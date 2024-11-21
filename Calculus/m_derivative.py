@@ -21,7 +21,7 @@ relative_error =  np.linalg.norm(approximation - exact, 'fro')  / np.linalg.norm
 # Print the results
 print("Matrix X:")
 print(X)
-print("\nMatrix dX:")
+print("\nDifferential dX:")
 print(dX)
 print("\nApproximation (f(X + dX) - f(X)):")
 print(approximation)
