@@ -19,8 +19,8 @@ exact = X @ dX + dX @ X
 relative_error =  np.linalg.norm(approximation - exact, 'fro')  / np.linalg.norm(exact, 'fro')
 
 # Print the results
-print(f"Input Matrix X: {X} \n")
-print(f"Differential dX: {dX}\n")
-print(f"Approximation (f(X + dX) - f(X)): {approximation}\n")
-print(f"Exact (X dX + dX X): {exact}\n")
+print(f"Input Matrix X:\n {X} \n")
+print(f"Differential dX:\n {dX}\n")
+print(f"Approximation (f(X + dX) - f(X)):\n {approximation}\n")
+print(f"Exact (X dX + dX X):\n {exact}\n")
 print(f"\nRelative Error: {relative_error:.2e}")
