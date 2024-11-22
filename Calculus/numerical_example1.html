@@ -14,7 +14,7 @@
         <blockquote>
             <div class="container">
                 <h2>Python Code Example</h2>
-                <button class="run-button" onclick="runPythonCode()">Run Code</button>
+               
                 <pre class="python-code">
                     import numpy as np
                     # Matrix X 
@@ -46,6 +46,7 @@
                     print(exact)
                     print(f"\nRelative Error: {relative_error:.2e}")
                 </pre>
+                <button class="run-button" onclick="runPythonCode()">Run Code</button>
                 <div class="python-output" id="output"></div>
             </div>
             
@@ -53,42 +54,31 @@
             <a href="../index.html">Back to Home </a>
         <br> <a href="calculus.html">Back to Calculus </a>
 
-        
-        <script>
-            let pyodide;
-    
-            // Load Pyodide and required packages
-            async function loadPyodideAndPackages() {
-                pyodide = await loadPyodide();
-                await pyodide.loadPackage("numpy");
-                console.log("Pyodide and numpy loaded successfully.");
-            }
-    
-            // Function to run the Python code
-            async function runPythonCode() {
-                // Get the Python code from the <pre> block
-                const pythonCode = document.querySelector('.python-code').textContent;
-    
-                // Reference the output container
-                const outputContainer = document.getElementById('output');
-                outputContainer.innerHTML = ""; // Clear previous output
-    
-                try {
-                    // Execute Python code
-                    const result = await pyodide.runPythonAsync(pythonCode);
-    
-                    // Pyodide doesn't automatically capture printed output; redirect stdout
-                    const printedOutput = pyodide.globals.get("print")();
-                    outputContainer.textContent = printedOutput;
-                } catch (error) {
-                    // Display error in the output container
-                    outputContainer.textContent = `Error: ${error.message}`;
-                    console.error("Execution error:", error);
-                }
-            }
-    
-            // Load Pyodide on page load
-            loadPyodideAndPackages();
+        <script> 
+            let pyodide; 
+            async function loadPyodideAndPackages() { 
+                pyodide = await loadPyodide(); 
+                await pyodide.loadPackage("numpy"); 
+                console.log("Pyodide and numpy loaded successfully."); 
+            } 
+            async function runPythonCode() { 
+                const pythonCode = document.querySelector('.python-code').textContent; 
+                const outputContainer = document.getElementById('output'); 
+                outputContainer.innerHTML = ""; 
+                // Clear previous output 
+                try { 
+                    let capturedOutput = []; 
+                    pyodide.globals.set("print", function(...args) { 
+                        capturedOutput.push(args.join(" ")); 
+                    }); 
+                    await pyodide.runPythonAsync(pythonCode); 
+                    outputContainer.textContent = capturedOutput.join("\n"); 
+                } catch (error) { 
+                    outputContainer.textContent = `Error: ${error.message}`; 
+                    console.error("Execution error:", error); } 
+                } 
+                loadPyodideAndPackages(); 
         </script>
+        
     </body>
 </html>
