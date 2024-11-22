@@ -57,25 +57,37 @@
         <script>
             let pyodide;
     
+            // Load Pyodide and required packages
             async function loadPyodideAndPackages() {
                 pyodide = await loadPyodide();
                 await pyodide.loadPackage("numpy");
+                console.log("Pyodide and numpy loaded successfully.");
             }
     
+            // Function to run the Python code
             async function runPythonCode() {
                 // Get the Python code from the <pre> block
                 const pythonCode = document.querySelector('.python-code').textContent;
     
-                // Execute the Python code and display the result in the output div
+                // Reference the output container
+                const outputContainer = document.getElementById('output');
+                outputContainer.innerHTML = ""; // Clear previous output
+    
                 try {
-                    const output = await pyodide.runPythonAsync(pythonCode);
-                    document.getElementById('output').textContent = output;
-                } catch (err) {
-                    document.getElementById('output').textContent = `Error: ${err}`;
+                    // Execute Python code
+                    const result = await pyodide.runPythonAsync(pythonCode);
+    
+                    // Pyodide doesn't automatically capture printed output; redirect stdout
+                    const printedOutput = pyodide.globals.get("print")();
+                    outputContainer.textContent = printedOutput;
+                } catch (error) {
+                    // Display error in the output container
+                    outputContainer.textContent = `Error: ${error.message}`;
+                    console.error("Execution error:", error);
                 }
             }
     
-            // Load Pyodide and packages on page load
+            // Load Pyodide on page load
             loadPyodideAndPackages();
         </script>
     </body>
