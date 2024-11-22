@@ -4,7 +4,7 @@
         <title>Numerical Example</title>
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
         <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css">
+        <script src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <link rel="stylesheet" href="../styles.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,27 +48,35 @@
                 </pre>
                 <div class="python-output" id="output"></div>
             </div>
+            
         </blockquote>
             <a href="../index.html">Back to Home </a>
         <br> <a href="calculus.html">Back to Calculus </a>
 
-        <py-env>{"packages": ["numpy"]}</py-env>
-
+        
         <script>
-            function runPythonCode() {
-                // Get the Python code from the preformatted block
-                const pythonCode = document.querySelector('.python-code').textContent;
-                
-                 // Create a new PyScript element dynamically
-                const pyScript = document.createElement('py-script');
-                pyScript.textContent = pythonCode;
-                pyScript.setAttribute('output', 'output'); // Direct output to the correct container
-
-                // Clear previous output and replace with the new py-script element
-                const outputContainer = document.getElementById('output');
-                outputContainer.innerHTML = '';
-                document.body.appendChild(pyScript);
+            let pyodide;
+    
+            async function loadPyodideAndPackages() {
+                pyodide = await loadPyodide();
+                await pyodide.loadPackage("numpy");
             }
+    
+            async function runPythonCode() {
+                // Get the Python code from the <pre> block
+                const pythonCode = document.querySelector('.python-code').textContent;
+    
+                // Execute the Python code and display the result in the output div
+                try {
+                    const output = await pyodide.runPythonAsync(pythonCode);
+                    document.getElementById('output').textContent = output;
+                } catch (err) {
+                    document.getElementById('output').textContent = `Error: ${err}`;
+                }
+            }
+    
+            // Load Pyodide and packages on page load
+            loadPyodideAndPackages();
         </script>
     </body>
 </html>
