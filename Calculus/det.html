@@ -130,10 +130,9 @@
             \[
             d(\det A) = (\det A)\text{tr }(A^{-1} dA) \tag{4}
             \]
-            This expression is particularly useful to approximate eigenvalues from the characteristic equation. 
-            Consider the scalar function \(p(x) = \det(xI - A)\). In practice, often we have to 
-            approximate eigenvalues using an algorithm and it requires the derivative of \(p(x)\) at 
-            different values of \(x\).
+            Consider the scalar function \(p(x) = \det(xI - A)\), which is the characteristic polynomial of \(A\). 
+            In practice, when approximating eigenvalues using numerical methods, we often need to compute the derivative 
+            of \(p(x)\) at different values of \(x\).
             <br>
             Applying the expression (4), we have:
             \[
@@ -143,7 +142,38 @@
             \[
             d(\det (xI-A)) = (\det (xI-A)) \text{tr } ((xI-A)^{-1})dx
             \]
+            <br>
+            Note: while the analytical approach provides a useful formula for the differential of many functions, in practice,
+            <strong>automatic differentiation</strong>(auto-diff) offers a more stable and efficient way to compute 
+            the gradient of functions. Auto-diff allows us to compute the derivative with respect to matrix parameters directly 
+            without explicitly computing such as \(A^{-1}\). 
 
+            <pre class="python-code">
+            import torch
+
+            # Random square matrix
+            def generate_matrix(n):
+                return torch.randn(n, n, dtype=torch.float64, requires_grad=False)
+
+            # Characteristic polynomial p(x) = det(xI - A)
+            def p(x, A):
+                return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
+
+            # Derivative of p(x) using auto-differentiation
+            def dp_torch(x, A):
+                x_tensor = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
+                grad = torch.autograd.grad(p(x_tensor, A), x_tensor)[0]
+                return grad.item()
+
+            # Analytical formula d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
+            def dp(x, A):
+                return (
+                    p(x, A).item() *
+                    torch.trace(
+                        torch.inverse(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
+                    ).item()
+                )
+            </pre>
         </blockquote>
         <a href="../index.html">Back to Home </a>
         <br> <a href="calculus.html">Back to Calculus </a>
