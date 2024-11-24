@@ -8,11 +8,11 @@ def generate_matrix(n):
 def p(x, A):
     return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
 
-# Derivative of p(x) using PyTorch
+# Derivative of p(x) using auto-differentiation
 def dp_torch(x, A):
-    x = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
-    p(x, A).backward()
-    return x.grad.item()
+    x_tensor = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
+    grad = torch.autograd.grad(p(x_tensor, A), x_tensor)[0]
+    return grad.item()
 
 # d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
 def dp(x, A):

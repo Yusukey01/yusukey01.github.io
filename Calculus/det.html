@@ -4,8 +4,6 @@
         <title>Orthogonality</title>
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
         <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
-        <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <link rel="stylesheet" href="../styles.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
@@ -146,73 +144,10 @@
             d(\det (xI-A)) = (\det (xI-A)) \text{tr } ((xI-A)^{-1})dx
             \]
 
-            Here, you can compare the analytical derivative and derivative from PyTorch. 
-            <pre class="python-code">
-                import torch
-
-                # Random square matrix
-                def generate_matrix(n):
-                    return torch.randn(n, n, dtype=torch.float64, requires_grad=False)
-
-                # Characteristic polynomial p(x) = det(xI - A)
-                def p(x, A):
-                    return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
-
-                # Derivative of p(x) using PyTorch
-                def dp_torch(x, A):
-                    x = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
-                    p(x, A).backward()
-                    return x.grad.item()
-
-                # d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
-                def dp(x, A):
-                    return (
-                        p(x, A).item() *
-                        torch.trace(
-                            torch.inverse(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
-                        ).item()
-                    )
-                # Random square matrix
-                n = 5
-                A = generate_matrix(n)
-                # Random scalar x
-                x = torch.randn(1).item()  
-                # Print results
-                print(f"Matrix A:\n{A}")
-                print(f"x =  {x}")
-                print(f"PyTorch derivative: {dp_torch(x, A)}")
-                print(f"Analytical derivative: {dp(x, A)}")
-            </pre>
-            <button class="run-button" onclick="runPythonCode()">Run Code</button>
-            <div class="python-output" id="output"></div>
-
         </blockquote>
         <a href="../index.html">Back to Home </a>
         <br> <a href="calculus.html">Back to Calculus </a>
 
-        <script> 
-            let pyodide; 
-            async function loadPyodideAndPackages() { 
-                pyodide = await loadPyodide(); 
-                await pyodide.loadPackage("torch");
-                console.log("Pyodide and torch loaded successfully."); 
-            } 
-            async function runPythonCode() { 
-                const pythonCode = document.querySelector('.python-code').textContent; 
-                const outputContainer = document.getElementById('output'); 
-                outputContainer.innerHTML = ""; 
-                try { 
-                    let capturedOutput = []; 
-                    pyodide.globals.set("print", function(...args) { 
-                        capturedOutput.push(args.join(" ")); 
-                    }); 
-                    await pyodide.runPythonAsync(pythonCode); 
-                    outputContainer.textContent = capturedOutput.join("\n"); 
-                } catch (error) { 
-                    outputContainer.textContent = `Error: ${error.message}`; 
-                    console.error("Execution error:", error); } 
-                } 
-                loadPyodideAndPackages(); 
-        </script>
+        
     </body>
 </html>
