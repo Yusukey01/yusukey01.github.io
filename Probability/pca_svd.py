@@ -1,7 +1,8 @@
 import numpy as np
 
+# Random data matrix ( m data points with n parameters)
 def generate_data(m, n):
-    # Random data matrix ( m data points with n parameters)
+
     data = np.random.randn(m, n) 
 
     # Make some correlations 
@@ -13,8 +14,6 @@ def generate_data(m, n):
 
     # Mean-deviation form 
     return (data - np.mean(data, axis=0) )
-
-
 
 # PCA with covariance matrix (As refference)
 def pca_via_covariance(data):
