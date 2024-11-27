@@ -101,12 +101,16 @@
             component(PC2) captures the next largest variance and is orthogonal to PC1. Similarly, each subsequent PC capturing less variance 
             and maintaining orthogonality to all previous PCs.
             <br><br>
-            For example, Suppose you have 10 million data points, each represented as a vector \(x_i \in \mathbb{R}^{10} \). 
-            After computing the covariance matrix \(\Sigma \) and diagonalizing it(\(\Sigma = PDP^T\)), you examine the 
+            For example, Suppose you have 1 million data points, each represented as a vector \(x_i \in \mathbb{R}^{10} \). 
+            After computing the covariance matrix \(\Sigma = X^T X \) and diagonalizing it(\(\Sigma = PDP^T\)), you examine the 
             eigenvalues to determine how much variance each principal component captures comparing with the <strong>total variance</strong> 
             of \(\Sigma\). Let's say PC1: 40%, PC2: 30%, and PC3: 25%. Then, you project the data onto the subspace 
             spanned by the first 3 most significant principal components. Even you discarded the remaining 7 dimentions(noise dimensions),
             you still retain the most significant patterns(trends) in the data. 
+            \[
+             x_i \in \mathbb{R}^10 \to z_i \in \mathbb{R}^3
+            \]
+            The vector \(z_i\) is known as the <strong>latent vector</strong>.
             <br><br>
             This <strong>dimensionality reduction</strong> process is called <strong>principal component analysis(PCA)</strong>. By reducing 
             dimensions, PCA enables efficient analysis of large datasets while retaining their most meaningful structure. PCA is 
@@ -117,15 +121,26 @@
         <blockquote>
             In practice, the <strong>singular value decomposition</strong>(See <a href="../Linear_algebra/symmetry.html">Section I - Part 9</a>) plays an 
             important role in the PCA. 
+            Given a data matrix in mean-deviation form \(X \in \mathbb{R}^{m \times n}\), then \(S = X^TX\) is the covariance matrix.
+            <br>
+            Note: in PCA, it is common to use \(X^TX \mathbb{R}^{n \times n}\) instead of \(XX^T \mathbb{R}^{m \times m}\) because we are interested 
+            in  \(n\) "features" than \(m\) data points. 
+            <br>
+            By SVD of \(X\), 
             \[
-            A = U\Sigma V^T
+            \begin{align*}
+            S &= (U\Sigma V^T)^T(U\Sigma V^T)  \\\\
+              &= V\Sigma^TU^TU\Sigma V^T \\\\
+              &= V\Sigma^2V^T
+            \end{align*}
             \] 
-            The singular value \(\sigma_i\) is the square roots of eigenvalues of the covariance matrix. Since the eigenvalues 
-            represent variance, their square roots represent <strong>standard deviation</strong> along the principal components.
-            \[
-            \sigma_i = \sqrt{\lambda_i} = \sqrt{\text{variance}_i} = \text{standard deviation}_i
+            This result is equivalent to the eigendecomposition \(X^TX = PDP^T\) because the singular value \(\sigma_i\) is the square roots of 
+            eigenvalues of the covariance matrix \(S\): 
+            [\
+            \sigma_i = \sqrt{\lambda_i}
             \]
-           
+            and the right singular vectors in \(V\) are eigenvectors(principal components) of \(S\). So, singular values represent 
+            <strong>standard deviation</strong> along the principal components.
         <div class="container">
             <pre class="python-code">
                 import numpy as np
