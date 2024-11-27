@@ -76,7 +76,7 @@ num_pcs = threshold(ratio, t)
 # Print results
 print("Eigenvalues:")
 for i, val in enumerate(eigvals):
-    print(f"  PC{i + 1}: {val:.6f}")
+    print(f"  Lambda {i + 1}: {val:.6f}")
 
 print("\nExplained Variance Ratio (%):")
 for i, var in enumerate(ratio):
