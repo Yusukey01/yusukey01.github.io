@@ -1,6 +1,6 @@
 import numpy as np
 
-# Random data matrix ( m data points with n parameters)
+# Random data matrix ( m data points with n features)
 def generate_data(m, n):
 
     data = np.random.randn(m, n) 
@@ -19,7 +19,7 @@ def generate_data(m, n):
 def pca_via_covariance(data):
     
     # "Sample" covariance matrix 
-    # Note: Dividing by (n-1) provides "unbiased" estimate of the population covariance. 
+    # Note: Dividing by (m-1) provides "unbiased" estimate of the population covariance. 
     cov_matrix = np.dot(data.T, data) / (data.shape[0] - 1)
 
     # Eigenvalue decomposition 
@@ -43,7 +43,7 @@ def pca_with_svd(data):
     # Singular Value Decomposition (we don't need the matrix U: use "_" )
     _, S, vt = np.linalg.svd(data, full_matrices=False)
     
-    # Get eigenvalues via singular values
+    # Get eigenvalues via singular values: lambda_i = (S_i)^2  / m - 1
     eigvals = (S ** 2) / (data.shape[0] - 1)
     
     # Each variance vs total variance
