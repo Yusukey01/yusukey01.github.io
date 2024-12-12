@@ -64,7 +64,7 @@ def threshold(var_ratio, t):
 
 # Dimension of data 
 m = 1000000 
-n = 10 
+n = 15
 
 # Run PCA
 eigvals, eigvecs, ratio = pca_with_svd(generate_data(m, n))
