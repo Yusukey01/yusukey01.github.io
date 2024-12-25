@@ -38,7 +38,7 @@ def mini_batch_sgd(X, y):
             break
     return theta
 
-# Gradient function of linear regression
+# Gradient of objective function for linear regression (gradient of Mean Squared Error (MSE))
 def grad_f(theta, x_batch, y_batch):
         grad = (1 /(x_batch.shape[0])) * x_batch.T @ ((x_batch @ theta) - y_batch)
         return grad
