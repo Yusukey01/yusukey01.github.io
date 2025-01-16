@@ -2,54 +2,50 @@ import numpy as np
 
 # Objective function and its gradient
 def objective(x):
-    return (x[0] - 2)**2 + x[1]**2 + x[2]**2
+    return (x[0] - 2) ** 2 + x[1] ** 2 + x[2] ** 2
 
 def grad_objective(x):
     return np.array([2 * (x[0] - 2), 2 * x[1], 2 * x[2]])
 
-# Constraints
+# Constraints and their gradients
 def inequality_constraint_1(x):
-    return x[0] + x[1] - 1  # g1(x) <= 0
+    return x[0] + x[1] - 1  # g1
 
 def inequality_constraint_2(x):
-    return x[0] + x[2] - 1  # g2(x) <= 0
+    return x[0] + x[2] - 1  # g2
 
 def equality_constraint(x):
-    return x[0] - x[1]  # h1(x) = 0
+    return x[0] - x[1]  # h
 
 def grad_inequality_constraint_1():
-    return np.array([1, 1, 0])
+    return np.array([1, 1, 0])  # Dg1
 
 def grad_inequality_constraint_2():
-    return np.array([1, 0, 1])
+    return np.array([1, 0, 1])  # Dg2
 
 def grad_equality_constraint():
-    return np.array([1, -1, 0])
+    return np.array([1, -1, 0])  # Dh
 
-# Penalty method with safe handling of large rho values
-def penalty_method(rho=2.2, lr=0.01, tol=1e-6, max_iter=100):
-    x = np.array([0.5, 0.5, 0.0])  # Initial guess (feasible starting point)
+# Simple Penalty method 
+def penalty_method(rho = 2, lr = 0.001, tol = 1e-6, max_iter = 50):
+    x = np.array([0.5, 0.5, 0.0])  # Initial (choose feasible starting point)
     
     for _ in range(max_iter):
         # Apply constraints safely: we want to avoid overflow or invalid values
-        g1 = max(0, -(x[0] + x[1] - 1))
-        g2 = max(0, -(x[0] + x[2] - 1))
-        h = (x[0] - x[1])  # h(x) = 0
+        g1 = (max(0, (x[0] + x[1] - 1)))**2
+        g2 = (max(0, (x[0] + x[2] - 1)))**2
+        h =  (x[0] - x[1])**2
         
         # Compute the gradient of the penalty term
         grad_penalty = (
-            2 * rho * g1 * grad_inequality_constraint_1() +
-            2 * rho * g2 * grad_inequality_constraint_2() +
-            2 * rho * h * grad_equality_constraint()
+            rho * g1 * grad_inequality_constraint_1() +
+            rho * g2 * grad_inequality_constraint_2() +
+            rho * h * grad_equality_constraint()
         )
 
-        # Full gradient of penalized objective function
+        # Gradient of penalized objective function
         grad = grad_objective(x) + grad_penalty
-
-        # Gradient descent step with damping factor to avoid large updates
-        damping_factor = 0.1
-        grad = grad * damping_factor  # Reduce gradient step size
-
+        
         # Gradient descent step
         x = x - lr * grad
 
@@ -60,68 +56,92 @@ def penalty_method(rho=2.2, lr=0.01, tol=1e-6, max_iter=100):
     return x, objective(x)
 
 # KKT method
-def kkt_method(tol=1e-8, max_iter=10):
-    vars = np.array([0.5, 0.5, 0.0, 0.0, 0.0, 0.0])  # Initial guess (x1, x2, x3, mu1, mu2, lambda_)
+def kkt_method(tol = 1e-8, max_iter = 10):
+    # Initial values of parameters: x1, x2, x3, mu1, mu2, s1, s2, lambda
+    # The starting point is often critical in optimization problems.
+    parameters = np.array([2.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5]) 
 
-    for _ in range(max_iter):
-        x1, x2, x3, mu1, mu2, lambda_ = vars
-
-        # Compute constraints
-        g1 = x1 + x2 - 1
-        g2 = x1 + x3 - 1
-        h = x1 - x2
+    for i in range(max_iter):
+        x = parameters[:3] / np.array([1.0, 1.0, 1.0]) # Scaling to avoid singular Jacobian or ill-conditioned
+        mu1, mu2, s1, s2, lambd = parameters[3:] 
 
         # Gradients
-        grad_f = grad_objective([x1, x2, x3])
+        grad_f = grad_objective(x)
         grad_g1 = grad_inequality_constraint_1()
         grad_g2 = grad_inequality_constraint_2()
         grad_h = grad_equality_constraint()
 
-        # Residuals
-        eq1 = grad_f + mu1 * grad_g1 + mu2 * grad_g2 + lambda_ * grad_h  # Stationarity
-        eq2 = g1  # Primal feasibility: g1(x)
-        eq3 = g2  # Primal feasibility: g2(x)
-        eq4 = h   # Primal feasibility: h(x)
-        eq5 = mu1 * g1  # Complementary slackness
-        eq6 = mu2 * g2  # Complementary slackness
-
-        residuals = np.array([*eq1, eq2, eq3, eq4, eq5, eq6])
-
-        # Jacobian
-        jacobian = np.array([
-            [2, 0, 0, grad_g1[0], grad_g2[0], grad_h[0]],
-            [0, 2, 0, grad_g1[1], grad_g2[1], grad_h[1]],
-            [0, 0, 2, grad_g1[2], grad_g2[2], grad_h[2]],
-            [1, 1, 0, 0, 0, 0],
-            [1, 0, 1, 0, 0, 0],
-            [1, -1, 0, 0, 0, 0],
+        # Residuals (KKT conditions)
+        r_stationarity = grad_f + mu1 * grad_g1 + mu2 * grad_g2 + lambd * grad_h
+        r_primal_feasibility = np.array([
+                inequality_constraint_1(x) + s1,  # g1(x) + s1 == 0
+                inequality_constraint_2(x) + s2,  # g2(x) + s2 == 0
+                equality_constraint(x)            # h(x) == 0
+        ])
+        r_complementarity = np.array([
+                mu1 * s1,  # mu1*s1 == 0
+                mu2 * s2   # mu2*s2 == 0
         ])
 
-        # Solve the linear system
-        delta_vars = np.linalg.lstsq(jacobian, -residuals[:6], rcond=None)[0]
+        # Residual vector
+        residuals = np.concatenate([r_stationarity, r_primal_feasibility, r_complementarity])
 
-        # Update variables
-        vars += delta_vars
+        # Jacobian matrix
+        jacobian = np.zeros((8, 8))
+
+        # Stationarity (Df + μ1*Dg1 + μ2*Dg2 + λ*Dh)
+        jacobian[:3, :3] = 2 * np.eye(3)  # Df(x)
+        jacobian[:3, 3] = grad_g1  # Dg1(x) 
+        jacobian[:3, 4] = grad_g2  # Dg2(x) 
+        jacobian[:3, 7] = grad_h   # Dh(x) 
+
+        # Primal feasibility (g1(x) + s1, g2(x) + s2, h(x))
+        jacobian[3, :3] = grad_g1  # Dg1(x) 
+        jacobian[4, :3] = grad_g2  # Dg2(x) 
+        jacobian[5, :3] = grad_h   # Dh(x) 
+        jacobian[3, 5] = 1         # Slack variable s1
+        jacobian[4, 6] = 1         # Slack variable s2
+
+        # Complementarity  (mu1*s1, mu2*s2)
+        jacobian[6, 3] = s1     # mu1*s1 
+        jacobian[6, 5] = mu1    # mu1 
+        jacobian[7, 4] = s2     # mu2*s2 
+        jacobian[7, 6] = mu2    # mu2 
+
+        print(f"Iteration {i+1}:")
+        print(f" x = {parameters[:3]}, f(x) = {objective(x):.6f}")
+        print(f"Multipliers: mu1 = {parameters[3]}, mu2 = {parameters[4]}, lambda = {parameters[7]}\n")
         
-        # Enforce non-negativity of mu1 and mu2
-        vars[3] = max(0, vars[3])  # mu1 >= 0
-        vars[4] = max(0, vars[4])  # mu2 >= 0
-
-        # Check convergence
-        if np.linalg.norm(delta_vars[:3]) < tol:
+        # Solve the system
+        try:
+            delta = np.linalg.solve(jacobian, -residuals)
+        except np.linalg.LinAlgError:
+            print("Jacobian is singular or ill-conditioned. Stopping optimization.")
             break
 
-    x = vars[:3]
-    return x, objective(x)
+        # Update parameters
+        parameters += delta
 
+        # Enforce non-negativity of inequality multipliers and slack variables
+        parameters[3] = max(0, parameters[3])   # mu1 >= 0
+        parameters[4] = max(0, parameters[4])   # mu2 >= 0
+        parameters[5] = max(0, parameters[5])   # s1 >= 0
+        parameters[6] = max(0, parameters[6])   # s2 >= 0
 
-    
+        # Convergence 
+        if np.linalg.norm(residuals) < tol:
+            break
+
+    x = parameters[:3]
+    return x, parameters[3], parameters[4], parameters[7], objective(x)
 
 if __name__ == "__main__":
-    x_penalty, f_penalty = penalty_method()
-    x_kkt, f_kkt = kkt_method()
-    relative_error  = np.linalg.norm(np.array(x_penalty) - np.array(x_kkt)) / np.linalg.norm(np.array(x_kkt))
+    x_opt, mu1, mu2, lambd, f_opt = kkt_method()
+    print(f"Optimal by KKT multipliers: x = {x_opt}, f(x) = {f_opt}")
+    print(f"Multipliers: mu1 = {mu1}, mu2 = {mu2}, lambda = {lambd}\n")
     
+    x_penalty, f_penalty = penalty_method()
+    relative_error  = np.linalg.norm(np.array(x_penalty) - np.array(x_opt)) / np.linalg.norm(np.array(x_opt))
     print(f"Optimal by Penalty Method: x = {x_penalty}, f(x) = {f_penalty}")
-    print(f"Optimal by KKT Multipliers: x = {x_kkt}, f(x) = {f_kkt}")
     print(f"X_Relative_Error: {relative_error :.6f}")
+
