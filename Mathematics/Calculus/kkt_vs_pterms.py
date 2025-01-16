@@ -100,7 +100,17 @@ def kkt_method(tol = 1e-8, max_iter = 10):
         # Residual vector
         residuals = np.concatenate([r_stationarity, r_primal_feasibility, r_complementarity])
 
-        # Jacobian matrix
+        # Jacobian matrix is 8x8 (8 equations and 8 parameters)
+        # As refference, the initial Jacobian matrix: 
+        #  x1   x2    x3   mu1  mu2  s1   s2  lambda
+        # [ 2.   0.   0.   1.   1.   0.   0.   1. ] Stationarity 1
+        # [ 0.   2.   0.   1.   0.   0.   0.  -1. ] Stationarity 2
+        # [ 0.   0.   2.   0.   1.   0.   0.   0. ] Stationarity 3
+        # [ 1.   1.   0.   0.   0.   1.   0.   0. ] Primal feasibility g1 + s1
+        # [ 1.   0.   1.   0.   0.   0.   1.   0. ] Primal feasibility g2 + s2
+        # [ 1.  -1.   0.   0.   0.   0.   0.   0. ] Primal feasibility h
+        # [ 0.   0.   0.   0.5  0.   0.5  0.   0. ] Complementarity 1 mu1 & s1
+        # [ 0.   0.   0.   0.   0.5  0.   0.5  0. ] Complementarity 2 mu2 & s2
         jacobian = np.zeros((8, 8))
 
         # Stationarity (Df + μ1*Dg1 + μ2*Dg2 + λ*Dh)
@@ -126,7 +136,7 @@ def kkt_method(tol = 1e-8, max_iter = 10):
         print(f" x = {parameters[:3]}, f(x) = {objective(x):.6f}")
         print(f"Multipliers: mu1 = {parameters[3]}, mu2 = {parameters[4]}, lambda = {parameters[7]}\n")
         
-        # Solve the system
+        # Solve the system 
         try:
             delta = np.linalg.solve(jacobian, -residuals)
         except np.linalg.LinAlgError:
