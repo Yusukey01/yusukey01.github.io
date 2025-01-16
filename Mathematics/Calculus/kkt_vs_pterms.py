@@ -130,7 +130,7 @@ def kkt_method(tol = 1e-8, max_iter = 10):
         try:
             delta = np.linalg.solve(jacobian, -residuals)
         except np.linalg.LinAlgError:
-            print("Jacobian is singular or ill-conditioned.")
+            print("Jacobian is singular OR ill-conditioned.")
             break
 
         # Update parameters
@@ -158,6 +158,5 @@ if __name__ == "__main__":
     x_relative_error  = np.linalg.norm(np.array(x_penalty) - np.array(x_opt)) / np.linalg.norm(np.array(x_opt))
     f_relative_error  = np.linalg.norm(np.array(f_penalty) - np.array(f_opt)) / np.linalg.norm(np.array(f_opt))
     print(f"Optimal by Penalty Method: x = {x_penalty}, f(x) = {f_penalty}")
-    print(f"x_Relative_Error: {x_relative_error :.6f}")
-    print(f"f_Relative_Error: {f_relative_error :.6f}")
+    print(f"x_Relative_Error: {x_relative_error :.6f}, f_Relative_Error: {f_relative_error :.6f}")
 
