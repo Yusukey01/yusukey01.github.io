@@ -26,39 +26,53 @@ def grad_inequality_constraint_2():
 def grad_equality_constraint():
     return np.array([1, -1, 0])  # Dh
 
-# Simple Penalty method 
-def penalty_method(rho = 2, lr = 0.001, tol = 1e-6, max_iter = 50):
-    x = np.array([0.5, 0.5, 0.0])  # Initial (choose feasible starting point)
+# Simple Penalty Method
+def penalty_method(rho=0.01, lr=0.05, tol=1e-6, max_iter=2000, rho_growth=1.2, clip_grad=1.0):
     
-    for _ in range(max_iter):
-        # Apply constraints safely: we want to avoid overflow or invalid values
-        g1 = (max(0, (x[0] + x[1] - 1)))**2
-        g2 = (max(0, (x[0] + x[2] - 1)))**2
-        h =  (x[0] - x[1])**2
-        
-        # Compute the gradient of the penalty term
+    x = np.array([0.5, 0.5, 0.5])  # Initial point
+    
+    for i in range(max_iter):
+        # Evaluate constraints with clipping to avoid invalid values
+        g1 = max(0, inequality_constraint_1(x))  # g1(x)
+        g2 = max(0, inequality_constraint_2(x))  # g2(x)
+        h = equality_constraint(x)              # h(x)
+
+        # Compute gradients of penalty terms
         grad_penalty = (
             rho * g1 * grad_inequality_constraint_1() +
             rho * g2 * grad_inequality_constraint_2() +
             rho * h * grad_equality_constraint()
         )
 
-        # Gradient of penalized objective function
+        # Gradient of the penalized objective function
         grad = grad_objective(x) + grad_penalty
-        
-        # Gradient descent step
-        x = x - lr * grad
 
+        # Gradient clipping to prevent instability
+        grad = np.clip(grad, -clip_grad, clip_grad)
+
+        # Gradient descent step: Learning rate diminishes over iterations
+        lr_t = lr / (1 + i / 10)  
+        x -= lr_t * grad
+    
         # Check convergence
-        if np.linalg.norm(grad) < tol:
+        constraint_violation = max(abs(g1), abs(g2), abs(h))
+        if np.linalg.norm(grad) < tol and constraint_violation < tol:
+            print(f"Converged after {i + 1} iterations.")
             break
-            
+
+        # Increase penalty parameter
+        if abs(h) > tol or g1 > tol or g2 > tol:
+            rho = min(rho * rho_growth, 1e6)  # Cap rho at a reasonable level
+
+        # Debugging output for monitoring progress
+        #print(f"Iteration {iteration + 1}: x = {x}, f(x) = {objective(x):.6f}, rho = {rho}")
+
     return x, objective(x)
 
 # KKT method
 def kkt_method(tol = 1e-8, max_iter = 10):
     # Initial values of parameters: x1, x2, x3, mu1, mu2, s1, s2, lambda
-    # The starting point is often critical in optimization problems.
+    # Note: s1 and s2 are slack variables.
     parameters = np.array([2.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5]) 
 
     for i in range(max_iter):
@@ -116,7 +130,7 @@ def kkt_method(tol = 1e-8, max_iter = 10):
         try:
             delta = np.linalg.solve(jacobian, -residuals)
         except np.linalg.LinAlgError:
-            print("Jacobian is singular or ill-conditioned. Stopping optimization.")
+            print("Jacobian is singular or ill-conditioned.")
             break
 
         # Update parameters
@@ -128,7 +142,7 @@ def kkt_method(tol = 1e-8, max_iter = 10):
         parameters[5] = max(0, parameters[5])   # s1 >= 0
         parameters[6] = max(0, parameters[6])   # s2 >= 0
 
-        # Convergence 
+        # Check Convergence
         if np.linalg.norm(residuals) < tol:
             break
 
@@ -141,7 +155,9 @@ if __name__ == "__main__":
     print(f"Multipliers: mu1 = {mu1}, mu2 = {mu2}, lambda = {lambd}\n")
     
     x_penalty, f_penalty = penalty_method()
-    relative_error  = np.linalg.norm(np.array(x_penalty) - np.array(x_opt)) / np.linalg.norm(np.array(x_opt))
+    x_relative_error  = np.linalg.norm(np.array(x_penalty) - np.array(x_opt)) / np.linalg.norm(np.array(x_opt))
+    f_relative_error  = np.linalg.norm(np.array(f_penalty) - np.array(f_opt)) / np.linalg.norm(np.array(f_opt))
     print(f"Optimal by Penalty Method: x = {x_penalty}, f(x) = {f_penalty}")
-    print(f"X_Relative_Error: {relative_error :.6f}")
+    print(f"x_Relative_Error: {x_relative_error :.6f}")
+    print(f"f_Relative_Error: {f_relative_error :.6f}")
 
