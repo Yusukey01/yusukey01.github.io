@@ -69,7 +69,7 @@ def penalty_method(rho=0.01, lr=0.05, tol=1e-6, max_iter=2000, rho_growth=1.2, c
 
     return x, objective(x)
 
-# KKT method
+# KKT method (with Newton's method)
 def kkt_method(tol = 1e-8, max_iter = 10):
     # Initial values of parameters: x1, x2, x3, mu1, mu2, s1, s2, lambda
     # Note: s1 and s2 are slack variables. 
