@@ -55,7 +55,7 @@
             is as follows:
             <div class="theorem">
                 <span class="theorem-title">Algorithm 1: NEWTONS_METHOD</span>
-                <strong>Input:</strong> objective function\(\mathcal{L}\), tolerance \(\epsilon\), initial ste size \(\eta_o\);
+                <strong>Input:</strong> objective function\(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\);
                 <br> 
                 <strong>Output:</strong> stationary point \(\theta^*\);
                 <br>
@@ -134,9 +134,67 @@
                 </ol>
             </div>
             In practice, we cannot store the whole Hessian approximation for large-scale problems. It costs \(O(n^2)\) memory space. 
-            In <strong>Limited memory BFGS(L-BFGS)</strong>, we only use the \(m\) most recent \(s_t, y_t\) pairs, and do not store the Hessian 
+            In <strong>Limited memory BFGS(L-BFGS)</strong>, we only use the \(m\) most recent \(s_t, y_t\) pairs, and do not store the Hessian approximation 
             explicitly. So, we can approximate \(H_t^{-1 }g_t\) by computing a sequence of inner products of these vectors. The memory requirement 
             can be \(O(mn)\), where \(m\) is typically 5 to 20.
+            <br>
+            <div class="theorem">
+                <span class="theorem-title">Algorithm 2: L_BFGS</span>
+                <strong>Input:</strong> objective function\(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\);
+                <br> 
+                <strong>Output:</strong> stationary point \(\theta^*\);
+                <br>
+                <strong>begin</strong>
+                <br>
+                &emsp;Set an initial point \(\theta_o\);
+                <br>
+                &emsp;Compute \( g_0 = \nabla f(\theta_0) \).
+                <br>
+                &emsp;Initialize \( s_t, y_t \) storage for \( m \) past updates.
+                <br>
+                &emsp;Set initial inverse Hessian approximation \( H_0 = I \) (identity matrix).
+                <br>
+                &emsp;\(t \leftarrow 0\);
+                <br>
+                &emsp;<strong>repeat: </strong>
+                <br>
+                &emsp;&emsp;Set \( q = g_t \)
+                <br>
+                &emsp;&emsp;Loop backward (from latest stored \( s, y \) pairs):
+                <br>
+                &emsp;&emsp;&emsp;Compute \( \alpha_i = \frac{s_i^\top q}{y_i^\top s_i} \).
+                <br>
+                &emsp;&emsp;&emsp;Update \( q = q - \alpha_i y_i \).
+                <br>
+                &emsp;&emsp;Multiply \( q \) by \( H_0 \): \( r = H_0 q \).
+                <br>
+                &emsp;&emsp;Loop forward (from oldest stored \( s, y \) pairs):
+                <br>
+                &emsp;&emsp;&emsp;Compute \( \beta_i = \frac{y_i^\top r}{y_i^\top s_i} \).
+                <br>
+                &emsp;&emsp;&emsp;Update \( r = r + s_i (\alpha_i - \beta_i) \).
+                <br>
+                &emsp;&emsp;Set serch direction  \( p_t = -r \).
+                <br>
+                &emsp;&emsp;Perform line search: find Find step size \( \alpha_t \) s.t. \( f(\theta_t + \alpha_t p_t) < f(\theta_t) \)
+                <br>
+                &emsp;&emsp;Update parameters: \( \theta_{t+1} = \theta_t + \alpha_t p_t \).
+                <br>
+                &emsp;&emsp;Update gradient \( g_{t+1} = \nabla f(\theta_{t+1}) \).
+                <br>
+                &emsp;&emsp;Store \( s_t \) and \( y_t \):\( s_t = \theta_{t+1} - \theta_t \) and \( y_t = g_{t+1} - g_t \).
+                <br>
+                &emsp;&emsp;Maintain memory size:If the number of stored \( s, y \) pairs exceeds \( m \), discard the oldest pair.
+                <br>
+                &emsp;<strong>until</strong> \( \|g_t\| < \epsilon \);
+                <br>
+                &emsp;Output \(\theta_t\);
+                <br>
+                <strong>end</strong>
+                
+                <br>
+            </div>
+
         </blockquote>
 
         <a href="../../index.html">Back to Home </a>
