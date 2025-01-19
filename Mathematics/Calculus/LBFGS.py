@@ -97,8 +97,8 @@ def rosenbrock(x):
 
 def grad_rosenbrock(x):
     grad = np.zeros_like(x)
-    grad[:-1] = -400 * x[:-1] * (x[1:] - x[:-1]**2) - 2 * (1 - x[:-1]) #partial derivative wrt x_i
-    grad[1:] += 200 * (x[1:] - x[:-1]**2) # adding 200(x_i+1 -x_i ^2) except i=1 case
+    grad[:-1] = -400 * x[:-1] * (x[1:] - x[:-1]**2) - 2 * (1 - x[:-1]) # x_1 to x_n-1
+    grad[1:] += 200 * (x[1:] - x[:-1]**2) # x_2 to x_n
     return grad
 
 # Finite difference gradient to check grad_rosenbrock().
