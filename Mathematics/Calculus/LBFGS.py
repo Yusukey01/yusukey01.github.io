@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # perturbation around the global minimum x* = [1, ... , 1]^T 
     x0 =  np.random.randn(n)  
     numeric_opt = limit_bfgs(rosenbrock, grad_rosenbrock, x0)
-    print("Numerical optimum: \n", numeric_opt)
+    print("Numerical optimum: \n", numeric_opt.tolist())
 
     '''
     # If you are not sure about the gradient of the objective, always you can compare it with finite difference.
