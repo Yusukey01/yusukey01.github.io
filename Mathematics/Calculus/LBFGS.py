@@ -31,8 +31,8 @@ def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
 
     return eta
 
-# Limit memory LBFGS 
-def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 4000):
+# Limited memory LBFGS 
+def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 4000):
     
     theta = theta0.copy()
     g = grad_f(theta)
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     # You could try : x0 = np.ones(n) + 0.3 * np.random.randn(n), which represents adding small 
     # perturbation around the global minimum x* = [1, ... , 1]^T 
     x0 =  np.random.randn(n)  
-    numeric_opt = limit_bfgs(rosenbrock, grad_rosenbrock, x0)
+    numeric_opt = limited_bfgs(rosenbrock, grad_rosenbrock, x0)
     print("Initial point: \n", x0.tolist())
     print("\nNumerical optimum: \n", numeric_opt.tolist())
 
