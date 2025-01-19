@@ -1,38 +1,39 @@
 import numpy as np
 
-# Line search with Wolfe conditions
+# Line search with Wolfe conditions 
 def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
-    alpha = 1.0
-    alpha_low = 0.0
-    alpha_high = None
+    eta = 1.0
+    eta_low = 0.0
+    eta_high = None
 
     phi_0 = f(theta)
     grad_phi_0 = np.dot(grad_f(theta), p)
 
     for _ in range(max_iter):
-        phi_alpha = f(theta + alpha * p)
+        phi_eta = f(theta + eta * p)
 
         # Check the first Wolfe condition (sufficient decrease)
-        if phi_alpha > phi_0 + c1 * alpha * grad_phi_0:
-            alpha_high = alpha
+        if phi_eta > phi_0 + c1 * eta * grad_phi_0:
+            eta_high = eta
         else:
             # Check the second Wolfe condition (curvature condition)
-            grad_phi_alpha = np.dot(grad_f(theta + alpha * p), p)
-            if grad_phi_alpha < c2 * grad_phi_0:
-                alpha_low = alpha
+            grad_phi_eta = np.dot(grad_f(theta + eta * p), p)
+            if grad_phi_eta < c2 * grad_phi_0:
+                eta_low = eta
             else:
-                return alpha
+                return eta
 
         # Update alpha using bisection method
-        if alpha_high is not None:
-            alpha = (alpha_low + alpha_high) / 2.0
+        if eta_high is not None:
+            eta = (eta_low + eta_high) / 2.0
         else:
-            alpha *= 2.0
+            eta *= 2.0
 
-    return alpha
+    return eta
 
 # Limit memory LBFGS 
-def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 5000):
+def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 4000):
+    
     theta = theta0.copy()
     g = grad_f(theta)
     s_list = []
@@ -40,6 +41,7 @@ def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 5000):
     rho_list = []
 
     for _ in range(max_iter):
+        
         if np.linalg.norm(g) < tol:
             break
 
@@ -52,7 +54,7 @@ def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 5000):
             alpha_list.append(alpha)
             q -= alpha * y
 
-        # Initial Hessian approximation is identity: H0 * q = q
+        # Initial Hessian approximation is identity: H0 = I, so H0 * q = q
         r = q
 
         # Loop forward through stored (s, y) pairs
@@ -63,17 +65,16 @@ def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 5000):
         # Search direction
         p = -r
 
-        # Line search satisfying Wolfe conditions
+        # Compute the step size by Line search satisfying Wolfe conditions
         eta = line_search(f, grad_f, theta, p)
 
         # Update parameters
         theta_next = theta + eta * p
-        g_next = grad_f(theta_next)
+        grad_next = grad_f(theta_next)
 
-        # Update memory
+        # Update memory for (s, y) pairs
         s = theta_next - theta
-        y = g_next - g
-
+        y = grad_next - g
         if np.dot(s, y) > 1e-6:  
             if len(s_list) == m:
                 s_list.pop(0)
@@ -82,9 +83,10 @@ def limit_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 5000):
             s_list.append(s)
             y_list.append(y)
             rho_list.append(1.0 / np.dot(y, s))
-
+            
+        # Update parameters and gradient
         theta = theta_next
-        g = g_next
+        g = grad_next
 
     return theta
 
@@ -115,8 +117,7 @@ if __name__ == "__main__":
     n = 100 # Dimensionality
     
     # Randomly generate an initial point x0:
-    # Sometimes, you will get a huge error rate depending on x0.
-    # Alternatively, You could try : x0 = np.ones(n) + 0.5 * np.random.randn(n), which represents adding small 
+    # You could try : x0 = np.ones(n) + 0.3 * np.random.randn(n), which represents adding small 
     # perturbation around the global minimum x* = [1, ... , 1]^T 
     x0 =  np.random.randn(n)  
     numeric_opt = limit_bfgs(rosenbrock, grad_rosenbrock, x0)
