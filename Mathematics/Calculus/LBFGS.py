@@ -12,11 +12,11 @@ def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
     for _ in range(max_iter):
         phi_eta = f(theta + eta * p)
 
-        # Check the first Wolfe condition (sufficient decrease)
+        # Check Armijo condition
         if phi_eta > phi_0 + c1 * eta * grad_phi_0:
             eta_high = eta
         else:
-            # Check the second Wolfe condition (curvature condition)
+            # Check Ccurvature condition
             grad_phi_eta = np.dot(grad_f(theta + eta * p), p)
             if grad_phi_eta < c2 * grad_phi_0:
                 eta_low = eta
