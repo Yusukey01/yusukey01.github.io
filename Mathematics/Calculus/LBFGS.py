@@ -31,7 +31,7 @@ def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
 
     return eta
 
-# Limited memory LBFGS 
+# Limited memory BFGS 
 def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
     
     theta = theta0.copy()
