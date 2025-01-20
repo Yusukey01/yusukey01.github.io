@@ -32,7 +32,7 @@ def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
     return eta
 
 # Limited memory LBFGS 
-def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 4000):
+def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
     
     theta = theta0.copy()
     g = grad_f(theta)
@@ -114,7 +114,7 @@ def finite_difference_gradient(f, x, epsilon=1e-6):
 
 if __name__ == "__main__":
     
-    n = 100 # Dimensionality
+    n = 50 # Dimensionality
     
     # Randomly generate an initial point x0:
     # You could try : x0 = np.ones(n) + 0.3 * np.random.randn(n), which represents adding small 
