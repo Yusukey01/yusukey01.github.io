@@ -38,7 +38,7 @@ def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
     g = grad_f(theta)
     s_list = []
     y_list = []
-    rho_list = []
+    rho_list = [] # We introduce rho =  1/s^T y instead of directly using 1/s^T y for efficiency & stability. 
 
     for _ in range(max_iter):
         
@@ -69,11 +69,11 @@ def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
         eta = line_search(f, grad_f, theta, p)
 
         # Update parameters
-        theta_next = theta + eta * p
-        grad_next = grad_f(theta_next)
+        theta += eta * p
+        grad_next = grad_f(theta)
 
         # Update memory for (s, y) pairs
-        s = theta_next - theta
+        s = eta * p
         y = grad_next - g
         if np.dot(s, y) > 1e-6:  
             if len(s_list) == m:
@@ -84,8 +84,7 @@ def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
             y_list.append(y)
             rho_list.append(1.0 / np.dot(y, s))
             
-        # Update parameters and gradient
-        theta = theta_next
+        # Update gradient
         g = grad_next
 
     return theta
