@@ -122,7 +122,7 @@ if __name__ == "__main__":
     x0 =  np.random.randn(n)  
     numeric_opt = limited_bfgs(rosenbrock, grad_rosenbrock, x0)
     print("Initial point: \n", x0.tolist())
-    print("\nNumerical optimum: \n", numeric_opt.tolist())
+    print("\n Numerical optimum: \n", numeric_opt.tolist())
 
     '''
     # If you are not sure about the gradient of the objective, always you can compare it with finite difference.
