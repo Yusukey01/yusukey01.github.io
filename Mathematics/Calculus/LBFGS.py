@@ -16,14 +16,14 @@ def line_search(f, grad_f, theta, p, c1 = 1e-4, c2 = 0.9, max_iter = 100):
         if phi_eta > phi_0 + c1 * eta * grad_phi_0:
             eta_high = eta
         else:
-            # Check Ccurvature condition
+            # Check Curvature condition
             grad_phi_eta = np.dot(grad_f(theta + eta * p), p)
             if grad_phi_eta < c2 * grad_phi_0:
                 eta_low = eta
             else:
                 return eta
 
-        # Update alpha using bisection method
+        # Update step size using bisection method
         if eta_high is not None:
             eta = (eta_low + eta_high) / 2.0
         else:
