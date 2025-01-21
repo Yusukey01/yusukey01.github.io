@@ -110,6 +110,48 @@
                 H_{t+1}^{-1} \approx C_{t+1} = \Big(I - \frac{s_t y_t^\top}{y_t^\top s_t} \Big) C_t \Big( I - \frac{y_t s_t^\top}{y_t^\top s_t}\Big) + \frac{s_t s_t^\top}{y_t^\top s_t}.
                 \]
             </div>
+            <br>
+            By the Taylor expansion of the gradient \(g(\theta) = \nabla \mathcal{L}(\theta)\) around \(\theta_t\): 
+            \[
+            g(\theta_{t+1}) \approx  g(\theta_t) + H(\theta_t) (\theta_{t+1}-\theta_t) \Longeightarrow y_t = H_t s_t
+            \]
+            where y_t = g(\theta_{t+1}) - g(\theta_t)  and \(s_t = \theta_{t+1}-\theta_t\).
+            <br> 
+            At the end of step \(t\), the new Hessian approximation \(B_{t+1}\) is computed, and it must satisfy the <strong>secant condition</strong>:
+            \[
+            B_{t+1} s_t = y_t
+            \]
+            where \(s_t = \theta_t - \theta_{t-1}\), and \(y_t = g(\theta_t) - g(\theta_{t-1})\).
+            <br>
+            This condition ensures that the updated Hessian approximation \(B_{t+1} \) reflects the curvature 
+            relationship between the step \(s_t\) and the gradient change \(y_t\).
+            <br>
+            Now, we assume that \(B_{t+1}\) is a symmetric rank-2 update of \(B_t\): 
+            \[
+            B_{t+1} = B_t + U
+            \]
+            and then the secant condition becomes:
+            \[
+            (B_t + U) s_t = y_t \longrightarrow U s_t = y_t - B_t s_t.
+            \]
+            Here, the correction \(U\) must account for the discrepancy \(y_t - B_t s_t\), so we choose: 
+            \[
+            U = \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}.
+            \]
+            The first term adds curvature in the direction of \(y_t\) and the scalar \(y_t^\top s_t\) normalizes this term. 
+            The second term remove curvature in the direction of \(s_t\) to avoid over-correction. It ensures that the updated 
+            \(B_{t+1}\) remains symmetric and positive definite. 
+            Finally, 
+            \[
+            \begin{align*}
+            &B_{t+1} = B_t + \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t} \\\\
+            &\longrightarrow B_{t+1} s_t = B_t s_t + \Big\{\frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}\Big\} s_t \\\\
+            &\longrightarrow B_{t+1} s_t = B_t s_t  + y_t - B_t s_t \\\\
+            &\longrightarrow B_{t+1} s_t = y_t
+            \end{align*}
+            \]
+            Therefore, the formula update approximation of Hessian with satisfying the secant condition.
+            <br>
             Note: Check <a href="../Linear_algebra/woodbury.html"><strong>Sherman-Morrison formula</strong></a>. 
             <br><br>
             If the initial \(B_o\) is positive definite(Usually, \(B_o = I\)), and the step size \(\eta\) is found via Condition (1) and the following 
