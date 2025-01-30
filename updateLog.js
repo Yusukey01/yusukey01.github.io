@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 groupedUpdates[date].forEach(update => {
                     let updateItem = document.createElement("p");
-                    updateItem.innerHTML = `----<strong>${update.content}</strong>`;
+                    updateItem.innerHTML = `&nbsp;&nbsp;&nbsp;<strong>${update.content}</strong>`;
                     updateLog.appendChild(updateItem);
                 });
             });
