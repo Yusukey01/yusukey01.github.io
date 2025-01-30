@@ -20,12 +20,12 @@ document.addEventListener("DOMContentLoaded", function () {
             // Create an HTML structure for each date group
             sortedDates.forEach(date => {
                 const dateHeading = document.createElement("h4");
-                dateHeading.textContent = `Updates on ${date}`;
+                dateHeading.textContent = `${date}:`;
                 updateLog.appendChild(dateHeading);
 
                 groupedUpdates[date].forEach(update => {
                     let updateItem = document.createElement("p");
-                    updateItem.innerHTML = `<strong>${update.content}</strong>`;
+                    updateItem.innerHTML = `----<strong>${update.content}</strong>`;
                     updateLog.appendChild(updateItem);
                 });
             });
