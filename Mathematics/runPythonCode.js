@@ -1,25 +1,47 @@
 let pyodide;
 
-async function loadPyodideAndPackages() { 
-    pyodide = await loadPyodide(); 
-    await pyodide.loadPackage("numpy");
-    console.log("Pyodide and numpy loaded successfully."); 
-} 
+// Lazy load Pyodide and only the required packages on demand
+async function loadPyodideAndPackages() {
+    if (pyodide) return; // Avoid reloading if Pyodide is already loaded
 
-async function runPythonCode() { 
-    const pythonCode = document.querySelector('.python-code').textContent; 
-    const outputContainer = document.getElementById('output'); 
-    outputContainer.innerHTML = ""; 
-    try { 
-        let capturedOutput = []; 
-        pyodide.globals.set("print", function(...args) { 
-            capturedOutput.push(args.join(" ")); 
-        }); 
-        await pyodide.runPythonAsync(pythonCode); 
-        outputContainer.textContent = capturedOutput.join("\n"); 
-    } catch (error) { 
-        outputContainer.textContent = `Error: ${error.message}`; 
-        console.error("Execution error:", error); } 
-    } 
-    
-loadPyodideAndPackages(); 
+    // Load Pyodide with the index URL for the required version
+    pyodide = await loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.3/full/"
+    });
+
+    // Dynamically load numpy package only when needed
+    await pyodide.loadPackage("numpy");
+    console.log("Pyodide and numpy loaded successfully.");
+}
+
+// Run Python code and capture output dynamically
+async function runPythonCode() {
+    const pythonCode = document.querySelector('.python-code').textContent;
+    const outputContainer = document.getElementById('output');
+    outputContainer.innerHTML = ""; // Clear previous output
+
+    try {
+        await loadPyodideAndPackages();  // Ensure Pyodide and numpy are loaded before running Python code
+
+        let capturedOutput = [];
+        // Override print function to capture output
+        pyodide.globals.set("print", function(...args) {
+            capturedOutput.push(args.join(" "));
+        });
+
+        // Run the Python code
+        await pyodide.runPythonAsync(pythonCode);
+
+        // Display captured output
+        outputContainer.textContent = capturedOutput.join("\n");
+    } catch (error) {
+        // Display error if execution fails
+        outputContainer.textContent = `Error: ${error.message}`;
+        console.error("Execution error:", error);
+    }
+}
+
+// Event listener to run Python code when needed (example: button click)
+document.getElementById('run-python-button').addEventListener('click', runPythonCode);
+
+// Optionally, initialize Pyodide and packages when needed, instead of on load.
