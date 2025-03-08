@@ -44,7 +44,7 @@ def limited_bfgs(f, grad_f, theta0, m = 10, tol = 1e-6, max_iter = 2000):
         
         if np.linalg.norm(g) < tol:
             break
-
+                    
         q = g.copy() 
         alpha_list = [] # Need this for the second loop to avoid computing alpha again 
 
