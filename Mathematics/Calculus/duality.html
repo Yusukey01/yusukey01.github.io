@@ -85,7 +85,7 @@
             <br>
             Moreover, a function is <strong>\(L\)-smooth</strong> if its gradient \(\nabla f(x)\) is Lipschitz continuous:
             \[
-            \| \nabla f(x) \ \nabla f(y) \| \leq L \|x -y\|.
+            \| \nabla f(x) - \nabla f(y) \| \leq L \|x - y\|.
             \]
             This smoothness condition ensures that gradient-based optimization behaves predictably.
             <br><br>
@@ -102,53 +102,43 @@
             \]
             where \(A\) is positive definite symmetric Hessian of \(f\).
             <br><br>
-            Suppose we use <a href="gradient.html"><strong>steepest descent</strong></a> with exact line search. 
-            If \(\alpha_k\) is a sufficiently small constant \(\alpha > 0\), the corresponding iteration: 
+            Suppose we use <a href="gradient.html"><strong>steepest descent</strong></a> with a fixed step size \(\alpha\). 
+            By shifting the optimum to \(x^*\) (and adjusting constants), we can write:
             \[
-            x_{k+1} = x_k - \alpha \nabla f(x_k), \tag{2}
+            f(x) = \frac{1}{2}(x - x^*)^T A (x - x^*), \quad \nabla f(x) = A(x-x^*).
             \]
-            can be shown to be contractive within a sphere centered at \(x^*\), so it converges linearly.
-            We simplify Equation (1), and adding a suitable constant, we have 
+            Then the steepest descent iteration is:
             \[
-            f(x) = \frac{1}{2}(x - x^*)A(x-x^*), \quad \nabla f(x) = A(x-x^*).
+            x_{k+1} = x_k - \alpha \nabla f(x_k),
             \]
-            Then for a constant stepsize \(\alpha\), the steepest descent iteration (2) can be written as 
+            which can be rewritten as:
             \[
             x_{k+1} - x^* = (I - \alpha A)(x_k - x^*).
             \]
-            For \alpha = frac{2}{\lambda_{\max}}, where \(\lambda_{\max}\) is the largest eigenvalue of \(A\), 
-            the matrix \(I - \alpha A\) has eigenvalues strictly within the unit circle and is a contraction 
-            with respect to the Euclidean norm. 
-            <br>
-            The optimal stepsize \(\alpha^*\) is chosen to equate the constractions at \(\lambda_{\max}\) and 
-            \(\lambda_{\min}\):
+            The optimal step size is determined by equating the contraction factors at the smallest and largest eigenvalues of \(A\). Setting:
             \[
-            | 1 - \alpha^* \lambda_{\min} | = | 1 - \alpha^* \lambda_{\max} |
+            |1 - \alpha^* \lambda_{\min}| = |1 - \alpha^* \lambda_{\max}|,
             \]
-            where \(\lambda_{\min}\) is the smallest eigenvalue of \(A\).
-            <br>
-            Assuming \(1 - \alpha^* \lambda_{\min} \geq 0\) and \( 1 - \alpha^* \lambda_{\max} \leq 0\), we set 
+            and assuming \(1 - \alpha^* \lambda_{\min} \geq 0\) and \(1 - \alpha^* \lambda_{\max} \leq 0\), we solve:
             \[
-            1 - \alpha^* \lambda_{\min} = \alpha^* \lambda_{\max} - 1
+            1 - \alpha^* \lambda_{\min} = \alpha^* \lambda_{\max} - 1,
             \]
+            which gives:
             \[
             \alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}}.
             \]
-            With this stepsize, we have the linear convergence rate estimate
+            With this step size, the contraction factor for the iterates is:
             \[
-            \|x_{x+1} - x^* \| \leq \left( \frac{\frac{\lambda_{\max}}{\lambda_{\min}}-1}{\frac{\lambda_{\max}}{\lambda_{\min}}+1}\right) \|x_k - x^* \|.
+            q = 1 - \alpha^*\lambda_{\min} = \frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}} = \frac{\kappa-1}{\kappa+1},
             \]
-            Therefore, the convergence rate is given by 
-            \[
-            \mu = \left(\frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}\right)^2.
-            \] 
+            where \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\) is the <strong>condition number</strong>. 
             <br>
-            Or, using the <strong>condition number</strong> \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\), 
+            Since the function error decreases roughly as the square of the iterate error, the convergence rate in terms of function value is:
             \[
-            \mu = \left(\frac{\kappa -1}{\kappa + 1}\right)^2.
+            \mu = q^2 = \left(\frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}\right)^2 = \left(\frac{\kappa-1}{\kappa+1}\right)^2.
             \]
             <br>
-            In general, Problems with low condition numbers converge(or train) faster.
+            In general, problems with low condition numbers (i.e., when \(\kappa\) is close to 1) converge, or train, faster.
         </blockquote>
     <a href="../../index.html">Back to Home </a>
     <br> <a href="calculus.html">Back to Calculus </a>
