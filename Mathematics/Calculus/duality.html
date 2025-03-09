@@ -98,16 +98,50 @@
             <br><br>
             For example, consider a quadratic loss function:
             \[
-            \mathcal{L}(\theta) = \frac{1}{2}\theta^T A \theta + b^T \theta  + c 
+            \mathcal{L}(\theta) = \frac{1}{2}\theta^T A \theta + b^T \theta  + c  \tag{1}
             \]
-            where \(A\) is positive definite. 
+            where \(A\) is positive definite symmetric Hessian of \(f\).
             <br><br>
-            Suppose we use <a href="gradient.html"><strong>steepest descent</strong></a> with exact line search. The convergence rate is given by 
+            Suppose we use <a href="gradient.html"><strong>steepest descent</strong></a> with exact line search. 
+            If \(\alpha_k\) is a sufficiently small constant \(\alpha > 0\), the corresponding iteration: 
             \[
-            \mu = \left(\frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}\right)^2
+            x_{k+1} = x_k - \alpha \nabla f(x_k), \tag{2}
             \]
-            where \(\lambda_{\max}\) is the largest eigenvalue of \(A\) and \(\lambda_{\min}\) is the smallest eigenvalue 
-            of \(A\). 
+            can be shown to be contractive within a sphere centered at \(x^*\), so it converges linearly.
+            We simplify Equation (1), and adding a suitable constant, we have 
+            \[
+            f(x) = \frac{1}{2}(x - x^*)A(x-x^*), \quad \nabla f(x) = A(x-x^*).
+            \]
+            Then for a constant stepsize \(\alpha\), the steepest descent iteration (2) can be written as 
+            \[
+            x_{k+1} - x^* = (I - \alpha A)(x_k - x^*).
+            \]
+            For \alpha = frac{2}{\lambda_{\max}}, where \(\lambda_{\max}\) is the largest eigenvalue of \(A\), 
+            the matrix \(I - \alpha A\) has eigenvalues strictly within the unit circle and is a contraction 
+            with respect to the Euclidean norm. 
+            <br>
+            The optimal stepsize \(\alpha^*\) is chosen to equate the constractions at \(\lambda_{\max}\) and 
+            \(\lambda_{\min}\):
+            \[
+            | 1 - \alpha^* \lambda_{\min} | = | 1 - \alpha^* \lambda_{\max} |
+            \]
+            where \(\lambda_{\min}\) is the smallest eigenvalue of \(A\).
+            <br>
+            Assuming \(1 - \alpha^* \lambda_{\min} \geq 0\) and \( 1 - \alpha^* \lambda_{\max} \leq 0\), we set 
+            \[
+            1 - \alpha^* \lambda_{\min} = \alpha^* \lambda_{\max} - 1
+            \]
+            \[
+            \alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}}.
+            \]
+            With this stepsize, we have the linear convergence rate estimate
+            \[
+            \|x_{x+1} - x^* \| \leq \left( \frac{\frac{\lambda_{\max}}{\lambda_{\min}}-1}{\frac{\lambda_{\max}}{\lambda_{\min}}+1}\right) \|x_k - x^* \|.
+            \]
+            Therefore, the convergence rate is given by 
+            \[
+            \mu = \left(\frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}\right)^2.
+            \] 
             <br>
             Or, using the <strong>condition number</strong> \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\), 
             \[
