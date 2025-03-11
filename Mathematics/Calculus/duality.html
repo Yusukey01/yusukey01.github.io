@@ -84,7 +84,7 @@
             gradient. These conditions impact the stability and convergence of optimization algorithms. 
             
             <div class="theorem">
-                <span class="theorem-title">Lipschitz Continuity</span>
+                <span class="theorem-title">Lipschitz Continuity:</span>
             Let \((X, d)\) and \((Y, e)\) be <a href="../Linear_algebra/trace.html"><strong>metric spaces</strong></a> and \(f: X \to Y\). 
             If there exists \(L \in \mathbb{R}^+\) such that 
             \[
@@ -121,16 +121,29 @@
             <br>
             (Remember that we have an unique optimal point \(x^* = -A^{-1}b\).)
             <br><br>
-            Suppose we use <a href="gradient.html"><strong>steepest descent</strong></a> with a fixed step size \(\alpha\). 
+            To analyze the convergence of steepest descent, we first introduce the concept of a contraction mapping, which plays a key role 
+            in linear convergence analysis.
+            <div class="theorem">
+                <span class="theorem-title">Contraction Mapping:</span>
+                Suppose \((M, d)\) is a metric space. A map \(f: M \to M\) is said to be a <strong>contraction</strong> on \(M\) 
+                if and only if there exists a constant \(0 \leq k < 1\) such that:
+                \[
+                \forall x, y \in M, \quad d(f(x), f(y)) \leq k \, d(x, y).
+                \]
+                This constant \(k\) is often called the <strong>contraction factor</strong>. The contraction mapping \(f\) is a <strong>Lipschitz function</strong> 
+                with Lipschitz constant less than 1 and is <strong>uniformly continuous</strong> on its domain. If an iterative method satisfies this 
+                contraction property, it ensures that the error shrinks at every step, leading to convergence.
+            </div>
+            Now, suppose we apply <a href="gradient.html"><strong>steepest descent</strong></a> with a fixed step size \(\alpha\). 
             To analyze the function relative to the optimum \(x^*\), without loss of generality, Function (1) can be rewritten as
             \[
             f(x) = \frac{1}{2}(x - x^*)^T A (x - x^*)
             \]
-            and its gradient is 
+            with gradient:
             \[
             \nabla f(x) = A(x-x^*).
             \]
-            Then the steepest descent iteration:
+            Then steepest descent iteration:
             \[
             x_{k+1} = x_k - \alpha \nabla f(x_k) 
             \]
@@ -138,26 +151,26 @@
             \[
             x_{k+1} - x^* = (I - \alpha A)(x_k - x^*).
             \]
-            For the iteration to be a contraction, we require: 
+            For the iteration to be a contraction (i.e., to ensure the error shrinks), we require:
             \[
             | 1 - \alpha \lambda_i | < 1, \, \forall i  \tag{2}
             \]
+            where \(\lambda_i\) are eigenvalues of \(A\). This ensure that \(I - \alpha A\) has eigenvalues strictly inside 
+            the unit circle.
+            <br>
             Let \(\lambda_{\min}\) and \(\lambda_{\max}\) be the smallest and largest eigenvalues of \(A\), respectively.
-            From Inequality (2), we have 
+            From Inequality (2), we get
             \[
             0 < \alpha \lambda_i < 2 \Longrightarrow \alpha < \frac{2}{\lambda_{\max}}
             \]
-            Thus for \(\alpha < \frac{2}{\lambda_{\max}}\), the matrix \(I -\alpha A\) has eigenvalues strictly inside the unit circle, 
-            and is a contraction with respect to the Euclidean norm. This condition is critical because it guarantees that the error 
-            diminishes at each step of iteration.
+            Thus, for \(\alpha < \frac{2}{\lambda_{\max}}\), the matrix \(I -\alpha A\) is a contraction with respect to 
+            the Euclidean norm. This condition is critical because it guarantees that the error diminishes at each step of iteration.
             <br>
-            To achieve the fastest convergence rate (which means we want to minimize the maximum contraction factor), we set the two 
-            extreme eigenvalues of \(I -\alpha A\) have the same absolute deviation from 1:
+            To achieve the fastest convergence rate (i.e., to minimize the worst-case contraction factor), we choose \(\alpha^*\) 
+            such that the two extreme eigenvalues of \(I -\alpha A\) have the same absolute deviation from 1:
             \[
             |1 - \alpha^* \lambda_{\min}| = |1 - \alpha^* \lambda_{\max}|.
             \]
-            This ensures that the worst-case contraction factor is minimized, leading to the fastest overall convergence.
-            <br>
             Assuming \(1 - \alpha^* \lambda_{\min} \geq 0\) and \(1 - \alpha^* \lambda_{\max} \leq 0\), we solve:
             \[
             1 - \alpha^* \lambda_{\min} = \alpha^* \lambda_{\max} - 1,
@@ -166,29 +179,19 @@
             \[
             \alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}}.
             \]
-            With this step size, the contraction factor for the iterates is:
+            With this step size, the contraction factor is:
             \[
             k = 1 - \alpha^*\lambda_{\min} = \frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}} = \frac{\kappa-1}{\kappa+1},
             \]
             where \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\) is the <strong>condition number</strong>. 
             <br>
-            Since the function error decreases roughly as the square of the iterate error, the convergence rate in terms of function value is:
+            Since function error decreases roughly as the square of the iterate error, the function value convergence rate is:
             \[
             \mu = k^2 = \left(\frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}}\right)^2 = \left(\frac{\kappa-1}{\kappa+1}\right)^2.
             \]
             <br>
-            In general, problems with low condition numbers (i.e., when \(\kappa\) is close to 1) converge, or train, faster.
-            <br><br><br>
-            Note: The above linear convergence analysis is based on the concept of a <strong>contraction mapping</strong>.
-            <br> 
-            Suppose \((M, d)\) is a metric space. A map \(f: M \to M\) is said to be a <strong>contraction</strong> on \(M\) 
-            if and only if there exists a constant 
-            \(0 \leq k < 1\) such that:
-            \[
-              \forall x, y \in M, \quad d(f(x), f(y)) \leq k \, d(x, y).
-            \]
-            This constant \(k\) is often called the <strong>contraction factor</strong>. In this case, \(f\) is a Lipschitz function with 
-            Lipschitz constant less than 1, and <strong>uniformly continuous</strong> on its domain.
+            Note: In general, problems with low condition numbers (i.e., when \(\kappa\) is close to 1) converge (or train) faster.
+            On the other hand, a high condition number (ill-conditioned matrix \(A\)) leads to slower convergence.
         </blockquote>
     <a href="../../index.html">Back to Home </a>
     <br> <a href="calculus.html">Back to Calculus </a>
