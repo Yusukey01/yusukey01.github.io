@@ -34,6 +34,6 @@ if __name__ == "__main__":
     ]
     for inp, expected in test_cases:
         result = machine1(inp)
-        print(f"machine1({inp!r}) = {result} (expected: {expected})")
+        print(f"({inp!r}) = {result} (expected: {expected})")
 
    
