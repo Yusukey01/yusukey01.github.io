@@ -70,7 +70,7 @@ def machine3(w):
 # In this case, accepted strings often cause the worst-case performance
 # because they force the algorithm to do full verification.
 def worst_case_input(n):
-    print("Length: ", n)
+    print("n =  ", n)
     return "0" * n + "1" * n
 
 if __name__ == "__main__":
