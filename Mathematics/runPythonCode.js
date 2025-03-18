@@ -15,11 +15,12 @@ async function loadPyodideAndPackages() {
 }
 
 // Run Python code and capture output dynamically
-async function runPythonCode() {
-    const pythonCode = document.querySelector('.python-code').textContent;
-    const outputContainer = document.getElementById('output');
-    outputContainer.innerHTML = ""; // Clear previous output
-
+async function runPythonCode(button) {
+     // Find the closest container that holds the code and output.
+     const container = button.closest('.code-container');
+     const pythonCode = container.querySelector('.python-code').textContent;
+     const outputContainer = container.querySelector('.python-output');
+     outputContainer.innerHTML = ""; // Clear previous output
     try {
         await loadPyodideAndPackages();  // Ensure Pyodide and numpy are loaded before running Python code
 
