@@ -5,7 +5,6 @@
         <link rel="stylesheet" href="../styles.css">
         <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script async src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
-        <script async defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body> 
@@ -248,77 +247,79 @@
             Note: After a training <strong>epoch</strong>, we shuffle the dataset to generate different mini-batchies.
             <br>
             A sample code for mini-batch SGD in linear regression as follows: 
-            <div class="collapsible-section">
+            <div class="code-container">
+                <div class="collapsible-section">
                 <button class="collapsible-btn">Show/Hide Code</button>
                 <div class="collapsible-content">
-                    <pre class="python-code">
-                        import numpy as np
+                <pre class="python-code">
+                    import numpy as np
 
-                        # Fixed parameters for mini-batch SGD
-                        MAX_EPOCH = 10000
-                        BATCH_SIZE = 64
-                        TOLERANCE = 1e-3
-                        LEARNING_RATE = 0.01
+                    # Fixed parameters for mini-batch SGD
+                    MAX_EPOCH = 10000
+                    BATCH_SIZE = 64
+                    TOLERANCE = 1e-3
+                    LEARNING_RATE = 0.01
 
-                        # Sample data dimensions
-                        N_SAMPLES = 10000
-                        N_FEATURES = 3
+                    # Sample data dimensions
+                    N_SAMPLES = 10000
+                    N_FEATURES = 3
 
-                        # Mini-batch Stochastic Gradient Descent
-                        def mini_batch_sgd(X, y):
-                            n_samples = X.shape[0]
-                            theta = np.random.randn(X.shape[1]) * 0.01  # initial theta
+                    # Mini-batch Stochastic Gradient Descent
+                    def mini_batch_sgd(X, y):
+                        n_samples = X.shape[0]
+                        theta = np.random.randn(X.shape[1]) * 0.01  # initial theta
+                        
+                        for i in range(MAX_EPOCH):
+                            # Shuffling Data 
+                            indices = np.random.permutation(n_samples)
+                            x_shuffled = X[indices]
+                            y_shuffled = y[indices]
                             
-                            for i in range(MAX_EPOCH):
-                                # Shuffling Data 
-                                indices = np.random.permutation(n_samples)
-                                x_shuffled = X[indices]
-                                y_shuffled = y[indices]
+                            for j in range(0, n_samples, BATCH_SIZE):
+                                end = j + BATCH_SIZE
+                                x_batch = x_shuffled[j:end]
+                                y_batch = y_shuffled[j:end]
                                 
-                                for j in range(0, n_samples, BATCH_SIZE):
-                                    end = j + BATCH_SIZE
-                                    x_batch = x_shuffled[j:end]
-                                    y_batch = y_shuffled[j:end]
-                                    
-                                    # gradient function 
-                                    g = grad_f(theta, x_batch, y_batch)
-                                    
-                                    # Update parameters
-                                    theta -= LEARNING_RATE * g
+                                # gradient function 
+                                g = grad_f(theta, x_batch, y_batch)
                                 
-                                # Check convergence
-                                if np.linalg.norm(g) < TOLERANCE:
-                                    print(f"Converged in {i + 1} epochs.")
-                                    break
-                            return theta
+                                # Update parameters
+                                theta -= LEARNING_RATE * g
+                            
+                            # Check convergence
+                            if np.linalg.norm(g) < TOLERANCE:
+                                print(f"Converged in {i + 1} epochs.")
+                                break
+                        return theta
 
-                        # Gradient of objective function for linear regression (gradient of Mean Squared Error (MSE))
-                        def grad_f(theta, x_batch, y_batch):
-                                grad = (1 /(x_batch.shape[0])) * x_batch.T @ ((x_batch @ theta) - y_batch)
-                                return grad
-                            
-                        # Main 
-                        if __name__ == "__main__":
-                            
-                            # Generate sample data and objective 
-                            X = np.random.rand(N_SAMPLES, N_FEATURES) 
-                            true_theta = np.array([5, -1, -9])
-                            y = X @ true_theta + np.random.randn(X.shape[0]) * 0.1  # Add noise
-                            
-                            # Run Mini-Batch SGD
-                            estimated_theta = mini_batch_sgd(X, y)
-                            
-                            # Calculate relative error
-                            relative_error = np.linalg.norm(estimated_theta - true_theta) / np.linalg.norm(true_theta)
-                            
-                            print("True Parameters: ", true_theta)
-                            print("Estimated Parameters: ", estimated_theta)
-                            print(f"Relative Error: {relative_error:.6f}")
+                    # Gradient of objective function for linear regression (gradient of Mean Squared Error (MSE))
+                    def grad_f(theta, x_batch, y_batch):
+                            grad = (1 /(x_batch.shape[0])) * x_batch.T @ ((x_batch @ theta) - y_batch)
+                            return grad
+                        
+                    # Main 
+                    if __name__ == "__main__":
+                        
+                        # Generate sample data and objective 
+                        X = np.random.rand(N_SAMPLES, N_FEATURES) 
+                        true_theta = np.array([5, -1, -9])
+                        y = X @ true_theta + np.random.randn(X.shape[0]) * 0.1  # Add noise
+                        
+                        # Run Mini-Batch SGD
+                        estimated_theta = mini_batch_sgd(X, y)
+                        
+                        # Calculate relative error
+                        relative_error = np.linalg.norm(estimated_theta - true_theta) / np.linalg.norm(true_theta)
+                        
+                        print("True Parameters: ", true_theta)
+                        print("Estimated Parameters: ", estimated_theta)
+                        print(f"Relative Error: {relative_error:.6f}")
                     </pre>
                 </div>
             </div>
-            <button class="run-button" onclick="runPythonCode()">Run Code</button>
-            <div class="python-output" id="output"></div>
+            <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
+            <div class="python-output"></div>
+        </div>
         </blockquote>
 
         <h1 id="subgradient"> Sub-gradient Descent</h1>
