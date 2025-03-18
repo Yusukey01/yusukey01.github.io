@@ -76,7 +76,7 @@ def worst_case_input(n):
 if __name__ == "__main__":
     
     # Define the length of the string. Here, n = 10,000,000
-    input_str = worst_case_input(10000000)
+    input_str = worst_case_input(5000000)
 
     # Measure machine 2: (O(n log n))
     start = time.time()
