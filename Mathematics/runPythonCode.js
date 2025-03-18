@@ -43,5 +43,5 @@ async function runPythonCode(button) {
 }
 
 // Event listener to run Python code when needed (example: button click)
-document.getElementById('run-python-button').addEventListener('click', runPythonCode);
+//document.getElementById('run-python-button').addEventListener('click', runPythonCode);
 
