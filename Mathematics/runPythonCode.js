@@ -12,6 +12,8 @@ async function loadPyodideAndPackages() {
     // Dynamically load numpy package only when needed
     await pyodide.loadPackage("numpy");
     console.log("Pyodide and numpy loaded successfully.");
+    await pyodide.loadPackage("time");
+    console.log("Pyodide and time loaded successfully.");
 }
 
 // Run Python code and capture output dynamically
