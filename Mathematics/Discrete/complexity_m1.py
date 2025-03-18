@@ -1,4 +1,4 @@
-# Accept all strings generated from the language A = {0^k 1^k | k >= 0}
+# Accept all strings generated from the language A = {0^k 1^k | k >= 0}: O(n^2)
 def machine1(w):
     tape = list(w)
      
@@ -35,5 +35,7 @@ if __name__ == "__main__":
     for inp, expected in test_cases:
         result = machine1(inp)
         print(f"({inp!r}) = {result} (expected: {expected})")
+
+
 
    
