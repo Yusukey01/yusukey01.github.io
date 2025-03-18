@@ -44,4 +44,3 @@ async function runPythonCode() {
 // Event listener to run Python code when needed (example: button click)
 document.getElementById('run-python-button').addEventListener('click', runPythonCode);
 
-// Optionally, initialize Pyodide and packages when needed, instead of on load.
