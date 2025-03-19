@@ -1,6 +1,6 @@
 
 # Chek if a given cycle in the graph is Hamiltonian cycle or not : O(n)
-# Here, we don't run this function. S
+# Here, we don't run this function. 
 def is_hamiltonian_cycle(adj_matrix, cycle):
     n = len(adj_matrix)  # get number of vertices
     # Check cycle length: must visit all vertices and return to start
