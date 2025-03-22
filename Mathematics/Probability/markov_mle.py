@@ -62,7 +62,7 @@ def print_start_probabilities(pi_hat, states):
     for state, prob in zip(states, pi_hat):
         print(f"{state:>6}: {prob:.3f}")
 
-def print_transition_matrix(A_hat, states):
+def print_transition_matrix(A, states):
     # Determine column width based on the longest state name + padding
     max_len = max(len(state) for state in states)
     col_width = max_len + 2
@@ -72,7 +72,7 @@ def print_transition_matrix(A_hat, states):
     print(header)
     print("-" * len(header))
     # Print each row, formatting numbers with dynamic width
-    for j, row in enumerate(A_hat):
+    for j, row in enumerate(A):
         row_str = " | ".join(f"{p:{col_width}.3f}" for p in row)
         print(f"{states[j]:>{col_width}} | {row_str}")
 
