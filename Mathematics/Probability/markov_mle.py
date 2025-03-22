@@ -55,7 +55,7 @@ def estimate_mle(sequences, states, state_to_index):
 def print_sequences(sequences):
     print("Sequences:")
     for i, seq in enumerate(sequences):
-        print(f"City {i+1}: {' → '.join(seq)}")
+        print(f"City {i+1}:\n {' → '.join(seq)}")
 
 def print_start_probabilities(pi_hat, states):
     print("\nEstimated Start Probabilities (π̂ ):")
