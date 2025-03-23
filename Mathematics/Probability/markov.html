@@ -288,8 +288,7 @@
             <div class="theorem">
                 <span class="theorem-title">Uniform Dirichlet Prior </span>
                 The \(j\)-th row of the transition matrix \(A\) (which represents the probabilities of transitioning from state 
-                \(j\) to each of the \(K\) possible states) follows a Dirichlet distribution with parameters \(\alpha\). Note that 
-                every state is treated "equally" in the prior:
+                \(j\) to each of the \(K\) possible states) follows a Dirichlet distribution with parameters \(\alpha\):
                 \[
                 A_{j:} \sim \text{ Dir }(\alpha \: \boldsymbol{1}).
                 \]
@@ -297,8 +296,48 @@
                 \[
                 \hat{A}_{jk} = \frac{N_{jk}+\alpha}{N_j + K \alpha}.
                 \]
-                If \(\alpha = 1\), this is called <strong>add-one smoothing</strong>. 
-            </div>       
+                If \(\alpha = 1\), this is called <strong>add-one smoothing</strong>. Note that every state is treated "equally" 
+                in the prior.(evergy (\alpha\) is the same.)
+            </div> 
+            Assume that for the \(j\)ith row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). The total number of transitions from state \(j\) is 
+            \[
+            N_j = \sum_{k=1}^K N_{jk}
+            \]  
+            The likelihood under a multinomial model is: 
+            \[
+            P(\{N_{jk} | A_{j:}\}) \propto  \prod_{k=1}^K (A_{jk})^{N_{jk}}.
+            \]
+            Now, with the uniform Dirichlet prior, we have:
+            \[
+            P(A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{\alpha -1}.
+            \]
+            (The prior adds the same amount to each transition probability.)
+            <br>
+            By Bayes's rule, the posterior is proportional to the product of the likelihood and the prior:
+            \[
+            \begin{align*}
+            P(A_{j:} | \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
+                                   &=  \prod_{k=1}^K (A_{jk})^{N_{jk} + \alpha -1}.
+            \end{align*}
+            \]
+            Thus, the posterior distribution for \(A_{j:}\) is a Dirichlet distribution:
+            \[
+            A_{j:} | \{N_jk\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots \, N_{jK} + \alpha).
+            \]
+            There are two common choices for an estimator from a posterior distribution: the posterior mean and the mode (MAP estimate). For a Dirichlet 
+            distribution, the posterior mean is given by:
+            \[
+            \begin{align*}
+            E [A_{jk} | \{N_{jk}\}] &= \frac{N_{jk}+\alpha}{\sum_{i=1}^K (N_{ji}+\alpha)} \\\\
+                                    &= \frac{N_{jk}+\alpha}{N_j + K \alpha}.
+            \end{align*}
+            \]
+            This estimator is often used in practice because it is always defined. The mode (the "actual" MAP estimate) is given by
+            \[
+            \text{mode }(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
+            \]
+            However, this is not well-defined when \(\alpha =1 \). That's why the estimator based on the posterior mean is commonly used and, 
+            for \(\alpha =1 \), is referred to as add-one smoothing.
         </blockquote>
 
         <br><a href="../../index.html">Back to Home </a>
