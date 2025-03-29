@@ -1,52 +1,21 @@
 document.addEventListener("DOMContentLoaded", fetchPages);
 
-const pagesToIndex = [
-    "index.html",
-    "basic.html",
-    "random_variables.html",
-    "gamma.html",
-    "gaussian.html",
-    "student.html",
-    "covariance.html",
-    "correlation.html",
-    "mvn.html",
-    "mle.html",
-    "linear_regression.html",
-    "entropy.html",
-    "convergence.html",
-    "bayesian.html",
-    "expfamily.html",
-    "fisher_info.html",
-    "decision_theory.html",
-    "markov.html",
-]; 
-
 let searchIndex;
 let documents = [];
 
+// Fetch the search index from the JSON file
 async function fetchPages() {
-    let pagePromises = pagesToIndex.map(async (page) => {
-        try {
-            let response = await fetch(page);
-            let text = await response.text();
-            let tempElement = document.createElement("div");
-            tempElement.innerHTML = text;
-
-            // Extract main content (modify selector if needed)
-            let content = tempElement.querySelector("main") || tempElement.body;
-            let textContent = content.innerText;
-
-            return { id: page, text: textContent, url: page };
-        } catch (error) {
-            console.error(`Failed to fetch ${page}:`, error);
-            return null;
-        }
-    });
-
-    documents = (await Promise.all(pagePromises)).filter(doc => doc !== null);
-    buildSearchIndex();
+    try {
+        let response = await fetch("search-index.json");
+        documents = await response.json();
+        console.log("✅ Loaded search index:", documents);
+        buildSearchIndex();
+    } catch (error) {
+        console.error("❌ Failed to load search index:", error);
+    }
 }
 
+// Build Lunr.js search index
 function buildSearchIndex() {
     searchIndex = lunr(function () {
         this.ref("id");
@@ -56,6 +25,7 @@ function buildSearchIndex() {
     });
 }
 
+// Search function triggered on typing in the search box
 function searchFunction() {
     let query = document.getElementById("search-box").value.trim();
     let results = document.getElementById("search-results");
@@ -63,6 +33,13 @@ function searchFunction() {
 
     if (query.length > 0 && searchIndex) {
         let matches = searchIndex.search(query);
+        console.log("🔍 Search Query:", query);
+        console.log("🔍 Matches Found:", matches);
+
+        if (matches.length === 0) {
+            results.innerHTML = "<li>No results found.</li>";
+        }
+
         matches.forEach((match) => {
             let doc = documents.find((d) => d.id === match.ref);
             let li = document.createElement("li");
