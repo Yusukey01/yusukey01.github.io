@@ -13,7 +13,8 @@ X, y = make_classification(n_samples=10000,      # 10,000 samples
                            n_redundant=2,        # 2 features are redundant
                            n_repeated=0,         # No repeated features
                            n_clusters_per_class=2,  # 2 clusters per class, for a multimodal distribution
-                           class_sep=0.8,        # separation between classes
+                           weights=[0.90, 0.10], # 95% negatives, 5% positives
+                           class_sep=0.5,        # separation between classes
                            flip_y=0.05,          # 5% label noise 
                            random_state=42)
 

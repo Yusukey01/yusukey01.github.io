@@ -13,7 +13,8 @@ X, y = make_classification(n_samples=10000,      # 10,000 samples
                            n_redundant=2,        # 2 features are redundant (linear combinations)
                            n_repeated=0,         # No repeated features
                            n_clusters_per_class=2,  # 2 clusters per class, for a multimodal distribution
-                           class_sep=0.8,        # separation between classes
+                           weights=[0.90, 0.10], # 95% negatives, 5% positives
+                           class_sep=0.5,        # separation between classes
                            flip_y=0.05,          # 5% label noise 
                            random_state=42)
 
@@ -57,14 +58,17 @@ eer_rf = fpr_rf[eer_index_rf]
 # Plot ROC curves along with the chance line and the anti-diagonal (y = 1 - x)
 plt.figure(figsize=(8, 6))
 plt.plot(fpr_lr, tpr_lr, color='blue', lw=2,
-         label='Logistic Regression (AUC = {:.2f}, EER = {:.2f})'.format(roc_auc_lr, eer_lr))
+        label='Logistic Regression (AUC = {:.2f}, EER = {:.2f})'.format(roc_auc_lr, eer_lr))
+
 plt.plot(fpr_rf, tpr_rf, color='green', lw=2,
          label='Random Forest (AUC = {:.2f}, EER = {:.2f})'.format(roc_auc_rf, eer_rf))
+         
 plt.plot([0, 1], [0, 1], color='grey', lw=2, linestyle='--', label='Chance (y=x)')
 plt.plot([0, 1], [1, 0], color='red', lw=2, linestyle='--', label='Anti-diagonal (y=1-x)')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('ROC Curve Comparison with Equal Error Rate (EER)')
+plt.title('ROC Curve Comparison')
 plt.legend(loc="lower right")
 plt.grid(True)
 plt.show()
