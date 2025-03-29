@@ -43,7 +43,7 @@ avg_precision_lr = average_precision_score(y_test, y_scores_lr)
 precision_rf, recall_rf, thresholds_rf = precision_recall_curve(y_test, y_scores_rf)
 avg_precision_rf = average_precision_score(y_test, y_scores_rf)
 
-# Plot Precision-Recall curves for both classifiers
+# Plot Precision-Recall curves for both classifiers with legend in lower right corner
 plt.figure(figsize=(8, 6))
 plt.plot(recall_lr, precision_lr, color='blue', lw=2,
          label='Logistic Regression (AP = {:.2f})'.format(avg_precision_lr))
@@ -63,3 +63,4 @@ elif avg_precision_rf > avg_precision_lr:
     print("Random Forest (Good system) performs better on Precision-Recall with AP = {:.2f}".format(avg_precision_rf))
 else:
     print("Both models perform equally on Precision-Recall (AP = {:.2f})".format(avg_precision_lr))
+
