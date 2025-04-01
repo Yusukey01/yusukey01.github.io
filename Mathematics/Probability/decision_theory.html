@@ -7,381 +7,490 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body> 
-        <div class="toc-container">
-            <h2>Contents</h2>
-            <ul>
-                <li><a href="#intro">Introduction</a></li>
-                <li><a href="#class">Classification (zero-one loss)</a></li>
-                <li><a href="#CM">Confusion Matrix</a></li>
-                <li><a href="#ROC">ROC Curves</a></li>
-                <li><a href="#EER">Equal Error Rate (EER)</a></li>
-                <li><a href="#PR">PR Curves</a></li>
-                <li><a href="#imb">Class Imbalanced</a></li> 
+        <!-- Adding navbar from CSS -->
+        <nav class="navbar">
+            <div class="logo">
+                <h1>Mathematics</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../../index.html">Home</a></li>
+                <li><a href="../probability.html">Probability</a></li>
+                <li><a href="../algebra.html">Algebra</a></li>
+                <li><a href="../calculus.html">Calculus</a></li>
             </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+        
+        <!-- Hero section -->
+        <div class="hero-section">
+            <h1 class="webpage-name">Bayesian Decision Theory
+                <span class="subheading">A probabilistic approach to decision-making</span>
+            </h1>
         </div>
-        <h1 id="intro">Introduction</h1>
-        <blockquote>
-            In decision theory, an <strong>agent</strong> has a set of possible actions to choose from. Each <strong>action</strong> \(a \in \mathcal{A}\) 
-            is associated with costs and benefits that depend on the <strong>state of nature</strong> \(h \in \mathcal{H}\). 
-            This relationship is encoded into a <strong>loss function</strong> \(l(h, a)\). 
-            <br><br>
-            <strong>Bayesian decision theory</strong> is a probabilistic approach to decision-making under uncertainty. It provides a framework for making 
-            optimal decisions based on prior knowledge and observed data. The fundamental idea is to minimize the expected risk (or loss) by 
-            leveraging <a href="bayesian.html"><strong>Bayesian inference</strong></a>. This approach is widely used in probabilistic machine 
-            learning models such as classification, inference, and prediction.
-            <br><br>
-            For any action \(a\) given evidence, which can be single observation \(\boldsymbol{x}\) or a dataset \(\mathcal{D}\), we compute the 
-            <strong>posterior expected loss</strong>: 
-            \[
-            \rho(a | \boldsymbol{x}) = \mathbb{E}_{p(h| \boldsymbol{x})} [l(h, a)] = \sum_{h \in \mathcal{H}} l(h, a)p(h |\boldsymbol{x}).
-            \]
-            The <strong>Bayes estimator</strong>(or Bayes decision rule / optimal policy) specifies what action to take when presented with 
-            evidence \(boldsymbol{x}\) so as to minimize the risk(loss):
-            \[
-            \pi^* (\boldsymbol{x}) = \arg \min_{a \in \mathcal{A}} \mathbb{E}_{p(h|\boldsymbol{x})}[l(h, a)].
-            \]
-            Equivalently,
-            \[
-            \pi^* (\boldsymbol{x}) = \arg \max_{a \in \mathcal{A}} \mathbb{E}_{h}[U(h, a)],
-            \]
-            where \(U(h, a) = - l(h, a)\) is a <strong>utility function</strong> that is the desirability of each action in each possible state. 
-            This formulation is useful when working in utility-based decision-making, where the focus is on maximizing expected rewards rather 
-            than minimizing losses. (e.g., economics, game theory, and reinforcement learning)
-        </blockquote> 
-
-        <h1 id="class">Classification (Zero-One Loss)</h1>
-        <blockquote>
-            A common application of Bayesian decision theory is <strong>classification</strong>. 
-            In this context, we aim to select the optimal class label for a given input \(\boldsymbol{x} \in \mathcal{X}\).
-            <br><br>
-            Suppose that the states of nature correspond to labels:
-            \[
-            \mathcal{H} = \mathcal{Y} = \{1, \cdots, C\}.
-            \]
-            and that the possible actions are also the class labels:
-            \[
-            \mathcal{A} = \mathcal{Y}.
-            \]
-            In this case, a typical loss function is the <strong>zero-one loss</strong>:
-            \[
-            l_{01} (y^*, \hat{y}) = \mathbb{I}(y^* \neq \hat{y}), 
-            \]
-            where \(y^*\) is the true label, and \(\hat{y}\) is the predicted label.
-            <br><br>
-            Under the zero-one loss, the posterior expected loss for choosing label \(\hat{y}\) becomes will be
-            \[
-            \rho(\hat{y}| \boldsymbol{x}) = p(\hat{y} \neq y^* | \boldsymbol{x}) = 1 - p (y^* = \hat{y}| \boldsymbol{x}).
-            \] 
-            Thus, minimizing the expected loss is equivalent to maximizing the posterior probability:
-            \[
-            \pi (\boldsymbol{x}) = \arg \max_{y \in \mathcal{Y}} p( y | \boldsymbol{x} ).
-            \]
-            In other words, the optimal decision is to select the <strong>mode</strong> of the posterior distribution, which 
-            is the <strong>maximum a posteriori (MAP) estimate</strong>.
-            <br><br>
-            In some scenarios, especially when the risks associated with making an incorrect decision are high, it is prudent 
-            to allow the system to express uncertainty. This is called the <strong>reject option</strong>. Under this approach, 
-            the set of available actions is expanded to include the reject action:
-            \[
-            \mathcal{A} = \mathcal{Y} \cup \{0\},
-            \]
-            where action \(0\) represents the reject option (i.e., saying "I'm not sure").
-            <br><br>
-            The loss function can be defined as:
-            \[
-            l(y^*, a)=
-                \begin{cases}
-                0 &\text{if \(y^* = a\) and \(a \in \{1, \cdots, C\}\)} \\
-                \lambda_r &\text{if \(a = 0\)} \\
-                \lambda_e &\text{otherwise} \\
-                \end{cases}
-            \]
-            where \(\lambda_r\) is the cost of reject action, and \(\lambda_e\) is the cost of a classification error.
-            <br><br>
-            Under this framework, instead of always choosing the label with the highest posterior probability, the optimal policy is to 
-            choose a label only when the classifier is sufficiently confident: 
-            \[
-            a^* = 
-                \begin{cases} 
-                y^*  & \text{if \(p^* > \lambda^*\)} \\
-                \text{reject} & \text{otherwise}
-                \end{cases}
-            \]
-            where 
-            \[
-            \begin{align*}
-            &p^* = p(y^* | x) = \max_{y \in \{1, \cdots, C\}} p(y | x) \\
-            &\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}
-            \end{align*}
-            \]
-            <div class="proof">
-                <span class="proof-title">\(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\):</span>
-                The optimal decision is to choose the class label \(y\) if and only if its risk, \(R(y)\) is lower than the risk of rejecting, \(R(\text{reject})\). 
-                In other words, we choose \(y\) if 
-                \[
-                \begin{align*}
-                &R(y) < R(\text{reject}) \\\\
-                &\Longrightarrow \lambda_e \Bigl[\sum_{y^* \neq y} p(y^* | x)\Bigr]  < \lambda_r \\\\
-                &\Longrightarrow \lambda_e [1 - p(y|x)]  < \lambda_r \\\\
-                &\Longrightarrow p(y|x) > 1 - \frac{\lambda_r}{\lambda_e} \\\\
-                \end{align*}
-                \]
-                Thus, if the maximum posterior probability \(p^*\) exceeds the threshold \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\), 
-                then the classifier should choose the corresponding label. Otherwise, it should reject.
-            </div>
-        </blockquote>
-
-        <h1 id="CM">Confusion Matrix</h1>
-        <blockquote>
-            In classification tasks, it's crucial to evaluate how well the model performs. A common tool for this is the 
-            <strong>(class) confusion matrix</strong>, which summarizes the outcomes of classification decisions. The 
-            confusion matrix captures the following:
-            <ul>
-                <li>True Positives (TP):</li>
-                    The number of instances correctly classified as positive.
-                <li>True Negatives (TN):</li>
-                    The number of instances correctly classified as negative.
-                <li><strong>False Positives (FP)</strong>:</li>
-                    The number of instances incorrectly classified as positive (<strong>Type I error</strong>).
-                <li><strong>False Negatives (FN)</strong>:</li>
-                    The number of instances incorrectly classified as negative (<strong>Type II error</strong>).
-            </ul>
-            Understanding FP and FN is crucial because the costs associated with each error type may differ significantly depending 
-            on the application. In safety-critical systems, a FN (missing a dangerous condition) might be far more costly than a FP 
-            (raising an unnecessary alarm). For example, in a medical test, a FP would mean diagnosing a healthy patient as having 
-            a disease, whereas a FN would mean missing a disease in a patient who actually has it, which is more critical in mdedical 
-            fields. 
-            <br><br>
-            For binary classification, the confusion matrix typically looks like this:
-            <br>
-            <div style="text-align: center;">
-                \[
-                \begin{array}{|c|c|c|}
-                    \hline
-                    & \textbf{Predicted Positive} (\hat{P} = TP + FP) 
-                    & \textbf{Predicted Negative} (\hat{N} = FN + TN)  \\
-                    \hline
-                    \textbf{Actual Positive} (P = TP + FN)  & \textbf{TP} & \textbf{FN} \\
-                    \hline
-                    \textbf{Actual Negative} (N = FP + TN)  & \textbf{FP} & \textbf{TN} \\
-                    \hline
-                \end{array}
-                \]
-            <p style="margin-top: 5px;"><strong>Table 1: Confusion matrix for binary classification.</strong></p>
-            </div>
-            <br>
-            In our context, the confusion matrix quantifies the outcomes of decisions made by the Bayes estimator, which is designed to 
-            minimize the zero-one loss. It provides an empirical measure of the performance of that optimal policy by counting how often 
-            the decisions (predicted labels) match or mismatch the true labels. 
-            <br><br>
-            For any fixed threshold \(\tau\), consider the decision rule:
-            \[
-            \hat{y}_{\tau}(\boldsymbol{x}) = \mathbb{I}(p(y = 1 | \boldsymbol{x}) \geq 1 - \tau).
-            \]
-            We can compute the empirical number of them that arise from using the policy on a set \(N\) labeled examples. For example, 
-            \[
-            \text{FP}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 1, \, y_n = 0)
-            \]
-            and
-            \[
-            \text{FN}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 0, \, y_n = 1).
-            \]
-            The confusion matrix becomes like this:
-            <br>
-            <div style="text-align: center;">
-                \[
-                \begin{array}{|c|c|c|}
-                    \hline
-                    & \hat{y}_{\tau}(\boldsymbol{x}_n) = 1
-                    & \hat{y}_{\tau}(\boldsymbol{x}_n) = 0 \\
-                    \hline
-                    y_n = 1 & \text{TP}_{\tau} & \text{FN}_{\tau} \\
-                    \hline
-                    y_n = 0  & \text{FP}_{\tau} & \text{TN}_{\tau} \\
-                    \hline
-                \end{array}
-                \]
-                <p style="margin-top: 5px;"><strong>Table 2: Threshold-dependent confusion matrix.</strong></p>
-            </div>
-        </blockquote>
-
-        <h1 id="ROC">ROC Curves</h1>
-        <blockquote>
-            Here, we normalize the confusion matrix per <strong>row</strong> to obtain \(p(\hat{y}|y)\). (The sum of the 
-            entries in each row is 1.) The row-normalized confusion matrix is useful when optimizing for recall-focused tasks, 
-            such as detecting rare events like cybersecurity threats or disease outbreaks.
-            <br>
-            <div style="text-align: center;">
-                \[
-                \begin{array}{|c|c|c|}
-                    \hline
-                    &  1 & 0 \\
-                    \hline
-                    1 & \text{TP}_{\tau} / P = \text{TPR}_{\tau}  & \text{FN}_{\tau} / P = \text{FNR}_{\tau}  \\
-                    \hline
-                    0  &  \text{FP}_{\tau} / N = \text{FPR}_{\tau} & \text{TN}_{\tau} / N = \text{TNR}_{\tau}  \\
-                    \hline
-                \end{array}
-                \]
-                <p style="margin-top: 5px;"><strong>Table 3: Confusion matrix for a binary classification problem normalized per row.</strong></p>
-            </div>
-            <br>
-            <ul>
-                <li><strong>True positive rate (TPR)</strong> (or <strong>Sensitivity</strong> / <strong>Recall</strong>): \[
-                    \text{TPR}_{\tau} = p(\hat{y} = 1 | y = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
-                    \]</li>
-                <li><strong>False positive rate (FPR)</strong> (or <strong>Type I error rate</strong> / <strong>Fallout</strong>): \[
-                    \text{FPR}_{\tau} = p(\hat{y} = 1 | y = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
-                    \] </li>
-                <li><strong>False nagative rate (FNR)</strong> (or <strong>Type II error rate</strong> / <strong>Miss rate</strong>):\[
-                    \text{FNR}_{\tau} = p(\hat{y} = 0 | y = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
-                    \]</li>
-                <li><strong>True nagative rate (TNR)</strong> (or <strong>Specificity</strong>):\[
-                    \text{TNR}_{\tau} = p(\hat{y} = 0 | y = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
-                    \] </li>
-            </ul> 
-            <br>
-            Often, we plot the TPR vs FPR as an implicit function of \(\tau\); this plot is known as the <strong>receiver operating characteristic 
-            (ROC) curve</strong>. The overall quality of a classifier is often summarized using the <strong>AUC(Area Under the Curve)</strong>. 
-            A higher AUC indicates better discriminative ability across all threshold values (max = 1.0). 
-            <br>
-            The figure below compares two classifiers — one trained using logistic regression and the other using a random forest. Both classifiers 
-            provide predicted probabilities for the positive class, allowing us to vary \(\tau\) and compute the corresponding TPR and FPR. A diagonal 
-            line is also drawn, representing the performance of a random classifier — i.e., one that assigns labels purely by chance. On this line, 
-            the TPR equals the FPR at every threshold. If a classifier's ROC curve lies on this diagonal, it means the classifier is performing no 
-            better than random guessing. In contrast, any performance above the diagonal indicates that the classifier is capturing some signal, 
-            while performance below the diagonal (rare in practice) would indicate worse-than-random behavior. 
-            <br>
-            In our demonstration, the logistic regression model has been intentionally made worse, yielding an AUC of 0.78, while the random forest 
-            shows superior performance with an AUC of 0.94. These results mean that, overall, the random forest is much better at distinguishing 
-            between the positive and negative classes compared to the underperforming logistic regression model.
-            <div style="text-align: center;">
-                <img src="ruc_curve.png" alt="RUC curve" style="width:600px;">
-            </div>
-            (Data: 10,000 samples, 20 total features, 5 features are informative, 2 clusters per class, 5% label noise.)
-        </blockquote>  
         
-         <h1 id="EER">Equal Error Rate (EER)</h1>
-        <blockquote>
-            The <strong>equal error rate (EER)</strong> is the point where <strong>FPR = FNR</strong>. This is an important threshold in 
-            some applications (e.g., biometric authentication) where false positives and false negatives are equally costly. The EER provides 
-            a single value to compare classifiers, particularly when precision and recall trade-offs must be balanced.
-            <br>
-            Below is the EER point for our models, showing where the two error rates intersect:
-            <div style="text-align: center;">
-                <img src="eer.png" alt="EER" style="width:600px;">
+        <div class="container">
+            <!-- TOC using the defined style -->
+            <div class="toc-container">
+                <h2>Contents</h2>
+                <ul>
+                    <li><a href="#intro">Introduction</a></li>
+                    <li><a href="#class">Classification (zero-one loss)</a></li>
+                    <li><a href="#CM">Confusion Matrix</a></li>
+                    <li><a href="#ROC">ROC Curves</a></li>
+                    <li><a href="#EER">Equal Error Rate (EER)</a></li>
+                    <li><a href="#PR">PR Curves</a></li>
+                    <li><a href="#imb">Class Imbalanced</a></li> 
+                </ul>
             </div>
-           Note: the minimum EER is 0 corresponding to the top left corner. In many real-world applications, we might tune the threshold 
-           to minimize EER.
-        </blockquote>
-        
-        <h1 id="PR">Precision-Recall Curves</h1>
-        <blockquote>    
-           Next, we normalized the original confusion matrix per <strong>column</strong> to obtain \(p(y | \hat{y})\). 
-           (The sum of the entries in each column is 1.) The column-normalized confusion matrix is useful when the precision 
-           is crucial (e.g., medical diagnosis, fraud detection).
-            <div style="text-align: center;">
-                \[
-                \begin{array}{|c|c|c|}
-                    \hline
-                    &  1 & 0 \\
-                    \hline
-                    1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\
-                    \hline
-                    0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\
-                    \hline
-                \end{array}
-                \]
-                <p style="margin-top: 5px;"><strong>Table 4: Confusion matrix for a binary classification problem normalized per colummn.</strong></p>
-            </div>
-            <ul>
-                <li><strong>Positive predictive value (PPV)</strong> (or <strong>Precision</strong>):\[
-                    \text{PPV}_{\tau} = p(y = 1 | \hat{y} = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
-                    \] </li>
-                <li><strong>False discovery rate (FDR)</strong>:\[
-                    \text{FDR}_{\tau} = p(y = 1 | \hat{y} = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
-                    \]</li>
-                <li><strong>False omissin rate (FOR)</strong>:\[
-                    \text{FOR}_{\tau} = p(y = 0 | \hat{y} = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
-                    \]</li>
-                <li><strong>Negative predictive value (NPV)</strong>:\[
-                    \text{NPV}_{\tau} = p(y = 0 | \hat{y} = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
-                    \]</li>
-            </ul>
-            <br>
-            To summarize a system's performance — especially when classes are <strong>imbalanced</strong> (i.e., when the positive class is rare) 
-            or when false positives and false negatives have different costs — we often use a <strong>precision-recall (PR) curve</strong>. This 
-            curve plots precision against recall as the decision threshold \(\tau\).  
-            <br><br>
-            Note: <strong>Imbalanced datasets</strong> appear frequently in real-world machine learning applications where one class is naturally much rarer than 
-            the other. For examole, in financial transactions, fraudulent activities are rare compared to legitimate ones. The classifier must 
-            detect the very few fraud cases (positive class) among millions of normal transactions (negative class).
-            <br><br>
-            Let precision be \(\mathcal{P}(\tau)\) and recall be \(\mathcal{R}(\tau)\). If \(\hat{y}_n \in \{0, 1\}\) is the predicted 
-            label and \(y_n \in \{0, 1\}\) is the true label, then at threshold \(\tau\), precision and recall can be estimated by:
-            \[
-            \mathcal{P}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n \hat{y}_n}, 
-            \quad
-            \mathcal{R}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n y_n}.
-            \]
-            By plotting the precision vs recall for various the threshold \(\tau\), we obtain the PR curve. 
-            <div style="text-align: center;">
-                <img src="pr_curve.png" alt="PR curve" style="width:600px;">
-            </div>
-            This curve visually represents the trade-off between precision and recall. It is particularly valuable in situations where one 
-            class is much rarer than the other or when false alarms carry a significant cost.
-            <br><br>
-            Raw precision values can be noisy; therefore, an <strong>interpolated precision</strong> is often computed. For a given recall 
-            level (e.g., at least 10%), the interpolated precision is defined as the maximum precision observed for any recall level greater 
-            than or equal to that value. The <strong>average precision (AP)</strong> is the average of these interpolated precision values 
-            over the entire range of recall. Conceptually, AP is equal to the area under the interpolated PR curve. It provides a single number 
-            summary of the classifier's performance across all thresholds. Note that the AP calculated from the interpolated curve may differ 
-            from the area under the raw PR curve.
-            <br><br>
-            In our case, the logistic regression produced an AP of 0.73, meaning that on average, when this classifier predicts positive, 
-            about 73% of its predictions are correct, and the random Forest produced an AP of 0.93, indicating a much stronger performance.
-            <br><br>
-            Note: In settings where multiple PR curves are generated (for example, one for each query in information retrieval or one per class in 
-            multi-class classification), the <strong>mean average precision (mAP)</strong> is computed as the mean of the AP scores over all 
-            curves. mAP offers an overall performance measure across multiple queries or classes.
-        </blockquote>
+            
+            <!-- Main content using section-content class -->
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+                <div class="theorem">
+                    <span class="theorem-title">Bayesian Decision Theory:</span>
+                    In decision theory, an <strong>agent</strong> has a set of possible actions to choose from. Each <strong>action</strong> \(a \in \mathcal{A}\) 
+                    is associated with costs and benefits that depend on the <strong>state of nature</strong> \(h \in \mathcal{H}\). 
+                    This relationship is encoded into a <strong>loss function</strong> \(l(h, a)\). 
+                    <br><br>
+                    <strong>Bayesian decision theory</strong> is a probabilistic approach to decision-making under uncertainty. It provides a framework for making 
+                    optimal decisions based on prior knowledge and observed data. The fundamental idea is to minimize the expected risk (or loss) by 
+                    leveraging <a href="bayesian.html"><strong>Bayesian inference</strong></a>. This approach is widely used in probabilistic machine 
+                    learning models such as classification, inference, and prediction.
+                    <br><br>
+                    For any action \(a\) given evidence, which can be single observation \(\boldsymbol{x}\) or a dataset \(\mathcal{D}\), we compute the 
+                    <strong>posterior expected loss</strong>: 
+                    \[
+                    \rho(a | \boldsymbol{x}) = \mathbb{E}_{p(h| \boldsymbol{x})} [l(h, a)] = \sum_{h \in \mathcal{H}} l(h, a)p(h |\boldsymbol{x}).
+                    \]
+                    The <strong>Bayes estimator</strong>(or Bayes decision rule / optimal policy) specifies what action to take when presented with 
+                    evidence \(boldsymbol{x}\) so as to minimize the risk(loss):
+                    \[
+                    \pi^* (\boldsymbol{x}) = \arg \min_{a \in \mathcal{A}} \mathbb{E}_{p(h|\boldsymbol{x})}[l(h, a)].
+                    \]
+                    Equivalently,
+                    \[
+                    \pi^* (\boldsymbol{x}) = \arg \max_{a \in \mathcal{A}} \mathbb{E}_{h}[U(h, a)],
+                    \]
+                    where \(U(h, a) = - l(h, a)\) is a <strong>utility function</strong> that is the desirability of each action in each possible state. 
+                    This formulation is useful when working in utility-based decision-making, where the focus is on maximizing expected rewards rather 
+                    than minimizing losses. (e.g., economics, game theory, and reinforcement learning)
+                </div>
+            </section>
 
-        <h1 id="imb">Class Imbalanced</h1>
-        <blockquote>  
-            A dataset is considered <strong>imbalanced</strong> when one class has significantly fewer examples than the other. For example, in a binary 
-            classification task, a dataset may contain only 5% positive samples and 95% negative samples. In such cases, many traditional 
-            evaluation metrics, like accuracy, can be misleading. A model that always predicts the majority class (negative) can achieve 
-            high accuracy without correctly identifying minority class instances.
-            <br>
-            The <strong>>ROC-AUC metric</strong> is often <strong>insensitive</strong> to class imbalance because the TPR is defined as a ratio 
-            within the positive samples and the FPR is defined as a ratio within the negative samples only. So, it does not matter which class 
-            we define as positive or negative.
-            <br>
-            On the other hand, <strong>PR-AP metric</strong> is more <strong>sensitive</strong> to class imbalance. Remember that the precision is given by:
-            \[
-            \text{Precision} = \frac{TP}{TP + FP}, 
-            \]
-            which depends "both" on positive and negative samples. 
-            <br>
-            To demonstrate this, we create a dataset where 90% of the samples belong to the negative class and only 10% belong to the positive class. 
-            Then, we train both the logistic regression model and the random forest model again:
-            <div style="display: flex; justify-content: center; align-items: center;">
-                <img src="ruc_imbalanced.png" alt="RUC Imbalanced" style="width:600px; margin-right:10px;">
-                <img src="pr_imbalanced.png" alt="PR Imbalanced" style="width:600px;">
-            </div>
-            ROC curves remain relatively smooth, and AUC does not drop drastically, even though the dataset is highly imbalanced. 
+            <section id="class" class="section-content">
+                <h2>Classification (Zero-One Loss)</h2>
+                <div class="theorem">
+                    <span class="theorem-title">Classification with Zero-One Loss:</span>
+                    A common application of Bayesian decision theory is <strong>classification</strong>. 
+                    In this context, we aim to select the optimal class label for a given input \(\boldsymbol{x} \in \mathcal{X}\).
+                    <br><br>
+                    Suppose that the states of nature correspond to labels:
+                    \[
+                    \mathcal{H} = \mathcal{Y} = \{1, \cdots, C\}.
+                    \]
+                    and that the possible actions are also the class labels:
+                    \[
+                    \mathcal{A} = \mathcal{Y}.
+                    \]
+                    In this case, a typical loss function is the <strong>zero-one loss</strong>:
+                    \[
+                    l_{01} (y^*, \hat{y}) = \mathbb{I}(y^* \neq \hat{y}), 
+                    \]
+                    where \(y^*\) is the true label, and \(\hat{y}\) is the predicted label.
+                    <br><br>
+                    Under the zero-one loss, the posterior expected loss for choosing label \(\hat{y}\) becomes will be
+                    \[
+                    \rho(\hat{y}| \boldsymbol{x}) = p(\hat{y} \neq y^* | \boldsymbol{x}) = 1 - p (y^* = \hat{y}| \boldsymbol{x}).
+                    \] 
+                    Thus, minimizing the expected loss is equivalent to maximizing the posterior probability:
+                    \[
+                    \pi (\boldsymbol{x}) = \arg \max_{y \in \mathcal{Y}} p( y | \boldsymbol{x} ).
+                    \]
+                    In other words, the optimal decision is to select the <strong>mode</strong> of the posterior distribution, which 
+                    is the <strong>maximum a posteriori (MAP) estimate</strong>.
+                </div>
+                
+                <div class="theorem">
+                    <span class="theorem-title">The Reject Option:</span>
+                    In some scenarios, especially when the risks associated with making an incorrect decision are high, it is prudent 
+                    to allow the system to express uncertainty. This is called the <strong>reject option</strong>. Under this approach, 
+                    the set of available actions is expanded to include the reject action:
+                    \[
+                    \mathcal{A} = \mathcal{Y} \cup \{0\},
+                    \]
+                    where action \(0\) represents the reject option (i.e., saying "I'm not sure").
+                    <br><br>
+                    The loss function can be defined as:
+                    \[
+                    l(y^*, a)=
+                        \begin{cases}
+                        0 &\text{if \(y^* = a\) and \(a \in \{1, \cdots, C\}\)} \\
+                        \lambda_r &\text{if \(a = 0\)} \\
+                        \lambda_e &\text{otherwise} \\
+                        \end{cases}
+                    \]
+                    where \(\lambda_r\) is the cost of reject action, and \(\lambda_e\) is the cost of a classification error.
+                    <br><br>
+                    Under this framework, instead of always choosing the label with the highest posterior probability, the optimal policy is to 
+                    choose a label only when the classifier is sufficiently confident: 
+                    \[
+                    a^* = 
+                        \begin{cases} 
+                        y^*  & \text{if \(p^* > \lambda^*\)} \\
+                        \text{reject} & \text{otherwise}
+                        \end{cases}
+                    \]
+                    where 
+                    \[
+                    \begin{align*}
+                    &p^* = p(y^* | x) = \max_{y \in \{1, \cdots, C\}} p(y | x) \\
+                    &\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}
+                    \end{align*}
+                    \]
+                </div>
+                
+                <div class="proof">
+                    <span class="proof-title">Proof for \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\):</span>
+                    The optimal decision is to choose the class label \(y\) if and only if its risk, \(R(y)\) is lower than the risk of rejecting, \(R(\text{reject})\). 
+                    In other words, we choose \(y\) if 
+                    \[
+                    \begin{align*}
+                    &R(y) < R(\text{reject}) \\\\
+                    &\Longrightarrow \lambda_e \Bigl[\sum_{y^* \neq y} p(y^* | x)\Bigr]  < \lambda_r \\\\
+                    &\Longrightarrow \lambda_e [1 - p(y|x)]  < \lambda_r \\\\
+                    &\Longrightarrow p(y|x) > 1 - \frac{\lambda_r}{\lambda_e} \\\\
+                    \end{align*}
+                    \]
+                    Thus, if the maximum posterior probability \(p^*\) exceeds the threshold \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\), 
+                    then the classifier should choose the corresponding label. Otherwise, it should reject.
+                </div>
+            </section>
+
+            <section id="CM" class="section-content">
+                <h2>Confusion Matrix</h2>
+                <div class="theorem">
+                    <span class="theorem-title">Understanding Confusion Matrices:</span>
+                    In classification tasks, it's crucial to evaluate how well the model performs. A common tool for this is the 
+                    <strong>(class) confusion matrix</strong>, which summarizes the outcomes of classification decisions. The 
+                    confusion matrix captures the following:
+                </div>
+                
+                <div class="keywords">
+                    <span>True Positives (TP)</span>
+                    <span>True Negatives (TN)</span>
+                    <span>False Positives (FP)</span>
+                    <span>False Negatives (FN)</span>
+                </div>
+                
+                <ul>
+                    <li><strong>True Positives (TP):</strong> The number of instances correctly classified as positive.</li>
+                    <li><strong>True Negatives (TN):</strong> The number of instances correctly classified as negative.</li>
+                    <li><strong>False Positives (FP):</strong> The number of instances incorrectly classified as positive (<strong>Type I error</strong>).</li>
+                    <li><strong>False Negatives (FN):</strong> The number of instances incorrectly classified as negative (<strong>Type II error</strong>).</li>
+                </ul>
+                
+                <p>Understanding FP and FN is crucial because the costs associated with each error type may differ significantly depending 
+                on the application. In safety-critical systems, a FN (missing a dangerous condition) might be far more costly than a FP 
+                (raising an unnecessary alarm). For example, in a medical test, a FP would mean diagnosing a healthy patient as having 
+                a disease, whereas a FN would mean missing a disease in a patient who actually has it, which is more critical in medical 
+                fields.</p>
+                
+                <p>For binary classification, the confusion matrix typically looks like this:</p>
+                <div style="text-align: center;">
+                    \[
+                    \begin{array}{|c|c|c|}
+                        \hline
+                        & \textbf{Predicted Positive} (\hat{P} = TP + FP) 
+                        & \textbf{Predicted Negative} (\hat{N} = FN + TN)  \\
+                        \hline
+                        \textbf{Actual Positive} (P = TP + FN)  & \textbf{TP} & \textbf{FN} \\
+                        \hline
+                        \textbf{Actual Negative} (N = FP + TN)  & \textbf{FP} & \textbf{TN} \\
+                        \hline
+                    \end{array}
+                    \]
+                <p style="margin-top: 5px;"><strong>Table 1: Confusion matrix for binary classification.</strong></p>
+                </div>
+                
+                <p>In our context, the confusion matrix quantifies the outcomes of decisions made by the Bayes estimator, which is designed to 
+                minimize the zero-one loss. It provides an empirical measure of the performance of that optimal policy by counting how often 
+                the decisions (predicted labels) match or mismatch the true labels.</p>
+                
+                <div class="theorem">
+                    <span class="theorem-title">Threshold-Dependent Confusion Matrix:</span>
+                    For any fixed threshold \(\tau\), consider the decision rule:
+                    \[
+                    \hat{y}_{\tau}(\boldsymbol{x}) = \mathbb{I}(p(y = 1 | \boldsymbol{x}) \geq 1 - \tau).
+                    \]
+                    We can compute the empirical number of them that arise from using the policy on a set \(N\) labeled examples. For example, 
+                    \[
+                    \text{FP}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 1, \, y_n = 0)
+                    \]
+                    and
+                    \[
+                    \text{FN}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 0, \, y_n = 1).
+                    \]
+                </div>
+                
+                <div style="text-align: center;">
+                    \[
+                    \begin{array}{|c|c|c|}
+                        \hline
+                        & \hat{y}_{\tau}(\boldsymbol{x}_n) = 1
+                        & \hat{y}_{\tau}(\boldsymbol{x}_n) = 0 \\
+                        \hline
+                        y_n = 1 & \text{TP}_{\tau} & \text{FN}_{\tau} \\
+                        \hline
+                        y_n = 0  & \text{FP}_{\tau} & \text{TN}_{\tau} \\
+                        \hline
+                    \end{array}
+                    \]
+                    <p style="margin-top: 5px;"><strong>Table 2: Threshold-dependent confusion matrix.</strong></p>
+                </div>
+            </section>
+
+            <section id="ROC" class="section-content">
+                <h2>ROC Curves</h2>
+                <p>Here, we normalize the confusion matrix per <strong>row</strong> to obtain \(p(\hat{y}|y)\). (The sum of the 
+                entries in each row is 1.) The row-normalized confusion matrix is useful when optimizing for recall-focused tasks, 
+                such as detecting rare events like cybersecurity threats or disease outbreaks.</p>
+                
+                <div style="text-align: center;">
+                    \[
+                    \begin{array}{|c|c|c|}
+                        \hline
+                        &  1 & 0 \\
+                        \hline
+                        1 & \text{TP}_{\tau} / P = \text{TPR}_{\tau}  & \text{FN}_{\tau} / P = \text{FNR}_{\tau}  \\
+                        \hline
+                        0  &  \text{FP}_{\tau} / N = \text{FPR}_{\tau} & \text{TN}_{\tau} / N = \text{TNR}_{\tau}  \\
+                        \hline
+                    \end{array}
+                    \]
+                    <p style="margin-top: 5px;"><strong>Table 3: Confusion matrix for a binary classification problem normalized per row.</strong></p>
+                </div>
+                
+                <div class="keywords">
+                    <span>True Positive Rate (TPR)</span>
+                    <span>False Positive Rate (FPR)</span>
+                    <span>False Negative Rate (FNR)</span>
+                    <span>True Negative Rate (TNR)</span>
+                </div>
+                
+                <ul>
+                    <li><strong>True positive rate (TPR)</strong> (or <strong>Sensitivity</strong> / <strong>Recall</strong>): \[
+                        \text{TPR}_{\tau} = p(\hat{y} = 1 | y = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
+                        \]</li>
+                    <li><strong>False positive rate (FPR)</strong> (or <strong>Type I error rate</strong> / <strong>Fallout</strong>): \[
+                        \text{FPR}_{\tau} = p(\hat{y} = 1 | y = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
+                        \] </li>
+                    <li><strong>False nagative rate (FNR)</strong> (or <strong>Type II error rate</strong> / <strong>Miss rate</strong>):\[
+                        \text{FNR}_{\tau} = p(\hat{y} = 0 | y = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
+                        \]</li>
+                    <li><strong>True nagative rate (TNR)</strong> (or <strong>Specificity</strong>):\[
+                        \text{TNR}_{\tau} = p(\hat{y} = 0 | y = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
+                        \] </li>
+                </ul>
+                
+                <div class="theorem">
+                    <span class="theorem-title">Receiver Operating Characteristic (ROC) Curve:</span>
+                    Often, we plot the TPR vs FPR as an implicit function of \(\tau\); this plot is known as the <strong>receiver operating characteristic 
+                    (ROC) curve</strong>. The overall quality of a classifier is often summarized using the <strong>AUC(Area Under the Curve)</strong>. 
+                    A higher AUC indicates better discriminative ability across all threshold values (max = 1.0).
+                </div>
+                
+                <p>The figure below compares two classifiers — one trained using logistic regression and the other using a random forest. Both classifiers 
+                provide predicted probabilities for the positive class, allowing us to vary \(\tau\) and compute the corresponding TPR and FPR. A diagonal 
+                line is also drawn, representing the performance of a random classifier — i.e., one that assigns labels purely by chance. On this line, 
+                the TPR equals the FPR at every threshold. If a classifier's ROC curve lies on this diagonal, it means the classifier is performing no 
+                better than random guessing. In contrast, any performance above the diagonal indicates that the classifier is capturing some signal, 
+                while performance below the diagonal (rare in practice) would indicate worse-than-random behavior.</p>
+                
+                <p>In our demonstration, the logistic regression model has been intentionally made worse, yielding an AUC of 0.78, while the random forest 
+                shows superior performance with an AUC of 0.94. These results mean that, overall, the random forest is much better at distinguishing 
+                between the positive and negative classes compared to the underperforming logistic regression model.</p>
+                
+                <div style="text-align: center;">
+                    <img src="ruc_curve.png" alt="RUC curve" style="width:600px;">
+                    <p>(Data: 10,000 samples, 20 total features, 5 features are informative, 2 clusters per class, 5% label noise.)</p>
+                </div>
+            </section>
+
+            <section id="EER" class="section-content">
+                <h2>Equal Error Rate (EER)</h2>
+                <div class="theorem">
+                    <span class="theorem-title">Equal Error Rate:</span>
+                    The <strong>equal error rate (EER)</strong> is the point where <strong>FPR = FNR</strong>. This is an important threshold in 
+                    some applications (e.g., biometric authentication) where false positives and false negatives are equally costly. The EER provides 
+                    a single value to compare classifiers, particularly when precision and recall trade-offs must be balanced.
+                </div>
+                
+                <p>Below is the EER point for our models, showing where the two error rates intersect:</p>
+                <div style="text-align: center;">
+                    <img src="eer.png" alt="EER" style="width:600px;">
+                </div>
+                
+                <p>Note: the minimum EER is 0 corresponding to the top left corner. In many real-world applications, we might tune the threshold 
+                to minimize EER.</p>
+            </section>
+
+            <section id="PR" class="section-content">
+                <h2>Precision-Recall Curves</h2>
+                <p>Next, we normalized the original confusion matrix per <strong>column</strong> to obtain \(p(y | \hat{y})\). 
+                (The sum of the entries in each column is 1.) The column-normalized confusion matrix is useful when the precision 
+                is crucial (e.g., medical diagnosis, fraud detection).</p>
+                
+                <div style="text-align: center;">
+                    \[
+                    \begin{array}{|c|c|c|}
+                        \hline
+                        &  1 & 0 \\
+                        \hline
+                        1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\
+                        \hline
+                        0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\
+                        \hline
+                    \end{array}
+                    \]
+                    <p style="margin-top: 5px;"><strong>Table 4: Confusion matrix for a binary classification problem normalized per colummn.</strong></p>
+                </div>
+                
+                <div class="keywords">
+                    <span>Positive Predictive Value (PPV)</span>
+                    <span>False Discovery Rate (FDR)</span>
+                    <span>False Omission Rate (FOR)</span>
+                    <span>Negative Predictive Value (NPV)</span>
+                </div>
+                
+                <ul>
+                    <li><strong>Positive predictive value (PPV)</strong> (or <strong>Precision</strong>):\[
+                        \text{PPV}_{\tau} = p(y = 1 | \hat{y} = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
+                        \] </li>
+                    <li><strong>False discovery rate (FDR)</strong>:\[
+                        \text{FDR}_{\tau} = p(y = 1 | \hat{y} = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
+                        \]</li>
+                    <li><strong>False omissin rate (FOR)</strong>:\[
+                        \text{FOR}_{\tau} = p(y = 0 | \hat{y} = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
+                        \]</li>
+                    <li><strong>Negative predictive value (NPV)</strong>:\[
+                        \text{NPV}_{\tau} = p(y = 0 | \hat{y} = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
+                        \]</li>
+                </ul>
+                
+                <div class="theorem">
+                    <span class="theorem-title">Precision-Recall (PR) Curve:</span>
+                    To summarize a system's performance — especially when classes are <strong>imbalanced</strong> (i.e., when the positive class is rare) 
+                    or when false positives and false negatives have different costs — we often use a <strong>precision-recall (PR) curve</strong>. This 
+                    curve plots precision against recall as the decision threshold \(\tau\).
+                </div>
+                
+                <p><strong>Imbalanced datasets</strong> appear frequently in real-world machine learning applications where one class is naturally much rarer than 
+                the other. For example, in financial transactions, fraudulent activities are rare compared to legitimate ones. The classifier must 
+                detect the very few fraud cases (positive class) among millions of normal transactions (negative class).</p>
+                
+                <p>Let precision be \(\mathcal{P}(\tau)\) and recall be \(\mathcal{R}(\tau)\). If \(\hat{y}_n \in \{0, 1\}\) is the predicted 
+                label and \(y_n \in \{0, 1\}\) is the true label, then at threshold \(\tau\), precision and recall can be estimated by:
+                \[
+                \mathcal{P}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n \hat{y}_n}, 
+                \quad
+                \mathcal{R}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n y_n}.
+                \]
+                By plotting the precision vs recall for various the threshold \(\tau\), we obtain the PR curve.</p>
+                
+                <div style="text-align: center;">
+                    <img src="pr_curve.png" alt="PR curve" style="width:600px;">
+                </div>
+                
+                <p>This curve visually represents the trade-off between precision and recall. It is particularly valuable in situations where one 
+                class is much rarer than the other or when false alarms carry a significant cost.</p>
+                
+                <div class="theorem">
+                    <span class="theorem-title">Average Precision (AP):</span>
+                    Raw precision values can be noisy; therefore, an <strong>interpolated precision</strong> is often computed. For a given recall 
+                    level (e.g., at least 10%), the interpolated precision is defined as the maximum precision observed for any recall level greater 
+                    than or equal to that value. The <strong>average precision (AP)</strong> is the average of these interpolated precision values 
+                    over the entire range of recall. Conceptually, AP is equal to the area under the interpolated PR curve.
+                </div>
+                
+                <p>It provides a single number summary of the classifier's performance across all thresholds. Note that the AP calculated from the interpolated curve may differ 
+                from the area under the raw PR curve.</p>
+                
+                <p>In our case, the logistic regression produced an AP of 0.73, meaning that on average, when this classifier predicts positive, 
+                about 73% of its predictions are correct, and the random Forest produced an AP of 0.93, indicating a much stronger performance.</p>
+                
+                <p>Note: In settings where multiple PR curves are generated (for example, one for each query in information retrieval or one per class in 
+                multi-class classification), the <strong>mean average precision (mAP)</strong> is computed as the mean of the AP scores over all 
+                curves. mAP offers an overall performance measure across multiple queries or classes.</p>
+            </section>
+
+            <section id="imb" class="section-content">
+                <h2>Class Imbalanced</h2>
+                <div class="theorem">
+                    <span class="theorem-title">Handling Class Imbalance:</span>
+                    A dataset is considered <strong>imbalanced</strong> when one class has significantly fewer examples than the other. For example, in a binary 
+                    classification task, a dataset may contain only 5% positive samples and 95% negative samples. In such cases, many traditional 
+                    evaluation metrics, like accuracy, can be misleading. A model that always predicts the majority class (negative) can achieve 
+                    high accuracy without correctly identifying minority class instances.
+                </div>
+                
+                <div class="keywords">
+                    <span>ROC-AUC</span>
+                    <span>PR-AP</span>
+                    <span>Class Imbalance</span>
+                </div>
+                
+                <p>The <strong>ROC-AUC metric</strong> is often <strong>insensitive</strong> to class imbalance because the TPR is defined as a ratio 
+                within the positive samples and the FPR is defined as a ratio within the negative samples only. So, it does not matter which class 
+                we define as positive or negative.</p>
+                
+                <p>On the other hand, <strong>PR-AP metric</strong> is more <strong>sensitive</strong> to class imbalance. Remember that the precision is given by:
+                \[
+                \text{Precision} = \frac{TP}{TP + FP}, 
+                \]
+                which depends "both" on positive and negative samples.</p>
+                
+                <p>To demonstrate this, we create a dataset where 90% of the samples belong to the negative class and only 10% belong to the positive class. 
+                Then, we train both the logistic regression model and the random forest model again:
+
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <img src="ruc_imbalanced.png" alt="RUC Imbalanced" style="width:600px; margin-right:10px;">
+                    <img src="pr_imbalanced.png" alt="PR Imbalanced" style="width:600px;">
+                </div>
+            <p>ROC curves remain relatively smooth, and AUC does not drop drastically, even though the dataset is highly imbalanced. 
             PR curves, however, show a much distinct difference, with lower AP scores, highlighting how class imbalance makes it harder to 
             achieve good precision and recall simultaneously. Even though random forest performs better than logistic regression, it struggles 
-            to detect the rare positive cases effectively. 
-            <br><br>
-            Note: PR curves focus on precision and recall, which directly reflect how well a model identifies the rare (minority) class. Precision, 
+            to detect the rare positive cases effectively.</p>
+            
+            <p>>Note: PR curves focus on precision and recall, which directly reflect how well a model identifies the rare (minority) class. Precision, 
             in particular, is affected by even a small number of false positives, giving a more realistic picture of performance when the positive 
             class is scarce. Thus, : PR-AP is usually the better choice for class imbalance problems because it directly measures performance on the 
-            minority class.
-        </blockquote>
+            minority class.</p>
+        </div>
+    </section>
 
-        <br><a href="../../index.html">Back to Home </a>
-        <br> <a href="probability.html">Back to Probability </a> 
+    <!-- Back to Home Link -->
+    <div class="contact-section">
+        <a href="../../index.html">Back to Home</a>
+        <a href="calculus.html">Back to Calculus</a>
+    </div>
 
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-about">
+                <h3>About</h3>
+                <p>This page provides resources for understanding Newton's method and optimization techniques essential for numerical optimization and machine learning.</p>
+            </div>
+            <div class="footer-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="../../index.html">Home</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Mathematics Resource Site. All rights reserved.</p>
+        </div>
+    </footer>
     </body>
 </html>
