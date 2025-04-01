@@ -4,22 +4,41 @@
         <title>Gradient Descent</title>
         <link rel="stylesheet" href="../styles.css">
         <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script async src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body> 
-        <div class="toc-container">
-            <h2>Contents</h2>
-            <ul>
-                <li><a href="#intro">Introduction to Optimization</a></li>
-                <li><a href="#convexity">Convexity</a></li>
-                <li><a href="#gradient">Gradient Descent</a></li>
-                <li><a href="#sgd">Stochastic Gradient Descent</a></li>
-                <li><a href="#subgradient">Sub-gradient Descent</a></li>
+        <nav class="navbar">
+            <div class="logo">
+                <h1>Section II - Calculus to Optimization & Analysis</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../../index.html">Home</a></li>
+                <li><a href="../Linear_algebra/linear_algebra.html">Linear Algebra</a></li>
+                <li><a href="calculus.html">Calculus & Optimization</a></li>
+                <li><a href="../Probability/probability.html">Probability & Statistics</a></li>
+                <li><a href="../Discrete/discrete_math.html">Discrete Mathematics</a></li>
             </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+
+        <div class="hero-section">
+            <h1 class="webpage-name"> Gradient Descent 
+                <span class="subheading">First-order Optimization Techniques</span>
+            </h1>
         </div>
-        <h1 id="intro">Introduction to Optimization</h1>
-        <blockquote>
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction to Optimization</a>
+            <a href="#convexity">Convexity</a>
+            <a href="#gradient">Gradient Descent</a>
+            <a href="#sgd">Stochastic Gradient Descent</a>
+            <a href="#subgradient">Sub-gradient Descent</a>
+        </div>  
+
+        <div class="container">     
+            <section id="intro" class="section-content">
+            <h2>Introduction to Optimization</h2>
+            <p>
             In machine learning, parameter estimation also known as <strong>model fitting</strong> requires solving 
             <strong>optimization problem</strong>:
             \[
@@ -47,140 +66,144 @@
                 H(\theta^*) = \nabla^2 \mathcal{L}(\theta^*) \succ 0
                 \]
             </ol>
-        </blockquote>
-
-        <h1 id="convexity">Convexity</h1>
-        <blockquote>
-        Usually we design models so that their training objectives are <strong>convex</strong> because in the convex optimization problem, 
-        if the local minimum exists, it is actually the "global" minimum. 
-        <br><br>
-        A set \(\mathcal{S}\) is a convex if for any \(x, x' \in \mathcal{S}\), 
-        \[
-        \lambda x + (1 - \lambda) x' \in \mathcal{S}, \, \forall \lambda \in [0, 1].
-        \]
-        A function \(f(x)\) is said to be a <strong>convex function</strong> if it is defined on a convex set and if for any \(x, y \in \mathcal{S}\) and for any 
-        \(0 \leq \lambda \leq 1\),
-        \[
-        f(\lambda x + (1 - \lambda)y) \leq \lambda f(x) + (1 - \lambda) f(y).
-        \]
-        <div class="theorem">
-            <span class="theorem-title">Theorem 1:</span>
-            Let \(f: \mathbb{R} \to \mathbb{R}\) be a twice differentiable function.
-            Then \(f\) is a convex function if and only if \(f'' \geq 0\) for all \(x \in \mathbb{R}\).
-        </div>
-        <div class="proof">
-            <span class="proof-title">Proof:</span>
-            Suppose that \(\forall x \in \mathbb{R}\), a function \(f: \mathbb{R} \to \mathbb{R}\) is twice differentiable and 
-            \(f'' \geq 0\).
-            <br>
-            By Taylor's theorem, 
-            \(\forall z, w \in \mathbb{R}, \, \exists c \in \mathbb{R} \) such that 
-            \[
-            f(w) = f(z) + f'(z)(w -z) + f''(c) \frac{(w-z)^2}{2}.
-            \]
-            This implies 
-            \[
-            f(w) \geq f(z) + f'(z)(w-z). \tag{1}
-            \]
-            Here, consider two point \(a, b \in \mathbb{R}\), and let \(z = \lambda a + (1-\lambda)b, \, \lambda \in [0, 1]\). By inequality (1), 
-            for each point, we have 
-            \[
-            f(a) \geq f(z) + f'(z)(a-z) \Longrightarrow  \lambda f(a) \geq \lambda f(z) + \lambda f'(z)(a-z) \tag{2}
-            \]
-            and
-            \[
-            f(b) \geq f(z) + f'(z)(b-z) \Longrightarrow  (1-\lambda )f(b) \geq (1- \lambda )f(z) + (1-\lambda )f'(z)(b-z) \tag{3}
-            \]
-            By (2) + (3), we obtain:
-            \[
-            \begin{align*}
-            \lambda f(a) + (1-\lambda )f(b) &\geq f(z) + \lambda f'(z)(a-z) (1-\lambda )f(z) + (1-\lambda )f'(z)(b-z) \\\\
-                              &= f(z) + f'(z)(\lambda a + b -\lambda a - b + \lambda b - \lambda b) \\\\
-                              &= f(z)
-            \end{align*}
-            \]
-            Thus,
-            \[
-            \lambda f(a) + (1-\lambda )f(b) \geq f(\lambda a + (1-\lambda)b).
-            \]
-             By definition of the convex function, \(f\) is convex. 
-             <br><br>
-             Next, assume that \(f\) is convex. Let \(a < b\), then since \(f\) is convex, for all \(x\),
-             \[
-             f(x) \geq f(a) + f'(a)(x -a) 
-             \]
-             Substituting \(x = b\), 
-             \[
-             f(b) \geq f(a) + f'(a)(b -a) \Longrightarrow f'(a) \leq \frac{f(b) - f(a)}{b - a} \tag{4}
-              \]
-             and similarly, 
-             \[
-             f(x) \geq f(b) + f'(b)(x -b)
-             \]
-             Substituting \(x = a\), 
-             \[
-             f(a) \geq f(b) + f'(b)(a -b) \Longrightarrow f'(b) \geq \frac{f(b) - f(a)}{b - a} \tag{5}
-              \]
-              (Note: Since a < b, (a-b) < 0.)
-              <br>
-              From (4) and (5), we get 
-              \[
-              f'(a) \leq \frac{f(b) - f(a)}{b - a} \leq f'(b).
-              \]
-              Thus, \(f'\) is <strong>monotonically increasing</strong> and therefore, \(f'' \geq 0\). 
-        </div>
-        <br>
-        You can see convex functions everywhere in machine learning. For example, the cross-entropy loss function
-        (See <a href="../Probability/entropy.html">Entropy</a>) in classification, and the ReLU (Rectified Linear Unit), which 
-        is a popular activation function in neural networks are convex. 
-        <br><br>
-        For \(n\) dimensional case, following theorem is a fundamental aspect of optimization problems. 
-        <div class="theorem">
-            <span class="theorem-title">Theorem 2:</span>
-            Suppose \(f: \mathbb{R}^n \to \mathbb{R}\) is \(C^2\). Then \(f\) is convex if and only if the Hessian matrix 
-            \(H = \nabla^2 f(x)\) is positive semidefinite for all \(x \in dom(f)\). Furthermore, \(f\) is strictly convex if \(H\) 
-            is positive definite. 
-        </div> 
-        <div class="proof">
-            <span class="proof-title">Proof:</span>
-            Suppose for any \(x, y \in \mathbb{R}^n\) and \(\lambda \in (0, 1)\), we define  \(h: [0, 1] \to \mathbb{R}\) 
-            as follows:
-            \[
-            h(\lambda) = f(\lambda a + (1-\lambda)b).
-            \]
-            For all \(z, w, p \in [0, 1]\), let \(\lambda = pz + (1-p)w\). Then
-            \[
-            h(\lambda) = f((pz + (1-p)w) a + (1-(pz + (1-p)w))b) \leq ph(z) + (1-p)h(w).
-            \]
-            Thus, \(h\) is a convex function. 
-            <br>
-            Rewriting \(h\), we have
-            \[
-            h(\lambda) = f(b + \lambda(a-b)).
-            \]
-            Taking the second derivative with respect to \(\lambda\), we obtain:
-            \[
-            \begin{align*}
-            &\frac{dh}{d\lambda} = (\nabla f(b + \lambda (a - b)))^T (a - b) \\\\
-            &\frac{d^2h}{d\lambda^2} = (a - b)^T (\nabla^2 f(b + \lambda(a - b))) (a - b)
-            \end{align*}
-            \]
-            Here, \(\nabla^2 f(x)\) is the Hessian matrix of \(f\) and \(\frac{d^2h}{d\lambda^2}\) is in quadratic form. 
-            <br>
-            For \(h\) to be a convex function, we must have:
-            \[
-            \frac{d^2h}{d\lambda^2} \geq 0 \quad \forall \lambda \in [0, 1].
-            \]
-            This implies the Hessian matrix is positive semidefinite for all \(x\).
-            <br><br>
-            For the sake of space, we omit the full proof.
-        </div>
-        The relationship between the Hessian matrix and convexity is fundamental to many optimization algorithms and 
-        is widely applied in both theoretical and practical optimization problems.
-        </blockquote>
+            </p>
+        </section>
     
-        <h1 id="gradient"> Gradient Descent</h1>
-        <blockquote>
+        <section id="convexity" class="section-content">
+            <h2>Convexity</h2>
+            <p>
+            Usually we design models so that their training objectives are <strong>convex</strong> because in the convex optimization problem, 
+            if the local minimum exists, it is actually the "global" minimum. 
+            <br><br>
+            A set \(\mathcal{S}\) is a convex if for any \(x, x' \in \mathcal{S}\), 
+            \[
+            \lambda x + (1 - \lambda) x' \in \mathcal{S}, \, \forall \lambda \in [0, 1].
+            \]
+            A function \(f(x)\) is said to be a <strong>convex function</strong> if it is defined on a convex set and if for any \(x, y \in \mathcal{S}\) and for any 
+            \(0 \leq \lambda \leq 1\),
+            \[
+            f(\lambda x + (1 - \lambda)y) \leq \lambda f(x) + (1 - \lambda) f(y).
+            \]
+            <div class="theorem">
+                <span class="theorem-title">Theorem 1:</span>
+                Let \(f: \mathbb{R} \to \mathbb{R}\) be a twice differentiable function.
+                Then \(f\) is a convex function if and only if \(f'' \geq 0\) for all \(x \in \mathbb{R}\).
+            </div>
+            <div class="proof">
+                <span class="proof-title">Proof:</span>
+                Suppose that \(\forall x \in \mathbb{R}\), a function \(f: \mathbb{R} \to \mathbb{R}\) is twice differentiable and 
+                \(f'' \geq 0\).
+                <br>
+                By Taylor's theorem, 
+                \(\forall z, w \in \mathbb{R}, \, \exists c \in \mathbb{R} \) such that 
+                \[
+                f(w) = f(z) + f'(z)(w -z) + f''(c) \frac{(w-z)^2}{2}.
+                \]
+                This implies 
+                \[
+                f(w) \geq f(z) + f'(z)(w-z). \tag{1}
+                \]
+                Here, consider two point \(a, b \in \mathbb{R}\), and let \(z = \lambda a + (1-\lambda)b, \, \lambda \in [0, 1]\). By inequality (1), 
+                for each point, we have 
+                \[
+                f(a) \geq f(z) + f'(z)(a-z) \Longrightarrow  \lambda f(a) \geq \lambda f(z) + \lambda f'(z)(a-z) \tag{2}
+                \]
+                and
+                \[
+                f(b) \geq f(z) + f'(z)(b-z) \Longrightarrow  (1-\lambda )f(b) \geq (1- \lambda )f(z) + (1-\lambda )f'(z)(b-z) \tag{3}
+                \]
+                By (2) + (3), we obtain:
+                \[
+                \begin{align*}
+                \lambda f(a) + (1-\lambda )f(b) &\geq f(z) + \lambda f'(z)(a-z) (1-\lambda )f(z) + (1-\lambda )f'(z)(b-z) \\\\
+                                &= f(z) + f'(z)(\lambda a + b -\lambda a - b + \lambda b - \lambda b) \\\\
+                                &= f(z)
+                \end{align*}
+                \]
+                Thus,
+                \[
+                \lambda f(a) + (1-\lambda )f(b) \geq f(\lambda a + (1-\lambda)b).
+                \]
+                By definition of the convex function, \(f\) is convex. 
+                <br><br>
+                Next, assume that \(f\) is convex. Let \(a < b\), then since \(f\) is convex, for all \(x\),
+                \[
+                f(x) \geq f(a) + f'(a)(x -a) 
+                \]
+                Substituting \(x = b\), 
+                \[
+                f(b) \geq f(a) + f'(a)(b -a) \Longrightarrow f'(a) \leq \frac{f(b) - f(a)}{b - a} \tag{4}
+                \]
+                and similarly, 
+                \[
+                f(x) \geq f(b) + f'(b)(x -b)
+                \]
+                Substituting \(x = a\), 
+                \[
+                f(a) \geq f(b) + f'(b)(a -b) \Longrightarrow f'(b) \geq \frac{f(b) - f(a)}{b - a} \tag{5}
+                \]
+                (Note: Since a < b, (a-b) < 0.)
+                <br>
+                From (4) and (5), we get 
+                \[
+                f'(a) \leq \frac{f(b) - f(a)}{b - a} \leq f'(b).
+                \]
+                Thus, \(f'\) is <strong>monotonically increasing</strong> and therefore, \(f'' \geq 0\). 
+            </div>
+            <br>
+            You can see convex functions everywhere in machine learning. For example, the cross-entropy loss function
+            (See <a href="../Probability/entropy.html">Entropy</a>) in classification, and the ReLU (Rectified Linear Unit), which 
+            is a popular activation function in neural networks are convex. 
+            <br><br>
+            For \(n\) dimensional case, following theorem is a fundamental aspect of optimization problems. 
+            <div class="theorem">
+                <span class="theorem-title">Theorem 2:</span>
+                Suppose \(f: \mathbb{R}^n \to \mathbb{R}\) is \(C^2\). Then \(f\) is convex if and only if the Hessian matrix 
+                \(H = \nabla^2 f(x)\) is positive semidefinite for all \(x \in dom(f)\). Furthermore, \(f\) is strictly convex if \(H\) 
+                is positive definite. 
+            </div> 
+            <div class="proof">
+                <span class="proof-title">Proof:</span>
+                Suppose for any \(x, y \in \mathbb{R}^n\) and \(\lambda \in (0, 1)\), we define  \(h: [0, 1] \to \mathbb{R}\) 
+                as follows:
+                \[
+                h(\lambda) = f(\lambda a + (1-\lambda)b).
+                \]
+                For all \(z, w, p \in [0, 1]\), let \(\lambda = pz + (1-p)w\). Then
+                \[
+                h(\lambda) = f((pz + (1-p)w) a + (1-(pz + (1-p)w))b) \leq ph(z) + (1-p)h(w).
+                \]
+                Thus, \(h\) is a convex function. 
+                <br>
+                Rewriting \(h\), we have
+                \[
+                h(\lambda) = f(b + \lambda(a-b)).
+                \]
+                Taking the second derivative with respect to \(\lambda\), we obtain:
+                \[
+                \begin{align*}
+                &\frac{dh}{d\lambda} = (\nabla f(b + \lambda (a - b)))^T (a - b) \\\\
+                &\frac{d^2h}{d\lambda^2} = (a - b)^T (\nabla^2 f(b + \lambda(a - b))) (a - b)
+                \end{align*}
+                \]
+                Here, \(\nabla^2 f(x)\) is the Hessian matrix of \(f\) and \(\frac{d^2h}{d\lambda^2}\) is in quadratic form. 
+                <br>
+                For \(h\) to be a convex function, we must have:
+                \[
+                \frac{d^2h}{d\lambda^2} \geq 0 \quad \forall \lambda \in [0, 1].
+                \]
+                This implies the Hessian matrix is positive semidefinite for all \(x\).
+                <br><br>
+                For the sake of space, we omit the full proof.
+            </div>
+            The relationship between the Hessian matrix and convexity is fundamental to many optimization algorithms and 
+            is widely applied in both theoretical and practical optimization problems.
+            </p>
+        </section>
+        
+        <section id="gradient" class="section-content">
+            <h2>Gradient Descent</h2>
+            <p>
             To find a local minimum of an objective function, we update the current point by moving in the direction that   
             the <strong>negative gradient</strong>, \(- \nabla f\). This is because the gradient, \(\nabla f\)  indicates 
             the direction of steepest increase of the function \(f\). By contrast, the negative gradient points in the 
@@ -203,10 +226,12 @@
                 <strong>end</strong>
             </div>
             Note: The gradient descent is called the <strong>first-order method</strong> since it requires only the gradient. 
-        </blockquote>
+            </p>
+        </section>
 
-        <h1 id="sgd"> Stochastic Gradient Descent</h1>
-        <blockquote>
+        <section id="agd" class="section-content">
+            <h2>Stochastic Gradient Descent</h2>
+            <p>
             In a <strong>stochastic optimization</strong>, we minimize the average value of an objective function:
             \[
             \mathcal{L}(\theta) = \mathbb{E }_{q(z)}[\mathcal{L}(\theta, z)]
@@ -320,10 +345,12 @@
                 <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
                 <div class="python-output"></div>
             </div>
-        </blockquote>
-
-        <h1 id="subgradient"> Sub-gradient Descent</h1>
-        <blockquote>
+            </p>
+        </section>
+    
+        <section id="subgradient" class="section-content">
+            <h2>Sub-gradient Descent</h2>
+            <p>
             Even if a objective funtion has local discontinuities(non-smooth), still we can compute its gradients. Particularly, for 
             a convex function \(f: \mathbb{R}^n \to \mathbb{R}\), we define a <strong>subgradient</strong> of \(f\) at 
             \(x \in dom(f)\): 
@@ -343,12 +370,51 @@
             \]
             In <strong>sub-gradient descent</strong>, we just find a gradient that satisfies inequality (6) but it is slower 
             than GD on a convex smooth function because the gradient does not get smaller near the global minimum.
-        </blockquote>
+            </p>
+        </section>
+    </div>
 
-        <a href="../../index.html">Back to Home </a>
-        <br> <a href="calculus.html">Back to Calculus </a>
+    <div class="contact-section">
+        <a href="../../index.html">Back to Home</a>
+        <a href="calculus.html">Back to Calculus</a>
+    </div>
 
-        <script src="../runPythonCode.js"></script>
-        <script src="../collapsible.js"></script>
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-about">
+                <h3>About</h3>
+                <p>This page provides resources for understanding derivatives of determinant.</p>
+            </div>
+            <div class="footer-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="../../index.html">Home</a></li>
+                    <li><a href="calculus.html">Calculus to Optimization & Analysis</a></li>
+                    <li><a href="linear_approximation.html">The Derivative</a></li>
+                    <li><a href="jacobian.html">The Jacobian</a></li>
+                    <li><a href="matrix_cal.html">Matrix Derivatives</a></li>
+                    <li><a href="numerical_example1.html">Numerical Examples</a></li>
+                    <li><a href="det.html">Scalar Functions of Matrices</a></li>
+                    <li><a href="mvt.html">Mean Value Theorem</a></li>
+                    <li><a href="gradient.html">Gradient Descent</a></li>
+                    <li><a href="constrained_opt.html">Constrained Optimization</a></li>
+                    <li><a href="newton.html">Newton's Method</a></li>
+                    <li><a href="riemann.html">Riemann Integration</a></li>
+                    <li><a href="measure.html">Measure Theory</a></li>
+                    <li><a href="lebesgue.html">Lebesgue Integration</a></li>
+                    <li><a href="duality.html">Duality in Optimization</a></li>
+                </ul>
+            </div>
+        </div>
+            
+        <div class="footer-bottom">
+            <p>&copy; 2025 Mathematics Resource Site. All rights reserved.</p>
+        </div>
+    </footer>    
+
+    <script src="../runPythonCode.js"></script>
+    <script src="../collapsible.js"></script>
+    
     </body>
 </html>
