@@ -1,40 +1,24 @@
-// search.js - Pop-up search results functionality
+// pop-up search.js
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Search script loaded - pop-up version');
+    console.log('Search script loaded - simplified pop-up version');
     
     // Get DOM elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
     
-    // Create pop-up results container if it doesn't exist
-    let searchPopup = document.getElementById('search-popup');
+    // Create popup container and add it to the page
+    const popupHtml = `
+        <div id="search-popup" class="search-popup">
+            <div class="search-popup-content"></div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', popupHtml);
     
-    if (!searchPopup) {
-        searchPopup = document.createElement('div');
-        searchPopup.id = 'search-popup';
-        searchPopup.className = 'search-popup';
-        searchPopup.innerHTML = '<div class="search-popup-content"></div>';
-        
-        // Insert after the navbar
-        const navbar = document.querySelector('.navbar');
-        if (navbar && navbar.parentNode) {
-            navbar.parentNode.insertBefore(searchPopup, navbar.nextSibling);
-        } else {
-            // Fallback to body if navbar not found
-            document.body.appendChild(searchPopup);
-        }
-    }
+    const searchPopup = document.getElementById('search-popup');
+    const popupContent = document.querySelector('.search-popup-content');
     
-    const popupContent = searchPopup.querySelector('.search-popup-content');
-    
-    // Check if all elements exist
-    if (!searchInput || !searchButton || !searchPopup || !popupContent) {
-        console.error('Search elements not found');
-        return; // Stop execution if elements are missing
-    }
-    
-    // Array of pages to search through
+    // Define pages to search through
     const pages = [
         { 
             path: 'index.html', 
@@ -44,135 +28,90 @@ document.addEventListener('DOMContentLoaded', function() {
         { 
             path: 'Mathematics/Linear_algebra/linear_algebra.html', 
             title: 'Linear Algebra',
-            keywords: ['linear algebra', 'vectors', 'matrices', 'transformations', 'eigenvectors', 'eigenvalues', 'linear systems']
+            keywords: ['linear algebra', 'vectors', 'matrices', 'transformations', 'eigenvectors', 'eigenvalues']
         },
         { 
             path: 'Mathematics/Calculus/calculus.html', 
             title: 'Calculus & Optimization',
-            keywords: ['calculus', 'derivatives', 'integrals', 'optimization', 'gradient descent', 'partial derivatives', 'multivariate']
+            keywords: ['calculus', 'derivatives', 'integrals', 'optimization', 'gradient descent']
         },
         { 
             path: 'Mathematics/Probability/probability.html', 
             title: 'Probability & Statistics',
-            keywords: ['probability', 'statistics', 'random variables', 'distributions', 'expected value', 'variance', 'hypothesis testing']
+            keywords: ['probability', 'statistics', 'random variables', 'distributions', 'expected value']
         },
         { 
             path: 'Mathematics/Discrete/discrete_math.html', 
             title: 'Discrete Mathematics',
-            keywords: ['discrete', 'set theory', 'graph theory', 'combinatorics', 'logic', 'proofs', 'algorithms', 'complexity']
+            keywords: ['discrete', 'set theory', 'graph theory', 'combinatorics', 'logic', 'proofs']
         }
-        // Add more pages as they are created
     ];
     
-    // Create a loading indicator
-    function createLoadingIndicator() {
-        const loader = document.createElement('div');
-        loader.className = 'search-loading';
-        return loader;
-    }
-    
-    // Calculate position for popup
+    // Position the popup below the search box
     function positionPopup() {
         const searchContainer = document.querySelector('.search-container');
+        if (!searchContainer) return;
         
-        if (searchContainer) {
-            const rect = searchContainer.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            
-            searchPopup.style.position = 'absolute';
-            searchPopup.style.top = (rect.bottom + scrollTop) + 'px';
-            searchPopup.style.left = rect.left + 'px';
-            searchPopup.style.width = rect.width + 'px';
-            searchPopup.style.maxWidth = '500px'; // Limit maximum width
-        }
+        const rect = searchContainer.getBoundingClientRect();
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        
+        searchPopup.style.top = (rect.bottom + scrollTop) + 'px';
+        searchPopup.style.left = rect.left + 'px';
+        searchPopup.style.width = rect.width + 'px';
     }
     
-    // Perform search with pop-up results
+    // Perform search
     function performSearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
         
         if (searchTerm === '') {
-            searchPopup.style.display = 'none';
+            searchPopup.classList.remove('active');
             return;
         }
         
-        // Position popup before showing
+        // Show loading indicator
+        popupContent.innerHTML = '<div class="search-loading"></div>';
+        searchPopup.classList.add('active');
+        
+        // Position the popup
         positionPopup();
         
-        // Show loading state
-        searchButton.classList.add('active');
-        popupContent.innerHTML = '';
-        const loader = createLoadingIndicator();
-        popupContent.appendChild(loader);
-        searchPopup.style.display = 'block';
+        // Filter pages based on search term
+        const results = pages.filter(page => {
+            if (page.title.toLowerCase().includes(searchTerm)) return true;
+            return page.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+        });
         
-        // Use setTimeout to allow UI to update before search
+        // Display results after a short delay
         setTimeout(() => {
-            // Perform search
-            const results = pages.filter(page => {
-                // Check title
-                if (page.title.toLowerCase().includes(searchTerm)) return true;
-                
-                // Check keywords - both exact match and partial match
-                return page.keywords.some(keyword => 
-                    keyword.toLowerCase().includes(searchTerm) || 
-                    searchTerm.includes(keyword.toLowerCase())
-                );
-            });
-            
-            // Remove loading indicator
-            searchButton.classList.remove('active');
-            popupContent.innerHTML = '';
-            
-            // Display results
             if (results.length > 0) {
-                // Add search summary
-                const searchSummary = document.createElement('div');
-                searchSummary.className = 'search-summary';
-                searchSummary.innerHTML = `<p>Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"</p>`;
-                popupContent.appendChild(searchSummary);
-                
-                // Add results
-                const resultsList = document.createElement('div');
-                resultsList.className = 'search-results-list';
-                popupContent.appendChild(resultsList);
+                let resultsHtml = `
+                    <div class="search-summary">
+                        Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"
+                    </div>
+                    <div class="results-list">
+                `;
                 
                 results.forEach(result => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'popup-result-item';
-                    
-                    // Highlight matching text in title
-                    let titleHtml = result.title;
-                    if (result.title.toLowerCase().includes(searchTerm)) {
-                        titleHtml = result.title.replace(
-                            new RegExp(`(${searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'), 
-                            '<mark>$1</mark>'
-                        );
-                    }
-                    
-                    // Show relevant keywords
-                    const matchingKeywords = result.keywords.filter(keyword => 
-                        keyword.toLowerCase().includes(searchTerm) || 
-                        searchTerm.includes(keyword.toLowerCase())
-                    );
-                    
-                    resultItem.innerHTML = `
-                        <h3><a href="${result.path}">${titleHtml}</a></h3>
-                        ${matchingKeywords.length > 0 ? 
-                          `<p class="result-keywords">${matchingKeywords.join(', ')}</p>` : ''}
+                    resultsHtml += `
+                        <div class="popup-result-item">
+                            <h3><a href="${result.path}">${result.title}</a></h3>
+                            <p>${result.keywords.join(', ')}</p>
+                        </div>
                     `;
-                    
-                    resultsList.appendChild(resultItem);
                 });
+                
+                resultsHtml += '</div>';
+                popupContent.innerHTML = resultsHtml;
             } else {
                 popupContent.innerHTML = `
                     <div class="no-results">
                         <p>No results found for "${searchTerm}"</p>
-                        <p class="search-suggestion">Try different keywords or check spelling</p>
+                        <p class="search-suggestion">Try different keywords</p>
                     </div>
                 `;
             }
-        }, 300); // Small delay for UI update and to show loading indicator
+        }, 300);
     }
     
     // Event listeners
@@ -181,35 +120,28 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
             performSearch();
-        } else if (searchInput.value.trim() !== '') {
-            // Auto-search as you type (optional)
-            // performSearch();
-        } else {
-            searchPopup.style.display = 'none';
         }
     });
     
-    // Close search results when clicking outside
+    // Close popup when clicking outside
     document.addEventListener('click', function(event) {
         if (!searchPopup.contains(event.target) && 
             event.target !== searchInput && 
-            event.target !== searchButton &&
-            !searchButton.contains(event.target)) {
-            searchPopup.style.display = 'none';
+            event.target !== searchButton) {
+            searchPopup.classList.remove('active');
         }
     });
     
     // Reposition popup on window resize
     window.addEventListener('resize', function() {
-        if (searchPopup.style.display === 'block') {
+        if (searchPopup.classList.contains('active')) {
             positionPopup();
         }
     });
     
-    // For testing
+    // Make search function available for testing
     window.testSearch = function(term) {
         searchInput.value = term || 'linear algebra';
         performSearch();
-        return 'Search test executed';
     };
 });
