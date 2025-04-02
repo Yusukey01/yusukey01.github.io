@@ -1,11 +1,18 @@
-// search.js - Automatic content extraction with no manual keywords needed
+// search.js 
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Auto-content search script loaded');
+    console.log('Fixed search script loaded - ensuring button click works');
     
     // Get DOM elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
+    
+    if (!searchInput || !searchButton) {
+        console.error('Search elements not found:', { searchInput, searchButton });
+        return;
+    }
+    
+    console.log('Search elements found successfully');
     
     // Create popup HTML
     const popupHTML = `
@@ -25,8 +32,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const popupContent = document.querySelector('.search-popup-content');
     const closeButton = document.querySelector('.search-popup-close');
     
+    if (!searchPopup || !popupContent || !closeButton) {
+        console.error('Popup elements not created properly');
+        return;
+    }
+    
+    console.log('Popup elements created successfully');
+    
     // Close button functionality
     closeButton.addEventListener('click', function() {
+        console.log('Close button clicked');
         searchPopup.classList.remove('active');
     });
     
@@ -114,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Perform search
     async function performSearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
+        console.log('Performing search for:', searchTerm);
         
         if (searchTerm === '') {
             searchPopup.classList.remove('active');
@@ -124,117 +140,142 @@ document.addEventListener('DOMContentLoaded', function() {
         popupContent.innerHTML = '<div class="search-loading"></div>';
         searchPopup.classList.add('active');
         
-        // Fetch content for all pages if not cached
-        const contentPromises = pages.map(page => fetchPageContent(page));
-        const pagesContent = await Promise.all(contentPromises);
+        console.log('Search popup activated with loading state');
         
-        // Match results
-        const results = [];
-        
-        for (let i = 0; i < pages.length; i++) {
-            const page = pages[i];
-            const content = pagesContent[i];
+        try {
+            // Fetch content for all pages if not cached
+            const contentPromises = pages.map(page => fetchPageContent(page));
+            const pagesContent = await Promise.all(contentPromises);
             
-            // Check title
-            if (page.title.toLowerCase().includes(searchTerm)) {
-                results.push({
-                    ...page,
-                    matchType: 'title',
-                    matchContext: page.title
-                });
-                continue; // Skip further checks for this page
-            }
+            console.log('Content fetched for all pages');
             
-            // Check description
-            if (content.description && content.description.toLowerCase().includes(searchTerm)) {
-                results.push({
-                    ...page,
-                    matchType: 'description',
-                    matchContext: content.description
-                });
-                continue;
-            }
+            // Match results
+            const results = [];
             
-            // Check headings
-            const matchingHeading = content.headings.find(h => 
-                h.toLowerCase().includes(searchTerm)
-            );
-            
-            if (matchingHeading) {
-                results.push({
-                    ...page,
-                    matchType: 'heading',
-                    matchContext: matchingHeading
-                });
-                continue;
-            }
-            
-            // Check content
-            if (content.content && content.content.toLowerCase().includes(searchTerm)) {
-                // Find context around match
-                const contentLower = content.content.toLowerCase();
-                const matchIndex = contentLower.indexOf(searchTerm);
-                const start = Math.max(0, matchIndex - 40);
-                const end = Math.min(content.content.length, matchIndex + searchTerm.length + 40);
-                let matchContext = content.content.substring(start, end);
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                const content = pagesContent[i];
                 
-                // Add ellipsis if needed
-                if (start > 0) matchContext = '...' + matchContext;
-                if (end < content.content.length) matchContext = matchContext + '...';
-                
-                results.push({
-                    ...page,
-                    matchType: 'content',
-                    matchContext: matchContext
-                });
-            }
-        }
-        
-        // Display results
-        if (results.length > 0) {
-            let resultsHtml = `
-                <div class="search-summary">
-                    Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"
-                </div>
-                <div class="results-list">
-            `;
-            
-            results.forEach(result => {
-                // Highlight match in context
-                let highlightedContext = result.matchContext;
-                if (highlightedContext) {
-                    const regex = new RegExp(searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-                    highlightedContext = highlightedContext.replace(regex, match => `<mark>${match}</mark>`);
+                // Check title
+                if (page.title.toLowerCase().includes(searchTerm)) {
+                    results.push({
+                        ...page,
+                        matchType: 'title',
+                        matchContext: page.title
+                    });
+                    continue; // Skip further checks for this page
                 }
                 
-                resultsHtml += `
-                    <div class="popup-result-item">
-                        <h3><a href="${result.path}">${result.title}</a></h3>
-                        <p class="result-context">${highlightedContext || ''}</p>
+                // Check description
+                if (content.description && content.description.toLowerCase().includes(searchTerm)) {
+                    results.push({
+                        ...page,
+                        matchType: 'description',
+                        matchContext: content.description
+                    });
+                    continue;
+                }
+                
+                // Check headings
+                const matchingHeading = content.headings.find(h => 
+                    h.toLowerCase().includes(searchTerm)
+                );
+                
+                if (matchingHeading) {
+                    results.push({
+                        ...page,
+                        matchType: 'heading',
+                        matchContext: matchingHeading
+                    });
+                    continue;
+                }
+                
+                // Check content
+                if (content.content && content.content.toLowerCase().includes(searchTerm)) {
+                    // Find context around match
+                    const contentLower = content.content.toLowerCase();
+                    const matchIndex = contentLower.indexOf(searchTerm);
+                    const start = Math.max(0, matchIndex - 40);
+                    const end = Math.min(content.content.length, matchIndex + searchTerm.length + 40);
+                    let matchContext = content.content.substring(start, end);
+                    
+                    // Add ellipsis if needed
+                    if (start > 0) matchContext = '...' + matchContext;
+                    if (end < content.content.length) matchContext = matchContext + '...';
+                    
+                    results.push({
+                        ...page,
+                        matchType: 'content',
+                        matchContext: matchContext
+                    });
+                }
+            }
+            
+            console.log(`Found ${results.length} results`);
+            
+            // Display results
+            if (results.length > 0) {
+                let resultsHtml = `
+                    <div class="search-summary">
+                        Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"
+                    </div>
+                    <div class="results-list">
+                `;
+                
+                results.forEach(result => {
+                    // Highlight match in context
+                    let highlightedContext = result.matchContext;
+                    if (highlightedContext) {
+                        const regex = new RegExp(searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+                        highlightedContext = highlightedContext.replace(regex, match => `<mark>${match}</mark>`);
+                    }
+                    
+                    resultsHtml += `
+                        <div class="popup-result-item">
+                            <h3><a href="${result.path}">${result.title}</a></h3>
+                            <p class="result-context">${highlightedContext || ''}</p>
+                        </div>
+                    `;
+                });
+                
+                resultsHtml += '</div>';
+                popupContent.innerHTML = resultsHtml;
+            } else {
+                popupContent.innerHTML = `
+                    <div class="no-results">
+                        <p>No results found for "${searchTerm}"</p>
+                        <p class="search-suggestion">Try different keywords</p>
                     </div>
                 `;
-            });
-            
-            resultsHtml += '</div>';
-            popupContent.innerHTML = resultsHtml;
-        } else {
+            }
+        } catch (error) {
+            console.error('Error during search:', error);
             popupContent.innerHTML = `
                 <div class="no-results">
-                    <p>No results found for "${searchTerm}"</p>
-                    <p class="search-suggestion">Try different keywords</p>
+                    <p>An error occurred while searching</p>
+                    <p class="search-suggestion">Please try again</p>
                 </div>
             `;
         }
     }
     
-    // Event listeners
+    // Event listeners - FIXED BUTTON CLICK
     searchButton.addEventListener('click', function(e) {
-        e.preventDefault();
+        console.log('Search button clicked');
+        e.preventDefault(); // Prevent form submission if in a form
         performSearch();
     });
     
+    // Also test direct onclick assignment as fallback
+    searchButton.onclick = function(e) {
+        console.log('Search button onclick triggered');
+        e.preventDefault();
+        performSearch();
+    };
+    
     searchInput.addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
+            console.log('Enter key pressed in search input');
             performSearch();
         }
     });
@@ -245,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             !searchPopup.contains(event.target) && 
             event.target !== searchInput && 
             event.target !== searchButton) {
+            console.log('Clicked outside, closing popup');
             searchPopup.classList.remove('active');
         }
     });
@@ -252,6 +294,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make search function available for testing
     window.testSearch = function(term) {
         searchInput.value = term || 'linear algebra';
+        console.log('Test search initiated for:', searchInput.value);
         performSearch();
+        return 'Test search executed';
     };
+    
+    console.log('Search functionality fully initialized');
 });
