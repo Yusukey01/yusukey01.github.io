@@ -1,20 +1,20 @@
-// search.js 
+// search.js - Special focus on button click fix
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Fixed search script loaded - ensuring button click works');
+    console.log('DOM loaded - initializing search with button fix');
     
-    // Get DOM elements
+    // Find search elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
+    const searchIcon = searchButton ? searchButton.querySelector('i') : null;
     
-    if (!searchInput || !searchButton) {
-        console.error('Search elements not found:', { searchInput, searchButton });
-        return;
-    }
+    console.log('Search elements:', { 
+        searchInput: !!searchInput, 
+        searchButton: !!searchButton,
+        searchIcon: !!searchIcon
+    });
     
-    console.log('Search elements found successfully');
-    
-    // Create popup HTML
+    // Create popup
     const popupHTML = `
         <div id="search-popup" class="search-popup">
             <div class="search-popup-header">
@@ -25,108 +25,69 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
     
-    // Insert popup HTML directly into body
     document.body.insertAdjacentHTML('beforeend', popupHTML);
     
     const searchPopup = document.getElementById('search-popup');
     const popupContent = document.querySelector('.search-popup-content');
     const closeButton = document.querySelector('.search-popup-close');
     
-    if (!searchPopup || !popupContent || !closeButton) {
-        console.error('Popup elements not created properly');
-        return;
-    }
-    
-    console.log('Popup elements created successfully');
-    
-    // Close button functionality
+    // Close button
     closeButton.addEventListener('click', function() {
-        console.log('Close button clicked');
         searchPopup.classList.remove('active');
     });
     
-    // Define pages to search - NO KEYWORDS NEEDED
+    // Define pages to search
     const pages = [
-        { 
-            path: 'index.html', 
-            title: 'Math-CS Compass - Home'
-        },
-        { 
-            path: 'Mathematics/Linear_algebra/linear_algebra.html', 
-            title: 'Linear Algebra'
-        },
-        { 
-            path: 'Mathematics/Calculus/calculus.html', 
-            title: 'Calculus & Optimization'
-        },
-        { 
-            path: 'Mathematics/Probability/probability.html', 
-            title: 'Probability & Statistics'
-        },
-        { 
-            path: 'Mathematics/Discrete/discrete_math.html', 
-            title: 'Discrete Mathematics'
-        }
+        { path: 'index.html', title: 'Math-CS Compass - Home' },
+        { path: 'Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
+        { path: 'Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
+        { path: 'Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
+        { path: 'Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
     ];
     
-    // Cache for page content
+    // Content cache
     const contentCache = {};
     
     // Fetch page content
     async function fetchPageContent(page) {
-        // Check cache first
-        if (contentCache[page.path]) {
-            return contentCache[page.path];
-        }
+        if (contentCache[page.path]) return contentCache[page.path];
         
         try {
             const response = await fetch(page.path);
             const html = await response.text();
-            
-            // Create DOM parser
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // Extract text from main content
-            let contentText = '';
-            
-            // Try to get main content
+            // Extract content
+            let content = '';
             const main = doc.querySelector('main');
             if (main) {
-                contentText = main.textContent;
+                content = main.textContent;
             } else {
-                // Fallback to body
-                contentText = doc.body.textContent;
+                content = doc.body.textContent;
             }
             
-            // Clean up text
-            contentText = contentText.replace(/\\s+/g, ' ').trim();
+            content = content.replace(/\\s+/g, ' ').trim();
             
-            // Get meta description if available
+            // Get meta description
             const metaDesc = doc.querySelector('meta[name="description"]');
             const description = metaDesc ? metaDesc.getAttribute('content') : '';
             
-            // Extract headings for better context
+            // Extract headings
             const headings = Array.from(doc.querySelectorAll('h1, h2, h3'))
-                .map(heading => heading.textContent.trim())
-                .filter(text => text.length > 0);
+                .map(h => h.textContent.trim())
+                .filter(h => h.length > 0);
             
-            // Store in cache
-            const extractedContent = {
-                content: contentText,
-                description: description,
-                headings: headings
-            };
-            
-            contentCache[page.path] = extractedContent;
-            return extractedContent;
+            const result = { content, description, headings };
+            contentCache[page.path] = result;
+            return result;
         } catch (error) {
             console.error(`Error fetching ${page.path}:`, error);
             return { content: '', description: '', headings: [] };
         }
     }
     
-    // Perform search
+    // Perform search function
     async function performSearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
         console.log('Performing search for:', searchTerm);
@@ -140,16 +101,12 @@ document.addEventListener('DOMContentLoaded', function() {
         popupContent.innerHTML = '<div class="search-loading"></div>';
         searchPopup.classList.add('active');
         
-        console.log('Search popup activated with loading state');
-        
         try {
-            // Fetch content for all pages if not cached
+            // Search all pages
             const contentPromises = pages.map(page => fetchPageContent(page));
             const pagesContent = await Promise.all(contentPromises);
             
-            console.log('Content fetched for all pages');
-            
-            // Match results
+            // Find matches
             const results = [];
             
             for (let i = 0; i < pages.length; i++) {
@@ -163,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         matchType: 'title',
                         matchContext: page.title
                     });
-                    continue; // Skip further checks for this page
+                    continue;
                 }
                 
                 // Check description
@@ -192,14 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Check content
                 if (content.content && content.content.toLowerCase().includes(searchTerm)) {
-                    // Find context around match
+                    // Find context
                     const contentLower = content.content.toLowerCase();
                     const matchIndex = contentLower.indexOf(searchTerm);
                     const start = Math.max(0, matchIndex - 40);
                     const end = Math.min(content.content.length, matchIndex + searchTerm.length + 40);
                     let matchContext = content.content.substring(start, end);
                     
-                    // Add ellipsis if needed
                     if (start > 0) matchContext = '...' + matchContext;
                     if (end < content.content.length) matchContext = matchContext + '...';
                     
@@ -223,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 
                 results.forEach(result => {
-                    // Highlight match in context
+                    // Highlight match
                     let highlightedContext = result.matchContext;
                     if (highlightedContext) {
                         const regex = new RegExp(searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
@@ -259,23 +215,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Event listeners - FIXED BUTTON CLICK
-    searchButton.addEventListener('click', function(e) {
-        console.log('Search button clicked');
-        e.preventDefault(); // Prevent form submission if in a form
-        performSearch();
-    });
+    // ===== FIX FOR BUTTON CLICK =====
     
-    // Also test direct onclick assignment as fallback
-    searchButton.onclick = function(e) {
-        console.log('Search button onclick triggered');
+    // Function to ensure search is triggered regardless of what is clicked
+    function triggerSearch(e) {
+        console.log('Search triggered by:', e.target.tagName);
         e.preventDefault();
+        e.stopPropagation();
         performSearch();
-    };
+        return false; // Ensure no default actions occur
+    }
     
+    // Add event listeners to all possible elements
+    if (searchButton) {
+        // Multiple approaches to ensure button click works
+        searchButton.onclick = triggerSearch;
+        searchButton.addEventListener('click', triggerSearch);
+        searchButton.addEventListener('mousedown', triggerSearch);
+    }
+    
+    // Also add to the icon inside if it exists
+    if (searchIcon) {
+        searchIcon.onclick = triggerSearch;
+        searchIcon.addEventListener('click', triggerSearch);
+        searchIcon.addEventListener('mousedown', triggerSearch);
+    }
+    
+    // Enter key in search input
     searchInput.addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
-            console.log('Enter key pressed in search input');
+            console.log('Enter key pressed');
             performSearch();
         }
     });
@@ -285,19 +254,40 @@ document.addEventListener('DOMContentLoaded', function() {
         if (searchPopup.classList.contains('active') &&
             !searchPopup.contains(event.target) && 
             event.target !== searchInput && 
-            event.target !== searchButton) {
-            console.log('Clicked outside, closing popup');
+            event.target !== searchButton &&
+            event.target !== searchIcon) {
             searchPopup.classList.remove('active');
         }
     });
     
-    // Make search function available for testing
+    // Test function
     window.testSearch = function(term) {
         searchInput.value = term || 'linear algebra';
-        console.log('Test search initiated for:', searchInput.value);
         performSearch();
         return 'Test search executed';
     };
     
-    console.log('Search functionality fully initialized');
+    // Add a helper button for testing (will be hidden in production)
+    const testButton = document.createElement('button');
+    testButton.textContent = 'Test Search';
+    testButton.style.position = 'fixed';
+    testButton.style.bottom = '10px';
+    testButton.style.right = '10px';
+    testButton.style.zIndex = '9999';
+    testButton.style.padding = '5px 10px';
+    testButton.style.backgroundColor = '#3498db';
+    testButton.style.color = 'white';
+    testButton.style.border = 'none';
+    testButton.style.borderRadius = '4px';
+    testButton.style.cursor = 'pointer';
+    
+    testButton.onclick = function() {
+        searchInput.value = 'linear algebra';
+        performSearch();
+    };
+    
+    // Uncomment this line to add the test button (for debugging only)
+    // document.body.appendChild(testButton);
+    
+    console.log('Search initialization complete with button fix');
 });
