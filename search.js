@@ -1,226 +1,178 @@
-// search.js - Automatically extracts content from pages for search
+// search.js - Pop-up search results functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing automatic search functionality');
+    console.log('Search script loaded - pop-up version');
     
     // Get DOM elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
-    const searchResults = document.getElementById('search-results');
-    const resultsContainer = document.getElementById('results-container');
+    
+    // Create pop-up results container if it doesn't exist
+    let searchPopup = document.getElementById('search-popup');
+    
+    if (!searchPopup) {
+        searchPopup = document.createElement('div');
+        searchPopup.id = 'search-popup';
+        searchPopup.className = 'search-popup';
+        searchPopup.innerHTML = '<div class="search-popup-content"></div>';
+        
+        // Insert after the navbar
+        const navbar = document.querySelector('.navbar');
+        if (navbar && navbar.parentNode) {
+            navbar.parentNode.insertBefore(searchPopup, navbar.nextSibling);
+        } else {
+            // Fallback to body if navbar not found
+            document.body.appendChild(searchPopup);
+        }
+    }
+    
+    const popupContent = searchPopup.querySelector('.search-popup-content');
     
     // Check if all elements exist
-    if (!searchInput || !searchButton || !searchResults || !resultsContainer) {
+    if (!searchInput || !searchButton || !searchPopup || !popupContent) {
         console.error('Search elements not found');
         return; // Stop execution if elements are missing
     }
     
-    // Define pages to search with minimal info - no need for keywords
+    // Array of pages to search through
     const pages = [
         { 
             path: 'index.html', 
-            title: 'Math-CS Compass - Home'
+            title: 'Math-CS Compass - Home',
+            keywords: ['mathematics', 'computer science', 'bridge', 'introduction', 'AI', 'overview']
         },
         { 
             path: 'Mathematics/Linear_algebra/linear_algebra.html', 
-            title: 'Linear Algebra'
+            title: 'Linear Algebra',
+            keywords: ['linear algebra', 'vectors', 'matrices', 'transformations', 'eigenvectors', 'eigenvalues', 'linear systems']
         },
         { 
             path: 'Mathematics/Calculus/calculus.html', 
-            title: 'Calculus & Optimization'
+            title: 'Calculus & Optimization',
+            keywords: ['calculus', 'derivatives', 'integrals', 'optimization', 'gradient descent', 'partial derivatives', 'multivariate']
         },
         { 
             path: 'Mathematics/Probability/probability.html', 
-            title: 'Probability & Statistics'
+            title: 'Probability & Statistics',
+            keywords: ['probability', 'statistics', 'random variables', 'distributions', 'expected value', 'variance', 'hypothesis testing']
         },
         { 
             path: 'Mathematics/Discrete/discrete_math.html', 
-            title: 'Discrete Mathematics'
+            title: 'Discrete Mathematics',
+            keywords: ['discrete', 'set theory', 'graph theory', 'combinatorics', 'logic', 'proofs', 'algorithms', 'complexity']
         }
-        // Add more pages as needed with just path and title
+        // Add more pages as they are created
     ];
-    
-    // Cache for page content to avoid repeated fetches
-    const pageCache = {};
-    
-    // Fetch and extract content from a page
-    async function fetchPageContent(page) {
-        // Check cache first
-        if (pageCache[page.path]) {
-            return pageCache[page.path];
-        }
-        
-        try {
-            const response = await fetch(page.path);
-            const html = await response.text();
-            
-            // Create a temporary element to parse the HTML
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Extract main content and remove script tags
-            const scripts = doc.querySelectorAll('script');
-            scripts.forEach(script => script.remove());
-            
-            // Extract text from main content areas
-            let content = '';
-            
-            // First try to get content from main tag
-            const main = doc.querySelector('main');
-            if (main) {
-                content = main.textContent;
-            } else {
-                // Fallback to body content
-                content = doc.body.textContent;
-            }
-            
-            // Clean up the content
-            content = content.replace(/\s+/g, ' ').trim();
-            
-            // Extract meta description if available
-            const metaDescription = doc.querySelector('meta[name="description"]');
-            const description = metaDescription ? metaDescription.getAttribute('content') : '';
-            
-            // Extract headings for better search context
-            const headings = Array.from(doc.querySelectorAll('h1, h2, h3'))
-                .map(h => h.textContent.trim())
-                .filter(h => h.length > 0);
-            
-            // Store the processed content in cache
-            const pageData = {
-                content: content,
-                description: description,
-                headings: headings
-            };
-            
-            pageCache[page.path] = pageData;
-            return pageData;
-            
-        } catch (error) {
-            console.error(`Error fetching ${page.path}:`, error);
-            return { content: '', description: '', headings: [] };
-        }
-    }
     
     // Create a loading indicator
     function createLoadingIndicator() {
-        const loader = document.createElement('span');
+        const loader = document.createElement('div');
         loader.className = 'search-loading';
         return loader;
     }
     
-    // Perform search with content extraction
-    async function performSearch() {
+    // Calculate position for popup
+    function positionPopup() {
+        const searchContainer = document.querySelector('.search-container');
+        
+        if (searchContainer) {
+            const rect = searchContainer.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            searchPopup.style.position = 'absolute';
+            searchPopup.style.top = (rect.bottom + scrollTop) + 'px';
+            searchPopup.style.left = rect.left + 'px';
+            searchPopup.style.width = rect.width + 'px';
+            searchPopup.style.maxWidth = '500px'; // Limit maximum width
+        }
+    }
+    
+    // Perform search with pop-up results
+    function performSearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
         
         if (searchTerm === '') {
-            searchResults.style.display = 'none';
+            searchPopup.style.display = 'none';
             return;
         }
         
+        // Position popup before showing
+        positionPopup();
+        
         // Show loading state
         searchButton.classList.add('active');
+        popupContent.innerHTML = '';
         const loader = createLoadingIndicator();
-        searchButton.appendChild(loader);
+        popupContent.appendChild(loader);
+        searchPopup.style.display = 'block';
         
-        // Clear previous results
-        resultsContainer.innerHTML = '';
-        searchResults.style.display = 'block';
-        resultsContainer.innerHTML = '<p>Searching...</p>';
-        
-        // Fetch content for all pages (will use cache for already fetched pages)
-        const pagePromises = pages.map(async page => {
-            const pageData = await fetchPageContent(page);
-            return {
-                ...page,
-                ...pageData
-            };
-        });
-        
-        // Wait for all page content to be fetched
-        const pagesWithContent = await Promise.all(pagePromises);
-        
-        // Filter pages based on search term
-        const results = pagesWithContent.filter(page => {
-            // Check title
-            if (page.title.toLowerCase().includes(searchTerm)) return true;
-            
-            // Check description
-            if (page.description && page.description.toLowerCase().includes(searchTerm)) return true;
-            
-            // Check headings
-            if (page.headings.some(heading => heading.toLowerCase().includes(searchTerm))) return true;
-            
-            // Check content
-            if (page.content && page.content.toLowerCase().includes(searchTerm)) return true;
-            
-            return false;
-        });
-        
-        // Remove loading indicator
-        searchButton.classList.remove('active');
-        if (searchButton.contains(loader)) {
-            searchButton.removeChild(loader);
-        }
-        
-        // Display results
-        resultsContainer.innerHTML = '';
-        
-        if (results.length > 0) {
-            // Add search summary
-            const searchSummary = document.createElement('div');
-            searchSummary.className = 'search-summary';
-            searchSummary.innerHTML = `<p>Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"</p>`;
-            resultsContainer.appendChild(searchSummary);
-            
-            // Add results
-            results.forEach(result => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
+        // Use setTimeout to allow UI to update before search
+        setTimeout(() => {
+            // Perform search
+            const results = pages.filter(page => {
+                // Check title
+                if (page.title.toLowerCase().includes(searchTerm)) return true;
                 
-                // Highlight matching text in title
-                let titleHtml = result.title;
-                if (result.title.toLowerCase().includes(searchTerm)) {
-                    const regex = new RegExp(`(${searchTerm})`, 'gi');
-                    titleHtml = result.title.replace(regex, '<mark>$1</mark>');
-                }
-                
-                // Extract snippet showing search term in context
-                let snippet = '';
-                if (result.content) {
-                    const contentLower = result.content.toLowerCase();
-                    const index = contentLower.indexOf(searchTerm);
-                    if (index !== -1) {
-                        // Get text around the match
-                        const start = Math.max(0, index - 50);
-                        const end = Math.min(result.content.length, index + searchTerm.length + 50);
-                        snippet = result.content.substring(start, end);
-                        
-                        // Add ellipsis if needed
-                        if (start > 0) snippet = '...' + snippet;
-                        if (end < result.content.length) snippet = snippet + '...';
-                        
-                        // Highlight the search term
-                        const regex = new RegExp(`(${searchTerm})`, 'gi');
-                        snippet = snippet.replace(regex, '<mark>$1</mark>');
-                    }
-                }
-                
-                // Build result HTML
-                resultItem.innerHTML = `
-                    <h3><a href="${result.path}">${titleHtml}</a></h3>
-                    <p>${result.description || ''}</p>
-                    ${snippet ? `<p class="snippet">${snippet}</p>` : ''}
-                `;
-                
-                resultsContainer.appendChild(resultItem);
+                // Check keywords - both exact match and partial match
+                return page.keywords.some(keyword => 
+                    keyword.toLowerCase().includes(searchTerm) || 
+                    searchTerm.includes(keyword.toLowerCase())
+                );
             });
-        } else {
-            resultsContainer.innerHTML = `
-                <p>No results found for "${searchTerm}". Try different keywords.</p>
-                <p>Suggestions: Try shorter keywords or check spelling.</p>
-            `;
-        }
+            
+            // Remove loading indicator
+            searchButton.classList.remove('active');
+            popupContent.innerHTML = '';
+            
+            // Display results
+            if (results.length > 0) {
+                // Add search summary
+                const searchSummary = document.createElement('div');
+                searchSummary.className = 'search-summary';
+                searchSummary.innerHTML = `<p>Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"</p>`;
+                popupContent.appendChild(searchSummary);
+                
+                // Add results
+                const resultsList = document.createElement('div');
+                resultsList.className = 'search-results-list';
+                popupContent.appendChild(resultsList);
+                
+                results.forEach(result => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'popup-result-item';
+                    
+                    // Highlight matching text in title
+                    let titleHtml = result.title;
+                    if (result.title.toLowerCase().includes(searchTerm)) {
+                        titleHtml = result.title.replace(
+                            new RegExp(`(${searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'), 
+                            '<mark>$1</mark>'
+                        );
+                    }
+                    
+                    // Show relevant keywords
+                    const matchingKeywords = result.keywords.filter(keyword => 
+                        keyword.toLowerCase().includes(searchTerm) || 
+                        searchTerm.includes(keyword.toLowerCase())
+                    );
+                    
+                    resultItem.innerHTML = `
+                        <h3><a href="${result.path}">${titleHtml}</a></h3>
+                        ${matchingKeywords.length > 0 ? 
+                          `<p class="result-keywords">${matchingKeywords.join(', ')}</p>` : ''}
+                    `;
+                    
+                    resultsList.appendChild(resultItem);
+                });
+            } else {
+                popupContent.innerHTML = `
+                    <div class="no-results">
+                        <p>No results found for "${searchTerm}"</p>
+                        <p class="search-suggestion">Try different keywords or check spelling</p>
+                    </div>
+                `;
+            }
+        }, 300); // Small delay for UI update and to show loading indicator
     }
     
     // Event listeners
@@ -229,21 +181,30 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
             performSearch();
+        } else if (searchInput.value.trim() !== '') {
+            // Auto-search as you type (optional)
+            // performSearch();
+        } else {
+            searchPopup.style.display = 'none';
         }
     });
     
     // Close search results when clicking outside
     document.addEventListener('click', function(event) {
-        if (!searchResults.contains(event.target) && 
+        if (!searchPopup.contains(event.target) && 
             event.target !== searchInput && 
             event.target !== searchButton &&
             !searchButton.contains(event.target)) {
-            searchResults.style.display = 'none';
+            searchPopup.style.display = 'none';
         }
     });
     
-    // Log that search is ready
-    console.log('Automatic search functionality initialized');
+    // Reposition popup on window resize
+    window.addEventListener('resize', function() {
+        if (searchPopup.style.display === 'block') {
+            positionPopup();
+        }
+    });
     
     // For testing
     window.testSearch = function(term) {
