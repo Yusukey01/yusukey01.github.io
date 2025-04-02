@@ -1,18 +1,12 @@
-// search.js - Special focus on button click fix
+// search.js - Using external JSON for page definitions
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing search with button fix');
+    console.log('DOM loaded - initializing search with JSON page data');
     
     // Find search elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
     const searchIcon = searchButton ? searchButton.querySelector('i') : null;
-    
-    console.log('Search elements:', { 
-        searchInput: !!searchInput, 
-        searchButton: !!searchButton,
-        searchIcon: !!searchIcon
-    });
     
     // Create popup
     const popupHTML = `
@@ -36,17 +30,33 @@ document.addEventListener('DOMContentLoaded', function() {
         searchPopup.classList.remove('active');
     });
     
-    // Define pages to search
-    const pages = [
-        { path: 'index.html', title: 'Math-CS Compass - Home' },
-        { path: 'Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
-        { path: 'Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
-        { path: 'Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
-        { path: 'Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
-    ];
-    
     // Content cache
     const contentCache = {};
+    let pages = []; // Will be populated from JSON
+    
+    // Load page data from JSON
+    async function loadPageData() {
+        try {
+            const response = await fetch('pages.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            pages = data.pages || [];
+            console.log(`Loaded ${pages.length} pages from JSON`);
+            return pages;
+        } catch (error) {
+            console.error('Error loading pages.json:', error);
+            // Fallback to default pages if JSON loading fails
+            return [
+                { path: 'index.html', title: 'Math-CS Compass - Home' },
+                { path: 'Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
+                { path: 'Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
+                { path: 'Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
+                { path: 'Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
+            ];
+        }
+    }
     
     // Fetch page content
     async function fetchPageContent(page) {
@@ -95,6 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (searchTerm === '') {
             searchPopup.classList.remove('active');
             return;
+        }
+        
+        // Make sure pages are loaded
+        if (pages.length === 0) {
+            pages = await loadPageData();
         }
         
         // Show loading state
@@ -215,7 +230,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ===== FIX FOR BUTTON CLICK =====
+    // Load page data on initialization
+    loadPageData().then(loadedPages => {
+        console.log(`Initialized with ${loadedPages.length} pages from JSON`);
+        pages = loadedPages;
+    });
     
     // Function to ensure search is triggered regardless of what is clicked
     function triggerSearch(e) {
@@ -223,28 +242,23 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         e.stopPropagation();
         performSearch();
-        return false; // Ensure no default actions occur
+        return false;
     }
     
     // Add event listeners to all possible elements
     if (searchButton) {
-        // Multiple approaches to ensure button click works
         searchButton.onclick = triggerSearch;
         searchButton.addEventListener('click', triggerSearch);
-        searchButton.addEventListener('mousedown', triggerSearch);
     }
     
-    // Also add to the icon inside if it exists
     if (searchIcon) {
         searchIcon.onclick = triggerSearch;
         searchIcon.addEventListener('click', triggerSearch);
-        searchIcon.addEventListener('mousedown', triggerSearch);
     }
     
     // Enter key in search input
     searchInput.addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
-            console.log('Enter key pressed');
             performSearch();
         }
     });
@@ -267,27 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Test search executed';
     };
     
-    // Add a helper button for testing (will be hidden in production)
-    const testButton = document.createElement('button');
-    testButton.textContent = 'Test Search';
-    testButton.style.position = 'fixed';
-    testButton.style.bottom = '10px';
-    testButton.style.right = '10px';
-    testButton.style.zIndex = '9999';
-    testButton.style.padding = '5px 10px';
-    testButton.style.backgroundColor = '#3498db';
-    testButton.style.color = 'white';
-    testButton.style.border = 'none';
-    testButton.style.borderRadius = '4px';
-    testButton.style.cursor = 'pointer';
+    // Make search function available globally
+    window.doSearch = performSearch;
     
-    testButton.onclick = function() {
-        searchInput.value = 'linear algebra';
-        performSearch();
-    };
-    
-    // Uncomment this line to add the test button (for debugging only)
-    // document.body.appendChild(testButton);
-    
-    console.log('Search initialization complete with button fix');
+    console.log('Search initialization complete with JSON loading');
 });
