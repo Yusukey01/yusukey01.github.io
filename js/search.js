@@ -34,10 +34,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentCache = {};
     let pages = []; // Will be populated from JSON
     
+    // Determine the correct path to the root of the website
+    function getRootPath() {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        let rootPath = '';
+        
+        // If we're in a subdirectory, we need to go back to the root
+        if (pathSegments.length > 0) {
+            // For each directory level, we need to go up one level
+            // But we need to handle the case where the URL ends with a file
+            const segmentsToRoot = pathSegments.length;
+            for (let i = 0; i < segmentsToRoot; i++) {
+                rootPath += '../';
+            }
+        }
+        
+        return rootPath;
+    }
+    
     // Load page data from JSON
     async function loadPageData() {
         try {
-            const response = await fetch(`${origin}/pages.json`);
+            // Use the correct path to the root directory
+            const rootPath = getRootPath();
+            const response = await fetch(`${rootPath}pages.json`);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -50,20 +71,24 @@ document.addEventListener('DOMContentLoaded', function() {
             // Fallback to default pages if JSON loading fails
             return [
                 { path: '/index.html', title: 'Math-CS Compass - Home' },
-                { path: '/linear_algebra.html', title: 'Linear Algebra' },
-                { path: '/calculus.html', title: 'Calculus & Optimization' },
-                { path: '/probability.html', title: 'Probability & Statistics' },
-                { path: '/discrete_math.html', title: 'Discrete Mathematics' }
+                { path: '/Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
+                { path: '/Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
+                { path: '/Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
+                { path: '/Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
             ];
         }
     }
     
-    // Fetch page content
+    // Fetch page content with correct path resolution
     async function fetchPageContent(page) {
         if (contentCache[page.path]) return contentCache[page.path];
         
         try {
-            const response = await fetch(page.path);
+            // Use the correct path to the root directory
+            const rootPath = getRootPath();
+            const fullPath = `${rootPath}${page.path.startsWith('/') ? page.path.substring(1) : page.path}`;
+            const response = await fetch(fullPath);
+            
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
@@ -193,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="results-list">
                 `;
                 
+                // Get root path for creating correct links
+                const rootPath = getRootPath();
+                
                 results.forEach(result => {
                     // Highlight match
                     let highlightedContext = result.matchContext;
@@ -201,9 +229,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         highlightedContext = highlightedContext.replace(regex, match => `<mark>${match}</mark>`);
                     }
                     
+                    // Fix the path for the link
+                    const pagePath = result.path.startsWith('/') ? result.path.substring(1) : result.path;
+                    const fullPath = `${rootPath}${pagePath}`;
+                    
                     resultsHtml += `
                         <div class="popup-result-item">
-                            <h3><a href="${result.path}">${result.title}</a></h3>
+                            <h3><a href="${fullPath}">${result.title}</a></h3>
                             <p class="result-context">${highlightedContext || ''}</p>
                         </div>
                     `;
