@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load page data from JSON
     async function loadPageData() {
         try {
-            const response = await fetch('/pages.json');
+            const response = await fetch('/pages.json.html');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading pages.json:', error);
             // Fallback to default pages if JSON loading fails
             return [
-                { path: 'index.html', title: 'Math-CS Compass - Home' },
-                { path: 'Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
-                { path: 'Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
-                { path: 'Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
-                { path: 'Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
+                { path: '/index.html', title: 'Math-CS Compass - Home' },
+                { path: '/linear_algebra.html', title: 'Linear Algebra' },
+                { path: '/calculus.html', title: 'Calculus & Optimization' },
+                { path: '/probability.html', title: 'Probability & Statistics' },
+                { path: '/discrete_math.html', title: 'Discrete Mathematics' }
             ];
         }
     }
