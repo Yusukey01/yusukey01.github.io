@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load page data from JSON
     async function loadPageData() {
         try {
-            const response = await fetch('https://raw.githubusercontent.com/yusukey01/yusukey01.github.io/main/pages.json');
+            const response = await fetch(`${origin}/pages.json`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
