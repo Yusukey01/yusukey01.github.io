@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load page data from JSON
     async function loadPageData() {
         try {
-            const response = await fetch('/pages.jason');
+            const response = await fetch('/pages.json');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
