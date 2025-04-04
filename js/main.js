@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         menuToggle.addEventListener('click', function() {
             navLinks.classList.toggle('active');
         });
-    }
-/*
+    }*/
     
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
