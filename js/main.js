@@ -5,45 +5,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mobile menu toggle
     const menuToggle = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
-    
+
     if (menuToggle && navLinks) {
-        // Add additional touch event handlers for better mobile support
-        menuToggle.addEventListener('touchstart', function(e) {
-            e.preventDefault(); // Prevent default touch behavior
-        }, { passive: false });
+        // Replace addEventListener with direct property assignment
+        menuToggle.onclick = function(e) {
+            e.preventDefault();
+            // Explicit toggle instead of using classList.toggle
+            if (navLinks.classList.contains('active')) {
+                navLinks.classList.remove('active');
+            } else {
+                navLinks.classList.add('active');
+            }
+            return false; // Prevent event bubbling
+        };
         
-        menuToggle.addEventListener('touchend', function(e) {
-            e.preventDefault(); // Prevent default touch behavior
-            navLinks.classList.toggle('active');
-        }, { passive: false });
+        // Add direct touch handler for mobile devices
+        menuToggle.ontouchend = function(e) {
+            e.preventDefault();
+            if (navLinks.classList.contains('active')) {
+                navLinks.classList.remove('active');
+            } else {
+                navLinks.classList.add('active');
+            }
+            return false;
+        };
         
-        // Keep the click handler for non-touch devices
-        menuToggle.addEventListener('click', function(e) {
-            e.stopPropagation(); // Stop event propagation
-            navLinks.classList.toggle('active');
+        // Close menu when clicking on links 
+        const mobileNavLinks = document.querySelectorAll('.nav-links a');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    navLinks.classList.remove('active');
+                }
+            });
         });
-    }
-    
-    // Close menu when clicking on a link (improved mobile UX)
-    const mobileNavLinks = document.querySelectorAll('.nav-links a');
-    mobileNavLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            if (window.innerWidth <= 992) { // Only on mobile view
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const isClickInsideNav = navLinks.contains(event.target);
+            const isClickOnToggle = menuToggle.contains(event.target);
+            
+            if (!isClickInsideNav && !isClickOnToggle && navLinks.classList.contains('active')) {
                 navLinks.classList.remove('active');
             }
         });
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', function(event) {
-        const isClickInsideNav = navLinks.contains(event.target);
-        const isClickOnToggle = menuToggle.contains(event.target);
-        
-        if (!isClickInsideNav && !isClickOnToggle && navLinks.classList.contains('active')) {
-            navLinks.classList.remove('active');
-        }
-    });
-
+    }
+    
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
