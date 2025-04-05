@@ -7,8 +7,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelector('.nav-links');
     
     if (menuToggle && navLinks) {
-        menuToggle.addEventListener('click', function() {
-            // Change from 'show' to 'active' to match CSS
+        // Add additional touch event handlers for better mobile support
+        menuToggle.addEventListener('touchstart', function(e) {
+            e.preventDefault(); // Prevent default touch behavior
+        }, { passive: false });
+        
+        menuToggle.addEventListener('touchend', function(e) {
+            e.preventDefault(); // Prevent default touch behavior
+            navLinks.classList.toggle('active');
+        }, { passive: false });
+        
+        // Keep the click handler for non-touch devices
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation(); // Stop event propagation
             navLinks.classList.toggle('active');
         });
     }
@@ -32,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
             navLinks.classList.remove('active');
         }
     });
-    
+
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
