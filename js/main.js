@@ -1,31 +1,34 @@
 // main.js - Main website functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     // Mobile menu toggle
     const menuToggle = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
 
     if (menuToggle && navLinks) {
         menuToggle.addEventListener('click', function() {
+            console.log('Menu toggle clicked');
+            
+            // Toggle the active class on the nav links
             navLinks.classList.toggle('active');
             
-            // Toggle icon between bars and x
+            // Toggle the icon (FA6 uses fa-xmark instead of fa-times)
             const icon = this.querySelector('i');
             if (icon) {
                 if (icon.classList.contains('fa-bars')) {
                     icon.classList.remove('fa-bars');
-                    icon.classList.add('fa-xmark'); // Font Awesome 6 uses fa-xmark instead of fa-times
+                    icon.classList.add('fa-xmark');
                 } else {
                     icon.classList.remove('fa-xmark');
                     icon.classList.add('fa-bars');
                 }
             }
             
-            // Log for debugging
-            console.log('Menu toggle clicked, active: ', navLinks.classList.contains('active'));
+            console.log('Menu active:', navLinks.classList.contains('active'));
         });
     }
+
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
