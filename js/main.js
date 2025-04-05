@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (menuToggle && navLinks) {
         menuToggle.addEventListener('click', function() {
-            // Change 'show' to 'active' to match your CSS
             navLinks.classList.toggle('active');
             
             // Optional: Toggle icon if you want to change from hamburger to X
