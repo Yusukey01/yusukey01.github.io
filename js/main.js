@@ -1,16 +1,24 @@
 // main.js - Main website functionality
 
 document.addEventListener('DOMContentLoaded', function() {
+    
     // Mobile menu toggle
     const menuToggle = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
-    
+
     if (menuToggle && navLinks) {
         menuToggle.addEventListener('click', function() {
-            navLinks.classList.toggle('show');
+            // Change 'show' to 'active' to match your CSS
+            navLinks.classList.toggle('active');
+            
+            // Optional: Toggle icon if you want to change from hamburger to X
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            }
         });
     }
-    
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
