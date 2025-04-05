@@ -1,15 +1,37 @@
 // main.js - Main website functionality
 
 document.addEventListener('DOMContentLoaded', function() {
+    
     // Mobile menu toggle
     const menuToggle = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
     
     if (menuToggle && navLinks) {
         menuToggle.addEventListener('click', function() {
-            navLinks.classList.toggle('show');
+            // Change from 'show' to 'active' to match CSS
+            navLinks.classList.toggle('active');
         });
     }
+    
+    // Close menu when clicking on a link (improved mobile UX)
+    const mobileNavLinks = document.querySelectorAll('.nav-links a');
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 992) { // Only on mobile view
+                navLinks.classList.remove('active');
+            }
+        });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const isClickInsideNav = navLinks.contains(event.target);
+        const isClickOnToggle = menuToggle.contains(event.target);
+        
+        if (!isClickInsideNav && !isClickOnToggle && navLinks.classList.contains('active')) {
+            navLinks.classList.remove('active');
+        }
+    });
     
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
