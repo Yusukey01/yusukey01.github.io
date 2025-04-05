@@ -10,12 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
         menuToggle.addEventListener('click', function() {
             navLinks.classList.toggle('active');
             
-            // Optional: Toggle icon if you want to change from hamburger to X
+            // Toggle icon between bars and x
             const icon = this.querySelector('i');
             if (icon) {
-                icon.classList.toggle('fa-bars');
-                icon.classList.toggle('fa-times');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-xmark'); // Font Awesome 6 uses fa-xmark instead of fa-times
+                } else {
+                    icon.classList.remove('fa-xmark');
+                    icon.classList.add('fa-bars');
+                }
             }
+            
+            // Log for debugging
+            console.log('Menu toggle clicked, active: ', navLinks.classList.contains('active'));
         });
     }
     // Smooth scrolling for anchor links
