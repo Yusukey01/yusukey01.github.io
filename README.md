@@ -1,2 +1,2 @@
-# Mathematics
+# MATH-CS COMPASS
 This is HOME of MATH-CS COMPASS.
