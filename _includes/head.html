@@ -1,10 +1,81 @@
 <head>
     <title>{% if page.title %}{{ page.title }} - MATH-CS COMPASS{% else %}MATH-CS COMPASS - Bridging Pure & Applied Mathematics{% endif %}</title>
-    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js" defer></script>
+    <script>
+        // Function to load MathJax only when needed
+        function loadMathJax() {
+        if (document.querySelector('.math') || document.querySelector('\\(') || document.querySelector('\\[')) {
+            const script = document.createElement('script');
+            script.id = "MathJax-script";
+            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
+            script.async = true;
+            document.head.appendChild(script);
+        }
+        }
+        
+        // Configure MathJax before loading
+        window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        startup: {
+            pageReady: () => {
+            return MathJax.startup.defaultPageReady().then(() => {
+                // Custom code after MathJax has rendered
+            });
+            }
+        }
+        };
+        
+        // Load MathJax after initial page render
+        if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadMathJax);
+        } else {
+        loadMathJax();
+        }
+    </script>
+    <script>
+        // Only load Pyodide when a Python code block exists
+        function loadPyodide() {
+        if (document.querySelector('.python-code') && !window.pyodideLoaded) {
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js";
+            script.async = true;
+            window.pyodideLoaded = true;
+            document.head.appendChild(script);
+        }
+        }
+        
+        // Attach event listeners to run buttons instead of loading immediately
+        document.addEventListener('DOMContentLoaded', function() {
+        const runButtons = document.querySelectorAll('.run-button');
+        if (runButtons.length > 0) {
+            runButtons.forEach(button => {
+            button.addEventListener('click', loadPyodide);
+            });
+        } else if (document.querySelector('.python-code')) {
+            // If there are Python code blocks but no run buttons, load on scroll near the code
+            const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                loadPyodide();
+                observer.disconnect();
+                }
+            });
+            });
+            document.querySelectorAll('.python-code').forEach(block => {
+            observer.observe(block);
+            });
+        }
+        });
+    </script>
     <link rel="stylesheet" href="{% if page.level == 'home' %}css/styles.css{% elsif page.level == 'section' %}../../css/styles.css{% elsif page.level == 'detail' %}../../../css/styles.css{% else %}../../../css/styles.css{% endif %}">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ page.description | default: site.description }}">
     <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
