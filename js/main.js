@@ -195,11 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Collapsible introduction functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Find the toggle button
-        const toggleButton = document.getElementById('intro-toggle-btn');
-        
-        if (toggleButton) {
+    const toggleButton = document.getElementById('intro-toggle-btn');
+    
+    if (toggleButton) {
         // Find all collapsible content paragraphs
         const collapsibleContent = document.querySelectorAll('.collapsible-content');
         
@@ -210,27 +208,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Toggle visibility of all collapsible paragraphs
             collapsibleContent.forEach(paragraph => {
-            paragraph.style.display = isCollapsed ? 'block' : 'none';
+                paragraph.style.display = isCollapsed ? 'block' : 'none';
             });
             
             // Update button text and icon
             if (isCollapsed) {
-            this.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-            this.classList.add('expanded');
+                this.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+                this.classList.add('expanded');
             } else {
-            this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
-            this.classList.remove('expanded');
+                this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
+                this.classList.remove('expanded');
             }
         });
-        
-        // For desktop: If we decide to show content by default but keep the button
-        // Check if we're on a larger screen where content is already visible
-        const isLargeScreen = window.matchMedia('(min-width: 992px)').matches;
-        if (isLargeScreen) {
-            toggleButton.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-            toggleButton.classList.add('expanded');
-        }
-        }
-    });
-  
+    }
 });
