@@ -156,4 +156,41 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Go To Top Button
+    const goTopButton = document.getElementById('go-to-top-btn');
+    
+    if (goTopButton) {
+        // When the user scrolls down 300px from the top of the document, show the button
+        window.addEventListener('scroll', function() {
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                goTopButton.style.display = 'block';
+            } else {
+                goTopButton.style.display = 'none';
+            }
+        });
+        
+        // When the user clicks on the button, scroll to the top of the document
+        goTopButton.addEventListener('click', function() {
+            // For most modern browsers
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            
+            // For older browsers that don't support smooth scrolling
+            function scrollToTop() {
+                const currentPosition = document.body.scrollTop || document.documentElement.scrollTop;
+                if (currentPosition > 0) {
+                    window.requestAnimationFrame(scrollToTop);
+                    window.scrollTo(0, currentPosition - currentPosition / 8);
+                }
+            }
+            
+            // Check if smooth scrolling is supported
+            if (typeof window.scrollTo !== 'function' || typeof window.scrollTo.behavior !== 'string') {
+                scrollToTop();
+            }
+        });
+    }
 });
