@@ -131,4 +131,80 @@ document.addEventListener('DOMContentLoaded', function() {
             element.classList.add('fade-in');
         });
     }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find the quick jump toggle and menu
+        const quickJumpToggle = document.getElementById('quick-jump-toggle');
+        const quickJumpMenu = document.getElementById('quick-jump-menu');
+        const quickJumpLinks = document.querySelector('.quick-jump-links');
+        
+        if (quickJumpToggle && quickJumpMenu && quickJumpLinks) {
+          // Populate the quick jump menu with card links
+          const cards = document.querySelectorAll('.card');
+          if (cards.length > 0) {
+            cards.forEach(card => {
+              const cardTitle = card.querySelector('h3 a');
+              if (cardTitle) {
+                const link = document.createElement('a');
+                link.href = cardTitle.getAttribute('href');
+                link.textContent = cardTitle.textContent;
+                quickJumpLinks.appendChild(link);
+              }
+            });
+          }
+          
+          // Toggle the quick jump menu when clicked
+          quickJumpToggle.addEventListener('click', function() {
+            quickJumpMenu.classList.toggle('active');
+          });
+          
+          // Close the menu when clicking outside
+          document.addEventListener('click', function(event) {
+            const isClickInsideMenu = quickJumpMenu.contains(event.target);
+            const isClickOnToggle = quickJumpToggle.contains(event.target);
+            
+            if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
+              quickJumpMenu.classList.remove('active');
+            }
+          });
+        }
+      });
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Find the quick jump toggle and menu
+    const quickJumpToggle = document.getElementById('quick-jump-toggle');
+    const quickJumpMenu = document.getElementById('quick-jump-menu');
+    const quickJumpLinks = document.querySelector('.quick-jump-links');
+    
+    if (quickJumpToggle && quickJumpMenu && quickJumpLinks) {
+      // Populate the quick jump menu with card links
+      const cards = document.querySelectorAll('.card');
+      if (cards.length > 0) {
+        cards.forEach(card => {
+          const cardTitle = card.querySelector('h3 a');
+          if (cardTitle) {
+            const link = document.createElement('a');
+            link.href = cardTitle.getAttribute('href');
+            link.textContent = cardTitle.textContent;
+            quickJumpLinks.appendChild(link);
+          }
+        });
+      }
+      
+      // Toggle the quick jump menu when clicked
+      quickJumpToggle.addEventListener('click', function() {
+        quickJumpMenu.classList.toggle('active');
+      });
+      
+      // Close the menu when clicking outside
+      document.addEventListener('click', function(event) {
+        const isClickInsideMenu = quickJumpMenu.contains(event.target);
+        const isClickOnToggle = quickJumpToggle.contains(event.target);
+        
+        if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
+          quickJumpMenu.classList.remove('active');
+        }
+      });
+    }
+  });
