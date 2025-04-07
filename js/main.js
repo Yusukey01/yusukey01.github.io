@@ -171,34 +171,17 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 });
 
-// Quick Jump Navigation
+// For Quick Jump Navigation
 document.addEventListener('DOMContentLoaded', function() {
     // Find the quick jump toggle and menu
     const quickJumpToggle = document.getElementById('quick-jump-toggle');
     const quickJumpMenu = document.getElementById('quick-jump-menu');
-    const quickJumpLinks = document.querySelector('.quick-jump-links');
     
-    if (quickJumpToggle && quickJumpMenu && quickJumpLinks) {
-      // Populate the quick jump menu with card links
-      const cards = document.querySelectorAll('.card');
-      if (cards.length > 0) {
-        cards.forEach(card => {
-          const cardTitle = card.querySelector('h3 a');
-          if (cardTitle) {
-            const link = document.createElement('a');
-            link.href = cardTitle.getAttribute('href');
-            link.textContent = cardTitle.textContent;
-            quickJumpLinks.appendChild(link);
-          }
-        });
-      }
-      
-      // Toggle the quick jump menu when clicked - FIXED VERSION
+    if (quickJumpToggle && quickJumpMenu) {
+      // Toggle the quick jump menu when clicked
       quickJumpToggle.addEventListener('click', function(event) {
         event.preventDefault(); // Prevent default button behavior
-        event.stopPropagation(); // Stop event from bubbling up
         quickJumpMenu.classList.toggle('active');
-        return false; // Extra insurance to prevent default
       });
       
       // Close the menu when clicking outside
@@ -207,14 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const isClickOnToggle = quickJumpToggle.contains(event.target);
         
         if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
-          quickJumpMenu.classList.remove('active');
-        }
-      });
-  
-      // Ensure links work correctly
-      quickJumpLinks.addEventListener('click', function(event) {
-        if (event.target.tagName === 'A') {
-          // Let the link handle navigation
           quickJumpMenu.classList.remove('active');
         }
       });
