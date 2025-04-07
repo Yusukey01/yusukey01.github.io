@@ -171,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 });
 
+// Quick Jump Navigation
 document.addEventListener('DOMContentLoaded', function() {
     // Find the quick jump toggle and menu
     const quickJumpToggle = document.getElementById('quick-jump-toggle');
@@ -192,9 +193,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
       
-      // Toggle the quick jump menu when clicked
-      quickJumpToggle.addEventListener('click', function() {
+      // Toggle the quick jump menu when clicked - FIXED VERSION
+      quickJumpToggle.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default button behavior
+        event.stopPropagation(); // Stop event from bubbling up
         quickJumpMenu.classList.toggle('active');
+        return false; // Extra insurance to prevent default
       });
       
       // Close the menu when clicking outside
@@ -203,6 +207,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const isClickOnToggle = quickJumpToggle.contains(event.target);
         
         if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
+          quickJumpMenu.classList.remove('active');
+        }
+      });
+  
+      // Ensure links work correctly
+      quickJumpLinks.addEventListener('click', function(event) {
+        if (event.target.tagName === 'A') {
+          // Let the link handle navigation
           quickJumpMenu.classList.remove('active');
         }
       });
