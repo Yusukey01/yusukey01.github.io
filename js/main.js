@@ -193,4 +193,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Add to your main.js or as a separate file
+    document.addEventListener('DOMContentLoaded', function() {
+        const introSection = document.querySelector('.homepage-introduction');
+        
+        if (introSection) {
+        // Get all paragraphs in the introduction
+        const paragraphs = introSection.querySelectorAll('p');
+        
+        if (paragraphs.length > 1) {
+            // Hide all paragraphs except the first one
+            for (let i = 1; i < paragraphs.length; i++) {
+            paragraphs[i].classList.add('collapsed-content');
+            }
+            
+            // Create toggle button
+            const toggleButton = document.createElement('button');
+            toggleButton.className = 'intro-toggle-btn';
+            toggleButton.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
+            
+            // Insert button after first paragraph
+            paragraphs[0].after(toggleButton);
+            
+            // Add toggle functionality
+            toggleButton.addEventListener('click', function() {
+            const isCollapsed = this.innerHTML.includes('Read More');
+            
+            // Toggle paragraphs visibility
+            for (let i = 1; i < paragraphs.length; i++) {
+                paragraphs[i].classList.toggle('collapsed-content');
+            }
+            
+            // Update button text
+            if (isCollapsed) {
+                this.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+            } else {
+                this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
+            }
+            });
+        }
+        }
+    });
 });
