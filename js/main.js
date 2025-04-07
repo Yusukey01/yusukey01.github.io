@@ -54,11 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
+            const href = this.getAttribute('href');
+            if (href !== '#' && document.querySelector(href)) {
+                e.preventDefault();
+                document.querySelector(href).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
         });
     });
     
@@ -72,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
             item.classList.add('active');
         } else if (currentLocation.endsWith('/') || currentLocation.endsWith('index.html')) {
             // Add active class to Home
-            // Add active class to Home link when on the homepage
             if (item.getAttribute('href') === 'index.html') {
                 item.classList.add('active');
             }
@@ -132,66 +133,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    document.addEventListener('DOMContentLoaded', function() {
-        // Find the quick jump toggle and menu
-        const quickJumpToggle = document.getElementById('quick-jump-toggle');
-        const quickJumpMenu = document.getElementById('quick-jump-menu');
-        const quickJumpLinks = document.querySelector('.quick-jump-links');
-        
-        if (quickJumpToggle && quickJumpMenu && quickJumpLinks) {
-          // Populate the quick jump menu with card links
-          const cards = document.querySelectorAll('.card');
-          if (cards.length > 0) {
-            cards.forEach(card => {
-              const cardTitle = card.querySelector('h3 a');
-              if (cardTitle) {
-                const link = document.createElement('a');
-                link.href = cardTitle.getAttribute('href');
-                link.textContent = cardTitle.textContent;
-                quickJumpLinks.appendChild(link);
-              }
-            });
-          }
-          
-          // Toggle the quick jump menu when clicked
-          quickJumpToggle.addEventListener('click', function() {
-            quickJumpMenu.classList.toggle('active');
-          });
-          
-          // Close the menu when clicking outside
-          document.addEventListener('click', function(event) {
-            const isClickInsideMenu = quickJumpMenu.contains(event.target);
-            const isClickOnToggle = quickJumpToggle.contains(event.target);
-            
-            if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
-              quickJumpMenu.classList.remove('active');
-            }
-          });
-        }
-      });
-});
-
-// For Quick Jump Navigation
-document.addEventListener('DOMContentLoaded', function() {
-    // Find the quick jump toggle and menu
+    // Quick Jump Navigation - FIXED VERSION
     const quickJumpToggle = document.getElementById('quick-jump-toggle');
     const quickJumpMenu = document.getElementById('quick-jump-menu');
     
     if (quickJumpToggle && quickJumpMenu) {
-      // Toggle the quick jump menu when clicked
-      quickJumpToggle.addEventListener('click', function(event) {
-        event.preventDefault(); // Prevent default button behavior
-        quickJumpMenu.classList.toggle('active');
-      });
-      
-      // Close the menu when clicking outside
-      document.addEventListener('click', function(event) {
-        const isClickInsideMenu = quickJumpMenu.contains(event.target);
-        const isClickOnToggle = quickJumpToggle.contains(event.target);
+        // Toggle the quick jump menu when clicked
+        quickJumpToggle.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            quickJumpMenu.classList.toggle('active');
+            return false;
+        };
         
-        if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
-          quickJumpMenu.classList.remove('active');
-        }
-      });
+        // Close the menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const isClickInsideMenu = quickJumpMenu.contains(event.target);
+            const isClickOnToggle = quickJumpToggle.contains(event.target);
+            
+            if (!isClickInsideMenu && !isClickOnToggle && quickJumpMenu.classList.contains('active')) {
+                quickJumpMenu.classList.remove('active');
+            }
+        });
     }
-  });
+});
