@@ -194,45 +194,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add to your main.js or as a separate file
+    // Collapsible introduction functionality
     document.addEventListener('DOMContentLoaded', function() {
-        const introSection = document.querySelector('.homepage-introduction');
+        // Find the toggle button
+        const toggleButton = document.getElementById('intro-toggle-btn');
         
-        if (introSection) {
-        // Get all paragraphs in the introduction
-        const paragraphs = introSection.querySelectorAll('p');
+        if (toggleButton) {
+        // Find all collapsible content paragraphs
+        const collapsibleContent = document.querySelectorAll('.collapsible-content');
         
-        if (paragraphs.length > 1) {
-            // Hide all paragraphs except the first one
-            for (let i = 1; i < paragraphs.length; i++) {
-            paragraphs[i].classList.add('collapsed-content');
-            }
+        // Add toggle functionality
+        toggleButton.addEventListener('click', function() {
+            // Check if content is currently collapsed
+            const isCollapsed = !this.classList.contains('expanded');
             
-            // Create toggle button
-            const toggleButton = document.createElement('button');
-            toggleButton.className = 'intro-toggle-btn';
-            toggleButton.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
-            
-            // Insert button after first paragraph
-            paragraphs[0].after(toggleButton);
-            
-            // Add toggle functionality
-            toggleButton.addEventListener('click', function() {
-            const isCollapsed = this.innerHTML.includes('Read More');
-            
-            // Toggle paragraphs visibility
-            for (let i = 1; i < paragraphs.length; i++) {
-                paragraphs[i].classList.toggle('collapsed-content');
-            }
-            
-            // Update button text
-            if (isCollapsed) {
-                this.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-            } else {
-                this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
-            }
+            // Toggle visibility of all collapsible paragraphs
+            collapsibleContent.forEach(paragraph => {
+            paragraph.style.display = isCollapsed ? 'block' : 'none';
             });
+            
+            // Update button text and icon
+            if (isCollapsed) {
+            this.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+            this.classList.add('expanded');
+            } else {
+            this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
+            this.classList.remove('expanded');
+            }
+        });
+        
+        // For desktop: If we decide to show content by default but keep the button
+        // Check if we're on a larger screen where content is already visible
+        const isLargeScreen = window.matchMedia('(min-width: 992px)').matches;
+        if (isLargeScreen) {
+            toggleButton.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+            toggleButton.classList.add('expanded');
         }
         }
     });
+  
 });
