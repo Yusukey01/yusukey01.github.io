@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edu-app-v1';
+const CACHE_NAME = 'math-cs-compass-app-v1';
 const urlsToCache = [
   '/',
   '/index.html',
