@@ -20,7 +20,13 @@ const urlsToCache = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2',
+
+  // Main Section Pages
+  '/Mathematics/Linear_algebra/linear_algebra.html',
+  '/Mathematics/Calculus/calculus.html',
+  '/Mathematics/Probability/probability.html',
+  '/Mathematics/Discrete/discrete_math.html',
 ];
 
 // Install the service worker and cache initial assets
