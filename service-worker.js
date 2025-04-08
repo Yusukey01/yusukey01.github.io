@@ -2,18 +2,21 @@ const CACHE_NAME = 'math-cs-compass-app-v1';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/_includes/head.html',
+  '/_includes/header.html',
+  '/_includes/footer.html',
+  '/_layouts/default.html',
   '/css/styles.css',
   '/js/main.js',
   '/js/search.js',
   '/js/updateLog.js',
   '/offline.html',
   '/logo/logo_ver3.webp',
-  '/images/icon_x512.png',
   '/images/maskable_icon_x512.png',
   '/images/maskable_icon_x1280.png',
   '/manifest.json',
   
-  // External resources - very important for icons
+  // External resources
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
