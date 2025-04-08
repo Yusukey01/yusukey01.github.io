@@ -9,7 +9,7 @@ const urlsToCache = [
   '/offline.html',
   '/logo/logo_ver3.webp',
   '/images/icon-512x512.png',
-  '/images/maskable-icon-512x512.png',
+  '/images/maskable-icon-1137x1137.png',
   '/manifest.json',
   
   // External resources - very important for icons
