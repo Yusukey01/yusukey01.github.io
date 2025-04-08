@@ -4,12 +4,18 @@ const urlsToCache = [
   '/index.html',
   '/css/styles.css',
   '/js/main.js',
-  '/_includes/footer.html',
-  '/_includes/head.html',
-  '/_includes/header.html',
-
-  // Add more URLs to your important assets, scripts, and pages
-  // Example: '/about.html', '/contact.html', etc.
+  '/js/search.js',
+  '/js/updateLog.js',
+  '/offline.html',
+  '/logo/logo_ver3.webp',
+  '/images/icon-512x512.png',
+  '/manifest.json',
+  
+  // External resources - very important for icons
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2'
 ];
 
 // Install the service worker and cache initial assets
@@ -37,43 +43,61 @@ self.addEventListener('activate', event => {
       );
     })
   );
+  
+  // Claim clients immediately so updates take effect right away
+  event.waitUntil(clients.claim());
 });
 
 // Serve cached content when offline
 self.addEventListener('fetch', event => {
+  // For Font Awesome and other CDN resources, use a cache-first strategy
+  if (event.request.url.includes('cdnjs.cloudflare.com')) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => {
+          return response || fetch(event.request)
+            .then(fetchResponse => {
+              const responseToCache = fetchResponse.clone();
+              caches.open(CACHE_NAME)
+                .then(cache => {
+                  cache.put(event.request, responseToCache);
+                });
+              return fetchResponse;
+            });
+        })
+    );
+    return;
+  }
   
+  // For other resources, use a network-first strategy to ensure fresh content
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        // Cache hit - return the response from the cached version
-        if (response) {
-          return response;
-        }
+        // Clone the response to cache it
+        const responseToCache = response.clone();
         
-        // Not in cache - fetch from network
-        return fetch(event.request)
-          .then(response => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone the response since we need to use it twice
-            const responseToCache = response.clone();
-
-            // Add response to cache for future use
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
+        caches.open(CACHE_NAME)
+          .then(cache => {
+            cache.put(event.request, responseToCache);
           });
+          
+        return response;
       })
       .catch(() => {
-        // If both cache and network fail, show a generic fallback page
-        // You can customize this to show a nice offline page
-        return caches.match('/offline.html');
+        // If network fails, try the cache
+        return caches.match(event.request)
+          .then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            
+            // If the request is for a page, show the offline page
+            if (event.request.mode === 'navigate') {
+              return caches.match('/offline.html');
+            }
+            
+            return new Response('Resource not available offline');
+          });
       })
   );
 });
