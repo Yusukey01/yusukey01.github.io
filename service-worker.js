@@ -37,6 +37,13 @@ self.addEventListener('activate', event => {
 
 // Serve cached content when offline
 self.addEventListener('fetch', event => {
+  // Check if the request is being served over HTTPS
+  if (self.location.protocol === 'http:') {
+    // Redirect to HTTPS
+    const url = event.request.url.replace(/^http:\/\//i, 'https://');
+    event.respondWith(Response.redirect(url, 301));
+    return;
+  }
   event.respondWith(
     caches.match(event.request)
       .then(response => {
