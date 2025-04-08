@@ -8,7 +8,7 @@ const urlsToCache = [
   '/js/updateLog.js',
   '/offline.html',
   '/logo/logo_ver3.webp',
-  '/images/icon-1024x1024.png',
+  '/images/icon-512x512.png',
   '/manifest.json',
   
   // External resources - very important for icons
