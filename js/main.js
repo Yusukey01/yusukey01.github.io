@@ -193,4 +193,62 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    initCollapsibleIntro();
 });
+
+
+// Function to initialize collapsible introduction sections
+function initCollapsibleIntro() {
+    const introSections = document.querySelectorAll('.homepage-introduction');
+    
+    introSections.forEach(section => {
+        // Skip if already initialized
+        if (section.classList.contains('collapsible-intro')) return;
+        
+        // Add collapsible class and set initial state
+        section.classList.add('collapsible-intro', 'collapsed');
+        
+        // Create fade overlay
+        const fadeDiv = document.createElement('div');
+        fadeDiv.className = 'intro-fade';
+        section.appendChild(fadeDiv);
+        
+        // Create toggle button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'intro-toggle collapsed';
+        toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> <span>Read More</span>';
+        
+        // Insert button after the introduction section
+        section.parentNode.insertBefore(toggleBtn, section.nextSibling);
+        
+        // Store the full height for smooth transitions
+        const fullHeight = section.scrollHeight + 'px';
+        
+        // Set up click handler
+        toggleBtn.addEventListener('click', function() {
+            const isCollapsed = section.classList.contains('collapsed');
+            
+            // Toggle section state
+            section.classList.toggle('collapsed');
+            toggleBtn.classList.toggle('collapsed');
+            
+            // Update button text and height
+            if (isCollapsed) {
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> <span>Show Less</span>';
+                section.style.maxHeight = fullHeight;
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> <span>Read More</span>';
+                section.style.maxHeight = '';
+            }
+        });
+        
+        // Initialize max-height for animation to work properly
+        // We need to set it in JS for the transition to work
+        if (section.classList.contains('collapsed')) {
+            // Delay slightly to ensure CSS has been applied
+            setTimeout(() => {
+                section.style.maxHeight = '130px';
+            }, 10);
+        }
+    });
+}
