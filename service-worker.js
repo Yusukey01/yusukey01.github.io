@@ -4,6 +4,10 @@ const urlsToCache = [
   '/index.html',
   '/css/styles.css',
   '/js/main.js',
+  '/_includes/footer.html',
+  '/_includes/head.html',
+  '/_includes/header.html',
+
   // Add more URLs to your important assets, scripts, and pages
   // Example: '/about.html', '/contact.html', etc.
 ];
