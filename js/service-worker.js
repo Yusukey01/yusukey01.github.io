@@ -16,7 +16,7 @@ const APP_SHELL = [
   '/logo/logo_ver3.webp',
   '/images/maskable_icon_x512.png',
   '/images/maskable_icon_x1280.png',
-  '/images/icon-512x512.png',
+  '/images/icon_x512.png',
   '/manifest.json'
 ];
 
