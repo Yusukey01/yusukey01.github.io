@@ -84,21 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </div>
-    
-    <div class="explanation">
-      
-      <div class="explanation-grid">
-        <div>
-          <h4>Matrix Effects:</h4>
-          <ul>
-            <li><strong>Rotation:</strong> Rotates points around the origin</li>
-            <li><strong>Scaling:</strong> Stretches or shrinks space</li>
-            <li><strong>Reflection:</strong> Flips space across a line</li>
-            <li><strong>Shearing:</strong> Slants space in one direction</li>
-          </ul>
-        </div>
-      </div>
-    </div>
   `;
   
   // Add styles
