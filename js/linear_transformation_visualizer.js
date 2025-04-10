@@ -382,27 +382,30 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Drawing functions
   function drawGrid() {
-    const gridLines = canvasWidth / gridSize;
-    
     ctx.strokeStyle = '#ddd';
     ctx.lineWidth = 1;
+
+    const gridLines = canvasWidth / gridSize;
     
-    // Draw horizontal grid lines
-    for (let i = 0; i <= gridLines; i++) {
-      const y = i * gridSize;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvasWidth, y);
-      ctx.stroke();
+    // Calculate grid range based on canvas size
+    const maxGridCoord = Math.ceil(canvasWidth / (2 * gridSize));
+    
+    // Draw horizontal grid lines (correspond to integer y values)
+    for (let y = -maxGridCoord; y <= maxGridCoord; y++) {
+        const canvasY = canvasHeight / 2 - y * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(0, canvasY);
+        ctx.lineTo(canvasWidth, canvasY);
+        ctx.stroke();
     }
     
-    // Draw vertical grid lines
-    for (let i = 0; i <= gridLines; i++) {
-      const x = i * gridSize;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvasHeight);
-      ctx.stroke();
+    // Draw vertical grid lines (correspond to integer x values)
+    for (let x = -maxGridCoord; x <= maxGridCoord; x++) {
+        const canvasX = canvasWidth / 2 + x * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(canvasX, 0);
+        ctx.lineTo(canvasX, canvasHeight);
+        ctx.stroke();
     }
     
     // Draw x and y axes with thicker lines
@@ -438,9 +441,9 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let i = -Math.floor(gridLines/2); i <= Math.floor(gridLines/2); i++) {
       if (i === 0) continue; // Skip origin
       const y = canvasHeight / 2 - i * gridSize;
-      ctx.fillText((i).toString(), canvasWidth / 2 - 20, y);
+      ctx.fillText(i.toString(), canvasWidth / 2 - 20, y);
     }
-    
+
     // Origin label
     ctx.fillText('0', canvasWidth / 2 - 20, canvasHeight / 2 + 20);
   }
