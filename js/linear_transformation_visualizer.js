@@ -423,29 +423,6 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.moveTo(canvasWidth / 2, 0);
     ctx.lineTo(canvasWidth / 2, canvasHeight);
     ctx.stroke();
-    
-    // Add axis labels and numbers
-    ctx.fillStyle = '#333';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // x-axis labels
-    for (let i = -Math.floor(gridLines/2); i <= Math.floor(gridLines/2); i++) {
-      if (i === 0) continue; // Skip origin
-      const x = canvasWidth / 2 + i * gridSize;
-      ctx.fillText(i.toString(), x, canvasHeight / 2 + 20);
-    }
-    
-    // y-axis labels
-    for (let i = -Math.floor(gridLines/2); i <= Math.floor(gridLines/2); i++) {
-      if (i === 0) continue; // Skip origin
-      const y = canvasHeight / 2 - i * gridSize;
-      ctx.fillText(i.toString(), canvasWidth / 2 - 20, y);
-    }
-
-    // Origin label
-    ctx.fillText('0', canvasWidth / 2 - 20, canvasHeight / 2 + 20);
   }
   
   function drawShape(shapePoints, color = '#3498db', fillColor = 'rgba(52, 152, 219, 0.2)') {
