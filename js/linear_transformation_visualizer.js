@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="explanation">
       
       <div class="explanation-grid">
+        <div>
           <h4>Matrix Effects:</h4>
           <ul>
             <li><strong>Rotation:</strong> Rotates points around the origin</li>
