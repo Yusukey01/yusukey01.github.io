@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <label for="preset-transform">Preset Transformations:</label>
           <select id="preset-transform" class="full-width">
             <option value="identity">Identity (no change)</option>
-            <option value="rotate90">Rotate 90° clockwise</option>
+            <option value="rotate90CW">Rotate 90° clockwise</option>
+            <option value="rotate90CCW">Rotate 90° counterclockwise</option>
             <option value="rotate180">Rotate 180°</option>
             <option value="scale2">Scale by 2</option>
             <option value="scaleX">Scale X by 2</option>
@@ -333,7 +334,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Preset transformations
   const presetTransformations = {
     identity: [[1, 0], [0, 1]],
-    rotate90: [[0, -1], [1, 0]],
+    rotate90CW: [[0, 1], [-1, 0]],
+    rotate90CCW: [[0, -1], [1, 0]],
     rotate180: [[-1, 0], [0, -1]],
     scale2: [[2, 0], [0, 2]],
     scaleX: [[2, 0], [0, 1]],
