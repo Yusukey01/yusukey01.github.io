@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <p>• Determinant = 0: The transformation collapses space</p>
               <p>• Determinant greater than 0: Preserves orientation</p>
               <p>• Determinant less than 0: Reverses orientation</p>
-              <p>• |Determinant|: Area scale factor</p>
             </div>
           </div>
         </div>
@@ -86,20 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     
     <div class="explanation">
-      <h3>Understanding Linear Transformations</h3>
-      <p>A linear transformation preserves vector addition and scalar multiplication. When represented as a matrix, it shows how basis vectors are transformed.</p>
       
       <div class="explanation-grid">
-        <div>
-          <h4>Properties of Linear Transformations:</h4>
-          <ul>
-            <li>Origin remains fixed (maps to itself)</li>
-            <li>Straight lines remain straight</li>
-            <li>Parallel lines stay parallel</li>
-            <li>The ratio of lengths on the same line is preserved</li>
-          </ul>
-        </div>
-        <div>
           <h4>Matrix Effects:</h4>
           <ul>
             <li><strong>Rotation:</strong> Rotates points around the origin</li>
