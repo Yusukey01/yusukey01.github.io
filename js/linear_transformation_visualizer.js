@@ -79,8 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="legend">
           <div class="legend-item"><span class="legend-color original"></span> Original shape</div>
           <div class="legend-item"><span class="legend-color transformed"></span> Transformed shape</div>
-          <div class="legend-item"><span class="legend-color i-hat"></span> î unit vector (1,0) transformed</div>
-          <div class="legend-item"><span class="legend-color j-hat"></span> ĵ unit vector (0,1) transformed</div>
         </div>
       </div>
     </div>
@@ -482,36 +480,6 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.fillStyle = '#e74c3c';
       ctx.fill();
     }
-  }
-  
-  function drawBasisVectors() {
-    const i_hat = transformPoint([1, 0]);
-    const j_hat = transformPoint([0, 1]);
-    
-    // Draw i-hat
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    const origin = gridToCanvas([0, 0]);
-    const i_hat_point = gridToCanvas(i_hat);
-    ctx.moveTo(origin[0], origin[1]);
-    ctx.lineTo(i_hat_point[0], i_hat_point[1]);
-    ctx.stroke();
-    
-    // Draw j-hat
-    ctx.strokeStyle = '#9b59b6';
-    ctx.beginPath();
-    const j_hat_point = gridToCanvas(j_hat);
-    ctx.moveTo(origin[0], origin[1]);
-    ctx.lineTo(j_hat_point[0], j_hat_point[1]);
-    ctx.stroke();
-    
-    // Label basis vectors
-    ctx.font = 'bold 16px Arial';
-    ctx.fillStyle = '#2ecc71';
-    ctx.fillText('î', (origin[0] + i_hat_point[0]) / 2 + 10, (origin[1] + i_hat_point[1]) / 2 + 10);
-    ctx.fillStyle = '#9b59b6';
-    ctx.fillText('ĵ', (origin[0] + j_hat_point[0]) / 2 + 10, (origin[1] + j_hat_point[1]) / 2 + 10);
   }
   
   function drawCanvas() {
