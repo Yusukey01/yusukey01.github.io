@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let i = -Math.floor(gridLines/2); i <= Math.floor(gridLines/2); i++) {
       if (i === 0) continue; // Skip origin
       const y = canvasHeight / 2 - i * gridSize;
-      ctx.fillText((-i).toString(), canvasWidth / 2 - 20, y);
+      ctx.fillText((i).toString(), canvasWidth / 2 - 20, y);
     }
     
     // Origin label
