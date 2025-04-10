@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
     square: [[1, 1], [5, 1], [5, 5], [1, 5]],
     triangle: [[3, 6], [0, 1], [6, 1]],
     rectangle: [[1, 2], [7, 2], [7, 5], [1, 5]],
-    pentagon: [[4, 1], [6.85, 3.07], [5.76, 6.43], [2.24, 6.43], [1.15, 3.07]]
+    pentagon: [[4, 7], [1.15, 4.93], [2.24, 1.57], [5.76, 1.57], [6.85, 4.93]]
   };
   
   // Current shape
