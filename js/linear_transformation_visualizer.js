@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const canvasWidth = 600;
   const canvasHeight = 600;
-  const gridSize = 40;
+  const gridSize = 25;
   
   // Get DOM elements
   const presetSelect = document.getElementById('preset-transform');
