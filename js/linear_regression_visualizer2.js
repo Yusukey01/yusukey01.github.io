@@ -541,10 +541,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Grid helper
         const gridHelper = new THREE.GridHelper(1, 10);
-        gridHelper.rotation.x = Math.PI / 2;
+        // Make grid horizontal (x-z plane for ground)
         gridHelper.position.set(0.5, 0, 0.5);
         scene.add(gridHelper);
-        
         // Axes
         addAxes();
         
