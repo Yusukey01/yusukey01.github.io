@@ -72,29 +72,18 @@ document.addEventListener('DOMContentLoaded', function() {
           </ol>
         </div>
       </div>
-
-      <div class="canvas-container">
-        <div class="instruction">Click on the plot area to add data points</div>
-        <canvas id="regression-canvas" width="600" height="400"></canvas>
-        <div class="legend">
-          <div class="legend-item"><span class="legend-color data"></span> Data points</div>
-          <div class="legend-item"><span class="legend-color regression"></span> Regression line</div>
-          <div class="legend-item"><span class="legend-color residual"></span> Residuals</div>
-        </div>
-      </div>
     </div>
     
-    <div class="learning-notes">
-      <h3>Learning Notes:</h3>
-      <p>This interactive demo illustrates key concepts from the least-squares and linear regression sections:</p>
-      <ul>
-        <li>Linear regression finds coefficients (β) that minimize the sum of squared residuals</li>
-        <li>The normal equation (X<sup>T</sup>X)β = X<sup>T</sup>y solves for these optimal coefficients</li>
-        <li>Polynomial regression is still "linear" in terms of parameters, as explained in your notes</li>
-        <li>Residuals represent the difference between observed and predicted values</li>
-        <li>MSE (Mean Squared Error) and MAE (Mean Absolute Error) quantify model performance</li>
-      </ul>
+    <div class="canvas-container">
+      <div class="instruction">Click on the plot area to add data points</div>
+      <canvas id="regression-canvas" width="600" height="400"></canvas>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-color data"></span> Data points</div>
+        <div class="legend-item"><span class="legend-color regression"></span> Regression line</div>
+        <div class="legend-item"><span class="legend-color residual"></span> Residuals</div>
+      </div>
     </div>
+      
   `;
   
   // Add styles
