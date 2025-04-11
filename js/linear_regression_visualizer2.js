@@ -1308,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', function() {
             surfaceGeometry.computeVertexNormals();
             
             const surfaceMaterial = new THREE.MeshStandardMaterial({
-              color: 0xe74c3c,
+              color: 0xff0000,
               side: THREE.DoubleSide,
               transparent: true,
               opacity: 0.7,
