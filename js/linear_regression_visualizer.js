@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <ul>
           <li>Linear regression finds coefficients (β) that minimize the sum of squared residuals</li>
           <li>The normal equation (X<sup>T</sup>X)β = X<sup>T</sup>y solves for these optimal coefficients</li>
-          <li>Polynomial regression is still "linear" in terms of parameters, as explained in your notes</li>
+          <li>Polynomial regression is still "linear" in terms of parameters.</li>
           <li>Residuals represent the difference between observed and predicted values</li>
           <li>MSE (Mean Squared Error) and MAE (Mean Absolute Error) quantify model performance</li>
         </ul>

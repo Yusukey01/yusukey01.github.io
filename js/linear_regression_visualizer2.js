@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <ol>
                 <li>Toggle between 2D (one feature) and 3D (two features) modes</li>
                 <li>Select a polynomial degree (higher degrees can fit more complex patterns)</li>
+                <li>While 3D mode is limited to quadratic models, the same principles extend to higher dimensions</li>
                 <li>Use the example datasets or add your own points by clicking on the plot</li>
                 <li>Toggle "Show Residuals" to visualize the error between actual and predicted values</li>
                 <li>Observe how the best-fit curve/surface and error metrics change</li>
@@ -101,9 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li>Linear regression finds coefficients (β) that minimize the sum of squared residuals</li>
                 <li>The normal equation (X<sup>T</sup>X)β = X<sup>T</sup>y solves for these optimal coefficients</li>
                 <li>In 3D mode, we're using a fixed quadratic model with two features (x,y)</li>
-                <li>While 3D mode is limited to quadratic models, the same principles extend to higher dimensions</li>
                 <li>Real machine learning applications often use many features (4D, 5D, or more) even though we can't visualize them</li>
-                <li>Polynomial regression is still "linear" in terms of parameters, as explained in your notes</li>
+                <li>Polynomial regression is still "linear" in terms of parameters</li>
                 <li>MSE (Mean Squared Error) and MAE (Mean Absolute Error) quantify model performance</li>
             </ul>
         </div>
