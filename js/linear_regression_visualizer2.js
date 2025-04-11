@@ -552,11 +552,33 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       function addAxes() {
-        // Create axes
-        const axesHelper = new THREE.AxesHelper(1);
-        axesHelper.position.set(0, 0, 0);
-        scene.add(axesHelper);
+        // Create custom black axes
+        const material = new THREE.LineBasicMaterial({ color: 0x000000 });
         
+        // X-axis
+        const xPoints = [];
+        xPoints.push(new THREE.Vector3(0, 0, 0));
+        xPoints.push(new THREE.Vector3(1, 0, 0));
+        const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
+        const xAxis = new THREE.Line(xGeometry, material);
+        scene.add(xAxis);
+        
+        // Y-axis
+        const yPoints = [];
+        yPoints.push(new THREE.Vector3(0, 0, 0));
+        yPoints.push(new THREE.Vector3(0, 1, 0));
+        const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
+        const yAxis = new THREE.Line(yGeometry, material);
+        scene.add(yAxis);
+        
+        // Z-axis
+        const zPoints = [];
+        zPoints.push(new THREE.Vector3(0, 0, 0));
+        zPoints.push(new THREE.Vector3(0, 0, 1));
+        const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
+        const zAxis = new THREE.Line(zGeometry, material);
+        scene.add(zAxis);
+                
         // X-axis label
         addLabel('X', 1.1, 0, 0);
         
