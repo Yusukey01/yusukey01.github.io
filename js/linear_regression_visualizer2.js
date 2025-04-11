@@ -539,11 +539,6 @@ document.addEventListener('DOMContentLoaded', function() {
         directionalLight.position.set(1, 1, 1);
         scene.add(directionalLight);
         
-        // Grid helper
-        const gridHelper = new THREE.GridHelper(1, 10);
-        // Make grid horizontal (x-z plane for ground)
-        gridHelper.position.set(0.5, 0, 0.5);
-        scene.add(gridHelper);
         // Axes
         addAxes();
         
