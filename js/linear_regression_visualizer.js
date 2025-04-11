@@ -1,5 +1,5 @@
 // linear_regression_visualizer.js
-// A vanilla JavaScript implementation of the Linear Regression Visualizer
+// An improved vanilla JavaScript implementation of the Linear Regression Visualizer
 
 document.addEventListener('DOMContentLoaded', function() {
   // Get the container element
@@ -13,86 +13,88 @@ document.addEventListener('DOMContentLoaded', function() {
   // Create HTML structure
   container.innerHTML = `
     <div class="visualizer-container">
-      <div class="controls-panel">
-        <div class="control-group">
-          <label for="polynomial-degree">Polynomial Degree:</label>
-          <select id="polynomial-degree" class="full-width">
-            <option value="1">Linear (Degree 1)</option>
-            <option value="2">Quadratic (Degree 2)</option>
-            <option value="3">Cubic (Degree 3)</option>
-            <option value="4">Quartic (Degree 4)</option>
-          </select>
-        </div>
-        
-        <div class="control-group">
-          <label for="error-metric">Error Metric:</label>
-          <select id="error-metric" class="full-width">
-            <option value="mse">Mean Squared Error (MSE)</option>
-            <option value="mae">Mean Absolute Error (MAE)</option>
-          </select>
-        </div>
-        
-        <div class="toggle-group">
-          <label class="toggle-control">
-            <input type="checkbox" id="show-residuals" checked>
-            <span class="toggle-label">Show Residuals</span>
-          </label>
-          
-          <label class="toggle-control">
-            <input type="checkbox" id="show-equation" checked>
-            <span class="toggle-label">Show Equation</span>
-          </label>
-        </div>
-        
-        <div class="example-datasets">
-          <label>Example Datasets:</label>
-          <div class="dataset-buttons">
-            <button id="linear-data" class="dataset-btn">Linear</button>
-            <button id="quadratic-data" class="dataset-btn">Quadratic</button>
-            <button id="cubic-data" class="dataset-btn">Cubic</button>
-            <button id="sinusoidal-data" class="dataset-btn">Sinusoidal</button>
-            <button id="clear-data" class="clear-btn">Clear</button>
+      <div class="visualizer-layout">
+        <div class="canvas-container">
+          <div class="instruction">Click on the plot area to add data points</div>
+          <canvas id="regression-canvas" width="800" height="500"></canvas>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-color data"></span> Data points</div>
+            <div class="legend-item"><span class="legend-color regression"></span> Regression line</div>
+            <div class="legend-item"><span class="legend-color residual"></span> Residuals</div>
           </div>
         </div>
         
-        <div class="equation-display" id="equation-container">
-          <div class="equation-title">Best Fit Equation:</div>
-          <div id="regression-equation" class="equation">y = 0</div>
-          <div id="error-value" class="error-metric">MSE: 0.0000</div>
-        </div>
-        
-      <div class="how-to-use">
-          <h3>How to use this demo:</h3>
-          <ol>
-            <li>Select a polynomial degree (higher degrees can fit more complex patterns)</li>
-            <li>Use the example datasets or add your own points by clicking on the graph</li>
-            <li>Toggle "Show Residuals" to visualize the error between actual and predicted values</li>
-            <li>Observe how the best-fit line or curve and error metrics change as you add or remove points</li>
-            <li>Try different degrees with the same data to see the effect of overfitting</li>
-          </ol>
+        <div class="controls-panel">
+          <div class="control-group">
+            <label for="polynomial-degree">Polynomial Degree:</label>
+            <select id="polynomial-degree" class="full-width">
+              <option value="1">Linear (Degree 1)</option>
+              <option value="2">Quadratic (Degree 2)</option>
+              <option value="3">Cubic (Degree 3)</option>
+              <option value="4">Quartic (Degree 4)</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="error-metric">Error Metric:</label>
+            <select id="error-metric" class="full-width">
+              <option value="mse">Mean Squared Error (MSE)</option>
+              <option value="mae">Mean Absolute Error (MAE)</option>
+            </select>
+          </div>
+          
+          <div class="toggle-group">
+            <label class="toggle-control">
+              <input type="checkbox" id="show-residuals" checked>
+              <span class="toggle-label">Show Residuals</span>
+            </label>
+            
+            <label class="toggle-control">
+              <input type="checkbox" id="show-equation" checked>
+              <span class="toggle-label">Show Equation</span>
+            </label>
+          </div>
+          
+          <div class="equation-display" id="equation-container">
+            <div class="equation-title">Best Fit Equation:</div>
+            <div id="regression-equation" class="equation">y = 0</div>
+            <div id="error-value" class="error-metric">MSE: 0.0000</div>
+          </div>
+          
+          <div class="example-datasets">
+            <label>Example Datasets:</label>
+            <div class="dataset-buttons">
+              <button id="linear-data" class="dataset-btn">Linear</button>
+              <button id="quadratic-data" class="dataset-btn">Quadratic</button>
+              <button id="cubic-data" class="dataset-btn">Cubic</button>
+              <button id="sinusoidal-data" class="dataset-btn">Sinusoidal</button>
+              <button id="clear-data" class="clear-btn">Clear</button>
+            </div>
+          </div>
+          
+          <div class="how-to-use">
+            <h3>How to use this demo:</h3>
+            <ol>
+              <li>Select a polynomial degree (higher degrees can fit more complex patterns)</li>
+              <li>Use the example datasets or add your own points by clicking on the graph</li>
+              <li>Toggle "Show Residuals" to visualize the error between actual and predicted values</li>
+              <li>Observe how the best-fit line or curve and error metrics change as you add or remove points</li>
+              <li>Try different degrees with the same data to see the effect of overfitting</li>
+            </ol>
+          </div>
         </div>
       </div>
-
-      <div class="canvas-container">
-        <div class="instruction">Click on the plot area to add data points</div>
-        <canvas id="regression-canvas" width="600" height="400"></canvas>
-        <div class="legend">
-          <div class="legend-item"><span class="legend-color data"></span> Data points</div>
-          <div class="legend-item"><span class="legend-color regression"></span> Regression line</div>
-          <div class="legend-item"><span class="legend-color residual"></span> Residuals</div>
-        </div>
+      
+      <div class="learning-notes">
+        <h3>Side Notes:</h3>
+        <ul>
+          <li>Linear regression finds coefficients (β) that minimize the sum of squared residuals</li>
+          <li>The normal equation (X<sup>T</sup>X)β = X<sup>T</sup>y solves for these optimal coefficients</li>
+          <li>Polynomial regression is still "linear" in terms of parameters, as explained in your notes</li>
+          <li>Residuals represent the difference between observed and predicted values</li>
+          <li>MSE (Mean Squared Error) and MAE (Mean Absolute Error) quantify model performance</li>
+        </ul>
       </div>
-    </div>
-    
-    <div class="learning-notes">
-      <h3>Side Notes:</h3>
-      <ul>
-        <li>Linear regression finds coefficients (β) that minimize the sum of squared residuals</li>
-        <li>The normal equation (X<sup>T</sup>X)β = X<sup>T</sup>y solves for these optimal coefficients</li>
-        <li>Polynomial regression is still "linear" in terms of parameters, as explained in your notes</li>
-        <li>Residuals represent the difference between observed and predicted values</li>
-        <li>MSE (Mean Squared Error) and MAE (Mean Absolute Error) quantify model performance</li>
-      </ul>
     </div>
   `;
   
@@ -100,15 +102,29 @@ document.addEventListener('DOMContentLoaded', function() {
   const styleElement = document.createElement('style');
   styleElement.textContent = `
     .visualizer-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
       margin-bottom: 20px;
     }
     
+    .visualizer-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    /* Canvas first on mobile, controls second */
     @media (min-width: 992px) {
-      .visualizer-container {
+      .visualizer-layout {
         flex-direction: row;
+      }
+      
+      .canvas-container {
+        flex: 3;
+        order: 1;
+      }
+      
+      .controls-panel {
+        flex: 2;
+        order: 2;
       }
     }
     
@@ -116,12 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
       background-color: #f8f9fa;
       padding: 15px;
       border-radius: 8px;
-      flex: 1;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
     
     .canvas-container {
-      flex: 2;
       display: flex;
       flex-direction: column;
     }
@@ -145,8 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .toggle-group {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-wrap: wrap;
+      gap: 15px;
       margin-bottom: 20px;
     }
     
@@ -174,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      margin-bottom: 10px;
     }
     
     .dataset-btn, .clear-btn {
@@ -241,38 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
       display: inline-block;
     }
     
-    .button-group {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .primary-btn, .secondary-btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    
-    .primary-btn {
-      background-color: #3498db;
-      color: white;
-    }
-    
-    .secondary-btn {
-      background-color: #6c757d;
-      color: white;
-    }
-    
-    .primary-btn:hover {
-      background-color: #2980b9;
-    }
-    
-    .secondary-btn:hover {
-      background-color: #5a6268;
-    }
-    
     .instruction {
       text-align: center;
       margin-bottom: 10px;
@@ -287,6 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
       max-width: 100%;
       height: auto;
       cursor: crosshair;
+      touch-action: manipulation;
     }
     
     .legend {
@@ -296,6 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
       font-size: 0.9rem;
       color: #666;
       justify-content: center;
+      flex-wrap: wrap;
     }
     
     .legend-item {
@@ -323,6 +308,31 @@ document.addEventListener('DOMContentLoaded', function() {
       background-color: #2ecc71;
     }
     
+    .how-to-use {
+      background-color: #f4f8f9;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      margin-bottom: 20px;
+    }
+    
+    .how-to-use h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      color: #2c3e50;
+    }
+    
+    .how-to-use ol {
+      padding-left: 20px;
+      margin-bottom: 0;
+      font-size: 0.9rem;
+    }
+    
+    .how-to-use li {
+      margin-bottom: 5px;
+    }
+    
     .learning-notes {
       background-color: #f0f7ff;
       padding: 15px;
@@ -337,10 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
       color: #2c3e50;
     }
     
-    .learning-notes p {
-      margin-bottom: 10px;
-    }
-    
     .learning-notes ul {
       padding-left: 20px;
       margin-bottom: 0;
@@ -350,27 +356,45 @@ document.addEventListener('DOMContentLoaded', function() {
       margin-bottom: 5px;
     }
     
+    /* Mobile specific styles */
     @media (max-width: 768px) {
-      .button-group, .toggle-group, .dataset-buttons {
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
-      
       .dataset-btn, .clear-btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
+        padding: 10px 12px; /* Larger touch targets on mobile */
+        font-size: 1rem;
       }
       
       .equation {
         font-size: 0.9rem;
       }
       
-      .error-metric {
-        font-size: 0.8rem;
+      .toggle-group {
+        flex-direction: column;
+        gap: 10px;
       }
       
-      .legend {
-        flex-wrap: wrap;
+      .toggle-control {
+        padding: 8px 0;
+      }
+      
+      /* Make checkboxes larger on mobile */
+      .toggle-control input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+      }
+      
+      .toggle-label {
+        font-size: 1rem;
+      }
+      
+      /* Ensure better spacing on small screens */
+      .canvas-container {
+        margin-bottom: 15px;
+      }
+      
+      /* Make dropdown selects larger for touch */
+      .full-width {
+        padding: 12px;
+        font-size: 16px;
       }
     }
   `;
@@ -383,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
-  const padding = 40;
+  const padding = 50; // Increased padding to make the graph area clearer
   
   // Points array to store data
   let points = [];
@@ -404,8 +428,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const cubicDataBtn = document.getElementById('cubic-data');
   const sinusoidalDataBtn = document.getElementById('sinusoidal-data');
   const clearDataBtn = document.getElementById('clear-data');
-  
-  const resetBtn = document.getElementById('reset-btn');
   
   // Helper functions
   function dataToCanvas(point) {
@@ -656,9 +678,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (i % 2 === 0) {
         const label = (i / 10).toFixed(1);
         ctx.fillStyle = '#666';
-        ctx.font = '10px Arial';
+        ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(label, x, canvasHeight - padding + 15);
+        ctx.fillText(label, x, canvasHeight - padding + 20);
       }
     }
     
@@ -674,9 +696,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (i % 2 === 0) {
         const label = (i / 10).toFixed(1);
         ctx.fillStyle = '#666';
-        ctx.font = '10px Arial';
+        ctx.font = '12px Arial';
         ctx.textAlign = 'right';
-        ctx.fillText(label, padding - 5, y + 3);
+        ctx.fillText(label, padding - 10, y + 4);
       }
     }
     
@@ -698,11 +720,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Axis labels
     ctx.fillStyle = '#333';
-    ctx.font = '12px Arial';
+    ctx.font = '14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('X', canvasWidth - padding + 15, canvasHeight - padding + 15);
+    ctx.fillText('X', canvasWidth - padding + 25, canvasHeight - padding + 25);
     ctx.textAlign = 'right';
-    ctx.fillText('Y', padding - 15, padding - 10);
+    ctx.fillText('Y', padding - 20, padding - 15);
   }
   
   function drawPoints() {
@@ -713,7 +735,7 @@ document.addEventListener('DOMContentLoaded', function() {
     points.forEach(point => {
       const canvasPoint = dataToCanvas(point);
       ctx.beginPath();
-      ctx.arc(canvasPoint.x, canvasPoint.y, 5, 0, Math.PI * 2);
+      ctx.arc(canvasPoint.x, canvasPoint.y, 6, 0, Math.PI * 2); // Larger points for better visibility
       ctx.fill();
       ctx.stroke();
     });
@@ -723,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!regression) return;
     
     ctx.strokeStyle = '#e74c3c';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     
     const degree = parseInt(degreeSelect.value);
@@ -757,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!regression || !showResidualsCheckbox.checked) return;
     
     ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     
     points.forEach((point, index) => {
       const canvasPoint = dataToCanvas(point);
@@ -847,8 +869,44 @@ document.addEventListener('DOMContentLoaded', function() {
     drawCanvas();
   }
   
+  // Handle touch events for mobile devices
+  function handleTouchStart(e) {
+    e.preventDefault(); // Prevent scrolling when touching the canvas
+    
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const touchX = (touch.clientX - rect.left) * scaleX;
+    const touchY = (touch.clientY - rect.top) * scaleY;
+    
+    // Convert canvas coordinates to data coordinates
+    const dataPoint = canvasToData(touchX, touchY);
+    
+    // Ensure point is within bounds
+    if (dataPoint.x >= 0 && dataPoint.x <= 1 && dataPoint.y >= 0 && dataPoint.y <= 1) {
+      points.push(dataPoint);
+      
+      // Reset active dataset when manually adding points
+      activeDataset = null;
+      document.querySelectorAll('.dataset-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Calculate regression with new point
+      calculateRegression();
+      
+      // Redraw canvas
+      drawCanvas();
+    }
+  }
+  
   // Add event listeners
   canvas.addEventListener('click', handleCanvasClick);
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+  
   degreeSelect.addEventListener('change', handleDegreeChange);
   errorMetricSelect.addEventListener('change', handleErrorMetricChange);
   showResidualsCheckbox.addEventListener('change', handleShowResidualsChange);
@@ -859,8 +917,6 @@ document.addEventListener('DOMContentLoaded', function() {
   cubicDataBtn.addEventListener('click', () => generateDataset('cubic'));
   sinusoidalDataBtn.addEventListener('click', () => generateDataset('sinusoidal'));
   clearDataBtn.addEventListener('click', handleResetClick);
-  
-  resetBtn.addEventListener('click', handleResetClick);
   
   // Handle window resize to make canvas responsive
   function handleResize() {
@@ -878,6 +934,6 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('resize', handleResize);
   handleResize();
   
-  // Initialize canvas
-  drawGrid();
+  // Initialize canvas with example data
+  generateDataset('linear');
 });
