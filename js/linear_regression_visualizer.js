@@ -61,12 +61,18 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="error-value" class="error-metric">MSE: 0.0000</div>
         </div>
         
-        <div class="button-group">
-          <button id="fit-btn" class="primary-btn">Fit Regression</button>
-          <button id="reset-btn" class="secondary-btn">Reset</button>
+      <div class="how-to-use">
+          <h3>How to use this demo:</h3>
+          <ol>
+            <li>Select a polynomial degree (higher degrees can fit more complex patterns)</li>
+            <li>Use the example datasets or add your own points by clicking on the graph</li>
+            <li>Toggle "Show Residuals" to visualize the error between actual and predicted values</li>
+            <li>Observe how the best-fit line or curve and error metrics change as you add or remove points</li>
+            <li>Try different degrees with the same data to see the effect of overfitting</li>
+          </ol>
         </div>
       </div>
-      
+
       <div class="canvas-container">
         <div class="instruction">Click on the plot area to add data points</div>
         <canvas id="regression-canvas" width="600" height="400"></canvas>
@@ -400,7 +406,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const sinusoidalDataBtn = document.getElementById('sinusoidal-data');
   const clearDataBtn = document.getElementById('clear-data');
   
-  const fitBtn = document.getElementById('fit-btn');
   const resetBtn = document.getElementById('reset-btn');
   
   // Helper functions
@@ -856,7 +861,6 @@ document.addEventListener('DOMContentLoaded', function() {
   sinusoidalDataBtn.addEventListener('click', () => generateDataset('sinusoidal'));
   clearDataBtn.addEventListener('click', handleResetClick);
   
-  fitBtn.addEventListener('click', calculateRegression);
   resetBtn.addEventListener('click', handleResetClick);
   
   // Handle window resize to make canvas responsive
