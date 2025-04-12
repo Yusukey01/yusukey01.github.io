@@ -169,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
       scene.background = new THREE.Color(0xf8f9fa);
       // Inside the initializeVisualization function, find the scene setup section
 
-// Create axes - replace the existing axesHelper code with this
 // Create custom black axes instead of the colored ones
 function createAxis(p1, p2, color) {
     const material = new THREE.LineBasicMaterial({ color: color });
@@ -181,7 +180,7 @@ function createAxis(p1, p2, color) {
     line.userData.isAxis = true; // Mark this as an axis for easy identification
     return line;
   }
-  
+
   scene.children.forEach(child => {
     if (child instanceof THREE.Line && child.userData.isAxis) {
       scene.remove(child);
