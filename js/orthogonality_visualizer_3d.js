@@ -177,11 +177,16 @@ function createAxis(p1, p2, color) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute([
       p1.x, p1.y, p1.z, p2.x, p2.y, p2.z
     ], 3));
-    return new THREE.Line(geometry, material);
+    const line = new THREE.Line(geometry, material);
+    line.userData.isAxis = true; // Mark this as an axis for easy identification
+    return line;
   }
   
-  // Remove existing axesHelper
-  if (axesHelper) scene.remove(axesHelper);
+  scene.children.forEach(child => {
+    if (child instanceof THREE.Line && child.userData.isAxis) {
+      scene.remove(child);
+    }
+  });
   
   // X axis - black
   scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5, 0, 0), 0x000000));
