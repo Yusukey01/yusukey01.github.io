@@ -122,83 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
       initializeVisualization();
     }
     
-    function generateRandomVectors(count) {
-        // Clear previous vectors
-        gramSchmidtVectors = [];
-        orthogonalVectors = [];
-        gramSchmidtStep = 0;
-        
-        // Generate random vectors
-        for (let i = 0; i < count; i++) {
-          gramSchmidtVectors.push({
-            x: Math.random() * 4 - 2, // Range: -2 to 2
-            y: Math.random() * 4 - 2,
-            z: Math.random() * 4 - 2
-          });
-        }
-        
-        updateGramSchmidtDemo();
-      }
       
-      function gramSchmidtProcess() {
-        // Perform one step of the Gram-Schmidt process
-        if (orthogonalVectors.length >= gramSchmidtVectors.length) {
-          // Process is complete
-          return;
-        }
-        
-        // Increment step counter
-        gramSchmidtStep++;
-        
-        const currentVector = gramSchmidtVectors[orthogonalVectors.length];
-        
-        if (orthogonalVectors.length === 0) {
-          // First vector is just normalized
-          orthogonalVectors.push({
-            x: currentVector.x,
-            y: currentVector.y,
-            z: currentVector.z
-          });
-        } else {
-          // Calculate projections onto all previous orthogonal vectors
-          let result = { x: currentVector.x, y: currentVector.y, z: currentVector.z };
-          
-          orthogonalVectors.forEach(v => {
-            // Calculate projection
-            const projection = projectVector(currentVector, v);
-            
-            // Subtract from the result
-            result = vectorSubtract(result, projection);
-          });
-          
-          // Add the new orthogonal vector
-          if (magnitude(result) > 0.01) {
-            orthogonalVectors.push(result);
-          } else {
-            // Handle linear dependency case - generate a random perpendicular vector
-            // This is a simplified approach for the visualization
-            const perpVector = {
-              x: Math.random() * 4 - 2,
-              y: Math.random() * 4 - 2,
-              z: Math.random() * 4 - 2
-            };
-            
-            // Make it orthogonal to all existing vectors
-            let orthoVector = perpVector;
-            orthogonalVectors.forEach(v => {
-              const proj = projectVector(orthoVector, v);
-              orthoVector = vectorSubtract(orthoVector, proj);
-            });
-            
-            if (magnitude(orthoVector) > 0.01) {
-              orthogonalVectors.push(orthoVector);
-            }
-          }
-        }
-        
-        updateGramSchmidtDemo();
-    }
-
     function initializeVisualization() {
       // Wait for OrbitControls to load
       if (!THREE.OrbitControls) {
@@ -960,5 +884,82 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDemoType();
         animate();
         updateDemoType();       
+
+        function generateRandomVectors(count) {
+            // Clear previous vectors
+            gramSchmidtVectors = [];
+            orthogonalVectors = [];
+            gramSchmidtStep = 0;
+            
+            // Generate random vectors
+            for (let i = 0; i < count; i++) {
+              gramSchmidtVectors.push({
+                x: Math.random() * 4 - 2, // Range: -2 to 2
+                y: Math.random() * 4 - 2,
+                z: Math.random() * 4 - 2
+              });
+            }
+            
+            updateGramSchmidtDemo();
+          }
+          
+          function gramSchmidtProcess() {
+            // Perform one step of the Gram-Schmidt process
+            if (orthogonalVectors.length >= gramSchmidtVectors.length) {
+              // Process is complete
+              return;
+            }
+            
+            // Increment step counter
+            gramSchmidtStep++;
+            
+            const currentVector = gramSchmidtVectors[orthogonalVectors.length];
+            
+            if (orthogonalVectors.length === 0) {
+              // First vector is just normalized
+              orthogonalVectors.push({
+                x: currentVector.x,
+                y: currentVector.y,
+                z: currentVector.z
+              });
+            } else {
+              // Calculate projections onto all previous orthogonal vectors
+              let result = { x: currentVector.x, y: currentVector.y, z: currentVector.z };
+              
+              orthogonalVectors.forEach(v => {
+                // Calculate projection
+                const projection = projectVector(currentVector, v);
+                
+                // Subtract from the result
+                result = vectorSubtract(result, projection);
+              });
+              
+              // Add the new orthogonal vector
+              if (magnitude(result) > 0.01) {
+                orthogonalVectors.push(result);
+              } else {
+                // Handle linear dependency case - generate a random perpendicular vector
+                // This is a simplified approach for the visualization
+                const perpVector = {
+                  x: Math.random() * 4 - 2,
+                  y: Math.random() * 4 - 2,
+                  z: Math.random() * 4 - 2
+                };
+                
+                // Make it orthogonal to all existing vectors
+                let orthoVector = perpVector;
+                orthogonalVectors.forEach(v => {
+                  const proj = projectVector(orthoVector, v);
+                  orthoVector = vectorSubtract(orthoVector, proj);
+                });
+                
+                if (magnitude(orthoVector) > 0.01) {
+                  orthogonalVectors.push(orthoVector);
+                }
+              }
+            }
+            
+            updateGramSchmidtDemo();
+          }
     } // Close initializeVisualization function
 }); 
