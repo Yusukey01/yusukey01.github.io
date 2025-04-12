@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Inside the initializeVisualization function, find the scene setup section
 
 // Create custom black axes instead of the colored ones
+// Create custom black axes
 function createAxis(p1, p2, color) {
     const material = new THREE.LineBasicMaterial({ color: color });
     const geometry = new THREE.BufferGeometry();
@@ -177,67 +178,89 @@ function createAxis(p1, p2, color) {
       p1.x, p1.y, p1.z, p2.x, p2.y, p2.z
     ], 3));
     const line = new THREE.Line(geometry, material);
-    line.userData.isAxis = true; // Mark this as an axis for easy identification
+    line.userData.isAxis = true;
     return line;
   }
-
-  scene.children.forEach(child => {
-    if (child instanceof THREE.Line && child.userData.isAxis) {
-      scene.remove(child);
-    }
-  });
   
-  // X axis - black
+  // Add black axes
   scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5, 0, 0), 0x000000));
-  // Y axis - black
   scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 0), 0x000000));
-  // Z axis - black
   scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 5), 0x000000));
   
-  // Create XY, YZ and XZ planes - add this after the axes code
+  // Create gridded planes with transparency
+  function createGriddedPlane(color, rotationAxis, rotationAngle) {
+    const group = new THREE.Group();
+    
+    // Create the semi-transparent colored plane
+    const planeGeometry = new THREE.PlaneGeometry(10, 10);
+    const planeMaterial = new THREE.MeshBasicMaterial({ 
+      color: color, 
+      transparent: true, 
+      opacity: 0.1,
+      side: THREE.DoubleSide
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    group.add(plane);
+    
+    // Create grid lines on the plane
+    const gridSize = 10;
+    const divisions = 10;
+    const spacing = gridSize / divisions;
+    const gridMaterial = new THREE.LineBasicMaterial({ 
+      color: color, 
+      transparent: true, 
+      opacity: 0.3
+    });
+    
+    // Create horizontal grid lines
+    for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
+      const lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+        -gridSize/2, i, 0, 
+        gridSize/2, i, 0
+      ], 3));
+      const line = new THREE.Line(lineGeometry, gridMaterial);
+      group.add(line);
+    }
+    
+    // Create vertical grid lines
+    for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
+      const lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+        i, -gridSize/2, 0, 
+        i, gridSize/2, 0
+      ], 3));
+      const line = new THREE.Line(lineGeometry, gridMaterial);
+      group.add(line);
+    }
+    
+    // Apply rotation if specified
+    if (rotationAxis && rotationAngle !== undefined) {
+      if (rotationAxis === 'x') {
+        group.rotation.x = rotationAngle;
+      } else if (rotationAxis === 'y') {
+        group.rotation.y = rotationAngle;
+      } else if (rotationAxis === 'z') {
+        group.rotation.z = rotationAngle;
+      }
+    }
+    
+    return group;
+  }
+  
+  // Create and add the three gridded planes
   // XY Plane (blue)
-  const xyPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-  const xyPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    color: 0x2196f3, 
-    transparent: true, 
-    opacity: 0.2,
-    side: THREE.DoubleSide
-  });
-  const xyPlane = new THREE.Mesh(xyPlaneGeometry, xyPlaneMaterial);
-  xyPlane.position.set(0, 0, 0);
+  const xyPlane = createGriddedPlane(0x2196f3);
   scene.add(xyPlane);
   
   // YZ Plane (red)
-  const yzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-  const yzPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    color: 0xf44336, 
-    transparent: true, 
-    opacity: 0.2,
-    side: THREE.DoubleSide
-  });
-  const yzPlane = new THREE.Mesh(yzPlaneGeometry, yzPlaneMaterial);
-  yzPlane.position.set(0, 0, 0);
-  yzPlane.rotation.y = Math.PI / 2;
+  const yzPlane = createGriddedPlane(0xf44336, 'y', Math.PI / 2);
   scene.add(yzPlane);
   
   // XZ Plane (green)
-  const xzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-  const xzPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    color: 0x4caf50, 
-    transparent: true, 
-    opacity: 0.2,
-    side: THREE.DoubleSide
-  });
-  const xzPlane = new THREE.Mesh(xzPlaneGeometry, xzPlaneMaterial);
-  xzPlane.position.set(0, 0, 0);
-  xzPlane.rotation.x = Math.PI / 2;
+  const xzPlane = createGriddedPlane(0x4caf50, 'x', Math.PI / 2);
   scene.add(xzPlane);
-  
-  // Remove or comment out the existing gridHelper
-  // const gridHelper = new THREE.GridHelper(10, 10);
-  // gridHelper.rotation.x = Math.PI / 2;
-  // scene.add(gridHelper);
-  
+
   // Update the axis labels to use black color
   function createAxisLabels() {
     // Remove existing labels if any
