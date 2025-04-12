@@ -1039,6 +1039,15 @@ document.addEventListener('DOMContentLoaded', function() {
       drawCanvas();
     });
     
-    // Initialize the canvas
+    // Initialize
     updateDemoType();
+    
+    // Make sure the reset button for projection mode is properly connected
+    const projectionResetBtn = document.getElementById('projection-reset-btn');
+    if (projectionResetBtn) {
+      projectionResetBtn.addEventListener('click', resetProjection);
+      console.log("Reset button for projection mode connected");
+    } else {
+      console.error("Reset button for projection mode not found");
+    }
   });
