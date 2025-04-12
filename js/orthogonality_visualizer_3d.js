@@ -107,20 +107,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.head.appendChild(styleElement);
     
-    // Load Three.js from CDN if not already available
+    // script loading section to ensure proper loading order
     if (!window.THREE) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-      script.onload = initializeVisualization;
-      document.head.appendChild(script);
-      
-      // Also load OrbitControls
-      const orbitScript = document.createElement('script');
-      orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-      document.head.appendChild(orbitScript);
-    } else {
-      initializeVisualization();
-    }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        
+        // Only load OrbitControls after Three.js is loaded
+        script.onload = function() {
+            const orbitScript = document.createElement('script');
+            orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+            orbitScript.onload = initializeVisualization;
+            document.head.appendChild(orbitScript);
+        };   
+        document.head.appendChild(script);
+    }else{
+        // If THREE is already available, just load OrbitControls
+        if (!THREE.OrbitControls) {
+            const orbitScript = document.createElement('script');
+            orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+            orbitScript.onload = initializeVisualization;
+            document.head.appendChild(orbitScript);
+        } else {
+            // Both THREE and OrbitControls are already available
+            initializeVisualization();
+        }
+    } 
     
     function initializeVisualization() {
         // Wait for OrbitControls to load
