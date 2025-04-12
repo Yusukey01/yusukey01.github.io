@@ -370,6 +370,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const vecBXInput = document.getElementById('vec-b-x');
     const vecBYInput = document.getElementById('vec-b-y');
     
+    // Get projection reset button
+    const projectionResetBtn = document.getElementById('projection-reset-btn');
+    
     // Gram-Schmidt buttons
     const generateVectorsBtn = document.getElementById('generate-vectors-btn');
     const stepBtn = document.getElementById('step-btn');
@@ -948,6 +951,20 @@ document.addEventListener('DOMContentLoaded', function() {
       drawCanvas();
     }
     
+    // Function to reset projection vectors to default values
+    function resetProjectionVectors() {
+      console.log("Reset button clicked");
+      vectorA = { x: 4, y: 0 };
+      vectorB = { x: 0, y: 3 };
+      
+      vecAXInput.value = vectorA.x;
+      vecAYInput.value = vectorA.y;
+      vecBXInput.value = vectorB.x;
+      vecBYInput.value = vectorB.y;
+      
+      drawCanvas();
+    }
+    
     // Event handlers
     function handleMouseMove(e) {
       if (!isDragging || demoType === 'gramschmidt') return;
@@ -1031,6 +1048,14 @@ document.addEventListener('DOMContentLoaded', function() {
     vecBXInput.addEventListener('input', handleVectorInputChange);
     vecBYInput.addEventListener('input', handleVectorInputChange);
     
+    // Add event listener for projection reset button directly
+    if (projectionResetBtn) {
+      projectionResetBtn.addEventListener('click', resetProjectionVectors);
+      console.log("Reset button connected directly");
+    } else {
+      console.error("Projection reset button not found during initialization");
+    }
+    
     generateVectorsBtn.addEventListener('click', () => generateRandomVectors());
     stepBtn.addEventListener('click', gramSchmidtProcess);
     resetBtn.addEventListener('click', () => {
@@ -1041,27 +1066,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize
     updateDemoType();
-    
-    // Make sure the reset button for projection mode is properly connected with a delay
-    setTimeout(function() {
-      const projectionResetBtn = document.getElementById('projection-reset-btn');
-      if (projectionResetBtn) {
-        // Use direct property assignment rather than addEventListener
-        projectionResetBtn.onclick = function() {
-          console.log("Reset button clicked via delayed initialization");
-          vectorA = { x: 4, y: 0 };
-          vectorB = { x: 0, y: 3 };
-          
-          vecAXInput.value = vectorA.x;
-          vecAYInput.value = vectorA.y;
-          vecBXInput.value = vectorB.x;
-          vecBYInput.value = vectorB.y;
-          
-          drawCanvas();
-        };
-        console.log("Reset button connected with delayed initialization");
-      } else {
-        console.error("Reset button not found after delay");
-      }
-    }, 200); // Short delay to ensure DOM elements are ready
   });
