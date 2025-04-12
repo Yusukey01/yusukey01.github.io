@@ -696,6 +696,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (is3DMode) {
           // Clear existing points for 3D
           points3D = [];
+
+          // Helper function for adding noise and clamping values
+          function addNoiseAndClamp(value) {
+            return Math.max(0.05, Math.min(0.95, value + (Math.random() - 0.5) * 0.05));
+          }
           
           // Generate new 3D points based on dataset type
           if (type === 'linear') {
@@ -704,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const x = Math.random() * 0.8 + 0.1;
               const y = Math.random() * 0.8 + 0.1;
               const z = 0.4 * x + 0.5 * y + 0.1 + (Math.random() - 0.5) * 0.1;
-              points3D.push({ x, y, z });
+              points3D.push({ x, y, z: addNoiseAndClamp(z) });
             }
           } else if (type === 'quadratic') {
             // Quadratic relationship: z = 0.8x² + 0.2y² + 0.1
@@ -712,15 +717,15 @@ document.addEventListener('DOMContentLoaded', function() {
               const x = Math.random() * 0.8 + 0.1;
               const y = Math.random() * 0.8 + 0.1;
               const z = 0.8 * x * x + 0.2 * y * y + 0.1 + (Math.random() - 0.5) * 0.1;
-              points3D.push({ x, y, z });
+              points3D.push({ x, y, z: addNoiseAndClamp(z) });
             }
           } else if (type === 'cubic') {
-            // Cubic relationship: z = 2x³ - 1.5y² + 0.3xy + 0.1
+            // Cubic relationship:
             for (let i = 0; i < 50; i++) {
               const x = Math.random() * 0.8 + 0.1;
               const y = Math.random() * 0.8 + 0.1;
-              const z = 2 * Math.pow(x, 3) - 1.5 * Math.pow(y, 2) + 0.3 * x * y + 0.1 + (Math.random() - 0.5) * 0.1;
-              points3D.push({ x, y, z });
+              const z = 0.8 * Math.pow(x, 3) - 0.6 * Math.pow(y, 2) + 0.3 * x * y + 0.3;
+              points3D.push({ x, y, z: addNoiseAndClamp(z) });
             }
           } else if (type === 'sinusoidal') {
             // Sinusoidal relationship: z = 0.3sin(5x) + 0.3sin(5y) + 0.5
@@ -728,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const x = Math.random() * 0.8 + 0.1;
               const y = Math.random() * 0.8 + 0.1;
               const z = 0.3 * Math.sin(5 * x) + 0.3 * Math.sin(5 * y) + 0.5 + (Math.random() - 0.5) * 0.05;
-              points3D.push({ x, y, z });
+              points3D.push({ x, y, z: addNoiseAndClamp(z) });
             }
           }
           
