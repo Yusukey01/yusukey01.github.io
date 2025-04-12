@@ -86,11 +86,10 @@ document.addEventListener('DOMContentLoaded', function() {
               <ol>
                 <li>Toggle between 2D (one feature) and 3D (two features) modes</li>
                 <li>Select a polynomial degree (higher degrees can fit more complex patterns)</li>
-                <li>While 3D mode is limited to quadratic models, the same principles extend to higher dimensions</li>
                 <li>Use the example datasets or add your own points by clicking on the plot</li>
                 <li>Toggle "Show Residuals" to visualize the error between actual and predicted values</li>
                 <li>Observe how the best-fit curve/surface and error metrics change</li>
-                <li>In 3D mode, drag to rotate the view and see different angles</li>
+                <li>In 3D mode (only quadratic), drag to rotate the view and see different angles</li>
               </ol>
             </div>
           </div>
