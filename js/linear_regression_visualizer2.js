@@ -514,21 +514,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Camera
         camera = new THREE.PerspectiveCamera(60, canvasWrapper.clientWidth / 500, 0.1, 1000);
-        camera.position.set(0.5, 1.5, 0.5); // Changed to look down at xy plane
-        camera.lookAt(0.5, 0, 0.5);
-
+        camera.position.set(1.5, 1.5, 1.5);
+        camera.lookAt(0.5, 0.5, 0.5);
+        
         // Renderer
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(canvasWrapper.clientWidth, 500);
         container3D.innerHTML = '';
         container3D.appendChild(renderer.domElement);
-
+        
         // Controls
         controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0.5, 0, 0.5); // Look at center of xy plane
+        controls.target.set(0.5, 0.5, 0.5);
         controls.enableDamping = true;
         controls.dampingFactor = 0.1;
         controls.enableZoom = true;
+        controls.addEventListener('change', render3D);
         
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
@@ -542,23 +543,23 @@ document.addEventListener('DOMContentLoaded', function() {
         addAxes();
 
         // Create grids for all three planes
-        // x-z plane (horizontal "floor" grid)
-        const xzGrid = new THREE.GridHelper(1, 10);
-        xzGrid.position.set(0.5, 0, 0.5);
-        scene.add(xzGrid);
-
-        // x-y plane (vertical grid)
+        //  xy plane (horizontal "floor" grid)
         const xyGrid = new THREE.GridHelper(1, 10);
-        xyGrid.rotation.x = Math.PI / 2; // Rotate to be vertical
-        xyGrid.position.set(0.5, 0.5, 0);
+        xyGrid.position.set(0.5, 0, 0.5);
         scene.add(xyGrid);
 
-        // y-z plane (vertical grid)
+        //  xz plane (vertical grid)
+        const xzGrid = new THREE.GridHelper(1, 10);
+        xzGrid.rotation.x = Math.PI / 2; // Rotate to be vertical
+        xzGrid.position.set(0.5, 0.5, 0);
+        scene.add(xzGrid);
+
+        //  yz plane (vertical grid)
         const yzGrid = new THREE.GridHelper(1, 10);
         yzGrid.rotation.z = Math.PI / 2; // Rotate to be vertical
         yzGrid.position.set(0, 0.5, 0.5);
         scene.add(yzGrid);
-
+        
         // Make grids semi-transparent for better visibility
         xzGrid.material.opacity = 0.2;
         xzGrid.material.transparent = true;
@@ -576,41 +577,37 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       function addAxes() {
-        // Create custom black axes
-        const material = new THREE.LineBasicMaterial({ color: 0x000000 });
-        
-        // X-axis
-        const xPoints = [];
-        xPoints.push(new THREE.Vector3(0, 0, 0));
-        xPoints.push(new THREE.Vector3(1, 0, 0));
-        const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
-        const xAxis = new THREE.Line(xGeometry, material);
-        scene.add(xAxis);
-        
-        // Y-axis
-        const yPoints = [];
-        yPoints.push(new THREE.Vector3(0, 0, 0));
-        yPoints.push(new THREE.Vector3(0, 1, 0));
-        const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
-        const yAxis = new THREE.Line(yGeometry, material);
-        scene.add(yAxis);
-        
-        // Z-axis
-        const zPoints = [];
-        zPoints.push(new THREE.Vector3(0, 0, 0));
-        zPoints.push(new THREE.Vector3(0, 0, 1));
-        const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
-        const zAxis = new THREE.Line(zGeometry, material);
-        scene.add(zAxis);
-                
-        // X-axis label
-        addLabel('X', 1.1, 0, 0);
-        
-        // Y-axis label
-        addLabel('Y', 0, 1.1, 0);
-        
-        // Z-axis label
-        addLabel('Z', 0, 0, 1.1);
+         // Create custom black axes
+          const material = new THREE.LineBasicMaterial({ color: 0x000000 });
+          
+          // X-axis
+          const xPoints = [];
+          xPoints.push(new THREE.Vector3(0, 0, 0));
+          xPoints.push(new THREE.Vector3(1, 0, 0));
+          const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
+          const xAxis = new THREE.Line(xGeometry, material);
+          scene.add(xAxis);
+          
+          // Y-axis
+          const yPoints = [];
+          yPoints.push(new THREE.Vector3(0, 0, 0));
+          yPoints.push(new THREE.Vector3(0, 0, 1)); // Changed: y now points along z
+          const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
+          const yAxis = new THREE.Line(yGeometry, material);
+          scene.add(yAxis);
+          
+          // Z-axis
+          const zPoints = [];
+          zPoints.push(new THREE.Vector3(0, 0, 0));
+          zPoints.push(new THREE.Vector3(0, 1, 0)); // Changed: z now points along y
+          const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
+          const zAxis = new THREE.Line(zGeometry, material);
+          scene.add(zAxis);
+          
+          // Labels - updated to match new orientation
+          addLabel('X', 1.1, 0, 0);
+          addLabel('Y', 0, 0, 1.1);
+          addLabel('Z', 0, 1.1, 0);
       }
       
       function addLabel(text, x, y, z) {
