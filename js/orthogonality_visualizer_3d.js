@@ -860,6 +860,27 @@ function createAxis(p1, p2, color) {
         function updateDemoType() {
             demoType = demoTypeSelect.value;
             
+            // Clear all existing objects from the scene first
+            if (objects.vectorA) scene.remove(objects.vectorA);
+            if (objects.vectorB) scene.remove(objects.vectorB);
+            if (objects.vectorC) scene.remove(objects.vectorC);
+            if (objects.projection) scene.remove(objects.projection);
+            if (objects.orthogonal) scene.remove(objects.orthogonal);
+            if (objects.projectionLine) scene.remove(objects.projectionLine);
+            if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
+            
+            objects.gramSchmidtOrigVectors.forEach(v => scene.remove(v));
+            objects.gramSchmidtOrthVectors.forEach(v => scene.remove(v));
+            objects.projectionLines.forEach(l => scene.remove(l));
+            objects.angles.forEach(a => scene.remove(a));
+            objects.labels.forEach(label => scene.remove(label));
+            
+            objects.gramSchmidtOrigVectors = [];
+            objects.gramSchmidtOrthVectors = [];
+            objects.projectionLines = [];
+            objects.angles = [];
+            objects.labels = [];
+            
             // Update UI based on demo type
             if (demoType === 'projection3d') {
             explanationTitle.textContent = '3D Orthogonal Projection';
