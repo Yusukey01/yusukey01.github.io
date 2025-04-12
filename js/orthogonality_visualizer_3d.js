@@ -1030,11 +1030,6 @@ function createAxis(p1, p2, color) {
         stepBtn.addEventListener('click', gramSchmidtProcess);
         resetBtn.addEventListener('click', resetDemo);
         
-       // Start the visualization
-        updateDemoType();
-        animate();
-        updateDemoType();       
-
         // Add these event listeners after your existing event listeners
 // Inside the initializeVisualization function, after other event listeners
 
@@ -1174,6 +1169,12 @@ function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
   
   return arrowGroup;
 }
+       // Start the visualization
+        updateDemoType();
+        animate();
+        updateDemoType();       
+
+        
 
         function generateRandomVectors(count) {
             // Clear previous vectors
