@@ -258,6 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
         // Create and add the three gridded planes
         const xyPlane = createGriddedPlane(0x000000);
+        xyPlane.position.y = -5; // Move the XY plane to the bottom
         scene.add(xyPlane);
         const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
         scene.add(yzPlane);
@@ -1042,26 +1043,36 @@ document.addEventListener('DOMContentLoaded', function() {
             // Raycast to find vectors
             raycaster.setFromCamera(mouse, camera);
             
-            // Create an array of objects to check for intersection
-            const arrows = [];
-            if (objects.vectorA) arrows.push(objects.vectorA);
-            if (objects.vectorB) arrows.push(objects.vectorB);
+            // Fix: Ensure we're checking for intersections with all meshes in the scene
+            const intersects = raycaster.intersectObjects(scene.children, true);
             
-            const intersects = raycaster.intersectObjects(arrows, true);
-  
-            if (intersects.length > 0) {
+            // Find the first intersected object that belongs to either vectorA or vectorB
+            let vectorIntersection = null;
+            for (let i = 0; i < intersects.length; i++) {
+                const obj = intersects[i].object;
+                let parent = obj.parent;
+                
+                while (parent) {
+                    if (parent === objects.vectorA) {
+                        vectorIntersection = { object: parent, type: 'u' };
+                        break;
+                    } else if (parent === objects.vectorB) {
+                        vectorIntersection = { object: parent, type: 'v' };
+                        break;
+                    }
+                    parent = parent.parent;
+                }
+                
+                if (vectorIntersection) break;
+            }
+
+            if (vectorIntersection) {
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
                 isDragging = true;
-                
-                // Determine which vector was selected
-                if (intersects[0].object.parent === objects.vectorA) {
-                    selectedVector = 'u';
-                } else if (intersects[0].object.parent === objects.vectorB) {
-                    selectedVector = 'v';
-                }
-    
+                selectedVector = vectorIntersection.type;
+
                 // Create a drag plane perpendicular to the camera
                 dragPlane.setFromNormalAndCoplanarPoint(
                 camera.getWorldDirection(dragPlane.normal),
