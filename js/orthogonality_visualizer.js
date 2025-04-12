@@ -18,28 +18,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="visualization-mode-toggle">
               <label class="toggle-control">
                 <select id="demo-type" class="full-width">
-                  <option value="vectors">Orthogonal Vectors</option>
                   <option value="projection">Orthogonal Projection</option>
                   <option value="gramschmidt">Gram-Schmidt Process</option>
                 </select>
               </label>
             </div>
-            <div class="instruction" id="instruction-text">Drag the blue vector to explore orthogonality</div>
+            <div class="instruction" id="instruction-text">Drag the vectors to see orthogonal projection</div>
             <div id="canvas-wrapper">
               <canvas id="orthogonality-canvas" width="800" height="500"></canvas>
             </div>
             <div class="legend" id="legend-container">
               <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
               <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
-              <div class="legend-item"><span class="legend-color orthogonal"></span> Orthogonal when u·v = 0</div>
+              <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
+              <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
             </div>
           </div>
           
           <div class="controls-panel">
             <div class="equation-display" id="equation-container">
-              <div class="equation-title">Inner Product:</div>
-              <div id="inner-product" class="equation">u·v = 0</div>
-              <div id="orthogonal-status" class="status orthogonal">Vectors are orthogonal</div>
+              <div class="equation-title">Projection Formula:</div>
+              <div id="inner-product" class="equation">proj_v u = (u·v / ||v||²) × v</div>
+              <div id="orthogonal-status" class="status orthogonal">Residual z is orthogonal to v</div>
             </div>
   
             <div class="control-group" id="vector-controls">
@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <input type="number" id="vec-b-y" value="3" step="0.5" min="-10" max="10">
                 </div>
               </div>
+              <button id="projection-reset-btn" class="secondary-btn" style="margin-top: 15px;">Reset</button>
             </div>
             
             <div class="control-group" id="gramschmidt-controls" style="display: none;">
@@ -381,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const scale = 30; // pixels per unit
     
     // State variables
-    let demoType = 'vectors';
+    let demoType = 'projection';
     let vectorA = { x: 4, y: 0 };
     let vectorB = { x: 0, y: 3 };
     let draggingVector = null;
@@ -393,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event state
     let isDragging = false;
     let startX, startY;
+    let lastTouchX, lastTouchY;
     
     // Utility functions
     function dot(v1, v2) {
@@ -807,9 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawCanvas() {
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       
-      if (demoType === 'vectors') {
-        drawOrthogonalityDemo();
-      } else if (demoType === 'projection') {
+      if (demoType === 'projection') {
         drawProjectionDemo();
       } else if (demoType === 'gramschmidt') {
         drawGramSchmidtDemo();
@@ -820,17 +820,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateRandomVectors(count = 3) {
       gramSchmidtVectors = [];
       
-      // Generate random vectors
+      // Generate random vectors with larger magnitudes
       for (let i = 0; i < count; i++) {
-        const x = (Math.random() * 6) - 3;
-        const y = (Math.random() * 6) - 3;
+        // Larger range (-6 to 6) for better visibility
+        const x = (Math.random() * 12) - 6;
+        const y = (Math.random() * 12) - 6;
         gramSchmidtVectors.push({ x, y });
       }
       
-      // Ensure they're not too small
+      // Ensure they're not too small - minimum magnitude of 3
       gramSchmidtVectors = gramSchmidtVectors.map(v => {
-        if (magnitude(v) < 1) {
-          return scalarMultiply(normalize(v), 1 + Math.random());
+        if (magnitude(v) < 3) {
+          return scalarMultiply(normalize(v), 3 + Math.random() * 2);
         }
         return v;
       });
@@ -891,28 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
       demoType = demoTypeSelect.value;
       
       // Update UI based on demo type
-      if (demoType === 'vectors') {
-        explanationTitle.textContent = 'Orthogonal Vectors';
-        explanationContent.innerHTML = `
-          <p>Two vectors are <strong>orthogonal</strong> when their inner product equals zero.</p>
-          <p>For vectors in ℝ<sup>n</sup>: u·v = u₁v₁ + u₂v₂ + ... + uₙvₙ</p>
-          <p>In this 2D example: u·v = u₁v₁ + u₂v₂</p>
-          <p>When vectors are orthogonal, they form a 90° angle.</p>
-          <p>Try moving the vectors to see how the inner product changes!</p>
-        `;
-        
-        instructionText.textContent = 'Drag the vectors to explore orthogonality';
-        
-        legendContainer.innerHTML = `
-          <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
-          <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
-          <div class="legend-item"><span class="legend-color orthogonal"></span> Orthogonal when u·v = 0</div>
-        `;
-        
-        vectorControls.style.display = 'block';
-        gramSchmidtControls.style.display = 'none';
-        
-      } else if (demoType === 'projection') {
+      if (demoType === 'projection') {
         explanationTitle.textContent = 'Orthogonal Projection';
         explanationContent.innerHTML = `
           <p>The <strong>orthogonal projection</strong> of vector u onto vector v is:</p>
