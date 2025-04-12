@@ -1306,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             surfaceGeometry.setAttribute('position', new THREE.Float32BufferAttribute(surfacePositions, 3));
             surfaceGeometry.computeVertexNormals();
             
-            const surfaceMaterial = new THREE.MeshStandardMaterial({
+            const surfaceMaterial = new THREE.MeshBasicMaterial({     
               color: 0xe74c3c, 
               side: THREE.DoubleSide,
               transparent: true,
