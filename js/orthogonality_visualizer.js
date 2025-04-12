@@ -1042,12 +1042,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     updateDemoType();
     
-    // Make sure the reset button for projection mode is properly connected
-    const projectionResetBtn = document.getElementById('projection-reset-btn');
-    if (projectionResetBtn) {
-      projectionResetBtn.addEventListener('click', resetProjection);
-      console.log("Reset button for projection mode connected");
-    } else {
-      console.error("Reset button for projection mode not found");
-    }
+    // Make sure the reset button for projection mode is properly connected with a delay
+    setTimeout(function() {
+      const projectionResetBtn = document.getElementById('projection-reset-btn');
+      if (projectionResetBtn) {
+        // Use direct property assignment rather than addEventListener
+        projectionResetBtn.onclick = function() {
+          console.log("Reset button clicked via delayed initialization");
+          vectorA = { x: 4, y: 0 };
+          vectorB = { x: 0, y: 3 };
+          
+          vecAXInput.value = vectorA.x;
+          vecAYInput.value = vectorA.y;
+          vecBXInput.value = vectorB.x;
+          vecBYInput.value = vectorB.y;
+          
+          drawCanvas();
+        };
+        console.log("Reset button connected with delayed initialization");
+      } else {
+        console.error("Reset button not found after delay");
+      }
+    }, 200); // Short delay to ensure DOM elements are ready
   });
