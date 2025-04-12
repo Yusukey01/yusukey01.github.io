@@ -440,9 +440,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function projectVector(v, onto) {
-      const ontoNormalized = normalize(onto);
-      const dotProduct = dot(v, ontoNormalized);
-      return scalarMultiply(ontoNormalized, dotProduct);
+        // Standard projection formula: proj_{onto}(v) = (v·onto / onto·onto) × onto
+        const dotProduct = dot(v, onto);
+        const ontoSquared = dot(onto, onto);
+
+        // Avoid division by zero
+        if (Math.abs(ontoSquared) < 0.00001) {
+            return { x: 0, y: 0 };
+        }
+        
+        return scalarMultiply(onto, dotProduct / ontoSquared);
     }
     
     // Drawing functions
@@ -846,48 +853,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function gramSchmidtProcess() {
-      if (gramSchmidtVectors.length === 0) {
-        generateRandomVectors();
-        return;
-      }
-      
-      // If we're just starting, add the first vector
-      if (orthogonalVectors.length === 0) {
+        if (gramSchmidtVectors.length === 0) {
+            generateRandomVectors();
+            return;
+        }
+        
+        // If we're just starting, add the first vector
+        if (orthogonalVectors.length === 0) {
+        // Copy the first vector
         orthogonalVectors.push({ ...gramSchmidtVectors[0] });
         gramSchmidtStep = 1;
         drawCanvas();
         return;
-      }
-      
-      // If we've processed all vectors, reset
-      if (orthogonalVectors.length >= gramSchmidtVectors.length) {
+        }
+        
+        // If we've processed all vectors, reset
+        if (orthogonalVectors.length >= gramSchmidtVectors.length) {
         orthogonalVectors = [];
         gramSchmidtStep = 0;
         drawCanvas();
         return;
-      }
-      
-      // Process the next vector
-      const currentIdx = orthogonalVectors.length;
-      const currentVector = gramSchmidtVectors[currentIdx];
-      
-      // Calculate the sum of all projections onto previous orthogonal vectors
-      let sumProjection = { x: 0, y: 0 };
-      orthogonalVectors.forEach(v => {
+        }
+        
+        // Process the next vector
+        const currentIdx = orthogonalVectors.length;
+        const currentVector = gramSchmidtVectors[currentIdx];
+        
+        // Calculate the sum of all projections onto previous orthogonal vectors
+        let sumProjection = { x: 0, y: 0 };
+        orthogonalVectors.forEach(v => {
         const proj = projectVector(currentVector, v);
         sumProjection = vectorAdd(sumProjection, proj);
-      });
-      
-      // The new orthogonal vector is the difference between the original vector and the sum of projections
-      const newOrthogonalVector = vectorSubtract(currentVector, sumProjection);
-      
-      // Add the new orthogonal vector to our list
-      orthogonalVectors.push(newOrthogonalVector);
-      
-      // Increment the step counter
-      gramSchmidtStep++;
-      
-      drawCanvas();
+        });
+        
+        // The new orthogonal vector is the difference between the original vector and the sum of projections
+        const newOrthogonalVector = vectorSubtract(currentVector, sumProjection);
+        
+        // Add the new orthogonal vector to our list
+        orthogonalVectors.push(newOrthogonalVector);
+        
+        // Increment the step counter
+        gramSchmidtStep++;
+        
+        drawCanvas();
     }
     
     // Demo type change handling
