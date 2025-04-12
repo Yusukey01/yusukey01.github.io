@@ -719,101 +719,142 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    function getOrthogonalVectorColor(index) {
+        // A consistent color palette with good contrast
+        const colors = [
+          '#3498db', // Blue for first vector
+          '#e74c3c', // Red for second vector
+          '#9b59b6', // Purple for third vector
+          '#2ecc71', // Green for fourth vector
+          '#f39c12'  // Orange for fifth vector (if needed)
+        ];
+        
+        return colors[index % colors.length];
+    }
+
     function drawGramSchmidtDemo() {
-      drawGrid();
-      
-      // Draw the original vectors first (faded)
-      gramSchmidtVectors.forEach((v, i) => {
-        const endPoint = vectorToCanvas(v);
-        
-        ctx.beginPath();
-        ctx.moveTo(origin.x, origin.y);
-        ctx.lineTo(endPoint.x, endPoint.y);
-        ctx.strokeStyle = 'rgba(153, 153, 153, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Label
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#999';
-        ctx.fillText(`x₍${i+1}₎`, endPoint.x + 10, endPoint.y - 10);
-      });
-      
-      // Draw the orthogonalized vectors that have been processed
-      orthogonalVectors.forEach((v, i) => {
-        const color = i === 0 ? '#3498db' : i === 1 ? '#e74c3c' : '#9b59b6';
-        const label = `v₍${i+1}₎`;
-        drawVector(v, color, label);
-      });
-      
-      // Update the inner product display
-      if (orthogonalVectors.length >= 2) {
-        const v1 = orthogonalVectors[0];
-        const v2 = orthogonalVectors[1];
-        const dotProduct = dot(v1, v2).toFixed(2);
-        
-        innerProductDisplay.textContent = `v₍1₎·v₍2₎ = (${v1.x.toFixed(1)} × ${v2.x.toFixed(1)}) + (${v1.y.toFixed(1)} × ${v2.y.toFixed(1)}) = ${dotProduct}`;
-        
-        if (Math.abs(dotProduct) < 0.1) {
-          orthogonalStatus.textContent = 'Vectors are orthogonal';
-          orthogonalStatus.className = 'status orthogonal';
-        } else {
-          orthogonalStatus.textContent = 'Continue Gram-Schmidt process';
-          orthogonalStatus.className = 'status not-orthogonal';
-        }
-      } else {
-        innerProductDisplay.textContent = 'Click "Step Through Process" to start';
-        orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
-        orthogonalStatus.className = 'status orthogonal';
-      }
-      
-      // If we're currently calculating a projection in the demo, show it
-      if (gramSchmidtStep > 0 && gramSchmidtStep <= gramSchmidtVectors.length && orthogonalVectors.length < gramSchmidtVectors.length) {
-        const currentIdx = orthogonalVectors.length;
-        const currentVector = gramSchmidtVectors[currentIdx];
-        
-        // Draw the current vector we're processing
-        const currentEnd = vectorToCanvas(currentVector);
-        ctx.beginPath();
-        ctx.moveTo(origin.x, origin.y);
-        ctx.lineTo(currentEnd.x, currentEnd.y);
-        ctx.strokeStyle = '#f39c12';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#f39c12';
-        ctx.fillText(`x₍${currentIdx+1}₎`, currentEnd.x + 15, currentEnd.y);
-        
-        // Show projections onto each orthogonal vector
-        let sumProjection = { x: 0, y: 0 };
-        
-        orthogonalVectors.forEach((v, i) => {
-          const proj = projectVector(currentVector, v);
-          sumProjection = vectorAdd(sumProjection, proj);
-          
-          // Draw each projection with a different opacity
-          const projColor = `rgba(243, 156, 18, ${0.7 - i*0.2})`;
-          drawProjection(currentVector, v, projColor);
+        drawGrid();
+  
+        // Draw the original vectors first (faded)
+        gramSchmidtVectors.forEach((v, i) => {
+            const endPoint = vectorToCanvas(v);
+            
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(endPoint.x, endPoint.y);
+            ctx.strokeStyle = 'rgba(153, 153, 153, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Label
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#999';
+            ctx.fillText(`x₍${i+1}₎`, endPoint.x + 10, endPoint.y - 10);
         });
         
-        // Draw the difference vector (the part that will be orthogonal)
-        const difference = vectorSubtract(currentVector, sumProjection);
-        const diffEnd = vectorToCanvas(difference);
+        // Draw the orthogonalized vectors that have been processed
+        orthogonalVectors.forEach((v, i) => {
+            const color = getOrthogonalVectorColor(i);
+            const label = `v₍${i+1}₎`;
+            drawVector(v, color, label);
+        });
         
-        // Draw from origin
-        ctx.beginPath();
-        ctx.moveTo(origin.x, origin.y);
-        ctx.lineTo(diffEnd.x, diffEnd.y);
-        ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        // Update the inner product display
+        if (orthogonalVectors.length >= 2) {
+            const v1 = orthogonalVectors[0];
+            const v2 = orthogonalVectors[1];
+            const dotProduct = dot(v1, v2).toFixed(2);
+            
+            innerProductDisplay.textContent = `v₍1₎·v₍2₎ = (${v1.x.toFixed(1)} × ${v2.x.toFixed(1)}) + (${v1.y.toFixed(1)} × ${v2.y.toFixed(1)}) = ${dotProduct}`;
+            
+            if (Math.abs(dotProduct) < 0.1) {
+            orthogonalStatus.textContent = 'Vectors are orthogonal';
+            orthogonalStatus.className = 'status orthogonal';
+            } else {
+            orthogonalStatus.textContent = 'Continue Gram-Schmidt process';
+            orthogonalStatus.className = 'status not-orthogonal';
+            }
+        } else {
+            innerProductDisplay.textContent = 'Click "Step Through Process" to start';
+            orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
+            orthogonalStatus.className = 'status orthogonal';
+        }
         
-        // Label
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillText(`v₍${currentIdx+1}₎`, diffEnd.x + 10, diffEnd.y - 10);
-      }
+        // Add step counter
+        if (gramSchmidtVectors.length > 0) {
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = '#333';
+            ctx.fillText(`Step: ${orthogonalVectors.length}/${gramSchmidtVectors.length}`, 20, 30);
+        }
+        
+        // If we're currently calculating a projection in the demo, show it
+        if (gramSchmidtStep > 0 && gramSchmidtStep <= gramSchmidtVectors.length && orthogonalVectors.length < gramSchmidtVectors.length) {
+            const currentIdx = orthogonalVectors.length;
+            const currentVector = gramSchmidtVectors[currentIdx];
+            
+            // Draw the current vector we're processing
+            const currentEnd = vectorToCanvas(currentVector);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(currentEnd.x, currentEnd.y);
+            ctx.strokeStyle = '#f39c12';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#f39c12';
+            ctx.fillText(`x₍${currentIdx+1}₎`, currentEnd.x + 15, currentEnd.y);
+            
+            // Show projections onto each orthogonal vector
+            let sumProjection = { x: 0, y: 0 };
+            let yOffset = 70; // starting y position for displaying calculations
+            
+            // Add a title for the projection calculations display
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = '#333';
+            ctx.fillText('Projection Calculations:', 20, 50);
+            
+            orthogonalVectors.forEach((v, i) => {
+            const proj = projectVector(currentVector, v);
+            sumProjection = vectorAdd(sumProjection, proj);
+            
+            // Draw each projection with a different opacity
+            const projColor = getOrthogonalVectorColor(i);
+            drawProjection(currentVector, v, projColor);
+            
+            // Display calculation values
+            const dotProd = dot(currentVector, v).toFixed(2);
+            const vDotV = dot(v, v).toFixed(2);
+            const factor = (dotProd / vDotV).toFixed(2);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = projColor;
+            ctx.fillText(`proj_v${i+1}(x${currentIdx+1}) = (${dotProd} / ${vDotV}) × v${i+1} = ${factor} × (${v.x.toFixed(1)}, ${v.y.toFixed(1)})`, 20, yOffset);
+            yOffset += 20; // move down for next calculation
+            });
+            
+            // Draw the difference vector (the part that will be orthogonal)
+            const difference = vectorSubtract(currentVector, sumProjection);
+            const diffEnd = vectorToCanvas(difference);
+            
+            // Draw from origin
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(diffEnd.x, diffEnd.y);
+            ctx.strokeStyle = getOrthogonalVectorColor(currentIdx); // Use consistent coloring
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Label
+            ctx.font = '16px Arial';
+            ctx.fillStyle = getOrthogonalVectorColor(currentIdx);
+            ctx.fillText(`v₍${currentIdx+1}₎`, diffEnd.x + 10, diffEnd.y - 10);
+            
+            // Display the final calculation for new orthogonal vector
+            ctx.font = '12px Arial';
+            ctx.fillStyle = getOrthogonalVectorColor(currentIdx);
+            ctx.fillText(`v${currentIdx+1} = x${currentIdx+1} - sum(projections) = (${currentVector.x.toFixed(1)}, ${currentVector.y.toFixed(1)}) - (${sumProjection.x.toFixed(1)}, ${sumProjection.y.toFixed(1)}) = (${difference.x.toFixed(1)}, ${difference.y.toFixed(1)})`, 20, yOffset + 20);
+        }                
     }
     
     function drawCanvas() {
@@ -898,65 +939,56 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCanvas();
     }
     
+    function updateLegend() {
+        if (demoType === 'gramschmidt') {
+          let legendHTML = `
+            <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
+            <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
+          `;
+          
+          // Add dynamically generated legend items for orthogonal vectors
+          for (let i = 0; i < Math.min(gramSchmidtVectors.length, 3); i++) {
+            const color = getOrthogonalVectorColor(i);
+            legendHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color};"></span> v₍${i+1}₎ (orthogonal)</div>`;
+          }
+          
+          legendContainer.innerHTML = legendHTML;
+        }
+    }
+      
     // Demo type change handling
     function updateDemoType() {
-      demoType = demoTypeSelect.value;
-      
-      // Update UI based on demo type
-      if (demoType === 'projection') {
-        explanationTitle.textContent = 'Orthogonal Projection';
-        explanationContent.innerHTML = `
-          <p>The <strong>orthogonal projection</strong> of vector u onto vector v is:</p>
-          <p>proj<sub>v</sub> u = (u·v / ||v||²) × v</p>
-          <p>This decomposes u into two components:</p>
-          <p>u = proj<sub>v</sub> u + z</p>
-          <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
-          <p>This is the <strong>orthogonal decomposition</strong> of u.</p>
-        `;
-        
-        instructionText.textContent = 'Drag vectors to see orthogonal projection';
-        
-        legendContainer.innerHTML = `
-          <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
-          <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
-          <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
-          <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
-        `;
-        
-        vectorControls.style.display = 'block';
-        gramSchmidtControls.style.display = 'none';
-        
-      } else if (demoType === 'gramschmidt') {
-        explanationTitle.textContent = 'Gram-Schmidt Process';
-        explanationContent.innerHTML = `
-          <p>The <strong>Gram-Schmidt process</strong> transforms a set of vectors into an orthogonal set.</p>
-          <p>Starting with vectors {x₁, x₂, ..., xₙ}:</p>
-          <p>1. v₁ = x₁</p>
-          <p>2. v₂ = x₂ - proj<sub>v₁</sub>x₂</p>
-          <p>3. v₃ = x₃ - proj<sub>v₁</sub>x₃ - proj<sub>v₂</sub>x₃</p>
-          <p>Each new vector v<sub>k</sub> is x<sub>k</sub> minus its projections onto all previous v<sub>i</sub>.</p>
-          <p>The resulting vectors {v₁, v₂, ..., vₙ} form an orthogonal set.</p>
-        `;
-        
-        instructionText.textContent = 'Step through the process to see orthogonalization';
-        
-        legendContainer.innerHTML = `
-          <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
-          <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
-          <div class="legend-item"><span class="legend-color vector-a"></span> First orthogonal vector</div>
-          <div class="legend-item"><span class="legend-color vector-b"></span> Second orthogonal vector</div>
-        `;
-        
-        vectorControls.style.display = 'none';
-        gramSchmidtControls.style.display = 'block';
-        
-        // Initialize Gram-Schmidt demo if needed
-        if (gramSchmidtVectors.length === 0) {
-          generateRandomVectors();
-        }
-      }
-      
-      drawCanvas();
+        demoType = demoTypeSelect.value;
+  
+        // Update UI based on demo type
+        if (demoType === 'projection') {
+          // [existing projection code...]
+          
+          legendContainer.innerHTML = `
+            <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
+            <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
+            <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
+            <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
+          `;
+          
+          vectorControls.style.display = 'block';
+          gramSchmidtControls.style.display = 'none';
+          
+        } else if (demoType === 'gramschmidt') {
+          // [existing gramschmidt code...]
+          
+          // Use the dynamic legend update function instead of hardcoded HTML
+          updateLegend();
+          
+          vectorControls.style.display = 'none';
+          gramSchmidtControls.style.display = 'block';
+          
+          // Initialize Gram-Schmidt demo if needed
+          if (gramSchmidtVectors.length === 0) {
+            generateRandomVectors();
+          }
+        }  
+        drawCanvas();
     }
     
     // Function to reset projection vectors to default values
