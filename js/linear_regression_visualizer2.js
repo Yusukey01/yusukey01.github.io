@@ -541,6 +541,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Axes
         addAxes();
+
+        // Make grid horizontal (x-z plane for ground)
+        const gridHelper = new THREE.GridHelper(1, 10);
+        gridHelper.position.set(0.5, 0, 0.5);
+        scene.add(gridHelper);
         
         // Event listener for clicking in 3D space
         renderer.domElement.addEventListener('mousedown', handle3DClick);
