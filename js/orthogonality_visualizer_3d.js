@@ -122,647 +122,633 @@ document.addEventListener('DOMContentLoaded', function() {
       initializeVisualization();
     }
     
-      
     function initializeVisualization() {
-      // Wait for OrbitControls to load
-      if (!THREE.OrbitControls) {
+        // Wait for OrbitControls to load
+        if (!THREE.OrbitControls) {
         setTimeout(initializeVisualization, 100);
         return;
-      }
-      
-      // Get DOM elements
-      const demoTypeSelect = document.getElementById('demo-type-3d');
-      const instructionText = document.getElementById('instruction-text-3d');
-      const innerProductDisplay = document.getElementById('inner-product-3d');
-      const orthogonalStatus = document.getElementById('orthogonal-status-3d');
-      const explanationTitle = document.getElementById('explanation-title-3d');
-      const explanationContent = document.getElementById('explanation-content-3d');
-      const legendContainer = document.getElementById('legend-container-3d');
-      const vectorControls = document.getElementById('vector-controls-3d');
-      const gramSchmidtControls = document.getElementById('gramschmidt-controls-3d');
-      const vecCInput = document.getElementById('vec-c-input-3d');
-      
-      // Vector input elements
-      const vecAXInput = document.getElementById('vec-a-x-3d');
-      const vecAYInput = document.getElementById('vec-a-y-3d');
-      const vecAZInput = document.getElementById('vec-a-z-3d');
-      const vecBXInput = document.getElementById('vec-b-x-3d');
-      const vecBYInput = document.getElementById('vec-b-y-3d');
-      const vecBZInput = document.getElementById('vec-b-z-3d');
-      const vecCXInput = document.getElementById('vec-c-x-3d');
-      const vecCYInput = document.getElementById('vec-c-y-3d');
-      const vecCZInput = document.getElementById('vec-c-z-3d');
-      
-      // Buttons
-      const projectionResetBtn = document.getElementById('projection-reset-btn-3d');
-      const generateVectorsBtn = document.getElementById('generate-vectors-btn-3d');
-      const stepBtn = document.getElementById('step-btn-3d');
-      const resetBtn = document.getElementById('reset-btn-3d');
-      
-      // Three.js setup
-      const canvasContainer = document.getElementById('three-canvas-container');
-      const width = canvasContainer.clientWidth;
-      const height = canvasContainer.clientHeight;
-      
-      // Create scene
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf8f9fa);
-      // Inside the initializeVisualization function, find the scene setup section
+        }
+        
+        // Get DOM elements
+        const demoTypeSelect = document.getElementById('demo-type-3d');
+        const instructionText = document.getElementById('instruction-text-3d');
+        const innerProductDisplay = document.getElementById('inner-product-3d');
+        const orthogonalStatus = document.getElementById('orthogonal-status-3d');
+        const explanationTitle = document.getElementById('explanation-title-3d');
+        const explanationContent = document.getElementById('explanation-content-3d');
+        const legendContainer = document.getElementById('legend-container-3d');
+        const vectorControls = document.getElementById('vector-controls-3d');
+        const gramSchmidtControls = document.getElementById('gramschmidt-controls-3d');
+        const vecCInput = document.getElementById('vec-c-input-3d');
+        
+        // Vector input elements
+        const vecAXInput = document.getElementById('vec-a-x-3d');
+        const vecAYInput = document.getElementById('vec-a-y-3d');
+        const vecAZInput = document.getElementById('vec-a-z-3d');
+        const vecBXInput = document.getElementById('vec-b-x-3d');
+        const vecBYInput = document.getElementById('vec-b-y-3d');
+        const vecBZInput = document.getElementById('vec-b-z-3d');
+        const vecCXInput = document.getElementById('vec-c-x-3d');
+        const vecCYInput = document.getElementById('vec-c-y-3d');
+        const vecCZInput = document.getElementById('vec-c-z-3d');
+        
+        // Buttons
+        const projectionResetBtn = document.getElementById('projection-reset-btn-3d');
+        const generateVectorsBtn = document.getElementById('generate-vectors-btn-3d');
+        const stepBtn = document.getElementById('step-btn-3d');
+        const resetBtn = document.getElementById('reset-btn-3d');
+        
+        // Three.js setup
+        const canvasContainer = document.getElementById('three-canvas-container');
+        const width = canvasContainer.clientWidth;
+        const height = canvasContainer.clientHeight;
+        
+        // Create scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8f9fa);
 
-// Create custom black axes instead of the colored ones
-// Create custom black axes
-function createAxis(p1, p2, color) {
-    const material = new THREE.LineBasicMaterial({ color: color });
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-      p1.x, p1.y, p1.z, p2.x, p2.y, p2.z
-    ], 3));
-    const line = new THREE.Line(geometry, material);
-    line.userData.isAxis = true;
-    return line;
-  }
-  
-  // Add black axes
-  scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5, 0, 0), 0x000000));
-  scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 0), 0x000000));
-  scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 5), 0x000000));
-  
-  // Create gridded planes with transparency
-  function createGriddedPlane(color, rotationAxis, rotationAngle) {
-    const group = new THREE.Group();
-    
-    // Create the semi-transparent colored plane
-    const planeGeometry = new THREE.PlaneGeometry(10, 10);
-    const planeMaterial = new THREE.MeshBasicMaterial({ 
-      color: color, 
-      transparent: true, 
-      opacity: 0.1,
-      side: THREE.DoubleSide
-    });
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    group.add(plane);
-    
-    // Create grid lines on the plane
-    const gridSize = 10;
-    const divisions = 10;
-    const spacing = gridSize / divisions;
-    const gridMaterial = new THREE.LineBasicMaterial({ 
-      color: color, 
-      transparent: true, 
-      opacity: 0.3
-    });
-    
-    // Create horizontal grid lines
-    for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
-      const lineGeometry = new THREE.BufferGeometry();
-      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
-        -gridSize/2, i, 0, 
-        gridSize/2, i, 0
-      ], 3));
-      const line = new THREE.Line(lineGeometry, gridMaterial);
-      group.add(line);
-    }
-    
-    // Create vertical grid lines
-    for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
-      const lineGeometry = new THREE.BufferGeometry();
-      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
-        i, -gridSize/2, 0, 
-        i, gridSize/2, 0
-      ], 3));
-      const line = new THREE.Line(lineGeometry, gridMaterial);
-      group.add(line);
-    }
-    
-    // Apply rotation if specified
-    if (rotationAxis && rotationAngle !== undefined) {
-      if (rotationAxis === 'x') {
-        group.rotation.x = rotationAngle;
-      } else if (rotationAxis === 'y') {
-        group.rotation.y = rotationAngle;
-      } else if (rotationAxis === 'z') {
-        group.rotation.z = rotationAngle;
-      }
-    }
-    
-    return group;
-  }
-  
-  // Create and add the three gridded planes
-  // XY Plane
-  const xyPlane = createGriddedPlane(0x000000);
-  scene.add(xyPlane);
-  
-  // YZ Plane
-  const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
-  scene.add(yzPlane);
-  
-  // XZ Plane
-  const xzPlane = createGriddedPlane(0x000000, 'x', Math.PI / 2);
-  scene.add(xzPlane);
-
-  // Update the axis labels to use black color
-  function createAxisLabels() {
-    // Remove existing labels if any
-    scene.children.forEach(child => {
-      if (child.isAxisLabel) scene.remove(child);
-    });
-    
-    // Create X, Y, Z text labels using sprites for simplicity
-    function createTextSprite(text, position, color) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.width = 64;
-      canvas.height = 64;
-      
-      context.font = 'Bold 32px Arial';
-      context.fillStyle = color;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(text, 32, 32);
-      
-      const texture = new THREE.CanvasTexture(canvas);
-      const material = new THREE.SpriteMaterial({map: texture});
-      const sprite = new THREE.Sprite(material);
-      
-      sprite.position.copy(position);
-      sprite.scale.set(1, 1, 1);
-      sprite.isAxisLabel = true;
-      
-      return sprite;
-    }
-    
-    // X axis label - now with black color
-    const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
-    scene.add(xLabel);
-    
-    // Y axis label - now with black color
-    const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
-    scene.add(yLabel);
-    
-    // Z axis label - now with black color
-    const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
-    scene.add(zLabel);
-  }
-      
-      // Create camera
-      const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-      camera.position.set(8, 8, 8);
-      camera.lookAt(0, 0, 0);
-      
-      // Create renderer
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(width, height);
-      canvasContainer.appendChild(renderer.domElement);
-      
-      // Responsive canvas
-      window.addEventListener('resize', () => {
-        const newWidth = canvasContainer.clientWidth;
-        const newHeight = canvasContainer.clientHeight;
-        camera.aspect = newWidth / newHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(newWidth, newHeight);
-      });
-      
-      // Add orbit controls
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.25;
-      
-      
-      // State variables
-      let demoType = 'projection3d';
-      let vectorA = { x: 3, y: 0, z: 0 };
-      let vectorB = { x: 0, y: 2, z: 0 };
-      let vectorC = { x: 0, y: 0, z: 1 };
-      let gramSchmidtStep = 0;
-      let gramSchmidtVectors = [];
-      let orthogonalVectors = [];
-      
-      // Materials
-      const vectorAMaterial = new THREE.MeshBasicMaterial({ color: 0x3498db });
-      const vectorBMaterial = new THREE.MeshBasicMaterial({ color: 0xe74c3c });
-      const vectorCMaterial = new THREE.MeshBasicMaterial({ color: 0x27ae60 });
-      const projectionMaterial = new THREE.MeshBasicMaterial({ color: 0x9b59b6 });
-      const orthogonalMaterial = new THREE.MeshBasicMaterial({ color: 0x2ecc71 });
-      
-      // Object references for updating
-      const objects = {
-        vectorA: null,
-        vectorB: null,
-        vectorC: null,
-        projection: null,
-        orthogonal: null,
-        projectionLine: null,
-        orthogonalLine: null,
-        gramSchmidtOrigVectors: [],
-        gramSchmidtOrthVectors: [],
-        projectionLines: [],
-        angles: [],
-        labels: []
-      };
-      
-      // Utility functions
-      function dot(v1, v2) {
-        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-      }
-      
-      function magnitude(v) {
-        return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-      }
-      
-      function normalize(v) {
-        const mag = magnitude(v);
-        if (mag < 0.00001) return { x: 0, y: 0, z: 0 };
-        return { x: v.x / mag, y: v.y / mag, z: v.z / mag };
-      }
-      
-      function scalarMultiply(v, scalar) {
-        return { x: v.x * scalar, y: v.y * scalar, z: v.z * scalar };
-      }
-      
-      function vectorAdd(v1, v2) {
-        return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z };
-      }
-      
-      function vectorSubtract(v1, v2) {
-        return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z };
-      }
-      
-      function projectVector(v, onto) {
-        // Standard projection formula: proj_{onto}(v) = (v·onto / onto·onto) × onto
-        const dotProduct = dot(v, onto);
-        const ontoSquared = dot(onto, onto);
-        
-        // Avoid division by zero
-        if (Math.abs(ontoSquared) < 0.00001) {
-          return { x: 0, y: 0, z: 0 };
+        // Create custom black axes 
+        function createAxis(p1, p2, color) {
+            const material = new THREE.LineBasicMaterial({ color: color });
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+            p1.x, p1.y, p1.z, p2.x, p2.y, p2.z
+            ], 3));
+            const line = new THREE.Line(geometry, material);
+            line.userData.isAxis = true;
+            return line;
         }
+  
+        // Add black axes
+        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5, 0, 0), 0x000000));
+        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 0), 0x000000));
+        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 5), 0x000000));
         
-        return scalarMultiply(onto, dotProduct / ontoSquared);
-      }
-      
-      function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
-        // Direction
-        const direction = new THREE.Vector3(to.x - from.x, to.y - from.y, to.z - from.z);
-        const length = direction.length();
-        direction.normalize();
-        
-        // Arrow body
-        const arrowGeometry = new THREE.CylinderGeometry(0.02, 0.02, length - headLength, 8);
-        const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
-        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-        
-        // Position and orient
-        arrow.position.copy(new THREE.Vector3(from.x, from.y, from.z));
-        arrow.position.add(direction.clone().multiplyScalar(length / 2));
-        arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-        
-        // Arrow head
-        const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
-        const head = new THREE.Mesh(headGeometry, arrowMaterial);
-        head.position.copy(new THREE.Vector3(from.x, from.y, from.z));
-        head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
-        head.quaternion.copy(arrow.quaternion);
-        
-        // Group
-        const arrowGroup = new THREE.Group();
-        arrowGroup.add(arrow);
-        arrowGroup.add(head);
-        
-        return arrowGroup;
-      }
-      
-      function createDashedLine(from, to, color) {
-        const points = [];
-        points.push(new THREE.Vector3(from.x, from.y, from.z));
-        points.push(new THREE.Vector3(to.x, to.y, to.z));
-        
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const material = new THREE.LineDashedMaterial({
-          color: color,
-          dashSize: 0.1,
-          gapSize: 0.05,
-        });
-        
-        const line = new THREE.Line(geometry, material);
-        line.computeLineDistances();
-        
-        return line;
-      }
-      
-      function updateProjectionDemo() {
-        // Clear previous objects
-        if (objects.vectorA) scene.remove(objects.vectorA);
-        if (objects.vectorB) scene.remove(objects.vectorB);
-        if (objects.projection) scene.remove(objects.projection);
-        if (objects.orthogonal) scene.remove(objects.orthogonal);
-        if (objects.projectionLine) scene.remove(objects.projectionLine);
-        if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
-        
-        objects.labels.forEach(label => scene.remove(label));
-        objects.labels = [];
-        
-        objects.angles.forEach(angle => scene.remove(angle));
-        objects.angles = [];
-        
-        // Create vectors
-        const origin = { x: 0, y: 0, z: 0 };
-        objects.vectorA = createArrow(origin, vectorA, 0x3498db);
-        objects.vectorB = createArrow(origin, vectorB, 0xe74c3c);
-        
-        scene.add(objects.vectorA);
-        scene.add(objects.vectorB);
-        
-        // Calculate projection
-        const projection = projectVector(vectorA, vectorB);
-        objects.projection = createArrow(origin, projection, 0x9b59b6);
-        scene.add(objects.projection);
-        
-        // Calculate orthogonal component
-        const orthogonal = vectorSubtract(vectorA, projection);
-        
-        // Draw orthogonal component if significant
-        if (magnitude(orthogonal) > 0.01) {
-          objects.orthogonal = createArrow(projection, vectorA, 0x2ecc71);
-          scene.add(objects.orthogonal);
-          
-          // Add dashed line from origin to vector A tip
-          objects.projectionLine = createDashedLine(origin, projection, 0x666666);
-          objects.orthogonalLine = createDashedLine(projection, vectorA, 0x666666);
-          
-          scene.add(objects.projectionLine);
-          scene.add(objects.orthogonalLine);
-        }
-        
-        // Add vector labels
-        createVectorLabels();
-        
-        // Add orthogonality indicator
-        createOrthogonalityIndicator();
-        
-        // Update info display
-        const innerProduct = dot(vectorA, vectorB);
-        innerProductDisplay.textContent = `u·v = (${vectorA.x.toFixed(1)} × ${vectorB.x.toFixed(1)}) + (${vectorA.y.toFixed(1)} × ${vectorB.y.toFixed(1)}) + (${vectorA.z.toFixed(1)} × ${vectorB.z.toFixed(1)}) = ${innerProduct.toFixed(2)}`;
-        
-        // Check orthogonality
-        if (Math.abs(innerProduct) < 0.1) {
-          orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
-          orthogonalStatus.className = 'status orthogonal';
-        } else {
-          orthogonalStatus.textContent = 'Vectors are not orthogonal';
-          orthogonalStatus.className = 'status not-orthogonal';
-        }
-      }
-      
-      function getOrthogonalVectorColor(index) {
-        // A consistent color palette with good contrast
-        const colors = [
-          0x3498db, // Blue for first vector
-          0xe74c3c, // Red for second vector
-          0x27ae60, // Green for third vector
-          0x9b59b6, // Purple for fourth vector
-          0xf39c12  // Orange for fifth vector
-        ];
-        
-        return colors[index % colors.length];
-      }
-      
-      function updateGramSchmidtDemo() {
-        // Clear previous objects
-        objects.gramSchmidtOrigVectors.forEach(v => scene.remove(v));
-        objects.gramSchmidtOrthVectors.forEach(v => scene.remove(v));
-        objects.projectionLines.forEach(l => scene.remove(l));
-        objects.angles.forEach(a => scene.remove(a));
-        objects.labels.forEach(label => scene.remove(label));
-        
-        objects.gramSchmidtOrigVectors = [];
-        objects.gramSchmidtOrthVectors = [];
-        objects.projectionLines = [];
-        objects.angles = [];
-        objects.labels = [];
-        
-        const origin = { x: 0, y: 0, z: 0 };
-        
-        // Draw original vectors (faded)
-        gramSchmidtVectors.forEach((v, i) => {
-          const arrow = createArrow(origin, v, 0x999999);
-          arrow.material = new THREE.MeshBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.5 });
-          scene.add(arrow);
-          objects.gramSchmidtOrigVectors.push(arrow);
-        });
-        
-        // Draw orthogonalized vectors
-        orthogonalVectors.forEach((v, i) => {
-          if (magnitude(v) > 0.01) {
-            const arrow = createArrow(origin, v, getOrthogonalVectorColor(i));
-            scene.add(arrow);
-            objects.gramSchmidtOrthVectors.push(arrow);
-          }
-        });
-        
-        // Add vector labels
-        createVectorLabels();
-        
-        // Add orthogonality indicators if we have at least 2 orthogonal vectors
-        if (orthogonalVectors.length >= 2) {
-          createOrthogonalityIndicator();
-        }
-        
-        // Display step counter
-        let statusText = '';
-        if (orthogonalVectors.length === 0) {
-          statusText = 'Click "Step Through Process" to start';
-        } else if (orthogonalVectors.length < gramSchmidtVectors.length) {
-          statusText = `Step ${orthogonalVectors.length} of ${gramSchmidtVectors.length}`;
-        } else {
-          statusText = 'Process complete! All vectors are orthogonal';
-        }
-        
-        // Update inner product display for the orthogonal vectors
-        if (orthogonalVectors.length >= 2) {
-          // Calculate all dot products between orthogonal vectors
-          let allOrthogonal = true;
-          let dotProductText = '';
-          
-          for (let i = 0; i < orthogonalVectors.length; i++) {
-            for (let j = i + 1; j < orthogonalVectors.length; j++) {
-              const dotProd = dot(orthogonalVectors[i], orthogonalVectors[j]);
-              dotProductText += `v₍${i+1}₎·v₍${j+1}₎ = ${dotProd.toFixed(2)}, `;
-              if (Math.abs(dotProd) > 0.1) allOrthogonal = false;
+        // Create gridded planes with transparency
+        function createGriddedPlane(color, rotationAxis, rotationAngle) {
+            const group = new THREE.Group();
+            
+            // Create the semi-transparent colored plane
+            const planeGeometry = new THREE.PlaneGeometry(10, 10);
+            const planeMaterial = new THREE.MeshBasicMaterial({ 
+            color: color, 
+            transparent: true, 
+            opacity: 0.1,
+            side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            group.add(plane);
+            
+            // Create grid lines on the plane
+            const gridSize = 10;
+            const divisions = 10;
+            const spacing = gridSize / divisions;
+            const gridMaterial = new THREE.LineBasicMaterial({ 
+            color: color, 
+            transparent: true, 
+            opacity: 0.3
+            });
+            
+            // Create horizontal grid lines
+            for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
+            const lineGeometry = new THREE.BufferGeometry();
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+                -gridSize/2, i, 0, 
+                gridSize/2, i, 0
+            ], 3));
+            const line = new THREE.Line(lineGeometry, gridMaterial);
+            group.add(line);
             }
-          }
-          
-          innerProductDisplay.textContent = dotProductText.slice(0, -2); // Remove trailing comma
-          
-          if (allOrthogonal) {
-            orthogonalStatus.textContent = 'All vectors are orthogonal to each other';
+            
+            // Create vertical grid lines
+            for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
+            const lineGeometry = new THREE.BufferGeometry();
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+                i, -gridSize/2, 0, 
+                i, gridSize/2, 0
+            ], 3));
+            const line = new THREE.Line(lineGeometry, gridMaterial);
+            group.add(line);
+            }
+            
+            // Apply rotation if specified
+            if (rotationAxis && rotationAngle !== undefined) {
+            if (rotationAxis === 'x') {
+                group.rotation.x = rotationAngle;
+            } else if (rotationAxis === 'y') {
+                group.rotation.y = rotationAngle;
+            } else if (rotationAxis === 'z') {
+                group.rotation.z = rotationAngle;
+            }
+            }
+            
+            return group;
+        }
+  
+        // Create and add the three gridded planes
+        const xyPlane = createGriddedPlane(0x000000);
+        scene.add(xyPlane);
+        const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
+        scene.add(yzPlane);
+        const xzPlane = createGriddedPlane(0x000000, 'x', Math.PI / 2);
+        scene.add(xzPlane);
+
+        // Update the axis labels
+        function createAxisLabels() {
+            scene.children.forEach(child => {
+            if (child.isAxisLabel) scene.remove(child);
+            });
+            
+            // Create X, Y, Z text labels using sprites for simplicity
+            function createTextSprite(text, position, color) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 64;
+            canvas.height = 64;
+            
+            context.font = 'Bold 32px Arial';
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, 32, 32);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({map: texture});
+            const sprite = new THREE.Sprite(material);
+            
+            sprite.position.copy(position);
+            sprite.scale.set(1, 1, 1);
+            sprite.isAxisLabel = true;
+            
+            return sprite;
+            }
+            
+            // X axis label - now with black color
+            const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
+            scene.add(xLabel);
+            
+            // Y axis label - now with black color
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
+            scene.add(yLabel);
+            
+            // Z axis label - now with black color
+            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
+            scene.add(zLabel);
+        }
+      
+        // Create camera
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        camera.position.set(8, 8, 8);
+        camera.lookAt(0, 0, 0);
+        
+        // Create renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        canvasContainer.appendChild(renderer.domElement);
+        
+        // Responsive canvas
+        window.addEventListener('resize', () => {
+            const newWidth = canvasContainer.clientWidth;
+            const newHeight = canvasContainer.clientHeight;
+            camera.aspect = newWidth / newHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newWidth, newHeight);
+        });
+      
+        // Add orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.25;
+      
+        // State variables
+        let demoType = 'projection3d';
+        let vectorA = { x: 3, y: 0, z: 0 };
+        let vectorB = { x: 0, y: 2, z: 0 };
+        let vectorC = { x: 0, y: 0, z: 1 };
+        let gramSchmidtStep = 0;
+        let gramSchmidtVectors = [];
+        let orthogonalVectors = [];
+      
+        // Object references for updating
+        const objects = {
+            vectorA: null,
+            vectorB: null,
+            vectorC: null,
+            projection: null,
+            orthogonal: null,
+            projectionLine: null,
+            orthogonalLine: null,
+            gramSchmidtOrigVectors: [],
+            gramSchmidtOrthVectors: [],
+            projectionLines: [],
+            angles: [],
+            labels: []
+        };
+      
+        // Utility functions
+        function dot(v1, v2) {
+            return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+        }
+        
+        function magnitude(v) {
+            return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        }
+        
+        function normalize(v) {
+            const mag = magnitude(v);
+            if (mag < 0.00001) return { x: 0, y: 0, z: 0 };
+            return { x: v.x / mag, y: v.y / mag, z: v.z / mag };
+        }
+        
+        function scalarMultiply(v, scalar) {
+            return { x: v.x * scalar, y: v.y * scalar, z: v.z * scalar };
+        }
+        
+        function vectorAdd(v1, v2) {
+            return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z };
+        }
+      
+        function vectorSubtract(v1, v2) {
+            return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z };
+        }
+      
+        function projectVector(v, onto) {
+            // Standard projection formula: proj_{onto}(v) = (v·onto / onto·onto) × onto
+            const dotProduct = dot(v, onto);
+            const ontoSquared = dot(onto, onto);
+            
+            // Avoid division by zero
+            if (Math.abs(ontoSquared) < 0.00001) {
+            return { x: 0, y: 0, z: 0 };
+            }
+            
+            return scalarMultiply(onto, dotProduct / ontoSquared);
+        }
+      
+        function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
+            // Direction
+            const direction = new THREE.Vector3(to.x - from.x, to.y - from.y, to.z - from.z);
+            const length = direction.length();
+            direction.normalize();
+            
+            // Arrow body
+            const arrowGeometry = new THREE.CylinderGeometry(0.02, 0.02, length - headLength, 8);
+            const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+            
+            // Position and orient
+            arrow.position.copy(new THREE.Vector3(from.x, from.y, from.z));
+            arrow.position.add(direction.clone().multiplyScalar(length / 2));
+            arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+            
+            // Arrow head
+            const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
+            const head = new THREE.Mesh(headGeometry, arrowMaterial);
+            head.position.copy(new THREE.Vector3(from.x, from.y, from.z));
+            head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
+            head.quaternion.copy(arrow.quaternion);
+            
+            // Group
+            const arrowGroup = new THREE.Group();
+            arrowGroup.add(arrow);
+            arrowGroup.add(head);
+
+            arrowGroup.traverse(object => {
+                if (object.isMesh) {
+                object.userData.vectorArrow = true;
+                }
+            });
+            
+            return arrowGroup;
+        }
+      
+        function createDashedLine(from, to, color) {
+            const points = [];
+            points.push(new THREE.Vector3(from.x, from.y, from.z));
+            points.push(new THREE.Vector3(to.x, to.y, to.z));
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineDashedMaterial({
+            color: color,
+            dashSize: 0.1,
+            gapSize: 0.05,
+            });
+            
+            const line = new THREE.Line(geometry, material);
+            line.computeLineDistances();
+            
+            return line;
+        }
+      
+        function updateProjectionDemo() {
+            // Clear previous objects
+            if (objects.vectorA) scene.remove(objects.vectorA);
+            if (objects.vectorB) scene.remove(objects.vectorB);
+            if (objects.projection) scene.remove(objects.projection);
+            if (objects.orthogonal) scene.remove(objects.orthogonal);
+            if (objects.projectionLine) scene.remove(objects.projectionLine);
+            if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
+            
+            objects.labels.forEach(label => scene.remove(label));
+            objects.labels = [];
+            
+            objects.angles.forEach(angle => scene.remove(angle));
+            objects.angles = [];
+            
+            // Create vectors
+            const origin = { x: 0, y: 0, z: 0 };
+            objects.vectorA = createArrow(origin, vectorA, 0x3498db);
+            objects.vectorB = createArrow(origin, vectorB, 0xe74c3c);
+            
+            scene.add(objects.vectorA);
+            scene.add(objects.vectorB);
+            
+            // Calculate projection
+            const projection = projectVector(vectorA, vectorB);
+            objects.projection = createArrow(origin, projection, 0x9b59b6);
+            scene.add(objects.projection);
+            
+            // Calculate orthogonal component
+            const orthogonal = vectorSubtract(vectorA, projection);
+            
+            // Draw orthogonal component if significant
+            if (magnitude(orthogonal) > 0.01) {
+            objects.orthogonal = createArrow(projection, vectorA, 0x2ecc71);
+            scene.add(objects.orthogonal);
+            
+            // Add dashed line from origin to vector A tip
+            objects.projectionLine = createDashedLine(origin, projection, 0x666666);
+            objects.orthogonalLine = createDashedLine(projection, vectorA, 0x666666);
+            
+            scene.add(objects.projectionLine);
+            scene.add(objects.orthogonalLine);
+            }
+            
+            // Add vector labels
+            createVectorLabels();
+            
+            // Add orthogonality indicator
+            createOrthogonalityIndicator();
+            
+            // Update info display
+            const innerProduct = dot(vectorA, vectorB);
+            innerProductDisplay.textContent = `u·v = (${vectorA.x.toFixed(1)} × ${vectorB.x.toFixed(1)}) + (${vectorA.y.toFixed(1)} × ${vectorB.y.toFixed(1)}) + (${vectorA.z.toFixed(1)} × ${vectorB.z.toFixed(1)}) = ${innerProduct.toFixed(2)}`;
+            
+            // Check orthogonality
+            if (Math.abs(innerProduct) < 0.1) {
+            orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
             orthogonalStatus.className = 'status orthogonal';
-          } else {
-            orthogonalStatus.textContent = 'Continue the process for full orthogonalization';
+            } else {
+            orthogonalStatus.textContent = 'Vectors are not orthogonal';
             orthogonalStatus.className = 'status not-orthogonal';
-          }
-        } else {
-          innerProductDisplay.textContent = statusText;
-          orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
-          orthogonalStatus.className = 'status orthogonal';
-        }
-        
-        // Show current step visualization
-        if (gramSchmidtStep > 0 && orthogonalVectors.length < gramSchmidtVectors.length) {
-          const currentIdx = orthogonalVectors.length;
-          const currentVector = gramSchmidtVectors[currentIdx];
-          
-          // Draw the current vector being processed (highlighted)
-          const currentArrow = createArrow(origin, currentVector, 0xf39c12);
-          scene.add(currentArrow);
-          objects.gramSchmidtOrigVectors.push(currentArrow);
-          
-          // Draw projections onto previous orthogonal vectors
-          let sumProjection = { x: 0, y: 0, z: 0 };
-          
-          orthogonalVectors.forEach((v, i) => {
-            if (magnitude(v) > 0.01) {
-              const proj = projectVector(currentVector, v);
-              sumProjection = vectorAdd(sumProjection, proj);
-              
-              // Draw projection
-              const projArrow = createArrow(origin, proj, getOrthogonalVectorColor(i), 0.15, 0.08);
-              projArrow.material = new THREE.MeshBasicMaterial({ 
-                color: getOrthogonalVectorColor(i),
-                transparent: true,
-                opacity: 0.7 - i * 0.2
-              });
-              scene.add(projArrow);
-              objects.projectionLines.push(projArrow);
-              
-              // Draw dashed line
-              const dashLine = createDashedLine(proj, currentVector, 0x666666);
-              scene.add(dashLine);
-              objects.projectionLines.push(dashLine);
             }
-          });
-          
-          // Draw the resulting orthogonal vector
-          const difference = vectorSubtract(currentVector, sumProjection);
-          if (magnitude(difference) > 0.01) {
-            const orthArrow = createArrow(origin, difference, getOrthogonalVectorColor(currentIdx));
-            scene.add(orthArrow);
-            objects.projectionLines.push(orthArrow);
-          }
         }
-      }
       
-      // Add labels for axes
-      function createAxisLabels() {
-        // Remove existing labels if any
-        scene.children.forEach(child => {
-          if (child.isAxisLabel) scene.remove(child);
-        });
-        
-        // Create X, Y, Z text labels using sprites for simplicity
-        function createTextSprite(text, position, color) {
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.width = 64;
-          canvas.height = 64;
-          
-          context.font = 'Bold 32px Arial';
-          context.fillStyle = color;
-          context.textAlign = 'center';
-          context.textBaseline = 'middle';
-          context.fillText(text, 32, 32);
-          
-          const texture = new THREE.CanvasTexture(canvas);
-          const material = new THREE.SpriteMaterial({map: texture});
-          const sprite = new THREE.Sprite(material);
-          
-          sprite.position.copy(position);
-          sprite.scale.set(1, 1, 1);
-          sprite.isAxisLabel = true;
-          
-          return sprite;
+        function getOrthogonalVectorColor(index) {
+            const colors = [
+            0x3498db, // Blue for first vector
+            0xe74c3c, // Red for second vector
+            0x27ae60, // Green for third vector
+            0x9b59b6, // Purple for fourth vector
+            0xf39c12  // Orange for fifth vector
+            ];
+            
+            return colors[index % colors.length];
         }
-        // X axis label
-        const xLabel = createTextSprite('X', new THREE.Vector3(0, 0, 5.5), '#ff0000');
-        scene.add(xLabel);
-        
-        // Y axis label
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#00ff00');
-        scene.add(yLabel);
-        
-        // Z axis label
-        const zLabel = createTextSprite('Z', new THREE.Vector3(5.5, 0, 0), '#0000ff');
-        scene.add(zLabel);
-      }
       
-      // Create a function to add/update vector labels
-      function createVectorLabels() {
-        objects.labels.forEach(label => scene.remove(label));
-        objects.labels = [];
+        function updateGramSchmidtDemo() {
+            // Clear previous objects
+            objects.gramSchmidtOrigVectors.forEach(v => scene.remove(v));
+            objects.gramSchmidtOrthVectors.forEach(v => scene.remove(v));
+            objects.projectionLines.forEach(l => scene.remove(l));
+            objects.angles.forEach(a => scene.remove(a));
+            objects.labels.forEach(label => scene.remove(label));
+            
+            objects.gramSchmidtOrigVectors = [];
+            objects.gramSchmidtOrthVectors = [];
+            objects.projectionLines = [];
+            objects.angles = [];
+            objects.labels = [];
         
-        function createTextSprite(text, position, color) {
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.width = 64;
-          canvas.height = 64;
-          
-          context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          
-          context.font = '32px Arial';
-          context.fillStyle = color;
-          context.textAlign = 'center';
-          context.textBaseline = 'middle';
-          context.fillText(text, 32, 32);
-          
-          const texture = new THREE.CanvasTexture(canvas);
-          const material = new THREE.SpriteMaterial({map: texture});
-          const sprite = new THREE.Sprite(material);
-          
-          sprite.position.copy(position);
-          sprite.scale.set(0.5, 0.5, 0.5);
-          
-          return sprite;
-        }
+            const origin = { x: 0, y: 0, z: 0 };
         
-        // Add labels based on demo type
-        if (demoType === 'projection3d') {
-          // Vector A label
-          if (magnitude(vectorA) > 0.1) {
-            const labelA = createTextSprite('u', new THREE.Vector3(vectorA.x*1.1, vectorA.y*1.1, vectorA.z*1.1), '#3498db');
-            scene.add(labelA);
-            objects.labels.push(labelA);
-          }
-          
-          // Vector B label
-          if (magnitude(vectorB) > 0.1) {
-            const labelB = createTextSprite('v', new THREE.Vector3(vectorB.x*1.1, vectorB.y*1.1, vectorB.z*1.1), '#e74c3c');
-            scene.add(labelB);
-            objects.labels.push(labelB);
-          }
-        } else if (demoType === 'gramschmidt3d') {
-          // Labels for original vectors
-          gramSchmidtVectors.forEach((v, i) => {
-            if (magnitude(v) > 0.1) {
-              const label = createTextSprite(`x₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), '#999999');
-              scene.add(label);
-              objects.labels.push(label);
+            // Draw original vectors (faded)
+            gramSchmidtVectors.forEach((v, i) => {
+                const arrow = createArrow(origin, v, 0x999999);
+                arrow.material = new THREE.MeshBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.5 });
+                scene.add(arrow);
+                objects.gramSchmidtOrigVectors.push(arrow);
+            });
+        
+            // Draw orthogonalized vectors
+            orthogonalVectors.forEach((v, i) => {
+                if (magnitude(v) > 0.01) {
+                    const arrow = createArrow(origin, v, getOrthogonalVectorColor(i));
+                    scene.add(arrow);
+                    objects.gramSchmidtOrthVectors.push(arrow);
+                }
+            });
+        
+            // Add vector labels
+            createVectorLabels();
+            
+            // Add orthogonality indicators if we have at least 2 orthogonal vectors
+            if (orthogonalVectors.length >= 2) {
+            createOrthogonalityIndicator();
             }
-          });
-          
-         // Labels for orthogonal vectors
-        orthogonalVectors.forEach((v, i) => {
-            if (magnitude(v) > 0.1) {
-            const color = getOrthogonalVectorColor(i).toString(16).padStart(6, '0');
-            const label = createTextSprite(`v₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), `#${color}`);
-            scene.add(label);
-            objects.labels.push(label);
-            }
-        });
-        }
-        }
         
+            // Display step counter
+            let statusText = '';
+            if (orthogonalVectors.length === 0) {
+            statusText = 'Click "Step Through Process" to start';
+            } else if (orthogonalVectors.length < gramSchmidtVectors.length) {
+            statusText = `Step ${orthogonalVectors.length} of ${gramSchmidtVectors.length}`;
+            } else {
+            statusText = 'Process complete! All vectors are orthogonal';
+            }
+            
+            // Update inner product display for the orthogonal vectors
+            if (orthogonalVectors.length >= 2) {
+            // Calculate all dot products between orthogonal vectors
+            let allOrthogonal = true;
+            let dotProductText = '';
+            
+            for (let i = 0; i < orthogonalVectors.length; i++) {
+                for (let j = i + 1; j < orthogonalVectors.length; j++) {
+                    const dotProd = dot(orthogonalVectors[i], orthogonalVectors[j]);
+                    dotProductText += `v₍${i+1}₎·v₍${j+1}₎ = ${dotProd.toFixed(2)}, `;
+                    if (Math.abs(dotProd) > 0.1) allOrthogonal = false;
+                }
+            }
+          
+            innerProductDisplay.textContent = dotProductText.slice(0, -2); // Remove trailing comma
+          
+            if (allOrthogonal) {
+                orthogonalStatus.textContent = 'All vectors are orthogonal to each other';
+                orthogonalStatus.className = 'status orthogonal';
+            } else {
+                orthogonalStatus.textContent = 'Continue the process for full orthogonalization';
+                orthogonalStatus.className = 'status not-orthogonal';
+            }
+            } else {
+                innerProductDisplay.textContent = statusText;
+                orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
+                orthogonalStatus.className = 'status orthogonal';
+            }
+        
+            // Show current step visualization
+            if (gramSchmidtStep > 0 && orthogonalVectors.length < gramSchmidtVectors.length) {
+                const currentIdx = orthogonalVectors.length;
+                const currentVector = gramSchmidtVectors[currentIdx];
+                
+                // Draw the current vector being processed (highlighted)
+                const currentArrow = createArrow(origin, currentVector, 0xf39c12);
+                scene.add(currentArrow);
+                objects.gramSchmidtOrigVectors.push(currentArrow);
+                
+                // Draw projections onto previous orthogonal vectors
+                let sumProjection = { x: 0, y: 0, z: 0 };
+                
+                orthogonalVectors.forEach((v, i) => {
+                    if (magnitude(v) > 0.01) {
+                        const proj = projectVector(currentVector, v);
+                        sumProjection = vectorAdd(sumProjection, proj);
+                        
+                        // Draw projection
+                        const projArrow = createArrow(origin, proj, getOrthogonalVectorColor(i), 0.15, 0.08);
+                        projArrow.material = new THREE.MeshBasicMaterial({ 
+                            color: getOrthogonalVectorColor(i),
+                            transparent: true,
+                            opacity: 0.7 - i * 0.2
+                        });
+                        scene.add(projArrow);
+                        objects.projectionLines.push(projArrow);
+                        
+                        // Draw dashed line
+                        const dashLine = createDashedLine(proj, currentVector, 0x666666);
+                        scene.add(dashLine);
+                        objects.projectionLines.push(dashLine);
+                    }
+                });
+          
+                // Draw the resulting orthogonal vector
+                const difference = vectorSubtract(currentVector, sumProjection);
+                if (magnitude(difference) > 0.01) {
+                    const orthArrow = createArrow(origin, difference, getOrthogonalVectorColor(currentIdx));
+                    scene.add(orthArrow);
+                    objects.projectionLines.push(orthArrow);
+                }
+            }
+        }//updateGramSchmidtDemo ends
+      
+        // Add labels for axes
+        function createAxisLabels() {
+            // Remove existing labels if any
+            scene.children.forEach(child => {
+            if (child.isAxisLabel) scene.remove(child);
+            });
+            
+            // Create X, Y, Z text labels using sprites for simplicity
+            function createTextSprite(text, position, color) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 64;
+                canvas.height = 64;
+                
+                context.font = 'Bold 32px Arial';
+                context.fillStyle = color;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, 32, 32);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({map: texture});
+                const sprite = new THREE.Sprite(material);
+                
+                sprite.position.copy(position);
+                sprite.scale.set(1, 1, 1);
+                sprite.isAxisLabel = true;
+                
+                return sprite;
+            }
+            // X axis label
+            const xLabel = createTextSprite('X', new THREE.Vector3(0, 0, 5.5), '#000000');
+            scene.add(xLabel);
+            // Y axis label
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
+            scene.add(yLabel);
+            // Z axis label
+            const zLabel = createTextSprite('Z', new THREE.Vector3(5.5, 0, 0), '#000000');
+            scene.add(zLabel);
+
+        }//createAxisLabels end
+      
+        // Create a function to add/update vector labels
+        function createVectorLabels() {
+            objects.labels.forEach(label => scene.remove(label));
+            objects.labels = [];
+        
+            function createTextSprite(text, position, color) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 64;
+                canvas.height = 64;
+                
+                context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+          
+                context.font = '32px Arial';
+                context.fillStyle = color;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, 32, 32);
+          
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({map: texture});
+                const sprite = new THREE.Sprite(material);
+                
+                sprite.position.copy(position);
+                sprite.scale.set(0.5, 0.5, 0.5);
+                
+                return sprite;
+            }
+
+            // Add labels based on demo type
+            if (demoType === 'projection3d') {
+                // Vector A label
+                if (magnitude(vectorA) > 0.1) {
+                    const labelA = createTextSprite('u', new THREE.Vector3(vectorA.x*1.1, vectorA.y*1.1, vectorA.z*1.1), '#3498db');
+                    scene.add(labelA);
+                    objects.labels.push(labelA);
+                }
+                // Vector B label
+                if (magnitude(vectorB) > 0.1) {
+                    const labelB = createTextSprite('v', new THREE.Vector3(vectorB.x*1.1, vectorB.y*1.1, vectorB.z*1.1), '#e74c3c');
+                    scene.add(labelB);
+                    objects.labels.push(labelB);
+                }
+                else if (demoType === 'gramschmidt3d') {
+                    // Labels for original vectors
+                    gramSchmidtVectors.forEach((v, i) => {
+                        if (magnitude(v) > 0.1) {
+                            const label = createTextSprite(`x₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), '#999999');
+                            scene.add(label);
+                            objects.labels.push(label);
+                        }
+                    });
+          
+                    // Labels for orthogonal vectors
+                    orthogonalVectors.forEach((v, i) => {
+                        if (magnitude(v) > 0.1) {
+                            const color = getOrthogonalVectorColor(i).toString(16).padStart(6, '0');
+                            const label = createTextSprite(`v₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), `#${color}`);
+                            scene.add(label);
+                            objects.labels.push(label);
+                        }
+                    });
+                }        
+            }
+        }
         // Create a visual indicator for orthogonal angles
         function createOrthogonalityIndicator() {
             // Clear any existing indicators
@@ -771,37 +757,35 @@ function createAxis(p1, p2, color) {
             
             if (demoType === 'projection3d') {
             // Create a right angle indicator between the projection and orthogonal component
-            const projection = projectVector(vectorA, vectorB);
-            const orthogonal = vectorSubtract(vectorA, projection);
-            
-            // Only add if both vectors have significant magnitude
-            if (magnitude(projection) > 0.1 && magnitude(orthogonal) > 0.1) {
-                const rightAngle = createRightAngleMarker(projection, orthogonal, 0.3);
-                scene.add(rightAngle);
-                objects.angles.push(rightAngle);
-            }
-            } else if (demoType === 'gramschmidt3d' && orthogonalVectors.length >= 2) {
-            // Add right angle markers between orthogonal vectors
-            for (let i = 0; i < orthogonalVectors.length; i++) {
-                for (let j = i+1; j < orthogonalVectors.length; j++) {
-                if (magnitude(orthogonalVectors[i]) > 0.1 && magnitude(orthogonalVectors[j]) > 0.1) {
-                    const rightAngle = createRightAngleMarker(
-                    orthogonalVectors[i], 
-                    orthogonalVectors[j], 
-                    0.3
-                    );
+                const projection = projectVector(vectorA, vectorB);
+                const orthogonal = vectorSubtract(vectorA, projection);
+                
+                // Only add if both vectors have significant magnitude
+                if (magnitude(projection) > 0.1 && magnitude(orthogonal) > 0.1) {
+                    const rightAngle = createRightAngleMarker(projection, orthogonal, 0.3);
                     scene.add(rightAngle);
                     objects.angles.push(rightAngle);
                 }
+            } else if (demoType === 'gramschmidt3d' && orthogonalVectors.length >= 2) {
+                // Add right angle markers between orthogonal vectors
+                for (let i = 0; i < orthogonalVectors.length; i++) {
+                    for (let j = i+1; j < orthogonalVectors.length; j++) {
+                        if (magnitude(orthogonalVectors[i]) > 0.1 && magnitude(orthogonalVectors[j]) > 0.1) {
+                            const rightAngle = createRightAngleMarker(
+                            orthogonalVectors[i], 
+                            orthogonalVectors[j], 
+                            0.3
+                            );
+                            scene.add(rightAngle);
+                            objects.angles.push(rightAngle);
+                        }
+                    }
                 }
             }
-            }
-        }
+        }//createOrthogonalityIndicator end
         
         function createRightAngleMarker(v1, v2, size) {
             // Create a small square to indicate a right angle
-            // We need to work in the plane defined by the two vectors
-            
             // Create a group to hold the right angle marker
             const group = new THREE.Group();
             
@@ -809,31 +793,28 @@ function createAxis(p1, p2, color) {
             const v1norm = normalize(v1);
             const v2norm = normalize(v2);
             
-            // Calculate the corner point (at the origin in this visualization)
-            const cornerPoint = new THREE.Vector3(0, 0, 0);
-            
             // Create the right angle marker lines
             const material = new THREE.LineBasicMaterial({ color: 0x2ecc71, linewidth: 2 });
             
             // First point along the first unit vector
             const p1 = new THREE.Vector3(
-            v1norm.x * size,
-            v1norm.y * size,
-            v1norm.z * size
+                v1norm.x * size,
+                v1norm.y * size,
+                v1norm.z * size
             );
             
             // Second point (corner of the right angle)
             const p2 = new THREE.Vector3(
-            v1norm.x * size + v2norm.x * size,
-            v1norm.y * size + v2norm.y * size,
-            v1norm.z * size + v2norm.z * size
+                v1norm.x * size + v2norm.x * size,
+                v1norm.y * size + v2norm.y * size,
+                v1norm.z * size + v2norm.z * size
             );
             
             // Third point along the second unit vector
             const p3 = new THREE.Vector3(
-            v2norm.x * size,
-            v2norm.y * size,
-            v2norm.z * size
+                v2norm.x * size,
+                v2norm.y * size,
+                v2norm.z * size
             );
             
             // Create the geometry and line
@@ -842,7 +823,8 @@ function createAxis(p1, p2, color) {
             
             group.add(rightAngleLine);
             return group;
-        }
+
+        }//createRightAngleMarker end
         
         function updateDemo() {
             if (demoType === 'projection3d') {
@@ -878,32 +860,32 @@ function createAxis(p1, p2, color) {
 
             // Update UI based on demo type
             if (demoType === 'projection3d') {
-            explanationTitle.textContent = '3D Orthogonal Projection';
-            explanationContent.innerHTML = `
-                <p>The <strong>orthogonal projection</strong> of vector u onto vector v in 3D space is:</p>
-                <p>proj<sub>v</sub> u = (u·v / ||v||²) × v</p>
-                <p>This decomposes u into two perpendicular components in 3D.</p>
-                <p>The orthogonal decomposition: u = proj<sub>v</sub> u + z</p>
-                <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
-            `;
-            
-            instructionText.textContent = 'Drag to rotate the 3D space and see orthogonal projection';
-            
-            legendContainer.innerHTML = `
-                <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
-                <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
-                <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
-                <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
-            `;
-            
-            vectorControls.style.display = 'block';
-            gramSchmidtControls.style.display = 'none';
-            vecCInput.style.display = 'none';
-            
-            updateProjectionDemo();
+                explanationTitle.textContent = '3D Orthogonal Projection';
+                explanationContent.innerHTML = `
+                    <p>The <strong>orthogonal projection</strong> of vector u onto vector v in 3D space is:</p>
+                    <p>proj<sub>v</sub> u = (u·v / ||v||²) × v</p>
+                    <p>This decomposes u into two perpendicular components in 3D.</p>
+                    <p>The orthogonal decomposition: u = proj<sub>v</sub> u + z</p>
+                    <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
+                `;
+                
+                instructionText.textContent = 'Drag to rotate the 3D space and see orthogonal projection';
+                
+                legendContainer.innerHTML = `
+                    <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
+                    <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
+                    <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
+                    <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
+                `;
+                
+                vectorControls.style.display = 'block';
+                gramSchmidtControls.style.display = 'none';
+                vecCInput.style.display = 'none';
+                
+                updateProjectionDemo();
             } else if (demoType === 'gramschmidt3d') {
-            explanationTitle.textContent = '3D Gram-Schmidt Process';
-            explanationContent.innerHTML = `
+                explanationTitle.textContent = '3D Gram-Schmidt Process';
+                explanationContent.innerHTML = `
                 <p>The <strong>Gram-Schmidt process</strong> transforms a set of vectors into an orthogonal set in 3D space.</p>
                 <p>Starting with vectors {x₁, x₂, x₃}:</p>
                 <p>1. v₁ = x₁</p>
@@ -911,29 +893,30 @@ function createAxis(p1, p2, color) {
                 <p>3. v₃ = x₃ - proj<sub>v₁</sub>x₃ - proj<sub>v₂</sub>x₃</p>
                 <p>Unlike in 2D, three orthogonal vectors can fully exist in 3D space.</p>
                 <p>This relationship is essential in many 3D applications, including computer graphics and robotics.</p>
-            `;
+                `;
+                
+                instructionText.textContent = 'Step through the process to see 3D orthogonalization';
+                
+                legendContainer.innerHTML = `
+                    <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
+                    <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
+                    <div class="legend-item"><span class="legend-color vector-a"></span> First orthogonal vector</div>
+                    <div class="legend-item"><span class="legend-color vector-b"></span> Second orthogonal vector</div>
+                    <div class="legend-item"><span class="legend-color vector-c"></span> Third orthogonal vector</div>
+                `;
             
-            instructionText.textContent = 'Step through the process to see 3D orthogonalization';
-            
-            legendContainer.innerHTML = `
-                <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
-                <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
-                <div class="legend-item"><span class="legend-color vector-a"></span> First orthogonal vector</div>
-                <div class="legend-item"><span class="legend-color vector-b"></span> Second orthogonal vector</div>
-                <div class="legend-item"><span class="legend-color vector-c"></span> Third orthogonal vector</div>
-            `;
-            
-            vectorControls.style.display = 'none';
-            gramSchmidtControls.style.display = 'block';
-            vecCInput.style.display = 'block';
-            
-            // Initialize Gram-Schmidt demo if needed
-            if (gramSchmidtVectors.length === 0) {
-                generateRandomVectors(3);
+                vectorControls.style.display = 'none';
+                gramSchmidtControls.style.display = 'block';
+                vecCInput.style.display = 'block';
+                
+                // Initialize Gram-Schmidt demo if needed
+                if (gramSchmidtVectors.length === 0) {
+                    generateRandomVectors(3);
+                }
+                updateGramSchmidtDemo();
             }
-            updateGramSchmidtDemo();
-            }
-        }
+
+        }//updateDemoType end
         
         // Event handlers
         function handleVectorInputChange() {
@@ -1024,13 +1007,132 @@ function createAxis(p1, p2, color) {
         stepBtn.addEventListener('click', gramSchmidtProcess);
         resetBtn.addEventListener('click', resetDemo);
         
-        
        // Start the visualization
         updateDemoType();
         animate();
-        updateDemoType();       
-
+        updateDemoType();      
         
+        // Track dragging state
+        let isDragging = false;
+        let selectedVector = null;
+        let dragPlane = new THREE.Plane();
+        let dragOffset = new THREE.Vector3();
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        // Mouse/touch handling functions
+        function onMouseDown(event) {
+            // Prevent default behavior
+            event.preventDefault();
+            
+            // Get normalized mouse position
+            updateMousePosition(event);
+            
+            // Raycast to find vectors
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Create an array of objects to check for intersection
+            const arrows = [];
+            if (objects.vectorA) arrows.push(objects.vectorA);
+            if (objects.vectorB) arrows.push(objects.vectorB);
+            
+            const intersects = raycaster.intersectObjects(arrows, true);
+  
+            if (intersects.length > 0) {
+                // Disable orbit controls temporarily
+                controls.enabled = false;
+                
+                isDragging = true;
+                
+                // Determine which vector was selected
+                if (intersects[0].object.parent === objects.vectorA) {
+                    selectedVector = 'u';
+                } else if (intersects[0].object.parent === objects.vectorB) {
+                    selectedVector = 'v';
+                }
+    
+                // Create a drag plane perpendicular to the camera
+                dragPlane.setFromNormalAndCoplanarPoint(
+                camera.getWorldDirection(dragPlane.normal),
+                new THREE.Vector3(0, 0, 0)
+                );
+                
+                // Set the drag offset
+                const intersection = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, intersection);
+                dragOffset.copy(intersection);
+            }
+        }       
+
+        function onMouseMove(event) {
+            // Update mouse position
+            updateMousePosition(event);
+            
+            // If dragging a vector
+            if (isDragging && selectedVector && demoType === 'projection3d') {
+                // Raycast to the drag plane
+                raycaster.setFromCamera(mouse, camera);
+                const intersection = new THREE.Vector3();
+                
+                if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
+                    // Calculate new position
+                    const newPosition = intersection.clone().sub(dragOffset);
+                    
+                    // Update the selected vector
+                    if (selectedVector === 'u') {
+                        vectorA.x = Math.round(newPosition.x * 2) / 2; // Round to nearest 0.5
+                        vectorA.y = Math.round(newPosition.y * 2) / 2;
+                        vectorA.z = Math.round(newPosition.z * 2) / 2;
+                        
+                        // Update input fields
+                        vecAXInput.value = vectorA.x;
+                        vecAYInput.value = vectorA.y;
+                        vecAZInput.value = vectorA.z;
+                    } else if (selectedVector === 'v') {
+                        vectorB.x = Math.round(newPosition.x * 2) / 2; 
+                        vectorB.y = Math.round(newPosition.y * 2) / 2;
+                        vectorB.z = Math.round(newPosition.z * 2) / 2;
+                        
+                        // Update input fields
+                        vecBXInput.value = vectorB.x;
+                        vecBYInput.value = vectorB.y;
+                        vecBZInput.value = vectorB.z;
+                    }
+                    
+                    // Update the visualization
+                    updateProjectionDemo();
+                }
+            }
+        }
+
+        function onMouseUp(event) {
+        isDragging = false;
+        selectedVector = null;
+        
+        // Re-enable orbit controls
+        controls.enabled = true;
+        }
+
+        function updateMousePosition(event) {
+            const canvasRect = renderer.domElement.getBoundingClientRect();
+            
+            // Handle both mouse and touch events
+            const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
+            const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
+            
+            mouse.x = ((clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+            mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+        }
+
+        // Add event listeners for both mouse and touch
+        renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+        renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('mouseup', onMouseUp, false);
+
+        // Touch events
+        renderer.domElement.addEventListener('touchstart', onMouseDown, false);
+        renderer.domElement.addEventListener('touchmove', onMouseMove, false);
+        window.addEventListener('touchend', onMouseUp, false);
 
         function generateRandomVectors(count) {
             // Clear previous vectors
@@ -1062,12 +1164,12 @@ function createAxis(p1, p2, color) {
             const currentVector = gramSchmidtVectors[orthogonalVectors.length];
             
             if (orthogonalVectors.length === 0) {
-              // First vector is just normalized
-              orthogonalVectors.push({
-                x: currentVector.x,
-                y: currentVector.y,
-                z: currentVector.z
-              });
+                // First vector is just normalized
+                orthogonalVectors.push({
+                    x: currentVector.x,
+                    y: currentVector.y,
+                    z: currentVector.z
+                });
             } else {
               // Calculate projections onto all previous orthogonal vectors
               let result = { x: currentVector.x, y: currentVector.y, z: currentVector.z };
