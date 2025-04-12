@@ -542,10 +542,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Axes
         addAxes();
 
-        // Make grid horizontal (x-z plane for ground)
-        const gridHelper = new THREE.GridHelper(1, 10);
-        gridHelper.position.set(0.5, 0, 0.5);
-        scene.add(gridHelper);
+        // Create grids for all three planes
+        // x-z plane (horizontal "floor" grid)
+        const xzGrid = new THREE.GridHelper(1, 10);
+        xzGrid.position.set(0.5, 0, 0.5);
+        scene.add(xzGrid);
+
+        // x-y plane (vertical grid)
+        const xyGrid = new THREE.GridHelper(1, 10);
+        xyGrid.rotation.x = Math.PI / 2; // Rotate to be vertical
+        xyGrid.position.set(0.5, 0.5, 0);
+        scene.add(xyGrid);
+
+        // y-z plane (vertical grid)
+        const yzGrid = new THREE.GridHelper(1, 10);
+        yzGrid.rotation.z = Math.PI / 2; // Rotate to be vertical
+        yzGrid.position.set(0, 0.5, 0.5);
+        scene.add(yzGrid);
+
+        // Make grids semi-transparent for better visibility
+        xzGrid.material.opacity = 0.2;
+        xzGrid.material.transparent = true;
+        xyGrid.material.opacity = 0.2;
+        xyGrid.material.transparent = true;
+        yzGrid.material.opacity = 0.2;
+        yzGrid.material.transparent = true;
         
         // Event listener for clicking in 3D space
         renderer.domElement.addEventListener('mousedown', handle3DClick);
