@@ -249,16 +249,16 @@ function createAxis(p1, p2, color) {
   }
   
   // Create and add the three gridded planes
-  // XY Plane (blue)
-  const xyPlane = createGriddedPlane(0x2196f3);
+  // XY Plane
+  const xyPlane = createGriddedPlane(0x000000);
   scene.add(xyPlane);
   
-  // YZ Plane (red)
-  const yzPlane = createGriddedPlane(0xf44336, 'y', Math.PI / 2);
+  // YZ Plane
+  const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
   scene.add(yzPlane);
   
-  // XZ Plane (green)
-  const xzPlane = createGriddedPlane(0x4caf50, 'x', Math.PI / 2);
+  // XZ Plane
+  const xzPlane = createGriddedPlane(0x000000, 'x', Math.PI / 2);
   scene.add(xzPlane);
 
   // Update the axis labels to use black color
