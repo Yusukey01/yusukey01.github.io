@@ -258,7 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
         // Create and add the three gridded planes
         const xyPlane = createGriddedPlane(0x000000);
-        xyPlane.position.y = -5; // Move the XY plane to the bottom
         scene.add(xyPlane);
         const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
         scene.add(yzPlane);
