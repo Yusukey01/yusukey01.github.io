@@ -514,22 +514,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Camera
         camera = new THREE.PerspectiveCamera(60, canvasWrapper.clientWidth / 500, 0.1, 1000);
-        camera.position.set(1.5, 1.5, 1.5);
-        camera.lookAt(0.5, 0.5, 0.5);
-        
+        camera.position.set(0.5, 1.5, 0.5); // Changed to look down at xy plane
+        camera.lookAt(0.5, 0, 0.5);
+
         // Renderer
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(canvasWrapper.clientWidth, 500);
         container3D.innerHTML = '';
         container3D.appendChild(renderer.domElement);
-        
+
         // Controls
         controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0.5, 0.5, 0.5);
+        controls.target.set(0.5, 0, 0.5); // Look at center of xy plane
         controls.enableDamping = true;
         controls.dampingFactor = 0.1;
         controls.enableZoom = true;
-        controls.addEventListener('change', render3D);
         
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
