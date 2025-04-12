@@ -193,56 +193,58 @@ document.addEventListener('DOMContentLoaded', function() {
       controls.dampingFactor = 0.25;
       
       // Create axes
-      const axesHelper = new THREE.AxesHelper(5);
-      axesHelper.setColors(
-        new THREE.Color(0x000000), // X axis - black
-        new THREE.Color(0x000000), // Y axis - black
-        new THREE.Color(0x000000)  // Z axis - black
-      );
-      scene.add(axesHelper);
+      // Create black axes instead of colored ones
+        const axesHelper = new THREE.AxesHelper(5);
+        // Access the material of the axes helper and set its color
+        const axesMaterial = axesHelper.material;
+        if (axesMaterial) {
+        axesMaterial.vertexColors = false; // Disable vertex colors
+        axesMaterial.color.set(0x000000); // Set to black
+        }
+        scene.add(axesHelper);
       
       // Create grid
       const gridHelper = new THREE.GridHelper(10, 10);
       gridHelper.rotation.x = Math.PI / 2;
       scene.add(gridHelper);
       // Add these new lines to create coordinate planes:
-// XY Plane (blue)
-const xyPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-const xyPlaneMaterial = new THREE.MeshBasicMaterial({ 
-  color: 0x2196f3, 
-  transparent: true, 
-  opacity: 0.2,
-  side: THREE.DoubleSide
-});
-const xyPlane = new THREE.Mesh(xyPlaneGeometry, xyPlaneMaterial);
-xyPlane.position.set(0, 0, 0);
-scene.add(xyPlane);
+        // XY Plane (blue)
+        const xyPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+        const xyPlaneMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x2196f3, 
+        transparent: true, 
+        opacity: 0.2,
+        side: THREE.DoubleSide
+        });
+        const xyPlane = new THREE.Mesh(xyPlaneGeometry, xyPlaneMaterial);
+        xyPlane.position.set(0, 0, 0);
+        scene.add(xyPlane);
 
-// YZ Plane (red)
-const yzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-const yzPlaneMaterial = new THREE.MeshBasicMaterial({ 
-  color: 0xf44336, 
-  transparent: true, 
-  opacity: 0.2,
-  side: THREE.DoubleSide
-});
-const yzPlane = new THREE.Mesh(yzPlaneGeometry, yzPlaneMaterial);
-yzPlane.position.set(0, 0, 0);
-yzPlane.rotation.y = Math.PI / 2;
-scene.add(yzPlane);
+        // YZ Plane (red)
+        const yzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+        const yzPlaneMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xf44336, 
+        transparent: true, 
+        opacity: 0.2,
+        side: THREE.DoubleSide
+        });
+        const yzPlane = new THREE.Mesh(yzPlaneGeometry, yzPlaneMaterial);
+        yzPlane.position.set(0, 0, 0);
+        yzPlane.rotation.y = Math.PI / 2;
+        scene.add(yzPlane);
 
-// XZ Plane (green)
-const xzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
-const xzPlaneMaterial = new THREE.MeshBasicMaterial({ 
-  color: 0x4caf50, 
-  transparent: true, 
-  opacity: 0.2,
-  side: THREE.DoubleSide
-});
-const xzPlane = new THREE.Mesh(xzPlaneGeometry, xzPlaneMaterial);
-xzPlane.position.set(0, 0, 0);
-xzPlane.rotation.x = Math.PI / 2;
-scene.add(xzPlane);
+        // XZ Plane (green)
+        const xzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+        const xzPlaneMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x4caf50, 
+        transparent: true, 
+        opacity: 0.2,
+        side: THREE.DoubleSide
+        });
+        const xzPlane = new THREE.Mesh(xzPlaneGeometry, xzPlaneMaterial);
+        xzPlane.position.set(0, 0, 0);
+        xzPlane.rotation.x = Math.PI / 2;
+        scene.add(xzPlane);
       
       // State variables
       let demoType = 'projection3d';
