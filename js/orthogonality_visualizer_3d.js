@@ -683,9 +683,8 @@ function createAxis(p1, p2, color) {
           
           return sprite;
         }
-        
         // X axis label
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff0000');
+        const xLabel = createTextSprite('X', new THREE.Vector3(0, 0, 5.5), '#ff0000');
         scene.add(xLabel);
         
         // Y axis label
@@ -693,16 +692,12 @@ function createAxis(p1, p2, color) {
         scene.add(yLabel);
         
         // Z axis label
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#0000ff');
+        const zLabel = createTextSprite('Z', new THREE.Vector3(5.5, 0, 0), '#0000ff');
         scene.add(zLabel);
       }
       
       // Create a function to add/update vector labels
       function createVectorLabels() {
-        // Create simple sprite text for vector labels
-        // This avoids the potential issues with loading external font files
-        
-        // Remove existing labels first
         objects.labels.forEach(label => scene.remove(label));
         objects.labels = [];
         
@@ -936,7 +931,6 @@ function createAxis(p1, p2, color) {
             if (gramSchmidtVectors.length === 0) {
                 generateRandomVectors(3);
             }
-            
             updateGramSchmidtDemo();
             }
         }
@@ -1030,145 +1024,7 @@ function createAxis(p1, p2, color) {
         stepBtn.addEventListener('click', gramSchmidtProcess);
         resetBtn.addEventListener('click', resetDemo);
         
-        // Add these event listeners after your existing event listeners
-// Inside the initializeVisualization function, after other event listeners
-
-// Track dragging state
-let isDragging = false;
-let selectedVector = null;
-let dragPlane = new THREE.Plane();
-let dragOffset = new THREE.Vector3();
-let raycaster = new THREE.Raycaster();
-let mouse = new THREE.Vector2();
-
-// Mouse/touch handling functions
-function onMouseDown(event) {
-  // Prevent default behavior
-  event.preventDefault();
-  
-  // Get normalized mouse position
-  updateMousePosition(event);
-  
-  // Raycast to find vectors
-  raycaster.setFromCamera(mouse, camera);
-  
-  // Create an array of objects to check for intersection
-  const arrows = [];
-  if (objects.vectorA) arrows.push(objects.vectorA);
-  if (objects.vectorB) arrows.push(objects.vectorB);
-  
-  const intersects = raycaster.intersectObjects(arrows, true);
-  
-  if (intersects.length > 0) {
-    // Disable orbit controls temporarily
-    controls.enabled = false;
-    
-    isDragging = true;
-    
-    // Determine which vector was selected
-    if (intersects[0].object.parent === objects.vectorA) {
-      selectedVector = 'u';
-    } else if (intersects[0].object.parent === objects.vectorB) {
-      selectedVector = 'v';
-    }
-    
-    // Create a drag plane perpendicular to the camera
-    dragPlane.setFromNormalAndCoplanarPoint(
-      camera.getWorldDirection(dragPlane.normal),
-      new THREE.Vector3(0, 0, 0)
-    );
-    
-    // Set the drag offset
-    const intersection = new THREE.Vector3();
-    raycaster.ray.intersectPlane(dragPlane, intersection);
-    dragOffset.copy(intersection);
-  }
-}
-
-function onMouseMove(event) {
-  // Update mouse position
-  updateMousePosition(event);
-  
-  // If dragging a vector
-  if (isDragging && selectedVector && demoType === 'projection3d') {
-    // Raycast to the drag plane
-    raycaster.setFromCamera(mouse, camera);
-    const intersection = new THREE.Vector3();
-    
-    if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
-      // Calculate new position
-      const newPosition = intersection.clone().sub(dragOffset);
-      
-      // Update the selected vector
-      if (selectedVector === 'u') {
-        vectorA.x = Math.round(newPosition.x * 2) / 2; // Round to nearest 0.5
-        vectorA.y = Math.round(newPosition.y * 2) / 2;
-        vectorA.z = Math.round(newPosition.z * 2) / 2;
         
-        // Update input fields
-        vecAXInput.value = vectorA.x;
-        vecAYInput.value = vectorA.y;
-        vecAZInput.value = vectorA.z;
-      } else if (selectedVector === 'v') {
-        vectorB.x = Math.round(newPosition.x * 2) / 2; 
-        vectorB.y = Math.round(newPosition.y * 2) / 2;
-        vectorB.z = Math.round(newPosition.z * 2) / 2;
-        
-        // Update input fields
-        vecBXInput.value = vectorB.x;
-        vecBYInput.value = vectorB.y;
-        vecBZInput.value = vectorB.z;
-      }
-      
-      // Update the visualization
-      updateProjectionDemo();
-    }
-  }
-}
-
-function onMouseUp(event) {
-  isDragging = false;
-  selectedVector = null;
-  
-  // Re-enable orbit controls
-  controls.enabled = true;
-}
-
-function updateMousePosition(event) {
-  const canvasRect = renderer.domElement.getBoundingClientRect();
-  
-  // Handle both mouse and touch events
-  const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
-  const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
-  
-  mouse.x = ((clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
-  mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
-}
-
-// Add event listeners for both mouse and touch
-renderer.domElement.addEventListener('mousedown', onMouseDown, false);
-renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-window.addEventListener('mouseup', onMouseUp, false);
-
-// Touch events
-renderer.domElement.addEventListener('touchstart', onMouseDown, false);
-renderer.domElement.addEventListener('touchmove', onMouseMove, false);
-window.addEventListener('touchend', onMouseUp, false);
-
-// Make vectors more clickable
-function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
-  // Your existing arrow creation code...
-  
-  // Add this to the end of the function:
-  // Make arrow components respond to raycaster
-  arrowGroup.traverse(object => {
-    if (object.isMesh) {
-      object.userData.vectorArrow = true;
-    }
-  });
-  
-  return arrowGroup;
-}
        // Start the visualization
         updateDemoType();
         animate();
@@ -1189,12 +1045,11 @@ function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
                 y: Math.random() * 4 - 2,
                 z: Math.random() * 4 - 2
               });
-            }
-            
+            }   
             updateGramSchmidtDemo();
-          }
+        }
           
-          function gramSchmidtProcess() {
+        function gramSchmidtProcess() {
             // Perform one step of the Gram-Schmidt process
             if (orthogonalVectors.length >= gramSchmidtVectors.length) {
               // Process is complete
@@ -1248,9 +1103,8 @@ function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
                   orthogonalVectors.push(orthoVector);
                 }
               }
-            }
-            
+            }   
             updateGramSchmidtDemo();
-          }
+        }
     } // Close initializeVisualization function
 }); 
