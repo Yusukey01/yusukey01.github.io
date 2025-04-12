@@ -194,12 +194,52 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Create axes
       const axesHelper = new THREE.AxesHelper(5);
+      axesHelper.setColors(
+        new THREE.Color(0x000000), // X axis - black
+        new THREE.Color(0x000000), // Y axis - black
+        new THREE.Color(0x000000)  // Z axis - black
+      );
       scene.add(axesHelper);
       
       // Create grid
-      const gridHelper = new THREE.GridHelper(10, 10);
-      gridHelper.rotation.x = Math.PI / 2;
-      scene.add(gridHelper);
+      // Add these new lines to create coordinate planes:
+    // XY Plane 
+    const xyPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+    const xyPlaneMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0x000000, 
+    transparent: true, 
+    opacity: 0.2,
+    side: THREE.DoubleSide
+    });
+    const xyPlane = new THREE.Mesh(xyPlaneGeometry, xyPlaneMaterial);
+    xyPlane.position.set(0, 0, 0);
+    scene.add(xyPlane);
+
+    // YZ Plane 
+    const yzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+    const yzPlaneMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0x000000, 
+    transparent: true, 
+    opacity: 0.2,
+    side: THREE.DoubleSide
+    });
+    const yzPlane = new THREE.Mesh(yzPlaneGeometry, yzPlaneMaterial);
+    yzPlane.position.set(0, 0, 0);
+    yzPlane.rotation.y = Math.PI / 2;
+    scene.add(yzPlane);
+
+    // XZ Plane 
+    const xzPlaneGeometry = new THREE.PlaneGeometry(10, 10);
+    const xzPlaneMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0x000000, 
+    transparent: true, 
+    opacity: 0.2,
+    side: THREE.DoubleSide
+    });
+    const xzPlane = new THREE.Mesh(xzPlaneGeometry, xzPlaneMaterial);
+    xzPlane.position.set(0, 0, 0);
+    xzPlane.rotation.x = Math.PI / 2;
+    scene.add(xzPlane);
       
       // State variables
       let demoType = 'projection3d';
