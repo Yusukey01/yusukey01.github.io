@@ -1034,6 +1034,69 @@ document.addEventListener('DOMContentLoaded', function() {
       
       drawCanvas();
     }
+
+    function handleTouchStart(e) {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        
+        if (demoType === 'gramschmidt') return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        // Check if we touched a vector endpoint
+        const endA = vectorToCanvas(vectorA);
+        const endB = vectorToCanvas(vectorB);
+        
+        const distA = Math.sqrt(Math.pow(x - endA.x, 2) + Math.pow(y - endA.y, 2));
+        const distB = Math.sqrt(Math.pow(x - endB.x, 2) + Math.pow(y - endB.y, 2));
+        
+        if (distA < 30) { // Increased touch target for mobile
+          isDragging = true;
+          draggingVector = 'u';
+        } else if (distB < 30) {
+          isDragging = true;
+          draggingVector = 'v';
+        }
+        
+        lastTouchX = x;
+        lastTouchY = y;
+      }
+      
+      function handleTouchMove(e) {
+        e.preventDefault();
+        
+        if (!isDragging || demoType === 'gramschmidt') return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const vector = canvasToVector(x, y);
+        
+        // Update the dragged vector's coordinates
+        if (draggingVector === 'u') {
+          vectorA = vector;
+          vecAXInput.value = vector.x.toFixed(1);
+          vecAYInput.value = vector.y.toFixed(1);
+        } else if (draggingVector === 'v') {
+          vectorB = vector;
+          vecBXInput.value = vector.x.toFixed(1);
+          vecBYInput.value = vector.y.toFixed(1);
+        }
+        
+        lastTouchX = x;
+        lastTouchY = y;
+        
+        drawCanvas();
+      }
+      
+      function handleTouchEnd(e) {
+        isDragging = false;
+        draggingVector = null;
+      }
     
     // Adding event listeners
     demoTypeSelect.addEventListener('change', updateDemoType);
@@ -1047,6 +1110,11 @@ document.addEventListener('DOMContentLoaded', function() {
     vecAYInput.addEventListener('input', handleVectorInputChange);
     vecBXInput.addEventListener('input', handleVectorInputChange);
     vecBYInput.addEventListener('input', handleVectorInputChange);
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
     
     // Add event listener for projection reset button directly
     if (projectionResetBtn) {
