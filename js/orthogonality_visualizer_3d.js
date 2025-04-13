@@ -1164,9 +1164,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate random vectors
             for (let i = 0; i < count; i++) {
               gramSchmidtVectors.push({
-                x: Math.random() * 4 - 2, // Range: -2 to 2
-                y: Math.random() * 4 - 2,
-                z: Math.random() * 4 - 2
+                x: Math.random() * 8 - 4, // Range: -4 to 4
+                y: Math.random() * 8 - 4,
+                z: Math.random() * 8 - 4
               });
             }   
             updateGramSchmidtDemo();
@@ -1229,5 +1229,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }   
             updateGramSchmidtDemo();
         }
-    } // Close initializeVisualization function
+    }// Close initializeVisualization function
 }); 
