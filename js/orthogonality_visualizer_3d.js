@@ -192,16 +192,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf8f9fa);
 
-        // Create custom black axes 
         function createAxis(p1, p2, color) {
             const material = new THREE.LineBasicMaterial({ color: color });
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-            p1.x, p1.y, p1.z, p2.x, p2.y, p2.z
+            
+            // Create positive direction
+            const geometryPositive = new THREE.BufferGeometry();
+            geometryPositive.setAttribute('position', new THREE.Float32BufferAttribute([
+                0, 0, 0, p2.x, p2.y, p2.z
             ], 3));
-            const line = new THREE.Line(geometry, material);
-            line.userData.isAxis = true;
-            return line;
+            const linePositive = new THREE.Line(geometryPositive, material);
+            
+            // Create negative direction
+            const geometryNegative = new THREE.BufferGeometry();
+            geometryNegative.setAttribute('position', new THREE.Float32BufferAttribute([
+                0, 0, 0, -p2.x, -p2.y, -p2.z
+            ], 3));
+            const lineNegative = new THREE.Line(geometryNegative, material);
+            
+            // Group both lines
+            const axisGroup = new THREE.Group();
+            axisGroup.add(linePositive);
+            axisGroup.add(lineNegative);
+            axisGroup.userData.isAxis = true;
+            
+            return axisGroup;
         }
   
         // Add black axes
@@ -213,58 +227,58 @@ document.addEventListener('DOMContentLoaded', function() {
         function createGriddedPlane(color, rotationAxis, rotationAngle) {
             const group = new THREE.Group();
             
-            // Create the semi-transparent colored plane
+            // Create the semi-transparent colored plane with increased transparency
             const planeGeometry = new THREE.PlaneGeometry(10, 10);
             const planeMaterial = new THREE.MeshBasicMaterial({ 
-            color: color, 
-            transparent: true, 
-            opacity: 0.1,
-            side: THREE.DoubleSide
+                color: color, 
+                transparent: true, 
+                opacity: 0.05,  // Reduced from 0.1 to 0.05
+                side: THREE.DoubleSide
             });
             const plane = new THREE.Mesh(planeGeometry, planeMaterial);
             group.add(plane);
             
-            // Create grid lines on the plane
+            // Create grid lines on the plane with increased transparency
             const gridSize = 10;
             const divisions = 10;
             const spacing = gridSize / divisions;
             const gridMaterial = new THREE.LineBasicMaterial({ 
-            color: color, 
-            transparent: true, 
-            opacity: 0.3
+                color: color, 
+                transparent: true, 
+                opacity: 0.2  // Reduced from 0.3 to 0.2
             });
             
             // Create horizontal grid lines
             for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
-            const lineGeometry = new THREE.BufferGeometry();
-            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
-                -gridSize/2, i, 0, 
-                gridSize/2, i, 0
-            ], 3));
-            const line = new THREE.Line(lineGeometry, gridMaterial);
-            group.add(line);
+                const lineGeometry = new THREE.BufferGeometry();
+                lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+                    -gridSize/2, i, 0, 
+                    gridSize/2, i, 0
+                ], 3));
+                const line = new THREE.Line(lineGeometry, gridMaterial);
+                group.add(line);
             }
             
             // Create vertical grid lines
             for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
-            const lineGeometry = new THREE.BufferGeometry();
-            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
-                i, -gridSize/2, 0, 
-                i, gridSize/2, 0
-            ], 3));
-            const line = new THREE.Line(lineGeometry, gridMaterial);
-            group.add(line);
+                const lineGeometry = new THREE.BufferGeometry();
+                lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+                    i, -gridSize/2, 0, 
+                    i, gridSize/2, 0
+                ], 3));
+                const line = new THREE.Line(lineGeometry, gridMaterial);
+                group.add(line);
             }
             
             // Apply rotation if specified
             if (rotationAxis && rotationAngle !== undefined) {
-            if (rotationAxis === 'x') {
-                group.rotation.x = rotationAngle;
-            } else if (rotationAxis === 'y') {
-                group.rotation.y = rotationAngle;
-            } else if (rotationAxis === 'z') {
-                group.rotation.z = rotationAngle;
-            }
+                if (rotationAxis === 'x') {
+                    group.rotation.x = rotationAngle;
+                } else if (rotationAxis === 'y') {
+                    group.rotation.y = rotationAngle;
+                } else if (rotationAxis === 'z') {
+                    group.rotation.z = rotationAngle;
+                }
             }
             
             return group;
@@ -1045,7 +1059,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
 
-        // Mouse/touch handling functions
         function onMouseDown(event) {
             // Prevent default behavior
             event.preventDefault();
@@ -1056,40 +1069,44 @@ document.addEventListener('DOMContentLoaded', function() {
             // Raycast to find vectors
             raycaster.setFromCamera(mouse, camera);
             
-            // Fix: Ensure we're checking for intersections with all meshes in the scene
+            // Check intersections with all objects in the scene, including their children
             const intersects = raycaster.intersectObjects(scene.children, true);
             
             // Find the first intersected object that belongs to either vectorA or vectorB
             let vectorIntersection = null;
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
-                let parent = obj.parent;
                 
-                while (parent) {
-                    if (parent === objects.vectorA) {
-                        vectorIntersection = { object: parent, type: 'u' };
-                        break;
-                    } else if (parent === objects.vectorB) {
-                        vectorIntersection = { object: parent, type: 'v' };
-                        break;
+                // Check if the object or any of its parents has the vectorArrow flag
+                let currentObj = obj;
+                while (currentObj) {
+                    if (currentObj.userData && currentObj.userData.vectorArrow) {
+                        // Now determine which vector it is
+                        if (objects.vectorA && objects.vectorA.getObjectById(currentObj.id)) {
+                            vectorIntersection = { object: objects.vectorA, type: 'u' };
+                            break;
+                        } else if (objects.vectorB && objects.vectorB.getObjectById(currentObj.id)) {
+                            vectorIntersection = { object: objects.vectorB, type: 'v' };
+                            break;
+                        }
                     }
-                    parent = parent.parent;
+                    currentObj = currentObj.parent;
                 }
                 
                 if (vectorIntersection) break;
             }
-
+        
             if (vectorIntersection) {
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
                 isDragging = true;
                 selectedVector = vectorIntersection.type;
-
+        
                 // Create a drag plane perpendicular to the camera
                 dragPlane.setFromNormalAndCoplanarPoint(
-                camera.getWorldDirection(dragPlane.normal),
-                new THREE.Vector3(0, 0, 0)
+                    camera.getWorldDirection(dragPlane.normal),
+                    new THREE.Vector3(0, 0, 0)
                 );
                 
                 // Set the drag offset
