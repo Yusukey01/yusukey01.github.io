@@ -434,6 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const arrowGeometry = new THREE.CylinderGeometry(0.02, 0.02, length - headLength, 8);
             const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
             const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+            arrow.userData.vectorArrow = true;
             
             // Position and orient
             arrow.position.copy(new THREE.Vector3(from.x, from.y, from.z));
@@ -443,6 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Arrow head
             const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
             const head = new THREE.Mesh(headGeometry, arrowMaterial);
+            head.userData.vectorArrow = true;
             head.position.copy(new THREE.Vector3(from.x, from.y, from.z));
             head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
             head.quaternion.copy(arrow.quaternion);
@@ -451,12 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const arrowGroup = new THREE.Group();
             arrowGroup.add(arrow);
             arrowGroup.add(head);
-
-            arrowGroup.traverse(object => {
-                if (object.isMesh) {
-                object.userData.vectorArrow = true;
-                }
-            });
+            arrowGroup.userData.vectorArrow = true;
             
             return arrowGroup;
         }
@@ -1063,13 +1060,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Prevent default behavior
             event.preventDefault();
             
+            // Only process drag in projection3d mode
+            if (demoType !== 'projection3d') return;
+            
             // Get normalized mouse position
             updateMousePosition(event);
             
             // Raycast to find vectors
             raycaster.setFromCamera(mouse, camera);
             
-            // Check intersections with all objects in the scene, including their children
+            // Check intersections with all objects in the scene
             const intersects = raycaster.intersectObjects(scene.children, true);
             
             // Find the first intersected object that belongs to either vectorA or vectorB
@@ -1077,32 +1077,44 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
                 
-                // Check if the object or any of its parents has the vectorArrow flag
-                let currentObj = obj;
-                while (currentObj) {
-                    if (currentObj.userData && currentObj.userData.vectorArrow) {
-                        // Now determine which vector it is
-                        if (objects.vectorA && objects.vectorA.getObjectById(currentObj.id)) {
-                            vectorIntersection = { object: objects.vectorA, type: 'u' };
-                            break;
-                        } else if (objects.vectorB && objects.vectorB.getObjectById(currentObj.id)) {
-                            vectorIntersection = { object: objects.vectorB, type: 'v' };
+                // Check if the object has the vectorArrow userData flag
+                if (obj.userData && obj.userData.vectorArrow) {
+                    // Check which vector group this object belongs to
+                    let currentObj = obj;
+                    let foundInVector = null;
+                    
+                    // Find the parent group by traversing up through parent hierarchy
+                    while (currentObj && !foundInVector) {
+                        // Check if this is the root group for vectorA
+                        if (objects.vectorA === currentObj) {
+                            foundInVector = 'u';
                             break;
                         }
+                        // Check if this is the root group for vectorB
+                        else if (objects.vectorB === currentObj) {
+                            foundInVector = 'v';
+                            break;
+                        }
+                        
+                        // Move up to parent
+                        currentObj = currentObj.parent;
                     }
-                    currentObj = currentObj.parent;
+                    
+                    // If we identified a vector, save it
+                    if (foundInVector) {
+                        vectorIntersection = foundInVector;
+                        break;
+                    }
                 }
-                
-                if (vectorIntersection) break;
             }
-        
+            
             if (vectorIntersection) {
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
                 isDragging = true;
-                selectedVector = vectorIntersection.type;
-        
+                selectedVector = vectorIntersection;
+                
                 // Create a drag plane perpendicular to the camera
                 dragPlane.setFromNormalAndCoplanarPoint(
                     camera.getWorldDirection(dragPlane.normal),
