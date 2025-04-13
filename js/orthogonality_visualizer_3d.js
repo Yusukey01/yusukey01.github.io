@@ -284,13 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return group;
         }
   
-        // Create and add the three gridded planes
-        const xyPlane = createGriddedPlane(0x000000);
+        // Create and add the three gridded planes with xy as horizontal plane
+        const xyPlane = createGriddedPlane(0x000000); // No rotation - this is horizontal
         scene.add(xyPlane);
-        const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI / 2);
-        scene.add(yzPlane);
-        const xzPlane = createGriddedPlane(0x000000, 'x', Math.PI / 2);
+        const xzPlane = createGriddedPlane(0x000000, 'x', Math.PI / 2); // Vertical along X axis
         scene.add(xzPlane);
+        const yzPlane = createGriddedPlane(0x000000, 'z', Math.PI / 2); // Vertical along Z axis
+        scene.add(yzPlane);
 
         // Update the axis labels
         function createAxisLabels() {
@@ -323,16 +323,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return sprite;
             }
             
-            // X axis label (red)
-            const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
+            // X axis label 
+            const xLabel = createTextSprite('Y', new THREE.Vector3(5.5, 0, 0), '#000000');
             scene.add(xLabel);
             
-            // Y axis label (green)
-            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
+            // Y axis label 
+            const yLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
             scene.add(yLabel);
             
-            // Z axis label (blue)
-            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
+            // Z axis label 
+            const zLabel = createTextSprite('X', new THREE.Vector3(0, 5.5, 0), '#000000');
             scene.add(zLabel);
         }
       
