@@ -283,20 +283,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             return group;
         }
-
+       
         // XY plane - horizontal (floor plane)
         const xyPlane = createGriddedPlane(0x000000);
-        xyPlane.rotation.x = Math.PI/2; // Rotate to make horizontal
         scene.add(xyPlane);
 
         // XZ plane - vertical along X axis
         const xzPlane = createGriddedPlane(0x000000);
+        xzPlane.rotation.x = Math.PI/2; // Rotate to make vertical
         scene.add(xzPlane);
 
         // YZ plane - vertical along Y axis
-        const yzPlane = createGriddedPlane(0x000000, 'y', Math.PI/2);
+        const yzPlane = createGriddedPlane(0x000000);
+        yzPlane.rotation.y = Math.PI/2; // Rotate to make vertical
         scene.add(yzPlane);
-
+        
         // Update the axis labels
         function createAxisLabels() {
             // Remove existing labels if any
@@ -331,13 +332,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // X axis label
             const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
             scene.add(xLabel);
-
             // Y axis label
-            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
             scene.add(yLabel);
-
             // Z axis label
-            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
+            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
             scene.add(zLabel);
         }
       
