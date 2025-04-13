@@ -536,26 +536,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add orthogonality indicator
             createOrthogonalityIndicator();
-            
-            // Update projection formula display
-            const scalarFactor = magnitudeBSquared > 0.00001 ? 
-                (dotProduct / magnitudeBSquared).toFixed(2) : "0";
-                
-            innerProductDisplay.innerHTML = `
-                proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> x v<br>
-                = (${vectorA.x.toFixed(1)}x${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}x${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
-                = ${scalarFactor} x (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
-                = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
-            `;
-            
-            // Check orthogonality
-            if (Math.abs(dotProduct) < 0.1) {
-                orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
-                orthogonalStatus.className = 'status orthogonal';
-            } else {
-                orthogonalStatus.textContent = 'Vectors are not orthogonal';
-                orthogonalStatus.className = 'status not-orthogonal';
-            }
         }
 
         function getOrthogonalVectorColor(index) {
