@@ -294,44 +294,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update the axis labels
         function createAxisLabels() {
+            // Remove existing labels if any
             scene.children.forEach(child => {
-            if (child.isAxisLabel) scene.remove(child);
+                if (child.isAxisLabel) scene.remove(child);
             });
             
             // Create X, Y, Z text labels using sprites for simplicity
             function createTextSprite(text, position, color) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = 64;
-            canvas.height = 64;
-            
-            context.font = 'Bold 32px Arial';
-            context.fillStyle = color;
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(text, 32, 32);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({map: texture});
-            const sprite = new THREE.Sprite(material);
-            
-            sprite.position.copy(position);
-            sprite.scale.set(1, 1, 1);
-            sprite.isAxisLabel = true;
-            
-            return sprite;
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 64;
+                canvas.height = 64;
+                
+                context.font = 'Bold 32px Arial';
+                context.fillStyle = color;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, 32, 32);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({map: texture});
+                const sprite = new THREE.Sprite(material);
+                
+                sprite.position.copy(position);
+                sprite.scale.set(1, 1, 1);
+                sprite.isAxisLabel = true;
+                
+                return sprite;
             }
             
-            // X axis label - now with black color
+            // X axis label (red)
             const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
             scene.add(xLabel);
             
-            // Y axis label - now with black color
-            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
+            // Y axis label (green)
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
             scene.add(yLabel);
             
-            // Z axis label - now with black color
-            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
+            // Z axis label (blue)
+            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
             scene.add(zLabel);
         }
       
@@ -1089,6 +1090,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check intersections with all objects in the scene
             const intersects = raycaster.intersectObjects(scene.children, true);
+            console.log("Checking intersections:", intersects.length);
             
             let vectorType = null;
             
@@ -1096,25 +1098,28 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
                 
+                // First check if it's one of our vector objects
+                if (obj === objects.vectorA || 
+                    obj.parent === objects.vectorA || 
+                    obj === objects.vectorB || 
+                    obj.parent === objects.vectorB) {
+                    
+                    vectorType = obj === objects.vectorA || obj.parent === objects.vectorA ? 'u' : 'v';
+                    console.log("Found vector by object reference:", vectorType);
+                    break;
+                }
+                
+                // Then check userData for vectorArrow flag
                 if (obj.userData && obj.userData.vectorArrow) {
-                    // Check if it's part of vectorA (blue) or vectorB (red)
-                    if (obj.material && obj.material.color) {
-                        const color = obj.material.color.getHex();
-                        if (color === 0x3498db) {
-                            vectorType = 'u';
-                            break;
-                        } else if (color === 0xe74c3c) {
-                            vectorType = 'v';
-                            break;
-                        }
-                    } else if (obj.userData.vectorType) {
-                        vectorType = obj.userData.vectorType;
-                        break;
-                    }
+                    vectorType = obj.userData.vectorType;
+                    console.log("Found vector by userData:", vectorType);
+                    break;
                 }
             }
             
             if (vectorType) {
+                console.log("Starting drag on vector:", vectorType);
+                
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
@@ -1140,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Prevent event from triggering orbit controls
                 event.stopPropagation();
             }
-        }  
+        } 
 
         function onMouseMove(event) {
             if (!isDragging || !selectedVector) return;
