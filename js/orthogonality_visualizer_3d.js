@@ -116,7 +116,14 @@ document.addEventListener('DOMContentLoaded', function() {
         script.onload = function() {
             const orbitScript = document.createElement('script');
             orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-            orbitScript.onload = initializeVisualization;
+            
+                const transformScript = document.createElement('script');
+                transformScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js';
+                transformScript.onload = () => {
+                    initializeVisualization();
+                };
+                document.head.appendChild(transformScript);
+
             document.head.appendChild(orbitScript);
         };   
         document.head.appendChild(script);
@@ -125,7 +132,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!THREE.OrbitControls) {
             const orbitScript = document.createElement('script');
             orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-            orbitScript.onload = initializeVisualization;
+            
+                const transformScript = document.createElement('script');
+                transformScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js';
+                transformScript.onload = () => {
+                    initializeVisualization();
+                };
+                document.head.appendChild(transformScript);
+
             document.head.appendChild(orbitScript);
         } else {
             // Both THREE and OrbitControls are already available
