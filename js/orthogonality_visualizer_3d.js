@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           
           <div class="controls-panel">
+            <div class="equation-display" id="equation-container-3d">
+              <div class="equation-title">Projection Formula in 3D:</div>
+              <div id="inner-product-3d" class="equation">proj_v u = (u·v / ||v||²) × v</div>
+              <div id="orthogonal-status-3d" class="status orthogonal">Vectors are orthogonal when u·v = 0</div>
+            </div>
+  
             <div class="control-group" id="vector-controls-3d">
               <label id="control-label-3d">Vector Coordinates (3D):</label>
               <div class="vector-inputs">
@@ -356,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // State variables
         let demoType = 'projection3d';
         let vectorA = { x: 3, y: 0, z: 0 };
-        let vectorB = { x: 0, y: 2, z: 0};
+        let vectorB = { x: 0, y: 2, z: 0 };
         let vectorC = { x: 0, y: 0, z: 1 };
         let gramSchmidtStep = 0;
         let gramSchmidtVectors = [];
@@ -530,8 +536,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add orthogonality indicator
             createOrthogonalityIndicator();
+            
+            // Update projection formula display
+            const scalarFactor = magnitudeBSquared > 0.00001 ? 
+                (dotProduct / magnitudeBSquared).toFixed(2) : "0";
+                
+            innerProductDisplay.innerHTML = `
+                proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> × v<br>
+                = (${vectorA.x.toFixed(1)}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
+            `;
+            
+            // Check orthogonality
+            if (Math.abs(dotProduct) < 0.1) {
+                orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
+                orthogonalStatus.className = 'status orthogonal';
+            } else {
+                orthogonalStatus.textContent = 'Vectors are not orthogonal';
+                orthogonalStatus.className = 'status not-orthogonal';
+            }
         }
-
+        
         function getOrthogonalVectorColor(index) {
             const colors = [
             0x3498db, // Blue for first vector

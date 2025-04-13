@@ -36,6 +36,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           
           <div class="controls-panel">
+            <div class="equation-display" id="equation-container">
+              <div class="equation-title">Projection Formula:</div>
+              <div id="inner-product" class="equation">proj_v u = (u·v / ||v||²) × v</div>
+              <div id="orthogonal-status" class="status orthogonal">Residual z is orthogonal to v</div>
+            </div>
   
             <div class="control-group" id="vector-controls">
               <label id="control-label">Vector Coordinates:</label>
@@ -698,6 +703,20 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = '#2ecc71';
         ctx.fillText('z', midX + 10, midY - 10);
       }
+      
+      // Calculate and display formula
+      const projMagnitude = magnitude(projection);
+      const projUnitVector = normalize(vectorB);
+      
+      innerProductDisplay.textContent = `proj_v u = (u·v / ||v||²) × v = ${projMagnitude.toFixed(2)}`;
+      
+      if (Math.abs(dot(residual, vectorB)) < 0.001) {
+        orthogonalStatus.textContent = 'Residual z is orthogonal to v';
+        orthogonalStatus.className = 'status orthogonal';
+      } else {
+        orthogonalStatus.textContent = 'Adjust vectors to see orthogonal projection';
+        orthogonalStatus.className = 'status not-orthogonal';
+      }
     }
     
     function getOrthogonalVectorColor(index) {
@@ -921,55 +940,81 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateLegend() {
-        if (demoType === 'gramschmidt') {
-          let legendHTML = `
-            <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
-            <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
-          `;
-          
-          // Add dynamically generated legend items for orthogonal vectors
-          for (let i = 0; i < Math.min(gramSchmidtVectors.length, 3); i++) {
-            const color = getOrthogonalVectorColor(i);
-            legendHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color};"></span> v₍${i+1}₎ (orthogonal)</div>`;
-          }
-          
-          legendContainer.innerHTML = legendHTML;
-        }
-    }
+    if (demoType === 'gramschmidt') {
+      let legendHTML = `
+        <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
+        <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
+      `;
       
+      // Add dynamically generated legend items for orthogonal vectors
+      for (let i = 0; i < Math.min(gramSchmidtVectors.length, 3); i++) {
+        const color = getOrthogonalVectorColor(i);
+        legendHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color};"></span> v₍${i+1}₎ (orthogonal)</div>`;
+      }
+      
+      legendContainer.innerHTML = legendHTML;
+    }
+  }
+
     // Demo type change handling
     function updateDemoType() {
-        demoType = demoTypeSelect.value;
-  
-        // Update UI based on demo type
-        if (demoType === 'projection') {
-          // [existing projection code...]
-          
-          legendContainer.innerHTML = `
-            <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
-            <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
-            <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
-            <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
-          `;
-          
-          vectorControls.style.display = 'block';
-          gramSchmidtControls.style.display = 'none';
-          
-        } else if (demoType === 'gramschmidt') {
-          // [existing gramschmidt code...]
-          
-          // Use the dynamic legend update function instead of hardcoded HTML
-          updateLegend();
-          
-          vectorControls.style.display = 'none';
-          gramSchmidtControls.style.display = 'block';
-          
-          // Initialize Gram-Schmidt demo if needed
-          if (gramSchmidtVectors.length === 0) {
-            generateRandomVectors();
-          }
-        }  
-        drawCanvas();
+      demoType = demoTypeSelect.value;
+      
+      // Update UI based on demo type
+      if (demoType === 'projection') {
+        explanationTitle.textContent = 'Orthogonal Projection';
+        explanationContent.innerHTML = `
+          <p>The <strong>orthogonal projection</strong> of vector u onto vector v is:</p>
+          <p>proj<sub>v</sub> u = (u·v / ||v||²) × v</p>
+          <p>This decomposes u into two components:</p>
+          <p>u = proj<sub>v</sub> u + z</p>
+          <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
+          <p>This is the <strong>orthogonal decomposition</strong> of u.</p>
+        `;
+        
+        instructionText.textContent = 'Drag vectors to see orthogonal projection';
+        
+        legendContainer.innerHTML = `
+          <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
+          <div class="legend-item"><span class="legend-color vector-b"></span> Vector v</div>
+          <div class="legend-item"><span class="legend-color projection"></span> Projection of u onto v</div>
+          <div class="legend-item"><span class="legend-color orthogonal"></span> Residual z (orthogonal)</div>
+        `;
+        
+        vectorControls.style.display = 'block';
+        gramSchmidtControls.style.display = 'none';
+        
+      } else if (demoType === 'gramschmidt') {
+        explanationTitle.textContent = 'Gram-Schmidt Process';
+        explanationContent.innerHTML = `
+          <p>The <strong>Gram-Schmidt process</strong> transforms a set of vectors into an orthogonal set.</p>
+          <p>Starting with vectors {x₁, x₂, ..., xₙ}:</p>
+          <p>1. v₁ = x₁</p>
+          <p>2. v₂ = x₂ - proj<sub>v₁</sub>x₂</p>
+          <p>3. v₃ = x₃ - proj<sub>v₁</sub>x₃ - proj<sub>v₂</sub>x₃</p>
+          <p>Each new vector v<sub>k</sub> is x<sub>k</sub> minus its projections onto all previous v<sub>i</sub>.</p>
+          <p>The resulting vectors {v₁, v₂, ..., vₙ} form an orthogonal set.</p>
+        `;
+        
+        instructionText.textContent = 'Step through the process to see orthogonalization';
+        
+        legendContainer.innerHTML = `
+          <div class="legend-item"><span class="legend-color" style="background-color: #999;"></span> Original vectors</div>
+          <div class="legend-item"><span class="legend-color" style="background-color: #f39c12;"></span> Current vector</div>
+          <div class="legend-item"><span class="legend-color vector-a"></span> First orthogonal vector</div>
+          <div class="legend-item"><span class="legend-color vector-b"></span> Second orthogonal vector</div>
+        `;
+        
+        vectorControls.style.display = 'none';
+        gramSchmidtControls.style.display = 'block';
+        
+        // Initialize Gram-Schmidt demo if needed
+        if (gramSchmidtVectors.length === 0) {
+          generateRandomVectors();
+        }
+      }
+      
+      drawCanvas();
     }
     
     // Function to reset projection vectors to default values
