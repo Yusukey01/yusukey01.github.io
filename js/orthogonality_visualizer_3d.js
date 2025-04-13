@@ -355,8 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
         // State variables
         let demoType = 'projection3d';
-        let vectorA = { x: 3, y: 0, z: 3 };
-        let vectorB = { x: 0, y: 3, z: -1};
+        let vectorA = { x: 3, y: 0, z: 0 };
+        let vectorB = { x: 0, y: 2, z: 0};
         let vectorC = { x: 0, y: 0, z: 1 };
         let gramSchmidtStep = 0;
         let gramSchmidtVectors = [];
@@ -972,8 +972,8 @@ document.addEventListener('DOMContentLoaded', function() {
         function resetDemo() {
             // Reset the scene
             if (demoType === 'projection3d') {
-            vectorA = { x: 3, y: 0, z: 3 };
-            vectorB = { x: 0, y: 3, z: -1 };
+            vectorA = { x: 3, y: 0, z: 0 };
+            vectorB = { x: 0, y: 2, z: 0 };
             vectorC = { x: 0, y: 0, z: 1 };
             
             vecAXInput.value = vectorA.x;
