@@ -279,19 +279,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return group;
         }
        
-        // XY plane - horizontal (floor plane)
+        // XY plane (horizontal in math notation)
         const xyPlane = createGriddedPlane(0x000000);
-        // No rotation needed - XY should be horizontal (the "floor")
+        xyPlane.rotation.x = Math.PI/2;  // This makes it lie on the XZ plane in Three.js
         scene.add(xyPlane);
 
-        // XZ plane - vertical along X axis (wall)
+        // XZ plane (vertical in math notation, front wall)
         const xzPlane = createGriddedPlane(0x000000);
-        xzPlane.rotation.y = Math.PI/2; // Rotate to make vertical
+        // No rotation needed - this is the XY plane in Three.js
         scene.add(xzPlane);
 
-        // YZ plane - vertical along Y axis (wall)
+        // YZ plane (vertical in math notation, side wall)
         const yzPlane = createGriddedPlane(0x000000);
-        yzPlane.rotation.x = Math.PI/2; // Rotate to make vertical
+        yzPlane.rotation.z = Math.PI/2;  // Makes it lie on the ZY plane in Three.js
         scene.add(yzPlane);
                 
 
@@ -319,24 +319,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return sprite;
         }
 
-       // X axis label
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
-        scene.add(xLabel);
-
-        // Y axis label
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
-        scene.add(yLabel);
-
-        // Z axis label
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
-        scene.add(zLabel);
-
-        // Create custom black axes
+       // Create custom black axes with proper mathematical orientation
         const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
 
         // X-axis (both positive and negative)
         const xPoints = [];
-        xPoints.push(new THREE.Vector3(-5, 0, 0));
+        xPoints.push(new THREE.Vector3(-5, 0, 0));  // X is still X
         xPoints.push(new THREE.Vector3(5, 0, 0));
         const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
         const xAxis = new THREE.Line(xGeometry, axisMaterial);
@@ -344,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Y-axis (both positive and negative)
         const yPoints = [];
-        yPoints.push(new THREE.Vector3(0, 0, -5));
+        yPoints.push(new THREE.Vector3(0, 0, -5));  // Y in math is Z in Three.js
         yPoints.push(new THREE.Vector3(0, 0, 5));
         const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
         const yAxis = new THREE.Line(yGeometry, axisMaterial);
@@ -352,11 +340,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Z-axis (both positive and negative)
         const zPoints = [];
-        zPoints.push(new THREE.Vector3(0, -5, 0));
+        zPoints.push(new THREE.Vector3(0, -5, 0));  // Z in math is Y in Three.js
         zPoints.push(new THREE.Vector3(0, 5, 0));
         const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
         const zAxis = new THREE.Line(zGeometry, axisMaterial);
         scene.add(zAxis);
+
+        // Add axis labels with correct positions
+        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
+        scene.add(xLabel);
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
+        scene.add(yLabel);
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
+        scene.add(zLabel);
 
         // Create camera
         const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
@@ -448,20 +444,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       
         function createArrow(from, to, color, headLength = 0.2, headWidth = 0.1) {
-            // Direction
-            const direction = new THREE.Vector3(to.x - from.x, to.y - from.y, to.z - from.z);
+            // Create Three.js vector directly from our math vectors
+            // In our math: X is left/right, Y is front/back, Z is up/down
+            // In Three.js: X is left/right, Y is up/down, Z is front/back
+            const fromThreeJS = new THREE.Vector3(from.x, from.z, from.y);
+            const toThreeJS = new THREE.Vector3(to.x, to.z, to.y);
+            
+            // Calculate direction using Three.js vectors
+            const direction = new THREE.Vector3().subVectors(toThreeJS, fromThreeJS);
             const length = direction.length();
             direction.normalize();
             
             // Arrow body
-            const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, length - headLength, 8); // Increased thickness
+            const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, length - headLength, 8);
             const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
             const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
             arrow.userData.vectorArrow = true;
-            arrow.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
+            arrow.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
             
             // Position and orient
-            arrow.position.copy(new THREE.Vector3(from.x, from.y, from.z));
+            arrow.position.copy(fromThreeJS);
             arrow.position.add(direction.clone().multiplyScalar(length / 2));
             arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
             
@@ -469,8 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
             const head = new THREE.Mesh(headGeometry, arrowMaterial);
             head.userData.vectorArrow = true;
-            head.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
-            head.position.copy(new THREE.Vector3(from.x, from.y, from.z));
+            head.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
+            head.position.copy(fromThreeJS);
             head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
             head.quaternion.copy(arrow.quaternion);
             
@@ -479,21 +481,22 @@ document.addEventListener('DOMContentLoaded', function() {
             arrowGroup.add(arrow);
             arrowGroup.add(head);
             arrowGroup.userData.vectorArrow = true;
-            arrowGroup.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
+            arrowGroup.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
             
             return arrowGroup;
         }
 
         function createDashedLine(from, to, color) {
             const points = [];
-            points.push(new THREE.Vector3(from.x, from.y, from.z));
-            points.push(new THREE.Vector3(to.x, to.y, to.z));
+            // Convert from math coordinates to Three.js coordinates
+            points.push(new THREE.Vector3(from.x, from.z, from.y));
+            points.push(new THREE.Vector3(to.x, to.z, to.y));
             
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineDashedMaterial({
-            color: color,
-            dashSize: 0.1,
-            gapSize: 0.05,
+                color: color,
+                dashSize: 0.1,
+                gapSize: 0.05,
             });
             
             const line = new THREE.Line(geometry, material);
@@ -862,8 +865,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }//createOrthogonalityIndicator end
         
         function createRightAngleMarker(v1, v2, size) {
-            // Create a small square to indicate a right angle
-            // Create a group to hold the right angle marker
             const group = new THREE.Group();
             
             // Normalize the vectors
@@ -873,25 +874,25 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create the right angle marker lines
             const material = new THREE.LineBasicMaterial({ color: 0x2ecc71, linewidth: 2 });
             
-            // First point along the first unit vector
+            // Convert coordinates to Three.js system
             const p1 = new THREE.Vector3(
                 v1norm.x * size,
-                v1norm.y * size,
-                v1norm.z * size
+                v1norm.z * size,  // Z in math is Y in Three.js
+                v1norm.y * size   // Y in math is Z in Three.js
             );
             
             // Second point (corner of the right angle)
             const p2 = new THREE.Vector3(
                 v1norm.x * size + v2norm.x * size,
-                v1norm.y * size + v2norm.y * size,
-                v1norm.z * size + v2norm.z * size
+                v1norm.z * size + v2norm.z * size,
+                v1norm.y * size + v2norm.y * size
             );
             
             // Third point along the second unit vector
             const p3 = new THREE.Vector3(
                 v2norm.x * size,
-                v2norm.y * size,
-                v2norm.z * size
+                v2norm.z * size,
+                v2norm.y * size
             );
             
             // Create the geometry and line
@@ -900,8 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             group.add(rightAngleLine);
             return group;
-
-        }//createRightAngleMarker end
+        } //createRightAngleMarker
         
         function updateDemo() {
             if (demoType === 'projection3d') {
