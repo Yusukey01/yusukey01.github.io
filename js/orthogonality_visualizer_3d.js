@@ -217,11 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             return axisGroup;
         }
-  
-        // Add black axes
-        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5, 0, 0), 0x000000));
-        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 0), 0x000000));
-        scene.add(createAxis(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 5), 0x000000));
         
         // Create gridded planes with transparency
         function createGriddedPlane(color, rotationAxis, rotationAngle) {
@@ -337,12 +332,14 @@ document.addEventListener('DOMContentLoaded', function() {
         scene.add(zLabel);
 
         // Create custom black axes
+        const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+
         // X-axis
         const xPoints = [];
         xPoints.push(new THREE.Vector3(0, 0, 0));
         xPoints.push(new THREE.Vector3(5, 0, 0));
         const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
-        const xAxis = new THREE.Line(xGeometry, material);
+        const xAxis = new THREE.Line(xGeometry, axisMaterial);
         scene.add(xAxis);
 
         // Y-axis
@@ -350,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
         yPoints.push(new THREE.Vector3(0, 0, 0));
         yPoints.push(new THREE.Vector3(0, 5, 0));
         const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
-        const yAxis = new THREE.Line(yGeometry, material);
+        const yAxis = new THREE.Line(yGeometry, axisMaterial);
         scene.add(yAxis);
 
         // Z-axis
@@ -358,9 +355,9 @@ document.addEventListener('DOMContentLoaded', function() {
         zPoints.push(new THREE.Vector3(0, 0, 0));
         zPoints.push(new THREE.Vector3(0, 0, 5));
         const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
-        const zAxis = new THREE.Line(zGeometry, material);
+        const zAxis = new THREE.Line(zGeometry, axisMaterial);
         scene.add(zAxis);
-      
+            
         // Create camera
         const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
         camera.position.set(8, 8, 8);
