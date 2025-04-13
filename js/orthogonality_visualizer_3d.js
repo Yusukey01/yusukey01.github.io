@@ -459,6 +459,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, length - headLength, 8);
             const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
             const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+            
+            // Tag the arrow body with vector info
             arrow.userData.vectorArrow = true;
             arrow.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
             
@@ -470,8 +472,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Arrow head
             const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
             const head = new THREE.Mesh(headGeometry, arrowMaterial);
+            
+            // Tag the arrow head with vector info
             head.userData.vectorArrow = true;
             head.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
+            
             head.position.copy(fromThreeJS);
             head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
             head.quaternion.copy(arrow.quaternion);
@@ -480,6 +485,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const arrowGroup = new THREE.Group();
             arrowGroup.add(arrow);
             arrowGroup.add(head);
+            
+            // Tag the group with vector info
             arrowGroup.userData.vectorArrow = true;
             arrowGroup.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null);
             
@@ -1119,19 +1126,15 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
                 
-                // First check if it's one of our vector objects
-                if (obj === objects.vectorA || 
-                    obj.parent === objects.vectorA || 
-                    obj === objects.vectorB || 
-                    obj.parent === objects.vectorB) {
-                    
-                    vectorType = obj === objects.vectorA || obj.parent === objects.vectorA ? 'u' : 'v';
+                // Look at the object and its parent for vector information
+                if (obj.userData && obj.userData.vectorArrow) {
+                    vectorType = obj.userData.vectorType;
                     break;
                 }
                 
-                // Then check userData for vectorArrow flag
-                if (obj.userData && obj.userData.vectorArrow) {
-                    vectorType = obj.userData.vectorType;
+                // Check if parent has vector information
+                if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
+                    vectorType = obj.parent.userData.vectorType;
                     break;
                 }
             }
@@ -1149,11 +1152,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
                 dragPlane.setFromNormalAndCoplanarPoint(normal, center);
                 
-                // Set drag offset - convert math coords to Three.js coords
+                // Set drag offset
                 const intersection = new THREE.Vector3();
                 raycaster.ray.intersectPlane(dragPlane, intersection);
                 
                 const vectorData = selectedVector === 'u' ? vectorA : vectorB;
+                // Convert math coords to Three.js coords
                 const vectorThreeJS = new THREE.Vector3(
                     vectorData.x,
                     vectorData.z,  // Z in math is Y in Three.js
@@ -1165,7 +1169,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Prevent event from triggering orbit controls
                 event.stopPropagation();
             }
-        } 
+        }
+         
 
         function onMouseMove(event) {
             if (!isDragging || !selectedVector) return;
