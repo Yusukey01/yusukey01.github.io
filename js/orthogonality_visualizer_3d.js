@@ -1077,10 +1077,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Find the first intersected object that is a vector arrow
             let foundVectorType = null;
+            
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
+                // Look for objects marked as vector arrows
                 if (obj.userData && obj.userData.vectorArrow && obj.userData.vectorType) {
                     foundVectorType = obj.userData.vectorType;
+                    console.log("Found vector:", foundVectorType); // Debug
                     break;
                 }
             }
@@ -1100,61 +1103,64 @@ document.addEventListener('DOMContentLoaded', function() {
                     new THREE.Vector3(0, 0, 0)
                 );
                 
-                // Set the drag offset
-                const intersection = new THREE.Vector3();
-                raycaster.ray.intersectPlane(dragPlane, intersection);
-                dragOffset.copy(intersection);
+                // Set the drag offset based on the vector position
+                const vectorPos = selectedVector === 'u' ? 
+                    new THREE.Vector3(vectorA.x, vectorA.y, vectorA.z) : 
+                    new THREE.Vector3(vectorB.x, vectorB.y, vectorB.z);
+                    
+                dragOffset.copy(vectorPos);
                 
-                // Prevent the event from propagating to prevent rotation
+                // Stop event propagation to prevent orbiting
                 event.stopPropagation();
             }
-        }    
+        }   
 
         function onMouseMove(event) {
+            // Only process if we're dragging
+            if (!isDragging || !selectedVector || demoType !== 'projection3d') return;
+            
+            // Prevent default to avoid text selection, etc.
+            event.preventDefault();
+            
             // Update mouse position
             updateMousePosition(event);
             
-            // If dragging a vector
-            if (isDragging && selectedVector && demoType === 'projection3d') {
-                // Raycast to the drag plane
-                raycaster.setFromCamera(mouse, camera);
-                const intersection = new THREE.Vector3();
-                
-                if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
-                    // Calculate new position
-                    const newPosition = intersection.clone().sub(dragOffset);
+            // Raycast to the drag plane
+            raycaster.setFromCamera(mouse, camera);
+            const intersection = new THREE.Vector3();
+            
+            if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
+                // Update the selected vector position
+                if (selectedVector === 'u') {
+                    vectorA.x = Math.round(intersection.x * 2) / 2;
+                    vectorA.y = Math.round(intersection.y * 2) / 2;
+                    vectorA.z = Math.round(intersection.z * 2) / 2;
                     
-                    // Update the selected vector
-                    if (selectedVector === 'u') {
-                        vectorA.x = Math.round(newPosition.x * 2) / 2; // Round to nearest 0.5
-                        vectorA.y = Math.round(newPosition.y * 2) / 2;
-                        vectorA.z = Math.round(newPosition.z * 2) / 2;
-                        
-                        // Update input fields
-                        vecAXInput.value = vectorA.x;
-                        vecAYInput.value = vectorA.y;
-                        vecAZInput.value = vectorA.z;
-                    } else if (selectedVector === 'v') {
-                        vectorB.x = Math.round(newPosition.x * 2) / 2; 
-                        vectorB.y = Math.round(newPosition.y * 2) / 2;
-                        vectorB.z = Math.round(newPosition.z * 2) / 2;
-                        
-                        // Update input fields
-                        vecBXInput.value = vectorB.x;
-                        vecBYInput.value = vectorB.y;
-                        vecBZInput.value = vectorB.z;
-                    }
+                    // Update input fields
+                    vecAXInput.value = vectorA.x;
+                    vecAYInput.value = vectorA.y;
+                    vecAZInput.value = vectorA.z;
+                } else if (selectedVector === 'v') {
+                    vectorB.x = Math.round(intersection.x * 2) / 2;
+                    vectorB.y = Math.round(intersection.y * 2) / 2;
+                    vectorB.z = Math.round(intersection.z * 2) / 2;
                     
-                    // Update the visualization
-                    updateProjectionDemo();
+                    // Update input fields
+                    vecBXInput.value = vectorB.x;
+                    vecBYInput.value = vectorB.y;
+                    vecBZInput.value = vectorB.z;
                 }
                 
-                // Prevent rotation while dragging
-                event.stopPropagation();
+                // Update the visualization
+                updateProjectionDemo();
             }
+            
+            // Prevent orbit controls from activating
+            event.stopPropagation();
         }
 
         function onMouseUp(event) {
+            // Check if we were dragging
             if (isDragging) {
                 isDragging = false;
                 selectedVector = null;
@@ -1162,8 +1168,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Re-enable orbit controls
                 controls.enabled = true;
                 
-                // Prevent the event from triggering orbit controls immediately
+                // Prevent event propagation
                 event.stopPropagation();
+                event.preventDefault();
             }
         }
 
