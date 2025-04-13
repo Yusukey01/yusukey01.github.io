@@ -503,7 +503,15 @@ document.addEventListener('DOMContentLoaded', function() {
             scene.add(objects.vectorB);
             
             // Calculate projection
-            const projection = projectVector(vectorA, vectorB);
+            const dotProduct = dot(vectorA, vectorB);
+            const magnitudeB = magnitude(vectorB);
+            const magnitudeBSquared = magnitudeB * magnitudeB;
+            
+            // Avoid division by zero
+            const projection = magnitudeBSquared > 0.00001 ? 
+                projectVector(vectorA, vectorB) : 
+                { x: 0, y: 0, z: 0 };
+                
             objects.projection = createArrow(origin, projection, 0x9b59b6);
             scene.add(objects.projection);
             
@@ -512,15 +520,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Draw orthogonal component if significant
             if (magnitude(orthogonal) > 0.01) {
-            objects.orthogonal = createArrow(projection, vectorA, 0x2ecc71);
-            scene.add(objects.orthogonal);
-            
-            // Add dashed line from origin to vector A tip
-            objects.projectionLine = createDashedLine(origin, projection, 0x666666);
-            objects.orthogonalLine = createDashedLine(projection, vectorA, 0x666666);
-            
-            scene.add(objects.projectionLine);
-            scene.add(objects.orthogonalLine);
+                objects.orthogonal = createArrow(projection, vectorA, 0x2ecc71);
+                scene.add(objects.orthogonal);
+                
+                // Add dashed line from origin to vector A tip
+                objects.projectionLine = createDashedLine(origin, projection, 0x666666);
+                objects.orthogonalLine = createDashedLine(projection, vectorA, 0x666666);
+                
+                scene.add(objects.projectionLine);
+                scene.add(objects.orthogonalLine);
             }
             
             // Add vector labels
@@ -529,20 +537,27 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add orthogonality indicator
             createOrthogonalityIndicator();
             
-            // Update info display
-            const innerProduct = dot(vectorA, vectorB);
-            innerProductDisplay.textContent = `u·v = (${vectorA.x.toFixed(1)} × ${vectorB.x.toFixed(1)}) + (${vectorA.y.toFixed(1)} × ${vectorB.y.toFixed(1)}) + (${vectorA.z.toFixed(1)} × ${vectorB.z.toFixed(1)}) = ${innerProduct.toFixed(2)}`;
+            // Update projection formula display
+            const scalarFactor = magnitudeBSquared > 0.00001 ? 
+                (dotProduct / magnitudeBSquared).toFixed(2) : "0";
+                
+            innerProductDisplay.innerHTML = `
+                proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> × v<br>
+                = (${vectorA.x.toFixed(1)}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
+            `;
             
             // Check orthogonality
-            if (Math.abs(innerProduct) < 0.1) {
-            orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
-            orthogonalStatus.className = 'status orthogonal';
+            if (Math.abs(dotProduct) < 0.1) {
+                orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
+                orthogonalStatus.className = 'status orthogonal';
             } else {
-            orthogonalStatus.textContent = 'Vectors are not orthogonal';
-            orthogonalStatus.className = 'status not-orthogonal';
+                orthogonalStatus.textContent = 'Vectors are not orthogonal';
+                orthogonalStatus.className = 'status not-orthogonal';
             }
         }
-      
+
         function getOrthogonalVectorColor(index) {
             const colors = [
             0x3498db, // Blue for first vector
@@ -1075,51 +1090,62 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check intersections with all objects in the scene
             const intersects = raycaster.intersectObjects(scene.children, true);
             
-            // Find the first intersected object that is a vector arrow
-            let foundVectorType = null;
+            let vectorType = null;
             
+            // Find vector arrows in the intersected objects
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
-                // Look for objects marked as vector arrows
-                if (obj.userData && obj.userData.vectorArrow && obj.userData.vectorType) {
-                    foundVectorType = obj.userData.vectorType;
-                    console.log("Found vector:", foundVectorType); // Debug
-                    break;
+                
+                if (obj.userData && obj.userData.vectorArrow) {
+                    // Check if it's part of vectorA (blue) or vectorB (red)
+                    if (obj.material && obj.material.color) {
+                        const color = obj.material.color.getHex();
+                        if (color === 0x3498db) {
+                            vectorType = 'u';
+                            break;
+                        } else if (color === 0xe74c3c) {
+                            vectorType = 'v';
+                            break;
+                        }
+                    } else if (obj.userData.vectorType) {
+                        vectorType = obj.userData.vectorType;
+                        break;
+                    }
                 }
             }
             
-            if (foundVectorType) {
+            if (vectorType) {
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
                 isDragging = true;
-                selectedVector = foundVectorType;
+                selectedVector = vectorType;
                 
-                // Create a drag plane perpendicular to the camera
-                const cameraDirection = new THREE.Vector3();
-                camera.getWorldDirection(cameraDirection);
-                dragPlane.setFromNormalAndCoplanarPoint(
-                    cameraDirection,
-                    new THREE.Vector3(0, 0, 0)
-                );
+                // Create a drag plane aligned with the camera view
+                const cameraPosition = camera.position.clone();
+                const center = new THREE.Vector3(0, 0, 0);
+                const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
+                dragPlane.setFromNormalAndCoplanarPoint(normal, center);
                 
-                // Set the drag offset based on the vector position
+                // Set drag offset
+                const intersection = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, intersection);
+                
                 const vectorPos = selectedVector === 'u' ? 
                     new THREE.Vector3(vectorA.x, vectorA.y, vectorA.z) : 
                     new THREE.Vector3(vectorB.x, vectorB.y, vectorB.z);
                     
-                dragOffset.copy(vectorPos);
+                dragOffset.subVectors(intersection, vectorPos);
                 
-                // Stop event propagation to prevent orbiting
+                // Prevent event from triggering orbit controls
                 event.stopPropagation();
             }
-        }   
+        }  
 
         function onMouseMove(event) {
-            // Only process if we're dragging
-            if (!isDragging || !selectedVector || demoType !== 'projection3d') return;
+            if (!isDragging || !selectedVector) return;
             
-            // Prevent default to avoid text selection, etc.
+            // Prevent default behavior
             event.preventDefault();
             
             // Update mouse position
@@ -1130,20 +1156,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const intersection = new THREE.Vector3();
             
             if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
-                // Update the selected vector position
+                // Calculate new position by subtracting the drag offset
+                const newPosition = intersection.clone().sub(dragOffset);
+                
+                // Update vector coordinates (rounded to nearest 0.5)
                 if (selectedVector === 'u') {
-                    vectorA.x = Math.round(intersection.x * 2) / 2;
-                    vectorA.y = Math.round(intersection.y * 2) / 2;
-                    vectorA.z = Math.round(intersection.z * 2) / 2;
+                    vectorA.x = Math.round(newPosition.x * 2) / 2;
+                    vectorA.y = Math.round(newPosition.y * 2) / 2;
+                    vectorA.z = Math.round(newPosition.z * 2) / 2;
                     
                     // Update input fields
                     vecAXInput.value = vectorA.x;
                     vecAYInput.value = vectorA.y;
                     vecAZInput.value = vectorA.z;
                 } else if (selectedVector === 'v') {
-                    vectorB.x = Math.round(intersection.x * 2) / 2;
-                    vectorB.y = Math.round(intersection.y * 2) / 2;
-                    vectorB.z = Math.round(intersection.z * 2) / 2;
+                    vectorB.x = Math.round(newPosition.x * 2) / 2;
+                    vectorB.y = Math.round(newPosition.y * 2) / 2;
+                    vectorB.z = Math.round(newPosition.z * 2) / 2;
                     
                     // Update input fields
                     vecBXInput.value = vectorB.x;
@@ -1151,7 +1180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     vecBZInput.value = vectorB.z;
                 }
                 
-                // Update the visualization
+                // Update visualization
                 updateProjectionDemo();
             }
             
