@@ -698,20 +698,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = '#2ecc71';
         ctx.fillText('z', midX + 10, midY - 10);
       }
-      
-      // Calculate and display formula
-      const projMagnitude = magnitude(projection);
-      const projUnitVector = normalize(vectorB);
-      
-      innerProductDisplay.textContent = `proj_v u = (u·v / ||v||²) × v = ${projMagnitude.toFixed(2)}`;
-      
-      if (Math.abs(dot(residual, vectorB)) < 0.001) {
-        orthogonalStatus.textContent = 'Residual z is orthogonal to v';
-        orthogonalStatus.className = 'status orthogonal';
-      } else {
-        orthogonalStatus.textContent = 'Adjust vectors to see orthogonal projection';
-        orthogonalStatus.className = 'status not-orthogonal';
-      }
     }
     
     function getOrthogonalVectorColor(index) {
