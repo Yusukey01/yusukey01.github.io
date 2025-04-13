@@ -431,10 +431,11 @@ document.addEventListener('DOMContentLoaded', function() {
             direction.normalize();
             
             // Arrow body
-            const arrowGeometry = new THREE.CylinderGeometry(0.02, 0.02, length - headLength, 8);
+            const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, length - headLength, 8); // Increased thickness
             const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
             const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
             arrow.userData.vectorArrow = true;
+            arrow.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
             
             // Position and orient
             arrow.position.copy(new THREE.Vector3(from.x, from.y, from.z));
@@ -445,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const headGeometry = new THREE.ConeGeometry(headWidth, headLength, 8);
             const head = new THREE.Mesh(headGeometry, arrowMaterial);
             head.userData.vectorArrow = true;
+            head.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
             head.position.copy(new THREE.Vector3(from.x, from.y, from.z));
             head.position.add(direction.clone().multiplyScalar(length - headLength / 2));
             head.quaternion.copy(arrow.quaternion);
@@ -454,10 +456,11 @@ document.addEventListener('DOMContentLoaded', function() {
             arrowGroup.add(arrow);
             arrowGroup.add(head);
             arrowGroup.userData.vectorArrow = true;
+            arrowGroup.userData.vectorType = color === 0x3498db ? 'u' : (color === 0xe74c3c ? 'v' : null); // Store vector type
             
             return arrowGroup;
         }
-      
+
         function createDashedLine(from, to, color) {
             const points = [];
             points.push(new THREE.Vector3(from.x, from.y, from.z));
@@ -1072,52 +1075,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check intersections with all objects in the scene
             const intersects = raycaster.intersectObjects(scene.children, true);
             
-            // Find the first intersected object that belongs to either vectorA or vectorB
-            let vectorIntersection = null;
+            // Find the first intersected object that is a vector arrow
+            let foundVectorType = null;
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
-                
-                // Check if the object has the vectorArrow userData flag
-                if (obj.userData && obj.userData.vectorArrow) {
-                    // Check which vector group this object belongs to
-                    let currentObj = obj;
-                    let foundInVector = null;
-                    
-                    // Find the parent group by traversing up through parent hierarchy
-                    while (currentObj && !foundInVector) {
-                        // Check if this is the root group for vectorA
-                        if (objects.vectorA === currentObj) {
-                            foundInVector = 'u';
-                            break;
-                        }
-                        // Check if this is the root group for vectorB
-                        else if (objects.vectorB === currentObj) {
-                            foundInVector = 'v';
-                            break;
-                        }
-                        
-                        // Move up to parent
-                        currentObj = currentObj.parent;
-                    }
-                    
-                    // If we identified a vector, save it
-                    if (foundInVector) {
-                        vectorIntersection = foundInVector;
-                        break;
-                    }
+                if (obj.userData && obj.userData.vectorArrow && obj.userData.vectorType) {
+                    foundVectorType = obj.userData.vectorType;
+                    break;
                 }
             }
             
-            if (vectorIntersection) {
+            if (foundVectorType) {
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
                 isDragging = true;
-                selectedVector = vectorIntersection;
+                selectedVector = foundVectorType;
                 
                 // Create a drag plane perpendicular to the camera
+                const cameraDirection = new THREE.Vector3();
+                camera.getWorldDirection(cameraDirection);
                 dragPlane.setFromNormalAndCoplanarPoint(
-                    camera.getWorldDirection(dragPlane.normal),
+                    cameraDirection,
                     new THREE.Vector3(0, 0, 0)
                 );
                 
@@ -1125,8 +1104,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const intersection = new THREE.Vector3();
                 raycaster.ray.intersectPlane(dragPlane, intersection);
                 dragOffset.copy(intersection);
+                
+                // Prevent the event from propagating to prevent rotation
+                event.stopPropagation();
             }
-        }       
+        }    
 
         function onMouseMove(event) {
             // Update mouse position
@@ -1166,15 +1148,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update the visualization
                     updateProjectionDemo();
                 }
+                
+                // Prevent rotation while dragging
+                event.stopPropagation();
             }
         }
 
         function onMouseUp(event) {
-        isDragging = false;
-        selectedVector = null;
-        
-        // Re-enable orbit controls
-        controls.enabled = true;
+            if (isDragging) {
+                isDragging = false;
+                selectedVector = null;
+                
+                // Re-enable orbit controls
+                controls.enabled = true;
+                
+                // Prevent the event from triggering orbit controls immediately
+                event.stopPropagation();
+            }
         }
 
         function updateMousePosition(event) {
