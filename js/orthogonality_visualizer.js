@@ -36,11 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           
           <div class="controls-panel">
-            <div class="equation-display" id="equation-container">
-              <div class="equation-title">Projection Formula:</div>
-              <div id="inner-product" class="equation">proj_v u = (u·v / ||v||²) × v</div>
-              <div id="orthogonal-status" class="status orthogonal">Residual z is orthogonal to v</div>
-            </div>
   
             <div class="control-group" id="vector-controls">
               <label id="control-label">Vector Coordinates:</label>
