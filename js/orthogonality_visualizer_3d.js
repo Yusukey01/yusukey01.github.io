@@ -281,19 +281,19 @@ document.addEventListener('DOMContentLoaded', function() {
        
         // XY plane - horizontal (floor plane)
         const xyPlane = createGriddedPlane(0x000000);
-        // No rotation needed - XY is already horizontal in Three.js
+        // No rotation needed - XY should be horizontal (the "floor")
         scene.add(xyPlane);
 
-        // XZ plane - vertical along X axis
+        // XZ plane - vertical along X axis (wall)
         const xzPlane = createGriddedPlane(0x000000);
-        xzPlane.rotation.x = Math.PI/2; // Rotate to make vertical
+        xzPlane.rotation.y = Math.PI/2; // Rotate to make vertical
         scene.add(xzPlane);
 
-        // YZ plane - vertical along Y axis
+        // YZ plane - vertical along Y axis (wall)
         const yzPlane = createGriddedPlane(0x000000);
-        yzPlane.rotation.y = Math.PI/2; // Rotate to make vertical
+        yzPlane.rotation.x = Math.PI/2; // Rotate to make vertical
         scene.add(yzPlane);
-        
+                
 
         // Create X, Y, Z text labels using sprites for simplicity
         function createTextSprite(text, position, color) {
@@ -319,45 +319,45 @@ document.addEventListener('DOMContentLoaded', function() {
             return sprite;
         }
 
-        // X axis label
+       // X axis label
         const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
         scene.add(xLabel);
 
         // Y axis label
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
         scene.add(yLabel);
 
         // Z axis label
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 0, 5.5), '#000000');
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
         scene.add(zLabel);
 
         // Create custom black axes
         const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
 
-        // X-axis
+        // X-axis (both positive and negative)
         const xPoints = [];
-        xPoints.push(new THREE.Vector3(0, 0, 0));
+        xPoints.push(new THREE.Vector3(-5, 0, 0));
         xPoints.push(new THREE.Vector3(5, 0, 0));
         const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
         const xAxis = new THREE.Line(xGeometry, axisMaterial);
         scene.add(xAxis);
 
-        // Y-axis
+        // Y-axis (both positive and negative)
         const yPoints = [];
-        yPoints.push(new THREE.Vector3(0, 0, 0));
-        yPoints.push(new THREE.Vector3(0, 5, 0));
+        yPoints.push(new THREE.Vector3(0, 0, -5));
+        yPoints.push(new THREE.Vector3(0, 0, 5));
         const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
         const yAxis = new THREE.Line(yGeometry, axisMaterial);
         scene.add(yAxis);
 
-        // Z-axis
+        // Z-axis (both positive and negative)
         const zPoints = [];
-        zPoints.push(new THREE.Vector3(0, 0, 0));
-        zPoints.push(new THREE.Vector3(0, 0, 5));
+        zPoints.push(new THREE.Vector3(0, -5, 0));
+        zPoints.push(new THREE.Vector3(0, 5, 0));
         const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
         const zAxis = new THREE.Line(zGeometry, axisMaterial);
         scene.add(zAxis);
-            
+
         // Create camera
         const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
         camera.position.set(8, 8, 8);
@@ -749,13 +749,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return sprite;
             }
             // X axis label
-            const xLabel = createTextSprite('X', new THREE.Vector3(0, 0, 5.5), '#000000');
+            const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
             scene.add(xLabel);
             // Y axis label
-            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 5.5, 0), '#000000');
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000'); 
             scene.add(yLabel);
             // Z axis label
-            const zLabel = createTextSprite('Z', new THREE.Vector3(5.5, 0, 0), '#000000');
+            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
             scene.add(zLabel);
 
         }//createAxisLabels end
