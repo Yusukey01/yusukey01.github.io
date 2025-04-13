@@ -37,12 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           
           <div class="controls-panel">
-            <div class="equation-display" id="equation-container-3d">
-              <div class="equation-title">Projection Formula in 3D:</div>
-              <div id="inner-product-3d" class="equation">proj_v u = (u·v / ||v||²) × v</div>
-              <div id="orthogonal-status-3d" class="status orthogonal">Vectors are orthogonal when u·v = 0</div>
-            </div>
-  
             <div class="control-group" id="vector-controls-3d">
               <label id="control-label-3d">Vector Coordinates (3D):</label>
               <div class="vector-inputs">
@@ -361,8 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
         // State variables
         let demoType = 'projection3d';
-        let vectorA = { x: 3, y: 0, z: 0 };
-        let vectorB = { x: 0, y: 2, z: 0 };
+        let vectorA = { x: 3, y: 0, z: 3 };
+        let vectorB = { x: 0, y: 3, z: -1};
         let vectorC = { x: 0, y: 0, z: 1 };
         let gramSchmidtStep = 0;
         let gramSchmidtVectors = [];
