@@ -542,9 +542,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 (dotProduct / magnitudeBSquared).toFixed(2) : "0";
                 
             innerProductDisplay.innerHTML = `
-                proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> × v<br>
-                = (${vectorA.x.toFixed(1)}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
-                = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> x v<br>
+                = (${vectorA.x.toFixed(1)}x${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}x${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = ${scalarFactor} x (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
                 = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
             `;
             
