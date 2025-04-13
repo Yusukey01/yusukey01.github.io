@@ -279,19 +279,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return group;
         }
        
-        // XY plane (horizontal in math notation)
+        // XY plane (horizontal in math notation, XZ in Three.js)
         const xyPlane = createGriddedPlane(0x000000);
-        xyPlane.rotation.x = Math.PI/2;  // This makes it lie on the XZ plane in Three.js
+        xyPlane.rotation.x = Math.PI/2;  // Rotate around X axis to be horizontal
         scene.add(xyPlane);
 
-        // XZ plane (vertical in math notation, front wall)
+        // XZ plane (vertical in math notation, front wall) (XY in Three.js)
         const xzPlane = createGriddedPlane(0x000000);
         // No rotation needed - this is the XY plane in Three.js
         scene.add(xzPlane);
 
-        // YZ plane (vertical in math notation, side wall)
+        // YZ plane (vertical in math notation, side wall) (ZY in Three.js)
         const yzPlane = createGriddedPlane(0x000000);
-        yzPlane.rotation.z = Math.PI/2;  // Makes it lie on the ZY plane in Three.js
+        yzPlane.rotation.y = Math.PI/2;  // Rotate around Y axis to create side wall
         scene.add(yzPlane);
                 
 
@@ -1112,7 +1112,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check intersections with all objects in the scene
             const intersects = raycaster.intersectObjects(scene.children, true);
-            console.log("Checking intersections:", intersects.length);
             
             let vectorType = null;
             
@@ -1127,21 +1126,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     obj.parent === objects.vectorB) {
                     
                     vectorType = obj === objects.vectorA || obj.parent === objects.vectorA ? 'u' : 'v';
-                    console.log("Found vector by object reference:", vectorType);
                     break;
                 }
                 
                 // Then check userData for vectorArrow flag
                 if (obj.userData && obj.userData.vectorArrow) {
                     vectorType = obj.userData.vectorType;
-                    console.log("Found vector by userData:", vectorType);
                     break;
                 }
             }
             
             if (vectorType) {
-                console.log("Starting drag on vector:", vectorType);
-                
                 // Disable orbit controls temporarily
                 controls.enabled = false;
                 
@@ -1154,15 +1149,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
                 dragPlane.setFromNormalAndCoplanarPoint(normal, center);
                 
-                // Set drag offset
+                // Set drag offset - convert math coords to Three.js coords
                 const intersection = new THREE.Vector3();
                 raycaster.ray.intersectPlane(dragPlane, intersection);
                 
-                const vectorPos = selectedVector === 'u' ? 
-                    new THREE.Vector3(vectorA.x, vectorA.y, vectorA.z) : 
-                    new THREE.Vector3(vectorB.x, vectorB.y, vectorB.z);
-                    
-                dragOffset.subVectors(intersection, vectorPos);
+                const vectorData = selectedVector === 'u' ? vectorA : vectorB;
+                const vectorThreeJS = new THREE.Vector3(
+                    vectorData.x,
+                    vectorData.z,  // Z in math is Y in Three.js
+                    vectorData.y   // Y in math is Z in Three.js
+                );
+                
+                dragOffset.subVectors(intersection, vectorThreeJS);
                 
                 // Prevent event from triggering orbit controls
                 event.stopPropagation();
@@ -1186,20 +1184,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Calculate new position by subtracting the drag offset
                 const newPosition = intersection.clone().sub(dragOffset);
                 
-                // Update vector coordinates (rounded to nearest 0.5)
+                // We need to convert from Three.js coords to our math coords
+                // In Three.js: X = X, Y = Z, Z = Y
+                const mathPosition = {
+                    x: Math.round(newPosition.x * 2) / 2,
+                    y: Math.round(newPosition.z * 2) / 2, // Z in Three.js is Y in math
+                    z: Math.round(newPosition.y * 2) / 2  // Y in Three.js is Z in math
+                };
+                
+                // Update vector coordinates
                 if (selectedVector === 'u') {
-                    vectorA.x = Math.round(newPosition.x * 2) / 2;
-                    vectorA.y = Math.round(newPosition.y * 2) / 2;
-                    vectorA.z = Math.round(newPosition.z * 2) / 2;
+                    vectorA = mathPosition;
                     
                     // Update input fields
                     vecAXInput.value = vectorA.x;
                     vecAYInput.value = vectorA.y;
                     vecAZInput.value = vectorA.z;
                 } else if (selectedVector === 'v') {
-                    vectorB.x = Math.round(newPosition.x * 2) / 2;
-                    vectorB.y = Math.round(newPosition.y * 2) / 2;
-                    vectorB.z = Math.round(newPosition.z * 2) / 2;
+                    vectorB = mathPosition;
                     
                     // Update input fields
                     vecBXInput.value = vectorB.x;
