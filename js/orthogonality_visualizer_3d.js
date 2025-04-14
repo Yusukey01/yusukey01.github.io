@@ -364,6 +364,118 @@ document.addEventListener('DOMContentLoaded', function() {
         renderer.setSize(width, height);
         canvasContainer.appendChild(renderer.domElement);
         
+        // Add this after creating the renderer
+        function addRotationControls() {
+            // Create container for rotation controls
+            const rotationControlsContainer = document.createElement('div');
+            rotationControlsContainer.className = 'rotation-controls';
+            rotationControlsContainer.style.position = 'absolute';
+            rotationControlsContainer.style.bottom = '20px';
+            rotationControlsContainer.style.right = '20px';
+            rotationControlsContainer.style.display = 'grid';
+            rotationControlsContainer.style.gridTemplateColumns = 'repeat(3, 40px)';
+            rotationControlsContainer.style.gridTemplateRows = 'repeat(3, 40px)';
+            rotationControlsContainer.style.gap = '5px';
+            rotationControlsContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+            rotationControlsContainer.style.borderRadius = '8px';
+            rotationControlsContainer.style.padding = '5px';
+            rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+            canvasWrapper.appendChild(rotationControlsContainer);
+
+            // Create rotation buttons (6 directions)
+            const directions = [
+                { icon: '↑', col: 2, row: 1, rotate: function() { rotateCamera(0, -0.2, 0); } }, // Up
+                { icon: '↓', col: 2, row: 3, rotate: function() { rotateCamera(0, 0.2, 0); } },  // Down
+                { icon: '←', col: 1, row: 2, rotate: function() { rotateCamera(-0.2, 0, 0); } },  // Left
+                { icon: '→', col: 3, row: 2, rotate: function() { rotateCamera(0.2, 0, 0); } },   // Right
+                { icon: '↻', col: 3, row: 1, rotate: function() { rotateCamera(0, 0, -0.2); } },  // Clockwise
+                { icon: '↺', col: 1, row: 1, rotate: function() { rotateCamera(0, 0, 0.2); } }    // Counter-clockwise
+            ];
+            
+            directions.forEach(dir => {
+                const button = document.createElement('button');
+                button.innerText = dir.icon;
+                button.style.gridColumn = dir.col;
+                button.style.gridRow = dir.row;
+                button.style.width = '40px';
+                button.style.height = '40px';
+                button.style.fontSize = '20px';
+                button.style.border = '1px solid #ccc';
+                button.style.borderRadius = '4px';
+                button.style.backgroundColor = '#f0f0f0';
+                button.style.cursor = 'pointer';
+                button.addEventListener('click', dir.rotate);
+                button.addEventListener('touchstart', dir.rotate);
+                rotationControlsContainer.appendChild(button);
+            });
+            
+            // Add reset view button
+            const resetButton = document.createElement('button');
+            resetButton.innerText = '⟲';
+            resetButton.style.gridColumn = 2;
+            resetButton.style.gridRow = 2;
+            resetButton.style.width = '40px';
+            resetButton.style.height = '40px';
+            resetButton.style.fontSize = '20px';
+            resetButton.style.border = '1px solid #ccc';
+            resetButton.style.borderRadius = '4px';
+            resetButton.style.backgroundColor = '#e0e0e0';
+            resetButton.style.cursor = 'pointer';
+            resetButton.addEventListener('click', resetCameraView);
+            resetButton.addEventListener('touchstart', resetCameraView);
+            rotationControlsContainer.appendChild(resetButton);
+
+            function rotateCamera(x, y, z) {
+                // Orbit around target
+                const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+                
+                // Rotate around vertical axis (y-axis)
+                if (x !== 0) {
+                    const angleX = x;
+                    const cosX = Math.cos(angleX);
+                    const sinX = Math.sin(angleX);
+                    
+                    const newX = offset.x * cosX - offset.z * sinX;
+                    const newZ = offset.x * sinX + offset.z * cosX;
+                    
+                    offset.x = newX;
+                    offset.z = newZ;
+                }
+                
+                // Rotate around horizontal axis (x-axis)
+                if (y !== 0) {
+                    const angleY = y;
+                    const cosY = Math.cos(angleY);
+                    const sinY = Math.sin(angleY);
+                    
+                    const newY = offset.y * cosY - offset.z * sinY;
+                    const newZ = offset.y * sinY + offset.z * cosY;
+                    
+                    offset.y = newY;
+                    offset.z = newZ;
+                }
+                
+                // Update camera position
+                camera.position.copy(controls.target).add(offset);
+                camera.lookAt(controls.target);
+                
+                // Update controls to match
+                controls.update();
+            }
+            
+            function resetCameraView() {
+                camera.position.set(8, 8, 8);
+                camera.lookAt(0, 0, 0);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        }
+
+        // Call this function after setting up the renderer
+        addRotationControls();
+
+        // Set orbit controls to be disabled by default (we'll use our custom controls)
+        controls.enabled = false;
         // Responsive canvas
         window.addEventListener('resize', () => {
             const newWidth = canvasContainer.clientWidth;
@@ -377,6 +489,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
+
+        // Initialize rotation controls
+        addRotationControls();
+
+        // Disable default orbit controls for mouse (we'll use our buttons instead)
+        controls.enabled = true; // Keep enabled for programmatic control
+        controls.enableRotate = false; // Disable mouse rotation
       
         // State variables
         let demoType = 'projection3d';
@@ -943,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
             objects.labels = [];
 
             // Update UI based on demo type
+            // In the updateDemoType function where it sets instructionText:
             if (demoType === 'projection3d') {
                 explanationTitle.textContent = '3D Orthogonal Projection';
                 explanationContent.innerHTML = `
@@ -953,7 +1073,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
                 `;
                 
-                instructionText.textContent = 'Drag to rotate the 3D space and see orthogonal projection';
+                // REPLACE THIS LINE
+                instructionText.textContent = 'Touch and drag vectors to change them. Use arrow buttons to rotate view.';
                 
                 legendContainer.innerHTML = `
                     <div class="legend-item"><span class="legend-color vector-a"></span> Vector u</div>
@@ -1140,9 +1261,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (vectorType) {
-                // Disable orbit controls temporarily
-                controls.enabled = false;
-                
                 isDragging = true;
                 selectedVector = vectorType;
                 
@@ -1170,7 +1288,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 event.stopPropagation();
             }
         }
-         
 
         function onMouseMove(event) {
             if (!isDragging || !selectedVector) return;
