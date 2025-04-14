@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const demoTypeSelect = document.getElementById('demo-type-3d');
         const instructionText = document.getElementById('instruction-text-3d');
         const innerProductDisplay = document.getElementById('inner-product-3d');
+        const orthogonalStatus = document.getElementById('orthogonal-status-3d');
         const explanationTitle = document.getElementById('explanation-title-3d');
         const explanationContent = document.getElementById('explanation-content-3d');
         const legendContainer = document.getElementById('legend-container-3d');
@@ -765,6 +766,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           
             innerProductDisplay.textContent = dotProductText.slice(0, -2); 
+          
+            if (allOrthogonal) {
+                orthogonalStatus.textContent = 'All vectors are orthogonal to each other';
+                orthogonalStatus.className = 'status orthogonal';
+            } else {
+                orthogonalStatus.textContent = 'Continue the process for full orthogonalization';
+                orthogonalStatus.className = 'status not-orthogonal';
+            }
+            } else {
+                innerProductDisplay.textContent = statusText;
+                orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
+                orthogonalStatus.className = 'status orthogonal';
+            }
         
             // Show current step visualization
             if (gramSchmidtStep > 0 && orthogonalVectors.length < gramSchmidtVectors.length) {
