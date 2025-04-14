@@ -1,5 +1,4 @@
-// orthogonality_visualizer_3d.js
-// A ThreeJS implementation for 3D visualization of orthogonality concepts
+// A Three JS implementation for 3D visualization of orthogonality concepts
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -107,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.head.appendChild(styleElement);
     
-    // script loading section to ensure proper loading order
+    // script loading section
     if (!window.THREE) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
@@ -227,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const planeMaterial = new THREE.MeshBasicMaterial({ 
                 color: color, 
                 transparent: true, 
-                opacity: 0.05,  // Reduced from 0.1 to 0.05
+                opacity: 0.05, 
                 side: THREE.DoubleSide
             });
             const plane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -240,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const gridMaterial = new THREE.LineBasicMaterial({ 
                 color: color, 
                 transparent: true, 
-                opacity: 0.2  // Reduced from 0.3 to 0.2
+                opacity: 0.2
             });
             
             // Create horizontal grid lines
@@ -286,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // XZ plane (vertical in math notation, front wall) (XY in Three.js)
         const xzPlane = createGriddedPlane(0x000000);
-        // No rotation needed - this is the XY plane in Three.js
         scene.add(xzPlane);
 
         // YZ plane (vertical in math notation, side wall) (ZY in Three.js)
@@ -319,18 +317,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return sprite;
         }
 
-       // Create custom black axes with proper mathematical orientation
+       // Create black axes with proper mathematical orientation
         const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
 
-        // X-axis (both positive and negative)
+        // X-axis 
         const xPoints = [];
-        xPoints.push(new THREE.Vector3(-5, 0, 0));  // X is still X
+        xPoints.push(new THREE.Vector3(-5, 0, 0)); 
         xPoints.push(new THREE.Vector3(5, 0, 0));
         const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
         const xAxis = new THREE.Line(xGeometry, axisMaterial);
         scene.add(xAxis);
 
-        // Y-axis (both positive and negative)
+        // Y-axis
         const yPoints = [];
         yPoints.push(new THREE.Vector3(0, 0, -5));  // Y in math is Z in Three.js
         yPoints.push(new THREE.Vector3(0, 0, 5));
@@ -338,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const yAxis = new THREE.Line(yGeometry, axisMaterial);
         scene.add(yAxis);
 
-        // Z-axis (both positive and negative)
+        // Z-axis
         const zPoints = [];
         zPoints.push(new THREE.Vector3(0, -5, 0));  // Z in math is Y in Three.js
         zPoints.push(new THREE.Vector3(0, 5, 0));
@@ -378,7 +376,6 @@ document.addEventListener('DOMContentLoaded', function() {
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
 
-        // Add this after creating the renderer
         function addRotationControls() {
             // Get reference to the canvas wrapper
             const canvasWrapper = document.getElementById('canvas-wrapper-3d');
@@ -400,10 +397,9 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.padding = '5px';
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
 
-            // Important: Attach to canvasContainer
             canvasWrapper.appendChild(rotationControlsContainer);
         
-            // Create rotation buttons (6 directions)
+            // Create rotation buttons
             const directions = [
                 { icon: '↑', col: 2, row: 1, rotate: function() { rotateCamera(0, -0.2, 0); } }, // Up
                 { icon: '↓', col: 2, row: 3, rotate: function() { rotateCamera(0, 0.2, 0); } },  // Down
@@ -428,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rotationControlsContainer.appendChild(button);
             });
             
-            // Add reset view button
+            // reset view button
             const resetButton = document.createElement('button');
             resetButton.innerText = '⟲';
             resetButton.style.gridColumn = 2;
@@ -490,12 +486,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-
         addRotationControls();
 
-        // Disable default orbit controls for mouse (we'll use our buttons instead)
-        controls.enabled = true; // Keep enabled for programmatic control
-        controls.enableRotate = false; // Disable mouse rotation
+        controls.enabled = true;
+        controls.enableRotate = true; 
       
         // State variables
         let demoType = 'projection3d';
@@ -695,14 +689,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             innerProductDisplay.innerHTML = `
                 proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> × v<br>
-                = (${vectorA.x.toFixed(1)}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
+                = (${vectorA.x_1}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
                 = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
                 = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
             `;
             
             // Check orthogonality
             if (Math.abs(dotProduct) < 0.1) {
-                orthogonalStatus.textContent = 'Vectors are orthogonal (perpendicular)';
+                orthogonalStatus.textContent = 'Vectors are orthogonal';
                 orthogonalStatus.className = 'status orthogonal';
             } else {
                 orthogonalStatus.textContent = 'Vectors are not orthogonal';
