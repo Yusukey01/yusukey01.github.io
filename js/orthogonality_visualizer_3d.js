@@ -473,8 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 controls.update();
             }
         }
-        // Call this function after setting up the renderer
-        addRotationControls();
 
         // Set orbit controls to be disabled by default (we'll use our custom controls)
         controls.enabled = false;
@@ -492,7 +490,6 @@ document.addEventListener('DOMContentLoaded', function() {
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
 
-        // Initialize rotation controls
         addRotationControls();
 
         // Disable default orbit controls for mouse (we'll use our buttons instead)
@@ -925,13 +922,25 @@ document.addEventListener('DOMContentLoaded', function() {
             if (demoType === 'projection3d') {
                 // Vector A label
                 if (magnitude(vectorA) > 0.1) {
-                    const labelA = createTextSprite('u', new THREE.Vector3(vectorA.x*1.1, vectorA.y*1.1, vectorA.z*1.1), '#3498db');
+                    // Transform math coords to Three.js coords for label position
+                    const labelPos = new THREE.Vector3(
+                        vectorA.x*1.1,
+                        vectorA.z*1.1,  // Z in math is Y in Three.js
+                        vectorA.y*1.1   // Y in math is Z in Three.js
+                    );
+                    const labelA = createTextSprite('u', labelPos, '#3498db');
                     scene.add(labelA);
                     objects.labels.push(labelA);
                 }
                 // Vector B label
                 if (magnitude(vectorB) > 0.1) {
-                    const labelB = createTextSprite('v', new THREE.Vector3(vectorB.x*1.1, vectorB.y*1.1, vectorB.z*1.1), '#e74c3c');
+                    // Transform math coords to Three.js coords for label position
+                    const labelPos = new THREE.Vector3(
+                        vectorB.x*1.1,
+                        vectorB.z*1.1,  // Z in math is Y in Three.js
+                        vectorB.y*1.1   // Y in math is Z in Three.js
+                    );
+                    const labelB = createTextSprite('v', labelPos, '#e74c3c');
                     scene.add(labelB);
                     objects.labels.push(labelB);
                 }
