@@ -386,6 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create container for rotation controls
             const rotationControlsContainer = document.createElement('div');
             rotationControlsContainer.className = 'rotation-controls';
+            
+            rotationControlsContainer.className = 'rotation-controls';
             rotationControlsContainer.style.position = 'absolute';
             rotationControlsContainer.style.bottom = '20px';
             rotationControlsContainer.style.right = '20px';
@@ -397,7 +399,9 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.borderRadius = '8px';
             rotationControlsContainer.style.padding = '5px';
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-            canvasWrapper.appendChild(rotationControlsContainer);
+
+            // Important: Attach to canvasContainer
+            canvasContainer.appendChild(rotationControlsContainer);
         
             // Create rotation buttons (6 directions)
             const directions = [
