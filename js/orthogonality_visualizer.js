@@ -700,8 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Calculate and display formula
       const projMagnitude = magnitude(projection);
       const projUnitVector = normalize(vectorB);
-      
-      innerProductDisplay.textContent = `proj_v u = (u·v / ||v||²) × v = ${projMagnitude.toFixed(2)}`;
+      innerProductDisplay.textContent = `proj_v u = (u·v / ||v||²) × v = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)})`;
     }
     
     function getOrthogonalVectorColor(index) {
