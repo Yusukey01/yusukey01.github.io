@@ -1231,75 +1231,75 @@ document.addEventListener('DOMContentLoaded', function() {
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
 
-        function onMouseDown(event) {
-            // Prevent default behavior
-            event.preventDefault();
-            
-            // Only process drag in projection3d mode
-            if (demoType !== 'projection3d') return;
-            
-            // Get normalized mouse position
-            updateMousePosition(event);
-            
-            // Raycast to find vectors
-            raycaster.setFromCamera(mouse, camera);
-            
-            // Check intersections with all objects in the scene
-            const intersects = raycaster.intersectObjects(scene.children, true);
-            
-            let vectorType = null;
-            
-            // Find vector arrows in the intersected objects
-            for (let i = 0; i < intersects.length; i++) {
-                const obj = intersects[i].object;
-                
-                // Check the object's userData
-                if (obj.userData && obj.userData.vectorArrow) {
-                    vectorType = obj.userData.vectorType;
-                    break;
-                }
-                
-                // Check the object's parent
-                if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
-                    vectorType = obj.parent.userData.vectorType;
-                    break;
-                }
-                
-                // Also check the parent's parent (for nested groups)
-                if (obj.parent && obj.parent.parent && obj.parent.parent.userData && obj.parent.parent.userData.vectorArrow) {
-                    vectorType = obj.parent.parent.userData.vectorType;
-                    break;
-                }
-            }
-            
-            if (vectorType) {
-                isDragging = true;
-                selectedVector = vectorType;
-                
-                // Create a drag plane aligned with the camera view
-                const cameraPosition = camera.position.clone();
-                const center = new THREE.Vector3(0, 0, 0);
-                const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
-                dragPlane.setFromNormalAndCoplanarPoint(normal, center);
-                
-                // Set drag offset
-                const intersection = new THREE.Vector3();
-                raycaster.ray.intersectPlane(dragPlane, intersection);
-                
-                const vectorData = selectedVector === 'u' ? vectorA : vectorB;
-                // Convert math coords to Three.js coords
-                const vectorThreeJS = new THREE.Vector3(
-                    vectorData.x,
-                    vectorData.z,  // Z in math is Y in Three.js
-                    vectorData.y   // Y in math is Z in Three.js
-                );
-                
-                dragOffset.subVectors(intersection, vectorThreeJS);
-                
-                // Prevent event from triggering orbit controls
-                event.stopPropagation();
-            }
+        // Update this function
+function onMouseDown(event) {
+    // Prevent default behavior
+    event.preventDefault();
+    
+    // Only process drag in projection3d mode
+    if (demoType !== 'projection3d') return;
+    
+    // Get normalized mouse position
+    updateMousePosition(event);
+    
+    // Raycast to find vectors
+    raycaster.setFromCamera(mouse, camera);
+    
+    // Check intersections with all objects in the scene
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    
+    let vectorType = null;
+    
+    // Find vector arrows in the intersected objects
+    for (let i = 0; i < intersects.length; i++) {
+        const obj = intersects[i].object;
+        
+        // Check the object and parent objects for vector data
+        if (obj.userData && obj.userData.vectorArrow) {
+            vectorType = obj.userData.vectorType;
+            break;
         }
+        
+        if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
+            vectorType = obj.parent.userData.vectorType;
+            break;
+        }
+        
+        if (obj.parent && obj.parent.parent && obj.parent.parent.userData && obj.parent.parent.userData.vectorArrow) {
+            vectorType = obj.parent.parent.userData.vectorType;
+            break;
+        }
+    }
+    
+    if (vectorType) {
+        console.log("Selected vector:", vectorType); // Debug output
+        isDragging = true;
+        selectedVector = vectorType;
+        
+        // Create a drag plane aligned with the camera view
+        const cameraPosition = camera.position.clone();
+        const center = new THREE.Vector3(0, 0, 0);
+        const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
+        dragPlane.setFromNormalAndCoplanarPoint(normal, center);
+        
+        // Set drag offset
+        const intersection = new THREE.Vector3();
+        raycaster.ray.intersectPlane(dragPlane, intersection);
+        
+        const vectorData = selectedVector === 'u' ? vectorA : vectorB;
+        // Convert math coords to Three.js coords
+        const vectorThreeJS = new THREE.Vector3(
+            vectorData.x,
+            vectorData.z,  // Z in math is Y in Three.js
+            vectorData.y   // Y in math is Z in Three.js
+        );
+        
+        dragOffset.subVectors(intersection, vectorThreeJS);
+        
+        // Prevent event from triggering orbit controls
+        event.stopPropagation();
+    }
+}
 
         function onMouseMove(event) {
             if (!isDragging || !selectedVector) return;
@@ -1388,26 +1388,10 @@ document.addEventListener('DOMContentLoaded', function() {
             mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
         }
 
-        // Add event listeners for both mouse and touch
         // Mouse events with separate event handlers
-        renderer.domElement.addEventListener('mousedown', (event) => {
-            // Always disable rotation when mouse is down
-            controls.enableRotate = false;
-            
-            // Handle the mouse down event
-    onMouseDown(event);
-        }, false);
-
+        renderer.domElement.addEventListener('mousedown', onMouseDown, false);
         renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-
-        document.addEventListener('mouseup', (event) => {
-            // Reset flags
-            isDragging = false;
-            selectedVector = null;
-            
-            // Re-enable orbit controls for future rotations via buttons
-            controls.enableRotate = false;
-        }, false);
+        document.addEventListener('mouseup', onMouseUp, false);
 
         // Touch events
         renderer.domElement.addEventListener('touchstart', onMouseDown, false);
