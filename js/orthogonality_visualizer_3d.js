@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </label>
             </div>
             <div class="instruction" id="instruction-text-3d">Drag to rotate the 3D space and see orthogonal projection</div>
-            <div id="canvas-wrapper-3d">
+            <div id="canvas-wrapper-3d" style="position: relative;">
               <div id="three-canvas-container" style="width: 100%; height: 500px;"></div>
             </div>
             <div class="legend" id="legend-container-3d">
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
 
             // Important: Attach to canvasContainer
-            canvasContainer.appendChild(rotationControlsContainer);
+            canvasWrapper.appendChild(rotationControlsContainer);
         
             // Create rotation buttons (6 directions)
             const directions = [
@@ -1261,15 +1261,21 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < intersects.length; i++) {
                 const obj = intersects[i].object;
                 
-                // Look at the object and its parent for vector information
+                // Check the object's userData
                 if (obj.userData && obj.userData.vectorArrow) {
                     vectorType = obj.userData.vectorType;
                     break;
                 }
                 
-                // Check if parent has vector information
+                // Check the object's parent
                 if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
                     vectorType = obj.parent.userData.vectorType;
+                    break;
+                }
+                
+                // Also check the parent's parent (for nested groups)
+                if (obj.parent && obj.parent.parent && obj.parent.parent.userData && obj.parent.parent.userData.vectorArrow) {
+                    vectorType = obj.parent.parent.userData.vectorType;
                     break;
                 }
             }
@@ -1369,25 +1375,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function updateMousePosition(event) {
+            
             const canvasRect = renderer.domElement.getBoundingClientRect();
             
-            // Handle both mouse and touch events
-            const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
-            const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
+            // Support both mouse and touch events
+            let clientX, clientY;
+            
+            // For touch events
+            if (event.touches && event.touches.length) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } 
+            // For mouse events
+            else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
             
             mouse.x = ((clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
             mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
         }
 
         // Add event listeners for both mouse and touch
-        renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+        // Mouse events with separate event handlers
+        renderer.domElement.addEventListener('mousedown', (event) => {
+            controls.enableRotate = false; // Disable rotation during potential drag
+            onMouseDown(event);
+        }, false);
         renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('mouseup', onMouseUp, false);
+        document.addEventListener('mouseup', (event) => {
+            controls.enableRotate = true; // Re-enable rotation after drag ends
+            onMouseUp(event);
+        }, false);
 
         // Touch events
         renderer.domElement.addEventListener('touchstart', onMouseDown, false);
         renderer.domElement.addEventListener('touchmove', onMouseMove, false);
-        window.addEventListener('touchend', onMouseUp, false);
+        document.addEventListener('touchend', onMouseUp, false);
+
 
         function generateRandomVectors(count) {
             // Clear previous vectors
