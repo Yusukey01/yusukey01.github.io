@@ -366,10 +366,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add this after creating the renderer
         function addRotationControls() {
+            // Get reference to the canvas wrapper
+            const canvasWrapper = document.getElementById('canvas-wrapper-3d');
+            
             // Create container for rotation controls
-            // Define canvasWrapper here at the beginning of the function
-             const canvasWrapper = document.getElementById('canvas-wrapper-3d');
-    
+            const rotationControlsContainer = document.createElement('div');
             rotationControlsContainer.className = 'rotation-controls';
             rotationControlsContainer.style.position = 'absolute';
             rotationControlsContainer.style.bottom = '20px';
@@ -383,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.padding = '5px';
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
             canvasWrapper.appendChild(rotationControlsContainer);
-
+        
             // Create rotation buttons (6 directions)
             const directions = [
                 { icon: '↑', col: 2, row: 1, rotate: function() { rotateCamera(0, -0.2, 0); } }, // Up
@@ -426,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resetButton.addEventListener('click', resetCameraView);
             resetButton.addEventListener('touchstart', resetCameraView);
             rotationControlsContainer.appendChild(resetButton);
-
+        
             function rotateCamera(x, y, z) {
                 // Orbit around target
                 const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
@@ -472,7 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 controls.update();
             }
         }
-
         // Call this function after setting up the renderer
         addRotationControls();
 
