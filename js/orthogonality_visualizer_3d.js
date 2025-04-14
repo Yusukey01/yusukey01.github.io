@@ -493,8 +493,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
         // State variables
         let demoType = 'projection3d';
-        let vectorA = { x: 3, y: 0, z: 0 };
-        let vectorB = { x: 0, y: 2, z: 0 };
+        let vectorA = { x: 2, y: 5, z: -2 };
+        let vectorB = { x: -1, y: 0, z: 4 };
         let vectorC = { x: 0, y: 0, z: 1 };
         let gramSchmidtStep = 0;
         let gramSchmidtVectors = [];
