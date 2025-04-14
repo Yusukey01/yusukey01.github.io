@@ -1155,8 +1155,8 @@ document.addEventListener('DOMContentLoaded', function() {
         function resetDemo() {
             // Reset the scene
             if (demoType === 'projection3d') {
-            vectorA = { x: 3, y: 0, z: 0 };
-            vectorB = { x: 0, y: 2, z: 0 };
+            vectorA = { x: 2, y: 5, z: -2 };
+            vectorB = { x: -1, y: 0, z: 4 };
             vectorC = { x: 0, y: 0, z: 1 };
             
             vecAXInput.value = vectorA.x;
