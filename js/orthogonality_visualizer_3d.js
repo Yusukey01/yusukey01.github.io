@@ -409,8 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 { icon: '↓', col: 2, row: 3, rotate: function() { rotateCamera(0, 0.2, 0); } },  // Down
                 { icon: '←', col: 1, row: 2, rotate: function() { rotateCamera(-0.2, 0, 0); } },  // Left
                 { icon: '→', col: 3, row: 2, rotate: function() { rotateCamera(0.2, 0, 0); } },   // Right
-                { icon: '↻', col: 3, row: 1, rotate: function() { rotateCamera(0, 0, -0.2); } },  // Clockwise
-                { icon: '↺', col: 1, row: 1, rotate: function() { rotateCamera(0, 0, 0.2); } }    // Counter-clockwise
             ];
             
             directions.forEach(dir => {
