@@ -1397,23 +1397,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners for both mouse and touch
         // Mouse events with separate event handlers
         renderer.domElement.addEventListener('mousedown', (event) => {
-            onMouseDown(event);
-            if (isDragging) {
-                controls.enableRotate = true; // Only enable rotation if not dragging a vector
-                event.stopPropagation(); // Prevent orbit controls from activating
-            } 
+            // Always disable rotation when mouse is down
+            controls.enableRotate = false;
+            
+            // Handle the mouse down event
+    onMouseDown(event);
         }, false);
+
         renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-        
+
         document.addEventListener('mouseup', (event) => {
-            const wasDragging = isDragging;
-            onMouseUp(event);
-            if (wasDragging) {
-                // Give a small delay before re-enabling rotation to prevent unwanted rotations
-                setTimeout(() => {
-                    controls.enableRotate = true;
-                }, 100);
-            }
+            // Reset flags
+            isDragging = false;
+            selectedVector = null;
+            
+            // Re-enable orbit controls for future rotations via buttons
+            controls.enableRotate = false;
         }, false);
 
         // Touch events
