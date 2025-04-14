@@ -380,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.borderRadius = '8px';
             rotationControlsContainer.style.padding = '5px';
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+            const canvasWrapper = document.getElementById('canvas-wrapper-3d');
             canvasWrapper.appendChild(rotationControlsContainer);
 
             // Create rotation buttons (6 directions)
