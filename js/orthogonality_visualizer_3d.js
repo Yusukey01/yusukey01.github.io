@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="equation-display" id="equation-container-3d">
               <div class="equation-title">Projection Formula in 3D:</div>
               <div id="inner-product-3d" class="equation">proj_v u = (u·v / ||v||²) × v</div>
-              <div id="orthogonal-status-3d" class="status orthogonal">Vectors are orthogonal when u·v = 0</div>
             </div>
   
             <div class="control-group" id="vector-controls-3d">
