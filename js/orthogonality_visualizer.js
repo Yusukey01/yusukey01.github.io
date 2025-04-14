@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="equation-display" id="equation-container">
               <div class="equation-title">Projection Formula:</div>
               <div id="inner-product" class="equation">proj_v u = (u·v / ||v||²) × v</div>
-              <div id="orthogonal-status" class="status orthogonal">Residual z is orthogonal to v</div>
             </div>
   
             <div class="control-group" id="vector-controls">
@@ -357,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const demoTypeSelect = document.getElementById('demo-type');
     const instructionText = document.getElementById('instruction-text');
     const innerProductDisplay = document.getElementById('inner-product');
-    const orthogonalStatus = document.getElementById('orthogonal-status');
     const explanationTitle = document.getElementById('explanation-title');
     const explanationContent = document.getElementById('explanation-content');
     const legendContainer = document.getElementById('legend-container');
@@ -637,8 +635,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Display orthogonality status
       if (Math.abs(innerProduct) < 0.1) {
-        orthogonalStatus.textContent = 'Vectors are orthogonal';
-        orthogonalStatus.className = 'status orthogonal';
         
         // Draw the 90-degree angle marker
         const angleMarkerRadius = 30;
@@ -664,9 +660,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = 'bold 14px Arial';
         ctx.fillStyle = '#2ecc71';
         ctx.fillText('90°', labelPos.x - 10, labelPos.y + 5);
-      } else {
-        orthogonalStatus.textContent = 'Vectors are not orthogonal';
-        orthogonalStatus.className = 'status not-orthogonal';
       }
     }
     
@@ -709,14 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const projUnitVector = normalize(vectorB);
       
       innerProductDisplay.textContent = `proj_v u = (u·v / ||v||²) × v = ${projMagnitude.toFixed(2)}`;
-      
-      if (Math.abs(dot(residual, vectorB)) < 0.001) {
-        orthogonalStatus.textContent = 'Residual z is orthogonal to v';
-        orthogonalStatus.className = 'status orthogonal';
-      } else {
-        orthogonalStatus.textContent = 'Adjust vectors to see orthogonal projection';
-        orthogonalStatus.className = 'status not-orthogonal';
-      }
     }
     
     function getOrthogonalVectorColor(index) {
@@ -767,17 +752,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             innerProductDisplay.textContent = `v₍1₎·v₍2₎ = (${v1.x.toFixed(1)} × ${v2.x.toFixed(1)}) + (${v1.y.toFixed(1)} × ${v2.y.toFixed(1)}) = ${dotProduct}`;
             
-            if (Math.abs(dotProduct) < 0.1) {
-            orthogonalStatus.textContent = 'Vectors are orthogonal';
-            orthogonalStatus.className = 'status orthogonal';
-            } else {
-            orthogonalStatus.textContent = 'Continue Gram-Schmidt process';
-            orthogonalStatus.className = 'status not-orthogonal';
-            }
+           
         } else {
             innerProductDisplay.textContent = 'Click "Step Through Process" to start';
-            orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
-            orthogonalStatus.className = 'status orthogonal';
         }
         
         // Add step counter
