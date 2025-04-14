@@ -677,9 +677,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 scene.add(objects.orthogonalLine);
             }
             
-            // Add vector labels
-            createVectorLabels();
-            
             // Add orthogonality indicator
             createOrthogonalityIndicator();
             
@@ -748,9 +745,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     objects.gramSchmidtOrthVectors.push(arrow);
                 }
             });
-        
-            // Add vector labels
-            createVectorLabels();
             
             // Add orthogonality indicators if we have at least 2 orthogonal vectors
             if (orthogonalVectors.length >= 2) {
@@ -882,85 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scene.add(zLabel);
 
         }//createAxisLabels end
-      
-        // Create a function to add/update vector labels
-        function createVectorLabels() {
-            objects.labels.forEach(label => scene.remove(label));
-            objects.labels = [];
-        
-            function createTextSprite(text, position, color) {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.width = 64;
-                canvas.height = 64;
-                
-                context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                context.fillRect(0, 0, canvas.width, canvas.height);
-          
-                context.font = '32px Arial';
-                context.fillStyle = color;
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                context.fillText(text, 32, 32);
-          
-                const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.SpriteMaterial({map: texture});
-                const sprite = new THREE.Sprite(material);
-                
-                sprite.position.copy(position);
-                sprite.scale.set(0.5, 0.5, 0.5);
-                
-                return sprite;
-            }
 
-            // Add labels based on demo type
-            if (demoType === 'projection3d') {
-                // Vector A label
-                if (magnitude(vectorA) > 0.1) {
-                    // Transform math coords to Three.js coords for label position
-                    const labelPos = new THREE.Vector3(
-                        vectorA.x*1.1,
-                        vectorA.z*1.1,  // Z in math is Y in Three.js
-                        vectorA.y*1.1   // Y in math is Z in Three.js
-                    );
-                    const labelA = createTextSprite('u', labelPos, '#3498db');
-                    scene.add(labelA);
-                    objects.labels.push(labelA);
-                }
-                // Vector B label
-                if (magnitude(vectorB) > 0.1) {
-                    // Transform math coords to Three.js coords for label position
-                    const labelPos = new THREE.Vector3(
-                        vectorB.x*1.1,
-                        vectorB.z*1.1,  // Z in math is Y in Three.js
-                        vectorB.y*1.1   // Y in math is Z in Three.js
-                    );
-                    const labelB = createTextSprite('v', labelPos, '#e74c3c');
-                    scene.add(labelB);
-                    objects.labels.push(labelB);
-                }
-                else if (demoType === 'gramschmidt3d') {
-                    // Labels for original vectors
-                    gramSchmidtVectors.forEach((v, i) => {
-                        if (magnitude(v) > 0.1) {
-                            const label = createTextSprite(`x₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), '#999999');
-                            scene.add(label);
-                            objects.labels.push(label);
-                        }
-                    });
-          
-                    // Labels for orthogonal vectors
-                    orthogonalVectors.forEach((v, i) => {
-                        if (magnitude(v) > 0.1) {
-                            const color = getOrthogonalVectorColor(i).toString(16).padStart(6, '0');
-                            const label = createTextSprite(`v₍${i+1}₎`, new THREE.Vector3(v.x*1.1, v.y*1.1, v.z*1.1), `#${color}`);
-                            scene.add(label);
-                            objects.labels.push(label);
-                        }
-                    });
-                }        
-            }
-        }
         // Create a visual indicator for orthogonal angles
         function createOrthogonalityIndicator() {
             // Clear any existing indicators
