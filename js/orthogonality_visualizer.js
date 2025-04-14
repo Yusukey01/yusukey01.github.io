@@ -678,28 +678,21 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw residual vector if significant
       if (magnitude(residual) > 0.1) {
-        // For the residual vector z, we need to draw it from the endpoint of the projection to the endpoint of vectorA
-        // First, get the canvas coordinates for the origin
-        const originCanvas = { x: origin.x, y: origin.y };
-        
-        // Get canvas coordinates for the end of the projection vector (from origin)
-        const projEndCanvas = vectorToCanvas(projection);
-        
-        // Get canvas coordinates for the end of vectorA (from origin)
-        const vectorAEndCanvas = vectorToCanvas(vectorA);
+        // Get canvas coordinates for the endpoints
+        const projectionEnd = vectorToCanvas(projection);
+        const vectorAEnd = vectorToCanvas(vectorA);
         
         // Draw the residual vector from projection endpoint to vectorA endpoint
         ctx.beginPath();
-        ctx.moveTo(projEndCanvas.x, projEndCanvas.y);
-        ctx.lineTo(vectorAEndCanvas.x, vectorAEndCanvas.y);
+        ctx.moveTo(projectionEnd.x, projectionEnd.y);  // Start from the END of projection
+        ctx.lineTo(vectorAEnd.x, vectorAEnd.y);        // End at the tip of vector A
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         ctx.stroke();
         
-        // Label the residual vector as z
-        const midX = (projEndCanvas.x + vectorAEndCanvas.x) / 2;
-        const midY = (projEndCanvas.y + vectorAEndCanvas.y) / 2;
-        
+        // Label the residual vector
+        const midX = (projectionEnd.x + vectorAEnd.x) / 2;
+        const midY = (projectionEnd.y + vectorAEnd.y) / 2;
         ctx.font = '16px Arial';
         ctx.fillStyle = '#2ecc71';
         ctx.fillText('z', midX + 10, midY - 10);
