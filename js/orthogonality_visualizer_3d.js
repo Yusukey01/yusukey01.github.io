@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const demoTypeSelect = document.getElementById('demo-type-3d');
         const instructionText = document.getElementById('instruction-text-3d');
         const innerProductDisplay = document.getElementById('inner-product-3d');
-        const orthogonalStatus = document.getElementById('orthogonal-status-3d');
         const explanationTitle = document.getElementById('explanation-title-3d');
         const explanationContent = document.getElementById('explanation-content-3d');
         const legendContainer = document.getElementById('legend-container-3d');
