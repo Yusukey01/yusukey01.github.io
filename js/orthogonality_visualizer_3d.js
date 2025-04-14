@@ -364,6 +364,20 @@ document.addEventListener('DOMContentLoaded', function() {
         renderer.setSize(width, height);
         canvasContainer.appendChild(renderer.domElement);
         
+        // Responsive canvas
+        window.addEventListener('resize', () => {
+            const newWidth = canvasContainer.clientWidth;
+            const newHeight = canvasContainer.clientHeight;
+            camera.aspect = newWidth / newHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newWidth, newHeight);
+        });
+      
+        // Add orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.25;
+
         // Add this after creating the renderer
         function addRotationControls() {
             // Get reference to the canvas wrapper
@@ -474,21 +488,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Set orbit controls to be disabled by default (we'll use our custom controls)
-        controls.enabled = false;
-        // Responsive canvas
-        window.addEventListener('resize', () => {
-            const newWidth = canvasContainer.clientWidth;
-            const newHeight = canvasContainer.clientHeight;
-            camera.aspect = newWidth / newHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(newWidth, newHeight);
-        });
-      
-        // Add orbit controls
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.25;
 
         addRotationControls();
 
