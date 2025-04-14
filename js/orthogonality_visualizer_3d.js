@@ -690,15 +690,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
                 = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
             `;
-            
-            // Check orthogonality
-            if (Math.abs(dotProduct) < 0.1) {
-                orthogonalStatus.textContent = 'Vectors are orthogonal';
-                orthogonalStatus.className = 'status orthogonal';
-            } else {
-                orthogonalStatus.textContent = 'Vectors are not orthogonal';
-                orthogonalStatus.className = 'status not-orthogonal';
-            }
         }
         
         function getOrthogonalVectorColor(index) {
@@ -775,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
           
-            innerProductDisplay.textContent = dotProductText.slice(0, -2); // Remove trailing comma
+            innerProductDisplay.textContent = dotProductText.slice(0, -2); 
           
             if (allOrthogonal) {
                 orthogonalStatus.textContent = 'All vectors are orthogonal to each other';
@@ -995,7 +986,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>where z is <strong>orthogonal</strong> to v (z·v = 0)</p>
                 `;
                 
-                // REPLACE THIS LINE
                 instructionText.textContent = 'Touch and drag vectors to change them. Use arrow buttons to rotate view.';
                 
                 legendContainer.innerHTML = `
