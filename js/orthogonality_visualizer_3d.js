@@ -1398,13 +1398,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mouse events with separate event handlers
         renderer.domElement.addEventListener('mousedown', (event) => {
             onMouseDown(event);
-            if (!isDragging) {
+            if (isDragging) {
                 controls.enableRotate = true; // Only enable rotation if not dragging a vector
-            } else {
-                controls.enableRotate = false; // Disable rotation during vector drag
-            }
+                event.stopPropagation(); // Prevent orbit controls from activating
+            } 
         }, false);
-
+        renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+        
         document.addEventListener('mouseup', (event) => {
             const wasDragging = isDragging;
             onMouseUp(event);
