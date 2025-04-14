@@ -47,15 +47,15 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="vector-inputs">
                 <div class="vector-input">
                   <label>u = </label>
-                  <input type="number" id="vec-a-x-3d" value="3" step="0.5" min="-10" max="10">
-                  <input type="number" id="vec-a-y-3d" value="0" step="0.5" min="-10" max="10">
-                  <input type="number" id="vec-a-z-3d" value="0" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-a-x-3d" value="2" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-a-y-3d" value="5" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-a-z-3d" value="-2" step="0.5" min="-10" max="10">
                 </div>
                 <div class="vector-input">
                   <label>v = </label>
-                  <input type="number" id="vec-b-x-3d" value="0" step="0.5" min="-10" max="10">
-                  <input type="number" id="vec-b-y-3d" value="2" step="0.5" min="-10" max="10">
-                  <input type="number" id="vec-b-z-3d" value="0" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-b-x-3d" value="-1" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-b-y-3d" value="0" step="0.5" min="-10" max="10">
+                  <input type="number" id="vec-b-z-3d" value="4" step="0.5" min="-10" max="10">
                 </div>
                 <div class="vector-input" id="vec-c-input-3d" style="display: none;">
                   <label>w = </label>
