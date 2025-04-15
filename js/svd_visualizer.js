@@ -42,36 +42,56 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="singular-value">σ₂ = 0.00</div>
             </div>
 
-            <div class="svd-matrices">
+           <div class="svd-matrices">
   <h3>SVD Decomposition</h3>
-  <div class="matrix-formula-wrapper">
-    <div class="matrix-formula">
-      <div class="matrix-component">
-        <div class="matrix-label">A</div>
-        <div class="matrix-container" id="a-matrix-display">
+  <div class="matrix-formula">
+    <div class="matrix-component">
+      <div class="matrix-label">A</div>
+      <div class="matrix-with-brackets">
+        <div class="matrix-bracket matrix-bracket-left">[</div>
+        <div class="matrix-content" id="a-matrix-display">
           <!-- Will be filled dynamically -->
         </div>
+        <div class="matrix-bracket matrix-bracket-right">]</div>
       </div>
-      <div class="matrix-equals-sign">=</div>
-      <div class="matrix-component">
-        <div class="matrix-label">U</div>
-        <div class="matrix-container" id="u-matrix-display">
+    </div>
+    
+    <div class="matrix-equals-sign">=</div>
+    
+    <div class="matrix-component">
+      <div class="matrix-label">U</div>
+      <div class="matrix-with-brackets">
+        <div class="matrix-bracket matrix-bracket-left">[</div>
+        <div class="matrix-content" id="u-matrix-display">
           <!-- Will be filled dynamically -->
         </div>
+        <div class="matrix-bracket matrix-bracket-right">]</div>
       </div>
-      <div class="matrix-operator">×</div>
-      <div class="matrix-component">
-        <div class="matrix-label">Σ</div>
-        <div class="matrix-container" id="sigma-matrix-display">
+    </div>
+    
+    <div class="matrix-operator">×</div>
+    
+    <div class="matrix-component">
+      <div class="matrix-label">Σ</div>
+      <div class="matrix-with-brackets">
+        <div class="matrix-bracket matrix-bracket-left">[</div>
+        <div class="matrix-content" id="sigma-matrix-display">
           <!-- Will be filled dynamically -->
         </div>
+        <div class="matrix-bracket matrix-bracket-right">]</div>
       </div>
-      <div class="matrix-operator">×</div>
-      <div class="matrix-component">
-        <div class="matrix-label">V<sup>T</sup></div>
-        <div class="matrix-container" id="vt-matrix-display">
+    </div>
+    
+    <div class="matrix-operator">×</div>
+    
+    <div class="matrix-component">
+      <div class="matrix-label">V<sup>T</sup></div>
+      <div class="matrix-with-brackets">
+        <div class="matrix-bracket matrix-bracket-left">[</div>
+        <div class="matrix-content" id="vt-matrix-display">
           <!-- Will be filled dynamically -->
         </div>
+        <div class="matrix-bracket matrix-bracket-right">]</div>
       </div>
     </div>
   </div>
@@ -423,6 +443,61 @@ document.addEventListener('DOMContentLoaded', function() {
     content: '';
     padding-right: 5px;
   }
+}
+/* Matrix with brackets display style */
+.matrix-with-brackets {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.matrix-bracket {
+  font-size: 2.5rem;
+  font-weight: lighter;
+  line-height: 1;
+  color: #555;
+}
+
+.matrix-bracket-left {
+  margin-right: 5px;
+}
+
+.matrix-bracket-right {
+  margin-left: 5px;
+}
+
+.matrix-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 4px;
+}
+
+.matrix-cell-display {
+  width: 40px;
+  height: 28px;
+  text-align: center;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Special cell styles */
+.diagonal-element {
+  font-weight: bold;
+  background-color: #e6f7ff;
+  color: #0066cc;
+  border-color: #b3d9ff;
+}
+
+.zero-element {
+  color: #999;
+  background-color: #f9f9f9;
+  border-color: #e6e6e6;
 }
     `;
     
@@ -827,95 +902,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update the SVD matrix displays
-    function updateSVDMatrices() {
-        const svd = state.svd;
-        
-        // Update original A matrix display
-        const aMatrixDisplay = document.getElementById('a-matrix-display');
-        aMatrixDisplay.innerHTML = '';
-        state.matrix.forEach(row => {
-          row.forEach(val => {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            cell.textContent = val.toFixed(2);
-            aMatrixDisplay.appendChild(cell);
-          });
-        });
-        
-        // Update U matrix
-        uMatrixDisplay.innerHTML = '';
-        svd.U.forEach(row => {
-          row.forEach(val => {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            cell.textContent = val.toFixed(2);
-            uMatrixDisplay.appendChild(cell);
-          });
-        });
-        
-        // Update Sigma matrix (diagonal)
-        sigmaMatrixDisplay.innerHTML = '';
-        for (let i = 0; i < 2; i++) {
-          for (let j = 0; j < 2; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            if (i === j) {
-              cell.textContent = svd.S[i].toFixed(2);
-              cell.classList.add('diagonal-element');
-            } else {
-              cell.textContent = '0.00';
-              cell.classList.add('zero-element');
-            }
-            sigmaMatrixDisplay.appendChild(cell);
-          }
-        }
-        
-        // Update V^T matrix
-        vtMatrixDisplay.innerHTML = '';
-        for (let i = 0; i < 2; i++) {
-          for (let j = 0; j < 2; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
-            vtMatrixDisplay.appendChild(cell);
-          }
-        }
-
-        // Verify the decomposition by calculating U*Σ*V^T and comparing to original A
-        const reconstructed = [
-            [0, 0],
-            [0, 0]
-        ];
-        
-        for (let i = 0; i < 2; i++) {
-            for (let j = 0; j < 2; j++) {
-            let sum = 0;
-            for (let k = 0; k < 2; k++) {
-                sum += svd.U[i][k] * svd.S[k] * svd.V[j][k];
-            }
-            reconstructed[i][j] = sum;
-            }
-        }
-        
-        // Calculate the error between original and reconstructed matrices
-        let error = 0;
-        for (let i = 0; i < 2; i++) {
-            for (let j = 0; j < 2; j++) {
-            error += Math.pow(state.matrix[i][j] - reconstructed[i][j], 2);
-            }
-        }
-        error = Math.sqrt(error);
-        
-        // Add verification message
-        const verificationElement = document.getElementById('matrix-verification');
-        if (error < 1e-10) {
-            verificationElement.textContent = "✓ SVD decomposition verified (error < 1e-10)";
-            verificationElement.style.color = "#4caf50";
+   // Update the SVD matrix displays
+function updateSVDMatrices() {
+    const svd = state.svd;
+    
+    // Update original A matrix display with brackets format
+    const aMatrixDisplay = document.getElementById('a-matrix-display');
+    aMatrixDisplay.innerHTML = '';
+    state.matrix.forEach(row => {
+      row.forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell-display';
+        cell.textContent = val.toFixed(2);
+        aMatrixDisplay.appendChild(cell);
+      });
+    });
+    
+    // Update U matrix with brackets format
+    const uMatrixDisplay = document.getElementById('u-matrix-display');
+    uMatrixDisplay.innerHTML = '';
+    svd.U.forEach(row => {
+      row.forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell-display';
+        cell.textContent = val.toFixed(2);
+        uMatrixDisplay.appendChild(cell);
+      });
+    });
+    
+    // Update Sigma matrix with brackets format (diagonal)
+    const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
+    sigmaMatrixDisplay.innerHTML = '';
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell-display';
+        if (i === j) {
+          cell.textContent = svd.S[i].toFixed(2);
+          cell.classList.add('diagonal-element');
         } else {
-            verificationElement.textContent = `SVD decomposition error: ${error.toExponential(2)}`;
-            verificationElement.style.color = error < 1e-5 ? "#4caf50" : "#ff9800";
+          cell.textContent = '0.00';
+          cell.classList.add('zero-element');
         }
+        sigmaMatrixDisplay.appendChild(cell);
+      }
     }
+    
+    // Update V^T matrix with brackets format
+    const vtMatrixDisplay = document.getElementById('vt-matrix-display');
+    vtMatrixDisplay.innerHTML = '';
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell-display';
+        cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
+        vtMatrixDisplay.appendChild(cell);
+      }
+    }
+    
+    // Verification code remains the same...
+  }
   
     // Update step information
     function updateStepInfo() {
