@@ -44,32 +44,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="svd-matrices">
   <h3>SVD Decomposition</h3>
-  <div class="matrix-formula">
-    <div class="matrix-component">
-      <div class="matrix-label">A</div>
-      <div class="matrix-container" id="a-matrix-display">
-        <!-- Will be filled dynamically -->
+  <div class="matrix-formula-wrapper">
+    <div class="matrix-formula">
+      <div class="matrix-component">
+        <div class="matrix-label">A</div>
+        <div class="matrix-container" id="a-matrix-display">
+          <!-- Will be filled dynamically -->
+        </div>
       </div>
-    </div>
-    <div class="matrix-equals-sign">=</div>
-    <div class="matrix-component">
-      <div class="matrix-label">U</div>
-      <div class="matrix-container" id="u-matrix-display">
-        <!-- Will be filled dynamically -->
+      <div class="matrix-equals-sign">=</div>
+      <div class="matrix-component">
+        <div class="matrix-label">U</div>
+        <div class="matrix-container" id="u-matrix-display">
+          <!-- Will be filled dynamically -->
+        </div>
       </div>
-    </div>
-    <div class="matrix-operator">×</div>
-    <div class="matrix-component">
-      <div class="matrix-label">Σ</div>
-      <div class="matrix-container" id="sigma-matrix-display">
-        <!-- Will be filled dynamically -->
+      <div class="matrix-operator">×</div>
+      <div class="matrix-component">
+        <div class="matrix-label">Σ</div>
+        <div class="matrix-container" id="sigma-matrix-display">
+          <!-- Will be filled dynamically -->
+        </div>
       </div>
-    </div>
-    <div class="matrix-operator">×</div>
-    <div class="matrix-component">
-      <div class="matrix-label">V<sup>T</sup></div>
-      <div class="matrix-container" id="vt-matrix-display">
-        <!-- Will be filled dynamically -->
+      <div class="matrix-operator">×</div>
+      <div class="matrix-component">
+        <div class="matrix-label">V<sup>T</sup></div>
+        <div class="matrix-container" id="vt-matrix-display">
+          <!-- Will be filled dynamically -->
+        </div>
       </div>
     </div>
   </div>
@@ -333,52 +335,37 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 4px;
     }
 
-    .matrix-formula {
+    /* Container for the entire formula */
+.matrix-formula {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: flex-start; /* Start from left for better scrolling */
   gap: 8px;
   margin: 15px 0;
   padding: 10px;
   background: #f5f5f5;
   border-radius: 8px;
-  overflow-x: auto;
+  overflow-x: auto; /* Enable horizontal scrolling */
   width: 100%;
+  min-width: 0; /* Needed for proper flexbox scrolling */
+  scrollbar-width: thin; /* For Firefox */
 }
 
-/* Media query for desktop to ensure horizontal display */
-@media (min-width: 768px) {
-  .matrix-formula {
-    flex-wrap: nowrap;
-    justify-content: center;
-  }
-
-  .matrix-controls {
-    width: 350px !important; /* Increase the sidebar width to accommodate the matrices */
-  }
-  
-  /* Make all matrices the same size */
-  .matrix-container {
-    width: 70px;
-  }
+/* For Webkit browsers - nicer scrollbar */
+.matrix-formula::-webkit-scrollbar {
+  height: 6px;
 }
 
-/* Improve spacing between elements */
-.matrix-equals-sign, .matrix-operator {
-  font-size: 24px;
-  font-weight: bold;
-  padding: 0 3px;
-  align-self: center;
+.matrix-formula::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
 }
 
-/* Make matrix cells smaller to fit better in a row */
-.matrix-container .matrix-cell {
-  padding: 4px;
-  font-size: 13px;
+.matrix-formula::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
 }
 
-/* Better styling for the matrix containers */
+/* Matrix containers */
 .matrix-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -388,35 +375,54 @@ document.addEventListener('DOMContentLoaded', function() {
   background: white;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  min-width: 60px; /* Ensure minimum width */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* Improved highlighting for special elements */
-.diagonal-element {
+/* Individual matrix cells */
+.matrix-cell {
+  padding: 4px !important;
+  font-size: 13px !important;
+  text-align: center;
+  min-width: 30px; /* Ensure minimum width for cell content */
+}
+
+/* Operators between matrices */
+.matrix-equals-sign, .matrix-operator {
+  font-size: 20px;
   font-weight: bold;
-  background-color: #e6f7ff;
-  color: #0066cc;
+  padding: 0 3px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
-.zero-element {
-  color: #aaa;
-  background-color: #f9f9f9;
+/* Matrix components (label + matrix) */
+.matrix-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* Better label positioning */
+/* Matrix labels */
 .matrix-label {
   font-weight: bold;
   margin-bottom: 5px;
-  font-size: 18px;
+  font-size: 16px;
   text-align: center;
 }
 
-/* Add a verification message below the formula */
-.matrix-verification {
-  font-size: 12px;
-  color: #666;
-  text-align: center;
-  margin-top: 5px;
-  padding: 5px;
+/* Media query for desktop */
+@media (min-width: 768px) {
+  .matrix-controls {
+    width: 320px !important; /* Adjust width based on needs */
+    max-width: 380px;
+  }
+  
+  /* Ensure visible scroll indicator */
+  .matrix-formula::after {
+    content: '';
+    padding-right: 5px;
+  }
 }
     `;
     
