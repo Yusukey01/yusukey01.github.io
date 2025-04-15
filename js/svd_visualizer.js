@@ -29,11 +29,15 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="matrix-controls">
             <h3>Matrix A</h3>
-            <div class="matrix-grid" id="matrix-display">
-              <div class="matrix-cell">3.00</div>
-              <div class="matrix-cell">1.00</div>
-              <div class="matrix-cell">1.00</div>
-              <div class="matrix-cell">2.00</div>
+            <div class="matrix-input">
+            <div class="matrix-bracket">[</div>
+            <div class="matrix-cells" id="matrix-display">
+                <input type="text" id="m00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1">
+                <input type="text" id="m01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2">
+                <input type="text" id="m10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1">
+                <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2">
+            </div>
+            <div class="matrix-bracket">]</div>
             </div>
             
             <h3>Singular Values</h3>
@@ -108,24 +112,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <button class="preset-btn" data-matrix="reflection">Reflection</button>
             </div>
             
-            <button id="custom-matrix-btn" class="btn">Custom Matrix</button>
-            
-            <div id="custom-matrix-input" class="custom-matrix-input" style="display: none;">
-            <div class="matrix-input">
-                <div class="matrix-bracket">[</div>
-                <div class="matrix-cells">
-                <input type="text" id="m00-svd" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1">
-                <input type="text" id="m01-svd" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2">
-                <input type="text" id="m10-svd" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1">
-                <input type="text" id="m11-svd" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2">
-                </div>
-                <div class="matrix-bracket">]</div>
-            </div>
-            <div class="custom-matrix-buttons">
-                <button id="apply-matrix-btn" class="btn btn-success">Apply</button>
-                <button id="cancel-matrix-btn" class="btn">Cancel</button>
-            </div>
-            </div>
         
         <div class="svd-info">
           <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
@@ -548,18 +534,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const matrixDisplay = document.getElementById('matrix-display');
     const singularValuesDisplay = document.getElementById('singular-values');
     const presetButtons = document.getElementById('preset-buttons').querySelectorAll('.preset-btn');
-    const customMatrixBtn = document.getElementById('custom-matrix-btn');
-    const customMatrixInput = document.getElementById('custom-matrix-input');
-    const applyMatrixBtn = document.getElementById('apply-matrix-btn');
-    const cancelMatrixBtn = document.getElementById('cancel-matrix-btn');
     const uMatrixDisplay = document.getElementById('u-matrix-display');
     const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
     const vtMatrixDisplay = document.getElementById('vt-matrix-display');
-    // Update DOM references to include the new input fields
-    const m00InputSvd = document.getElementById('m00-svd');
-    const m01InputSvd = document.getElementById('m01-svd');
-    const m10InputSvd = document.getElementById('m10-svd');
-    const m11InputSvd = document.getElementById('m11-svd');
+    const m00Input = document.getElementById('m00');
+    const m01Input = document.getElementById('m01');
+    const m10Input = document.getElementById('m10');
+    const m11Input = document.getElementById('m11');
     // SVD Visualization state
     let state = {
       matrix: [
@@ -1065,43 +1046,39 @@ function updateSVDMatrices() {
         }
       });
     });
-  
-    // Custom matrix button
-    customMatrixBtn.addEventListener('click', function() {
-      customMatrixInput.style.display = 'block';
-    });
+
+    // Add these lines where the old event listeners were:
+    m00Input.addEventListener('input', handleMatrixInput);
+    m01Input.addEventListener('input', handleMatrixInput);
+    m10Input.addEventListener('input', handleMatrixInput);
+    m11Input.addEventListener('input', handleMatrixInput);
     
-    // Cancel custom matrix button
-    cancelMatrixBtn.addEventListener('click', function() {
-      customMatrixInput.style.display = 'none';
-    });
-    
-    
-    applyMatrixBtn.addEventListener('click', function() {
-    try {
-        // Get values from inputs
-        const m00 = parseFloat(m00InputSvd.value) || 0;
-        const m01 = parseFloat(m01InputSvd.value) || 0;
-        const m10 = parseFloat(m10InputSvd.value) || 0;
-        const m11 = parseFloat(m11InputSvd.value) || 0;
-        
-        // Update matrix
-        const matrix = [
-        [m00, m01],
-        [m10, m11]
-        ];
-        
-        setMatrix(matrix);
-        customMatrixInput.style.display = 'none';
-    } catch (error) {
-        alert(`Invalid matrix values: ${error.message}`);
-    }
-    });
-    
+
+
+
     // Initialize visualization
     state.svd = calculateSVD(state.matrix);
     updateMatrixDisplay();
     updateSVDMatrices(); // Add this line
     updateStepInfo();
     draw();
+
+    function handleMatrixInput() {
+        // Get values from inputs
+        const m00 = parseFloat(m00Input.value) || 0;
+        const m01 = parseFloat(m01Input.value) || 0;
+        const m10 = parseFloat(m10Input.value) || 0;
+        const m11 = parseFloat(m11Input.value) || 0;
+        
+        // Update matrix
+        state.matrix = [
+          [m00, m01],
+          [m10, m11]
+        ];
+        
+        // Update visualization
+        state.svd = calculateSVD(state.matrix);
+        updateSVDMatrices();
+        draw();
+      }
   });
