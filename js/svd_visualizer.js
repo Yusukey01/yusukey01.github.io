@@ -41,6 +41,39 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="singular-value">σ₁ = 0.00</div>
               <div class="singular-value">σ₂ = 0.00</div>
             </div>
+
+            <div class="svd-matrices">
+            <h3>SVD Matrix Components</h3>
+            <div class="svd-matrix-grid">
+                <div class="svd-matrix-component">
+                <div class="matrix-label">U</div>
+                <div class="matrix-container" id="u-matrix-display">
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                </div>
+                </div>
+                <div class="svd-matrix-component">
+                <div class="matrix-label">Σ</div>
+                <div class="matrix-container" id="sigma-matrix-display">
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                </div>
+                </div>
+                <div class="svd-matrix-component">
+                <div class="matrix-label">V<sup>T</sup></div>
+                <div class="matrix-container" id="vt-matrix-display">
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                    <div class="matrix-cell"></div>
+                </div>
+                </div>
+            </div>
+            </div>
             
             <h3>Preset Matrices</h3>
             <div class="preset-buttons" id="preset-buttons">
@@ -264,6 +297,40 @@ document.addEventListener('DOMContentLoaded', function() {
       .svd-info li {
         margin-bottom: 5px;
       }
+
+      .svd-matrices {
+    margin-top: 15px;
+    }
+
+        .svd-matrix-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    }
+
+        .svd-matrix-component {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
+        .matrix-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 18px;
+    }
+
+        .matrix-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    border: 1px solid #aaa;
+    padding: 6px;
+    background: #f8f8f8;
+    border-radius: 4px;
+    }
     `;
     
     document.head.appendChild(style);
@@ -284,6 +351,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const matrixInputTextarea = document.getElementById('matrix-input-textarea');
     const applyMatrixBtn = document.getElementById('apply-matrix-btn');
     const cancelMatrixBtn = document.getElementById('cancel-matrix-btn');
+    const uMatrixDisplay = document.getElementById('u-matrix-display');
+    const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
+    const vtMatrixDisplay = document.getElementById('vt-matrix-display');
   
     // SVD Visualization state
     let state = {
@@ -662,6 +732,44 @@ document.addEventListener('DOMContentLoaded', function() {
         singularValuesDisplay.appendChild(singularValue);
       });
     }
+
+    // Update the SVD matrix displays
+    function updateSVDMatrices() {
+        const svd = state.svd;
+        
+        // Update U matrix
+        uMatrixDisplay.innerHTML = '';
+        svd.U.forEach(row => {
+        row.forEach(val => {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.textContent = val.toFixed(2);
+            uMatrixDisplay.appendChild(cell);
+        });
+        });
+        
+        // Update Sigma matrix (diagonal)
+        sigmaMatrixDisplay.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.textContent = (i === j) ? svd.S[i].toFixed(2) : '0.00';
+            sigmaMatrixDisplay.appendChild(cell);
+        }
+    }
+    
+    // Update V^T matrix
+    vtMatrixDisplay.innerHTML = '';
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell';
+        cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
+        vtMatrixDisplay.appendChild(cell);
+      }
+    }
+  }
   
     // Update step information
     function updateStepInfo() {
@@ -698,6 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
       state.matrix = matrix;
       state.svd = calculateSVD(matrix);
       updateMatrixDisplay();
+      updateSVDMatrices();
       draw();
     }
   
@@ -769,6 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize visualization
     state.svd = calculateSVD(state.matrix);
     updateMatrixDisplay();
+    updateSVDMatrices(); // Add this line
     updateStepInfo();
     draw();
   });
