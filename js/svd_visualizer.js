@@ -43,37 +43,38 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="svd-matrices">
-            <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
-            <div class="matrix-formula">
-                <div class="matrix-component">
-                <div class="matrix-label">A</div>
-                <div class="matrix-container" id="a-matrix-display">
-                    <!-- Will be filled dynamically -->
-                </div>
-                </div>
-                <div class="matrix-equals-sign">=</div>
-                <div class="matrix-component">
-                <div class="matrix-label">U</div>
-                <div class="matrix-container" id="u-matrix-display">
-                    <!-- Will be filled dynamically -->
-                </div>
-                </div>
-                <div class="matrix-operator">×</div>
-                <div class="matrix-component">
-                <div class="matrix-label">Σ</div>
-                <div class="matrix-container" id="sigma-matrix-display">
-                    <!-- Will be filled dynamically -->
-                </div>
-                </div>
-                <div class="matrix-operator">×</div>
-                <div class="matrix-component">
-                <div class="matrix-label">V<sup>T</sup></div>
-                <div class="matrix-container" id="vt-matrix-display">
-                    <!-- Will be filled dynamically -->
-                </div>
-                </div>
-            </div>
-            </div>
+  <h3>SVD Decomposition</h3>
+  <div class="matrix-formula">
+    <div class="matrix-component">
+      <div class="matrix-label">A</div>
+      <div class="matrix-container" id="a-matrix-display">
+        <!-- Will be filled dynamically -->
+      </div>
+    </div>
+    <div class="matrix-equals-sign">=</div>
+    <div class="matrix-component">
+      <div class="matrix-label">U</div>
+      <div class="matrix-container" id="u-matrix-display">
+        <!-- Will be filled dynamically -->
+      </div>
+    </div>
+    <div class="matrix-operator">×</div>
+    <div class="matrix-component">
+      <div class="matrix-label">Σ</div>
+      <div class="matrix-container" id="sigma-matrix-display">
+        <!-- Will be filled dynamically -->
+      </div>
+    </div>
+    <div class="matrix-operator">×</div>
+    <div class="matrix-component">
+      <div class="matrix-label">V<sup>T</sup></div>
+      <div class="matrix-container" id="vt-matrix-display">
+        <!-- Will be filled dynamically -->
+      </div>
+    </div>
+  </div>
+  <div id="matrix-verification" class="matrix-verification"></div>
+</div>
             
             <h3>Preset Matrices</h3>
             <div class="preset-buttons" id="preset-buttons">
@@ -333,52 +334,90 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     .matrix-formula {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Media query for desktop to ensure horizontal display */
+@media (min-width: 768px) {
+  .matrix-formula {
+    flex-wrap: nowrap;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 15px 0;
-    padding: 10px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    overflow-x: auto;
-    width: 100%;
-    }
+  }
 
-    .matrix-component {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    }
+  .matrix-controls {
+    width: 350px !important; /* Increase the sidebar width to accommodate the matrices */
+  }
+  
+  /* Make all matrices the same size */
+  .matrix-container {
+    width: 70px;
+  }
+}
 
-    .matrix-equals-sign, .matrix-operator {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0 5px;
-    align-self: center;
-    }
+/* Improve spacing between elements */
+.matrix-equals-sign, .matrix-operator {
+  font-size: 24px;
+  font-weight: bold;
+  padding: 0 3px;
+  align-self: center;
+}
 
-    .matrix-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 3px;
-    border: 1px solid #aaa;
-    padding: 6px;
-    background: white;
-    border-radius: 4px;
-    min-width: 50px;
-    }
+/* Make matrix cells smaller to fit better in a row */
+.matrix-container .matrix-cell {
+  padding: 4px;
+  font-size: 13px;
+}
 
-    .diagonal-element {
-    font-weight: bold;
-    background-color: #e6f7ff;
-    }
+/* Better styling for the matrix containers */
+.matrix-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  border: 1px solid #aaa;
+  padding: 6px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
 
-    .zero-element {
-    color: #aaa;
-    background-color: #f9f9f9;
-    }
+/* Improved highlighting for special elements */
+.diagonal-element {
+  font-weight: bold;
+  background-color: #e6f7ff;
+  color: #0066cc;
+}
+
+.zero-element {
+  color: #aaa;
+  background-color: #f9f9f9;
+}
+
+/* Better label positioning */
+.matrix-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 18px;
+  text-align: center;
+}
+
+/* Add a verification message below the formula */
+.matrix-verification {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin-top: 5px;
+  padding: 5px;
+}
     `;
     
     document.head.appendChild(style);
@@ -834,6 +873,41 @@ document.addEventListener('DOMContentLoaded', function() {
             cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
             vtMatrixDisplay.appendChild(cell);
           }
+        }
+
+        // Verify the decomposition by calculating U*Σ*V^T and comparing to original A
+        const reconstructed = [
+            [0, 0],
+            [0, 0]
+        ];
+        
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+            let sum = 0;
+            for (let k = 0; k < 2; k++) {
+                sum += svd.U[i][k] * svd.S[k] * svd.V[j][k];
+            }
+            reconstructed[i][j] = sum;
+            }
+        }
+        
+        // Calculate the error between original and reconstructed matrices
+        let error = 0;
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+            error += Math.pow(state.matrix[i][j] - reconstructed[i][j], 2);
+            }
+        }
+        error = Math.sqrt(error);
+        
+        // Add verification message
+        const verificationElement = document.getElementById('matrix-verification');
+        if (error < 1e-10) {
+            verificationElement.textContent = "✓ SVD decomposition verified (error < 1e-10)";
+            verificationElement.style.color = "#4caf50";
+        } else {
+            verificationElement.textContent = `SVD decomposition error: ${error.toExponential(2)}`;
+            verificationElement.style.color = error < 1e-5 ? "#4caf50" : "#ff9800";
         }
     }
   
