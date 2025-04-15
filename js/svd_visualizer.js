@@ -644,65 +644,68 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // Draw the visualization
     function draw() {
-      const gridSize = canvas.width;
-      const center = gridSize / 2;
-      const scale = 10;
+        const gridSize = canvas.width;
+        const center = gridSize / 2;
+        const scale = 30;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, gridSize, gridSize);
+        
+        // Draw coordinate grid
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+
+        // Calculate grid range based on canvas size
+        const maxGridCoord = Math.ceil(gridSize / (2 * scale));
+        
+       // Vertical grid lines
+        for (let x = -maxGridCoord; x <= maxGridCoord; x++) {
+            ctx.beginPath();
+            ctx.moveTo(center + x * scale, 0);
+            ctx.lineTo(center + x * scale, gridSize);
+            ctx.stroke();
+        }
+        
+        // Horizontal grid lines
+        for (let y = -maxGridCoord; y <= maxGridCoord; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, center - y * scale);
+            ctx.lineTo(gridSize, center - y * scale);
+            ctx.stroke();
+        }
       
-      // Clear canvas
-      ctx.clearRect(0, 0, gridSize, gridSize);
-      
-      // Draw coordinate grid
-      ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 1;
-      
-      // Vertical grid lines
-      for (let x = -5; x <= 5; x++) {
+        // Draw x and y axes
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        
+        // x-axis
         ctx.beginPath();
-        ctx.moveTo(center + x * scale, 0);
-        ctx.lineTo(center + x * scale, gridSize);
+        ctx.moveTo(0, center);
+        ctx.lineTo(gridSize, center);
         ctx.stroke();
-      }
-      
-      // Horizontal grid lines
-      for (let y = -5; y <= 5; y++) {
+        
+        // y-axis
         ctx.beginPath();
-        ctx.moveTo(0, center - y * scale);
-        ctx.lineTo(gridSize, center - y * scale);
+        ctx.moveTo(center, 0);
+        ctx.lineTo(center, gridSize);
         ctx.stroke();
-      }
-      
-      // Draw x and y axes
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-      
-      // x-axis
-      ctx.beginPath();
-      ctx.moveTo(0, center);
-      ctx.lineTo(gridSize, center);
-      ctx.stroke();
-      
-      // y-axis
-      ctx.beginPath();
-      ctx.moveTo(center, 0);
-      ctx.lineTo(center, gridSize);
-      ctx.stroke();
-      
-      // Calculate SVD if needed
-      if (!state.svd) {
+        
+        // Calculate SVD if needed
+        if (!state.svd) {
         state.svd = calculateSVD(state.matrix);
-      }
-      
-      const svd = state.svd;
-      
-      // Draw unit circle for all steps
-      ctx.strokeStyle = '#aaa';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(center, center, scale, 0, 2 * Math.PI);
-      ctx.stroke();
-      
-      // STEP 0: Standard basis
-      if (state.showStep === 0) {
+        }
+        
+        const svd = state.svd;
+        
+        // Draw unit circle for all steps
+        ctx.strokeStyle = '#aaa';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(center, center, scale, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // STEP 0: Standard basis
+        if (state.showStep === 0) {
         // Draw original basis vectors
         ctx.strokeStyle = 'blue';
         ctx.lineWidth = 2;
@@ -724,10 +727,10 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '16px Arial';
         ctx.fillText('i', center + scale + 5, center + 15);
         ctx.fillText('j', center + 5, center - scale - 5);
-      }
-      
-      // STEP 1: Right singular vectors (V)
-      else if (state.showStep === 1) {
+        }
+        
+        // STEP 1: Right singular vectors (V)
+        else if (state.showStep === 1) {
         ctx.strokeStyle = 'green';
         ctx.lineWidth = 2;
         
@@ -748,10 +751,10 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '16px Arial';
         ctx.fillText('v₁', center + svd.V[0][0] * scale + 5, center - svd.V[0][1] * scale);
         ctx.fillText('v₂', center + svd.V[1][0] * scale + 5, center - svd.V[1][1] * scale);
-      }
-      
-      // STEP 2: Scaling (Σ)
-      else if (state.showStep === 2) {
+        }
+        
+        // STEP 2: Scaling (Σ)
+        else if (state.showStep === 2) {
         // First show the original V vectors in light green
         ctx.strokeStyle = 'rgba(0, 128, 0, 0.3)';
         ctx.lineWidth = 1;
@@ -789,10 +792,10 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '16px Arial';
         ctx.fillText('σ₁v₁', center + svd.V[0][0] * scale * svd.S[0] + 5, center - svd.V[0][1] * scale * svd.S[0] - 5);
         ctx.fillText('σ₂v₂', center + svd.V[1][0] * scale * svd.S[1] + 5, center - svd.V[1][1] * scale * svd.S[1] - 5);
-      }
-      
-      // STEP 3: Left singular vectors (U)
-      else if (state.showStep === 3) {
+        }
+        
+        // STEP 3: Left singular vectors (U)
+        else if (state.showStep === 3) {
         // Draw scaled vectors first in light purple
         ctx.strokeStyle = 'rgba(128, 0, 128, 0.3)';
         ctx.lineWidth = 1;
@@ -834,28 +837,28 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '16px Arial';
         ctx.fillText('u₁σ₁', center + u1_scaled[0] * scale + 5, center - u1_scaled[1] * scale - 5);
         ctx.fillText('u₂σ₂', center + u2_scaled[0] * scale + 5, center - u2_scaled[1] * scale - 5);
-      }
-      
-      // STEP 4: Complete transformation
-      else if (state.showStep === 4) {
+        }
+        
+        // STEP 4: Complete transformation
+        else if (state.showStep === 4) {
         // Draw transformed unit circle
         ctx.strokeStyle = 'orange';
         ctx.lineWidth = 1;
         ctx.beginPath();
         
         for (let angle = 0; angle <= 2 * Math.PI; angle += 0.01) {
-          const x = Math.cos(angle);
-          const y = Math.sin(angle);
-          
-          // Transform the point
-          const tx = state.matrix[0][0] * x + state.matrix[0][1] * y;
-          const ty = state.matrix[1][0] * x + state.matrix[1][1] * y;
-          
-          if (angle === 0) {
+            const x = Math.cos(angle);
+            const y = Math.sin(angle);
+            
+            // Transform the point
+            const tx = state.matrix[0][0] * x + state.matrix[0][1] * y;
+            const ty = state.matrix[1][0] * x + state.matrix[1][1] * y;
+            
+            if (angle === 0) {
             ctx.moveTo(center + tx * scale, center - ty * scale);
-          } else {
+            } else {
             ctx.lineTo(center + tx * scale, center - ty * scale);
-          }
+            }
         }
         
         ctx.closePath();
@@ -900,7 +903,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.moveTo(center, center);
         ctx.lineTo(center + u2_scaled[0] * scale, center - u2_scaled[1] * scale);
         ctx.stroke();
-      }
+        }
     }
 
     // With this function:
