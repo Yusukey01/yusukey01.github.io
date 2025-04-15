@@ -664,15 +664,38 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Draw orthogonal component if significant
             if (magnitude(orthogonal) > 0.01) {
-                objects.orthogonal = createArrow(projection, vectorA, 0x2ecc71);
+                // This part needs to be fixed - we need to draw the orthogonal vector from origin, not from projection endpoint
+                objects.orthogonal = createArrow(origin, orthogonal, 0x2ecc71);
                 scene.add(objects.orthogonal);
                 
-                // Add dashed line from origin to vector A tip
+                // Add dashed lines to show the relationship between vectors
                 objects.projectionLine = createDashedLine(origin, projection, 0x666666);
-                objects.orthogonalLine = createDashedLine(projection, vectorA, 0x666666);
+                objects.orthogonalLine = createDashedLine(origin, vectorA, 0x666666);
                 
                 scene.add(objects.projectionLine);
                 scene.add(objects.orthogonalLine);
+                
+                // Optionally create a dashed parallelogram to illustrate the decomposition
+                const parallelogramPoints = [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(projection.x, projection.z, projection.y),
+                    new THREE.Vector3(vectorA.x, vectorA.z, vectorA.y),
+                    new THREE.Vector3(orthogonal.x, orthogonal.z, orthogonal.y)
+                ];
+                
+                const parallelogramGeometry = new THREE.BufferGeometry();
+                parallelogramGeometry.setFromPoints(parallelogramPoints);
+                
+                const parallelogramMaterial = new THREE.LineDashedMaterial({
+                    color: 0x666666,
+                    dashSize: 0.1,
+                    gapSize: 0.05
+                });
+                
+                const parallelogram = new THREE.LineLoop(parallelogramGeometry, parallelogramMaterial);
+                parallelogram.computeLineDistances();
+                scene.add(parallelogram);
+                objects.projectionLines.push(parallelogram);
             }
             
             // Add orthogonality indicator
@@ -681,12 +704,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update projection formula display
             const scalarFactor = magnitudeBSquared > 0.00001 ? 
                 (dotProduct / magnitudeBSquared).toFixed(2) : "0";
-                
+
+            // Update projection formula display
             innerProductDisplay.innerHTML = `
                 proj<sub>v</sub> u = <span style="color:#3498db">(u·v)</span> / <span style="color:#e74c3c">||v||²</span> × v<br>
                 = (${vectorA.x.toFixed(1)}×${vectorB.x.toFixed(1)} + ${vectorA.y.toFixed(1)}×${vectorB.y.toFixed(1)} + ${vectorA.z.toFixed(1)}×${vectorB.z.toFixed(1)}) / ${magnitudeBSquared.toFixed(2)} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
                 = ${scalarFactor} × (${vectorB.x.toFixed(1)}, ${vectorB.y.toFixed(1)}, ${vectorB.z.toFixed(1)})<br>
-                = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})
+                = (${projection.x.toFixed(2)}, ${projection.y.toFixed(2)}, ${projection.z.toFixed(2)})<br>
+                <br>residual z = u - proj<sub>v</sub> u = (${orthogonal.x.toFixed(2)}, ${orthogonal.y.toFixed(2)}, ${orthogonal.z.toFixed(2)})
             `;
         }
         
