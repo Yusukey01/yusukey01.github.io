@@ -692,12 +692,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     dashSize: 0.1,
                     gapSize: 0.05
                 });
-
+                
                 const parallelogram = new THREE.LineLoop(parallelogramGeometry, parallelogramMaterial);
                 parallelogram.computeLineDistances();
                 scene.add(parallelogram);
-                objects.parallelogram = parallelogram;  // Store a direct reference
-                objects.projectionLines.push(parallelogram);  // Also add to the array for batch removal
+                objects.projectionLines.push(parallelogram);
             }
             
             // Add orthogonality indicator
@@ -1063,6 +1062,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Event handlers
         function handleVectorInputChange() {
+            // Clean up all existing objects
+            if (objects.vectorA) scene.remove(objects.vectorA);
+            if (objects.vectorB) scene.remove(objects.vectorB);
+            if (objects.vectorC) scene.remove(objects.vectorC);
+            if (objects.projection) scene.remove(objects.projection);
+            if (objects.orthogonal) scene.remove(objects.orthogonal);
+            if (objects.projectionLine) scene.remove(objects.projectionLine);
+            if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
+            if (objects.parallelogram) scene.remove(objects.parallelogram);
+            
+            objects.projectionLines.forEach(line => scene.remove(line));
+            objects.projectionLines = [];
+
             vectorA = {
             x: parseFloat(vecAXInput.value) || 0,
             y: parseFloat(vecAYInput.value) || 0,
@@ -1086,20 +1098,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function resetDemo() {
             // Reset the scene
-            if (demoType === 'projection3d') {
-                // Clean up all existing objects
-                if (objects.vectorA) scene.remove(objects.vectorA);
-                if (objects.vectorB) scene.remove(objects.vectorB);
-                if (objects.vectorC) scene.remove(objects.vectorC);
-                if (objects.projection) scene.remove(objects.projection);
-                if (objects.orthogonal) scene.remove(objects.orthogonal);
-                if (objects.projectionLine) scene.remove(objects.projectionLine);
-                if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
-                if (objects.parallelogram) scene.remove(objects.parallelogram);
-                
-                objects.projectionLines.forEach(line => scene.remove(line));
-                objects.projectionLines = [];
-
+            // Clean up all existing objects
+            if (objects.vectorA) scene.remove(objects.vectorA);
+            if (objects.vectorB) scene.remove(objects.vectorB);
+            if (objects.vectorC) scene.remove(objects.vectorC);
+            if (objects.projection) scene.remove(objects.projection);
+            if (objects.orthogonal) scene.remove(objects.orthogonal);
+            if (objects.projectionLine) scene.remove(objects.projectionLine);
+            if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
+            if (objects.parallelogram) scene.remove(objects.parallelogram);
+            
+            objects.projectionLines.forEach(line => scene.remove(line));
+            objects.projectionLines = [];
+            
             if (demoType === 'projection3d') {
             vectorA = { x: 2, y: 5, z: -2 };
             vectorB = { x: -1, y: 0, z: 4 };
