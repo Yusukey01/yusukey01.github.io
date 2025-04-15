@@ -1,496 +1,74 @@
-import React, { useState, useEffect, useRef } from 'react';
+/**
+ * SVD Visualization 
+ * Vanilla JavaScript implementation for direct browser use
+ */
 
-// SVD Visualization Component
-const SVDVisualization = () => {
-  const [matrix, setMatrix] = useState([
-    [3, 1],
-    [1, 2]
-  ]);
-  const [showSteps, setShowSteps] = useState(0);
-  const [customMatrix, setCustomMatrix] = useState(false);
-  const [matrixInput, setMatrixInput] = useState('3,1\n1,2');
-  const canvasRef = useRef(null);
-  const gridSize = 400;
-  const center = gridSize / 2;
-  // Adjusted scale to prevent vectors from going off-canvas
-  const scale = 30;
-
-  // Calculate SVD for a 2x2 matrix
-  const calculateSVD = (m) => {
-    // Calculate eigenvalues and eigenvectors of M^T * M
-    const mtm = [
-      [m[0][0] * m[0][0] + m[1][0] * m[1][0], m[0][0] * m[0][1] + m[1][0] * m[1][1]],
-      [m[0][0] * m[0][1] + m[1][0] * m[1][1], m[0][1] * m[0][1] + m[1][1] * m[1][1]]
-    ];
-    
-    // Get eigenvalues
-    const trace = mtm[0][0] + mtm[1][1];
-    const det = mtm[0][0] * mtm[1][1] - mtm[0][1] * mtm[1][0];
-    const sqrtTerm = Math.sqrt(trace * trace - 4 * det);
-    
-    const eigenvalue1 = (trace + sqrtTerm) / 2;
-    const eigenvalue2 = (trace - sqrtTerm) / 2;
-    
-    // Singular values are square roots of eigenvalues
-    const singularValues = [Math.sqrt(eigenvalue1), Math.sqrt(eigenvalue2)];
-    
-    // Compute right singular vectors (V)
-    let v1, v2;
-    if (mtm[0][1] !== 0) {
-      v1 = [mtm[0][1], eigenvalue1 - mtm[0][0]];
-      v2 = [mtm[0][1], eigenvalue2 - mtm[0][0]];
-    } else {
-      v1 = [1, 0];
-      v2 = [0, 1];
-    }
-    
-    // Normalize v1
-    const v1Norm = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);
-    v1 = [v1[0] / v1Norm, v1[1] / v1Norm];
-    
-    // Normalize v2
-    const v2Norm = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
-    v2 = [v2[0] / v2Norm, v2[1] / v2Norm];
-    
-    // Make sure v2 is orthogonal to v1
-    const dot = v1[0] * v2[0] + v1[1] * v2[1];
-    v2 = [v2[0] - dot * v1[0], v2[1] - dot * v1[1]];
-    const v2NormCorrected = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
-    v2 = [v2[0] / v2NormCorrected, v2[1] / v2NormCorrected];
-    
-    // Compute left singular vectors (U)
-    let u1, u2;
-    if (singularValues[0] > 0.0001) {
-      u1 = [
-        (m[0][0] * v1[0] + m[0][1] * v1[1]) / singularValues[0],
-        (m[1][0] * v1[0] + m[1][1] * v1[1]) / singularValues[0]
-      ];
-    } else {
-      u1 = [1, 0];
-    }
-    
-    if (singularValues[1] > 0.0001) {
-      u2 = [
-        (m[0][0] * v2[0] + m[0][1] * v2[1]) / singularValues[1],
-        (m[1][0] * v2[0] + m[1][1] * v2[1]) / singularValues[1]
-      ];
-    } else {
-      // Handle the case of a singular matrix
-      u2 = [-u1[1], u1[0]]; // Orthogonal to u1
-    }
-    
-    return {
-      U: [u1, u2],
-      S: singularValues,
-      V: [v1, v2]
-    };
-  };
-
-  // Draw the visualization
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, gridSize, gridSize);
-    
-    // Draw coordinate grid
-    ctx.strokeStyle = '#ddd';
-    ctx.lineWidth = 1;
-    
-    // Vertical grid lines
-    for (let x = -5; x <= 5; x++) {
-      ctx.beginPath();
-      ctx.moveTo(center + x * scale, 0);
-      ctx.lineTo(center + x * scale, gridSize);
-      ctx.stroke();
-    }
-    
-    // Horizontal grid lines
-    for (let y = -5; y <= 5; y++) {
-      ctx.beginPath();
-      ctx.moveTo(0, center - y * scale);
-      ctx.lineTo(gridSize, center - y * scale);
-      ctx.stroke();
-    }
-    
-    // Draw x and y axes
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    
-    // x-axis
-    ctx.beginPath();
-    ctx.moveTo(0, center);
-    ctx.lineTo(gridSize, center);
-    ctx.stroke();
-    
-    // y-axis
-    ctx.beginPath();
-    ctx.moveTo(center, 0);
-    ctx.lineTo(center, gridSize);
-    ctx.stroke();
-    
-    // Calculate SVD
-    const svd = calculateSVD(matrix);
-    
-    // Draw unit circle for all steps
-    ctx.strokeStyle = '#aaa';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(center, center, scale, 0, 2 * Math.PI);
-    ctx.stroke();
-    
-    // STEP 0: Standard basis
-    if (showSteps === 0) {
-      // Draw original basis vectors
-      ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 2;
-      
-      // x basis vector (i)
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + scale, center);
-      ctx.stroke();
-      
-      // y basis vector (j)
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center, center - scale);
-      ctx.stroke();
-      
-      // Label basis vectors
-      ctx.fillStyle = 'blue';
-      ctx.font = '16px Arial';
-      ctx.fillText('i', center + scale + 5, center + 15);
-      ctx.fillText('j', center + 5, center - scale - 5);
-    }
-    
-    // STEP 1: Right singular vectors (V)
-    else if (showSteps === 1) {
-      ctx.strokeStyle = 'green';
-      ctx.lineWidth = 2;
-      
-      // First right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[0][0] * scale, center - svd.V[0][1] * scale);
-      ctx.stroke();
-      
-      // Second right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[1][0] * scale, center - svd.V[1][1] * scale);
-      ctx.stroke();
-      
-      // Label V vectors
-      ctx.fillStyle = 'green';
-      ctx.font = '16px Arial';
-      ctx.fillText('v₁', center + svd.V[0][0] * scale + 5, center - svd.V[0][1] * scale);
-      ctx.fillText('v₂', center + svd.V[1][0] * scale + 5, center - svd.V[1][1] * scale);
-    }
-    
-    // STEP 2: Scaling (Σ)
-    else if (showSteps === 2) {
-      // First show the original V vectors in light green
-      ctx.strokeStyle = 'rgba(0, 128, 0, 0.3)';
-      ctx.lineWidth = 1;
-      
-      // First right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[0][0] * scale, center - svd.V[0][1] * scale);
-      ctx.stroke();
-      
-      // Second right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[1][0] * scale, center - svd.V[1][1] * scale);
-      ctx.stroke();
-      
-      // Then show the scaled vectors
-      ctx.strokeStyle = 'purple';
-      ctx.lineWidth = 2;
-      
-      // Scaled first right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[0][0] * scale * svd.S[0], center - svd.V[0][1] * scale * svd.S[0]);
-      ctx.stroke();
-      
-      // Scaled second right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[1][0] * scale * svd.S[1], center - svd.V[1][1] * scale * svd.S[1]);
-      ctx.stroke();
-      
-      // Label Σ vectors
-      ctx.fillStyle = 'purple';
-      ctx.font = '16px Arial';
-      ctx.fillText('σ₁v₁', center + svd.V[0][0] * scale * svd.S[0] + 5, center - svd.V[0][1] * scale * svd.S[0] - 5);
-      ctx.fillText('σ₂v₂', center + svd.V[1][0] * scale * svd.S[1] + 5, center - svd.V[1][1] * scale * svd.S[1] - 5);
-    }
-    
-    // STEP 3: Left singular vectors (U)
-    else if (showSteps === 3) {
-      // Draw scaled vectors first in light purple
-      ctx.strokeStyle = 'rgba(128, 0, 128, 0.3)';
-      ctx.lineWidth = 1;
-      
-      // Scaled first right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[0][0] * scale * svd.S[0], center - svd.V[0][1] * scale * svd.S[0]);
-      ctx.stroke();
-      
-      // Scaled second right singular vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + svd.V[1][0] * scale * svd.S[1], center - svd.V[1][1] * scale * svd.S[1]);
-      ctx.stroke();
-      
-      // Draw U vectors in red
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      
-      // Draw unit vectors scaled by singular values
-      const u1_scaled = [svd.U[0][0] * svd.S[0], svd.U[0][1] * svd.S[0]];
-      const u2_scaled = [svd.U[1][0] * svd.S[1], svd.U[1][1] * svd.S[1]];
-      
-      // First left singular vector (scaled)
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + u1_scaled[0] * scale, center - u1_scaled[1] * scale);
-      ctx.stroke();
-      
-      // Second left singular vector (scaled)
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + u2_scaled[0] * scale, center - u2_scaled[1] * scale);
-      ctx.stroke();
-      
-      // Label U vectors
-      ctx.fillStyle = 'red';
-      ctx.font = '16px Arial';
-      ctx.fillText('u₁σ₁', center + u1_scaled[0] * scale + 5, center - u1_scaled[1] * scale - 5);
-      ctx.fillText('u₂σ₂', center + u2_scaled[0] * scale + 5, center - u2_scaled[1] * scale - 5);
-    }
-    
-    // STEP 4: Complete transformation
-    else if (showSteps === 4) {
-      // Draw transformed unit circle
-      ctx.strokeStyle = 'orange';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      
-      for (let angle = 0; angle <= 2 * Math.PI; angle += 0.01) {
-        const x = Math.cos(angle);
-        const y = Math.sin(angle);
-        
-        // Transform the point
-        const tx = matrix[0][0] * x + matrix[0][1] * y;
-        const ty = matrix[1][0] * x + matrix[1][1] * y;
-        
-        if (angle === 0) {
-          ctx.moveTo(center + tx * scale, center - ty * scale);
-        } else {
-          ctx.lineTo(center + tx * scale, center - ty * scale);
-        }
-      }
-      
-      ctx.closePath();
-      ctx.stroke();
-      
-      // Draw transformed basis vectors
-      ctx.strokeStyle = 'brown';
-      ctx.lineWidth = 2;
-      
-      // Transformed x basis vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + matrix[0][0] * scale, center - matrix[1][0] * scale);
-      ctx.stroke();
-      
-      // Transformed y basis vector
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + matrix[0][1] * scale, center - matrix[1][1] * scale);
-      ctx.stroke();
-      
-      // Label transformed basis vectors
-      ctx.fillStyle = 'brown';
-      ctx.font = '16px Arial';
-      ctx.fillText('A(i)', center + matrix[0][0] * scale + 5, center - matrix[1][0] * scale - 5);
-      ctx.fillText('A(j)', center + matrix[0][1] * scale + 5, center - matrix[1][1] * scale - 5);
-      
-      // Add U vectors (with reduced opacity) to show connection
-      ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
-      ctx.lineWidth = 1;
-      
-      // First left singular vector (scaled)
-      const u1_scaled = [svd.U[0][0] * svd.S[0], svd.U[0][1] * svd.S[0]];
-      const u2_scaled = [svd.U[1][0] * svd.S[1], svd.U[1][1] * svd.S[1]];
-      
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + u1_scaled[0] * scale, center - u1_scaled[1] * scale);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(center + u2_scaled[0] * scale, center - u2_scaled[1] * scale);
-      ctx.stroke();
-    }
-  }, [matrix, showSteps]);
-
-  const handleMatrixInputChange = (e) => {
-    setMatrixInput(e.target.value);
-  };
-
-  const applyCustomMatrix = () => {
-    try {
-      const rows = matrixInput.trim().split('\n');
-      if (rows.length !== 2) throw new Error('Must be a 2x2 matrix');
-      
-      const newMatrix = rows.map(row => {
-        const values = row.split(',').map(v => parseFloat(v.trim()));
-        if (values.length !== 2) throw new Error('Each row must have 2 values');
-        if (values.some(isNaN)) throw new Error('All values must be numbers');
-        return values;
-      });
-      
-      setMatrix(newMatrix);
-      setCustomMatrix(false);
-    } catch (error) {
-      alert(`Invalid matrix input: ${error.message}`);
-    }
-  };
-
-  // Predefined matrices to demonstrate different transformations
-  const presetMatrices = [
-    { name: "Identity", matrix: [[1, 0], [0, 1]] },
-    { name: "Scaling", matrix: [[2, 0], [0, 0.5]] },
-    { name: "Rotation", matrix: [[0.7071, -0.7071], [0.7071, 0.7071]] },
-    { name: "Shear", matrix: [[1, 0.5], [0, 1]] },
-    { name: "Symmetric", matrix: [[3, 1], [1, 2]] },
-    { name: "Reflection", matrix: [[-1, 0], [0, 1]] }
-  ];
-
-  const svd = calculateSVD(matrix);
-
-  return (
-    <div className="flex flex-col items-center w-full bg-white p-4 rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-4">Singular Value Decomposition (SVD) Visualizer</h2>
-      
-      <div className="flex flex-col md:flex-row w-full gap-4">
-        <div className="flex-1 border p-4 rounded">
-          <canvas ref={canvasRef} width={gridSize} height={gridSize} className="border bg-white w-full h-auto" />
-          
-          <div className="mt-4 flex items-center justify-center space-x-2">
-            <button 
-              onClick={() => setShowSteps(prev => Math.max(0, prev - 1))}
-              className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-              disabled={showSteps === 0}
-            >
-              Previous
-            </button>
-            <span className="px-2">{showSteps + 1}/5</span>
-            <button 
-              onClick={() => setShowSteps(prev => Math.min(4, prev + 1))}
-              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-              disabled={showSteps === 4}
-            >
-              Next
-            </button>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get container and create necessary elements
+    const container = document.getElementById('svd-visualization-container');
+    if (!container) return;
+  
+    // Clear the container (in case this script runs multiple times)
+    container.innerHTML = '';
+  
+    // Set up the main elements
+    container.innerHTML = `
+      <div class="svd-visualizer">
+        <div class="visualizer-top">
+          <div class="canvas-container">
+            <canvas id="svd-canvas" width="400" height="400" class="border"></canvas>
+            <div class="step-controls">
+              <button id="prev-step-btn" class="btn">Previous</button>
+              <span id="step-indicator">1/5</span>
+              <button id="next-step-btn" class="btn btn-primary">Next</button>
+            </div>
+            <div class="step-description">
+              <h3 id="step-title">Step 1: Standard Basis & Unit Circle</h3>
+              <p id="step-detail">This is our starting point with the standard basis vectors i and j, and the unit circle.</p>
+            </div>
           </div>
-          
-          <div className="mt-4">
-            <h3 className="font-bold text-lg">Step {showSteps + 1}: 
-              {showSteps === 0 && " Standard Basis & Unit Circle"}
-              {showSteps === 1 && " Right Singular Vectors (V)"}
-              {showSteps === 2 && " Apply Scaling (Σ)"}
-              {showSteps === 3 && " Left Singular Vectors (U)"}
-              {showSteps === 4 && " Complete Transformation"}
-            </h3>
-            <p className="text-sm mt-1">
-              {showSteps === 0 && "This is our starting point with the standard basis vectors i and j, and the unit circle."}
-              {showSteps === 1 && "The right singular vectors (v₁, v₂) form an orthonormal basis. They are the eigenvectors of A^T A."}
-              {showSteps === 2 && "The singular values (σ₁, σ₂) scale the right singular vectors, stretching or compressing them. Original vectors shown faded."}
-              {showSteps === 3 && "The left singular vectors (u₁, u₂) show where the scaled vectors end up after rotation, forming another orthonormal basis. Previous step shown faded."}
-              {showSteps === 4 && "The complete transformation A maps the unit circle to an ellipse. The transformed basis vectors align with the left singular vectors scaled by singular values."}
-            </p>
-          </div>
-        </div>
-        
-        <div className="md:w-64 p-4 border rounded">
-          <h3 className="font-bold mb-2">Matrix A</h3>
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            {matrix.map((row, i) => (
-              row.map((val, j) => (
-                <div key={`${i}-${j}`} className="text-center border p-2 rounded bg-gray-50">
-                  {val.toFixed(2)}
-                </div>
-              ))
-            ))}
-          </div>
-          
-          <h3 className="font-bold mb-2">Singular Values</h3>
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            <div className="text-center border p-2 rounded bg-purple-50">σ₁ = {svd.S[0].toFixed(2)}</div>
-            <div className="text-center border p-2 rounded bg-purple-50">σ₂ = {svd.S[1].toFixed(2)}</div>
-          </div>
-          
-          <h3 className="font-bold mb-2">Preset Matrices</h3>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {presetMatrices.map((preset) => (
-              <button
-                key={preset.name}
-                onClick={() => setMatrix(preset.matrix)}
-                className="bg-gray-100 hover:bg-gray-200 text-sm py-1 px-2 rounded"
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
-          
-          <button
-            onClick={() => setCustomMatrix(true)}
-            className="w-full bg-blue-100 hover:bg-blue-200 py-1 px-3 rounded"
-          >
-            Custom Matrix
-          </button>
-          
-          {customMatrix && (
-            <div className="mt-4">
-              <textarea
-                value={matrixInput}
-                onChange={handleMatrixInputChange}
-                placeholder="Format: a,b\nc,d"
-                className="w-full p-2 border rounded h-20 text-sm"
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={applyCustomMatrix}
-                  className="flex-1 bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={() => setCustomMatrix(false)}
-                  className="flex-1 bg-gray-300 py-1 px-3 rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
+          <div class="matrix-controls">
+            <h3>Matrix A</h3>
+            <div class="matrix-grid" id="matrix-display">
+              <div class="matrix-cell">3.00</div>
+              <div class="matrix-cell">1.00</div>
+              <div class="matrix-cell">1.00</div>
+              <div class="matrix-cell">2.00</div>
+            </div>
+            
+            <h3>Singular Values</h3>
+            <div class="singular-values" id="singular-values">
+              <div class="singular-value">σ₁ = 0.00</div>
+              <div class="singular-value">σ₂ = 0.00</div>
+            </div>
+            
+            <h3>Preset Matrices</h3>
+            <div class="preset-buttons" id="preset-buttons">
+              <button class="preset-btn" data-matrix="identity">Identity</button>
+              <button class="preset-btn" data-matrix="scaling">Scaling</button>
+              <button class="preset-btn" data-matrix="rotation">Rotation</button>
+              <button class="preset-btn" data-matrix="shear">Shear</button>
+              <button class="preset-btn" data-matrix="symmetric">Symmetric</button>
+              <button class="preset-btn" data-matrix="reflection">Reflection</button>
+            </div>
+            
+            <button id="custom-matrix-btn" class="btn">Custom Matrix</button>
+            
+            <div id="custom-matrix-input" class="custom-matrix-input" style="display: none;">
+              <textarea id="matrix-input-textarea" placeholder="Format: a,b&#10;c,d">3,1
+  1,2</textarea>
+              <div class="custom-matrix-buttons">
+                <button id="apply-matrix-btn" class="btn btn-success">Apply</button>
+                <button id="cancel-matrix-btn" class="btn">Cancel</button>
               </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-      
-      <div className="w-full mt-4 p-4 border rounded bg-gray-50">
-        <h3 className="font-bold mb-2">SVD Decomposition: A = UΣV<sup>T</sup></h3>
-        <div className="text-sm">
-          <p className="mb-2"><strong>Description:</strong> SVD decomposes any matrix A into the product of three matrices: A = UΣV<sup>T</sup>, where:</p>
-          <ul className="list-disc pl-6 mb-2 space-y-1">
+        
+        <div class="svd-info">
+          <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
+          <p><strong>Description:</strong> SVD decomposes any matrix A into the product of three matrices: A = UΣV<sup>T</sup>, where:</p>
+          <ul>
             <li>U contains the left singular vectors (orthogonal)</li>
             <li>Σ is a diagonal matrix with singular values</li>
             <li>V<sup>T</sup> contains the right singular vectors (orthogonal)</li>
@@ -498,8 +76,699 @@ const SVDVisualization = () => {
           <p>Geometrically, this represents: rotation (V<sup>T</sup>) → scaling (Σ) → rotation (U)</p>
         </div>
       </div>
-    </div>
-  );
-};
-
-export default SVDVisualization;
+    `;
+  
+    // Add styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .svd-visualizer {
+        font-family: Arial, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      
+      .visualizer-top {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      @media (min-width: 768px) {
+        .visualizer-top {
+          flex-direction: row;
+        }
+        
+        .canvas-container {
+          flex: 1;
+        }
+        
+        .matrix-controls {
+          width: 250px;
+        }
+      }
+      
+      canvas {
+        background: white;
+        border: 1px solid #ddd;
+        max-width: 100%;
+        height: auto;
+      }
+      
+      .btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        background: #f0f0f0;
+      }
+      
+      .btn:hover {
+        background: #e0e0e0;
+      }
+      
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .btn-primary {
+        background: #3498db;
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background: #2980b9;
+      }
+      
+      .btn-success {
+        background: #2ecc71;
+        color: white;
+      }
+      
+      .step-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      
+      .step-description {
+        margin-top: 15px;
+      }
+      
+      .step-description h3 {
+        font-size: 16px;
+        margin-bottom: 5px;
+      }
+      
+      .step-description p {
+        font-size: 14px;
+        margin: 0;
+        color: #555;
+      }
+      
+      .matrix-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        margin-bottom: 15px;
+      }
+      
+      .matrix-cell {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      
+      .singular-values {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        margin-bottom: 15px;
+      }
+      
+      .singular-value {
+        background: #f0e6ff;
+        border: 1px solid #d4c4f9;
+        padding: 8px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      
+      .preset-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        margin-bottom: 15px;
+      }
+      
+      .preset-btn {
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+        padding: 5px;
+        text-align: center;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      
+      .preset-btn:hover {
+        background: #e0e0e0;
+      }
+      
+      .custom-matrix-input {
+        margin-top: 15px;
+      }
+      
+      textarea {
+        width: 100%;
+        height: 60px;
+        padding: 8px;
+        box-sizing: border-box;
+        font-family: monospace;
+        margin-bottom: 8px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      
+      .custom-matrix-buttons {
+        display: flex;
+        gap: 5px;
+      }
+      
+      .svd-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+      }
+      
+      .svd-info h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+      
+      .svd-info ul {
+        padding-left: 25px;
+        margin-bottom: 10px;
+      }
+      
+      .svd-info li {
+        margin-bottom: 5px;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  
+    // Get DOM references
+    const canvas = document.getElementById('svd-canvas');
+    const ctx = canvas.getContext('2d');
+    const prevBtn = document.getElementById('prev-step-btn');
+    const nextBtn = document.getElementById('next-step-btn');
+    const stepIndicator = document.getElementById('step-indicator');
+    const stepTitle = document.getElementById('step-title');
+    const stepDetail = document.getElementById('step-detail');
+    const matrixDisplay = document.getElementById('matrix-display');
+    const singularValuesDisplay = document.getElementById('singular-values');
+    const presetButtons = document.getElementById('preset-buttons').querySelectorAll('.preset-btn');
+    const customMatrixBtn = document.getElementById('custom-matrix-btn');
+    const customMatrixInput = document.getElementById('custom-matrix-input');
+    const matrixInputTextarea = document.getElementById('matrix-input-textarea');
+    const applyMatrixBtn = document.getElementById('apply-matrix-btn');
+    const cancelMatrixBtn = document.getElementById('cancel-matrix-btn');
+  
+    // SVD Visualization state
+    let state = {
+      matrix: [
+        [3, 1],
+        [1, 2]
+      ],
+      showStep: 0, // 0: basis, 1: V, 2: Sigma, 3: U, 4: transform
+      svd: null
+    };
+  
+    // Predefined matrices
+    const presetMatrices = {
+      identity: [[1, 0], [0, 1]],
+      scaling: [[2, 0], [0, 0.5]],
+      rotation: [[0.7071, -0.7071], [0.7071, 0.7071]],
+      shear: [[1, 0.5], [0, 1]],
+      symmetric: [[3, 1], [1, 2]],
+      reflection: [[-1, 0], [0, 1]]
+    };
+  
+    // Calculate SVD for a 2x2 matrix
+    function calculateSVD(m) {
+      // Calculate eigenvalues and eigenvectors of M^T * M
+      const mtm = [
+        [m[0][0] * m[0][0] + m[1][0] * m[1][0], m[0][0] * m[0][1] + m[1][0] * m[1][1]],
+        [m[0][0] * m[0][1] + m[1][0] * m[1][1], m[0][1] * m[0][1] + m[1][1] * m[1][1]]
+      ];
+      
+      // Get eigenvalues
+      const trace = mtm[0][0] + mtm[1][1];
+      const det = mtm[0][0] * mtm[1][1] - mtm[0][1] * mtm[1][0];
+      const sqrtTerm = Math.sqrt(trace * trace - 4 * det);
+      
+      const eigenvalue1 = (trace + sqrtTerm) / 2;
+      const eigenvalue2 = (trace - sqrtTerm) / 2;
+      
+      // Singular values are square roots of eigenvalues
+      const singularValues = [Math.sqrt(eigenvalue1), Math.sqrt(eigenvalue2)];
+      
+      // Compute right singular vectors (V)
+      let v1, v2;
+      if (Math.abs(mtm[0][1]) > 1e-10) {
+        v1 = [mtm[0][1], eigenvalue1 - mtm[0][0]];
+        v2 = [mtm[0][1], eigenvalue2 - mtm[0][0]];
+      } else {
+        v1 = [1, 0];
+        v2 = [0, 1];
+      }
+      
+      // Normalize v1
+      const v1Norm = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);
+      v1 = [v1[0] / v1Norm, v1[1] / v1Norm];
+      
+      // Normalize v2
+      const v2Norm = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
+      v2 = [v2[0] / v2Norm, v2[1] / v2Norm];
+      
+      // Make sure v2 is orthogonal to v1
+      const dot = v1[0] * v2[0] + v1[1] * v2[1];
+      v2 = [v2[0] - dot * v1[0], v2[1] - dot * v1[1]];
+      const v2NormCorrected = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
+      if (v2NormCorrected > 1e-10) {
+        v2 = [v2[0] / v2NormCorrected, v2[1] / v2NormCorrected];
+      }
+      
+      // Compute left singular vectors (U)
+      let u1, u2;
+      if (singularValues[0] > 1e-10) {
+        u1 = [
+          (m[0][0] * v1[0] + m[0][1] * v1[1]) / singularValues[0],
+          (m[1][0] * v1[0] + m[1][1] * v1[1]) / singularValues[0]
+        ];
+      } else {
+        u1 = [1, 0];
+      }
+      
+      if (singularValues[1] > 1e-10) {
+        u2 = [
+          (m[0][0] * v2[0] + m[0][1] * v2[1]) / singularValues[1],
+          (m[1][0] * v2[0] + m[1][1] * v2[1]) / singularValues[1]
+        ];
+      } else {
+        // Handle the case of a singular matrix
+        u2 = [-u1[1], u1[0]]; // Orthogonal to u1
+      }
+      
+      return {
+        U: [u1, u2],
+        S: singularValues,
+        V: [v1, v2]
+      };
+    }
+  
+    // Draw the visualization
+    function draw() {
+      const gridSize = canvas.width;
+      const center = gridSize / 2;
+      const scale = 30;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, gridSize, gridSize);
+      
+      // Draw coordinate grid
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 1;
+      
+      // Vertical grid lines
+      for (let x = -5; x <= 5; x++) {
+        ctx.beginPath();
+        ctx.moveTo(center + x * scale, 0);
+        ctx.lineTo(center + x * scale, gridSize);
+        ctx.stroke();
+      }
+      
+      // Horizontal grid lines
+      for (let y = -5; y <= 5; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, center - y * scale);
+        ctx.lineTo(gridSize, center - y * scale);
+        ctx.stroke();
+      }
+      
+      // Draw x and y axes
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      
+      // x-axis
+      ctx.beginPath();
+      ctx.moveTo(0, center);
+      ctx.lineTo(gridSize, center);
+      ctx.stroke();
+      
+      // y-axis
+      ctx.beginPath();
+      ctx.moveTo(center, 0);
+      ctx.lineTo(center, gridSize);
+      ctx.stroke();
+      
+      // Calculate SVD if needed
+      if (!state.svd) {
+        state.svd = calculateSVD(state.matrix);
+      }
+      
+      const svd = state.svd;
+      
+      // Draw unit circle for all steps
+      ctx.strokeStyle = '#aaa';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(center, center, scale, 0, 2 * Math.PI);
+      ctx.stroke();
+      
+      // STEP 0: Standard basis
+      if (state.showStep === 0) {
+        // Draw original basis vectors
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        
+        // x basis vector (i)
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + scale, center);
+        ctx.stroke();
+        
+        // y basis vector (j)
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center, center - scale);
+        ctx.stroke();
+        
+        // Label basis vectors
+        ctx.fillStyle = 'blue';
+        ctx.font = '16px Arial';
+        ctx.fillText('i', center + scale + 5, center + 15);
+        ctx.fillText('j', center + 5, center - scale - 5);
+      }
+      
+      // STEP 1: Right singular vectors (V)
+      else if (state.showStep === 1) {
+        ctx.strokeStyle = 'green';
+        ctx.lineWidth = 2;
+        
+        // First right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[0][0] * scale, center - svd.V[0][1] * scale);
+        ctx.stroke();
+        
+        // Second right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[1][0] * scale, center - svd.V[1][1] * scale);
+        ctx.stroke();
+        
+        // Label V vectors
+        ctx.fillStyle = 'green';
+        ctx.font = '16px Arial';
+        ctx.fillText('v₁', center + svd.V[0][0] * scale + 5, center - svd.V[0][1] * scale);
+        ctx.fillText('v₂', center + svd.V[1][0] * scale + 5, center - svd.V[1][1] * scale);
+      }
+      
+      // STEP 2: Scaling (Σ)
+      else if (state.showStep === 2) {
+        // First show the original V vectors in light green
+        ctx.strokeStyle = 'rgba(0, 128, 0, 0.3)';
+        ctx.lineWidth = 1;
+        
+        // First right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[0][0] * scale, center - svd.V[0][1] * scale);
+        ctx.stroke();
+        
+        // Second right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[1][0] * scale, center - svd.V[1][1] * scale);
+        ctx.stroke();
+        
+        // Then show the scaled vectors
+        ctx.strokeStyle = 'purple';
+        ctx.lineWidth = 2;
+        
+        // Scaled first right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[0][0] * scale * svd.S[0], center - svd.V[0][1] * scale * svd.S[0]);
+        ctx.stroke();
+        
+        // Scaled second right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[1][0] * scale * svd.S[1], center - svd.V[1][1] * scale * svd.S[1]);
+        ctx.stroke();
+        
+        // Label Σ vectors
+        ctx.fillStyle = 'purple';
+        ctx.font = '16px Arial';
+        ctx.fillText('σ₁v₁', center + svd.V[0][0] * scale * svd.S[0] + 5, center - svd.V[0][1] * scale * svd.S[0] - 5);
+        ctx.fillText('σ₂v₂', center + svd.V[1][0] * scale * svd.S[1] + 5, center - svd.V[1][1] * scale * svd.S[1] - 5);
+      }
+      
+      // STEP 3: Left singular vectors (U)
+      else if (state.showStep === 3) {
+        // Draw scaled vectors first in light purple
+        ctx.strokeStyle = 'rgba(128, 0, 128, 0.3)';
+        ctx.lineWidth = 1;
+        
+        // Scaled first right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[0][0] * scale * svd.S[0], center - svd.V[0][1] * scale * svd.S[0]);
+        ctx.stroke();
+        
+        // Scaled second right singular vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + svd.V[1][0] * scale * svd.S[1], center - svd.V[1][1] * scale * svd.S[1]);
+        ctx.stroke();
+        
+        // Draw U vectors in red
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        
+        // Draw unit vectors scaled by singular values
+        const u1_scaled = [svd.U[0][0] * svd.S[0], svd.U[0][1] * svd.S[0]];
+        const u2_scaled = [svd.U[1][0] * svd.S[1], svd.U[1][1] * svd.S[1]];
+        
+        // First left singular vector (scaled)
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + u1_scaled[0] * scale, center - u1_scaled[1] * scale);
+        ctx.stroke();
+        
+        // Second left singular vector (scaled)
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + u2_scaled[0] * scale, center - u2_scaled[1] * scale);
+        ctx.stroke();
+        
+        // Label U vectors
+        ctx.fillStyle = 'red';
+        ctx.font = '16px Arial';
+        ctx.fillText('u₁σ₁', center + u1_scaled[0] * scale + 5, center - u1_scaled[1] * scale - 5);
+        ctx.fillText('u₂σ₂', center + u2_scaled[0] * scale + 5, center - u2_scaled[1] * scale - 5);
+      }
+      
+      // STEP 4: Complete transformation
+      else if (state.showStep === 4) {
+        // Draw transformed unit circle
+        ctx.strokeStyle = 'orange';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        
+        for (let angle = 0; angle <= 2 * Math.PI; angle += 0.01) {
+          const x = Math.cos(angle);
+          const y = Math.sin(angle);
+          
+          // Transform the point
+          const tx = state.matrix[0][0] * x + state.matrix[0][1] * y;
+          const ty = state.matrix[1][0] * x + state.matrix[1][1] * y;
+          
+          if (angle === 0) {
+            ctx.moveTo(center + tx * scale, center - ty * scale);
+          } else {
+            ctx.lineTo(center + tx * scale, center - ty * scale);
+          }
+        }
+        
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Draw transformed basis vectors
+        ctx.strokeStyle = 'brown';
+        ctx.lineWidth = 2;
+        
+        // Transformed x basis vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + state.matrix[0][0] * scale, center - state.matrix[1][0] * scale);
+        ctx.stroke();
+        
+        // Transformed y basis vector
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + state.matrix[0][1] * scale, center - state.matrix[1][1] * scale);
+        ctx.stroke();
+        
+        // Label transformed basis vectors
+        ctx.fillStyle = 'brown';
+        ctx.font = '16px Arial';
+        ctx.fillText('A(i)', center + state.matrix[0][0] * scale + 5, center - state.matrix[1][0] * scale - 5);
+        ctx.fillText('A(j)', center + state.matrix[0][1] * scale + 5, center - state.matrix[1][1] * scale - 5);
+        
+        // Add U vectors (with reduced opacity) to show connection
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+        ctx.lineWidth = 1;
+        
+        // First left singular vector (scaled)
+        const u1_scaled = [svd.U[0][0] * svd.S[0], svd.U[0][1] * svd.S[0]];
+        const u2_scaled = [svd.U[1][0] * svd.S[1], svd.U[1][1] * svd.S[1]];
+        
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + u1_scaled[0] * scale, center - u1_scaled[1] * scale);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(center + u2_scaled[0] * scale, center - u2_scaled[1] * scale);
+        ctx.stroke();
+      }
+    }
+  
+    // Update the matrix display
+    function updateMatrixDisplay() {
+      // Update matrix display
+      matrixDisplay.innerHTML = '';
+      state.matrix.forEach(row => {
+        row.forEach(val => {
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          cell.textContent = val.toFixed(2);
+          matrixDisplay.appendChild(cell);
+        });
+      });
+      
+      // Update singular values display
+      const svd = state.svd;
+      singularValuesDisplay.innerHTML = '';
+      svd.S.forEach((val, idx) => {
+        const singularValue = document.createElement('div');
+        singularValue.className = 'singular-value';
+        singularValue.textContent = `σ${idx+1} = ${val.toFixed(2)}`;
+        singularValuesDisplay.appendChild(singularValue);
+      });
+    }
+  
+    // Update step information
+    function updateStepInfo() {
+      // Update step indicator
+      stepIndicator.textContent = `${state.showStep + 1}/5`;
+      
+      // Update step title
+      const stepTitles = [
+        "Step 1: Standard Basis & Unit Circle",
+        "Step 2: Right Singular Vectors (V)",
+        "Step 3: Apply Scaling (Σ)",
+        "Step 4: Left Singular Vectors (U)",
+        "Step 5: Complete Transformation"
+      ];
+      stepTitle.textContent = stepTitles[state.showStep];
+      
+      // Update step details
+      const stepDetails = [
+        "This is our starting point with the standard basis vectors i and j, and the unit circle.",
+        "The right singular vectors (v₁, v₂) form an orthonormal basis. They are the eigenvectors of A^T A.",
+        "The singular values (σ₁, σ₂) scale the right singular vectors, stretching or compressing them. Original vectors shown faded.",
+        "The left singular vectors (u₁, u₂) show where the scaled vectors end up after rotation, forming another orthonormal basis. Previous step shown faded.",
+        "The complete transformation A maps the unit circle to an ellipse. The transformed basis vectors align with the left singular vectors scaled by singular values."
+      ];
+      stepDetail.textContent = stepDetails[state.showStep];
+      
+      // Update button states
+      prevBtn.disabled = state.showStep === 0;
+      nextBtn.disabled = state.showStep === 4;
+    }
+  
+    // Set a new matrix and update the visualization
+    function setMatrix(matrix) {
+      state.matrix = matrix;
+      state.svd = calculateSVD(matrix);
+      updateMatrixDisplay();
+      draw();
+    }
+  
+    // Event listeners
+    prevBtn.addEventListener('click', function() {
+      if (state.showStep > 0) {
+        state.showStep--;
+        updateStepInfo();
+        draw();
+      }
+    });
+  
+    nextBtn.addEventListener('click', function() {
+      if (state.showStep < 4) {
+        state.showStep++;
+        updateStepInfo();
+        draw();
+      }
+    });
+  
+    // Preset matrix buttons
+    presetButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const matrixName = this.getAttribute('data-matrix');
+        if (presetMatrices[matrixName]) {
+          setMatrix(presetMatrices[matrixName]);
+        }
+      });
+    });
+  
+    // Custom matrix button
+    customMatrixBtn.addEventListener('click', function() {
+      customMatrixInput.style.display = 'block';
+    });
+    
+    // Cancel custom matrix button
+    cancelMatrixBtn.addEventListener('click', function() {
+      customMatrixInput.style.display = 'none';
+    });
+    
+    // Apply custom matrix button
+    applyMatrixBtn.addEventListener('click', function() {
+      try {
+        const inputText = matrixInputTextarea.value.trim();
+        const rows = inputText.split('\n');
+        
+        if (rows.length !== 2) {
+          throw new Error('Matrix must have exactly 2 rows');
+        }
+        
+        const matrix = rows.map(row => {
+          const values = row.split(',').map(val => parseFloat(val.trim()));
+          if (values.length !== 2) {
+            throw new Error('Each row must have exactly 2 values');
+          }
+          if (values.some(isNaN)) {
+            throw new Error('All values must be numbers');
+          }
+          return values;
+        });
+        
+        setMatrix(matrix);
+        customMatrixInput.style.display = 'none';
+      } catch (error) {
+        alert(`Invalid matrix format: ${error.message}`);
+      }
+    });
+    
+    // Initialize visualization
+    state.svd = calculateSVD(state.matrix);
+    updateMatrixDisplay();
+    updateStepInfo();
+    draw();
+  });
