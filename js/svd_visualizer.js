@@ -997,8 +997,41 @@ document.addEventListener('DOMContentLoaded', function() {
             vtMatrixDisplay.appendChild(cell);
         }
         }
+
+        // Verify the decomposition by calculating U*Σ*V^T and comparing to original A
+        const reconstructed = [
+            [0, 0],
+            [0, 0]
+        ];
         
-        // Verification code remains the same...
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+            let sum = 0;
+            for (let k = 0; k < 2; k++) {
+                sum += svd.U[i][k] * svd.S[k] * svd.V[j][k];
+            }
+            reconstructed[i][j] = sum;
+            }
+        }
+        
+        // Calculate the error between original and reconstructed matrices
+        let error = 0;
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+            error += Math.pow(state.matrix[i][j] - reconstructed[i][j], 2);
+            }
+        }
+        error = Math.sqrt(error);
+        
+        // Add verification message
+        const verificationElement = document.getElementById('matrix-verification');
+        if (error < 1e-10) {
+            verificationElement.textContent = "✓ SVD decomposition verified (error < 1e-10)";
+            verificationElement.style.color = "#4caf50";
+        } else {
+            verificationElement.textContent = `SVD decomposition error: ${error.toExponential(2)}`;
+            verificationElement.style.color = error < 1e-5 ? "#4caf50" : "#ff9800";
+        }
     }
     
     // Update step information
@@ -1095,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize visualization
     state.svd = calculateSVD(state.matrix);
     updateMatrixDisplay();
-    updateSVDMatrices(); // Add this line
+    updateSVDMatrices();
     updateStepInfo();
     draw();
 
