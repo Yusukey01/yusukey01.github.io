@@ -39,16 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
                 </div>
                 <div class="matrix-bracket">]</div>
-                </div>
-          </div>
+            </div>
 
             <h3>Singular Values</h3>
             <div class="singular-values" id="singular-values">
               <div class="singular-value">σ₁ = 0.00</div>
               <div class="singular-value">σ₂ = 0.00</div>
             </div>
-
-           <div class="svd-matrices">
+            
+            <div class="svd-matrices">
             <h3>SVD Decomposition</h3>
             <div class="matrix-formula">
                 <div class="matrix-component">
@@ -113,7 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <button class="preset-btn" data-matrix="symmetric">Symmetric</button>
               <button class="preset-btn" data-matrix="reflection">Reflection</button>
             </div>
-            
+          </div>
+        </div>
         
         <div class="svd-info">
           <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
