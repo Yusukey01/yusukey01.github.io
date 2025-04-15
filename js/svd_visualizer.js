@@ -27,19 +27,20 @@ document.addEventListener('DOMContentLoaded', function() {
               <p id="step-detail">This is our starting point with the standard basis vectors i and j, and the unit circle.</p>
             </div>
           </div>
+
           <div class="matrix-controls">
             <h3>Matrix A</h3>
             <div class="matrix-input">
             <div class="matrix-bracket">[</div>
-            <div class="matrix-cells" id="matrix-display">
-                <input type="text" id="m00" value="3" pattern="-?[0-9]*\.?[0-9]*" aria-label="Matrix element row 1 column 1">
-                <input type="text" id="m01" value="1" pattern="-?[0-9]*\.?[0-9]*" aria-label="Matrix element row 1 column 2">
-                <input type="text" id="m10" value="1" pattern="-?[0-9]*\.?[0-9]*" aria-label="Matrix element row 2 column 1">
-                <input type="text" id="m11" value="2" pattern="-?[0-9]*\.?[0-9]*" aria-label="Matrix element row 2 column 2">
+            <div class="matrix-cells">
+              <input type="text" id="m00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
+              <input type="text" id="m01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
+              <input type="text" id="m10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
+              <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
             </div>
             <div class="matrix-bracket">]</div>
-            </div>
-            
+          </div>
+
             <h3>Singular Values</h3>
             <div class="singular-values" id="singular-values">
               <div class="singular-value">σ₁ = 0.00</div>
