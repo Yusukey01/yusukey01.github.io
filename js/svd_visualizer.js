@@ -111,15 +111,21 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="custom-matrix-btn" class="btn">Custom Matrix</button>
             
             <div id="custom-matrix-input" class="custom-matrix-input" style="display: none;">
-              <textarea id="matrix-input-textarea" placeholder="Format: a,b&#10;c,d">3,1
-  1,2</textarea>
-              <div class="custom-matrix-buttons">
+            <div class="matrix-input">
+                <div class="matrix-bracket">[</div>
+                <div class="matrix-cells">
+                <input type="text" id="m00-svd" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1">
+                <input type="text" id="m01-svd" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2">
+                <input type="text" id="m10-svd" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1">
+                <input type="text" id="m11-svd" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2">
+                </div>
+                <div class="matrix-bracket">]</div>
+            </div>
+            <div class="custom-matrix-buttons">
                 <button id="apply-matrix-btn" class="btn btn-success">Apply</button>
                 <button id="cancel-matrix-btn" class="btn">Cancel</button>
-              </div>
             </div>
-          </div>
-        </div>
+            </div>
         
         <div class="svd-info">
           <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
@@ -499,6 +505,34 @@ document.addEventListener('DOMContentLoaded', function() {
   background-color: #f9f9f9;
   border-color: #e6e6e6;
 }
+
+// Add these styles to the style element
+.matrix-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.matrix-bracket {
+  font-size: 2rem;
+  margin: 0 5px;
+}
+
+.matrix-cells {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 10px;
+}
+
+.matrix-cells input {
+  width: 60px;
+  height: 40px;
+  text-align: center;
+  font-size: 1.1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
     `;
     
     document.head.appendChild(style);
@@ -516,13 +550,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const presetButtons = document.getElementById('preset-buttons').querySelectorAll('.preset-btn');
     const customMatrixBtn = document.getElementById('custom-matrix-btn');
     const customMatrixInput = document.getElementById('custom-matrix-input');
-    const matrixInputTextarea = document.getElementById('matrix-input-textarea');
     const applyMatrixBtn = document.getElementById('apply-matrix-btn');
     const cancelMatrixBtn = document.getElementById('cancel-matrix-btn');
     const uMatrixDisplay = document.getElementById('u-matrix-display');
     const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
     const vtMatrixDisplay = document.getElementById('vt-matrix-display');
-  
+    // Update DOM references to include the new input fields
+    const m00InputSvd = document.getElementById('m00-svd');
+    const m01InputSvd = document.getElementById('m01-svd');
+    const m10InputSvd = document.getElementById('m10-svd');
+    const m11InputSvd = document.getElementById('m11-svd');
     // SVD Visualization state
     let state = {
       matrix: [
@@ -1039,32 +1076,26 @@ function updateSVDMatrices() {
       customMatrixInput.style.display = 'none';
     });
     
-    // Apply custom matrix button
+    
     applyMatrixBtn.addEventListener('click', function() {
-      try {
-        const inputText = matrixInputTextarea.value.trim();
-        const rows = inputText.split('\n');
+    try {
+        // Get values from inputs
+        const m00 = parseFloat(m00InputSvd.value) || 0;
+        const m01 = parseFloat(m01InputSvd.value) || 0;
+        const m10 = parseFloat(m10InputSvd.value) || 0;
+        const m11 = parseFloat(m11InputSvd.value) || 0;
         
-        if (rows.length !== 2) {
-          throw new Error('Matrix must have exactly 2 rows');
-        }
-        
-        const matrix = rows.map(row => {
-          const values = row.split(',').map(val => parseFloat(val.trim()));
-          if (values.length !== 2) {
-            throw new Error('Each row must have exactly 2 values');
-          }
-          if (values.some(isNaN)) {
-            throw new Error('All values must be numbers');
-          }
-          return values;
-        });
+        // Update matrix
+        const matrix = [
+        [m00, m01],
+        [m10, m11]
+        ];
         
         setMatrix(matrix);
         customMatrixInput.style.display = 'none';
-      } catch (error) {
-        alert(`Invalid matrix format: ${error.message}`);
-      }
+    } catch (error) {
+        alert(`Invalid matrix values: ${error.message}`);
+    }
     });
     
     // Initialize visualization
