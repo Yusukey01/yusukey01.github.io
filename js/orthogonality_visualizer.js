@@ -677,31 +677,34 @@ document.addEventListener('DOMContentLoaded', function() {
       const residual = vectorSubtract(vectorA, projection);
       
       // Draw residual vector if significant
-      if (magnitude(residual) > 0.1) {
-        // Draw the residual vector directly from the origin
-        const residualEnd = vectorToCanvas(residual);
-        
-        ctx.beginPath();
-        ctx.moveTo(origin.x, origin.y);  // Start from origin
-        ctx.lineTo(residualEnd.x, residualEnd.y);  // Draw to the end of residual vector
-        ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Label the residual vector
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillText('z', residualEnd.x + 10, residualEnd.y - 10);
-        
-        // Also draw a dashed line to show the relationship between vectors
-        ctx.beginPath();
-        ctx.setLineDash([4, 4]);
-        ctx.moveTo(vectorToCanvas(projection).x, vectorToCanvas(projection).y);
-        ctx.lineTo(vectorToCanvas(vectorA).x, vectorToCanvas(vectorA).y);
-        ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.setLineDash([]);
+    if (magnitude(residual) > 0.1) {
+      // Draw the residual vector from origin using the calculated residual
+      const residualEnd = vectorToCanvas(residual);
+      
+      ctx.beginPath();
+      ctx.moveTo(origin.x, origin.y);  // Start from origin
+      ctx.lineTo(residualEnd.x, residualEnd.y);  // Draw to the calculated residual endpoint
+      ctx.strokeStyle = '#2ecc71';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Label the residual vector
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillText('z', residualEnd.x + 10, residualEnd.y - 10);
+      
+      // Optionally draw a dashed parallelogram to show the vector addition relationship
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(origin.x, origin.y);
+      ctx.lineTo(vectorToCanvas(projection).x, vectorToCanvas(projection).y);
+      ctx.lineTo(vectorToCanvas(vectorA).x, vectorToCanvas(vectorA).y);
+      ctx.lineTo(residualEnd.x, residualEnd.y);
+      ctx.closePath();
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
       }
       
       // Calculate and display formula
