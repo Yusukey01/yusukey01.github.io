@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function draw() {
       const gridSize = canvas.width;
       const center = gridSize / 2;
-      const scale = 10;
+      const scale = 50;
       
       // Clear canvas
       ctx.clearRect(0, 0, gridSize, gridSize);
