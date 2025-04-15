@@ -927,24 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // With this function:
-    function updateMatrixDisplay() {
-        // Just update the input values
-        m00Input.value = state.matrix[0][0];
-        m01Input.value = state.matrix[0][1];
-        m10Input.value = state.matrix[1][0];
-        m11Input.value = state.matrix[1][1];
-        
-        // Update singular values display
-        const svd = state.svd;
-        singularValuesDisplay.innerHTML = '';
-        svd.S.forEach((val, idx) => {
-        const singularValue = document.createElement('div');
-        singularValue.className = 'singular-value';
-        singularValue.textContent = `σ${idx+1} = ${val.toFixed(2)}`;
-        singularValuesDisplay.appendChild(singularValue);
-        });
-    }
+    
     
 
     // Update the SVD matrix displays
