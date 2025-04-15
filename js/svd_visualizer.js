@@ -646,7 +646,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function draw() {
         const gridSize = canvas.width;
         const center = gridSize / 2;
-        const scale = 30;
+        
+        // Dynamically calculate scale based on the matrix entries
+        let maxEntry = 0;
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+            maxEntry = Math.max(maxEntry, Math.abs(state.matrix[i][j]));
+            }
+        }
+        
+        // Calculate scale factor to ensure content fits in canvas
+        // Use a safe margin factor (0.7) to leave room around the edges
+        const safeMargin = 0.7;
+        const scale = Math.max(5, Math.min(50, Math.floor((gridSize / 2) * safeMargin / Math.max(maxEntry, 1))));
         
         // Clear canvas
         ctx.clearRect(0, 0, gridSize, gridSize);
@@ -654,11 +666,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw coordinate grid
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 1;
-
-        // Calculate grid range based on canvas size
+        
+        // Calculate grid range based on canvas size and scale
         const maxGridCoord = Math.ceil(gridSize / (2 * scale));
         
-       // Vertical grid lines
+        // Vertical grid lines
         for (let x = -maxGridCoord; x <= maxGridCoord; x++) {
             ctx.beginPath();
             ctx.moveTo(center + x * scale, 0);
