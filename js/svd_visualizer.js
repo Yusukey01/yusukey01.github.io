@@ -902,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
       }
     }
-    
+
     // With this function:
     function updateMatrixDisplay() {
         // Just update the input values
@@ -911,17 +911,6 @@ document.addEventListener('DOMContentLoaded', function() {
         m10Input.value = state.matrix[1][0];
         m11Input.value = state.matrix[1][1];
 
-         // Update matrix display
-         matrixDisplay.innerHTML = '';
-         state.matrix.forEach(row => {
-         row.forEach(val => {
-             const cell = document.createElement('div');
-             cell.className = 'matrix-cell';
-             cell.textContent = val.toFixed(2);
-             matrixDisplay.appendChild(cell);
-         });
-         });
-        
         // Update singular values display
         const svd = state.svd;
         singularValuesDisplay.innerHTML = '';
