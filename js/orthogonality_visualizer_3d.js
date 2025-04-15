@@ -394,15 +394,23 @@ document.addEventListener('DOMContentLoaded', function() {
             rotationControlsContainer.style.borderRadius = '8px';
             rotationControlsContainer.style.padding = '5px';
             rotationControlsContainer.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-
+        
             canvasWrapper.appendChild(rotationControlsContainer);
         
+            // Track which rotation button is pressed
+            const rotationState = {
+                up: false,
+                down: false,
+                left: false,
+                right: false
+            };
+            
             // Create rotation buttons
             const directions = [
-                { icon: '↑', col: 2, row: 1, rotate: function() { rotateCamera(0, -0.2, 0); } }, // Up
-                { icon: '↓', col: 2, row: 3, rotate: function() { rotateCamera(0, 0.2, 0); } },  // Down
-                { icon: '←', col: 1, row: 2, rotate: function() { rotateCamera(-0.2, 0, 0); } },  // Left
-                { icon: '→', col: 3, row: 2, rotate: function() { rotateCamera(0.2, 0, 0); } },   // Right
+                { icon: '↑', col: 2, row: 1, key: 'up', rotate: function() { rotateCamera(0, -0.05, 0); } },     // Up
+                { icon: '↓', col: 2, row: 3, key: 'down', rotate: function() { rotateCamera(0, 0.05, 0); } },    // Down
+                { icon: '←', col: 1, row: 2, key: 'left', rotate: function() { rotateCamera(-0.05, 0, 0); } },   // Left
+                { icon: '→', col: 3, row: 2, key: 'right', rotate: function() { rotateCamera(0.05, 0, 0); } },   // Right
             ];
             
             directions.forEach(dir => {
@@ -417,9 +425,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.style.borderRadius = '4px';
                 button.style.backgroundColor = '#f0f0f0';
                 button.style.cursor = 'pointer';
-                button.addEventListener('click', dir.rotate);
-                button.addEventListener('touchstart', dir.rotate);
+                
+                // Use mousedown/touchstart to start continuous rotation
+                button.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    rotationState[dir.key] = true;
+                });
+                
+                button.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    rotationState[dir.key] = true;
+                });
+                
                 rotationControlsContainer.appendChild(button);
+            });
+            
+            // Add event listeners to stop rotation when button released
+            document.addEventListener('mouseup', function() {
+                Object.keys(rotationState).forEach(key => {
+                    rotationState[key] = false;
+                });
+            });
+            
+            document.addEventListener('touchend', function() {
+                Object.keys(rotationState).forEach(key => {
+                    rotationState[key] = false;
+                });
             });
             
             // reset view button
@@ -482,9 +513,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 controls.target.set(0, 0, 0);
                 controls.update();
             }
+            
+            // Add continuous rotation to the animation loop
+            function updateCameraRotation() {
+                let changed = false;
+                
+                if (rotationState.up) {
+                    rotateCamera(0, -0.02, 0);
+                    changed = true;
+                }
+                if (rotationState.down) {
+                    rotateCamera(0, 0.02, 0);
+                    changed = true;
+                }
+                if (rotationState.left) {
+                    rotateCamera(-0.02, 0, 0);
+                    changed = true;
+                }
+                if (rotationState.right) {
+                    rotateCamera(0.02, 0, 0);
+                    changed = true;
+                }
+                
+                return changed;
+            }
+            
+            // Return the update function so it can be called in the animation loop
+            return updateCameraRotation;
         }
 
-        addRotationControls();
+        const updateCameraRotation = addRotationControls();
 
         controls.enabled = true;
         controls.enableRotate = false; 
@@ -1153,6 +1211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set up the animation loop
         function animate() {
             requestAnimationFrame(animate);
+            updateCameraRotation();
             controls.update(); // Only required if controls.enableDamping = true
             renderer.render(scene, camera);
         }
@@ -1189,7 +1248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let mouse = new THREE.Vector2();
 
         // Update this function
-        function onMouseDown(event) {
+            function onMouseDown(event) {
             // Prevent default behavior
             event.preventDefault();
             
