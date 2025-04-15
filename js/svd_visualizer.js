@@ -48,60 +48,60 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
            <div class="svd-matrices">
-  <h3>SVD Decomposition</h3>
-  <div class="matrix-formula">
-    <div class="matrix-component">
-      <div class="matrix-label">A</div>
-      <div class="matrix-with-brackets">
-        <div class="matrix-bracket matrix-bracket-left">[</div>
-        <div class="matrix-content" id="a-matrix-display">
-          <!-- Will be filled dynamically -->
-        </div>
-        <div class="matrix-bracket matrix-bracket-right">]</div>
-      </div>
-    </div>
-    
-    <div class="matrix-equals-sign">=</div>
-    
-    <div class="matrix-component">
-      <div class="matrix-label">U</div>
-      <div class="matrix-with-brackets">
-        <div class="matrix-bracket matrix-bracket-left">[</div>
-        <div class="matrix-content" id="u-matrix-display">
-          <!-- Will be filled dynamically -->
-        </div>
-        <div class="matrix-bracket matrix-bracket-right">]</div>
-      </div>
-    </div>
-    
-    <div class="matrix-operator">×</div>
-    
-    <div class="matrix-component">
-      <div class="matrix-label">Σ</div>
-      <div class="matrix-with-brackets">
-        <div class="matrix-bracket matrix-bracket-left">[</div>
-        <div class="matrix-content" id="sigma-matrix-display">
-          <!-- Will be filled dynamically -->
-        </div>
-        <div class="matrix-bracket matrix-bracket-right">]</div>
-      </div>
-    </div>
-    
-    <div class="matrix-operator">×</div>
-    
-    <div class="matrix-component">
-      <div class="matrix-label">V<sup>T</sup></div>
-      <div class="matrix-with-brackets">
-        <div class="matrix-bracket matrix-bracket-left">[</div>
-        <div class="matrix-content" id="vt-matrix-display">
-          <!-- Will be filled dynamically -->
-        </div>
-        <div class="matrix-bracket matrix-bracket-right">]</div>
-      </div>
-    </div>
-  </div>
-  <div id="matrix-verification" class="matrix-verification"></div>
-</div>
+            <h3>SVD Decomposition</h3>
+            <div class="matrix-formula">
+                <div class="matrix-component">
+                <div class="matrix-label">A</div>
+                <div class="matrix-with-brackets">
+                    <div class="matrix-bracket matrix-bracket-left">[</div>
+                    <div class="matrix-content" id="a-matrix-display">
+                    <!-- Will be filled dynamically -->
+                    </div>
+                    <div class="matrix-bracket matrix-bracket-right">]</div>
+                </div>
+                </div>
+                
+                <div class="matrix-equals-sign">=</div>
+                
+                <div class="matrix-component">
+                <div class="matrix-label">U</div>
+                <div class="matrix-with-brackets">
+                    <div class="matrix-bracket matrix-bracket-left">[</div>
+                    <div class="matrix-content" id="u-matrix-display">
+                    <!-- Will be filled dynamically -->
+                    </div>
+                    <div class="matrix-bracket matrix-bracket-right">]</div>
+                </div>
+                </div>
+                
+                <div class="matrix-operator">×</div>
+                
+                <div class="matrix-component">
+                <div class="matrix-label">Σ</div>
+                <div class="matrix-with-brackets">
+                    <div class="matrix-bracket matrix-bracket-left">[</div>
+                    <div class="matrix-content" id="sigma-matrix-display">
+                    <!-- Will be filled dynamically -->
+                    </div>
+                    <div class="matrix-bracket matrix-bracket-right">]</div>
+                </div>
+                </div>
+                
+                <div class="matrix-operator">×</div>
+                
+                <div class="matrix-component">
+                <div class="matrix-label">V<sup>T</sup></div>
+                <div class="matrix-with-brackets">
+                    <div class="matrix-bracket matrix-bracket-left">[</div>
+                    <div class="matrix-content" id="vt-matrix-display">
+                    <!-- Will be filled dynamically -->
+                    </div>
+                    <div class="matrix-bracket matrix-bracket-right">]</div>
+                </div>
+                </div>
+            </div>
+            <div id="matrix-verification" class="matrix-verification"></div>
+            </div>
             
             <h3>Preset Matrices</h3>
             <div class="preset-buttons" id="preset-buttons">
@@ -520,7 +520,15 @@ document.addEventListener('DOMContentLoaded', function() {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-    `;
+
+.matrix-verification {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin-top: 5px;
+  padding: 5px;
+}
+`;
     
     document.head.appendChild(style);
   
@@ -538,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const uMatrixDisplay = document.getElementById('u-matrix-display');
     const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
     const vtMatrixDisplay = document.getElementById('vt-matrix-display');
+    const verificationElement = document.getElementById('matrix-verification');
     const m00Input = document.getElementById('m00');
     const m01Input = document.getElementById('m01');
     const m10Input = document.getElementById('m10');
