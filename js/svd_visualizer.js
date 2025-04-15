@@ -1075,10 +1075,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleMatrixInput() {
         // Get values from inputs
-        const m00 = parseFloat(m00Input.value) || 0;
-        const m01 = parseFloat(m01Input.value) || 0;
-        const m10 = parseFloat(m10Input.value) || 0;
-        const m11 = parseFloat(m11Input.value) || 0;
+        const m00 = m00Input.value === '' || m00Input.value === '-' ? 0 : parseFloat(m00Input.value);
+        const m01 = m01Input.value === '' || m01Input.value === '-' ? 0 : parseFloat(m01Input.value);
+        const m10 = m10Input.value === '' || m10Input.value === '-' ? 0 : parseFloat(m10Input.value);
+        const m11 = m11Input.value === '' || m11Input.value === '-' ? 0 : parseFloat(m11Input.value);
         
         // Update matrix
         state.matrix = [
