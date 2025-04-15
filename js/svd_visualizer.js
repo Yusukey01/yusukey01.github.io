@@ -29,16 +29,16 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="matrix-controls">
             <h3>Matrix A</h3>
-            <div class="matrix-input">
-            <div class="matrix-bracket">[</div>
-            <div class="matrix-cells">
-                <input type="text" id="a00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
-                <input type="text" id="a01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
-                <input type="text" id="a10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
-                <input type="text" id="a11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
-            </div>
-            <div class="matrix-bracket">]</div>
-            </div>
+        <div class="matrix-input">
+        <div class="matrix-bracket">[</div>
+        <div class="matrix-cells">
+            <input type="text" id="a00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
+            <input type="text" id="a01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
+            <input type="text" id="a10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
+            <input type="text" id="a11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
+        </div>
+        <div class="matrix-bracket">]</div>
+        </div>
             
             <h3>Singular Values</h3>
             <div class="singular-values" id="singular-values">
@@ -112,7 +112,18 @@ document.addEventListener('DOMContentLoaded', function() {
               <button class="preset-btn" data-matrix="reflection">Reflection</button>
             </div>
             
+            <button id="custom-matrix-btn" class="btn">Custom Matrix</button>
             
+            <div id="custom-matrix-input" class="custom-matrix-input" style="display: none;">
+              <textarea id="matrix-input-textarea" placeholder="Format: a,b&#10;c,d">3,1
+  1,2</textarea>
+              <div class="custom-matrix-buttons">
+                <button id="apply-matrix-btn" class="btn btn-success">Apply</button>
+                <button id="cancel-matrix-btn" class="btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div class="svd-info">
           <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
@@ -492,33 +503,6 @@ document.addEventListener('DOMContentLoaded', function() {
   background-color: #f9f9f9;
   border-color: #e6e6e6;
 }
-
-.matrix-input {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 15px 0;
-}
-
-.matrix-bracket {
-  font-size: 2rem;
-  margin: 0 5px;
-}
-
-.matrix-cells {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 10px;
-}
-
-.matrix-cells input {
-  width: 60px;
-  height: 40px;
-  text-align: center;
-  font-size: 1.1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
     `;
     
     document.head.appendChild(style);
@@ -542,39 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const uMatrixDisplay = document.getElementById('u-matrix-display');
     const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
     const vtMatrixDisplay = document.getElementById('vt-matrix-display');
-
-    // Get DOM references for matrix inputs
-const a00Input = document.getElementById('a00');
-const a01Input = document.getElementById('a01');
-const a10Input = document.getElementById('a10');
-const a11Input = document.getElementById('a11');
-
-// Function to handle direct matrix input
-function handleMatrixDirectInput() {
-  // Get values from inputs
-  const a00 = parseFloat(a00Input.value) || 0;
-  const a01 = parseFloat(a01Input.value) || 0;
-  const a10 = parseFloat(a10Input.value) || 0;
-  const a11 = parseFloat(a11Input.value) || 0;
   
-  // Update matrix
-  state.matrix = [
-    [a00, a01],
-    [a10, a11]
-  ];
-  
-  // Recalculate SVD and update the visualization
-  state.svd = calculateSVD(state.matrix);
-  updateSVDMatrices();
-  draw();
-}
-
-// Add event listeners to matrix inputs
-a00Input.addEventListener('input', handleMatrixDirectInput);
-a01Input.addEventListener('input', handleMatrixDirectInput);
-a10Input.addEventListener('input', handleMatrixDirectInput);
-a11Input.addEventListener('input', handleMatrixDirectInput);
-   
     // SVD Visualization state
     let state = {
       matrix: [
@@ -928,14 +880,7 @@ a11Input.addEventListener('input', handleMatrixDirectInput);
         ctx.stroke();
       }
     }
-    
-    function updateMatrixInputs() {
-        a00Input.value = state.matrix[0][0];
-        a01Input.value = state.matrix[0][1];
-        a10Input.value = state.matrix[1][0];
-        a11Input.value = state.matrix[1][1];
-    }
-
+  
     // Update the matrix display
     function updateMatrixDisplay() {
       // Update matrix display
@@ -1018,6 +963,8 @@ function updateSVDMatrices() {
         vtMatrixDisplay.appendChild(cell);
       }
     }
+    
+    // Verification code remains the same...
   }
   
     // Update step information
@@ -1086,6 +1033,43 @@ function updateSVDMatrices() {
       });
     });
   
+    // Custom matrix button
+    customMatrixBtn.addEventListener('click', function() {
+      customMatrixInput.style.display = 'block';
+    });
+    
+    // Cancel custom matrix button
+    cancelMatrixBtn.addEventListener('click', function() {
+      customMatrixInput.style.display = 'none';
+    });
+    
+    // Apply custom matrix button
+    applyMatrixBtn.addEventListener('click', function() {
+      try {
+        const inputText = matrixInputTextarea.value.trim();
+        const rows = inputText.split('\n');
+        
+        if (rows.length !== 2) {
+          throw new Error('Matrix must have exactly 2 rows');
+        }
+        
+        const matrix = rows.map(row => {
+          const values = row.split(',').map(val => parseFloat(val.trim()));
+          if (values.length !== 2) {
+            throw new Error('Each row must have exactly 2 values');
+          }
+          if (values.some(isNaN)) {
+            throw new Error('All values must be numbers');
+          }
+          return values;
+        });
+        
+        setMatrix(matrix);
+        customMatrixInput.style.display = 'none';
+      } catch (error) {
+        alert(`Invalid matrix format: ${error.message}`);
+      }
+    });
     
     // Initialize visualization
     state.svd = calculateSVD(state.matrix);
