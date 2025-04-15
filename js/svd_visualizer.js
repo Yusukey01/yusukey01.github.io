@@ -31,14 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="matrix-controls">
             <h3>Matrix A</h3>
             <div class="matrix-input">
-            <div class="matrix-bracket">[</div>
-            <div class="matrix-cells">
-              <input type="text" id="m00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
-              <input type="text" id="m01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
-              <input type="text" id="m10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
-              <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
-            </div>
-            <div class="matrix-bracket">]</div>
+                <div class="matrix-bracket">[</div>
+                <div class="matrix-cells">
+                <input type="text" id="m00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
+                <input type="text" id="m01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
+                <input type="text" id="m10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
+                <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
+                </div>
+                <div class="matrix-bracket">]</div>
+                </div>
           </div>
 
             <h3>Singular Values</h3>
@@ -543,14 +544,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const matrixDisplay = document.getElementById('matrix-display');
     const singularValuesDisplay = document.getElementById('singular-values');
     const presetButtons = document.getElementById('preset-buttons').querySelectorAll('.preset-btn');
-    const uMatrixDisplay = document.getElementById('u-matrix-display');
-    const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
-    const vtMatrixDisplay = document.getElementById('vt-matrix-display');
-    const verificationElement = document.getElementById('matrix-verification');
     const m00Input = document.getElementById('m00');
     const m01Input = document.getElementById('m01');
     const m10Input = document.getElementById('m10');
     const m11Input = document.getElementById('m11');
+
     // SVD Visualization state
     let state = {
       matrix: [
@@ -648,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function draw() {
       const gridSize = canvas.width;
       const center = gridSize / 2;
-      const scale = 30;
+      const scale = 10;
       
       // Clear canvas
       ctx.clearRect(0, 0, gridSize, gridSize);
