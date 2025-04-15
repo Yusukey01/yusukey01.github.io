@@ -678,24 +678,30 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw residual vector if significant
       if (magnitude(residual) > 0.1) {
-        // Get canvas coordinates for the endpoints
-        const projectionEnd = vectorToCanvas(projection);
-        const vectorAEnd = vectorToCanvas(vectorA);
+        // Draw the residual vector directly from the origin
+        const residualEnd = vectorToCanvas(residual);
         
-        // Draw the residual vector from projection endpoint to vectorA endpoint
         ctx.beginPath();
-        ctx.moveTo(projectionEnd.x, projectionEnd.y);  // Start from the END of projection
-        ctx.lineTo(vectorAEnd.x, vectorAEnd.y);        // End at the tip of vector A
+        ctx.moveTo(origin.x, origin.y);  // Start from origin
+        ctx.lineTo(residualEnd.x, residualEnd.y);  // Draw to the end of residual vector
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         ctx.stroke();
         
         // Label the residual vector
-        const midX = (projectionEnd.x + vectorAEnd.x) / 2;
-        const midY = (projectionEnd.y + vectorAEnd.y) / 2;
         ctx.font = '16px Arial';
         ctx.fillStyle = '#2ecc71';
-        ctx.fillText('z', midX + 10, midY - 10);
+        ctx.fillText('z', residualEnd.x + 10, residualEnd.y - 10);
+        
+        // Also draw a dashed line to show the relationship between vectors
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(vectorToCanvas(projection).x, vectorToCanvas(projection).y);
+        ctx.lineTo(vectorToCanvas(vectorA).x, vectorToCanvas(vectorA).y);
+        ctx.strokeStyle = '#2ecc71';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
       
       // Calculate and display formula
