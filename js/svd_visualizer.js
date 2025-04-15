@@ -897,90 +897,109 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // Update the matrix display
     function updateMatrixDisplay() {
-      // Update matrix display
-      matrixDisplay.innerHTML = '';
-      state.matrix.forEach(row => {
+        // Update matrix display
+        matrixDisplay.innerHTML = '';
+        state.matrix.forEach(row => {
         row.forEach(val => {
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
-          cell.textContent = val.toFixed(2);
-          matrixDisplay.appendChild(cell);
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.textContent = val.toFixed(2);
+            matrixDisplay.appendChild(cell);
         });
-      });
-      
-      // Update singular values display
-      const svd = state.svd;
-      singularValuesDisplay.innerHTML = '';
-      svd.S.forEach((val, idx) => {
+        });
+        
+        // Update singular values display
+        const svd = state.svd;
+        singularValuesDisplay.innerHTML = '';
+        svd.S.forEach((val, idx) => {
         const singularValue = document.createElement('div');
         singularValue.className = 'singular-value';
         singularValue.textContent = `σ${idx+1} = ${val.toFixed(2)}`;
         singularValuesDisplay.appendChild(singularValue);
-      });
+        });
     }
+    
+    // With this function:
+    function updateMatrixDisplay() {
+        // Just update the input values
+        m00Input.value = state.matrix[0][0];
+        m01Input.value = state.matrix[0][1];
+        m10Input.value = state.matrix[1][0];
+        m11Input.value = state.matrix[1][1];
+        
+        // Update singular values display
+        const svd = state.svd;
+        singularValuesDisplay.innerHTML = '';
+        svd.S.forEach((val, idx) => {
+        const singularValue = document.createElement('div');
+        singularValue.className = 'singular-value';
+        singularValue.textContent = `σ${idx+1} = ${val.toFixed(2)}`;
+        singularValuesDisplay.appendChild(singularValue);
+        });
+    }
+    
 
     // Update the SVD matrix displays
-   // Update the SVD matrix displays
-function updateSVDMatrices() {
-    const svd = state.svd;
-    
-    // Update original A matrix display with brackets format
-    const aMatrixDisplay = document.getElementById('a-matrix-display');
-    aMatrixDisplay.innerHTML = '';
-    state.matrix.forEach(row => {
-      row.forEach(val => {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell-display';
-        cell.textContent = val.toFixed(2);
-        aMatrixDisplay.appendChild(cell);
-      });
-    });
-    
-    // Update U matrix with brackets format
-    const uMatrixDisplay = document.getElementById('u-matrix-display');
-    uMatrixDisplay.innerHTML = '';
-    svd.U.forEach(row => {
-      row.forEach(val => {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell-display';
-        cell.textContent = val.toFixed(2);
-        uMatrixDisplay.appendChild(cell);
-      });
-    });
-    
-    // Update Sigma matrix with brackets format (diagonal)
-    const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
-    sigmaMatrixDisplay.innerHTML = '';
-    for (let i = 0; i < 2; i++) {
-      for (let j = 0; j < 2; j++) {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell-display';
-        if (i === j) {
-          cell.textContent = svd.S[i].toFixed(2);
-          cell.classList.add('diagonal-element');
-        } else {
-          cell.textContent = '0.00';
-          cell.classList.add('zero-element');
+    function updateSVDMatrices() {
+        const svd = state.svd;
+        
+        // Update original A matrix display with brackets format
+        const aMatrixDisplay = document.getElementById('a-matrix-display');
+        aMatrixDisplay.innerHTML = '';
+        state.matrix.forEach(row => {
+        row.forEach(val => {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell-display';
+            cell.textContent = val.toFixed(2);
+            aMatrixDisplay.appendChild(cell);
+        });
+        });
+        
+        // Update U matrix with brackets format
+        const uMatrixDisplay = document.getElementById('u-matrix-display');
+        uMatrixDisplay.innerHTML = '';
+        svd.U.forEach(row => {
+        row.forEach(val => {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell-display';
+            cell.textContent = val.toFixed(2);
+            uMatrixDisplay.appendChild(cell);
+        });
+        });
+        
+        // Update Sigma matrix with brackets format (diagonal)
+        const sigmaMatrixDisplay = document.getElementById('sigma-matrix-display');
+        sigmaMatrixDisplay.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell-display';
+            if (i === j) {
+            cell.textContent = svd.S[i].toFixed(2);
+            cell.classList.add('diagonal-element');
+            } else {
+            cell.textContent = '0.00';
+            cell.classList.add('zero-element');
+            }
+            sigmaMatrixDisplay.appendChild(cell);
         }
-        sigmaMatrixDisplay.appendChild(cell);
-      }
+        }
+        
+        // Update V^T matrix with brackets format
+        const vtMatrixDisplay = document.getElementById('vt-matrix-display');
+        vtMatrixDisplay.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell-display';
+            cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
+            vtMatrixDisplay.appendChild(cell);
+        }
+        }
+        
+        // Verification code remains the same...
     }
     
-    // Update V^T matrix with brackets format
-    const vtMatrixDisplay = document.getElementById('vt-matrix-display');
-    vtMatrixDisplay.innerHTML = '';
-    for (let i = 0; i < 2; i++) {
-      for (let j = 0; j < 2; j++) {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell-display';
-        cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
-        vtMatrixDisplay.appendChild(cell);
-      }
-    }
-    
-    // Verification code remains the same...
-  }
-  
     // Update step information
     function updateStepInfo() {
       // Update step indicator
