@@ -1097,6 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update visualization
         state.svd = calculateSVD(state.matrix);
+        updateMatrixDisplay();
         updateSVDMatrices();
         draw();
       }
