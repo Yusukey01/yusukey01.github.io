@@ -1030,6 +1030,26 @@ document.addEventListener('DOMContentLoaded', function() {
       prevBtn.disabled = state.showStep === 0;
       nextBtn.disabled = state.showStep === 4;
     }
+
+    function handleMatrixInput() {
+        // Get values from inputs
+        const m00 = parseFloat(m00Input.value) || 0;
+        const m01 = parseFloat(m01Input.value) || 0;
+        const m10 = parseFloat(m10Input.value) || 0;
+        const m11 = parseFloat(m11Input.value) || 0;
+        
+        // Update matrix
+        state.matrix = [
+          [m00, m01],
+          [m10, m11]
+        ];
+        
+        // Update visualization
+        state.svd = calculateSVD(state.matrix);
+        updateMatrixDisplay();
+        updateSVDMatrices();
+        draw();
+    }
   
     // Set a new matrix and update the visualization
     function setMatrix(matrix) {
@@ -1067,15 +1087,11 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
 
-    // Add these lines where the old event listeners were:
     m00Input.addEventListener('input', handleMatrixInput);
     m01Input.addEventListener('input', handleMatrixInput);
     m10Input.addEventListener('input', handleMatrixInput);
     m11Input.addEventListener('input', handleMatrixInput);
     
-
-
-
     // Initialize visualization
     state.svd = calculateSVD(state.matrix);
     updateMatrixDisplay();
@@ -1083,23 +1099,4 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStepInfo();
     draw();
 
-    function handleMatrixInput() {
-        // Get values from inputs
-        const m00 = parseFloat(m00Input.value) || 0;
-        const m01 = parseFloat(m01Input.value) || 0;
-        const m10 = parseFloat(m10Input.value) || 0;
-        const m11 = parseFloat(m11Input.value) || 0;
-        
-        // Update matrix
-        state.matrix = [
-          [m00, m01],
-          [m10, m11]
-        ];
-        
-        // Update visualization
-        state.svd = calculateSVD(state.matrix);
-        updateMatrixDisplay();
-        updateSVDMatrices();
-        draw();
-      }
   });
