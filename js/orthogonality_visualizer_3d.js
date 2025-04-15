@@ -1189,74 +1189,74 @@ document.addEventListener('DOMContentLoaded', function() {
         let mouse = new THREE.Vector2();
 
         // Update this function
-function onMouseDown(event) {
-    // Prevent default behavior
-    event.preventDefault();
-    
-    // Only process drag in projection3d mode
-    if (demoType !== 'projection3d') return;
-    
-    // Get normalized mouse position
-    updateMousePosition(event);
-    
-    // Raycast to find vectors
-    raycaster.setFromCamera(mouse, camera);
-    
-    // Check intersections with all objects in the scene
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    
-    let vectorType = null;
-    
-    // Find vector arrows in the intersected objects
-    for (let i = 0; i < intersects.length; i++) {
-        const obj = intersects[i].object;
-        
-        // Check the object and parent objects for vector data
-        if (obj.userData && obj.userData.vectorArrow) {
-            vectorType = obj.userData.vectorType;
-            break;
+        function onMouseDown(event) {
+            // Prevent default behavior
+            event.preventDefault();
+            
+            // Only process drag in projection3d mode
+            if (demoType !== 'projection3d') return;
+            
+            // Get normalized mouse position
+            updateMousePosition(event);
+            
+            // Raycast to find vectors
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Check intersections with all objects in the scene
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            
+            let vectorType = null;
+            
+            // Find vector arrows in the intersected objects
+            for (let i = 0; i < intersects.length; i++) {
+                const obj = intersects[i].object;
+                
+                // Check the object and parent objects for vector data
+                if (obj.userData && obj.userData.vectorArrow) {
+                    vectorType = obj.userData.vectorType;
+                    break;
+                }
+                
+                if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
+                    vectorType = obj.parent.userData.vectorType;
+                    break;
+                }
+                
+                if (obj.parent && obj.parent.parent && obj.parent.parent.userData && obj.parent.parent.userData.vectorArrow) {
+                    vectorType = obj.parent.parent.userData.vectorType;
+                    break;
+                }
+            }
+            
+            if (vectorType) {
+                console.log("Selected vector:", vectorType); // Debug output
+                isDragging = true;
+                selectedVector = vectorType;
+                
+                // Create a drag plane aligned with the camera view
+                const cameraPosition = camera.position.clone();
+                const center = new THREE.Vector3(0, 0, 0);
+                const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
+                dragPlane.setFromNormalAndCoplanarPoint(normal, center);
+                
+                // Set drag offset
+                const intersection = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, intersection);
+                
+                const vectorData = selectedVector === 'u' ? vectorA : vectorB;
+                // Convert math coords to Three.js coords
+                const vectorThreeJS = new THREE.Vector3(
+                    vectorData.x,
+                    vectorData.z,  // Z in math is Y in Three.js
+                    vectorData.y   // Y in math is Z in Three.js
+                );
+                
+                dragOffset.subVectors(intersection, vectorThreeJS);
+                
+                // Prevent event from triggering orbit controls
+                event.stopPropagation();
+            }
         }
-        
-        if (obj.parent && obj.parent.userData && obj.parent.userData.vectorArrow) {
-            vectorType = obj.parent.userData.vectorType;
-            break;
-        }
-        
-        if (obj.parent && obj.parent.parent && obj.parent.parent.userData && obj.parent.parent.userData.vectorArrow) {
-            vectorType = obj.parent.parent.userData.vectorType;
-            break;
-        }
-    }
-    
-    if (vectorType) {
-        console.log("Selected vector:", vectorType); // Debug output
-        isDragging = true;
-        selectedVector = vectorType;
-        
-        // Create a drag plane aligned with the camera view
-        const cameraPosition = camera.position.clone();
-        const center = new THREE.Vector3(0, 0, 0);
-        const normal = new THREE.Vector3().subVectors(cameraPosition, center).normalize();
-        dragPlane.setFromNormalAndCoplanarPoint(normal, center);
-        
-        // Set drag offset
-        const intersection = new THREE.Vector3();
-        raycaster.ray.intersectPlane(dragPlane, intersection);
-        
-        const vectorData = selectedVector === 'u' ? vectorA : vectorB;
-        // Convert math coords to Three.js coords
-        const vectorThreeJS = new THREE.Vector3(
-            vectorData.x,
-            vectorData.z,  // Z in math is Y in Three.js
-            vectorData.y   // Y in math is Z in Three.js
-        );
-        
-        dragOffset.subVectors(intersection, vectorThreeJS);
-        
-        // Prevent event from triggering orbit controls
-        event.stopPropagation();
-    }
-}
 
         function onMouseMove(event) {
             if (!isDragging || !selectedVector) return;
@@ -1299,6 +1299,19 @@ function onMouseDown(event) {
                     vecBYInput.value = vectorB.y;
                     vecBZInput.value = vectorB.z;
                 }
+                
+                // IMPORTANT: Clean up all existing visualization objects before updating
+                if (objects.vectorA) scene.remove(objects.vectorA);
+                if (objects.vectorB) scene.remove(objects.vectorB);
+                if (objects.projection) scene.remove(objects.projection);
+                if (objects.orthogonal) scene.remove(objects.orthogonal);
+                if (objects.projectionLine) scene.remove(objects.projectionLine);
+                if (objects.orthogonalLine) scene.remove(objects.orthogonalLine);
+                if (objects.parallelogram) scene.remove(objects.parallelogram);
+                
+                // Clean up all projection lines and dashed lines
+                objects.projectionLines.forEach(line => scene.remove(line));
+                objects.projectionLines = [];
                 
                 // Update visualization
                 updateProjectionDemo();
