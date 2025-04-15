@@ -29,16 +29,12 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="matrix-controls">
             <h3>Matrix A</h3>
-        <div class="matrix-input">
-        <div class="matrix-bracket">[</div>
-        <div class="matrix-cells">
-            <input type="text" id="a00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1" title="Matrix element row 1 column 1">
-            <input type="text" id="a01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2" title="Matrix element row 1 column 2">
-            <input type="text" id="a10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1" title="Matrix element row 2 column 1">
-            <input type="text" id="a11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2" title="Matrix element row 2 column 2">
-        </div>
-        <div class="matrix-bracket">]</div>
-        </div>
+            <div class="matrix-grid" id="matrix-display">
+              <div class="matrix-cell">3.00</div>
+              <div class="matrix-cell">1.00</div>
+              <div class="matrix-cell">1.00</div>
+              <div class="matrix-cell">2.00</div>
+            </div>
             
             <h3>Singular Values</h3>
             <div class="singular-values" id="singular-values">
