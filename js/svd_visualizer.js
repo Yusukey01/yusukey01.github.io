@@ -32,10 +32,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="matrix-input">
             <div class="matrix-bracket">[</div>
             <div class="matrix-cells" id="matrix-display">
-                <input type="text" id="m00" value="3" inputmode="decimal" aria-label="Matrix element row 1 column 1">
-                <input type="text" id="m01" value="1" inputmode="decimal" aria-label="Matrix element row 1 column 2">
-                <input type="text" id="m10" value="1" inputmode="decimal" aria-label="Matrix element row 2 column 1">
-                <input type="text" id="m11" value="2" inputmode="decimal" aria-label="Matrix element row 2 column 2">
+                <input type="text" id="m00" value="3" inputmode="numeric" aria-label="Matrix element row 1 column 1">
+                <input type="text" id="m01" value="1" inputmode="numeric" aria-label="Matrix element row 1 column 2">
+                <input type="text" id="m10" value="1" inputmode="numeric" aria-label="Matrix element row 2 column 1">
+                <input type="text" id="m11" value="2" inputmode="numeric" aria-label="Matrix element row 2 column 2">
             </div>
             <div class="matrix-bracket">]</div>
             </div>
