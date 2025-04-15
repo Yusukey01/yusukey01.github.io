@@ -43,33 +43,33 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="svd-matrices">
-            <h3>SVD Matrix Components</h3>
-            <div class="svd-matrix-grid">
-                <div class="svd-matrix-component">
+            <h3>SVD Decomposition: A = UΣV<sup>T</sup></h3>
+            <div class="matrix-formula">
+                <div class="matrix-component">
+                <div class="matrix-label">A</div>
+                <div class="matrix-container" id="a-matrix-display">
+                    <!-- Will be filled dynamically -->
+                </div>
+                </div>
+                <div class="matrix-equals-sign">=</div>
+                <div class="matrix-component">
                 <div class="matrix-label">U</div>
                 <div class="matrix-container" id="u-matrix-display">
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
+                    <!-- Will be filled dynamically -->
                 </div>
                 </div>
-                <div class="svd-matrix-component">
+                <div class="matrix-operator">×</div>
+                <div class="matrix-component">
                 <div class="matrix-label">Σ</div>
                 <div class="matrix-container" id="sigma-matrix-display">
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
+                    <!-- Will be filled dynamically -->
                 </div>
                 </div>
-                <div class="svd-matrix-component">
+                <div class="matrix-operator">×</div>
+                <div class="matrix-component">
                 <div class="matrix-label">V<sup>T</sup></div>
                 <div class="matrix-container" id="vt-matrix-display">
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
-                    <div class="matrix-cell"></div>
+                    <!-- Will be filled dynamically -->
                 </div>
                 </div>
             </div>
@@ -330,6 +330,54 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 6px;
     background: #f8f8f8;
     border-radius: 4px;
+    }
+
+    .matrix-formula {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 15px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    overflow-x: auto;
+    width: 100%;
+    }
+
+    .matrix-component {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
+    .matrix-equals-sign, .matrix-operator {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 5px;
+    align-self: center;
+    }
+
+    .matrix-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    border: 1px solid #aaa;
+    padding: 6px;
+    background: white;
+    border-radius: 4px;
+    min-width: 50px;
+    }
+
+    .diagonal-element {
+    font-weight: bold;
+    background-color: #e6f7ff;
+    }
+
+    .zero-element {
+    color: #aaa;
+    background-color: #f9f9f9;
     }
     `;
     
@@ -737,39 +785,57 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSVDMatrices() {
         const svd = state.svd;
         
+        // Update original A matrix display
+        const aMatrixDisplay = document.getElementById('a-matrix-display');
+        aMatrixDisplay.innerHTML = '';
+        state.matrix.forEach(row => {
+          row.forEach(val => {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.textContent = val.toFixed(2);
+            aMatrixDisplay.appendChild(cell);
+          });
+        });
+        
         // Update U matrix
         uMatrixDisplay.innerHTML = '';
         svd.U.forEach(row => {
-        row.forEach(val => {
+          row.forEach(val => {
             const cell = document.createElement('div');
             cell.className = 'matrix-cell';
             cell.textContent = val.toFixed(2);
             uMatrixDisplay.appendChild(cell);
-        });
+          });
         });
         
         // Update Sigma matrix (diagonal)
         sigmaMatrixDisplay.innerHTML = '';
         for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < 2; j++) {
+          for (let j = 0; j < 2; j++) {
             const cell = document.createElement('div');
             cell.className = 'matrix-cell';
-            cell.textContent = (i === j) ? svd.S[i].toFixed(2) : '0.00';
+            if (i === j) {
+              cell.textContent = svd.S[i].toFixed(2);
+              cell.classList.add('diagonal-element');
+            } else {
+              cell.textContent = '0.00';
+              cell.classList.add('zero-element');
+            }
             sigmaMatrixDisplay.appendChild(cell);
+          }
+        }
+        
+        // Update V^T matrix
+        vtMatrixDisplay.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < 2; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
+            vtMatrixDisplay.appendChild(cell);
+          }
         }
     }
-    
-    // Update V^T matrix
-    vtMatrixDisplay.innerHTML = '';
-    for (let i = 0; i < 2; i++) {
-      for (let j = 0; j < 2; j++) {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell';
-        cell.textContent = svd.V[j][i].toFixed(2); // Note the transpose: j and i are swapped
-        vtMatrixDisplay.appendChild(cell);
-      }
-    }
-  }
   
     // Update step information
     function updateStepInfo() {
