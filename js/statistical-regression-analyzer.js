@@ -514,8 +514,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Variables to store state
         let data = [];
         let columns = [];
-        let xColumn = '';
-        let yColumn = '';
         let regressionResults = null;
         let regressionChart = null;
         let residualChart = null;
@@ -525,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const csvFileInput = document.getElementById('csv-file-input');
         const uploadCsvBtn = document.getElementById('upload-csv-btn');
         const variableSelectors = document.getElementById('variable-selectors');
-        const xVariableSelect = document.getElementById('x-variable');
+        const predictorVariablesSelect = document.getElementById('predictor-variables');
         const yVariableSelect = document.getElementById('y-variable');
         const showPredictionIntervalsCheckbox = document.getElementById('show-prediction-intervals');
         const toggleResidualPlotCheckbox = document.getElementById('toggle-residual-plot');
@@ -535,12 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableHead = document.getElementById('table-head');
         const tableBody = document.getElementById('table-body');
         const rowCount = document.getElementById('row-count');
-        
-        // Sample data buttons
-        const sampleLinearBtn = document.getElementById('sample-linear-btn');
-        const sampleNonlinearBtn = document.getElementById('sample-nonlinear-btn');
-        const sampleHeteroscedasticBtn = document.getElementById('sample-heteroscedastic-btn');
-        const sampleOutliersBtn = document.getElementById('sample-outliers-btn');
         
         // Statistics elements
         const equationDisplay = document.getElementById('equation-display');
@@ -555,11 +547,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const slopeCIElement = document.getElementById('slope-ci');
         const interceptCIElement = document.getElementById('intercept-ci');
         
+        // Sample data buttons
+        const sampleLinearBtn = document.getElementById('sample-linear-btn');
+        const sampleNonlinearBtn = document.getElementById('sample-nonlinear-btn');
+        const sampleHeteroscedasticBtn = document.getElementById('sample-heteroscedastic-btn');
+        const sampleOutliersBtn = document.getElementById('sample-outliers-btn');
+        
         // Event listeners
         uploadCsvBtn.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', handleFileUpload);
-        xVariableSelect.addEventListener('change', handleVariableChange);
+        
+        // Update these event listeners to use the new predictor-variables select
+        predictorVariablesSelect.addEventListener('change', handleVariableChange);
         yVariableSelect.addEventListener('change', handleVariableChange);
+        
         showPredictionIntervalsCheckbox.addEventListener('change', updateRegressionChart);
         toggleResidualPlotCheckbox.addEventListener('change', updateResidualChart);
         
@@ -567,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sampleNonlinearBtn.addEventListener('click', () => loadSampleData('nonlinear'));
         sampleHeteroscedasticBtn.addEventListener('click', () => loadSampleData('heteroscedastic'));
         sampleOutliersBtn.addEventListener('click', () => loadSampleData('outliers'));
-        
+            
         // Helper function to compute linear regression
         function computeRegression(data, xKeys, yKey) {
             // Extract dependent variable
