@@ -1,6 +1,7 @@
 
 // statistical-regression-analyzer.js - A vanilla JavaScript implementation for statistical linear regression analysis
 
+
 window.togglePolynomialDegree = function() {
     const degreeSelector = document.getElementById('degree-selector');
     const usePolynomial = document.getElementById('use-polynomial').checked;
@@ -11,7 +12,8 @@ window.togglePolynomialDegree = function() {
     const yVariableSelect = document.getElementById('y-variable');
     
     if (predictorVariablesSelect.selectedOptions.length > 0 && yVariableSelect.value) {
-        handleVariableChange();
+        // Use a custom event instead of directly calling handleVariableChange
+        document.dispatchEvent(new CustomEvent('updateRegression'));
     }
 };
 
@@ -625,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkboxControls.parentNode.insertBefore(polynomialControls, checkboxControls.nextSibling);
         
         document.addEventListener('updateRegression', handleVariableChange);
+        document.getElementById('polynomial-degree').addEventListener('change', handleVariableChange);
         // Event listeners
         uploadCsvBtn.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', handleFileUpload);
