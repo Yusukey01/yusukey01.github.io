@@ -932,54 +932,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       } else if (userVectors.length > 2) {
-        
-        let foundDependency = false;
-        
-        // Check each vector to see if it's a linear combination of the others
-        for (let i = 0; i < userVectors.length && !foundDependency; i++) {
-            const testVector = userVectors[i];
-            
-            // Try to express this vector as a combination of all the others
-            // This would require solving a system of equations
-            // For simplicity, let's check if this vector is parallel to any other vector
-            for (let j = 0; j < userVectors.length && !foundDependency; j++) {
-            if (i === j) continue; // Skip comparing a vector to itself
-            
-            const otherVector = userVectors[j];
-            
-            // Check if vectors are parallel (one is scalar multiple of the other)
-            if ((Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) || 
-                (Math.abs(otherVector.x) < 0.001 && Math.abs(otherVector.y) < 0.001)) {
-                // One is a zero vector
-                foundDependency = true;
-                isIndependent = false;
-                
-                if (Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) {
-                explanation = `v${i+1} is the zero vector`;
-                } else {
-                explanation = `v${j+1} is the zero vector`;
-                }
-            } else if (Math.abs(testVector.x * otherVector.y - testVector.y * otherVector.x) < 0.001) {
-                // Vectors are parallel
-                foundDependency = true;
-                isIndependent = false;
-                
-                // Find scalar relationship
-                let scalar = 0;
-                if (Math.abs(otherVector.x) > 0.001) {
-                scalar = testVector.x / otherVector.x;
-                } else {
-                scalar = testVector.y / otherVector.y;
-                }
-                explanation = `v${i+1} = ${scalar.toFixed(2)} · v${j+1}`;
-            }
-            }
-        }
-        // If no dependency was found, the vectors are linearly independent
-        if (!foundDependency) {
-            isIndependent = true;
-        }
-            
+        // In R², more than 2 vectors are always linearly dependent
+        isIndependent = false;
+        explanation = 'In ℝ², more than 2 vectors are always linearly dependent';
       }
       
       // Draw results on canvas
@@ -1338,15 +1293,27 @@ document.addEventListener('DOMContentLoaded', function() {
         'span': `
           <h3>Span</h3>
           <p>The span of a set of vectors is the set of all possible linear combinations of those vectors. It's the smallest subspace containing all the vectors.</p>
+          <p>In ℝ², the span of:</p>
+          <ul>
+            <li>One non-zero vector is a line through the origin</li>
+            <li>Two linearly independent vectors is the entire plane</li>
+          </ul>
         `,
         'linear-indep': `
           <h3>Linear Independence</h3>
           <p>A set of vectors is linearly independent if none of the vectors can be written as a linear combination of the others.</p>
           <p>For example, vectors v₁ and v₂ are linearly independent if the only solution to c₁v₁ + c₂v₂ = 0 is c₁ = c₂ = 0.</p>
+          <p>In ℝ², at most 2 vectors can be linearly independent.</p>
         `,
         'subspace': `
           <h3>Subspaces</h3>
           <p>A subspace is a subset of a vector space that is itself a vector space. It must contain the zero vector and be closed under addition and scalar multiplication.</p>
+          <p>In ℝ², the only subspaces are:</p>
+          <ul>
+            <li>The origin (0D)</li>
+            <li>Lines through the origin (1D)</li>
+            <li>The entire plane (2D)</li>
+          </ul>
         `,
         'basis': `
           <h3>Basis</h3>
@@ -1589,33 +1556,6 @@ document.addEventListener('DOMContentLoaded', function() {
       scene.add(arrowHelper);
       return arrowHelper;
     }
-
-    //example
-    function loadExample() {
-        clearAllVectors();
-        
-        // Add example vectors based on current concept
-        if (currentConcept === 'linear-combo' || currentConcept === 'span') {
-        userVectors.push({ x: 3, y: 1 });
-        userVectors.push({ x: 1, y: 2 });
-        } else if (currentConcept === 'linear-indep') {
-        userVectors.push({ x: 3, y: 1 });
-        userVectors.push({ x: 1, y: 2 });
-        // Add a linearly dependent vector
-        userVectors.push({ x: 6, y: 2 });
-        } else if (currentConcept === 'subspace') {
-        userVectors.push({ x: 2, y: 1 });
-        userVectors.push({ x: -4, y: -2 });
-        } else if (currentConcept === 'basis') {
-        userVectors.push({ x: 2, y: 1 });
-        userVectors.push({ x: -1, y: 2 });
-        }
-        
-        updateVectorsList();
-        updateWeightSliders();
-        calculateLinearCombo();
-        drawCanvas();
-    }
     
     // Add event listeners
     vectorCanvas.addEventListener('click', handleCanvasClick);
@@ -1623,28 +1563,12 @@ document.addEventListener('DOMContentLoaded', function() {
     clearBtn.addEventListener('click', clearAllVectors);
     exampleBtn.addEventListener('click', loadExample);
     
-
-    //  concept button handlers
+    // Add concept button handlers
     conceptButtons.forEach(button => {
-        button.addEventListener('click', function() {
-        // Extract concept name properly
-        let id = this.id;
-        let concept = '';
-        
-        if (id === 'linear-combo-btn') {
-            concept = 'linear-combo';
-        } else if (id === 'span-btn') {
-            concept = 'span';
-        } else if (id === 'linear-indep-btn') {
-            concept = 'linear-indep';
-        } else if (id === 'subspace-btn') {
-            concept = 'subspace';
-        } else if (id === 'basis-btn') {
-            concept = 'basis';
-        }
-        
+      button.addEventListener('click', function() {
+        const concept = this.id.replace('-btn', '');
         handleConceptChange(concept);
-        });
+      });
     });
     
     // Initialize with default concept
