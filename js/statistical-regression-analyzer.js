@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Create HTML structure for the tool
+    // HTML structure for the tool
     container.innerHTML = `
         <div class="regression-analyzer">
             <div class="controls-section">
@@ -177,8 +177,28 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     `;
+
+    // polynomial degree selector
+    const polynomialControls = document.createElement('div');
+    polynomialControls.className = 'polynomial-controls';
+    polynomialControls.innerHTML = `
+    <label>
+        <input type="checkbox" id="use-polynomial" onclick="togglePolynomialDegree()">
+        Use polynomial regression
+    </label>
+    <div id="degree-selector" style="display: none; margin-top: 8px;">
+        <label for="polynomial-degree">Polynomial degree:</label>
+        <select id="polynomial-degree">
+        <option value="1">1 (Linear)</option>
+        <option value="2">2 (Quadratic)</option>
+        <option value="3">3 (Cubic)</option>
+        <option value="4">4 (Quartic)</option>
+        <option value="5">5 (Quintic)</option>
+        </select>
+    </div>
+    `;
     
-    // Add styles
+    // regression styles
     const styleElement = document.createElement('style');
     styleElement.textContent = `
         .regression-analyzer {
@@ -501,6 +521,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 height: auto;
                 min-height: 120px;
             }
+        .polynomial-controls {
+            margin-top: 12px;
+        }
+
+        .polynomial-controls label {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .polynomial-controls input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        #degree-selector {
+        display: flex;
+        align-items: center;
+        margin-left: 20px;
+        }
+
+        #degree-selector label {
+            margin-right: 8px;
+        }
+
+        #polynomial-degree {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
     `;
     document.head.appendChild(styleElement);
     
@@ -553,6 +605,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const sampleHeteroscedasticBtn = document.getElementById('sample-heteroscedastic-btn');
         const sampleOutliersBtn = document.getElementById('sample-outliers-btn');
         
+        //checkbox control
+        const controlGroup = document.getElementById('variable-selectors');
+        const checkboxControls = controlGroup.querySelector('.checkbox-controls');
+        checkboxControls.parentNode.insertBefore(polynomialControls, checkboxControls.nextSibling);
+        
         // Event listeners
         uploadCsvBtn.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', handleFileUpload);
@@ -569,107 +626,253 @@ document.addEventListener('DOMContentLoaded', function() {
         sampleHeteroscedasticBtn.addEventListener('click', () => loadSampleData('heteroscedastic'));
         sampleOutliersBtn.addEventListener('click', () => loadSampleData('outliers'));
             
-        // Helper function to compute linear regression
-        // Replace the computeRegression function with this complete version
-        function computeRegression(data, xKeys, yKey) {
+
+
+        // linear regression 
+        function computeRegression(data, xKeys, yKey, degree = 1) {
             // Extract dependent variable
             const y = data.map(d => parseFloat(d[yKey]));
             
             // For simple regression (one X variable)
             if (xKeys.length === 1) {
-                // Use existing simple linear regression code
-                const xKey = xKeys[0];
-                const xs = data.map(d => parseFloat(d[xKey]));
-                
-                // Simple regression calculation
-                const xMean = xs.reduce((a, b) => a + b, 0) / xs.length;
-                const yMean = y.reduce((a, b) => a + b, 0) / y.length;
-                
-                let numerator = 0;
-                let denominator = 0;
-                
+            const xKey = xKeys[0];
+            const xs = data.map(d => parseFloat(d[xKey]));
+            
+            if (degree === 1) {
+                // linear regression code
+                 // For simple regression (one X variable)
+                if (xKeys.length === 1) {
+                    // Use existing simple linear regression code
+                    const xKey = xKeys[0];
+                    const xs = data.map(d => parseFloat(d[xKey]));
+                    
+                    // Simple regression calculation
+                    const xMean = xs.reduce((a, b) => a + b, 0) / xs.length;
+                    const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+                    
+                    let numerator = 0;
+                    let denominator = 0;
+                    
+                    for (let i = 0; i < xs.length; i++) {
+                        numerator += (xs[i] - xMean) * (y[i] - yMean);
+                        denominator += Math.pow(xs[i] - xMean, 2);
+                    }
+                    
+                    const slope = numerator / denominator;
+                    const intercept = yMean - slope * xMean;
+                    
+                    // Calculate predictions and residuals
+                    const predictions = xs.map(x => intercept + slope * x);
+                    const residuals = y.map((actual, i) => actual - predictions[i]);
+                    
+                    // Calculate R-squared
+                    const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
+                    const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
+                    const rSquared = 1 - (ssResidual / ssTotal);
+                    
+                    // Calculate standard error of regression
+                    const n = xs.length;
+                    const standardError = Math.sqrt(ssResidual / (n - 2));
+                    
+                    // Calculate standard error of coefficients
+                    const seSlope = standardError / Math.sqrt(denominator);
+                    const seIntercept = standardError * Math.sqrt(1/n + Math.pow(xMean, 2)/denominator);
+                    
+                    // Calculate t-statistics
+                    const tSlope = slope / seSlope;
+                    const tIntercept = intercept / seIntercept;
+                    
+                    // Calculate p-values
+                    const pSlope = 2 * (1 - normalCDF(Math.abs(tSlope)));
+                    const pIntercept = 2 * (1 - normalCDF(Math.abs(tIntercept)));
+                    
+                    // Calculate confidence intervals (95%)
+                    const criticalT = 1.96; // Approximation for large samples
+                    const ciSlopeWidth = criticalT * seSlope;
+                    const ciInterceptWidth = criticalT * seIntercept;
+                    
+                    // Calculate prediction intervals
+                    const predictionIntervals = xs.map(x => {
+                        const predictedY = intercept + slope * x;
+                        // Calculate the standard error of prediction
+                        const sePrediction = standardError * Math.sqrt(1 + 1/n + Math.pow(x - xMean, 2)/denominator);
+                        const piWidth = criticalT * sePrediction;
+                        
+                        return {
+                            x: x,
+                            y: predictedY,
+                            yLower: predictedY - piWidth,
+                            yUpper: predictedY + piWidth
+                        };
+                    });
+                    
+                    // Calculate metrics
+                    const mse = ssResidual / n;
+                    const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                    const rmse = Math.sqrt(mse);
+                    
+                    return {
+                        slope,
+                        intercept,
+                        rSquared,
+                        predictions,
+                        residuals,
+                        standardizedResiduals: residuals.map(r => r / standardError),
+                        mse,
+                        mae,
+                        rmse,
+                        equation: `${yKey} = ${intercept.toFixed(4)} + ${slope.toFixed(4)}${xKey}`,
+                        slopeCI: [slope - ciSlopeWidth, slope + ciSlopeWidth],
+                        interceptCI: [intercept - ciInterceptWidth, intercept + ciInterceptWidth],
+                        pValues: { slope: pSlope, intercept: pIntercept },
+                        tValues: { slope: tSlope, intercept: tIntercept },
+                        standardErrors: { slope: seSlope, intercept: seIntercept, regression: standardError },
+                        predictionIntervals,
+                        isMultivariate: false,
+                        xMean,
+                        yMean
+                    };
+                }
+            } else {
+                // Polynomial regression
+                // Create design matrix with polynomial terms
+                const X = [];
                 for (let i = 0; i < xs.length; i++) {
-                    numerator += (xs[i] - xMean) * (y[i] - yMean);
-                    denominator += Math.pow(xs[i] - xMean, 2);
+                const row = [1]; // Intercept term
+                for (let d = 1; d <= degree; d++) {
+                    row.push(Math.pow(xs[i], d));
+                }
+                X.push(row);
                 }
                 
-                const slope = numerator / denominator;
-                const intercept = yMean - slope * xMean;
+                // Calculate X'X
+                const XtX = [];
+                for (let i = 0; i < X[0].length; i++) {
+                XtX[i] = [];
+                for (let j = 0; j < X[0].length; j++) {
+                    let sum = 0;
+                    for (let k = 0; k < X.length; k++) {
+                    sum += X[k][i] * X[k][j];
+                    }
+                    XtX[i][j] = sum;
+                }
+                }
                 
-                // Calculate predictions and residuals
-                const predictions = xs.map(x => intercept + slope * x);
+                // Calculate X'y
+                const Xty = [];
+                for (let i = 0; i < X[0].length; i++) {
+                let sum = 0;
+                for (let k = 0; k < X.length; k++) {
+                    sum += X[k][i] * y[k];
+                }
+                Xty[i] = sum;
+                }
+                
+                // Solve for coefficients
+                const coefficients = solveSystem(XtX, Xty);
+                
+                // Calculate predictions
+                const predictions = X.map(row => {
+                let pred = 0;
+                for (let i = 0; i < coefficients.length; i++) {
+                    pred += coefficients[i] * row[i];
+                }
+                return pred;
+                });
+                
+                // Calculate residuals
                 const residuals = y.map((actual, i) => actual - predictions[i]);
                 
                 // Calculate R-squared
+                const yMean = y.reduce((a, b) => a + b, 0) / y.length;
                 const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
                 const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
                 const rSquared = 1 - (ssResidual / ssTotal);
                 
-                // Calculate standard error of regression
-                const n = xs.length;
-                const standardError = Math.sqrt(ssResidual / (n - 2));
-                
-                // Calculate standard error of coefficients
-                const seSlope = standardError / Math.sqrt(denominator);
-                const seIntercept = standardError * Math.sqrt(1/n + Math.pow(xMean, 2)/denominator);
-                
-                // Calculate t-statistics
-                const tSlope = slope / seSlope;
-                const tIntercept = intercept / seIntercept;
-                
-                // Calculate p-values
-                const pSlope = 2 * (1 - normalCDF(Math.abs(tSlope)));
-                const pIntercept = 2 * (1 - normalCDF(Math.abs(tIntercept)));
-                
-                // Calculate confidence intervals (95%)
-                const criticalT = 1.96; // Approximation for large samples
-                const ciSlopeWidth = criticalT * seSlope;
-                const ciInterceptWidth = criticalT * seIntercept;
-                
-                // Calculate prediction intervals
-                const predictionIntervals = xs.map(x => {
-                    const predictedY = intercept + slope * x;
-                    // Calculate the standard error of prediction
-                    const sePrediction = standardError * Math.sqrt(1 + 1/n + Math.pow(x - xMean, 2)/denominator);
-                    const piWidth = criticalT * sePrediction;
-                    
-                    return {
-                        x: x,
-                        y: predictedY,
-                        yLower: predictedY - piWidth,
-                        yUpper: predictedY + piWidth
-                    };
-                });
-                
                 // Calculate metrics
+                const n = xs.length;
                 const mse = ssResidual / n;
-                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
                 const rmse = Math.sqrt(mse);
+                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                const standardError = Math.sqrt(ssResidual / (n - (degree + 1)));
+                
+                // Generate polynomial equation string
+                let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
+                for (let i = 1; i < coefficients.length; i++) {
+                const coef = coefficients[i];
+                if (coef >= 0) {
+                    equation += ` + ${coef.toFixed(4)}${xKey}`;
+                } else {
+                    equation += ` - ${Math.abs(coef).toFixed(4)}${xKey}`;
+                }
+                
+                if (i > 1) {
+                    equation += `<sup>${i}</sup>`;
+                }
+                }
+                
+                // For prediction intervals - create polynomial x points for the curve
+                const numPoints = 100;
+                const xMin = Math.min(...xs);
+                const xMax = Math.max(...xs);
+                const range = xMax - xMin;
+                
+                const predictionIntervals = [];
+                for (let i = 0; i <= numPoints; i++) {
+                const x = xMin + (range * i / numPoints);
+                
+                // Calculate polynomial terms
+                const xPoly = [1];
+                for (let d = 1; d <= degree; d++) {
+                    xPoly.push(Math.pow(x, d));
+                }
+                
+                // Calculate prediction
+                let pred = 0;
+                for (let d = 0; d <= degree; d++) {
+                    pred += coefficients[d] * xPoly[d];
+                }
+                
+                // Simplified prediction interval (approximate)
+                const sePrediction = standardError * 1.2; // Approximation for polynomial case
+                const piWidth = 1.96 * sePrediction;
+                
+                predictionIntervals.push({
+                    x: x,
+                    y: pred,
+                    yLower: pred - piWidth,
+                    yUpper: pred + piWidth
+                });
+                }
                 
                 return {
-                    slope,
-                    intercept,
-                    rSquared,
-                    predictions,
-                    residuals,
-                    standardizedResiduals: residuals.map(r => r / standardError),
-                    mse,
-                    mae,
-                    rmse,
-                    equation: `${yKey} = ${intercept.toFixed(4)} + ${slope.toFixed(4)}${xKey}`,
-                    slopeCI: [slope - ciSlopeWidth, slope + ciSlopeWidth],
-                    interceptCI: [intercept - ciInterceptWidth, intercept + ciInterceptWidth],
-                    pValues: { slope: pSlope, intercept: pIntercept },
-                    tValues: { slope: tSlope, intercept: tIntercept },
-                    standardErrors: { slope: seSlope, intercept: seIntercept, regression: standardError },
-                    predictionIntervals,
-                    isMultivariate: false,
-                    xMean,
-                    yMean
+                coefficients,
+                degree,
+                predictions,
+                residuals,
+                standardizedResiduals: residuals.map(r => r / standardError),
+                rSquared,
+                mse,
+                rmse,
+                mae,
+                equation,
+                predictionIntervals,
+                isPolynomial: true,
+                // Keep compatibility with existing code
+                slope: coefficients[1] || 0,
+                intercept: coefficients[0],
+                xMean: null,
+                yMean,
+                standardErrors: { regression: standardError },
+                // Dummy values for compatibility
+                pValues: { slope: 0, intercept: 0 },
+                tValues: { slope: 0, intercept: 0 },
+                slopeCI: [0, 0],
+                interceptCI: [0, 0]
                 };
             }
-            // For multiple regression (more than one X variable)
-            else {
+            } else {
+                // Multiple regression code
                 // Create design matrix X with intercept term
                 const X = data.map(d => {
                     const row = [1]; // Intercept term
@@ -771,8 +974,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             }
         }
-            
-        
+    } 
+    
         // Normal CDF approximation
         function normalCDF(x) {
             const t = 1 / (1 + 0.2316419 * Math.abs(x));
@@ -828,6 +1031,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return x;
         }
         
+        // toggle function
+        function togglePolynomialDegree() {
+            const degreeSelector = document.getElementById('degree-selector');
+            const usePolynomial = document.getElementById('use-polynomial').checked;
+            degreeSelector.style.display = usePolynomial ? 'block' : 'none';
+            
+            // Update regression if variables are selected
+            const predictorVariablesSelect = document.getElementById('predictor-variables');
+            const yVariableSelect = document.getElementById('y-variable');
+            
+            if (predictorVariablesSelect.selectedOptions.length > 0 && yVariableSelect.value) {
+            handleVariableChange();
+            }
+        }
+
         // Helper function to create sample datasets
         function createSampleData(type) {
             const n = 50;
@@ -1063,13 +1281,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Only proceed if we have valid selections
                 if (xColumns.length > 0 && yColumn && data.length > xColumns.length + 1) {
-                    // Calculate regression
-                    regressionResults = computeRegression(data, xColumns, yColumn);
-                    
-                    // Update UI
-                    updateStatistics();
-                    initializeCharts();
-                    resultsSection.style.display = 'block';
+                // Check if polynomial regression is enabled
+                const usePolynomial = document.getElementById('use-polynomial')?.checked || false;
+                const polynomialDegree = usePolynomial ? 
+                    parseInt(document.getElementById('polynomial-degree').value) : 1;
+                
+                // Calculate regression (pass polynomial degree)
+                regressionResults = computeRegression(data, xColumns, yColumn, polynomialDegree);
+                
+                // Update UI
+                updateStatistics();
+                initializeCharts();
+                resultsSection.style.display = 'block';
                 }
             }
             
@@ -1144,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Get the first selected X variable for the chart
                 const selectedOptions = Array.from(predictorVariablesSelect.selectedOptions);
                 if (selectedOptions.length > 0) {
-                    xColumn = selectedOptions[0].value;
+                xColumn = selectedOptions[0].value;
                 }
                 
                 // Get the Y variable
@@ -1152,42 +1375,92 @@ document.addEventListener('DOMContentLoaded', function() {
             
                 // Destroy previous chart if it exists
                 if (regressionChart) {
-                    regressionChart.destroy();
+                regressionChart.destroy();
                 }
             
                 // Prepare data
                 const chartData = {
-                    datasets: [
-                        // Scatter plot for data points
-                        {
-                            label: 'Data Points',
-                            data: data.map(d => ({
-                                x: parseFloat(d[xColumn]),
-                                y: parseFloat(d[yColumn])
-                            })),
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1,
-                            pointRadius: 4,
-                            type: 'scatter'
-                        }
-                    ]
+                datasets: [
+                    // Scatter plot for data points
+                    {
+                    label: 'Data Points',
+                    data: data.map(d => ({
+                        x: parseFloat(d[xColumn]),
+                        y: parseFloat(d[yColumn])
+                    })),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    pointRadius: 4,
+                    type: 'scatter'
+                    }
+                ]
                 };
-
-            // Add regression line
-            if (regressionResults) {
-                // Find min and max x values
-                const xValues = data.map(d => parseFloat(d[xColumn]));
-                const minX = Math.min(...xValues);
-                const maxX = Math.max(...xValues);
-                
-                // Create line data
-                const lineData = [
+            
+                // Add regression line/curve
+                if (regressionResults) {
+                if (regressionResults.isPolynomial) {
+                    // For polynomial regression, use the prediction intervals as the curve
+                    const curveData = regressionResults.predictionIntervals.map(p => ({
+                    x: p.x,
+                    y: p.y
+                    }));
+                    
+                    chartData.datasets.push({
+                    label: `Polynomial Regression (degree ${regressionResults.degree})`,
+                    data: curveData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0,
+                    type: 'line',
+                    tension: 0.4
+                    });
+                    
+                    // Add prediction intervals if checked
+                    if (showPredictionIntervalsCheckbox.checked) {
+                    // Add upper bound
+                    chartData.datasets.push({
+                        label: 'Upper 95% Prediction',
+                        data: regressionResults.predictionIntervals.map(p => ({ x: p.x, y: p.yUpper })),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        type: 'line',
+                        tension: 0.4
+                    });
+                    
+                    // Add lower bound
+                    chartData.datasets.push({
+                        label: 'Lower 95% Prediction',
+                        data: regressionResults.predictionIntervals.map(p => ({ x: p.x, y: p.yLower })),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        type: 'line',
+                        tension: 0.4
+                    });
+                    }
+                } else {
+                    // Original linear regression code
+                    // Find min and max x values
+                    const xValues = data.map(d => parseFloat(d[xColumn]));
+                    const minX = Math.min(...xValues);
+                    const maxX = Math.max(...xValues);
+                    
+                    // Create line data
+                    const lineData = [
                     { x: minX, y: regressionResults.intercept + regressionResults.slope * minX },
                     { x: maxX, y: regressionResults.intercept + regressionResults.slope * maxX }
-                ];
-                
-                chartData.datasets.push({
+                    ];
+                    
+                    // Rest of the original linear regression chart code
+                    chartData.datasets.push({
                     label: 'Regression Line',
                     data: lineData,
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -1196,10 +1469,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     fill: false,
                     pointRadius: 0,
                     type: 'line'
-                });
-                
-                // Add prediction intervals if checked
-                if (showPredictionIntervalsCheckbox.checked) {
+                    });
+                    
+                    // Add prediction intervals if checked
+                    if (showPredictionIntervalsCheckbox.checked) {
+                    // Original prediction interval code
                     // Sort intervals by x value
                     const sortedIntervals = [...regressionResults.predictionIntervals]
                         .sort((a, b) => a.x - b.x);
@@ -1227,11 +1501,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         fill: false,
                         type: 'line'
                     });
+                    }
                 }
-            }
-
-            // Create chart
-            regressionChart = new Chart(ctx, {
+                }
+            
+                // Create chart (keep the rest of the original function)
+                regressionChart = new Chart(ctx, {
                 type: 'scatter',
                 data: chartData,
                 options: {
@@ -1239,21 +1514,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     maintainAspectRatio: true,
                     aspectRatio: 16/9, 
                     scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: xColumn
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: yColumn
-                            }
+                    x: {
+                        title: {
+                        display: true,
+                        text: xColumn
+                        }
+                    },
+                    y: {
+                        title: {
+                        display: true,
+                        text: yColumn
                         }
                     }
+                    }
                 }
-            });
+                });
             }
 
             // Initialize residual chart
