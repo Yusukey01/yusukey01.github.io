@@ -682,45 +682,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function drawSpan() {
-      if (userVectors.length === 0) return;
-      
-      if (userVectors.length === 1) {
-        // Draw the spanning line (1D subspace)
-        const vector = userVectors[0];
-        const scale = 15; // Scale factor to extend the line
+        if (userVectors.length === 0) return;
         
-        const start = { x: -vector.x * scale, y: -vector.y * scale };
-        const end = { x: vector.x * scale, y: vector.y * scale };
-        
-        ctx.strokeStyle = colors.spanVector;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        const startCanvas = gridToCanvas(start.x, start.y);
-        const endCanvas = gridToCanvas(end.x, end.y);
-        ctx.moveTo(startCanvas.x, startCanvas.y);
-        ctx.lineTo(endCanvas.x, endCanvas.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // Label the span
-        ctx.fillStyle = colors.spanVector;
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const labelPos = gridToCanvas(vector.x * 1.2, vector.y * 1.2);
-        ctx.fillText('span', labelPos.x, labelPos.y);
-      } 
-      else if (userVectors.length === 2) {
-        // Check if vectors are linearly independent (not parallel)
-        const v1 = userVectors[0];
-        const v2 = userVectors[1];
-        const determinant = v1.x * v2.y - v1.y * v2.x;
-        
-        if (Math.abs(determinant) < 0.001) {
-          // Vectors are linearly dependent, draw a line
-          const vector = v1; // Use the first vector
-          const scale = 15;
+        if (userVectors.length === 1) {
+          // Draw the spanning line (1D subspace)
+          const vector = userVectors[0];
+          const scale = 15; // Scale factor to extend the line
           
           const start = { x: -vector.x * scale, y: -vector.y * scale };
           const end = { x: vector.x * scale, y: vector.y * scale };
@@ -736,54 +703,125 @@ document.addEventListener('DOMContentLoaded', function() {
           ctx.stroke();
           ctx.setLineDash([]);
           
-          // Label
-          ctx.fillStyle = colors.spanVector;
-          ctx.font = '14px Arial';
-          ctx.fillText('span (1D)', gridToCanvas(vector.x * 1.2, vector.y * 1.2).x, 
-                                gridToCanvas(vector.x * 1.2, vector.y * 1.2).y);
-        } 
-        else {
-          // Vectors span a plane (2D)
-          // Draw a parallelogram to represent the span
-          const scale = 2;
-          const corner1 = { x: v1.x * scale, y: v1.y * scale };
-          const corner2 = { x: v2.x * scale, y: v2.y * scale };
-          const corner3 = { x: v1.x * scale + v2.x * scale, y: v1.y * scale + v2.y * scale };
-          const corner4 = { x: v1.x * scale - v2.x * scale, y: v1.y * scale - v2.y * scale };
-          
-          // Draw the parallelogram with dashed lines
-          ctx.strokeStyle = colors.spanVector;
-          ctx.lineWidth = 1;
-          ctx.setLineDash([5, 5]);
-          
-          // Draw the boundary
-          ctx.beginPath();
-          const c1 = gridToCanvas(corner1.x, corner1.y);
-          const c2 = gridToCanvas(corner2.x, corner2.y);
-          const c3 = gridToCanvas(corner3.x, corner3.y);
-          const c4 = gridToCanvas(-corner1.x, -corner1.y);
-          const c5 = gridToCanvas(-corner2.x, -corner2.y);
-          const c6 = gridToCanvas(-corner3.x, -corner3.y);
-          
-          // Connect the points to form a shape representing the span
-          ctx.moveTo(c4.x, c4.y);
-          ctx.lineTo(c5.x, c5.y);
-          ctx.lineTo(c6.x, c6.y);
-          ctx.lineTo(c3.x, c3.y);
-          ctx.lineTo(c1.x, c1.y);
-          ctx.lineTo(c2.x, c2.y);
-          
-          ctx.stroke();
-          ctx.setLineDash([]);
-          
           // Label the span
           ctx.fillStyle = colors.spanVector;
           ctx.font = '14px Arial';
-          ctx.fillText('span (2D)', gridToCanvas((corner1.x + corner2.x) / 2, (corner1.y + corner2.y) / 2).x, 
-                                gridToCanvas((corner1.x + corner2.x) / 2, (corner1.y + corner2.y) / 2).y);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const labelPos = gridToCanvas(vector.x * 1.2, vector.y * 1.2);
+          ctx.fillText('span', labelPos.x, labelPos.y);
+        } 
+        else {
+          // For 2 or more vectors
+          // Check if vectors are linearly independent
+          let linearly_independent = true;
+          let v1 = userVectors[0];
+          
+          // For any number of vectors, check if they're linearly independent
+          // In R², we can have at most 2 linearly independent vectors
+          for (let i = 1; i < userVectors.length && linearly_independent; i++) {
+            // For the first two vectors, check their determinant
+            if (i === 1) {
+              const v2 = userVectors[1];
+              const determinant = v1.x * v2.y - v1.y * v2.x;
+              if (Math.abs(determinant) < 0.001) {
+                linearly_independent = false;
+              }
+            } 
+            // If we have more than 2 vectors in R², they must be linearly dependent
+            else if (i >= 2) {
+              // Any set of 3 or more vectors in R² must be linearly dependent
+              linearly_independent = false;
+            }
+          }
+          
+          if (!linearly_independent) {
+            // Vectors are linearly dependent, so they span at most a line
+            // Find a non-zero vector to represent the span
+            let vector = null;
+            for (let i = 0; i < userVectors.length; i++) {
+              if (Math.abs(userVectors[i].x) > 0.001 || Math.abs(userVectors[i].y) > 0.001) {
+                vector = userVectors[i];
+                break;
+              }
+            }
+            
+            if (vector) {
+              const scale = 15;
+              
+              const start = { x: -vector.x * scale, y: -vector.y * scale };
+              const end = { x: vector.x * scale, y: vector.y * scale };
+              
+              ctx.strokeStyle = colors.spanVector;
+              ctx.lineWidth = 1;
+              ctx.setLineDash([5, 5]);
+              ctx.beginPath();
+              const startCanvas = gridToCanvas(start.x, start.y);
+              const endCanvas = gridToCanvas(end.x, end.y);
+              ctx.moveTo(startCanvas.x, startCanvas.y);
+              ctx.lineTo(endCanvas.x, endCanvas.y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              
+              // Label
+              ctx.fillStyle = colors.spanVector;
+              ctx.font = '14px Arial';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('span (1D)', gridToCanvas(vector.x * 1.2, vector.y * 1.2).x, 
+                                    gridToCanvas(vector.x * 1.2, vector.y * 1.2).y);
+            }
+          } 
+          else {
+            // Vectors span a plane (2D)
+            // Instead of drawing a complicated shape, simply fill a large area
+            // and add some helper lines to show that it's the entire plane
+            
+            // First, add a semi-transparent fill to indicate the full plane
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.1)';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Then draw some representative lines in the span
+            ctx.strokeStyle = colors.spanVector;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // Draw lines parallel to v1 and v2
+            const scale = 8;
+            
+            // Draw a grid of lines to represent the entire plane
+            for (let i = -2; i <= 2; i++) {
+                if (i === 0) continue; // Skip the center lines (already shown as vectors)
+                
+                // Lines parallel to v1
+                const start1 = { x: i * v2.x, y: i * v2.y };
+                const end1 = { x: i * v2.x + v1.x * scale, y: i * v2.y + v1.y * scale };
+                ctx.beginPath();
+                ctx.moveTo(gridToCanvas(start1.x, start1.y).x, gridToCanvas(start1.x, start1.y).y);
+                ctx.lineTo(gridToCanvas(end1.x, end1.y).x, gridToCanvas(end1.x, end1.y).y);
+                ctx.stroke();
+                
+                // Lines parallel to v2
+                const start2 = { x: i * v1.x, y: i * v1.y };
+                const end2 = { x: i * v1.x + v2.x * scale, y: i * v1.y + v2.y * scale };
+                ctx.beginPath();
+                ctx.moveTo(gridToCanvas(start2.x, start2.y).x, gridToCanvas(start2.x, start2.y).y);
+                ctx.lineTo(gridToCanvas(end2.x, end2.y).x, gridToCanvas(end2.x, end2.y).y);
+                ctx.stroke();
+            }
+            
+            ctx.setLineDash([]);
+            
+            // Label the span
+            ctx.fillStyle = colors.spanVector;
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('span (2D - entire plane)', canvasWidth / 2, 30);
         }
-      }
     }
+}
+
     
     function drawBasis() {
       if (userVectors.length === 0) return;
@@ -932,9 +970,54 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       } else if (userVectors.length > 2) {
-        // In R², more than 2 vectors are always linearly dependent
-        isIndependent = false;
-        explanation = 'In ℝ², more than 2 vectors are always linearly dependent';
+        
+        let foundDependency = false;
+        
+        // Check each vector to see if it's a linear combination of the others
+        for (let i = 0; i < userVectors.length && !foundDependency; i++) {
+            const testVector = userVectors[i];
+            
+            // Try to express this vector as a combination of all the others
+            // This would require solving a system of equations
+            // For simplicity, let's check if this vector is parallel to any other vector
+            for (let j = 0; j < userVectors.length && !foundDependency; j++) {
+            if (i === j) continue; // Skip comparing a vector to itself
+            
+            const otherVector = userVectors[j];
+            
+            // Check if vectors are parallel (one is scalar multiple of the other)
+            if ((Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) || 
+                (Math.abs(otherVector.x) < 0.001 && Math.abs(otherVector.y) < 0.001)) {
+                // One is a zero vector
+                foundDependency = true;
+                isIndependent = false;
+                
+                if (Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) {
+                explanation = `v${i+1} is the zero vector`;
+                } else {
+                explanation = `v${j+1} is the zero vector`;
+                }
+            } else if (Math.abs(testVector.x * otherVector.y - testVector.y * otherVector.x) < 0.001) {
+                // Vectors are parallel
+                foundDependency = true;
+                isIndependent = false;
+                
+                // Find scalar relationship
+                let scalar = 0;
+                if (Math.abs(otherVector.x) > 0.001) {
+                scalar = testVector.x / otherVector.x;
+                } else {
+                scalar = testVector.y / otherVector.y;
+                }
+                explanation = `v${i+1} = ${scalar.toFixed(2)} · v${j+1}`;
+            }
+            }
+        }
+        // If no dependency was found, the vectors are linearly independent
+        if (!foundDependency) {
+            isIndependent = true;
+        }
+            
       }
       
       // Draw results on canvas
@@ -1293,27 +1376,15 @@ document.addEventListener('DOMContentLoaded', function() {
         'span': `
           <h3>Span</h3>
           <p>The span of a set of vectors is the set of all possible linear combinations of those vectors. It's the smallest subspace containing all the vectors.</p>
-          <p>In ℝ², the span of:</p>
-          <ul>
-            <li>One non-zero vector is a line through the origin</li>
-            <li>Two linearly independent vectors is the entire plane</li>
-          </ul>
         `,
         'linear-indep': `
           <h3>Linear Independence</h3>
           <p>A set of vectors is linearly independent if none of the vectors can be written as a linear combination of the others.</p>
           <p>For example, vectors v₁ and v₂ are linearly independent if the only solution to c₁v₁ + c₂v₂ = 0 is c₁ = c₂ = 0.</p>
-          <p>In ℝ², at most 2 vectors can be linearly independent.</p>
         `,
         'subspace': `
           <h3>Subspaces</h3>
           <p>A subspace is a subset of a vector space that is itself a vector space. It must contain the zero vector and be closed under addition and scalar multiplication.</p>
-          <p>In ℝ², the only subspaces are:</p>
-          <ul>
-            <li>The origin (0D)</li>
-            <li>Lines through the origin (1D)</li>
-            <li>The entire plane (2D)</li>
-          </ul>
         `,
         'basis': `
           <h3>Basis</h3>
@@ -1556,6 +1627,33 @@ document.addEventListener('DOMContentLoaded', function() {
       scene.add(arrowHelper);
       return arrowHelper;
     }
+
+    //example
+    function loadExample() {
+        clearAllVectors();
+        
+        // Add example vectors based on current concept
+        if (currentConcept === 'linear-combo' || currentConcept === 'span') {
+        userVectors.push({ x: 3, y: 1 });
+        userVectors.push({ x: 1, y: 2 });
+        } else if (currentConcept === 'linear-indep') {
+        userVectors.push({ x: 3, y: 1 });
+        userVectors.push({ x: 1, y: 2 });
+        // Add a linearly dependent vector
+        userVectors.push({ x: 6, y: 2 });
+        } else if (currentConcept === 'subspace') {
+        userVectors.push({ x: 2, y: 1 });
+        userVectors.push({ x: -4, y: -2 });
+        } else if (currentConcept === 'basis') {
+        userVectors.push({ x: 2, y: 1 });
+        userVectors.push({ x: -1, y: 2 });
+        }
+        
+        updateVectorsList();
+        updateWeightSliders();
+        calculateLinearCombo();
+        drawCanvas();
+    }
     
     // Add event listeners
     vectorCanvas.addEventListener('click', handleCanvasClick);
@@ -1563,12 +1661,28 @@ document.addEventListener('DOMContentLoaded', function() {
     clearBtn.addEventListener('click', clearAllVectors);
     exampleBtn.addEventListener('click', loadExample);
     
-    // Add concept button handlers
+
+    //  concept button handlers
     conceptButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const concept = this.id.replace('-btn', '');
+        button.addEventListener('click', function() {
+        // Extract concept name properly
+        let id = this.id;
+        let concept = '';
+        
+        if (id === 'linear-combo-btn') {
+            concept = 'linear-combo';
+        } else if (id === 'span-btn') {
+            concept = 'span';
+        } else if (id === 'linear-indep-btn') {
+            concept = 'linear-indep';
+        } else if (id === 'subspace-btn') {
+            concept = 'subspace';
+        } else if (id === 'basis-btn') {
+            concept = 'basis';
+        }
+        
         handleConceptChange(concept);
-      });
+        });
     });
     
     // Initialize with default concept
