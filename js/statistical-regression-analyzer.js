@@ -845,11 +845,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     sampleData.push({ 'x': x, 'y': y });
                 }
             } else if (type === 'nonlinear') {
-                // y = 0.5x² + 2x + 3 + noise
+                // y = 0.05x³ + 0.5x² - x + 3 + noise (cubic function)
                 for (let i = 0; i < n; i++) {
                     const x = i / (n - 1) * 10;
-                    const noise = (Math.random() - 0.5) * 5;
-                    const y = 0.5 * x * x + 2 * x + 3 + noise;
+                    const noise = (Math.random() - 0.5) * 3;
+                    const y = 0.05 * Math.pow(x, 3) + 0.5 * x * x - x + 3 + noise;
                     sampleData.push({ 'x': x, 'y': y });
                 }
             } else if (type === 'heteroscedastic') {
