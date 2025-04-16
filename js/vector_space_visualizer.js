@@ -685,131 +685,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (userVectors.length === 0) return;
         
         if (userVectors.length === 1) {
-          // Draw the spanning line (1D subspace)
-          const vector = userVectors[0];
-          const scale = 15; // Scale factor to extend the line
-          
-          const start = { x: -vector.x * scale, y: -vector.y * scale };
-          const end = { x: vector.x * scale, y: vector.y * scale };
-          
-          ctx.strokeStyle = colors.spanVector;
-          ctx.lineWidth = 1;
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          const startCanvas = gridToCanvas(start.x, start.y);
-          const endCanvas = gridToCanvas(end.x, end.y);
-          ctx.moveTo(startCanvas.x, startCanvas.y);
-          ctx.lineTo(endCanvas.x, endCanvas.y);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          
-          // Label the span
-          ctx.fillStyle = colors.spanVector;
-          ctx.font = '14px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const labelPos = gridToCanvas(vector.x * 1.2, vector.y * 1.2);
-          ctx.fillText('span', labelPos.x, labelPos.y);
-        } 
-        else {
-          // For 2 or more vectors
-          // Check if vectors are linearly independent
-          let linearly_independent = true;
-          let v1 = userVectors[0];
-          
-          // For any number of vectors, check if they're linearly independent
-          // In R², we can have at most 2 linearly independent vectors
-          for (let i = 1; i < userVectors.length && linearly_independent; i++) {
-            // For the first two vectors, check their determinant
-            if (i === 1) {
-              const v2 = userVectors[1];
-              const determinant = v1.x * v2.y - v1.y * v2.x;
-              if (Math.abs(determinant) < 0.001) {
-                linearly_independent = false;
-              }
-            } 
-            // If we have more than 2 vectors in R², they must be linearly dependent
-            else if (i >= 2) {
-              // Any set of 3 or more vectors in R² must be linearly dependent
-              linearly_independent = false;
-            }
-          }
-          
-          if (!linearly_independent) {
-            // Vectors are linearly dependent, so they span at most a line
-            // Find a non-zero vector to represent the span
-            let vector = null;
-            for (let i = 0; i < userVectors.length; i++) {
-              if (Math.abs(userVectors[i].x) > 0.001 || Math.abs(userVectors[i].y) > 0.001) {
-                vector = userVectors[i];
-                break;
-              }
-            }
+            // Draw the spanning line (1D subspace)
+            const vector = userVectors[0];
+            const scale = 15; // Scale factor to extend the line
             
-            if (vector) {
-              const scale = 15;
-              
-              const start = { x: -vector.x * scale, y: -vector.y * scale };
-              const end = { x: vector.x * scale, y: vector.y * scale };
-              
-              ctx.strokeStyle = colors.spanVector;
-              ctx.lineWidth = 1;
-              ctx.setLineDash([5, 5]);
-              ctx.beginPath();
-              const startCanvas = gridToCanvas(start.x, start.y);
-              const endCanvas = gridToCanvas(end.x, end.y);
-              ctx.moveTo(startCanvas.x, startCanvas.y);
-              ctx.lineTo(endCanvas.x, endCanvas.y);
-              ctx.stroke();
-              ctx.setLineDash([]);
-              
-              // Label
-              ctx.fillStyle = colors.spanVector;
-              ctx.font = '14px Arial';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText('span (1D)', gridToCanvas(vector.x * 1.2, vector.y * 1.2).x, 
-                                    gridToCanvas(vector.x * 1.2, vector.y * 1.2).y);
-            }
-          } 
-          else {
-            // Vectors span a plane (2D)
-            // Instead of drawing a complicated shape, simply fill a large area
-            // and add some helper lines to show that it's the entire plane
+            const start = { x: -vector.x * scale, y: -vector.y * scale };
+            const end = { x: vector.x * scale, y: vector.y * scale };
             
-            // First, add a semi-transparent fill to indicate the full plane
-            ctx.fillStyle = 'rgba(46, 204, 113, 0.1)';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            
-            // Then draw some representative lines in the span
             ctx.strokeStyle = colors.spanVector;
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
-            
-            // Draw lines parallel to v1 and v2
-            const scale = 8;
-            
-            // Draw a grid of lines to represent the entire plane
-            for (let i = -2; i <= 2; i++) {
-                if (i === 0) continue; // Skip the center lines (already shown as vectors)
-                
-                // Lines parallel to v1
-                const start1 = { x: i * v2.x, y: i * v2.y };
-                const end1 = { x: i * v2.x + v1.x * scale, y: i * v2.y + v1.y * scale };
-                ctx.beginPath();
-                ctx.moveTo(gridToCanvas(start1.x, start1.y).x, gridToCanvas(start1.x, start1.y).y);
-                ctx.lineTo(gridToCanvas(end1.x, end1.y).x, gridToCanvas(end1.x, end1.y).y);
-                ctx.stroke();
-                
-                // Lines parallel to v2
-                const start2 = { x: i * v1.x, y: i * v1.y };
-                const end2 = { x: i * v1.x + v2.x * scale, y: i * v1.y + v2.y * scale };
-                ctx.beginPath();
-                ctx.moveTo(gridToCanvas(start2.x, start2.y).x, gridToCanvas(start2.x, start2.y).y);
-                ctx.lineTo(gridToCanvas(end2.x, end2.y).x, gridToCanvas(end2.x, end2.y).y);
-                ctx.stroke();
-            }
-            
+            ctx.beginPath();
+            const startCanvas = gridToCanvas(start.x, start.y);
+            const endCanvas = gridToCanvas(end.x, end.y);
+            ctx.moveTo(startCanvas.x, startCanvas.y);
+            ctx.lineTo(endCanvas.x, endCanvas.y);
+            ctx.stroke();
             ctx.setLineDash([]);
             
             // Label the span
@@ -817,11 +708,138 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('span (2D - entire plane)', canvasWidth / 2, 30);
+            const labelPos = gridToCanvas(vector.x * 1.2, vector.y * 1.2);
+            ctx.fillText('span', labelPos.x, labelPos.y);
+        } 
+        else {
+            // For 2 or more vectors
+            // Check if vectors are linearly independent
+            let linearly_independent = true;
+            let v1 = userVectors[0];
+            let v2 = null;
+            
+            // Find two linearly independent vectors if possible
+            for (let i = 1; i < userVectors.length && v2 === null; i++) {
+                const testVector = userVectors[i];
+                const determinant = v1.x * testVector.y - v1.y * testVector.x;
+                
+                if (Math.abs(determinant) > 0.001) {
+                    v2 = testVector;
+                    linearly_independent = true;
+                }
+            }
+            
+            if (!v2) {
+                // All vectors are linearly dependent, they span a line
+                const scale = 15;
+                
+                const start = { x: -v1.x * scale, y: -v1.y * scale };
+                const end = { x: v1.x * scale, y: v1.y * scale };
+                
+                ctx.strokeStyle = colors.spanVector;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                const startCanvas = gridToCanvas(start.x, start.y);
+                const endCanvas = gridToCanvas(end.x, end.y);
+                ctx.moveTo(startCanvas.x, startCanvas.y);
+                ctx.lineTo(endCanvas.x, endCanvas.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Label
+                ctx.fillStyle = colors.spanVector;
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('span (1D)', gridToCanvas(v1.x * 1.2, v1.y * 1.2).x, 
+                                    gridToCanvas(v1.x * 1.2, v1.y * 1.2).y);
+            } 
+            else {
+                // Vectors span the entire plane (2D)
+                // Draw a parallelogram pattern to represent the 2D span
+                const scale = 10; // Grid scale factor
+                const pScale = 4;  // Parallelogram scale factor
+                
+                // Draw a grid of parallelograms to show the span
+                ctx.strokeStyle = colors.spanVector;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                
+                // Draw the parallelogram grid
+                for (let i = -scale; i <= scale; i += 2) {
+                    for (let j = -scale; j <= scale; j += 2) {
+                        // Base point for this parallelogram
+                        const base = {
+                            x: i * v1.x / pScale + j * v2.x / pScale,
+                            y: i * v1.y / pScale + j * v2.y / pScale
+                        };
+                        
+                        // Draw a parallelogram
+                        ctx.beginPath();
+                        
+                        // Starting point
+                        const p1 = gridToCanvas(base.x, base.y);
+                        ctx.moveTo(p1.x, p1.y);
+                        
+                        // Point along v1
+                        const p2 = gridToCanvas(base.x + v1.x / pScale, base.y + v1.y / pScale);
+                        ctx.lineTo(p2.x, p2.y);
+                        
+                        // Diagonal point
+                        const p3 = gridToCanvas(
+                            base.x + v1.x / pScale + v2.x / pScale, 
+                            base.y + v1.y / pScale + v2.y / pScale
+                        );
+                        ctx.lineTo(p3.x, p3.y);
+                        
+                        // Point along v2
+                        const p4 = gridToCanvas(base.x + v2.x / pScale, base.y + v2.y / pScale);
+                        ctx.lineTo(p4.x, p4.y);
+                        
+                        // Close the parallelogram
+                        ctx.lineTo(p1.x, p1.y);
+                        
+                        // Draw with lightweight stroke
+                        ctx.stroke();
+                    }
+                }
+                
+                // Draw a bold parallelogram at the origin to highlight it
+                const origin = { x: 0, y: 0 };
+                const corner1 = { x: v1.x, y: v1.y };
+                const corner2 = { x: v2.x, y: v2.y };
+                const corner3 = { x: v1.x + v2.x, y: v1.y + v2.y };
+                
+                ctx.setLineDash([]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(gridToCanvas(origin.x, origin.y).x, gridToCanvas(origin.x, origin.y).y);
+                ctx.lineTo(gridToCanvas(corner1.x, corner1.y).x, gridToCanvas(corner1.x, corner1.y).y);
+                ctx.lineTo(gridToCanvas(corner3.x, corner3.y).x, gridToCanvas(corner3.x, corner3.y).y);
+                ctx.lineTo(gridToCanvas(corner2.x, corner2.y).x, gridToCanvas(corner2.x, corner2.y).y);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Add a very light fill to the main parallelogram
+                ctx.fillStyle = 'rgba(46, 204, 113, 0.05)';
+                ctx.fill();
+                
+                // Label the span
+                ctx.fillStyle = colors.spanVector;
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('span (2D)', gridToCanvas(
+                    (corner1.x + corner2.x) / 2, 
+                    (corner1.y + corner2.y) / 2
+                ).x, gridToCanvas(
+                    (corner1.x + corner2.x) / 2, 
+                    (corner1.y + corner2.y) / 2
+                ).y);
+            }
         }
     }
-}
-
     
     function drawBasis() {
       if (userVectors.length === 0) return;
