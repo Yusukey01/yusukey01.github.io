@@ -574,13 +574,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Extract dependent variable
             const y = data.map(d => parseFloat(d[yKey]));
             
-            // For simple regression (one X variable)
             if (xKeys.length === 1) {
                 // Use existing simple linear regression code
                 const xKey = xKeys[0];
                 const xs = data.map(d => parseFloat(d[xKey]));
                 
-                // Simple regression calculation (your existing code)
+                // Simple regression calculation
                 const xMean = xs.reduce((a, b) => a + b, 0) / xs.length;
                 const yMean = y.reduce((a, b) => a + b, 0) / y.length;
                 
@@ -594,101 +593,76 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const slope = numerator / denominator;
                 const intercept = yMean - slope * xMean;
-                // ...rest of your simple regression code...
-                
-                // Return simple regression results
-                return {
-                    // Your existing return properties
-                };
-            } 
-            // For multiple regression (more than one X variable)
-            else {
-                // Create design matrix X with intercept term
-                const X = data.map(d => {
-                    const row = [1]; // Intercept term
-                    for (const key of xKeys) {
-                        row.push(parseFloat(d[key]));
-                    }
-                    return row;
-                });
-                
-                // Calculate X'X (transpose of X multiplied by X)
-                const XtX = [];
-                for (let i = 0; i < X[0].length; i++) {
-                    XtX[i] = [];
-                    for (let j = 0; j < X[0].length; j++) {
-                        let sum = 0;
-                        for (let k = 0; k < X.length; k++) {
-                            sum += X[k][i] * X[k][j];
-                        }
-                        XtX[i][j] = sum;
-                    }
-                }
-                
-                // Calculate X'y
-                const Xty = [];
-                for (let i = 0; i < X[0].length; i++) {
-                    let sum = 0;
-                    for (let k = 0; k < X.length; k++) {
-                        sum += X[k][i] * y[k];
-                    }
-                    Xty[i] = sum;
-                }
-                
-                // Solve for coefficients using Gaussian elimination
-                const coefficients = solveSystem(XtX, Xty);
                 
                 // Calculate predictions and residuals
-                const predictions = X.map(row => {
-                    let pred = 0;
-                    for (let i = 0; i < coefficients.length; i++) {
-                        pred += coefficients[i] * row[i];
-                    }
-                    return pred;
-                });
-                
+                const predictions = xs.map(x => intercept + slope * x);
                 const residuals = y.map((actual, i) => actual - predictions[i]);
                 
-                // Calculate R-squared and other statistics
-                const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+                // Calculate R-squared
                 const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
                 const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
                 const rSquared = 1 - (ssResidual / ssTotal);
                 
-                // Calculate other metrics
-                const n = y.length;
-                const p = coefficients.length;
-                const adjustedRSquared = 1 - ((1 - rSquared) * (n - 1) / (n - p - 1));
-                const mse = ssResidual / n;
-                const rmse = Math.sqrt(mse);
-                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                // Calculate standard error of regression
+                const n = xs.length;
+                const standardError = Math.sqrt(ssResidual / (n - 2));
                 
-                // Generate equation string
-                let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
-                for (let i = 1; i < coefficients.length; i++) {
-                    const coef = coefficients[i];
-                    equation += coef >= 0 ? 
-                        ` + ${coef.toFixed(4)}${xKeys[i-1]}` : 
-                        ` - ${Math.abs(coef).toFixed(4)}${xKeys[i-1]}`;
-                }
+                // Calculate standard error of coefficients
+                const seSlope = standardError / Math.sqrt(denominator);
+                const seIntercept = standardError * Math.sqrt(1/n + Math.pow(xMean, 2)/denominator);
+                
+                // Calculate t-statistics
+                const tSlope = slope / seSlope;
+                const tIntercept = intercept / seIntercept;
+                
+                // Calculate p-values
+                const pSlope = 2 * (1 - normalCDF(Math.abs(tSlope)));
+                const pIntercept = 2 * (1 - normalCDF(Math.abs(tIntercept)));
+                
+                // Calculate confidence intervals (95%)
+                const criticalT = 1.96; // Approximation for large samples
+                const ciSlopeWidth = criticalT * seSlope;
+                const ciInterceptWidth = criticalT * seIntercept;
+                
+                // Calculate prediction intervals
+                const predictionIntervals = xs.map(x => {
+                    const predictedY = intercept + slope * x;
+                    // Calculate the standard error of prediction
+                    const sePrediction = standardError * Math.sqrt(1 + 1/n + Math.pow(x - xMean, 2)/denominator);
+                    const piWidth = criticalT * sePrediction;
+                    
+                    return {
+                        x: x,
+                        y: predictedY,
+                        yLower: predictedY - piWidth,
+                        yUpper: predictedY + piWidth
+                    };
+                });
+                
+                // Calculate metrics
+                const mse = ssResidual / n;
+                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                const rmse = Math.sqrt(mse);
                 
                 return {
-                    coefficients,
-                    variableNames: ['intercept', ...xKeys],
+                    slope,
+                    intercept,
+                    rSquared,
                     predictions,
                     residuals,
-                    standardizedResiduals: residuals.map(r => r / Math.sqrt(mse)),
-                    rSquared,
-                    adjustedRSquared,
+                    standardizedResiduals: residuals.map(r => r / standardError),
                     mse,
-                    rmse,
                     mae,
-                    equation,
-                    isMultivariate: true,
-                    // For compatibility with existing code
-                    slope: coefficients[1] || 0,
-                    intercept: coefficients[0],
-                    xMean: null,
+                    rmse,
+                    equation: `${yKey} = ${intercept.toFixed(4)} + ${slope.toFixed(4)}${xKey}`,
+                    slopeCI: [slope - ciSlopeWidth, slope + ciSlopeWidth],
+                    interceptCI: [intercept - ciInterceptWidth, intercept + ciInterceptWidth],
+                    pValues: { slope: pSlope, intercept: pIntercept },
+                    tValues: { slope: tSlope, intercept: tIntercept },
+                    standardErrors: { slope: seSlope, intercept: seIntercept, regression: standardError },
+                    predictionIntervals,
+                    isMultivariate: false,
+                    xMean,
                     yMean
                 };
             }
@@ -701,6 +675,53 @@ document.addEventListener('DOMContentLoaded', function() {
             const d = 0.3989423 * Math.exp(-x * x / 2);
             const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
             return x > 0 ? 1 - p : p;
+        }
+
+        // Add this function for matrix solving (used in multivariate regression)
+        function solveSystem(A, b) {
+            const n = A.length;
+            const augMatrix = A.map((row, i) => [...row, b[i]]);
+            
+            // Forward elimination
+            for (let i = 0; i < n; i++) {
+                // Find pivot
+                let maxRow = i;
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(augMatrix[j][i]) > Math.abs(augMatrix[maxRow][i])) {
+                        maxRow = j;
+                    }
+                }
+                
+                // Swap rows
+                [augMatrix[i], augMatrix[maxRow]] = [augMatrix[maxRow], augMatrix[i]];
+                
+                // Check for singular matrix
+                if (Math.abs(augMatrix[i][i]) < 1e-10) {
+                    continue; // Skip to next iteration if pivot is too small
+                }
+                
+                // Eliminate below
+                for (let j = i + 1; j < n; j++) {
+                    const factor = augMatrix[j][i] / augMatrix[i][i];
+                    for (let k = i; k <= n; k++) {
+                        augMatrix[j][k] -= factor * augMatrix[i][k];
+                    }
+                }
+            }
+            
+            // Back substitution
+            const x = new Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                x[i] = augMatrix[i][n];
+                for (let j = i + 1; j < n; j++) {
+                    x[i] -= augMatrix[i][j] * x[j];
+                }
+                if (Math.abs(augMatrix[i][i]) > 1e-10) {
+                    x[i] /= augMatrix[i][i];
+                }
+            }
+            
+            return x;
         }
         
         // Helper function to create sample datasets
@@ -822,79 +843,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             currentSample = type;
             
-            // Create a more complex sample dataset to showcase multivariate capabilities
-            let sampleData = [];
-            const n = 50;
-            
-            if (type === 'linear') {
-                // y = 2x1 + 1.5x2 + 3 + noise
-                for (let i = 0; i < n; i++) {
-                    const x1 = i / (n - 1) * 10;
-                    const x2 = Math.random() * 5;
-                    const noise = (Math.random() - 0.5) * 3;
-                    const y = 2 * x1 + 1.5 * x2 + 3 + noise;
-                    sampleData.push({ x1, x2, y });
-                }
-                columns = ['x1', 'x2', 'y'];
-            } else if (type === 'nonlinear') {
-                // y = 0.5x1² + 2x1 + 3 + noise
-                for (let i = 0; i < n; i++) {
-                    const x1 = i / (n - 1) * 10;
-                    const x2 = Math.random() * 8;
-                    const noise = (Math.random() - 0.5) * 5;
-                    const y = 0.5 * x1 * x1 + 2 * x1 + 0.3 * x2 + 3 + noise;
-                    sampleData.push({ x1, x2, y });
-                }
-                columns = ['x1', 'x2', 'y'];
-            } else if (type === 'heteroscedastic') {
-                // Creating sample dataset with health metrics
-                for (let i = 0; i < n; i++) {
-                    const age = 20 + Math.floor(Math.random() * 60); // Age 20-80
-                    const weight = 50 + Math.random() * 60; // Weight 50-110 kg
-                    const height = 150 + Math.random() * 50; // Height 150-200 cm
-                    const activity = Math.random() * 10; // Activity level 0-10
-                    
-                    // BMI-based calculation with increasing variance based on age
-                    const variance = 0.5 + age/60; 
-                    const noise = (Math.random() - 0.5) * variance * 8;
-                    const bmi = weight / ((height/100) * (height/100));
-                    const bloodPressure = 100 + 0.5 * age - 0.2 * activity + bmi + noise;
-                    
-                    sampleData.push({ 
-                        age, 
-                        weight, 
-                        height, 
-                        activity, 
-                        bloodPressure 
-                    });
-                }
-                columns = ['age', 'weight', 'height', 'activity', 'bloodPressure'];
-            } else if (type === 'outliers') {
-                // Sample housing dataset with outliers
-                for (let i = 0; i < n; i++) {
-                    const size = 50 + Math.random() * 150; // Size 50-200 m²
-                    const rooms = 1 + Math.floor(Math.random() * 5); // 1-6 rooms
-                    const age = Math.floor(Math.random() * 50); // 0-50 years old
-                    
-                    let price = 100000 + 1000 * size + 10000 * rooms - 1000 * age;
-                    
-                    // Add occasional outliers
-                    if (Math.random() < 0.1) {
-                        price = price * (Math.random() > 0.5 ? 2 : 0.5);
-                    }
-                    
-                    sampleData.push({ 
-                        size, 
-                        rooms, 
-                        age, 
-                        price 
-                    });
-                }
-                columns = ['size', 'rooms', 'age', 'price'];
-            }
-            
-            // Set the data
-            data = sampleData;
+            // Create sample data (using the rich multivariate datasets)
+            data = createSampleData(type);
             
             // Update UI
             populateVariableSelectors();
@@ -905,11 +855,16 @@ document.addEventListener('DOMContentLoaded', function() {
             placeholder.style.display = 'none';
             dataPreview.style.display = 'block';
             
-            // Set default selections - select first variable for X and last for Y
+            // Get the actual DOM elements directly
             const predictorVariablesSelect = document.getElementById('predictor-variables');
             const yVariableSelect = document.getElementById('y-variable');
             
-            // Select first X variable
+            // Reset selections
+            for (let i = 0; i < predictorVariablesSelect.options.length; i++) {
+                predictorVariablesSelect.options[i].selected = false;
+            }
+            
+            // For a simple demo, select just the first X variable initially
             if (predictorVariablesSelect.options.length > 0) {
                 predictorVariablesSelect.options[0].selected = true;
             }
@@ -919,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 yVariableSelect.value = columns[columns.length - 1];
             }
             
-            // Trigger variable change to update analysis
+            // Handle the regression with the selected variables
             handleVariableChange();
         }
         
@@ -985,16 +940,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Handle variable change
             function handleVariableChange() {
-                // For multiselect, get all selected options
                 const predictorVariablesSelect = document.getElementById('predictor-variables');
                 const yVariableSelect = document.getElementById('y-variable');
                 
+                // Get the selected X and Y variables
                 const selectedOptions = Array.from(predictorVariablesSelect.selectedOptions);
                 const xColumns = selectedOptions.map(option => option.value);
                 const yColumn = yVariableSelect.value;
                 
+                // Remember the selected variables for charts
+                if (xColumns.length > 0) {
+                    xColumn = xColumns[0]; // For charts, we use the first selected X variable
+                }
+                if (yColumn) {
+                    yColumn = yColumn;
+                }
+                
+                // Only proceed if we have valid selections
                 if (xColumns.length > 0 && yColumn && data.length > xColumns.length + 1) {
-                    // Calculate regression with possibly multiple predictors
+                    // Calculate regression
                     regressionResults = computeRegression(data, xColumns, yColumn);
                     
                     // Update UI
