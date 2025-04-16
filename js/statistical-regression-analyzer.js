@@ -1,6 +1,20 @@
 
 // statistical-regression-analyzer.js - A vanilla JavaScript implementation for statistical linear regression analysis
 
+window.togglePolynomialDegree = function() {
+    const degreeSelector = document.getElementById('degree-selector');
+    const usePolynomial = document.getElementById('use-polynomial').checked;
+    degreeSelector.style.display = usePolynomial ? 'block' : 'none';
+    
+    // Update regression if variables are selected
+    const predictorVariablesSelect = document.getElementById('predictor-variables');
+    const yVariableSelect = document.getElementById('y-variable');
+    
+    if (predictorVariablesSelect.selectedOptions.length > 0 && yVariableSelect.value) {
+        handleVariableChange();
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
     const container = document.getElementById('statistical-regression-analyzer');
@@ -635,17 +649,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // For simple regression (one X variable)
             if (xKeys.length === 1) {
-            const xKey = xKeys[0];
-            const xs = data.map(d => parseFloat(d[xKey]));
+                const xKey = xKeys[0];
+                const xs = data.map(d => parseFloat(d[xKey]));
             
-            if (degree === 1) {
-                // linear regression code
-                 // For simple regression (one X variable)
-                if (xKeys.length === 1) {
-                    // Use existing simple linear regression code
-                    const xKey = xKeys[0];
-                    const xs = data.map(d => parseFloat(d[xKey]));
-                    
+                if (degree === 1) {
                     // Simple regression calculation
                     const xMean = xs.reduce((a, b) => a + b, 0) / xs.length;
                     const yMean = y.reduce((a, b) => a + b, 0) / y.length;
@@ -731,146 +738,145 @@ document.addEventListener('DOMContentLoaded', function() {
                         isMultivariate: false,
                         xMean,
                         yMean
-                    };
-                }
-            } else {
-                // Polynomial regression
-                // Create design matrix with polynomial terms
-                const X = [];
-                for (let i = 0; i < xs.length; i++) {
-                const row = [1]; // Intercept term
-                for (let d = 1; d <= degree; d++) {
-                    row.push(Math.pow(xs[i], d));
-                }
-                X.push(row);
-                }
-                
-                // Calculate X'X
-                const XtX = [];
-                for (let i = 0; i < X[0].length; i++) {
-                XtX[i] = [];
-                for (let j = 0; j < X[0].length; j++) {
+                    };              
+                } else {
+                    // Polynomial regression
+                    // Create design matrix with polynomial terms
+                    const X = [];
+                    for (let i = 0; i < xs.length; i++) {
+                    const row = [1]; // Intercept term
+                    for (let d = 1; d <= degree; d++) {
+                        row.push(Math.pow(xs[i], d));
+                    }
+                    X.push(row);
+                    }
+                    
+                    // Calculate X'X
+                    const XtX = [];
+                    for (let i = 0; i < X[0].length; i++) {
+                    XtX[i] = [];
+                    for (let j = 0; j < X[0].length; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < X.length; k++) {
+                        sum += X[k][i] * X[k][j];
+                        }
+                        XtX[i][j] = sum;
+                    }
+                    }
+                    
+                    // Calculate X'y
+                    const Xty = [];
+                    for (let i = 0; i < X[0].length; i++) {
                     let sum = 0;
                     for (let k = 0; k < X.length; k++) {
-                    sum += X[k][i] * X[k][j];
+                        sum += X[k][i] * y[k];
                     }
-                    XtX[i][j] = sum;
+                    Xty[i] = sum;
+                    }
+                    
+                    // Solve for coefficients
+                    const coefficients = solveSystem(XtX, Xty);
+                    
+                    // Calculate predictions
+                    const predictions = X.map(row => {
+                    let pred = 0;
+                    for (let i = 0; i < coefficients.length; i++) {
+                        pred += coefficients[i] * row[i];
+                    }
+                    return pred;
+                    });
+                    
+                    // Calculate residuals
+                    const residuals = y.map((actual, i) => actual - predictions[i]);
+                    
+                    // Calculate R-squared
+                    const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+                    const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
+                    const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
+                    const rSquared = 1 - (ssResidual / ssTotal);
+                    
+                    // Calculate metrics
+                    const n = xs.length;
+                    const mse = ssResidual / n;
+                    const rmse = Math.sqrt(mse);
+                    const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                    const standardError = Math.sqrt(ssResidual / (n - (degree + 1)));
+                    
+                    // Generate polynomial equation string
+                    let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
+                    for (let i = 1; i < coefficients.length; i++) {
+                    const coef = coefficients[i];
+                    if (coef >= 0) {
+                        equation += ` + ${coef.toFixed(4)}${xKey}`;
+                    } else {
+                        equation += ` - ${Math.abs(coef).toFixed(4)}${xKey}`;
+                    }
+                    
+                    if (i > 1) {
+                        equation += `<sup>${i}</sup>`;
+                    }
+                    }
+                    
+                    // For prediction intervals - create polynomial x points for the curve
+                    const numPoints = 100;
+                    const xMin = Math.min(...xs);
+                    const xMax = Math.max(...xs);
+                    const range = xMax - xMin;
+                    
+                    const predictionIntervals = [];
+                    for (let i = 0; i <= numPoints; i++) {
+                    const x = xMin + (range * i / numPoints);
+                    
+                    // Calculate polynomial terms
+                    const xPoly = [1];
+                    for (let d = 1; d <= degree; d++) {
+                        xPoly.push(Math.pow(x, d));
+                    }
+                    
+                    // Calculate prediction
+                    let pred = 0;
+                    for (let d = 0; d <= degree; d++) {
+                        pred += coefficients[d] * xPoly[d];
+                    }
+                    
+                    // Simplified prediction interval (approximate)
+                    const sePrediction = standardError * 1.2; // Approximation for polynomial case
+                    const piWidth = 1.96 * sePrediction;
+                    
+                    predictionIntervals.push({
+                        x: x,
+                        y: pred,
+                        yLower: pred - piWidth,
+                        yUpper: pred + piWidth
+                    });
+                    }
+                    
+                    return {
+                    coefficients,
+                    degree,
+                    predictions,
+                    residuals,
+                    standardizedResiduals: residuals.map(r => r / standardError),
+                    rSquared,
+                    mse,
+                    rmse,
+                    mae,
+                    equation,
+                    predictionIntervals,
+                    isPolynomial: true,
+                    // Keep compatibility with existing code
+                    slope: coefficients[1] || 0,
+                    intercept: coefficients[0],
+                    xMean: null,
+                    yMean,
+                    standardErrors: { regression: standardError },
+                    // Dummy values for compatibility
+                    pValues: { slope: 0, intercept: 0 },
+                    tValues: { slope: 0, intercept: 0 },
+                    slopeCI: [0, 0],
+                    interceptCI: [0, 0]
+                    };
                 }
-                }
-                
-                // Calculate X'y
-                const Xty = [];
-                for (let i = 0; i < X[0].length; i++) {
-                let sum = 0;
-                for (let k = 0; k < X.length; k++) {
-                    sum += X[k][i] * y[k];
-                }
-                Xty[i] = sum;
-                }
-                
-                // Solve for coefficients
-                const coefficients = solveSystem(XtX, Xty);
-                
-                // Calculate predictions
-                const predictions = X.map(row => {
-                let pred = 0;
-                for (let i = 0; i < coefficients.length; i++) {
-                    pred += coefficients[i] * row[i];
-                }
-                return pred;
-                });
-                
-                // Calculate residuals
-                const residuals = y.map((actual, i) => actual - predictions[i]);
-                
-                // Calculate R-squared
-                const yMean = y.reduce((a, b) => a + b, 0) / y.length;
-                const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
-                const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
-                const rSquared = 1 - (ssResidual / ssTotal);
-                
-                // Calculate metrics
-                const n = xs.length;
-                const mse = ssResidual / n;
-                const rmse = Math.sqrt(mse);
-                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
-                const standardError = Math.sqrt(ssResidual / (n - (degree + 1)));
-                
-                // Generate polynomial equation string
-                let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
-                for (let i = 1; i < coefficients.length; i++) {
-                const coef = coefficients[i];
-                if (coef >= 0) {
-                    equation += ` + ${coef.toFixed(4)}${xKey}`;
-                } else {
-                    equation += ` - ${Math.abs(coef).toFixed(4)}${xKey}`;
-                }
-                
-                if (i > 1) {
-                    equation += `<sup>${i}</sup>`;
-                }
-                }
-                
-                // For prediction intervals - create polynomial x points for the curve
-                const numPoints = 100;
-                const xMin = Math.min(...xs);
-                const xMax = Math.max(...xs);
-                const range = xMax - xMin;
-                
-                const predictionIntervals = [];
-                for (let i = 0; i <= numPoints; i++) {
-                const x = xMin + (range * i / numPoints);
-                
-                // Calculate polynomial terms
-                const xPoly = [1];
-                for (let d = 1; d <= degree; d++) {
-                    xPoly.push(Math.pow(x, d));
-                }
-                
-                // Calculate prediction
-                let pred = 0;
-                for (let d = 0; d <= degree; d++) {
-                    pred += coefficients[d] * xPoly[d];
-                }
-                
-                // Simplified prediction interval (approximate)
-                const sePrediction = standardError * 1.2; // Approximation for polynomial case
-                const piWidth = 1.96 * sePrediction;
-                
-                predictionIntervals.push({
-                    x: x,
-                    y: pred,
-                    yLower: pred - piWidth,
-                    yUpper: pred + piWidth
-                });
-                }
-                
-                return {
-                coefficients,
-                degree,
-                predictions,
-                residuals,
-                standardizedResiduals: residuals.map(r => r / standardError),
-                rSquared,
-                mse,
-                rmse,
-                mae,
-                equation,
-                predictionIntervals,
-                isPolynomial: true,
-                // Keep compatibility with existing code
-                slope: coefficients[1] || 0,
-                intercept: coefficients[0],
-                xMean: null,
-                yMean,
-                standardErrors: { regression: standardError },
-                // Dummy values for compatibility
-                pValues: { slope: 0, intercept: 0 },
-                tValues: { slope: 0, intercept: 0 },
-                slopeCI: [0, 0],
-                interceptCI: [0, 0]
-                };
-            }
             } else {
                 // Multiple regression code
                 // Create design matrix X with intercept term
@@ -973,8 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     interceptCI: [0, 0]
                 };
             }
-        }
-    } 
+        } 
     
         // Normal CDF approximation
         function normalCDF(x) {
@@ -1031,21 +1036,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return x;
         }
         
-        // toggle function
-        function togglePolynomialDegree() {
-            const degreeSelector = document.getElementById('degree-selector');
-            const usePolynomial = document.getElementById('use-polynomial').checked;
-            degreeSelector.style.display = usePolynomial ? 'block' : 'none';
-            
-            // Update regression if variables are selected
-            const predictorVariablesSelect = document.getElementById('predictor-variables');
-            const yVariableSelect = document.getElementById('y-variable');
-            
-            if (predictorVariablesSelect.selectedOptions.length > 0 && yVariableSelect.value) {
-            handleVariableChange();
-            }
-        }
-
         // Helper function to create sample datasets
         function createSampleData(type) {
             const n = 50;
