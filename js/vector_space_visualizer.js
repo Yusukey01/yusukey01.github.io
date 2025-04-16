@@ -1556,6 +1556,33 @@ document.addEventListener('DOMContentLoaded', function() {
       scene.add(arrowHelper);
       return arrowHelper;
     }
+
+    //example
+    function loadExample() {
+        clearAllVectors();
+        
+        // Add example vectors based on current concept
+        if (currentConcept === 'linear-combo' || currentConcept === 'span') {
+        userVectors.push({ x: 3, y: 1 });
+        userVectors.push({ x: 1, y: 2 });
+        } else if (currentConcept === 'linear-indep') {
+        userVectors.push({ x: 3, y: 1 });
+        userVectors.push({ x: 1, y: 2 });
+        // Add a linearly dependent vector
+        userVectors.push({ x: 6, y: 2 });
+        } else if (currentConcept === 'subspace') {
+        userVectors.push({ x: 2, y: 1 });
+        userVectors.push({ x: -4, y: -2 });
+        } else if (currentConcept === 'basis') {
+        userVectors.push({ x: 2, y: 1 });
+        userVectors.push({ x: -1, y: 2 });
+        }
+        
+        updateVectorsList();
+        updateWeightSliders();
+        calculateLinearCombo();
+        drawCanvas();
+    }
     
     // Add event listeners
     vectorCanvas.addEventListener('click', handleCanvasClick);
@@ -1563,13 +1590,28 @@ document.addEventListener('DOMContentLoaded', function() {
     clearBtn.addEventListener('click', clearAllVectors);
     exampleBtn.addEventListener('click', loadExample);
     
-    // Add concept button handlers
+
+    //  concept button handlers
     conceptButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        let concept = this.id.replace('-btn', '');
+        button.addEventListener('click', function() {
+        // Extract concept name properly
+        let id = this.id;
+        let concept = '';
+        
+        if (id === 'linear-combo-btn') {
+            concept = 'linear-combo';
+        } else if (id === 'span-btn') {
+            concept = 'span';
+        } else if (id === 'linear-indep-btn') {
+            concept = 'linear-indep';
+        } else if (id === 'subspace-btn') {
+            concept = 'subspace';
+        } else if (id === 'basis-btn') {
+            concept = 'basis';
+        }
+        
         handleConceptChange(concept);
-       
-      });
+        });
     });
     
     // Initialize with default concept
