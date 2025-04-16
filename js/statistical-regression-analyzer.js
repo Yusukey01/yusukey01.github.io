@@ -948,14 +948,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const xColumns = selectedOptions.map(option => option.value);
                 const yColumn = yVariableSelect.value;
                 
-                // Remember the selected variables for charts
-                if (xColumns.length > 0) {
-                    xColumn = xColumns[0]; // For charts, we use the first selected X variable
-                }
-                if (yColumn) {
-                    yColumn = yColumn;
-                }
-                
                 // Only proceed if we have valid selections
                 if (xColumns.length > 0 && yColumn && data.length > xColumns.length + 1) {
                     // Calculate regression
@@ -967,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     resultsSection.style.display = 'block';
                 }
             }
-
+            
             // Update the statistics display function
             function updateStatistics() {
                 if (!regressionResults) return;
@@ -1032,31 +1024,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize regression chart
             function initializeRegressionChart() {
-            const ctx = document.getElementById('regression-chart').getContext('2d');
-
-            // Destroy previous chart if it exists
-            if (regressionChart) {
-                regressionChart.destroy();
-            }
-
-            // Prepare data
-            const chartData = {
-                datasets: [
-                    // Scatter plot for data points
-                    {
-                        label: 'Data Points',
-                        data: data.map(d => ({
-                            x: parseFloat(d[xColumn]),
-                            y: parseFloat(d[yColumn])
-                        })),
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        pointRadius: 4,
-                        type: 'scatter'
-                    }
-                ]
-            };
+                const ctx = document.getElementById('regression-chart').getContext('2d');
+                const predictorVariablesSelect = document.getElementById('predictor-variables');
+                const yVariableSelect = document.getElementById('y-variable');
+                
+                // Get the first selected X variable for the chart
+                const selectedOptions = Array.from(predictorVariablesSelect.selectedOptions);
+                if (selectedOptions.length > 0) {
+                    xColumn = selectedOptions[0].value;
+                }
+                
+                // Get the Y variable
+                yColumn = yVariableSelect.value;
+            
+                // Destroy previous chart if it exists
+                if (regressionChart) {
+                    regressionChart.destroy();
+                }
+            
+                // Prepare data
+                const chartData = {
+                    datasets: [
+                        // Scatter plot for data points
+                        {
+                            label: 'Data Points',
+                            data: data.map(d => ({
+                                x: parseFloat(d[xColumn]),
+                                y: parseFloat(d[yColumn])
+                            })),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            pointRadius: 4,
+                            type: 'scatter'
+                        }
+                    ]
+                };
 
             // Add regression line
             if (regressionResults) {
@@ -1142,69 +1145,70 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize residual chart
             function initializeResidualChart() {
-            const ctx = document.getElementById('residual-chart').getContext('2d');
-
-            // Destroy previous chart if it exists
-            if (residualChart) {
-                residualChart.destroy();
-            }
-
-            if (!regressionResults) return;
-
-            // Prepare data based on checkbox
-            const isStandardized = toggleResidualPlotCheckbox.checked;
-            const residualData = data.map((d, i) => {
-                const x = isStandardized ? 
-                    regressionResults.predictions[i] : 
-                    parseFloat(d[xColumn]);
                 
-                const y = isStandardized ? 
-                    regressionResults.standardizedResiduals[i] : 
-                    regressionResults.residuals[i];
-                
-                return { x, y };
-            });
+                const ctx = document.getElementById('residual-chart').getContext('2d');
 
-            // Create chart
-            residualChart = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: isStandardized ? 'Standardized Residuals' : 'Residuals',
-                        data: residualData,
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1,
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: isStandardized ? 'Predicted Values' : xColumn
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: isStandardized ? 'Standardized Residuals' : 'Residuals'
+                // Destroy previous chart if it exists
+                if (residualChart) {
+                    residualChart.destroy();
+                }
+
+                if (!regressionResults) return;
+
+                // Prepare data based on checkbox
+                const isStandardized = toggleResidualPlotCheckbox.checked;
+                const residualData = data.map((d, i) => {
+                    const x = isStandardized ? 
+                        regressionResults.predictions[i] : 
+                        parseFloat(d[xColumn]);
+                    
+                    const y = isStandardized ? 
+                        regressionResults.standardizedResiduals[i] : 
+                        regressionResults.residuals[i];
+                    
+                    return { x, y };
+                });
+
+                // Create chart
+                residualChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: isStandardized ? 'Standardized Residuals' : 'Residuals',
+                            data: residualData,
+                            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: isStandardized ? 'Predicted Values' : xColumn
+                                }
                             },
-                            grid: {
-                                color: (context) => {
-                                    if (context.tick.value === 0) {
-                                        return 'rgba(255, 0, 0, 0.5)';
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: isStandardized ? 'Standardized Residuals' : 'Residuals'
+                                },
+                                grid: {
+                                    color: (context) => {
+                                        if (context.tick.value === 0) {
+                                            return 'rgba(255, 0, 0, 0.5)';
+                                        }
+                                        return 'rgba(0, 0, 0, 0.1)';
                                     }
-                                    return 'rgba(0, 0, 0, 0.1)';
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
             }
 
             // Update regression chart when prediction intervals checkbox changes
