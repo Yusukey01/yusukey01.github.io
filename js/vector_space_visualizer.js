@@ -932,9 +932,54 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       } else if (userVectors.length > 2) {
-        // In R², more than 2 vectors are always linearly dependent
-        isIndependent = false;
-        explanation = 'In ℝ², more than 2 vectors are always linearly dependent';
+        // For vectors in ℝ², we need to check if any vector is a linear combination of the others
+        let foundDependency = false;
+        
+        // Check each vector to see if it's a linear combination of the others
+        for (let i = 0; i < userVectors.length && !foundDependency; i++) {
+            const testVector = userVectors[i];
+            
+            // Try to express this vector as a combination of all the others
+            // This would require solving a system of equations
+            // For simplicity, let's check if this vector is parallel to any other vector
+            for (let j = 0; j < userVectors.length && !foundDependency; j++) {
+            if (i === j) continue; // Skip comparing a vector to itself
+            
+            const otherVector = userVectors[j];
+            
+            // Check if vectors are parallel (one is scalar multiple of the other)
+            if ((Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) || 
+                (Math.abs(otherVector.x) < 0.001 && Math.abs(otherVector.y) < 0.001)) {
+                // One is a zero vector
+                foundDependency = true;
+                isIndependent = false;
+                
+                if (Math.abs(testVector.x) < 0.001 && Math.abs(testVector.y) < 0.001) {
+                explanation = `v${i+1} is the zero vector`;
+                } else {
+                explanation = `v${j+1} is the zero vector`;
+                }
+            } else if (Math.abs(testVector.x * otherVector.y - testVector.y * otherVector.x) < 0.001) {
+                // Vectors are parallel
+                foundDependency = true;
+                isIndependent = false;
+                
+                // Find scalar relationship
+                let scalar = 0;
+                if (Math.abs(otherVector.x) > 0.001) {
+                scalar = testVector.x / otherVector.x;
+                } else {
+                scalar = testVector.y / otherVector.y;
+                }
+                explanation = `v${i+1} = ${scalar.toFixed(2)} · v${j+1}`;
+            }
+            }
+        }
+        // If no dependency was found, the vectors are linearly independent
+        if (!foundDependency) {
+            isIndependent = true;
+        }
+            
       }
       
       // Draw results on canvas
