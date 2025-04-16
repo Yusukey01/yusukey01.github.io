@@ -1338,11 +1338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'span': `
           <h3>Span</h3>
           <p>The span of a set of vectors is the set of all possible linear combinations of those vectors. It's the smallest subspace containing all the vectors.</p>
-          <p>In ℝ², the span of:</p>
-          <ul>
-            <li>One non-zero vector is a line through the origin</li>
-            <li>Two linearly independent vectors is the entire plane</li>
-          </ul>
         `,
         'linear-indep': `
           <h3>Linear Independence</h3>
@@ -1352,12 +1347,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'subspace': `
           <h3>Subspaces</h3>
           <p>A subspace is a subset of a vector space that is itself a vector space. It must contain the zero vector and be closed under addition and scalar multiplication.</p>
-          <p>In ℝ², the only subspaces are:</p>
-          <ul>
-            <li>The origin (0D)</li>
-            <li>Lines through the origin (1D)</li>
-            <li>The entire plane (2D)</li>
-          </ul>
         `,
         'basis': `
           <h3>Basis</h3>
