@@ -575,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
     scriptElement.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
     scriptElement.onload = initializeAnalyzer;
     document.head.appendChild(scriptElement);
+
     
     function initializeAnalyzer() {
         // Variables to store state
@@ -583,7 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let regressionResults = null;
         let regressionChart = null;
         let residualChart = null;
-        let currentSample = null;
         
         // Get DOM elements
         const csvFileInput = document.getElementById('csv-file-input');
@@ -624,6 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkboxControls = controlGroup.querySelector('.checkbox-controls');
         checkboxControls.parentNode.insertBefore(polynomialControls, checkboxControls.nextSibling);
         
+        document.addEventListener('updateRegression', handleVariableChange);
         // Event listeners
         uploadCsvBtn.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', handleFileUpload);
@@ -640,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sampleHeteroscedasticBtn.addEventListener('click', () => loadSampleData('heteroscedastic'));
         sampleOutliersBtn.addEventListener('click', () => loadSampleData('outliers'));
             
-
+        
 
         // linear regression 
         function computeRegression(data, xKeys, yKey, degree = 1) {
