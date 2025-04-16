@@ -833,13 +833,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const n = 50;
             let sampleData = [];
             
+            // Set column names for our sample data
+            columns = ['x', 'y'];
+            
             if (type === 'linear') {
                 // y = 2x + 5 + noise
                 for (let i = 0; i < n; i++) {
                     const x = i / (n - 1) * 10;
                     const noise = (Math.random() - 0.5) * 3;
                     const y = 2 * x + 5 + noise;
-                    sampleData.push({ x, y });
+                    sampleData.push({ 'x': x, 'y': y });
                 }
             } else if (type === 'nonlinear') {
                 // y = 0.5x² + 2x + 3 + noise
@@ -847,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const x = i / (n - 1) * 10;
                     const noise = (Math.random() - 0.5) * 5;
                     const y = 0.5 * x * x + 2 * x + 3 + noise;
-                    sampleData.push({ x, y });
+                    sampleData.push({ 'x': x, 'y': y });
                 }
             } else if (type === 'heteroscedastic') {
                 // Increasing variance
@@ -856,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const variance = 0.5 + x * 0.5;
                     const noise = (Math.random() - 0.5) * variance * 5;
                     const y = 3 * x + 2 + noise;
-                    sampleData.push({ x, y });
+                    sampleData.push({ 'x': x, 'y': y });
                 }
             } else if (type === 'outliers') {
                 // With outliers
@@ -870,7 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     const y = 1.5 * x + 4 + noise;
-                    sampleData.push({ x, y });
+                    sampleData.push({ 'x': x, 'y': y });
                 }
             }
             
@@ -926,10 +929,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Set default X and Y if available
             if (columns.length >= 2) {
-                xColumn = columns[0];
-                yColumn = columns[1];
-                xVariableSelect.value = xColumn;
-                yVariableSelect.value = yColumn;
+               
+                const predictorVariablesSelect = document.getElementById('predictor-variables');
+                const yVariableSelect = document.getElementById('y-variable');
+                
+                // Select first column as X and second as Y by default
+                for (let i = 0; i < predictorVariablesSelect.options.length; i++) {
+                    predictorVariablesSelect.options[i].selected = i === 0;
+                }
+                yVariableSelect.value = columns[1];
+                
                 handleVariableChange();
             }
         }
@@ -947,8 +956,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             currentSample = type;
             
-            // Create sample data (using the rich multivariate datasets)
+            // Create sample data
             data = createSampleData(type);
+            // Note: columns is now set inside createSampleData
             
             // Update UI
             populateVariableSelectors();
@@ -968,14 +978,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 predictorVariablesSelect.options[i].selected = false;
             }
             
-            // For a simple demo, select just the first X variable initially
+            // For sample data, select x as predictor and y as response
             if (predictorVariablesSelect.options.length > 0) {
-                predictorVariablesSelect.options[0].selected = true;
+                predictorVariablesSelect.options[0].selected = true; // Select 'x'
             }
             
-            // Select Y variable (always the last one)
             if (yVariableSelect.options.length > 0) {
-                yVariableSelect.value = columns[columns.length - 1];
+                yVariableSelect.value = 'y'; // Select 'y'
             }
             
             // Handle the regression with the selected variables
