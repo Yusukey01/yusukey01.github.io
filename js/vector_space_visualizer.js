@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       } else if (userVectors.length > 2) {
-        // For vectors in ℝ², we need to check if any vector is a linear combination of the others
+        
         let foundDependency = false;
         
         // Check each vector to see if it's a linear combination of the others
@@ -1348,7 +1348,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <h3>Linear Independence</h3>
           <p>A set of vectors is linearly independent if none of the vectors can be written as a linear combination of the others.</p>
           <p>For example, vectors v₁ and v₂ are linearly independent if the only solution to c₁v₁ + c₂v₂ = 0 is c₁ = c₂ = 0.</p>
-          <p>In ℝ², at most 2 vectors can be linearly independent.</p>
         `,
         'subspace': `
           <h3>Subspaces</h3>
