@@ -326,8 +326,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         canvas {
-            width: 100%;
-            height: 300px;
+             width: 100%;
+            height: auto;
+            max-height: 350px;
+            aspect-ratio: 16/9;
             margin-bottom: 8px;
         }
         
