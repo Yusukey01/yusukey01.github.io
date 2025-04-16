@@ -570,10 +570,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sampleOutliersBtn.addEventListener('click', () => loadSampleData('outliers'));
             
         // Helper function to compute linear regression
+        // Replace the computeRegression function with this complete version
         function computeRegression(data, xKeys, yKey) {
             // Extract dependent variable
             const y = data.map(d => parseFloat(d[yKey]));
             
+            // For simple regression (one X variable)
             if (xKeys.length === 1) {
                 // Use existing simple linear regression code
                 const xKey = xKeys[0];
@@ -666,8 +668,110 @@ document.addEventListener('DOMContentLoaded', function() {
                     yMean
                 };
             }
+            // For multiple regression (more than one X variable)
+            else {
+                // Create design matrix X with intercept term
+                const X = data.map(d => {
+                    const row = [1]; // Intercept term
+                    for (const key of xKeys) {
+                        row.push(parseFloat(d[key]));
+                    }
+                    return row;
+                });
+                
+                // Calculate X'X (transpose of X multiplied by X)
+                const XtX = [];
+                for (let i = 0; i < X[0].length; i++) {
+                    XtX[i] = [];
+                    for (let j = 0; j < X[0].length; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < X.length; k++) {
+                            sum += X[k][i] * X[k][j];
+                        }
+                        XtX[i][j] = sum;
+                    }
+                }
+                
+                // Calculate X'y
+                const Xty = [];
+                for (let i = 0; i < X[0].length; i++) {
+                    let sum = 0;
+                    for (let k = 0; k < X.length; k++) {
+                        sum += X[k][i] * y[k];
+                    }
+                    Xty[i] = sum;
+                }
+                
+                // Solve for coefficients using Gaussian elimination
+                const coefficients = solveSystem(XtX, Xty);
+                
+                // Calculate predictions and residuals
+                const predictions = X.map(row => {
+                    let pred = 0;
+                    for (let i = 0; i < coefficients.length; i++) {
+                        pred += coefficients[i] * row[i];
+                    }
+                    return pred;
+                });
+                
+                const residuals = y.map((actual, i) => actual - predictions[i]);
+                
+                // Calculate R-squared and other statistics
+                const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+                const ssTotal = y.map(yi => Math.pow(yi - yMean, 2)).reduce((a, b) => a + b, 0);
+                const ssResidual = residuals.map(r => Math.pow(r, 2)).reduce((a, b) => a + b, 0);
+                const rSquared = 1 - (ssResidual / ssTotal);
+                
+                // Calculate other metrics
+                const n = y.length;
+                const p = coefficients.length;
+                const adjustedRSquared = 1 - ((1 - rSquared) * (n - 1) / (n - p - 1));
+                const mse = ssResidual / n;
+                const rmse = Math.sqrt(mse);
+                const mae = residuals.map(r => Math.abs(r)).reduce((a, b) => a + b, 0) / n;
+                const standardError = Math.sqrt(ssResidual / (n - p));
+                
+                // Generate equation string
+                let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
+                for (let i = 1; i < coefficients.length; i++) {
+                    const coef = coefficients[i];
+                    equation += coef >= 0 ? 
+                        ` + ${coef.toFixed(4)}${xKeys[i-1]}` : 
+                        ` - ${Math.abs(coef).toFixed(4)}${xKeys[i-1]}`;
+                }
+                
+                // Create dummy values for compatibility
+                const dummyPredictionIntervals = [];
+                
+                return {
+                    coefficients,
+                    variableNames: ['intercept', ...xKeys],
+                    predictions,
+                    residuals,
+                    standardizedResiduals: residuals.map(r => r / standardError),
+                    rSquared,
+                    adjustedRSquared,
+                    mse,
+                    rmse,
+                    mae,
+                    equation,
+                    isMultivariate: true,
+                    // For compatibility with existing code
+                    slope: coefficients[1] || 0,
+                    intercept: coefficients[0],
+                    predictionIntervals: dummyPredictionIntervals,
+                    xMean: null,
+                    yMean,
+                    standardErrors: { regression: standardError },
+                    // Dummy values for compatibility
+                    pValues: { slope: 0, intercept: 0 },
+                    tValues: { slope: 0, intercept: 0 },
+                    slopeCI: [0, 0],
+                    interceptCI: [0, 0]
+                };
+            }
         }
-      
+            
         
         // Normal CDF approximation
         function normalCDF(x) {
