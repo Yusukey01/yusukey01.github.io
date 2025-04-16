@@ -993,7 +993,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: chartData,
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
+                    aspectRatio: 16/9, 
                     scales: {
                         x: {
                             title: {
@@ -1052,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
                     scales: {
                         x: {
                             title: {
