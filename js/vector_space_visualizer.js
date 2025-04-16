@@ -1566,8 +1566,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add concept button handlers
     conceptButtons.forEach(button => {
       button.addEventListener('click', function() {
-        const concept = this.id.replace('-btn', '');
+        let concept = this.id.replace('-btn', '');
         handleConceptChange(concept);
+       
       });
     });
     
