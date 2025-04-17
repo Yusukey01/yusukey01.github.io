@@ -807,17 +807,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const standardError = Math.sqrt(ssResidual / (n - (degree + 1)));
                     
                     // Generate polynomial equation string
-                    // Generate polynomial equation string
+                    
                     let equation = `${yKey} = ${coefficients[0].toFixed(4)}`;
                     for (let i = 1; i < coefficients.length; i++) {
-                        const coef = coefficients[i];
-                        const term = i === 1 ? xKey : `${xKey}<sup>${i}</sup>`;
-                        
-                        if (coef >= 0) {
-                            equation += ` + ${coef.toFixed(4)}·${term}`;
-                        } else {
-                            equation += ` - ${Math.abs(coef).toFixed(4)}·${term}`;
-                        }
+                    const coef = coefficients[i];
+                    if (coef >= 0) {
+                        equation += ` + ${coef.toFixed(4)}${xKey}`;
+                    } else {
+                        equation += ` - ${Math.abs(coef).toFixed(4)}${xKey}`;
+                    }
+                    
+                    if (i > 1) {
+                        equation += `<sup>${i}</sup>`;
+                    }
                     }
                     
                     // For prediction intervals - create polynomial x points for the curve
