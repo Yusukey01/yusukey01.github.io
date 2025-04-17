@@ -1294,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!regressionResults) return;
 
                 // Update equation
-                equationDisplay.textContent = regressionResults.equation;
+                equationDisplay.innerHTML = regressionResults.equation;
 
                 // Update model fit statistics
                 rSquaredElement.textContent = regressionResults.rSquared.toFixed(4);
