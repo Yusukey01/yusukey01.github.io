@@ -92,10 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         <div class="visualization-panel">
           <canvas id="distribution-canvas" width="600" height="400"></canvas>
-          <div class="chart-labels">
-            <div class="x-label">x</div>
-            <div class="y-label">f(x)</div>
-          </div>
           <div class="pdf-formula" id="gamma-formula">
             <span>PDF: f(x) = </span>
             <span class="formula-content">
@@ -296,28 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
         height: auto;
       }
       
-      .chart-labels {
-        position: relative;
-        height: 20px;  /* Add some height to ensure labels have space */
-        margin-top: 10px;  /* Add space between canvas and labels */
-      }
-      
-      .x-label {
-        position: absolute;
-        bottom: -30px;  /* Changed from -40px to -30px */
-        left: 50%;      /* Center the label */
-        transform: translateX(-50%);  /* Center the label precisely */
-        font-weight: 500;
-        }
-      
-      .y-label {
-        position: absolute;
-        left: -30px;
-        top: -220px;
-        transform: rotate(-90deg);
-        font-weight: 500;
-      }
-      
       .pdf-formula {
         margin-top: 20px;
         padding: 12px;
@@ -402,91 +376,109 @@ document.addEventListener('DOMContentLoaded', function() {
     const padding = { left: 50, right: 30, top: 30, bottom: 50 };
     
     // Drawing functions
-    function drawAxes() {
-      const graphWidth = canvasWidth - padding.left - padding.right;
-      const graphHeight = canvasHeight - padding.top - padding.bottom;
-      
-      ctx.strokeStyle = '#999';
-      ctx.lineWidth = 1;
-      
-      // x-axis
-      ctx.beginPath();
-      ctx.moveTo(padding.left, canvasHeight - padding.bottom);
-      ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
-      ctx.stroke();
-      
-      // y-axis
-      ctx.beginPath();
-      ctx.moveTo(padding.left, canvasHeight - padding.bottom);
-      ctx.lineTo(padding.left, padding.top);
-      ctx.stroke();
-      
-      // Draw x-axis ticks and grid lines
-      const xTickCount = currentDistribution === 'gamma' ? 10 : 5;
-      const xMax = currentDistribution === 'gamma' ? 10 : 1;
-      
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = '#666';
-      ctx.font = '12px Arial';
-      
-      for (let i = 0; i <= xTickCount; i++) {
-        const x = padding.left + (i / xTickCount) * graphWidth;
-        const xValue = (i / xTickCount) * xMax;
-        
-        // Tick mark
-        ctx.beginPath();
-        ctx.moveTo(x, canvasHeight - padding.bottom);
-        ctx.lineTo(x, canvasHeight - padding.bottom + 5);
-        ctx.stroke();
-        
-        // Grid line (lighter color)
-        ctx.save();
-        ctx.strokeStyle = '#ddd';
-        ctx.beginPath();
-        ctx.moveTo(x, canvasHeight - padding.bottom);
-        ctx.lineTo(x, padding.top);
-        ctx.stroke();
-        ctx.restore();
-        
-        // Tick label
-        ctx.fillText(xValue.toFixed(1), x, canvasHeight - padding.bottom + 10);
-      }
-      
-      // Calculate nice y-axis scale based on max PDF value
-      const maxPdfValue = getMaxPdfValue();
-      const yTickCount = 5;
-      const yTickStep = Math.ceil(maxPdfValue / yTickCount * 10) / 10;
-      
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      
-      for (let i = 0; i <= yTickCount; i++) {
-        const yValue = i * yTickStep;
-        const y = canvasHeight - padding.bottom - (yValue / (yTickStep * yTickCount)) * graphHeight;
-        
-        if (y < padding.top) continue;
-        
-        // Tick mark
-        ctx.beginPath();
-        ctx.moveTo(padding.left, y);
-        ctx.lineTo(padding.left - 5, y);
-        ctx.stroke();
-        
-        // Grid line
-        ctx.save();
-        ctx.strokeStyle = '#ddd';
-        ctx.beginPath();
-        ctx.moveTo(padding.left, y);
-        ctx.lineTo(padding.left + graphWidth, y);
-        ctx.stroke();
-        ctx.restore();
-        
-        // Tick label
-        ctx.fillText(yValue.toFixed(1), padding.left - 10, y);
-      }
-    }
     
+    function drawAxes() {
+        const graphWidth = canvasWidth - padding.left - padding.right;
+        const graphHeight = canvasHeight - padding.top - padding.bottom;
+        
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1;
+        
+        // x-axis
+        ctx.beginPath();
+        ctx.moveTo(padding.left, canvasHeight - padding.bottom);
+        ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
+        ctx.stroke();
+        
+        // y-axis
+        ctx.beginPath();
+        ctx.moveTo(padding.left, canvasHeight - padding.bottom);
+        ctx.lineTo(padding.left, padding.top);
+        ctx.stroke();
+        
+        // Draw x-axis ticks and grid lines
+        const xTickCount = currentDistribution === 'gamma' ? 10 : 5;
+        const xMax = currentDistribution === 'gamma' ? 10 : 1;
+        
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        
+        for (let i = 0; i <= xTickCount; i++) {
+            const x = padding.left + (i / xTickCount) * graphWidth;
+            const xValue = (i / xTickCount) * xMax;
+            
+            // Tick mark
+            ctx.beginPath();
+            ctx.moveTo(x, canvasHeight - padding.bottom);
+            ctx.lineTo(x, canvasHeight - padding.bottom + 5);
+            ctx.stroke();
+            
+            // Grid line (lighter color)
+            ctx.save();
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(x, canvasHeight - padding.bottom);
+            ctx.lineTo(x, padding.top);
+            ctx.stroke();
+            ctx.restore();
+            
+            // Tick label
+            ctx.fillText(xValue.toFixed(1), x, canvasHeight - padding.bottom + 10);
+        }
+        
+        // Calculate nice y-axis scale based on max PDF value
+        const maxPdfValue = getMaxPdfValue();
+        const yTickCount = 5;
+        const yTickStep = Math.ceil(maxPdfValue / yTickCount * 10) / 10;
+        
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i <= yTickCount; i++) {
+            const yValue = i * yTickStep;
+            const y = canvasHeight - padding.bottom - (yValue / (yTickStep * yTickCount)) * graphHeight;
+            
+            if (y < padding.top) continue;
+            
+            // Tick mark
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left - 5, y);
+            ctx.stroke();
+            
+            // Grid line
+            ctx.save();
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + graphWidth, y);
+            ctx.stroke();
+            ctx.restore();
+            
+            // Tick label
+            ctx.fillText(yValue.toFixed(1), padding.left - 10, y);
+        }
+        
+        // Add x and y labels directly on the graph
+        // x-axis label
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('x', padding.left + graphWidth - 20, canvasHeight - padding.bottom + 30);
+        
+        // y-axis label (f(x))
+        ctx.save();
+        ctx.translate(padding.left - 35, padding.top + graphHeight/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('f(x)', 0, 0);
+        ctx.restore();
+        }
+
     function drawPdfCurve() {
       const graphWidth = canvasWidth - padding.left - padding.right;
       const graphHeight = canvasHeight - padding.top - padding.bottom;
