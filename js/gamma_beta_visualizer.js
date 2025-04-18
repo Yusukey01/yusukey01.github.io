@@ -1,4 +1,4 @@
-// gamma_beta_visualizer.js
+
 // A vanilla JavaScript implementation of the Gamma & Beta Distribution Visualizer
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -125,7 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li>Erlang distribution when α is a positive integer</li>
               </ul>
             </li>
-            <li>The gamma function Γ(α) is defined as ∫<sub>0</sub><sup>∞</sup> t<sup>α-1</sup>e<sup>-t</sup> dt</li>
           </ul>
         </div>
         
@@ -136,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>When α = β = 1, it becomes the uniform distribution.</li>
             <li>When α = β, the distribution is symmetric about 0.5.</li>
             <li>When α < 1 and β < 1, the distribution is U-shaped.</li>
-            <li>The beta function B(α,β) is defined as ∫<sub>0</sub><sup>1</sup> t<sup>α-1</sup>(1-t)<sup>β-1</sup> dt = Γ(α)Γ(β)/Γ(α+β)</li>
           </ul>
         </div>
       </div>
