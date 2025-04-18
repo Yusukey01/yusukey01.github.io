@@ -298,15 +298,17 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .chart-labels {
         position: relative;
-        height: 0;
+        height: 20px;  /* Add some height to ensure labels have space */
+        margin-top: 10px;  /* Add space between canvas and labels */
       }
       
       .x-label {
         position: absolute;
-        bottom: -40px;
-        right: 20px;
+        bottom: -30px;  /* Changed from -40px to -30px */
+        left: 50%;      /* Center the label */
+        transform: translateX(-50%);  /* Center the label precisely */
         font-weight: 500;
-      }
+        }
       
       .y-label {
         position: absolute;
