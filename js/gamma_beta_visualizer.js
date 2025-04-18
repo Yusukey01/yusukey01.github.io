@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.textBaseline = 'top';
         ctx.fillStyle = '#333';
         ctx.font = 'bold 14px Arial';
-        ctx.fillText('x', padding.left + graphWidth - 20, canvasHeight - padding.bottom + 30);
+        ctx.fillText('x', padding.left + graphWidth/2, canvasHeight - padding.bottom + 30);
         
         // y-axis label (f(x))
         ctx.save();
