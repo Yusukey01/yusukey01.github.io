@@ -495,18 +495,51 @@ document.addEventListener('DOMContentLoaded', function() {
           xMax = 1;
         }
         
-        // Calculate y-scale based on max PDF value but cap for infinite values
+        // Calculate maximum PDF value for scaling
         const maxPdfValue = getMaxPdfValue();
         const yScale = graphHeight / (maxPdfValue * 1.1); // Add 10% margin at the top
         
         // Store points for path construction
         const points = [];
         
-        // Calculate PDF values at a range of points, handling special cases for edge behavior
+        // For edges that approach infinity, we need special handling
+        const hasLeftAsymptote = (currentDistribution === 'gamma' && gammaParameters.alpha < 1) || 
+                                (currentDistribution === 'beta' && betaParameters.alpha < 1);
+                                
+        const hasRightAsymptote = (currentDistribution === 'beta' && betaParameters.beta < 1);
+        
+        // Calculate points with special handling for near-edge points
         for (let i = 0; i <= numPoints; i++) {
-          const xValue = xMin + (i / numPoints) * (xMax - xMin);
-          let pdfValue;
+          // Use non-linear spacing to get more points near the edges
+          let t;
+          if (hasLeftAsymptote && hasRightAsymptote) {
+            // For Beta with both edges approaching infinity, use different spacing
+            // This ensures we have more points near both edges
+            t = Math.pow(i / numPoints, 1); // Linear is fine with enough points
+          } else if (hasLeftAsymptote) {
+            // More points near left edge (x = 0)
+            t = Math.pow(i / numPoints, 2);
+          } else if (hasRightAsymptote) {
+            // More points near right edge (x = 1 for Beta)
+            t = 1 - Math.pow(1 - i / numPoints, 2);
+          } else {
+            // Regular linear spacing
+            t = i / numPoints;
+          }
           
+          const xValue = xMin + t * (xMax - xMin);
+          
+          // Skip extremely close to edge points which would cause numerical issues
+          // but keep enough points to show the curve approaching the asymptote
+          if (hasLeftAsymptote && xValue < 1e-6) {
+            continue;
+          }
+          if (hasRightAsymptote && xValue > 1 - 1e-6) {
+            continue;
+          }
+          
+          // Calculate PDF value
+          let pdfValue;
           if (currentDistribution === 'gamma') {
             pdfValue = calculateGammaPdf(xValue, gammaParameters.alpha, gammaParameters.beta);
           } else {
@@ -514,53 +547,29 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           // Cap extremely large values for visualization purposes
-          if (pdfValue > maxPdfValue * 2) {
-            pdfValue = maxPdfValue * 2;
-          }
+          // but make sure the approach to infinity is visible
+          const cappedValue = Math.min(pdfValue, maxPdfValue * 2);
           
           // Map to canvas coordinates
           const x = padding.left + ((xValue - xMin) / (xMax - xMin)) * graphWidth;
-          const y = canvasHeight - padding.bottom - pdfValue * yScale;
+          const y = canvasHeight - padding.bottom - cappedValue * yScale;
           
           points.push({ x, y });
         }
         
-        // Special handling for edges based on parameters
-        if (currentDistribution === 'gamma' && gammaParameters.alpha < 1) {
-          // For gamma with alpha < 1, PDF approaches infinity at x=0
-          // Add a point at the edge that goes to the top of the visible area
-          points.unshift({
-            x: padding.left,
-            y: padding.top
-          });
-        } else if (currentDistribution === 'beta') {
-          // For beta, check both edges
-          if (betaParameters.alpha < 1) {
-            // PDF approaches infinity at x=0
-            points.unshift({
-              x: padding.left,
-              y: padding.top
-            });
-          }
-          
-          if (betaParameters.beta < 1) {
-            // PDF approaches infinity at x=1
-            points.push({
-              x: padding.left + graphWidth,
-              y: padding.top
-            });
-          }
-        }
+        // Sort points by x-coordinate to ensure proper drawing order
+        points.sort((a, b) => a.x - b.x);
         
         // Draw the curve
         ctx.strokeStyle = '#3498db';
         ctx.lineWidth = 3;
         ctx.beginPath();
         
-        for (let i = 0; i < points.length; i++) {
-          if (i === 0) {
-            ctx.moveTo(points[i].x, points[i].y);
-          } else {
+        // Draw the main curve
+        if (points.length > 0) {
+          ctx.moveTo(points[0].x, points[0].y);
+          
+          for (let i = 1; i < points.length; i++) {
             ctx.lineTo(points[i].x, points[i].y);
           }
         }
@@ -569,21 +578,53 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Fill the area under the curve
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
         
+        // Start at the bottom left
+        ctx.moveTo(padding.left, canvasHeight - padding.bottom);
+        
+        // Add points for left edge asymptote if needed
+        if (hasLeftAsymptote) {
+          // First point on x-axis
+          ctx.lineTo(padding.left, canvasHeight - padding.bottom);
+          
+          // If there are points, make smooth transition to first point
+          if (points.length > 0) {
+            const firstPoint = points[0];
+            // Vertical line up to the height of the first point
+            ctx.lineTo(padding.left, firstPoint.y);
+            // Horizontal line to the first point
+            ctx.lineTo(firstPoint.x, firstPoint.y);
+          }
+        } else if (points.length > 0) {
+          // No left asymptote, just connect to first point
+          ctx.lineTo(points[0].x, points[0].y);
+        }
+        
+        // Add all the middle points
         for (let i = 1; i < points.length; i++) {
           ctx.lineTo(points[i].x, points[i].y);
         }
         
-        ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
-        ctx.lineTo(padding.left, canvasHeight - padding.bottom);
+        // Add right edge asymptote if needed
+        if (hasRightAsymptote && points.length > 0) {
+          const lastPoint = points[points.length - 1];
+          // From last point, go horizontally to right edge
+          ctx.lineTo(padding.left + graphWidth, lastPoint.y);
+          // Then vertical line down to x-axis
+          ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
+        } else {
+          // No right asymptote, just connect to bottom right
+          ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
+        }
+        
+        // Close the path back to the starting point
         ctx.closePath();
         ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
         ctx.fill();
         
         // Also update the x-axis to match the new range
         drawAxes(xMin, xMax);
-      }
+    }
     
     function drawCanvas() {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);   
@@ -595,33 +636,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function calculateGammaPdf(x, alpha, beta) {
         if (x < 0) return 0; // Support is [0, ∞)
         
-        // The edge behavior depends on alpha:
-        // - For alpha < 1: PDF approaches infinity as x → 0
-        // - For alpha = 1: PDF has finite value at x = 0
-        // - For alpha > 1: PDF is zero at x = 0
-        
-        // For extremely small x values when alpha < 1, we need special handling
+        // For extremely small x values but not exactly 0
         if (x < 1e-10) {
-            if (alpha < 1) {
-            // Approaches infinity at x=0 when alpha < 1
-            return Number.MAX_VALUE; // Represent as a very large value
-            } else if (alpha === 1) {
-            // For alpha = 1 (exponential distribution), evaluate at exactly x = 0
+          if (alpha < 1) {
+            // For alpha < 1, approaches infinity as x → 0
+            return 1e6; // Large value to indicate approaching infinity
+          } else if (alpha === 1) {
+            // For alpha = 1 (exponential), finite value at x = 0
             return beta;
-            } else {
-            // For alpha > 1, PDF is zero at x = 0
+          } else {
+            // For alpha > 1, PDF is 0 at x = 0
             return 0;
-            }
+          }
         }
         
-        // For normal range calculation, use log-space for numerical stability
+        // Normal calculation using log space for numerical stability
         try {
-            const logGammaAlpha = logGammaFunction(alpha);
-            const logPdf = alpha * Math.log(beta) - logGammaAlpha + (alpha - 1) * Math.log(x) - beta * x;
-            return Math.exp(logPdf);
+          const logGammaAlpha = logGammaFunction(alpha);
+          const logPdf = alpha * Math.log(beta) - logGammaAlpha + (alpha - 1) * Math.log(x) - beta * x;
+          return Math.exp(logPdf);
         } catch (e) {
-            console.error("Error calculating gamma PDF:", e);
-            return 0;
+          console.error("Error calculating gamma PDF:", e);
+          return 0;
         }
     }
 
@@ -630,32 +666,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Support is [0,1]
         if (x < 0 || x > 1) return 0;
         
-        // Handle edge cases:
-        // - If alpha < 1: PDF approaches infinity as x → 0
-        // - If beta < 1: PDF approaches infinity as x → 1
-        
+        // Handle edge cases properly
         if (x < 1e-10) {
-        if (alpha < 1) {
-            // Approaches infinity at x=0 when alpha < 1
-            return Number.MAX_VALUE;
-        }
+          if (alpha < 1) {
+            // For alpha < 1, approaches infinity as x → 0
+            return 1e6; // Large value to indicate approaching infinity
+          } else if (alpha === 1) {
+            // For alpha = 1, finite value at x = 0
+            const betaFunc = calculateBetaFunction(alpha, beta);
+            return (beta - 1) / betaFunc;
+          }
         }
         
         if (x > 1 - 1e-10) {
-        if (beta < 1) {
-            // Approaches infinity at x=1 when beta < 1
-            return Number.MAX_VALUE;
-        }
+          if (beta < 1) {
+            // For beta < 1, approaches infinity as x → 1
+            return 1e6; // Large value to indicate approaching infinity
+          } else if (beta === 1) {
+            // For beta = 1, finite value at x = 1
+            const betaFunc = calculateBetaFunction(alpha, beta);
+            return (alpha - 1) / betaFunc;
+          }
         }
         
-        // For normal range calculation, use log-space
+        // Normal calculation for non-edge points
         try {
-        const logBetaVal = logBetaFunction(alpha, beta);
-        const logPdf = -logBetaVal + (alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x);
-        return Math.exp(logPdf);
+          const logBetaVal = logBetaFunction(alpha, beta);
+          const logPdf = -logBetaVal + (alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x);
+          return Math.exp(logPdf);
         } catch (e) {
-        console.error("Error calculating beta PDF:", e);
-        return 0;
+          console.error("Error calculating beta PDF:", e);
+          return 0;
         }
     }
     
