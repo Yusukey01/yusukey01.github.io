@@ -487,46 +487,94 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get proper x-range
         let xMin, xMax;
         if (currentDistribution === 'gamma') {
-            const range = getGammaXRange(gammaParameters.alpha, gammaParameters.beta);
-            xMin = range.min;
-            xMax = range.max;
+          const range = getGammaXRange(gammaParameters.alpha, gammaParameters.beta);
+          xMin = range.min;
+          xMax = range.max;
         } else {
-            xMin = 0;
-            xMax = 1;
+          xMin = 0;
+          xMax = 1;
         }
         
-        // Calculate y-scale based on max PDF value
+        // Calculate y-scale based on max PDF value but cap for infinite values
         const maxPdfValue = getMaxPdfValue();
         const yScale = graphHeight / (maxPdfValue * 1.1); // Add 10% margin at the top
         
+        // Store points for path construction
+        const points = [];
+        
+        // Calculate PDF values at a range of points, handling special cases for edge behavior
+        for (let i = 0; i <= numPoints; i++) {
+          const xValue = xMin + (i / numPoints) * (xMax - xMin);
+          let pdfValue;
+          
+          if (currentDistribution === 'gamma') {
+            pdfValue = calculateGammaPdf(xValue, gammaParameters.alpha, gammaParameters.beta);
+          } else {
+            pdfValue = calculateBetaPdf(xValue, betaParameters.alpha, betaParameters.beta);
+          }
+          
+          // Cap extremely large values for visualization purposes
+          if (pdfValue > maxPdfValue * 2) {
+            pdfValue = maxPdfValue * 2;
+          }
+          
+          // Map to canvas coordinates
+          const x = padding.left + ((xValue - xMin) / (xMax - xMin)) * graphWidth;
+          const y = canvasHeight - padding.bottom - pdfValue * yScale;
+          
+          points.push({ x, y });
+        }
+        
+        // Special handling for edges based on parameters
+        if (currentDistribution === 'gamma' && gammaParameters.alpha < 1) {
+          // For gamma with alpha < 1, PDF approaches infinity at x=0
+          // Add a point at the edge that goes to the top of the visible area
+          points.unshift({
+            x: padding.left,
+            y: padding.top
+          });
+        } else if (currentDistribution === 'beta') {
+          // For beta, check both edges
+          if (betaParameters.alpha < 1) {
+            // PDF approaches infinity at x=0
+            points.unshift({
+              x: padding.left,
+              y: padding.top
+            });
+          }
+          
+          if (betaParameters.beta < 1) {
+            // PDF approaches infinity at x=1
+            points.push({
+              x: padding.left + graphWidth,
+              y: padding.top
+            });
+          }
+        }
+        
+        // Draw the curve
         ctx.strokeStyle = '#3498db';
         ctx.lineWidth = 3;
         ctx.beginPath();
         
-        for (let i = 0; i <= numPoints; i++) {
-            const xValue = xMin + (i / numPoints) * (xMax - xMin);
-            let pdfValue;
-            
-            if (currentDistribution === 'gamma') {
-            pdfValue = calculateGammaPdf(xValue, gammaParameters.alpha, gammaParameters.beta);
-            } else {
-            pdfValue = calculateBetaPdf(xValue, betaParameters.alpha, betaParameters.beta);
-            }
-            
-            // Map to canvas coordinates
-            const x = padding.left + ((xValue - xMin) / (xMax - xMin)) * graphWidth;
-            const y = canvasHeight - padding.bottom - pdfValue * yScale;
-            
-            if (i === 0) {
-            ctx.moveTo(x, y);
-            } else {
-            ctx.lineTo(x, y);
-            }
+        for (let i = 0; i < points.length; i++) {
+          if (i === 0) {
+            ctx.moveTo(points[i].x, points[i].y);
+          } else {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
         }
         
         ctx.stroke();
         
         // Fill the area under the curve
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        
         ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
         ctx.lineTo(padding.left, canvasHeight - padding.bottom);
         ctx.closePath();
@@ -535,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Also update the x-axis to match the new range
         drawAxes(xMin, xMax);
-    }
+      }
     
     function drawCanvas() {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);   
@@ -545,33 +593,69 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Distribution calculations
     function calculateGammaPdf(x, alpha, beta) {
-        if (x <= 0) return 0;
+        if (x < 0) return 0; // Support is [0, ∞)
         
-        // For numerical stability, work in log space to avoid overflow/underflow
-        // log(PDF) = alpha*log(beta) - logGamma(alpha) + (alpha-1)*log(x) - beta*x
+        // The edge behavior depends on alpha:
+        // - For alpha < 1: PDF approaches infinity as x → 0
+        // - For alpha = 1: PDF has finite value at x = 0
+        // - For alpha > 1: PDF is zero at x = 0
+        
+        // For extremely small x values when alpha < 1, we need special handling
+        if (x < 1e-10) {
+            if (alpha < 1) {
+            // Approaches infinity at x=0 when alpha < 1
+            return Number.MAX_VALUE; // Represent as a very large value
+            } else if (alpha === 1) {
+            // For alpha = 1 (exponential distribution), evaluate at exactly x = 0
+            return beta;
+            } else {
+            // For alpha > 1, PDF is zero at x = 0
+            return 0;
+            }
+        }
+        
+        // For normal range calculation, use log-space for numerical stability
         try {
-          const logGammaAlpha = logGammaFunction(alpha);
-          const logPdf = alpha * Math.log(beta) - logGammaAlpha + (alpha - 1) * Math.log(x) - beta * x;
-          return Math.exp(logPdf);
+            const logGammaAlpha = logGammaFunction(alpha);
+            const logPdf = alpha * Math.log(beta) - logGammaAlpha + (alpha - 1) * Math.log(x) - beta * x;
+            return Math.exp(logPdf);
         } catch (e) {
-          // In case of numerical issues
-          console.error("Error calculating gamma PDF:", e);
-          return 0;
+            console.error("Error calculating gamma PDF:", e);
+            return 0;
         }
     }
-    
+
+            
     function calculateBetaPdf(x, alpha, beta) {
-        if (x <= 0 || x >= 1) return 0; // Avoid edge cases exactly at 0 or 1
+        // Support is [0,1]
+        if (x < 0 || x > 1) return 0;
         
-        // For numerical stability, work in log space
-        // log(PDF) = -logBeta(alpha,beta) + (alpha-1)*log(x) + (beta-1)*log(1-x)
+        // Handle edge cases:
+        // - If alpha < 1: PDF approaches infinity as x → 0
+        // - If beta < 1: PDF approaches infinity as x → 1
+        
+        if (x < 1e-10) {
+        if (alpha < 1) {
+            // Approaches infinity at x=0 when alpha < 1
+            return Number.MAX_VALUE;
+        }
+        }
+        
+        if (x > 1 - 1e-10) {
+        if (beta < 1) {
+            // Approaches infinity at x=1 when beta < 1
+            return Number.MAX_VALUE;
+        }
+        }
+        
+        // For normal range calculation, use log-space
         try {
-          const logBetaVal = logBetaFunction(alpha, beta);
-          const logPdf = -logBetaVal + (alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x);
-          return Math.exp(logPdf);
+        const logBetaVal = logBetaFunction(alpha, beta);
+        const logPdf = -logBetaVal + (alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x);
+        return Math.exp(logPdf);
         } catch (e) {
-          console.error("Error calculating beta PDF:", e);
-          return 0;
+        console.error("Error calculating beta PDF:", e);
+        return 0;
         }
     }
     
