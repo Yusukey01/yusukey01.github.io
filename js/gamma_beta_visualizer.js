@@ -495,23 +495,27 @@ document.addEventListener('DOMContentLoaded', function() {
           xMax = 1;
         }
         
-        // Check for asymptotic behavior at the edges
+        // Calculate maximum PDF value for scaling
+        const maxPdfValue = getMaxPdfValue();
+        const yScale = graphHeight / (maxPdfValue * 1.1); // Add 10% margin at the top
+        
+        // Store points for path construction
+        const points = [];
+        
+        // For edges that approach infinity, we need special handling
         const hasLeftAsymptote = (currentDistribution === 'gamma' && gammaParameters.alpha < 1) || 
                                 (currentDistribution === 'beta' && betaParameters.alpha < 1);
                                 
         const hasRightAsymptote = (currentDistribution === 'beta' && betaParameters.beta < 1);
         
-        // Calculate points for the curve, avoiding exact edge points that would cause issues
-        const points = [];
-        
-        // For edge-approaching curves, we'll use a different point distribution
+        // Calculate points with special handling for near-edge points
         for (let i = 0; i <= numPoints; i++) {
           // Use non-linear spacing to get more points near the edges
           let t;
           if (hasLeftAsymptote && hasRightAsymptote) {
-            // For Beta with both edges approaching infinity
-            // Use transformed sine function for smooth distribution with more points at both edges
-            t = (Math.sin(Math.PI * (i / numPoints - 0.5)) + 1) / 2;
+            // For Beta with both edges approaching infinity, use different spacing
+            // This ensures we have more points near both edges
+            t = Math.pow(i / numPoints, 1); // Linear is fine with enough points
           } else if (hasLeftAsymptote) {
             // More points near left edge (x = 0)
             t = Math.pow(i / numPoints, 2);
@@ -525,9 +529,12 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const xValue = xMin + t * (xMax - xMin);
           
-          // Skip the exact edges to avoid numerical issues
-          if ((hasLeftAsymptote && xValue < 1e-5) || 
-              (hasRightAsymptote && xValue > 1 - 1e-5)) {
+          // Skip extremely close to edge points which would cause numerical issues
+          // but keep enough points to show the curve approaching the asymptote
+          if (hasLeftAsymptote && xValue < 1e-6) {
+            continue;
+          }
+          if (hasRightAsymptote && xValue > 1 - 1e-6) {
             continue;
           }
           
@@ -539,11 +546,15 @@ document.addEventListener('DOMContentLoaded', function() {
             pdfValue = calculateBetaPdf(xValue, betaParameters.alpha, betaParameters.beta);
           }
           
+          // Cap extremely large values for visualization purposes
+          // but make sure the approach to infinity is visible
+          const cappedValue = Math.min(pdfValue, maxPdfValue * 2);
+          
           // Map to canvas coordinates
           const x = padding.left + ((xValue - xMin) / (xMax - xMin)) * graphWidth;
-          const y = canvasHeight - padding.bottom - pdfValue * yScale;
+          const y = canvasHeight - padding.bottom - cappedValue * yScale;
           
-          points.push({ x, y, pdfValue });
+          points.push({ x, y });
         }
         
         // Sort points by x-coordinate to ensure proper drawing order
@@ -554,24 +565,13 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineWidth = 3;
         ctx.beginPath();
         
-        // For asymptotic edges, we need to create special points at the graph borders
-        
-        // If left asymptote, start at top left corner
-        if (hasLeftAsymptote) {
-          ctx.moveTo(padding.left, padding.top);
-        } else if (points.length > 0) {
-          // Otherwise start at first point
+        // Draw the main curve
+        if (points.length > 0) {
           ctx.moveTo(points[0].x, points[0].y);
-        }
-        
-        // Add all the middle points
-        for (let i = 0; i < points.length; i++) {
-          ctx.lineTo(points[i].x, points[i].y);
-        }
-        
-        // If right asymptote, end at top right corner
-        if (hasRightAsymptote) {
-          ctx.lineTo(padding.left + graphWidth, padding.top);
+          
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
         }
         
         ctx.stroke();
@@ -582,32 +582,49 @@ document.addEventListener('DOMContentLoaded', function() {
         // Start at the bottom left
         ctx.moveTo(padding.left, canvasHeight - padding.bottom);
         
-        // If left asymptote, go to top left corner
+        // Add points for left edge asymptote if needed
         if (hasLeftAsymptote) {
-          ctx.lineTo(padding.left, padding.top);
+          // First point on x-axis
+          ctx.lineTo(padding.left, canvasHeight - padding.bottom);
+          
+          // If there are points, make smooth transition to first point
+          if (points.length > 0) {
+            const firstPoint = points[0];
+            // Vertical line up to the height of the first point
+            ctx.lineTo(padding.left, firstPoint.y);
+            // Horizontal line to the first point
+            ctx.lineTo(firstPoint.x, firstPoint.y);
+          }
+        } else if (points.length > 0) {
+          // No left asymptote, just connect to first point
+          ctx.lineTo(points[0].x, points[0].y);
         }
         
-        // Add all points
-        for (let i = 0; i < points.length; i++) {
+        // Add all the middle points
+        for (let i = 1; i < points.length; i++) {
           ctx.lineTo(points[i].x, points[i].y);
         }
         
-        // If right asymptote, go to top right corner
-        if (hasRightAsymptote) {
-          ctx.lineTo(padding.left + graphWidth, padding.top);
+        // Add right edge asymptote if needed
+        if (hasRightAsymptote && points.length > 0) {
+          const lastPoint = points[points.length - 1];
+          // From last point, go horizontally to right edge
+          ctx.lineTo(padding.left + graphWidth, lastPoint.y);
+          // Then vertical line down to x-axis
+          ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
+        } else {
+          // No right asymptote, just connect to bottom right
+          ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
         }
         
-        // Complete the path back to x-axis
-        ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
-        ctx.lineTo(padding.left, canvasHeight - padding.bottom);
-        
+        // Close the path back to the starting point
         ctx.closePath();
         ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
         ctx.fill();
         
         // Also update the x-axis to match the new range
         drawAxes(xMin, xMax);
-      }
+    }
     
     function drawCanvas() {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);   
