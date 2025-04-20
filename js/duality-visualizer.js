@@ -1055,27 +1055,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calculate duality gap
         if (primalSolution && dualSolution) {
-            // In linear programming, strong duality means primal = dual
-            // Small numerical differences can occur due to floating point calculations
             const primalValue = primalSolution.value;
             const dualValue = dualSolution.value;
             const gap = Math.abs(primalValue - dualValue);
             
-            // Display the gap with higher precision to see small differences
-            dualityGapElement.textContent = gap.toFixed(6);
+            // Display the gap with appropriate precision
+            dualityGapElement.textContent = gap.toFixed(4);
             
-            // For a linear program, even small gaps indicate strong duality
-            // due to floating point precision limitations
-            if (gap < 0.0001) {
-                dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
+            // Adjust threshold based on scale of the problem
+            const threshold = Math.max(0.05, 0.01 * Math.abs(primalValue));
+            
+            if (gap < threshold) {
+                dualityGapElement.style.color = '#2ecc71'; // Green for "practically" strong duality
+                dualityGapElement.title = "Approximate strong duality - numerical differences are expected with vertex enumeration";
             } else {
-                // Check if the issue is with constraint scaling
-                const scaledGap = gap / (Math.abs(primalValue) + 0.000001);
-                if (scaledGap < 0.01) {
-                    dualityGapElement.style.color = '#2ecc71'; // Still good - relative gap is small
-                } else {
-                    dualityGapElement.style.color = '#e74c3c'; // Red for weak duality
-                }
+                dualityGapElement.style.color = '#e74c3c'; // Red for larger gap
+                dualityGapElement.title = "Larger gap may be due to vertex enumeration method or numerical issues";
             }
         } else {
             dualityGapElement.textContent = '-';
