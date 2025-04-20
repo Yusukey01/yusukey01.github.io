@@ -31,30 +31,29 @@ document.addEventListener('DOMContentLoaded', function() {
           
           <div class="controls-panel">
             <div class="control-group">
-              <h3>Primal Problem</h3>
-              <div class="problem-display">
-                <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - c₃</div>
-                <div class="constraint">Subject to:</div>
+                <h3>Primal Problem</h3>
+                <div class="problem-display">
+                    <div class="equation">Minimize: f(x) = c₁x₁ + c₂x₂ + c₃</div>
+                    <div class="constraint">Subject to:</div>
                     <div class="constraint-list">
-                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ ≥ c₁</div>
-                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ ≥ c₂</div>
-                        <div class="constraint">λ₁, λ₂ ≥ 0</div>
+                        <div class="constraint">a₁₁x₁ + a₁₂x₂ ≤ b₁</div>
+                        <div class="constraint">a₂₁x₁ + a₂₂x₂ ≤ b₂</div>
+                        <div class="constraint">x₁, x₂ ≥ 0</div>
                     </div>
                 </div>
             </div>
-            
+                        
             <div class="control-group">
-              <h3>Dual Problem</h3>
-              <div class="problem-display">
-                <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - c₃</div>
-                <div class="constraint">Subject to:</div>
+                <h3>Dual Problem</h3>
+                <div class="problem-display">
+                    <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ + c₃</div>
+                    <div class="constraint">Subject to:</div>
                     <div class="constraint-list">
                         <div class="constraint">a₁₁λ₁ + a₂₁λ₂ ≥ c₁</div>
                         <div class="constraint">a₁₂λ₁ + a₂₂λ₂ ≥ c₂</div>
                         <div class="constraint">λ₁, λ₂ ≥ 0</div>
                     </div>
                 </div>
-              </div>
             </div>
             
             <div class="control-group">
@@ -648,14 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to compute the primal problem's feasible region
     function computePrimalFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
-        
-        // Define the constraints
-        // a11*x1 + a12*x2 <= b1 (Constraint 1)
-        // a21*x1 + a22*x2 <= b2 (Constraint 2)
-        // x1 >= 0, x2 >= 0 (Non-negativity)
-        
-        // Calculate intersection points with axes and between constraints
-        
+                
         // Points where constraint 1 intersects the axes
         const p1 = { x: b1 / a11, y: 0 }; // x-axis
         const p2 = { x: 0, y: b1 / a12 }; // y-axis
@@ -710,13 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to solve linear program using the simplex method
     function solvePrimalSimplex() {
-        // For this 2D problem, we can use an analytical solution approach
-        // The primal problem: Minimize c₁x₁ + c₂x₂
-        // Subject to: a₁₁x₁ + a₁₂x₂ ≤ b₁
-        //            a₂₁x₁ + a₂₂x₂ ≤ b₂
-        //            x₁, x₂ ≥ 0
-        
-        // Check the vertices of the feasible region
         const vertices = [];
         
         // Origin
@@ -779,10 +764,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set up equations based on complementary slackness and feasibility
         let lambda1 = 0, lambda2 = 0;
         
-        // Solve system of equations using feasibility conditions:
-        // a₁₁λ₁ + a₂₁λ₂ = c₁ (if x₁ > 0)
-        // a₁₂λ₁ + a₂₂λ₂ = c₂ (if x₂ > 0)
-        
         if (Math.abs(slack1) < 1e-10 && Math.abs(slack2) < 1e-10) {
             // Both constraints are binding - solve 2x2 system
             const det = a11 * a22 - a12 * a21;
@@ -824,13 +805,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function computeDualFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
         
-        // Define the dual constraints
-        // a11*λ1 + a21*λ2 ≤ c1 (Constraint 1)
-        // a12*λ1 + a22*λ2 ≤ c2 (Constraint 2)
-        // λ1 ≥ 0, λ2 ≥ 0 (Non-negativity)
-        
-        // Calculate intersection points with axes and between constraints
-        
         // Points where constraint 1 intersects the axes
         const p1 = { x: c1 / a11, y: 0 }; // x-axis
         const p2 = { x: 0, y: c1 / a21 }; // y-axis
@@ -863,7 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Filter out points that don't satisfy all constraints
         vertices = vertices.filter(p => {
-            return (p.x >= 0 && p.y >= 0 && 
+            return (p.x >= -1e-6 && p.y >= -1e-6 && 
                     a11 * p.x + a21 * p.y >= c1 - 1e-6 && 
                     a12 * p.x + a22 * p.y >= c2 - 1e-6);
         });
@@ -930,7 +904,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const x1_2 = adjustedValue / c1;
                 const x2_2 = 0;
                 
-                drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.8)', 2, [5, 5]);
+                // Only draw if points are valid
+                if (x1_2 >= 0 && x2_1 >= 0) {
+                    drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.8)', 2, [5, 5]);
+                }
             }
             
             // Draw a few more level curves
@@ -944,7 +921,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const x1_2 = levelValue / c1;
                     const x2_2 = 0;
                     
-                    drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.4)', 1, [5, 5]);
+                    // Only draw if points are valid and within bounds
+                    if (x1_2 >= 0 && x2_1 >= 0 && 
+                        x1_2 <= getPlotBounds().maxX && x2_1 <= getPlotBounds().maxY) {
+                        drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.4)', 1, [5, 5]);
+                    }
                 }
             });
             
@@ -1340,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update parameter values to match sliders
         c1 = parseFloat(c1Slider.value);
         c2 = parseFloat(c2Slider.value);
+        c3 = parseFloat(c3Slider.value);
         a11 = parseFloat(a11Slider.value);
         a12 = parseFloat(a12Slider.value);
         a21 = parseFloat(a21Slider.value);
