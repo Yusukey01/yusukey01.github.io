@@ -1086,9 +1086,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to draw the entire visualization
     function drawVisualization() {
-        // Rest of the function remains the same...
+        // Clear canvas
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
-        // Calculate duality gap - Modify this section:
+        // Draw grid and axes
+        drawGrid();
+        
+        // Draw the appropriate problem based on current view
+        if (primalView) {
+            drawPrimal();
+        } else {
+            drawDual();
+        }
+        
+        // Solve both problems to display results
+        const primalSolution = solvePrimal();
+        const dualSolution = solveDual();
+        
+        // Update results panel
+        if (primalSolution) {
+            const { point: pPoint, value: pValue } = primalSolution;
+            primalOptimalElement.textContent = `x₁ = ${pPoint.x.toFixed(2)}, x₂ = ${pPoint.y.toFixed(2)}`;
+            primalValueElement.textContent = pValue.toFixed(2);
+        } else {
+            primalOptimalElement.textContent = 'Not feasible';
+            primalValueElement.textContent = '-';
+        }
+        
+        if (dualSolution) {
+            const { point: dPoint, value: dValue } = dualSolution;
+            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(2)}, λ₂ = ${dPoint.y.toFixed(2)}`;
+            dualValueElement.textContent = dValue.toFixed(2);
+        } else {
+            dualOptimalElement.textContent = 'Not feasible';
+            dualValueElement.textContent = '-';
+        }
+        
+        // Calculate duality gap
         if (primalSolution && dualSolution) {
             const primalValue = primalSolution.value;
             const dualValue = dualSolution.value;
