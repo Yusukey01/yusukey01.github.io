@@ -713,16 +713,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function calculateGammaPdf(x, alpha, beta) {
         if (x < 0) return 0; // Support is [0, ∞)
         
-        // For extremely small x values near 0
+        // For x = 0 exactly
+        if (x === 0) {
+            if (alpha < 1) return Number.POSITIVE_INFINITY; // Approaches infinity
+            if (alpha === 1) return beta; // Exponential case: exactly beta at x=0
+            return 0; // alpha > 1: PDF is 0 at x=0
+        }
+        
+        // For extremely small x values near 0 (but not exactly 0)
         if (x < 1e-10) {
             if (alpha < 1) {
                 // For alpha < 1, approaches infinity as x → 0
-                return Number.POSITIVE_INFINITY; // Better than using arbitrary large value
+                return Number.POSITIVE_INFINITY;
             } else if (alpha === 1) {
                 // For alpha = 1 (exponential), finite value at x = 0
                 return beta;
             } else {
-                // For alpha > 1, PDF is 0 at x = 0
+                // For alpha > 1, PDF approaches 0 as x → 0
                 return 0;
             }
         }
