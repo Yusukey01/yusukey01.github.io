@@ -1220,16 +1220,17 @@ document.addEventListener('DOMContentLoaded', function() {
     addTooltip(primalOptimalElement, 'The optimal values of x₁ and x₂ that minimize the objective function');
     addTooltip(dualOptimalElement, 'The optimal values of λ₁ and λ₂ (shadow prices) that maximize the dual objective');
     addTooltip(dualityGapElement, 'The difference between primal and dual optimal values. Zero indicates strong duality.');
-})
 
-// Initialize the visualization after all event listeners are set up
-function initialize() {
-    // Set initial parameter values
-    handleSliderChange();
-    
-    // Initial draw
-    drawVisualization();
+    function initialize() {
+        // Set initial parameter values
+        handleSliderChange();
+        
+        // Initial draw
+        drawVisualization();
+    }
+    initialize();
+
 }
 
-// Call initialize after all setup is done
-initialize();
+)
+
