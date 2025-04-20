@@ -853,34 +853,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Function to find the optimal solution for the dual problem
     function solveDual() {
-        // Get all possible vertices including constraint intersections
-        const vertices = computeDualVertices();
+        // First get primal solution
+        const primalSol = solvePrimal();
+        if (!primalSol) return null;
         
-        // If no feasible region, return null
-        if (vertices.length === 0) return null;
+        // Get the active constraints at the primal optimum
+        const point = primalSol.point;
+        const isConstraint1Active = Math.abs(a11 * point.x + a12 * point.y - b1) < 1e-6;
+        const isConstraint2Active = Math.abs(a21 * point.x + a22 * point.y - b2) < 1e-6;
         
-        // Evaluate the objective function at each vertex
-        let maxValue = -Infinity;
-        let optimalPoint = null;
+        // Set up linear system to solve for dual variables
+        let lambda1 = 0, lambda2 = 0;
         
-        vertices.forEach(v => {
-            // Check if the point is actually feasible
-            if (v.x >= 0 && v.y >= 0 && 
-                a11 * v.x + a21 * v.y <= c1 + 1e-6 && 
-                a12 * v.x + a22 * v.y <= c2 + 1e-6) {
-                
-                const objValue = b1 * v.x + b2 * v.y;
-                if (objValue > maxValue) {
-                    maxValue = objValue;
-                    optimalPoint = v;
-                }
+        // If constraint is active, corresponding dual variable may be positive
+        if (isConstraint1Active && isConstraint2Active) {
+            // Both constraints active - solve system of equations
+            const det = a11 * a22 - a12 * a21;
+            if (Math.abs(det) > 1e-6) {
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
             }
-        });
+        } else if (isConstraint1Active) {
+            // Only constraint 1 is active
+            lambda1 = c1 / a11;
+            lambda2 = 0;
+        } else if (isConstraint2Active) {
+            // Only constraint 2 is active
+            lambda1 = 0;
+            lambda2 = c1 / a21;
+        }
         
-        return optimalPoint ? {
-            point: optimalPoint,
-            value: maxValue
-        } : null;
+        // Ensure non-negativity
+        lambda1 = Math.max(0, lambda1);
+        lambda2 = Math.max(0, lambda2);
+        
+        // Calculate objective value
+        const value = b1 * lambda1 + b2 * lambda2;
+        
+        return {
+            point: { x: lambda1, y: lambda2 },
+            value: value
+        };
     }
 
     // Function to draw the primal problem
@@ -1132,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dualityGapElement.textContent = gap.toFixed(4);
             
             // Be more lenient with numerical precision due to floating point calculations
-            const threshold = Math.max(0.01, 0.0001 * Math.abs(primalValue));
+            const threshold = Math.max(0.001, 0.00001 * Math.abs(primalValue));
             
             if (gap < threshold) {
                 dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
