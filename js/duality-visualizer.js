@@ -902,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawLine(c2x1, 0, 0, c2x2, 'rgba(52, 152, 219, 0.8)', 2);
         
         // Draw objective function level curves
-        const optimalSolution = solvePrimal();
+        const optimalSolution = solvePrimalSimplex();
         if (optimalSolution) {
             const { point, value } = optimalSolution;
             
@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawLine(c2l1, 0, 0, c2l2, 'rgba(231, 76, 60, 0.8)', 2);
         
         // Draw objective function level curves
-        const optimalSolution = solveDual();
+        const optimalSolution = solveDualFromPrimal();
         if (optimalSolution) {
             const { point, value } = optimalSolution;
             
