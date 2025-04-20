@@ -1221,16 +1221,25 @@ document.addEventListener('DOMContentLoaded', function() {
     addTooltip(dualOptimalElement, 'The optimal values of λ₁ and λ₂ (shadow prices) that maximize the dual objective');
     addTooltip(dualityGapElement, 'The difference between primal and dual optimal values. Zero indicates strong duality.');
 
-    function initialize() {
-        // Set initial parameter values
-        handleSliderChange();
+    // Initialize on page load, need to wait for everything to load completely
+    setTimeout(function() {
+        // Update parameter values to match sliders
+        c1 = parseFloat(c1Slider.value);
+        c2 = parseFloat(c2Slider.value);
+        a11 = parseFloat(a11Slider.value);
+        a12 = parseFloat(a12Slider.value);
+        a21 = parseFloat(a21Slider.value);
+        a22 = parseFloat(a22Slider.value);
+        b1 = parseFloat(b1Slider.value);
+        b2 = parseFloat(b2Slider.value);
+        
+        // Update the display of parameter values
+        updateParameterDisplay();
         
         // Initial draw
         drawVisualization();
-    }
-    initialize();
+    }, 100);
+});
 
-}
 
-)
 
