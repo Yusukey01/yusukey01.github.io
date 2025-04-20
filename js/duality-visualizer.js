@@ -33,25 +33,26 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="control-group">
               <h3>Primal Problem</h3>
               <div class="problem-display">
-                <div class="equation">Minimize: f(x) = c₁x₁ + c₂x₂</div>
+                <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - c₃</div>
                 <div class="constraint">Subject to:</div>
-                <div class="constraint-list">
-                  <div class="constraint">a₁₁x₁ + a₁₂x₂ ≤ b₁</div>
-                  <div class="constraint">a₂₁x₁ + a₂₂x₂ ≤ b₂</div>
-                  <div class="constraint">x₁, x₂ ≥ 0</div>
+                    <div class="constraint-list">
+                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ ≥ c₁</div>
+                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ ≥ c₂</div>
+                        <div class="constraint">λ₁, λ₂ ≥ 0</div>
+                    </div>
                 </div>
-              </div>
             </div>
             
             <div class="control-group">
               <h3>Dual Problem</h3>
               <div class="problem-display">
-                <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂</div>
+                <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - c₃</div>
                 <div class="constraint">Subject to:</div>
-                <div class="constraint-list">
-                  <div class="constraint">a₁₁λ₁ + a₂₁λ₂ ≤ c₁</div>
-                  <div class="constraint">a₁₂λ₁ + a₂₂λ₂ ≤ c₂</div>
-                  <div class="constraint">λ₁, λ₂ ≥ 0</div>
+                    <div class="constraint-list">
+                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ ≥ c₁</div>
+                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ ≥ c₂</div>
+                        <div class="constraint">λ₁, λ₂ ≥ 0</div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -68,6 +69,11 @@ document.addEventListener('DOMContentLoaded', function() {
                   <label for="c2-slider">c₂:</label>
                   <input type="range" id="c2-slider" class="parameter-slider" min="1" max="10" value="4" step="0.5">
                   <span class="parameter-value" id="c2-value">4</span>
+                </div>
+                <div class="parameter-row">
+                    <label for="c3-slider">c₃:</label>
+                    <input type="range" id="c3-slider" class="parameter-slider" min="-50" max="50" value="-20" step="5">
+                    <span class="parameter-value" id="c3-value">-20</span>
                 </div>
                 <div class="parameter-row">
                   <label for="a11-slider">a₁₁:</label>
@@ -445,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize variables
     let primalView = true;
-    let c1 = 3, c2 = 4;
+    let c1 = 3, c2 = 4, c3 = -20;
     let a11 = 2, a12 = 1, a21 = 1, a22 = 3;
     let b1 = 10, b2 = 15;
     
@@ -457,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get parameter sliders and value displays
     const c1Slider = document.getElementById('c1-slider');
     const c2Slider = document.getElementById('c2-slider');
+    const c3Slider = document.getElementById('c3-slider');
     const a11Slider = document.getElementById('a11-slider');
     const a12Slider = document.getElementById('a12-slider');
     const a21Slider = document.getElementById('a21-slider');
@@ -466,6 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const c1Value = document.getElementById('c1-value');
     const c2Value = document.getElementById('c2-value');
+    const c3Value = document.getElementById('c3-value');
     const a11Value = document.getElementById('a11-value');
     const a12Value = document.getElementById('a12-value');
     const a21Value = document.getElementById('a21-value');
@@ -742,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let optimalPoint = null;
         
         feasibleVertices.forEach(v => {
-            const objValue = c1 * v.x + c2 * v.y;
+            const objValue = c1 * v.x + c2 * v.y + c3; // Add c3 to the objective
             if (objValue < optimalValue) {
                 optimalValue = objValue;
                 optimalPoint = v;
@@ -804,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function() {
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         
-        const dualValue = b1 * lambda1 + b2 * lambda2;
+        const dualValue = b1 * lambda1 + b2 * lambda2 + c3;
         
         return {
             point: { x: lambda1, y: lambda2 },
@@ -856,8 +864,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Filter out points that don't satisfy all constraints
         vertices = vertices.filter(p => {
             return (p.x >= 0 && p.y >= 0 && 
-                    a11 * p.x + a21 * p.y <= c1 + 1e-6 && 
-                    a12 * p.x + a22 * p.y <= c2 + 1e-6);
+                    a11 * p.x + a21 * p.y >= c1 - 1e-6 && 
+                    a12 * p.x + a22 * p.y >= c2 - 1e-6);
         });
         
         // Sort vertices (needed for drawing the polygon)
@@ -915,10 +923,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Draw the optimal level curve
             if (c2 !== 0) {
+                const adjustedValue = value - c3; // Adjust for the constant term
                 const x1_1 = 0;
-                const x2_1 = value / c2;
+                const x2_1 = adjustedValue / c2;
                 
-                const x1_2 = value / c1;
+                const x1_2 = adjustedValue / c1;
                 const x2_2 = 0;
                 
                 drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.8)', 2, [5, 5]);
@@ -927,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Draw a few more level curves
             [0.7, 1.3].forEach(factor => {
                 if (c2 !== 0) {
-                    const levelValue = value * factor;
+                    const levelValue = (value - c3) * factor;
                     
                     const x1_1 = 0;
                     const x2_1 = levelValue / c2;
@@ -1018,13 +1027,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Draw the optimal level curve
             if (b2 !== 0) {
+                const adjustedValue = value; // The value already includes c3
                 const l1_1 = 0;
-                const l2_1 = value / b2;
+                const l2_1 = adjustedValue / b2;
                 
-                const l1_2 = value / b1;
+                const l1_2 = adjustedValue / b1;
                 const l2_2 = 0;
                 
-                drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.8)', 2, [5, 5]);
+                // Ensure we stay within the plotting bounds
+                if (l1_2 > 0 && l2_1 > 0) {
+                    drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.8)', 2, [5, 5]);
+                }
             }
             
             // Draw a few more level curves
@@ -1038,7 +1051,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const l1_2 = levelValue / b1;
                     const l2_2 = 0;
                     
-                    drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.4)', 1, [5, 5]);
+                    // Ensure we stay within the plotting bounds
+                    if (l1_2 > 0 && l2_1 > 0) {
+                        drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.4)', 1, [5, 5]);
+                    }
                 }
             });
             
@@ -1145,6 +1161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateParameterDisplay() {
         c1Value.textContent = c1;
         c2Value.textContent = c2;
+        c3Value.textContent = c3;
         a11Value.textContent = a11;
         a12Value.textContent = a12;
         a21Value.textContent = a21;
@@ -1158,6 +1175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get values from sliders
         c1 = parseFloat(c1Slider.value);
         c2 = parseFloat(c2Slider.value);
+        c3 = parseFloat(c3Slider.value);
         a11 = parseFloat(a11Slider.value);
         a12 = parseFloat(a12Slider.value);
         a21 = parseFloat(a21Slider.value);
@@ -1182,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', function() {
      // Add event listeners
      c1Slider.addEventListener('input', handleSliderChange);
      c2Slider.addEventListener('input', handleSliderChange);
+     c3Slider.addEventListener('input', handleSliderChange);
      a11Slider.addEventListener('input', handleSliderChange);
      a12Slider.addEventListener('input', handleSliderChange);
      a21Slider.addEventListener('input', handleSliderChange);
