@@ -700,95 +700,118 @@ document.addEventListener('DOMContentLoaded', function() {
         return vertices;
     }
 
-    function computePrimalVertices() {
+    // Function to solve linear program using the simplex method
+    function solvePrimalSimplex() {
+        // For this 2D problem, we can use an analytical solution approach
+        // The primal problem: Minimize c₁x₁ + c₂x₂
+        // Subject to: a₁₁x₁ + a₁₂x₂ ≤ b₁
+        //            a₂₁x₁ + a₂₂x₂ ≤ b₂
+        //            x₁, x₂ ≥ 0
+        
+        // Check the vertices of the feasible region
         const vertices = [];
         
         // Origin
         vertices.push({ x: 0, y: 0 });
         
         // Intersections with axes
-        if (a11 !== 0 && b1 > 0) vertices.push({ x: b1 / a11, y: 0 });
-        if (a12 !== 0 && b1 > 0) vertices.push({ x: 0, y: b1 / a12 });
-        if (a21 !== 0 && b2 > 0) vertices.push({ x: b2 / a21, y: 0 });
-        if (a22 !== 0 && b2 > 0) vertices.push({ x: 0, y: b2 / a22 });
+        if (a11 !== 0) vertices.push({ x: b1 / a11, y: 0 });
+        if (a12 !== 0) vertices.push({ x: 0, y: b1 / a12 });
+        if (a21 !== 0) vertices.push({ x: b2 / a21, y: 0 });
+        if (a22 !== 0) vertices.push({ x: 0, y: b2 / a22 });
         
         // Intersection of the two constraints
         const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > 1e-6) { // Not parallel
+        if (Math.abs(det) > 1e-10) {
             const x = (b1 * a22 - b2 * a12) / det;
             const y = (a11 * b2 - a21 * b1) / det;
             vertices.push({ x, y });
         }
         
-        // Filter out infeasible points
-        return vertices.filter(v => 
-            v.x >= -1e-6 && v.y >= -1e-6 && 
-            a11 * v.x + a12 * v.y <= b1 + 1e-6 && 
-            a21 * v.x + a22 * v.y <= b2 + 1e-6
+        // Filter out infeasible points with more precise checks
+        const feasibleVertices = vertices.filter(v => 
+            v.x >= -1e-10 && v.y >= -1e-10 && 
+            a11 * v.x + a12 * v.y <= b1 + 1e-10 && 
+            a21 * v.x + a22 * v.y <= b2 + 1e-10
         );
-    }
-
-    function computeDualVertices() {
-        const vertices = [];
         
-        // Origin
-        vertices.push({ x: 0, y: 0 });
+        if (feasibleVertices.length === 0) return null;
         
-        // Intersections with axes
-        if (a11 !== 0 && c1 > 0) vertices.push({ x: c1 / a11, y: 0 });
-        if (a21 !== 0 && c1 > 0) vertices.push({ x: 0, y: c1 / a21 });
-        if (a12 !== 0 && c2 > 0) vertices.push({ x: c2 / a12, y: 0 });
-        if (a22 !== 0 && c2 > 0) vertices.push({ x: 0, y: c2 / a22 });
-        
-        // Intersection of the two constraints
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > 1e-6) { // Not parallel
-            const x = (c1 * a22 - c2 * a21) / det;
-            const y = (a11 * c2 - a12 * c1) / det;
-            vertices.push({ x, y });
-        }
-        
-        // Filter out infeasible points
-        return vertices.filter(v => 
-            v.x >= -1e-6 && v.y >= -1e-6 && 
-            a11 * v.x + a21 * v.y <= c1 + 1e-6 && 
-            a12 * v.x + a22 * v.y <= c2 + 1e-6
-        );
-    }
-
-    // Function to find the optimal solution for the primal problem
-    function solvePrimal() {
-        // Get all possible vertices including constraint intersections
-        const vertices = computePrimalVertices();
-        
-        // If no feasible region, return null
-        if (vertices.length === 0) return null;
-        
-        // Evaluate the objective function at each vertex
-        let minValue = Infinity;
+        // Find optimal solution
+        let optimalValue = Infinity;
         let optimalPoint = null;
         
-        vertices.forEach(v => {
-            // Check if the point is actually feasible (satisfies all constraints)
-            if (v.x >= 0 && v.y >= 0 && 
-                a11 * v.x + a12 * v.y <= b1 + 1e-6 && 
-                a21 * v.x + a22 * v.y <= b2 + 1e-6) {
-                
-                const objValue = c1 * v.x + c2 * v.y;
-                if (objValue < minValue) {
-                    minValue = objValue;
-                    optimalPoint = v;
-                }
+        feasibleVertices.forEach(v => {
+            const objValue = c1 * v.x + c2 * v.y;
+            if (objValue < optimalValue) {
+                optimalValue = objValue;
+                optimalPoint = v;
             }
         });
         
-        return optimalPoint ? {
+        return {
             point: optimalPoint,
-            value: minValue
-        } : null;
+            value: optimalValue
+        };
     }
 
-    
+    // Function to solve dual problem using strong duality and complementary slackness
+    function solveDualFromPrimal(primalSolution) {
+        if (!primalSolution) return null;
+        
+        const primalPoint = primalSolution.point;
+        
+        // Check which constraints are active at the optimal primal solution
+        const slack1 = b1 - (a11 * primalPoint.x + a12 * primalPoint.y);
+        const slack2 = b2 - (a21 * primalPoint.x + a22 * primalPoint.y);
+        
+        // If slack > 0, the constraint is not binding and corresponding dual variable = 0
+        // If slack = 0, the constraint is binding and we need to solve for the dual variable
+        
+        // Set up equations based on complementary slackness and feasibility
+        let lambda1 = 0, lambda2 = 0;
+        
+        // Solve system of equations using feasibility conditions:
+        // a₁₁λ₁ + a₂₁λ₂ = c₁ (if x₁ > 0)
+        // a₁₂λ₁ + a₂₂λ₂ = c₂ (if x₂ > 0)
+        
+        if (Math.abs(slack1) < 1e-10 && Math.abs(slack2) < 1e-10) {
+            // Both constraints are binding - solve 2x2 system
+            const det = a11 * a22 - a12 * a21;
+            if (Math.abs(det) > 1e-10) {
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
+            }
+        } else if (Math.abs(slack1) < 1e-10) {
+            // Only constraint 1 is binding
+            if (primalPoint.x > 1e-10 && a11 !== 0) {
+                lambda1 = c1 / a11;
+            } else if (primalPoint.y > 1e-10 && a12 !== 0) {
+                lambda1 = c2 / a12;
+            }
+            lambda2 = 0;
+        } else if (Math.abs(slack2) < 1e-10) {
+            // Only constraint 2 is binding
+            if (primalPoint.x > 1e-10 && a21 !== 0) {
+                lambda2 = c1 / a21;
+            } else if (primalPoint.y > 1e-10 && a22 !== 0) {
+                lambda2 = c2 / a22;
+            }
+            lambda1 = 0;
+        }
+        
+        // Ensure non-negativity
+        lambda1 = Math.max(0, lambda1);
+        lambda2 = Math.max(0, lambda2);
+        
+        const dualValue = b1 * lambda1 + b2 * lambda2;
+        
+        return {
+            point: { x: lambda1, y: lambda2 },
+            value: dualValue
+        };
+    }
+
     // Function to compute the dual feasible region
     function computeDualFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
@@ -851,50 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return vertices;
     }
-    // Function to find the optimal solution for the dual problem
-    function solveDual() {
-        // First get primal solution
-        const primalSol = solvePrimal();
-        if (!primalSol) return null;
-        
-        // Get the active constraints at the primal optimum
-        const point = primalSol.point;
-        const isConstraint1Active = Math.abs(a11 * point.x + a12 * point.y - b1) < 1e-6;
-        const isConstraint2Active = Math.abs(a21 * point.x + a22 * point.y - b2) < 1e-6;
-        
-        // Set up linear system to solve for dual variables
-        let lambda1 = 0, lambda2 = 0;
-        
-        // If constraint is active, corresponding dual variable may be positive
-        if (isConstraint1Active && isConstraint2Active) {
-            // Both constraints active - solve system of equations
-            const det = a11 * a22 - a12 * a21;
-            if (Math.abs(det) > 1e-6) {
-                lambda1 = (c1 * a22 - c2 * a21) / det;
-                lambda2 = (a11 * c2 - a12 * c1) / det;
-            }
-        } else if (isConstraint1Active) {
-            // Only constraint 1 is active
-            lambda1 = c1 / a11;
-            lambda2 = 0;
-        } else if (isConstraint2Active) {
-            // Only constraint 2 is active
-            lambda1 = 0;
-            lambda2 = c1 / a21;
-        }
-        
-        // Ensure non-negativity
-        lambda1 = Math.max(0, lambda1);
-        lambda2 = Math.max(0, lambda2);
-        
-        // Calculate objective value
-        const value = b1 * lambda1 + b2 * lambda2;
-        
-        return {
-            point: { x: lambda1, y: lambda2 },
-            value: value
-        };
-    }
+   
 
     // Function to draw the primal problem
     function drawPrimal() {
@@ -1105,6 +1085,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw grid and axes
         drawGrid();
         
+        // Solve primal problem using the new simplex method
+        const primalSolution = solvePrimalSimplex();
+        // Derive dual solution from primal solution
+        const dualSolution = solveDualFromPrimal(primalSolution);
+        
         // Draw the appropriate problem based on current view
         if (primalView) {
             drawPrimal();
@@ -1112,15 +1097,11 @@ document.addEventListener('DOMContentLoaded', function() {
             drawDual();
         }
         
-        // Solve both problems to display results
-        const primalSolution = solvePrimal();
-        const dualSolution = solveDual();
-        
         // Update results panel
         if (primalSolution) {
             const { point: pPoint, value: pValue } = primalSolution;
-            primalOptimalElement.textContent = `x₁ = ${pPoint.x.toFixed(2)}, x₂ = ${pPoint.y.toFixed(2)}`;
-            primalValueElement.textContent = pValue.toFixed(2);
+            primalOptimalElement.textContent = `x₁ = ${pPoint.x.toFixed(4)}, x₂ = ${pPoint.y.toFixed(4)}`;
+            primalValueElement.textContent = pValue.toFixed(4);
         } else {
             primalOptimalElement.textContent = 'Not feasible';
             primalValueElement.textContent = '-';
@@ -1128,31 +1109,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (dualSolution) {
             const { point: dPoint, value: dValue } = dualSolution;
-            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(2)}, λ₂ = ${dPoint.y.toFixed(2)}`;
-            dualValueElement.textContent = dValue.toFixed(2);
+            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(4)}, λ₂ = ${dPoint.y.toFixed(4)}`;
+            dualValueElement.textContent = dValue.toFixed(4);
         } else {
             dualOptimalElement.textContent = 'Not feasible';
             dualValueElement.textContent = '-';
         }
         
-        // Calculate duality gap
+        // Calculate duality gap with proper precision
         if (primalSolution && dualSolution) {
             const primalValue = primalSolution.value;
             const dualValue = dualSolution.value;
             const gap = Math.abs(primalValue - dualValue);
             
-            // Display the gap with appropriate precision
-            dualityGapElement.textContent = gap.toFixed(4);
-            
-            // Be more lenient with numerical precision due to floating point calculations
-            const threshold = Math.max(0.001, 0.00001 * Math.abs(primalValue));
+            // Use a very small threshold to account for floating-point precision
+            const threshold = 1e-8;
             
             if (gap < threshold) {
+                dualityGapElement.textContent = "0.0000";
                 dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
-                dualityGapElement.title = "Strong duality observed - primal and dual values match";
+                dualityGapElement.title = "Strong duality achieved";
             } else {
-                dualityGapElement.style.color = '#e74c3c'; // Red for larger gap
-                dualityGapElement.title = "Larger gap may indicate computational/numerical issues";
+                dualityGapElement.textContent = gap.toFixed(8);
+                dualityGapElement.style.color = '#e74c3c'; // Red if there's still a gap
+                dualityGapElement.title = "Unexpected duality gap";
             }
         } else {
             dualityGapElement.textContent = '-';
