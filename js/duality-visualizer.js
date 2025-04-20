@@ -647,33 +647,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to compute the primal problem's feasible region
     function computePrimalFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
-        
         let vertices = [];
         
-        // Add vertices considering minimum constraints x₁ ≥ 1, x₂ ≥ 1
-        const corners = [
-            { x: 1, y: 1 },
-            { x: Math.min(b1/a11, maxX), y: 1 },
-            { x: 1, y: Math.min(b1/a12, maxY) },
-            { x: Math.min(b2/a21, maxX), y: 1 },
-            { x: 1, y: Math.min(b2/a22, maxY) }
-        ];
+        // Add corner point at (1,1)
+        vertices.push({ x: 1, y: 1 });
         
-        // Add constraint intersections
-        const intersection = findIntersection(a11, a12, b1, a21, a22, b2);
-        if (intersection && intersection.x >= 1 && intersection.y >= 1) {
-            corners.push(intersection);
+        // Find intersections with axes considering minimum constraints
+        if (a11 !== 0) {
+            const xInt = (b1 - a12*1) / a11;
+            if (xInt >= 1 && a21*xInt + a22*1 <= b2) {
+                vertices.push({ x: xInt, y: 1 });
+            }
         }
         
-        // Filter feasible vertices
-        vertices = corners.filter(p => {
-            return (p.x >= 1 && p.y >= 1 && 
-                    a11 * p.x + a12 * p.y <= b1 + 1e-6 && 
-                    a21 * p.x + a22 * p.y <= b2 + 1e-6);
-        });
+        if (a12 !== 0) {
+            const yInt = (b1 - a11*1) / a12;
+            if (yInt >= 1 && a21*1 + a22*yInt <= b2) {
+                vertices.push({ x: 1, y: yInt });
+            }
+        }
+        
+        if (a21 !== 0) {
+            const xInt = (b2 - a22*1) / a21;
+            if (xInt >= 1 && a11*xInt + a12*1 <= b1) {
+                vertices.push({ x: xInt, y: 1 });
+            }
+        }
+        
+        if (a22 !== 0) {
+            const yInt = (b2 - a21*1) / a22;
+            if (yInt >= 1 && a11*1 + a12*yInt <= b1) {
+                vertices.push({ x: 1, y: yInt });
+            }
+        }
+        
+        // Find intersection of two constraints
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > 1e-10) {
+            const x = (b1 * a22 - b2 * a12) / det;
+            const y = (a11 * b2 - a21 * b1) / det;
+            if (x >= 1 && y >= 1) {
+                vertices.push({ x, y });
+            }
+        }
         
         // Sort vertices for proper polygon drawing
-        if (vertices.length > 0) {
+        if (vertices.length > 2) {
             const center = vertices.reduce((acc, v) => {
                 return { x: acc.x + v.x / vertices.length, y: acc.y + v.y / vertices.length };
             }, { x: 0, y: 0 });
@@ -692,16 +711,39 @@ document.addEventListener('DOMContentLoaded', function() {
     function solvePrimalSimplex() {
         const vertices = [];
         
-        // Origin
+        // Start with minimum constraints
         vertices.push({ x: 1, y: 1 });
         
-        // Intersections with axes
-        if (a11 !== 0) vertices.push({ x: Math.max(1, (b1 - a12) / a11), y: 1 });
-        if (a12 !== 0) vertices.push({ x: 1, y: Math.max(1, (b1 - a11) / a12) });
-        if (a21 !== 0) vertices.push({ x: Math.max(1, (b2 - a22) / a21), y: 1 });
-        if (a22 !== 0) vertices.push({ x: 1, y: Math.max(1, (b2 - a21) / a22) });
+        // Find intersections with constraints
+        if (a11 !== 0) {
+            const x1 = (b1 - a12) / a11;
+            if (x1 >= 1 && a21*x1 + a22 <= b2) {
+                vertices.push({ x: x1, y: 1 });
+            }
+        }
         
-        // Intersection of the two constraints
+        if (a12 !== 0) {
+            const y1 = (b1 - a11) / a12;
+            if (y1 >= 1 && a21 + a22*y1 <= b2) {
+                vertices.push({ x: 1, y: y1 });
+            }
+        }
+        
+        if (a21 !== 0) {
+            const x2 = (b2 - a22) / a21;
+            if (x2 >= 1 && a11*x2 + a12 <= b1) {
+                vertices.push({ x: x2, y: 1 });
+            }
+        }
+        
+        if (a22 !== 0) {
+            const y2 = (b2 - a21) / a22;
+            if (y2 >= 1 && a11 + a12*y2 <= b1) {
+                vertices.push({ x: 1, y: y2 });
+            }
+        }
+        
+        // Find intersection of two constraints
         const det = a11 * a22 - a12 * a21;
         if (Math.abs(det) > 1e-10) {
             const x = (b1 * a22 - b2 * a12) / det;
@@ -710,12 +752,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 vertices.push({ x, y });
             }
         }
-               
-        // Filter out infeasible points with more precise checks
-        const feasibleVertices = vertices.filter(v => 
+        
+        // Remove duplicates and invalid vertices
+        const feasibleVertices = vertices.filter((v, index, self) => 
             v.x >= 1 && v.y >= 1 && 
             a11 * v.x + a12 * v.y <= b1 + 1e-10 && 
-            a21 * v.x + a22 * v.y <= b2 + 1e-10
+            a21 * v.x + a22 * v.y <= b2 + 1e-10 &&
+            self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
         );
         
         if (feasibleVertices.length === 0) return null;
@@ -725,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let optimalPoint = null;
         
         feasibleVertices.forEach(v => {
-            const objValue = c1 * v.x + c2 * v.y + c3; // Add c3 to the objective
+            const objValue = c1 * v.x + c2 * v.y + c3;
             if (objValue < optimalValue) {
                 optimalValue = objValue;
                 optimalPoint = v;
@@ -737,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             value: optimalValue
         };
     }
-
+    
     // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
         if (!primalSolution) return null;
@@ -747,35 +790,47 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check which constraints are active
         const slack1 = b1 - (a11 * primalPoint.x + a12 * primalPoint.y);
         const slack2 = b2 - (a21 * primalPoint.x + a22 * primalPoint.y);
-        const slackX1 = primalPoint.x - 1; // For x₁ ≥ 1
-        const slackX2 = primalPoint.y - 1; // For x₂ ≥ 1
+        const slackX1 = primalPoint.x - 1;
+        const slackX2 = primalPoint.y - 1;
+        
+        // Using the KKT conditions, we need to solve the system:
+        // a11*λ1 + a21*λ2 - μ1 = c1
+        // a12*λ1 + a22*λ2 - μ2 = c2
+        // with complementary slackness conditions
         
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
-        // Use complementary slackness conditions
-        if (Math.abs(slack1) < 1e-10) {
-            lambda1 = (c1 + (slackX1 > 1e-10 ? 0 : c1/a11)) / a11;
+        // If both constraints are active
+        if (Math.abs(slack1) < 1e-10 && Math.abs(slack2) < 1e-10) {
+            // Solve 2x2 system:
+            // [a11 a21] [λ1] = [c1]
+            // [a12 a22] [λ2]   [c2]
+            
+            const det = a11 * a22 - a12 * a21;
+            if (Math.abs(det) > 1e-10) {
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
+            }
+        } else if (Math.abs(slack1) < 1e-10) {
+            // Only constraint 1 is active
+            lambda1 = c1 / a11;
+        } else if (Math.abs(slack2) < 1e-10) {
+            // Only constraint 2 is active
+            lambda2 = c2 / a22;
         }
-        if (Math.abs(slack2) < 1e-10) {
-            lambda2 = (c2 + (slackX2 > 1e-10 ? 0 : c2/a22)) / a22;
-        }
-        if (Math.abs(slackX1) < 1e-10) {
-            mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
-        }
-        if (Math.abs(slackX2) < 1e-10) {
-            mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
-        }
+        
+        // Calculate mu values
+        mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
+        mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
         
         // Ensure non-negativity
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
-        mu1 = Math.max(0, mu1);
-        mu2 = Math.max(0, mu2);
         
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
         
         return {
-            point: { x: lambda1, y: lambda2 }, // We'll visualize only λ₁ and λ₂
+            point: { x: lambda1, y: lambda2 },
             value: dualValue
         };
     }
