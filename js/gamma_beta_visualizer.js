@@ -468,10 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = '#3498db';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-            
-            // Place the note about infinity in the top corner
-            ctx.fillText('* The curve approaches ∞ at edge(s)', padding.left, padding.top - 20);
-            ctx.restore();
         }
         
         // Add x and y labels directly on the graph
