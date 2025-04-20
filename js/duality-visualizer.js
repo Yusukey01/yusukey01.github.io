@@ -976,7 +976,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    
     // Function to draw the dual problem
     function drawDual() {
         const { maxX, maxY } = getPlotBounds();
@@ -1002,8 +1001,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const c2l2 = c2 / a22;
         drawLine(c2l1, 0, 0, c2l2, 'rgba(231, 76, 60, 0.8)', 2);
         
+        // Get primal solution first to derive dual solution
+        const primalSolution = solvePrimalSimplex();
+        const optimalSolution = solveDualFromPrimal(primalSolution);
+        
         // Draw objective function level curves
-        const optimalSolution = solveDualFromPrimal();
         if (optimalSolution) {
             const { point, value } = optimalSolution;
             
@@ -1076,7 +1078,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.stroke();
         }
     }
-
     // Function to draw the entire visualization
     function drawVisualization() {
         // Clear canvas
