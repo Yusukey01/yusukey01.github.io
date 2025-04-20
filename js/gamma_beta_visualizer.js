@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Use fixed 0.5 increment for y-axis as requested
         const yTickStep = 0.5;
-        const yTickCount = 4; // Gives us 0, 0.5, 1.0, 1.5, 2.0
+        const yTickCount = 6; 
         
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
@@ -835,76 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
           return 0;
         }
     }
-      
-    function getMaxPdfValue() {
-        let maxVal = 0;
-        
-        if (currentDistribution === 'gamma') {
-            const alpha = gammaParameters.alpha;
-            const beta = gammaParameters.beta;
-            
-            // For alpha < 1, the maximum is at x approaching 0
-            if (alpha < 1) {
-                // Return a reasonable maximum for visualization purposes
-                return 5 / Math.min(alpha, 0.1); // Scale inversely with alpha
-            }
-            
-            // For alpha ≥ 1, the mode is at (alpha-1)/beta
-            const mode = Math.max(0, (alpha - 1) / beta);
-            const xRange = getGammaXRange(alpha, beta);
-            
-            // Sample densely around the mode
-            for (let i = -50; i <= 50; i++) {
-                const x = Math.max(1e-6, mode + i * mode * 0.05);
-                if (x > xRange.max) continue;
-                
-                const pdf = calculateGammaPdf(x, alpha, beta);
-                if (isFinite(pdf)) {
-                    maxVal = Math.max(maxVal, pdf);
-                }
-            }
-            
-            // Also check the exact mode for alpha > 1
-            if (alpha > 1) {
-                maxVal = Math.max(maxVal, calculateGammaPdf(mode, alpha, beta));
-            }
-            
-        } else { // Beta distribution
-            const alpha = betaParameters.alpha;
-            const beta = betaParameters.beta;
-            
-            // Handle special cases for Beta
-            if (alpha < 1 && beta < 1) {
-                // U-shaped, maxima at both endpoints
-                return 10 / Math.min(alpha, beta, 0.1); // Scale for good visualization
-            } else if (alpha < 1) {
-                // Maximum at x → 0
-                return 5 / Math.min(alpha, 0.1);
-            } else if (beta < 1) {
-                // Maximum at x → 1
-                return 5 / Math.min(beta, 0.1);
-            }
-            
-            // For both α,β > 1, calculate the mode
-            const mode = (alpha - 1) / (alpha + beta - 2);
-            
-            // Sample densely around the mode
-            for (let i = -50; i <= 50; i++) {
-                const x = Math.max(0.001, Math.min(0.999, mode + i * 0.01));
-                const pdf = calculateBetaPdf(x, alpha, beta);
-                if (isFinite(pdf)) {
-                    maxVal = Math.max(maxVal, pdf);
-                }
-            }
-            
-            // Also check the exact mode
-            maxVal = Math.max(maxVal, calculateBetaPdf(mode, alpha, beta));
-        }
-        
-        // Add safety margin and return
-        return Math.max(maxVal * 1.1, 1.0);
-    }
-    
+       
     // Update statistics
     function updateGammaStats() {
       const alpha = gammaParameters.alpha;
