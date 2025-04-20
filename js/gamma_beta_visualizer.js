@@ -468,6 +468,9 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = '#3498db';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
+
+            ctx.fillText('* Curve approaches infinity', padding.left, padding.top - 20);
+            ctx.restore();
         }
         
         // Add x and y labels directly on the graph
@@ -819,23 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
           max: Math.min(Math.max(maxX, 5), 20) // Limit between 5 and 20
         };
     }
-      
-    
-    function calculateBetaPdf(x, alpha, beta) {
-        if (x <= 0 || x >= 1) return 0; // Avoid edge cases exactly at 0 or 1
         
-        // For numerical stability, work in log space
-        // log(PDF) = -logBeta(alpha,beta) + (alpha-1)*log(x) + (beta-1)*log(1-x)
-        try {
-          const logBetaVal = logBetaFunction(alpha, beta);
-          const logPdf = -logBetaVal + (alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x);
-          return Math.exp(logPdf);
-        } catch (e) {
-          console.error("Error calculating beta PDF:", e);
-          return 0;
-        }
-    }
-       
     // Update statistics
     function updateGammaStats() {
       const alpha = gammaParameters.alpha;
