@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             value: optimalValue
         };
     }
-    
+
     // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
         if (!primalSolution) return null;
@@ -793,37 +793,43 @@ document.addEventListener('DOMContentLoaded', function() {
         const slackX1 = primalPoint.x - 1;
         const slackX2 = primalPoint.y - 1;
         
-        // Using the KKT conditions, we need to solve the system:
-        // a11*λ1 + a21*λ2 - μ1 = c1
-        // a12*λ1 + a22*λ2 - μ2 = c2
-        // with complementary slackness conditions
-        
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
-        // If both constraints are active
-        if (Math.abs(slack1) < 1e-10 && Math.abs(slack2) < 1e-10) {
-            // Solve 2x2 system:
-            // [a11 a21] [λ1] = [c1]
-            // [a12 a22] [λ2]   [c2]
-            
+        // Identify which constraints are active
+        const eps = 1e-8;
+        const constraint1Active = Math.abs(slack1) < eps;
+        const constraint2Active = Math.abs(slack2) < eps;
+        const boundX1Active = Math.abs(slackX1) < eps;
+        const boundX2Active = Math.abs(slackX2) < eps;
+        
+        // Set up the system based on active constraints
+        if (constraint1Active && constraint2Active) {
+            // Both constraints are active - solve 2x2 system
             const det = a11 * a22 - a12 * a21;
-            if (Math.abs(det) > 1e-10) {
+            if (Math.abs(det) > eps) {
                 lambda1 = (c1 * a22 - c2 * a21) / det;
                 lambda2 = (a11 * c2 - a12 * c1) / det;
             }
-        } else if (Math.abs(slack1) < 1e-10) {
+        } else if (constraint1Active) {
             // Only constraint 1 is active
-            lambda1 = c1 / a11;
-        } else if (Math.abs(slack2) < 1e-10) {
-            // Only constraint 2 is active
-            lambda2 = c2 / a22;
+            if (a11 !== 0) {
+                lambda1 = c1 / a11;
+            }
+        } else if (constraint2Active) {
+            // Only constraint 2 is active  
+            if (a22 !== 0) {
+                lambda2 = c2 / a22;
+            }
         }
         
-        // Calculate mu values
-        mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
-        mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
+        // Calculate mu values based on which bounds are active
+        if (boundX1Active || boundX2Active) {
+            // If any bound is active, we need to calculate mu properly
+            mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
+            mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
+        }
         
-        // Ensure non-negativity
+        // Force non-negativity
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         
@@ -838,47 +844,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to compute the dual feasible region
     function computeDualFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
-        
-        // Since we now have μ variables, the constraints become:
-        // a₁₁λ₁ + a₂₁λ₂ ≥ c₁ (since μ₁ ≥ 0)
-        // a₁₂λ₁ + a₂₂λ₂ ≥ c₂ (since μ₂ ≥ 0)
-        
-        // We need to find the region where λ₁, λ₂ ≥ 0 and the above conditions hold
         let vertices = [];
         
-        // Calculate intersection points
-        // Case where μ₁ = μ₂ = 0 (equalities)
+        // Find the intersection of constraints (if exists)
         const intersection = findIntersection(a11, a21, c1, a12, a22, c2);
         if (intersection && intersection.x >= 0 && intersection.y >= 0) {
             vertices.push(intersection);
         }
         
-        // Points on boundaries where one μ is zero
-        if (a11 !== 0) vertices.push({ x: c1/a11, y: 0 });
-        if (a21 !== 0) vertices.push({ x: 0, y: c1/a21 });
-        if (a12 !== 0) vertices.push({ x: c2/a12, y: 0 });
-        if (a22 !== 0) vertices.push({ x: 0, y: c2/a22 });
+        // Add axis intercepts
+        if (a11 > 0) vertices.push({ x: c1/a11, y: 0 });
+        if (a21 > 0) vertices.push({ x: 0, y: c1/a21 });
+        if (a12 > 0) vertices.push({ x: c2/a12, y: 0 });
+        if (a22 > 0) vertices.push({ x: 0, y: c2/a22 });
         
-        // Add boundary points to ensure we get the whole feasible region
+        // Add boundary points to form the unbounded region
         const largeValue = maxX;
-        vertices.push({ x: largeValue, y: (c1 - a11*largeValue)/a21 });
-        vertices.push({ x: largeValue, y: (c2 - a12*largeValue)/a22 });
-        vertices.push({ x: (c1 - a21*largeValue)/a11, y: largeValue });
-        vertices.push({ x: (c2 - a22*largeValue)/a12, y: largeValue });
+        if (a21 > 0) vertices.push({ x: largeValue, y: Math.max(0, (c1 - a11*largeValue)/a21) });
+        if (a22 > 0) vertices.push({ x: largeValue, y: Math.max(0, (c2 - a12*largeValue)/a22) });
+        if (a11 > 0) vertices.push({ x: Math.max(0, (c1 - a21*largeValue)/a11), y: largeValue });
+        if (a12 > 0) vertices.push({ x: Math.max(0, (c2 - a22*largeValue)/a12), y: largeValue });
         
-        // Filter feasible vertices
-        vertices = vertices.filter(p => {
-            return (p.x >= 0 && p.y >= 0 && 
-                    a11 * p.x + a21 * p.y >= c1 - 1e-6 && 
-                    a12 * p.x + a22 * p.y >= c2 - 1e-6);
-        });
+        // Filter and sort vertices for proper polygon drawing
+        vertices = vertices.filter(v => 
+            v.x >= 0 && v.y >= 0 && 
+            a11 * v.x + a21 * v.y >= c1 - 1e-6 && 
+            a12 * v.x + a22 * v.y >= c2 - 1e-6
+        );
+        
+        // Sort vertices by angle for proper polygon drawing
+        if (vertices.length > 2) {
+            const center = vertices.reduce((acc, v) => ({
+                x: acc.x + v.x/vertices.length,
+                y: acc.y + v.y/vertices.length
+            }), {x: 0, y: 0});
+            
+            vertices.sort((a, b) => {
+                const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+                const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+                return angleA - angleB;
+            });
+        }
         
         return vertices;
     }
 
     // Function to draw the primal problem
     function drawPrimal() {
-        const { maxX, maxY } = getPlotBounds();
         
         // Draw the feasible region
         const feasibleRegion = computePrimalFeasibleRegion();
