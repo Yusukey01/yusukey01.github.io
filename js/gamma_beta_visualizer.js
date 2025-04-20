@@ -429,10 +429,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calculate nice y-axis scale based on max PDF value
         const maxPdfValue = getMaxPdfValue();
+
         const yTickStep = 0.5;
-        // Calculate how many ticks we need to cover the max value
-        const yTickCount = Math.ceil(maxPdfValue / yTickStep);
-        
+        const maxYTicks = 5;
+        // Calculate the maximum y value to show (cap at maxYTicks * yTickStep)
+        const maxYValue = Math.min(Math.ceil(maxPdfValue / yTickStep) * yTickStep, maxYTicks * yTickStep);
+        const yTickCount = maxYValue / yTickStep;
+
+
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         
