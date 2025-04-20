@@ -376,7 +376,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const padding = { left: 50, right: 30, top: 30, bottom: 50 };
     
     // Drawing functions
-    
     function drawAxes(xMin, xMax) {
         const graphWidth = canvasWidth - padding.left - padding.right;
         const graphHeight = canvasHeight - padding.top - padding.bottom;
@@ -405,64 +404,74 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '12px Arial';
         
         for (let i = 0; i <= xTickCount; i++) {
-          const x = padding.left + (i / xTickCount) * graphWidth;
-          const xValue = xMin + (i / xTickCount) * (xMax - xMin);
-          
-          // Tick mark
-          ctx.beginPath();
-          ctx.moveTo(x, canvasHeight - padding.bottom);
-          ctx.lineTo(x, canvasHeight - padding.bottom + 5);
-          ctx.stroke();
-          
-          // Grid line (lighter color)
-          ctx.save();
-          ctx.strokeStyle = '#ddd';
-          ctx.beginPath();
-          ctx.moveTo(x, canvasHeight - padding.bottom);
-          ctx.lineTo(x, padding.top);
-          ctx.stroke();
-          ctx.restore();
-          
-          // Tick label
-          ctx.fillText(xValue.toFixed(1), x, canvasHeight - padding.bottom + 10);
+            const x = padding.left + (i / xTickCount) * graphWidth;
+            const xValue = xMin + (i / xTickCount) * (xMax - xMin);
+            
+            // Tick mark
+            ctx.beginPath();
+            ctx.moveTo(x, canvasHeight - padding.bottom);
+            ctx.lineTo(x, canvasHeight - padding.bottom + 5);
+            ctx.stroke();
+            
+            // Grid line (lighter color)
+            ctx.save();
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(x, canvasHeight - padding.bottom);
+            ctx.lineTo(x, padding.top);
+            ctx.stroke();
+            ctx.restore();
+            
+            // Tick label
+            ctx.fillText(xValue.toFixed(1), x, canvasHeight - padding.bottom + 10);
         }
         
-        // Calculate nice y-axis scale based on max PDF value
-        const maxPdfValue = getMaxPdfValue();
-
+        // Use fixed 0.5 increment for y-axis as requested
         const yTickStep = 0.5;
-        const maxYTicks = 5;
-        // Calculate the maximum y value to show (cap at maxYTicks * yTickStep)
-        const maxYValue = Math.min(Math.ceil(maxPdfValue / yTickStep) * yTickStep, maxYTicks * yTickStep);
-        const yTickCount = maxYValue / yTickStep;
-
-
+        const yTickCount = 4; // Gives us 0, 0.5, 1.0, 1.5, 2.0
+        
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         
         for (let i = 0; i <= yTickCount; i++) {
-          const yValue = i * yTickStep;
-          const y = canvasHeight - padding.bottom - (yValue / (yTickStep * yTickCount)) * graphHeight;
-          
-          if (y < padding.top) continue;
-          
-          // Tick mark
-          ctx.beginPath();
-          ctx.moveTo(padding.left, y);
-          ctx.lineTo(padding.left - 5, y);
-          ctx.stroke();
-          
-          // Grid line
-          ctx.save();
-          ctx.strokeStyle = '#ddd';
-          ctx.beginPath();
-          ctx.moveTo(padding.left, y);
-          ctx.lineTo(padding.left + graphWidth, y);
-          ctx.stroke();
-          ctx.restore();
-          
-          // Tick label
-          ctx.fillText(yValue.toFixed(1), padding.left - 10, y);
+            const yValue = i * yTickStep;
+            const y = canvasHeight - padding.bottom - (yValue / (yTickStep * yTickCount)) * graphHeight;
+            
+            // Tick mark
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left - 5, y);
+            ctx.stroke();
+            
+            // Grid line
+            ctx.save();
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + graphWidth, y);
+            ctx.stroke();
+            ctx.restore();
+            
+            // Tick label
+            ctx.fillText(yValue.toFixed(1), padding.left - 10, y);
+        }
+        
+        // Add label indicating curve goes to infinity if we have asymptotes
+        const hasLeftAsymptote = (currentDistribution === 'gamma' && gammaParameters.alpha < 1) || 
+                                (currentDistribution === 'beta' && betaParameters.alpha < 1);
+                                
+        const hasRightAsymptote = (currentDistribution === 'beta' && betaParameters.beta < 1);
+        
+        if (hasLeftAsymptote || hasRightAsymptote) {
+            ctx.save();
+            ctx.font = 'italic 12px Arial';
+            ctx.fillStyle = '#3498db';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            
+            // Place the note about infinity in the top corner
+            ctx.fillText('* The curve approaches ∞ at edge(s)', padding.left, padding.top - 20);
+            ctx.restore();
         }
         
         // Add x and y labels directly on the graph
@@ -487,8 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const graphWidth = canvasWidth - padding.left - padding.right;
         const graphHeight = canvasHeight - padding.top - padding.bottom;
         
-        const numPoints = 500; // Increase number of points for smoother curves
-        
         // Get proper x-range
         let xMin, xMax;
         if (currentDistribution === 'gamma') {
@@ -500,12 +507,10 @@ document.addEventListener('DOMContentLoaded', function() {
             xMax = 1;
         }
         
-        // Calculate maximum PDF value for scaling
-        const maxPdfValue = getMaxPdfValue();
-        const yScale = graphHeight / (maxPdfValue * 1.1); // Add 10% margin at the top
-        
-        // Store points for path construction
-        const points = [];
+        // Calculate maximum PDF value for scaling - but now we'll handle infinity differently
+        const yTickStep = 0.5;
+        const maxYTicks = 5; // This gives us 0, 0.5, 1.0, 1.5, 2.0
+        const maxYDisplayed = maxYTicks * yTickStep; // Maximum Y value displayed on axis (2.0)
         
         // For edges that approach infinity, we need special handling
         const hasLeftAsymptote = (currentDistribution === 'gamma' && gammaParameters.alpha < 1) || 
@@ -513,56 +518,39 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
         const hasRightAsymptote = (currentDistribution === 'beta' && betaParameters.beta < 1);
         
-        // Calculate proper edge point spacing
-        const edgeSpacing = hasLeftAsymptote || hasRightAsymptote ? 5e-5 : 1e-3;
+        // Store points for path construction
+        const points = [];
         
-        // Add explicit points very close to the edges for asymptotes
-        if (hasLeftAsymptote) {
-            // Add series of points approaching the left edge
-            for (let i = 8; i >= 0; i--) {
-                // Use exponential spacing to get closer to the edge
-                const x = Math.pow(10, -i - 2);
-                if (x < xMin || x > xMax) continue;
-                
-                let pdfValue;
-                if (currentDistribution === 'gamma') {
-                    pdfValue = calculateGammaPdf(x, gammaParameters.alpha, gammaParameters.beta);
-                } else {
-                    pdfValue = calculateBetaPdf(x, betaParameters.alpha, betaParameters.beta);
-                }
-                
-                // Cap extremely large values for visualization purposes
-                const cappedValue = Math.min(pdfValue, maxPdfValue * 2);
-                
-                // Map to canvas coordinates
-                const xPos = padding.left + ((x - xMin) / (xMax - xMin)) * graphWidth;
-                const yPos = canvasHeight - padding.bottom - cappedValue * yScale;
-                
-                points.push({ x: xPos, y: yPos, xValue: x });
-            }
-        }
-        
-        // Calculate points for the main curve
+        // Calculate points for the curve with better edge handling
+        const numPoints = 200;
         for (let i = 0; i <= numPoints; i++) {
-            // Non-linear spacing to get more points near the edges
-            let t;
+            // Use non-linear spacing to get more points near the edges where we have asymptotes
+            let t, xValue;
+            
             if (hasLeftAsymptote && hasRightAsymptote) {
-                // Use transformed sine curve to get more points at both edges
-                t = 0.5 * (1 - Math.cos(Math.PI * i / numPoints));
+                // U-shaped Beta - need more points at both edges
+                // Map t from [0,1] to a value that clusters points at both edges
+                if (i <= numPoints/2) {
+                    // First half: focus on left edge
+                    t = Math.pow(i / (numPoints/2), 4); // Higher power = more clustering
+                    xValue = xMin + t * (xMax - xMin) * 0.5; // Left half of domain
+                } else {
+                    // Second half: focus on right edge
+                    t = 1 - Math.pow((numPoints - i) / (numPoints/2), 4);
+                    xValue = xMin + (xMax - xMin) * (0.5 + 0.5 * t); // Right half of domain
+                }
             } else if (hasLeftAsymptote) {
-                t = Math.pow(i / numPoints, 3); // Cubic spacing, more points near left edge
+                // More points near left edge
+                t = Math.pow(i / numPoints, 4); // Higher power = more clustering at edge
+                xValue = xMin + t * (xMax - xMin);
             } else if (hasRightAsymptote) {
-                t = 1 - Math.pow(1 - i / numPoints, 3); // More points near right edge
+                // More points near right edge
+                t = 1 - Math.pow(1 - i / numPoints, 4);
+                xValue = xMin + t * (xMax - xMin);
             } else {
-                t = i / numPoints; // Linear spacing
-            }
-            
-            const xValue = xMin + t * (xMax - xMin);
-            
-            // Skip points too close to an already added edge point
-            if ((hasLeftAsymptote && xValue < edgeSpacing) || 
-                (hasRightAsymptote && xValue > 1 - edgeSpacing)) {
-                continue;
+                // Regular spacing
+                t = i / numPoints;
+                xValue = xMin + t * (xMax - xMin);
             }
             
             // Calculate PDF value
@@ -573,75 +561,146 @@ document.addEventListener('DOMContentLoaded', function() {
                 pdfValue = calculateBetaPdf(xValue, betaParameters.alpha, betaParameters.beta);
             }
             
-            // Handle infinity properly - cap at double the max value for visualization
-            const cappedValue = isFinite(pdfValue) ? Math.min(pdfValue, maxPdfValue * 2) : maxPdfValue * 2;
-            
-            // Map to canvas coordinates
+            // Map to canvas coordinates - handle infinity properly
             const x = padding.left + ((xValue - xMin) / (xMax - xMin)) * graphWidth;
-            const y = canvasHeight - padding.bottom - cappedValue * yScale;
+            
+            // For y-value, we need to scale and handle infinity
+            let y;
+            if (!isFinite(pdfValue) || pdfValue > maxYDisplayed) {
+                // For infinite or very large values, cap at the top of the graph
+                y = padding.top;
+            } else {
+                // Normal scaling for finite values within display range
+                y = canvasHeight - padding.bottom - (pdfValue / maxYDisplayed) * graphHeight;
+            }
             
             points.push({ x, y, xValue });
         }
         
-        // Add explicit points for right edge asymptote if needed
-        if (hasRightAsymptote) {
-            for (let i = 8; i >= 0; i--) {
-                const x = 1 - Math.pow(10, -i - 2);
-                if (x < xMin || x > xMax) continue;
-                
-                let pdfValue = calculateBetaPdf(x, betaParameters.alpha, betaParameters.beta);
-                
-                // Cap extremely large values
-                const cappedValue = Math.min(pdfValue, maxPdfValue * 2);
-                
-                // Map to canvas coordinates
-                const xPos = padding.left + ((x - xMin) / (xMax - xMin)) * graphWidth;
-                const yPos = canvasHeight - padding.bottom - cappedValue * yScale;
-                
-                points.push({ x: xPos, y: yPos, xValue: x });
+        // Special handling for asymptotes: add extra vertical segments to make curve look like it's
+        // approaching infinity
+        let extendedPoints = [...points];
+        
+        if (hasLeftAsymptote) {
+            // Find the points near the left edge
+            const leftEdgePoints = points.filter(p => p.xValue < (xMin + (xMax - xMin) * 0.02))
+                .sort((a, b) => a.xValue - b.xValue);
+            
+            if (leftEdgePoints.length > 0) {
+                // Add a vertical segment at the leftmost point
+                const edgePoint = leftEdgePoints[0];
+                extendedPoints.push({
+                    x: edgePoint.x,
+                    y: padding.top, // Top of graph
+                    xValue: edgePoint.xValue
+                });
+            }
+        }
+        
+        if (hasRightAsymptote && currentDistribution === 'beta') {
+            // Find the points near the right edge
+            const rightEdgePoints = points.filter(p => p.xValue > (xMax - (xMax - xMin) * 0.02))
+                .sort((a, b) => b.xValue - a.xValue);
+            
+            if (rightEdgePoints.length > 0) {
+                // Add a vertical segment at the rightmost point
+                const edgePoint = rightEdgePoints[0];
+                extendedPoints.push({
+                    x: edgePoint.x,
+                    y: padding.top, // Top of graph
+                    xValue: edgePoint.xValue
+                });
             }
         }
         
         // Sort points by x-coordinate to ensure proper drawing order
-        points.sort((a, b) => a.xValue - b.xValue);
+        extendedPoints.sort((a, b) => a.xValue - b.xValue);
         
         // Draw the curve
         ctx.strokeStyle = '#3498db';
         ctx.lineWidth = 3;
-        ctx.beginPath();
         
-        // Draw the main curve
-        if (points.length > 0) {
-            ctx.moveTo(points[0].x, points[0].y);
+        // Special drawing approach for curves with asymptotes
+        if (hasLeftAsymptote || hasRightAsymptote) {
+            // For curves with asymptotes, we need to draw separate path segments
+            // to avoid connecting across the asymptotes
             
-            for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
+            let currentSegment = [];
+            let inAsymptote = false;
+            
+            for (let i = 0; i < extendedPoints.length; i++) {
+                const point = extendedPoints[i];
+                const isAtTop = point.y <= padding.top + 2; // Allow small tolerance
+                
+                // If we're starting a new segment
+                if (currentSegment.length === 0) {
+                    currentSegment.push(point);
+                    inAsymptote = isAtTop;
+                    continue;
+                }
+                
+                // Check if we're transitioning between regular curve and asymptote
+                if (isAtTop !== inAsymptote) {
+                    // We've hit a transition - draw the current segment
+                    if (currentSegment.length > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(currentSegment[0].x, currentSegment[0].y);
+                        for (let j = 1; j < currentSegment.length; j++) {
+                            ctx.lineTo(currentSegment[j].x, currentSegment[j].y);
+                        }
+                        ctx.stroke();
+                    }
+                    
+                    // Start a new segment
+                    currentSegment = [point];
+                    inAsymptote = isAtTop;
+                } else {
+                    // Continue current segment
+                    currentSegment.push(point);
+                }
             }
+            
+            // Draw final segment
+            if (currentSegment.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(currentSegment[0].x, currentSegment[0].y);
+                for (let j = 1; j < currentSegment.length; j++) {
+                    ctx.lineTo(currentSegment[j].x, currentSegment[j].y);
+                }
+                ctx.stroke();
+            }
+        } else {
+            // For curves without asymptotes, we can draw the entire curve at once
+            ctx.beginPath();
+            ctx.moveTo(extendedPoints[0].x, extendedPoints[0].y);
+            for (let i = 1; i < extendedPoints.length; i++) {
+                ctx.lineTo(extendedPoints[i].x, extendedPoints[i].y);
+            }
+            ctx.stroke();
         }
         
-        ctx.stroke();
-        
-        // Fill the area under the curve
+        // Fill the area under the curve - but here we just use the original points
+        // to avoid filling up to infinity
         ctx.beginPath();
         
         // Start at the bottom left
         ctx.moveTo(padding.left, canvasHeight - padding.bottom);
         
-        // Draw curve
-        if (points.length > 0) {
-            for (let i = 0; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
-            }
+        // Draw curve (using original points, not extended ones with infinity markers)
+        for (let i = 0; i < points.length; i++) {
+            // Cap y-value at the top of the visible area
+            const y = Math.max(points[i].y, padding.top);
+            ctx.lineTo(points[i].x, y);
         }
         
-        // Close the path back to the x-axis and starting point
+        // Close the path back to the x-axis
         ctx.lineTo(padding.left + graphWidth, canvasHeight - padding.bottom);
         ctx.closePath();
         
         ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
         ctx.fill();
         
-        // Also update the x-axis to match the new range
+        // Draw axes with fixed scale
         drawAxes(xMin, xMax);
     }
     
