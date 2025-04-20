@@ -1197,13 +1197,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
      toggleViewBtn.addEventListener('click', toggleView);
 
-     // Handle window resize to make canvas responsive
+    // Handle window resize to make canvas responsive
     function handleResize() {
         const parentWidth = canvas.parentElement.clientWidth;
         canvas.style.width = '100%';
         canvas.style.height = 'auto';
         
-        drawVisualization();
+        // We need to call drawVisualization, but ensure it's safe
+        // Just redraw without trying to access primalSolution/dualSolution yet
+        if (!canvas.initialDrawDone) {
+            // Initial draw - just set up the canvas, don't try to evaluate solutions yet
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            drawGrid();
+            canvas.initialDrawDone = true; // Set flag to indicate initial draw is done
+        } else {
+            // Normal operation - full visualization with solutions
+            drawVisualization();
+        }
     }
 
     window.addEventListener('resize', handleResize);
