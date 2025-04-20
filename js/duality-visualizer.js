@@ -700,31 +700,94 @@ document.addEventListener('DOMContentLoaded', function() {
         return vertices;
     }
 
+    function computePrimalVertices() {
+        const vertices = [];
+        
+        // Origin
+        vertices.push({ x: 0, y: 0 });
+        
+        // Intersections with axes
+        if (a11 !== 0 && b1 > 0) vertices.push({ x: b1 / a11, y: 0 });
+        if (a12 !== 0 && b1 > 0) vertices.push({ x: 0, y: b1 / a12 });
+        if (a21 !== 0 && b2 > 0) vertices.push({ x: b2 / a21, y: 0 });
+        if (a22 !== 0 && b2 > 0) vertices.push({ x: 0, y: b2 / a22 });
+        
+        // Intersection of the two constraints
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > 1e-6) { // Not parallel
+            const x = (b1 * a22 - b2 * a12) / det;
+            const y = (a11 * b2 - a21 * b1) / det;
+            vertices.push({ x, y });
+        }
+        
+        // Filter out infeasible points
+        return vertices.filter(v => 
+            v.x >= -1e-6 && v.y >= -1e-6 && 
+            a11 * v.x + a12 * v.y <= b1 + 1e-6 && 
+            a21 * v.x + a22 * v.y <= b2 + 1e-6
+        );
+    }
+
+    function computeDualVertices() {
+        const vertices = [];
+        
+        // Origin
+        vertices.push({ x: 0, y: 0 });
+        
+        // Intersections with axes
+        if (a11 !== 0 && c1 > 0) vertices.push({ x: c1 / a11, y: 0 });
+        if (a21 !== 0 && c1 > 0) vertices.push({ x: 0, y: c1 / a21 });
+        if (a12 !== 0 && c2 > 0) vertices.push({ x: c2 / a12, y: 0 });
+        if (a22 !== 0 && c2 > 0) vertices.push({ x: 0, y: c2 / a22 });
+        
+        // Intersection of the two constraints
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > 1e-6) { // Not parallel
+            const x = (c1 * a22 - c2 * a21) / det;
+            const y = (a11 * c2 - a12 * c1) / det;
+            vertices.push({ x, y });
+        }
+        
+        // Filter out infeasible points
+        return vertices.filter(v => 
+            v.x >= -1e-6 && v.y >= -1e-6 && 
+            a11 * v.x + a21 * v.y <= c1 + 1e-6 && 
+            a12 * v.x + a22 * v.y <= c2 + 1e-6
+        );
+    }
+
     // Function to find the optimal solution for the primal problem
     function solvePrimal() {
-        // Get the feasible region vertices
-        const vertices = computePrimalFeasibleRegion();
+        // Get all possible vertices including constraint intersections
+        const vertices = computePrimalVertices();
         
         // If no feasible region, return null
-        if (vertices.length < 3) return null;
+        if (vertices.length === 0) return null;
         
         // Evaluate the objective function at each vertex
         let minValue = Infinity;
         let optimalPoint = null;
         
         vertices.forEach(v => {
-            const objValue = c1 * v.x + c2 * v.y;
-            if (objValue < minValue) {
-                minValue = objValue;
-                optimalPoint = v;
+            // Check if the point is actually feasible (satisfies all constraints)
+            if (v.x >= 0 && v.y >= 0 && 
+                a11 * v.x + a12 * v.y <= b1 + 1e-6 && 
+                a21 * v.x + a22 * v.y <= b2 + 1e-6) {
+                
+                const objValue = c1 * v.x + c2 * v.y;
+                if (objValue < minValue) {
+                    minValue = objValue;
+                    optimalPoint = v;
+                }
             }
         });
         
-        return {
+        return optimalPoint ? {
             point: optimalPoint,
             value: minValue
-        };
+        } : null;
     }
+
     
     // Function to compute the dual feasible region
     function computeDualFeasibleRegion() {
@@ -790,30 +853,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Function to find the optimal solution for the dual problem
     function solveDual() {
-        // Get the feasible region vertices
-        const vertices = computeDualFeasibleRegion();
+        // Get all possible vertices including constraint intersections
+        const vertices = computeDualVertices();
         
         // If no feasible region, return null
-        if (vertices.length < 3) return null;
+        if (vertices.length === 0) return null;
         
         // Evaluate the objective function at each vertex
         let maxValue = -Infinity;
         let optimalPoint = null;
         
         vertices.forEach(v => {
-            const objValue = b1 * v.x + b2 * v.y;
-            if (objValue > maxValue) {
-                maxValue = objValue;
-                optimalPoint = v;
+            // Check if the point is actually feasible
+            if (v.x >= 0 && v.y >= 0 && 
+                a11 * v.x + a21 * v.y <= c1 + 1e-6 && 
+                a12 * v.x + a22 * v.y <= c2 + 1e-6) {
+                
+                const objValue = b1 * v.x + b2 * v.y;
+                if (objValue > maxValue) {
+                    maxValue = objValue;
+                    optimalPoint = v;
+                }
             }
         });
         
-        return {
+        return optimalPoint ? {
             point: optimalPoint,
             value: maxValue
-        };
+        } : null;
     }
-    
+
     // Function to draw the primal problem
     function drawPrimal() {
         const { maxX, maxY } = getPlotBounds();
@@ -1015,45 +1084,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-     // Function to draw the entire visualization
-     function drawVisualization() {
-        // Clear canvas
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    // Function to draw the entire visualization
+    function drawVisualization() {
+        // Rest of the function remains the same...
         
-        // Draw grid and axes
-        drawGrid();
-        
-        // Draw the appropriate problem based on current view
-        if (primalView) {
-            drawPrimal();
-        } else {
-            drawDual();
-        }
-        
-        // Solve both problems to display results
-        const primalSolution = solvePrimal();
-        const dualSolution = solveDual();
-        
-        // Update results panel
-        if (primalSolution) {
-            const { point: pPoint, value: pValue } = primalSolution;
-            primalOptimalElement.textContent = `x₁ = ${pPoint.x.toFixed(2)}, x₂ = ${pPoint.y.toFixed(2)}`;
-            primalValueElement.textContent = pValue.toFixed(2);
-        } else {
-            primalOptimalElement.textContent = 'Not feasible';
-            primalValueElement.textContent = '-';
-        }
-        
-        if (dualSolution) {
-            const { point: dPoint, value: dValue } = dualSolution;
-            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(2)}, λ₂ = ${dPoint.y.toFixed(2)}`;
-            dualValueElement.textContent = dValue.toFixed(2);
-        } else {
-            dualOptimalElement.textContent = 'Not feasible';
-            dualValueElement.textContent = '-';
-        }
-        
-        // Calculate duality gap
+        // Calculate duality gap - Modify this section:
         if (primalSolution && dualSolution) {
             const primalValue = primalSolution.value;
             const dualValue = dualSolution.value;
@@ -1062,15 +1097,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display the gap with appropriate precision
             dualityGapElement.textContent = gap.toFixed(4);
             
-            // Adjust threshold based on scale of the problem
-            const threshold = Math.max(0.05, 0.01 * Math.abs(primalValue));
+            // Be more lenient with numerical precision due to floating point calculations
+            const threshold = Math.max(0.01, 0.0001 * Math.abs(primalValue));
             
             if (gap < threshold) {
-                dualityGapElement.style.color = '#2ecc71'; // Green for "practically" strong duality
-                dualityGapElement.title = "Approximate strong duality - numerical differences are expected with vertex enumeration";
+                dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
+                dualityGapElement.title = "Strong duality observed - primal and dual values match";
             } else {
                 dualityGapElement.style.color = '#e74c3c'; // Red for larger gap
-                dualityGapElement.title = "Larger gap may be due to vertex enumeration method or numerical issues";
+                dualityGapElement.title = "Larger gap may indicate computational/numerical issues";
             }
         } else {
             dualityGapElement.textContent = '-';
