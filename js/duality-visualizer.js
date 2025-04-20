@@ -726,6 +726,68 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
+    // Function to compute the dual feasible region
+    function computeDualFeasibleRegion() {
+        const { maxX, maxY } = getPlotBounds();
+        
+        // Define the dual constraints
+        // a11*λ1 + a21*λ2 ≤ c1 (Constraint 1)
+        // a12*λ1 + a22*λ2 ≤ c2 (Constraint 2)
+        // λ1 ≥ 0, λ2 ≥ 0 (Non-negativity)
+        
+        // Calculate intersection points with axes and between constraints
+        
+        // Points where constraint 1 intersects the axes
+        const p1 = { x: c1 / a11, y: 0 }; // x-axis
+        const p2 = { x: 0, y: c1 / a21 }; // y-axis
+        
+        // Points where constraint 2 intersects the axes
+        const p3 = { x: c2 / a12, y: 0 }; // x-axis
+        const p4 = { x: 0, y: c2 / a22 }; // y-axis
+        
+        // Find intersection of the two constraint lines
+        const intersection = findIntersection(a11, a21, c1, a12, a22, c2);
+        
+        // Create vertices for the feasible region
+        // Start with origin and the points where constraints meet axes
+        let vertices = [
+            { x: 0, y: 0 }, // Origin (non-negativity constraints)
+        ];
+        
+        // Add points where constraint 1 intersects axes if they're in the first quadrant
+        if (p1.x >= 0) vertices.push(p1);
+        if (p2.y >= 0) vertices.push(p2);
+        
+        // Add points where constraint 2 intersects axes if they're in the first quadrant
+        if (p3.x >= 0) vertices.push(p3);
+        if (p4.y >= 0) vertices.push(p4);
+        
+        // Add intersection point if it exists and is in the first quadrant
+        if (intersection && intersection.x >= 0 && intersection.y >= 0) {
+            vertices.push(intersection);
+        }
+        
+        // Filter out points that don't satisfy all constraints
+        vertices = vertices.filter(p => {
+            return (p.x >= 0 && p.y >= 0 && 
+                    a11 * p.x + a21 * p.y <= c1 + 1e-6 && 
+                    a12 * p.x + a22 * p.y <= c2 + 1e-6);
+        });
+        
+        // Sort vertices (needed for drawing the polygon)
+        // This is a simple algorithm for convex polygons
+        const center = vertices.reduce((acc, v) => {
+            return { x: acc.x + v.x / vertices.length, y: acc.y + v.y / vertices.length };
+        }, { x: 0, y: 0 });
+        
+        vertices.sort((a, b) => {
+            const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+            const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+            return angleA - angleB;
+        });
+        
+        return vertices;
+    }
     // Function to find the optimal solution for the dual problem
     function solveDual() {
         // Get the feasible region vertices
@@ -1159,3 +1221,15 @@ document.addEventListener('DOMContentLoaded', function() {
     addTooltip(dualOptimalElement, 'The optimal values of λ₁ and λ₂ (shadow prices) that maximize the dual objective');
     addTooltip(dualityGapElement, 'The difference between primal and dual optimal values. Zero indicates strong duality.');
 })
+
+// Initialize the visualization after all event listeners are set up
+function initialize() {
+    // Set initial parameter values
+    handleSliderChange();
+    
+    // Initial draw
+    drawVisualization();
+}
+
+// Call initialize after all setup is done
+initialize();
