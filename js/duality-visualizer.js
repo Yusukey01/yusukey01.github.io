@@ -802,7 +802,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const boundX1Active = Math.abs(slackX1) < eps;
         const boundX2Active = Math.abs(slackX2) < eps;
         
-        // Set up the system based on active constraints
+        // KKT conditions
         if (constraint1Active && constraint2Active) {
             // Both constraints are active - solve 2x2 system
             const det = a11 * a22 - a12 * a21;
@@ -812,26 +812,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else if (constraint1Active) {
             // Only constraint 1 is active
-            if (a11 !== 0) {
+            // We need to solve a11*λ1 + a21*λ2 = c1 and 
+            // a12*λ1 + a22*λ2 <= c2 (with the tightest possible λ2)
+            
+            if (boundX1Active) {
+                // x1 is at its lower bound - means gradient at x1 has a positive component
+                mu1 = c1 - a11 * lambda1;
+            } else {
+                // x1 is not at its bound - gradient is zero at x1
                 lambda1 = c1 / a11;
             }
         } else if (constraint2Active) {
-            // Only constraint 2 is active  
-            if (a22 !== 0) {
+            // Only constraint 2 is active
+            if (boundX2Active) {
+                mu2 = c2 - a22 * lambda2;
+            } else {
                 lambda2 = c2 / a22;
             }
         }
         
-        // Calculate mu values based on which bounds are active
-        if (boundX1Active || boundX2Active) {
-            // If any bound is active, we need to calculate mu properly
-            mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
-            mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
+        // If bounds are active, we need to find the corresponding mu values
+        if (boundX1Active) {
+            mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
+        }
+        if (boundX2Active) {
+            mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
         }
         
-        // Force non-negativity
+        // Ensure non-negativity
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
+        mu1 = Math.max(0, mu1);
+        mu2 = Math.max(0, mu2);
         
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
         
@@ -846,47 +858,75 @@ document.addEventListener('DOMContentLoaded', function() {
         const { maxX, maxY } = getPlotBounds();
         let vertices = [];
         
-        // Find the intersection of constraints (if exists)
+        // Find the intersection point of the two constraints
         const intersection = findIntersection(a11, a21, c1, a12, a22, c2);
         if (intersection && intersection.x >= 0 && intersection.y >= 0) {
             vertices.push(intersection);
         }
         
-        // Add axis intercepts
-        if (a11 > 0) vertices.push({ x: c1/a11, y: 0 });
-        if (a21 > 0) vertices.push({ x: 0, y: c1/a21 });
-        if (a12 > 0) vertices.push({ x: c2/a12, y: 0 });
-        if (a22 > 0) vertices.push({ x: 0, y: c2/a22 });
+        // Add points where one constraint is active and the other is at boundary
         
-        // Add boundary points to form the unbounded region
+        // When constraint 1 is active and λ2 = 0
+        if (a11 > 0) {
+            vertices.push({ x: c1/a11, y: 0 });
+        }
+        // When constraint 1 is active and λ1 = 0
+        if (a21 > 0) {
+            vertices.push({ x: 0, y: c1/a21 });
+        }
+        // When constraint 2 is active and λ2 = 0
+        if (a12 > 0) {
+            vertices.push({ x: c2/a12, y: 0 });
+        }
+        // When constraint 2 is active and λ1 = 0
+        if (a22 > 0) {
+            vertices.push({ x: 0, y: c2/a22 });
+        }
+        
+        // Add far corner points to show the unbounded feasible region
         const largeValue = maxX;
-        if (a21 > 0) vertices.push({ x: largeValue, y: Math.max(0, (c1 - a11*largeValue)/a21) });
-        if (a22 > 0) vertices.push({ x: largeValue, y: Math.max(0, (c2 - a12*largeValue)/a22) });
-        if (a11 > 0) vertices.push({ x: Math.max(0, (c1 - a21*largeValue)/a11), y: largeValue });
-        if (a12 > 0) vertices.push({ x: Math.max(0, (c2 - a22*largeValue)/a12), y: largeValue });
         
-        // Filter and sort vertices for proper polygon drawing
+        // Points on the constraint lines at the edge of the visualization
+        const farX = largeValue;
+        const farY = largeValue;
+        
+        vertices.push({ x: farX, y: Math.max(0, (c1 - a11*farX)/a21) });
+        vertices.push({ x: farX, y: Math.max(0, (c2 - a12*farX)/a22) });
+        vertices.push({ x: Math.max(0, (c1 - a21*farY)/a11), y: farY });
+        vertices.push({ x: Math.max(0, (c2 - a22*farY)/a12), y: farY });
+        
+        // Include the far corner point if it's feasible
+        if (a11*farX + a21*farY >= c1 && a12*farX + a22*farY >= c2) {
+            vertices.push({ x: farX, y: farY });
+        }
+        
+        // Filter valid vertices
         vertices = vertices.filter(v => 
             v.x >= 0 && v.y >= 0 && 
+            v.x <= maxX && v.y <= maxY &&
             a11 * v.x + a21 * v.y >= c1 - 1e-6 && 
             a12 * v.x + a22 * v.y >= c2 - 1e-6
         );
         
+        // Remove duplicates
+        const uniqueVertices = [];
+        vertices.forEach(v => {
+            if (!uniqueVertices.some(u => Math.abs(u.x - v.x) < 1e-6 && Math.abs(u.y - v.y) < 1e-6)) {
+                uniqueVertices.push(v);
+            }
+        });
+        
         // Sort vertices by angle for proper polygon drawing
-        if (vertices.length > 2) {
-            const center = vertices.reduce((acc, v) => ({
-                x: acc.x + v.x/vertices.length,
-                y: acc.y + v.y/vertices.length
-            }), {x: 0, y: 0});
-            
-            vertices.sort((a, b) => {
+        if (uniqueVertices.length > 2) {
+            const center = { x: 0, y: 0 };
+            uniqueVertices.sort((a, b) => {
                 const angleA = Math.atan2(a.y - center.y, a.x - center.x);
                 const angleB = Math.atan2(b.y - center.y, b.x - center.x);
                 return angleA - angleB;
             });
         }
         
-        return vertices;
+        return uniqueVertices;
     }
 
     // Function to draw the primal problem
