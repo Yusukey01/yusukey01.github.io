@@ -468,8 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = '#3498db';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-
-            ctx.fillText('* Curve approaches infinity', padding.left, padding.top - 20);
             ctx.restore();
         }
         
