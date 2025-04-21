@@ -1013,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Calculate dual objective value
-        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
             point: { x: lambda1, y: lambda2 },
