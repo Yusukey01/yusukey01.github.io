@@ -889,74 +889,117 @@ document.addEventListener('DOMContentLoaded', function() {
         const { maxX, maxY } = getPlotBounds();
         let vertices = [];
         
-        // Dual constraints: a11*λ1 + a21*λ2 ≥ c1 and a12*λ1 + a22*λ2 ≥ c2
+        // Dual constraints: a11*λ1 + a21*λ2 >= c1 and a12*λ1 + a22*λ2 >= c2
         
-        // Find the intersection of constraints
+        // Find the intersection of the constraint lines
         const intersection = findIntersection(a11, a21, c1, a12, a22, c2);
         if (intersection && intersection.x >= 0 && intersection.y >= 0) {
-            vertices.push(intersection);
+            // Check if this point satisfies both constraints
+            const constraint1 = a11 * intersection.x + a21 * intersection.y;
+            const constraint2 = a12 * intersection.x + a22 * intersection.y;
+            
+            if (constraint1 >= c1 - 1e-6 && constraint2 >= c2 - 1e-6) {
+                vertices.push(intersection);
+            }
         }
         
-        // Add points on axes where constraints meet them
+        // Find points where constraints meet the axes
+        // Constraint 1 meets x-axis
         if (a11 > 0) {
-            const xIntercept1 = c1 / a11;
-            // Check if this point satisfies the second constraint
-            if (a12 * xIntercept1 >= c2) {
-                vertices.push({ x: xIntercept1, y: 0 });
-            } else {
-                // Find where the second constraint meets the x-axis
-                vertices.push({ x: c2 / a12, y: 0 });
+            const xIntercept = c1 / a11;
+            if (xIntercept >= 0 && a12 * xIntercept >= c2) {
+                vertices.push({ x: xIntercept, y: 0 });
             }
         }
         
+        // Constraint 1 meets y-axis
         if (a21 > 0) {
-            const yIntercept1 = c1 / a21;
-            // Check if this point satisfies the second constraint
-            if (a22 * yIntercept1 >= c2) {
-                vertices.push({ x: 0, y: yIntercept1 });
-            } else {
-                // Find where the second constraint meets the y-axis
-                vertices.push({ x: 0, y: c2 / a22 });
+            const yIntercept = c1 / a21;
+            if (yIntercept >= 0 && a22 * yIntercept >= c2) {
+                vertices.push({ x: 0, y: yIntercept });
             }
         }
         
-        // Add vertices at the boundaries of our plotting region
-        const largeX = maxX;
-        const largeY = maxY;
-        
-        // Points on far right edge
-        const y1_at_largeX = (c1 - a11 * largeX) / a21;
-        const y2_at_largeX = (c2 - a12 * largeX) / a22;
-        
-        if (y1_at_largeX >= 0 && y1_at_largeX <= largeY) {
-            vertices.push({ x: largeX, y: y1_at_largeX });
-        }
-        if (y2_at_largeX >= 0 && y2_at_largeX <= largeY) {
-            vertices.push({ x: largeX, y: y2_at_largeX });
+        // Constraint 2 meets x-axis
+        if (a12 > 0) {
+            const xIntercept = c2 / a12;
+            if (xIntercept >= 0 && a11 * xIntercept >= c1) {
+                vertices.push({ x: xIntercept, y: 0 });
+            }
         }
         
-        // Points on top edge
-        const x1_at_largeY = (c1 - a21 * largeY) / a11;
-        const x2_at_largeY = (c2 - a22 * largeY) / a12;
-        
-        if (x1_at_largeY >= 0 && x1_at_largeY <= largeX) {
-            vertices.push({ x: x1_at_largeY, y: largeY });
-        }
-        if (x2_at_largeY >= 0 && x2_at_largeY <= largeX) {
-            vertices.push({ x: x2_at_largeY, y: largeY });
+        // Constraint 2 meets y-axis
+        if (a22 > 0) {
+            const yIntercept = c2 / a22;
+            if (yIntercept >= 0 && a21 * yIntercept >= c1) {
+                vertices.push({ x: 0, y: yIntercept });
+            }
         }
         
-        // Add the corner point if it's feasible
-        if (a11 * largeX + a21 * largeY >= c1 && a12 * largeX + a22 * largeY >= c2) {
-            vertices.push({ x: largeX, y: largeY });
+        // Add points at plot bounds to show the unbounded nature
+        const boundaryPoints = [];
+        
+        // Right boundary
+        for (let y = 0; y <= maxY; y += 1) {
+            const constraint1 = a11 * maxX + a21 * y;
+            const constraint2 = a12 * maxX + a22 * y;
+            if (constraint1 >= c1 && constraint2 >= c2) {
+                boundaryPoints.push({ x: maxX, y: y });
+                break;
+            }
         }
         
-        // Filter to keep only feasible points
-        vertices = vertices.filter(v => 
-            v.x >= 0 && v.y >= 0 && 
-            a11 * v.x + a21 * v.y >= c1 - 1e-6 && 
-            a12 * v.x + a22 * v.y >= c2 - 1e-6
-        );
+        // Top boundary
+        for (let x = 0; x <= maxX; x += 1) {
+            const constraint1 = a11 * x + a21 * maxY;
+            const constraint2 = a12 * x + a22 * maxY;
+            if (constraint1 >= c1 && constraint2 >= c2) {
+                boundaryPoints.push({ x: x, y: maxY });
+                break;
+            }
+        }
+        
+        // Find points along the constraint lines at the boundaries
+        const y1_at_maxX = (c1 - a11 * maxX) / a21;
+        const y2_at_maxX = (c2 - a12 * maxX) / a22;
+        
+        if (y1_at_maxX >= 0 && y1_at_maxX <= maxY) {
+            const constraint2 = a12 * maxX + a22 * y1_at_maxX;
+            if (constraint2 >= c2) {
+                vertices.push({ x: maxX, y: y1_at_maxX });
+            }
+        }
+        
+        if (y2_at_maxX >= 0 && y2_at_maxX <= maxY) {
+            const constraint1 = a11 * maxX + a21 * y2_at_maxX;
+            if (constraint1 >= c1) {
+                vertices.push({ x: maxX, y: y2_at_maxX });
+            }
+        }
+        
+        const x1_at_maxY = (c1 - a21 * maxY) / a11;
+        const x2_at_maxY = (c2 - a22 * maxY) / a12;
+        
+        if (x1_at_maxY >= 0 && x1_at_maxY <= maxX) {
+            const constraint2 = a12 * x1_at_maxY + a22 * maxY;
+            if (constraint2 >= c2) {
+                vertices.push({ x: x1_at_maxY, y: maxY });
+            }
+        }
+        
+        if (x2_at_maxY >= 0 && x2_at_maxY <= maxX) {
+            const constraint1 = a11 * x2_at_maxY + a21 * maxY;
+            if (constraint1 >= c1) {
+                vertices.push({ x: x2_at_maxY, y: maxY });
+            }
+        }
+        
+        // Add corner point if feasible
+        const constraint1_corner = a11 * maxX + a21 * maxY;
+        const constraint2_corner = a12 * maxX + a22 * maxY;
+        if (constraint1_corner >= c1 && constraint2_corner >= c2) {
+            vertices.push({ x: maxX, y: maxY });
+        }
         
         // Remove duplicates
         vertices = vertices.filter((v, index, self) => 
@@ -966,20 +1009,62 @@ document.addEventListener('DOMContentLoaded', function() {
         );
         
         // Sort vertices to form proper polygon
-        if (vertices.length > 2) {
-            const center = vertices.reduce((acc, v) => ({
-                x: acc.x + v.x / vertices.length,
-                y: acc.y + v.y / vertices.length
-            }), { x: 0, y: 0 });
-            
-            vertices.sort((a, b) => {
-                const angleA = Math.atan2(a.y - center.y, a.x - center.x);
-                const angleB = Math.atan2(b.y - center.y, b.x - center.x);
-                return angleA - angleB;
-            });
+        if (vertices.length >= 3) {
+            // First, find the convex hull to properly order the boundary vertices
+            vertices = computeConvexHull(vertices);
         }
         
         return vertices;
+    }
+
+    // Helper function to compute the convex hull of a set of points
+    function computeConvexHull(points) {
+        if (points.length < 3) return points;
+        
+        // Find the leftmost point
+        let leftmost = 0;
+        for (let i = 1; i < points.length; i++) {
+            if (points[i].x < points[leftmost].x) {
+                leftmost = i;
+            }
+        }
+        
+        const hull = [];
+        let current = leftmost;
+        do {
+            hull.push(points[current]);
+            let next = (current + 1) % points.length;
+            
+            for (let i = 0; i < points.length; i++) {
+                if (i === current) continue;
+                
+                const cross = crossProduct(
+                    points[current], 
+                    points[next], 
+                    points[i]
+                );
+                
+                if (cross < 0 || (cross === 0 && distance(points[current], points[i]) > distance(points[current], points[next]))) {
+                    next = i;
+                }
+            }
+            
+            current = next;
+        } while (current !== leftmost);
+        
+        return hull;
+    }
+
+    // Helper function to compute cross product
+    function crossProduct(p1, p2, p3) {
+        return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+    }
+
+    // Helper function to compute distance between two points
+    function distance(p1, p2) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     // Function to draw the primal problem
