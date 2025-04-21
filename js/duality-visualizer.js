@@ -782,7 +782,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve dual problem using strong duality and complementary slackness
-    // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
         if (!primalSolution) return null;
         
@@ -803,214 +802,78 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
-        // KKT conditions:
-        // ∇f(x) = A^T λ - μ
-        // Where ∇f(x) = [c1, c2]
-        // A^T = [a11 a21; a12 a22]
+        // By complementary slackness:
+        // - If a constraint is inactive (slack), its dual variable is zero
+        // - If a constraint is active, its dual variable may be positive
+        if (!constraint1Active) lambda1 = 0;
+        if (!constraint2Active) lambda2 = 0;
+        if (!boundX1Active) mu1 = 0;
+        if (!boundX2Active) mu2 = 0;
         
-        // Handle different cases based on which constraints are active
-        if (constraint1Active && constraint2Active) {
-            // Both constraints are active
-            // Solve: [a11 a21] [λ1] = [c1 + μ1]
-            //        [a12 a22] [λ2]   [c2 + μ2]
-            
-            const det = a11 * a22 - a12 * a21;
-            if (Math.abs(det) > eps) {
-                if (boundX1Active && boundX2Active) {
-                    // Both bounds are active - need to compute mu values first
-                    // First try with mu1 = mu2 = 0
+        // Determine active constraints and solve KKT system
+        let activeConstraints = 0;
+        if (constraint1Active) activeConstraints++;
+        if (constraint2Active) activeConstraints++;
+        if (boundX1Active) activeConstraints++;
+        if (boundX2Active) activeConstraints++;
+        
+        // KKT conditions: ∇f(x) = A^T λ - μ
+        // Where ∇f(x) = [c1, c2], A^T = [a11 a21; a12 a22]
+        
+        // Handle the most common cases systematically
+        if (activeConstraints === 2) {
+            // Two constraints active
+            if (constraint1Active && constraint2Active) {
+                // Both constraints active
+                const det = a11 * a22 - a12 * a21;
+                if (Math.abs(det) > eps) {
                     lambda1 = (c1 * a22 - c2 * a21) / det;
                     lambda2 = (a11 * c2 - a12 * c1) / det;
                     
-                    // Check if solution is non-negative
-                    if (lambda1 >= 0 && lambda2 >= 0) {
-                        mu1 = 0;
-                        mu2 = 0;
-                    } else {
-                        // Need to adjust for mu values
-                        // Since bounds are active, we know ∇f = A^T λ - μ
-                        // For x1=1: c1 = a11*λ1 + a21*λ2 - mu1
-                        // For x2=1: c2 = a12*λ1 + a22*λ2 - mu2
-                        // Choose the minimum mu values that give non-negative lambdas
+                    // Check for non-negativity
+                    if (lambda1 < 0 || lambda2 < 0) {
+                        // Try with μ values if direct solution is infeasible
+                        if (boundX1Active) mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
+                        if (boundX2Active) mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
                         
-                        // Try different combinations to find feasible dual solution
-                        let bestSol = null;
-                        let bestValue = -Infinity;
-                        
-                        // Try mu1 > 0, mu2 = 0
-                        mu1 = Math.max(0, c1);
-                        mu2 = 0;
-                        lambda1 = ((c1 + mu1) * a22 - (c2 + mu2) * a21) / det;
-                        lambda2 = (a11 * (c2 + mu2) - a12 * (c1 + mu1)) / det;
-                        if (lambda1 >= 0 && lambda2 >= 0) {
-                            const val = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
-                            if (val > bestValue) {
-                                bestValue = val;
-                                bestSol = { lambda1, lambda2, mu1, mu2 };
-                            }
-                        }
-                        
-                        // Try mu1 = 0, mu2 > 0
-                        mu1 = 0;
-                        mu2 = Math.max(0, c2);
-                        lambda1 = ((c1 + mu1) * a22 - (c2 + mu2) * a21) / det;
-                        lambda2 = (a11 * (c2 + mu2) - a12 * (c1 + mu1)) / det;
-                        if (lambda1 >= 0 && lambda2 >= 0) {
-                            const val = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
-                            if (val > bestValue) {
-                                bestValue = val;
-                                bestSol = { lambda1, lambda2, mu1, mu2 };
-                            }
-                        }
-                        
-                        // Try both mu1, mu2 > 0
-                        mu1 = Math.max(0, c1);
-                        mu2 = Math.max(0, c2);
-                        lambda1 = ((c1 + mu1) * a22 - (c2 + mu2) * a21) / det;
-                        lambda2 = (a11 * (c2 + mu2) - a12 * (c1 + mu1)) / det;
-                        if (lambda1 >= 0 && lambda2 >= 0) {
-                            const val = b1 * lambda1 + b2 * lambda2 - mu1 - mu2;
-                            if (val > bestValue) {
-                                bestValue = val;
-                                bestSol = { lambda1, lambda2, mu1, mu2 };
-                            }
-                        }
-                        
-                        if (bestSol) {
-                            lambda1 = bestSol.lambda1;
-                            lambda2 = bestSol.lambda2;
-                            mu1 = bestSol.mu1;
-                            mu2 = bestSol.mu2;
-                        }
+                        // Recalculate with adjusted gradients
+                        const c1_adj = c1 - mu1;
+                        const c2_adj = c2 - mu2;
+                        lambda1 = (c1_adj * a22 - c2_adj * a21) / det;
+                        lambda2 = (a11 * c2_adj - a12 * c1_adj) / det;
                     }
-                } else if (boundX1Active) {
-                    // Only bound x1 is active
-                    mu1 = Math.max(0, c1 - (a11 * ((c2 - mu2) / a12) + a21 * ((c2 - mu2) / a22)));
-                    lambda1 = ((c1 - mu1) * a22 - c2 * a21) / det;
-                    lambda2 = (a11 * c2 - a12 * (c1 - mu1)) / det;
-                } else if (boundX2Active) {
-                    // Only bound x2 is active
-                    mu2 = Math.max(0, c2 - (a12 * ((c1 - mu1) / a11) + a22 * ((c1 - mu1) / a21)));
-                    lambda1 = (c1 * a22 - (c2 - mu2) * a21) / det;
-                    lambda2 = (a11 * (c2 - mu2) - a12 * c1) / det;
-                } else {
-                    // Neither bound is active
-                    lambda1 = (c1 * a22 - c2 * a21) / det;
-                    lambda2 = (a11 * c2 - a12 * c1) / det;
                 }
-            }
-        } else if (constraint1Active) {
-            // Only constraint 1 is active
-            // a11*λ1 + a21*λ2 = c1 + μ1
-            
-            if (boundX1Active) {
-                // x1 bound is active, so we might need mu1 > 0
-                // Choose lambda1 and lambda2 to maximize the dual objective
-                // while ensuring a11*λ1 + a21*λ2 >= c1
-                
+            } else if (constraint1Active && boundX1Active) {
+                // Constraint 1 and x1 bound active
+                lambda1 = (c1 - mu1) / a11;
+                mu1 = Math.max(0, c1 - a11 * lambda1);
                 if (a21 !== 0) {
-                    lambda1 = 0; // Start with lambda1 = 0
-                    lambda2 = c1 / a21;
-                    
-                    // Check if this satisfies the second constraint
-                    if (a12 * lambda1 + a22 * lambda2 < c2) {
-                        // Adjust to satisfy both constraints
-                        const slope = -a11 / a21;
-                        const intercept = c1 / a21;
-                        
-                        // Find intersection with second constraint
-                        const det2 = a11 * a22 - a12 * a21;
-                        if (Math.abs(det2) > eps) {
-                            lambda1 = (c1 * a22 - c2 * a21) / det2;
-                            lambda2 = (a11 * c2 - a12 * c1) / det2;
-                        }
-                    }
-                } else {
-                    lambda1 = c1 / a11;
-                    lambda2 = 0;
+                    lambda2 = (c2 - a12 * lambda1 - mu2) / a22;
                 }
-                
-                // Calculate mu1 to ensure feasibility
-                mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
-            } else {
-                // x1 bound is not active, mu1 = 0
-                if (a21 !== 0) {
-                    lambda2 = 0;
-                    lambda1 = c1 / a11;
-                } else {
-                    lambda1 = c1 / a11;
-                    lambda2 = 0;
-                }
+            } else if (constraint1Active && boundX2Active) {
+                // Similar logic for other combinations
+                lambda1 = (c1 - a21 * lambda2) / a11;
+                mu2 = Math.max(0, c2 - a12 * lambda1 - a22 * lambda2);
             }
-        } else if (constraint2Active) {
-            // Similar logic for constraint 2
-            if (boundX2Active) {
-                if (a22 !== 0) {
-                    lambda2 = 0;
-                    lambda1 = c2 / a12;
-                    
-                    // Check if this satisfies the first constraint
-                    if (a11 * lambda1 + a21 * lambda2 < c1) {
-                        // Adjust to satisfy both constraints
-                        const det2 = a11 * a22 - a12 * a21;
-                        if (Math.abs(det2) > eps) {
-                            lambda1 = (c1 * a22 - c2 * a21) / det2;
-                            lambda2 = (a11 * c2 - a12 * c1) / det2;
-                        }
-                    }
-                } else {
-                    lambda1 = 0;
-                    lambda2 = c2 / a22;
-                }
-                
-                mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
-            } else {
-                if (a22 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c2 / a22;
-                } else {
-                    lambda1 = c2 / a12;
-                    lambda2 = 0;
-                }
-            }
-        } else {
-            // Neither constraint is active
-            lambda1 = 0;
-            lambda2 = 0;
-            
-            if (boundX1Active) {
+            // Add other two-constraint cases as needed
+        } else if (activeConstraints === 1) {
+            // One constraint active
+            if (constraint1Active) {
+                lambda1 = c1 / a11;
+            } else if (constraint2Active) {
+                lambda2 = c2 / a22;
+            } else if (boundX1Active) {
                 mu1 = c1;
-            }
-            if (boundX2Active) {
+            } else if (boundX2Active) {
                 mu2 = c2;
             }
         }
         
-        // Ensure non-negativity of dual variables
+        // Ensure non-negativity
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         mu1 = Math.max(0, mu1);
         mu2 = Math.max(0, mu2);
-        
-        // Verify that the solution satisfies the dual constraints
-        const satisfiesConstraint1 = a11 * lambda1 + a21 * lambda2 >= c1 - eps;
-        const satisfiesConstraint2 = a12 * lambda1 + a22 * lambda2 >= c2 - eps;
-        
-        if (!satisfiesConstraint1 || !satisfiesConstraint2) {
-            console.warn('Dual solution does not satisfy constraints. Attempting to fix...');
-            
-            // If constraints are not satisfied, find a feasible solution
-            // Use the intersection of constraints as the solution
-            const det = a11 * a22 - a12 * a21;
-            if (Math.abs(det) > eps) {
-                lambda1 = (c1 * a22 - c2 * a21) / det;
-                lambda2 = (a11 * c2 - a12 * c1) / det;
-                
-                // Ensure non-negativity
-                lambda1 = Math.max(0, lambda1);
-                lambda2 = Math.max(0, lambda2);
-            }
-        }
         
         // Calculate dual objective value
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
