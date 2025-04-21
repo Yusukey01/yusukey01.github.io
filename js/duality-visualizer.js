@@ -818,12 +818,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Calculate μ values based on which bounds are active
                 if (boundX1Active) {
-                    mu1 = c1 + a11 * lambda1 + a21 * lambda2;
+                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
                 } else {
                     mu1 = 0;
                 }
                 if (boundX2Active) {
-                    mu2 = c2 + a12 * lambda1 + a22 * lambda2;
+                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
                 } else {
                     mu2 = 0;
                 }
@@ -833,28 +833,28 @@ document.addEventListener('DOMContentLoaded', function() {
             lambda1 = Math.max(0, c1 / -a11);
             
             if (boundX1Active) {
-                mu1 = c1 + a11 * lambda1;
+                mu1 = a11 * lambda1 - c1;
             }
             if (boundX2Active) {
-                mu2 = c2 + a12 * lambda1;
+                mu2 = a12 * lambda1 - c2;
             }
         } else if (constraint2Active) {
             // Only constraint 2 active
             lambda2 = Math.max(0, c2 / -a22);
             
             if (boundX1Active) {
-                mu1 = c1 + a21 * lambda2;
+                mu1 = a21 * lambda2 - c1;
             }
             if (boundX2Active) {
-                mu2 = c2 + a22 * lambda2;
+                mu2 = a22 * lambda2 - c2;
             }
         } else {
             // Neither constraint is active, only bounds matter
             if (boundX1Active) {
-                mu1 = c1;
+                mu1 = -c1;
             }
             if (boundX2Active) {
-                mu2 = c2;
+                mu2 = -c2;
             }
         }
         
