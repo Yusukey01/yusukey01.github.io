@@ -781,7 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Function to solve dual problem using strong duality and complementary slackness
+   // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
         if (!primalSolution) return null;
         
@@ -830,61 +830,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else if (constraint1Active) {
             // Only constraint 1 active
-            if (boundX1Active && boundX2Active) {
-                // Both bounds and constraint 1 active - solve for all variables
-                lambda1 = c1 / -a11;
+            lambda1 = Math.max(0, c1 / -a11);
+            
+            if (boundX1Active) {
                 mu1 = c1 + a11 * lambda1;
+            }
+            if (boundX2Active) {
                 mu2 = c2 + a12 * lambda1;
-            } else if (boundX1Active) {
-                // x1 bound and constraint 1 active
-                lambda1 = c1 / -a11;
-                mu1 = c1 + a11 * lambda1;
-                mu2 = 0;
-            } else if (boundX2Active) {
-                // x2 bound and constraint 1 active
-                lambda1 = c1 / -a11;
-                mu1 = 0;
-                mu2 = c2 + a12 * lambda1;
-            } else {
-                // Only constraint 1 active
-                lambda1 = c1 / -a11;
-                mu1 = 0;
-                mu2 = 0;
             }
         } else if (constraint2Active) {
             // Only constraint 2 active
-            if (boundX1Active && boundX2Active) {
-                // Both bounds and constraint 2 active
-                lambda2 = c2 / -a22;
+            lambda2 = Math.max(0, c2 / -a22);
+            
+            if (boundX1Active) {
                 mu1 = c1 + a21 * lambda2;
+            }
+            if (boundX2Active) {
                 mu2 = c2 + a22 * lambda2;
-            } else if (boundX1Active) {
-                // x1 bound and constraint 2 active
-                lambda2 = c2 / -a22;
-                mu1 = c1 + a21 * lambda2;
-                mu2 = 0;
-            } else if (boundX2Active) {
-                // x2 bound and constraint 2 active
-                lambda2 = c2 / -a22;
-                mu1 = 0;
-                mu2 = c2 + a22 * lambda2;
-            } else {
-                // Only constraint 2 active
-                lambda2 = c2 / -a22;
-                mu1 = 0;
-                mu2 = 0;
             }
         } else {
-            // No inequality constraints active, only bounds
-            if (boundX1Active && boundX2Active) {
-                // Only bounds active
+            // Neither constraint is active, only bounds matter
+            if (boundX1Active) {
                 mu1 = c1;
-                mu2 = c2;
-            } else if (boundX1Active) {
-                // Only x1 bound active
-                mu1 = c1;
-            } else if (boundX2Active) {
-                // Only x2 bound active
+            }
+            if (boundX2Active) {
                 mu2 = c2;
             }
         }
@@ -896,10 +865,10 @@ document.addEventListener('DOMContentLoaded', function() {
         mu2 = Math.max(0, mu2);
         
         // Calculate dual objective value
-        // Since the bound constraints are x1 >= 1, x2 >= 1, we transform them to:
-        // -x1 <= -1 and -x2 <= -1
-        // So the dual objective includes -1*mu1 - 1*mu2 (from the bounds)
-        const dualValue = b1 * lambda1 + b2 * lambda2 - 1*mu1 - 1*mu2 + c3;
+        // The dual problem is: maximize g(λ,μ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+        // But the constraint in this problem is x >= 1, which transforms to -x <= -1
+        // So we need to add the constant term from the bounds to get the correct dual value
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
             point: { x: lambda1, y: lambda2 },
