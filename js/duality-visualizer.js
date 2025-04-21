@@ -803,8 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
         // KKT conditions for this problem:
-        // ∇f(x) + A^T λ - μ = 0 because we're minimizing and have inequality constraints
-        // Where ∇f(x) = [c1, c2]
+        // ∇f(x) + A^T λ - μ = 0
         // So: c1 + a11*λ1 + a21*λ2 - μ1 = 0  =>  μ1 = c1 + a11*λ1 + a21*λ2
         //     c2 + a12*λ1 + a22*λ2 - μ2 = 0  =>  μ2 = c2 + a12*λ1 + a22*λ2
         
@@ -813,48 +812,60 @@ document.addEventListener('DOMContentLoaded', function() {
             // Both inequality constraints active - solve 2x2 system
             const det = a11 * a22 - a12 * a21;
             if (Math.abs(det) > eps) {
-                lambda1 = (c1 * a22 - c2 * a21) / -det;
-                lambda2 = (a11 * c2 - a12 * c1) / -det;
+                // Solve: [a11 a21] [λ1] = -[c1]
+                //        [a12 a22] [λ2]    [c2]
+                lambda1 = -(c1 * a22 - c2 * a21) / det;
+                lambda2 = -(a11 * c2 - a12 * c1) / det;
                 
                 // Calculate μ values based on which bounds are active
                 if (boundX1Active) {
-                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+                    mu1 = c1 + a11 * lambda1 + a21 * lambda2;
                 } else {
                     mu1 = 0;
                 }
                 if (boundX2Active) {
-                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+                    mu2 = c2 + a12 * lambda1 + a22 * lambda2;
                 } else {
                     mu2 = 0;
                 }
             }
         } else if (constraint1Active) {
             // Only constraint 1 active
-            lambda1 = Math.max(0, c1 / -a11);
+            lambda1 = -c1 / a11;
+            lambda2 = 0;
             
             if (boundX1Active) {
-                mu1 = a11 * lambda1 - c1;
+                mu1 = c1 + a11 * lambda1 + a21 * lambda2;
+            } else {
+                mu1 = 0;
             }
             if (boundX2Active) {
-                mu2 = a12 * lambda1 - c2;
+                mu2 = c2 + a12 * lambda1 + a22 * lambda2;
+            } else {
+                mu2 = 0;
             }
         } else if (constraint2Active) {
             // Only constraint 2 active
-            lambda2 = Math.max(0, c2 / -a22);
+            lambda1 = 0;
+            lambda2 = -c2 / a22;
             
             if (boundX1Active) {
-                mu1 = a21 * lambda2 - c1;
+                mu1 = c1 + a11 * lambda1 + a21 * lambda2;
+            } else {
+                mu1 = 0;
             }
             if (boundX2Active) {
-                mu2 = a22 * lambda2 - c2;
+                mu2 = c2 + a12 * lambda1 + a22 * lambda2;
+            } else {
+                mu2 = 0;
             }
         } else {
             // Neither constraint is active, only bounds matter
             if (boundX1Active) {
-                mu1 = -c1;
+                mu1 = c1;
             }
             if (boundX2Active) {
-                mu2 = -c2;
+                mu2 = c2;
             }
         }
         
@@ -865,9 +876,9 @@ document.addEventListener('DOMContentLoaded', function() {
         mu2 = Math.max(0, mu2);
         
         // Calculate dual objective value
-        // The dual problem is: maximize g(λ,μ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-        // But the constraint in this problem is x >= 1, which transforms to -x <= -1
-        // So we need to add the constant term from the bounds to get the correct dual value
+        // Since the bound constraints are x1 >= 1, x2 >= 1, we transform them to standard form:
+        // -x1 <= -1 and -x2 <= -1
+        // So the dual objective includes -1*mu1 - 1*mu2 (from the bounds)
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
