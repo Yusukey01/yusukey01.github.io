@@ -786,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!primalSolution) return null;
         
         const primalPoint = primalSolution.point;
+        const eps = 1e-8;
         
         // Check which constraints are active
         const slack1 = b1 - (a11 * primalPoint.x + a12 * primalPoint.y);
@@ -793,8 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const slackX1 = primalPoint.x - 1;
         const slackX2 = primalPoint.y - 1;
         
-        // Identify which constraints are active (checking with small tolerance)
-        const eps = 1e-8;
+        // Identify active constraints
         const constraint1Active = Math.abs(slack1) < eps;
         const constraint2Active = Math.abs(slack2) < eps;
         const boundX1Active = Math.abs(slackX1) < eps;
@@ -803,109 +803,132 @@ document.addEventListener('DOMContentLoaded', function() {
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
         // KKT conditions:
-        // ∇f(x) = A^T λ - μ
+        // ∇f(x) = A^T λ - μ 
         // Where ∇f(x) = [c1, c2]
-        // A^T = [a11 a21; a12 a22]
         // So: c1 = a11*λ1 + a21*λ2 - μ1
         //     c2 = a12*λ1 + a22*λ2 - μ2
         
-        // We need to solve these two equations
-        // For simplicity, let's consider different cases based on active constraints
+        // Apply complementary slackness
+        if (!constraint1Active) lambda1 = 0;
+        if (!constraint2Active) lambda2 = 0;
+        if (!boundX1Active) mu1 = 0;
+        if (!boundX2Active) mu2 = 0;
         
+        // Count active constraints
+        let activeConstraints = 0;
+        if (constraint1Active) activeConstraints++;
+        if (constraint2Active) activeConstraints++;
+        if (boundX1Active) activeConstraints++;
+        if (boundX2Active) activeConstraints++;
+        
+        // Solve based on active constraints
         if (constraint1Active && constraint2Active) {
-            // Both constraints active - solve the system directly
+            // Both inequality constraints active - solve 2x2 system
             const det = a11 * a22 - a12 * a21;
             if (Math.abs(det) > eps) {
-                // Solve for λ1 and λ2 first (assuming no bounds are active initially)
-                const lambda1_temp = (c1 * a22 - c2 * a21) / det;
-                const lambda2_temp = (a11 * c2 - a12 * c1) / det;
-                
-                // Check if we need μ values based on bounds
-                if (boundX1Active) {
-                    mu1 = a11 * lambda1_temp + a21 * lambda2_temp - c1;
-                    mu1 = Math.max(0, mu1);
-                }
-                if (boundX2Active) {
-                    mu2 = a12 * lambda1_temp + a22 * lambda2_temp - c2;
-                    mu2 = Math.max(0, mu2);
-                }
-                
-                // Adjust λ values if μ values are non-zero
-                if (mu1 > 0 || mu2 > 0) {
-                    // Resolve the system with adjusted c values
-                    const c1_adj = c1 + mu1;
-                    const c2_adj = c2 + mu2;
-                    lambda1 = (c1_adj * a22 - c2_adj * a21) / det;
-                    lambda2 = (a11 * c2_adj - a12 * c1_adj) / det;
+                if (boundX1Active && boundX2Active) {
+                    // All four constraints active
+                    lambda1 = (c1 * a22 - c2 * a21) / det;
+                    lambda2 = (a11 * c2 - a12 * c1) / det;
+                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+                } else if (boundX1Active) {
+                    // x1 bound and both constraints active
+                    lambda1 = (c1 * a22 - c2 * a21) / det;
+                    lambda2 = (a11 * c2 - a12 * c1) / det;
+                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+                    mu2 = 0;
+                } else if (boundX2Active) {
+                    // x2 bound and both constraints active
+                    lambda1 = (c1 * a22 - c2 * a21) / det;
+                    lambda2 = (a11 * c2 - a12 * c1) / det;
+                    mu1 = 0;
+                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
                 } else {
-                    lambda1 = lambda1_temp;
-                    lambda2 = lambda2_temp;
+                    // Only two constraints active
+                    lambda1 = (c1 * a22 - c2 * a21) / det;
+                    lambda2 = (a11 * c2 - a12 * c1) / det;
+                    mu1 = 0;
+                    mu2 = 0;
                 }
             }
         } else if (constraint1Active) {
-            // Only constraint 1 is active
-            // a11*λ1 + a21*λ2 = c1 + μ1
-            // a12*λ1 + a22*λ2 = c2 + μ2
-            
-            // If only one constraint is active and bounds might be active,
-            // we need to solve a system considering complementary slackness
-            
+            // Only constraint 1 active
             if (boundX1Active && boundX2Active) {
-                // Both bounds are active
-                mu1 = c1 - a11 * lambda1 - a21 * lambda2;
-                mu2 = c2 - a12 * lambda1 - a22 * lambda2;
-                
-                // For constraint 1 active, we set λ1 based on complementary slackness
-                lambda1 = c1 / a11;
-                lambda2 = 0;
-                
-                // Adjust mu values
-                mu1 = Math.max(0, c1 - a11 * lambda1);
-                mu2 = Math.max(0, c2 - a12 * lambda1);
+                // Two bounds and constraint 1 active
+                if (a21 !== 0) {
+                    lambda1 = (c1 + mu1) / a11;
+                    lambda2 = ((c2 + mu2) - a12 * lambda1) / a22;
+                    mu1 = c1;
+                    mu2 = c2 - a12 * lambda1 - a22 * lambda2;
+                }
             } else if (boundX1Active) {
-                // x1 bound is active
-                lambda1 = c1 / a11;
-                mu1 = Math.max(0, c1 - a11 * lambda1);
+                // x1 bound and constraint 1 active
+                if (a21 !== 0) {
+                    lambda2 = c1 / a21;
+                    mu1 = c1 - a11 * lambda1 - a21 * lambda2;
+                } else {
+                    lambda1 = c1 / a11;
+                    mu1 = 0;
+                }
             } else if (boundX2Active) {
-                // x2 bound is active
+                // x2 bound and constraint 1 active
                 lambda1 = c1 / a11;
-                mu2 = Math.max(0, c2 - a12 * lambda1);
+                mu2 = c2 - a12 * lambda1;
             } else {
-                // Only constraint 1 is active, no bounds
+                // Only constraint 1 active
                 lambda1 = c1 / a11;
             }
         } else if (constraint2Active) {
-            // Similar logic for constraint 2
+            // Only constraint 2 active
             if (boundX1Active && boundX2Active) {
-                lambda2 = c2 / a22;
-                mu1 = Math.max(0, c1 - a21 * lambda2);
-                mu2 = Math.max(0, c2 - a22 * lambda2);
+                // Two bounds and constraint 2 active
+                if (a22 !== 0) {
+                    lambda2 = (c2 + mu2) / a22;
+                    lambda1 = ((c1 + mu1) - a21 * lambda2) / a11;
+                    mu1 = c1 - a11 * lambda1 - a21 * lambda2;
+                    mu2 = c2;
+                }
             } else if (boundX1Active) {
+                // x1 bound and constraint 2 active
                 lambda2 = c2 / a22;
-                mu1 = Math.max(0, c1 - a21 * lambda2);
+                mu1 = c1 - a21 * lambda2;
             } else if (boundX2Active) {
-                lambda2 = c2 / a22;
-                mu2 = Math.max(0, c2 - a22 * lambda2);
+                // x2 bound and constraint 2 active
+                if (a12 !== 0) {
+                    lambda1 = c2 / a12;
+                    mu2 = c2 - a12 * lambda1 - a22 * lambda2;
+                } else {
+                    lambda2 = c2 / a22;
+                    mu2 = 0;
+                }
             } else {
+                // Only constraint 2 active
                 lambda2 = c2 / a22;
             }
         } else {
-            // Neither constraint is active, only bounds might be active
-            if (boundX1Active) {
+            // No inequality constraints active, only bounds
+            if (boundX1Active && boundX2Active) {
+                // Only bounds active
                 mu1 = c1;
-            }
-            if (boundX2Active) {
+                mu2 = c2;
+            } else if (boundX1Active) {
+                // Only x1 bound active
+                mu1 = c1;
+            } else if (boundX2Active) {
+                // Only x2 bound active
                 mu2 = c2;
             }
         }
         
-        // Ensure non-negativity of all dual variables
+        // Ensure non-negativity
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         mu1 = Math.max(0, mu1);
         mu2 = Math.max(0, mu2);
         
         // Calculate dual objective value
+        // Correction: The dual objective should include μ*1 since the bound constraints are x1 >= 1, x2 >= 1
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
