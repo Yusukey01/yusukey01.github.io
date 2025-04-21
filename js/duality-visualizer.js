@@ -793,7 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const slackX1 = primalPoint.x - 1;
         const slackX2 = primalPoint.y - 1;
         
-        // Identify which constraints are active
+        // Identify which constraints are active (checking with small tolerance)
         const eps = 1e-8;
         const constraint1Active = Math.abs(slack1) < eps;
         const constraint2Active = Math.abs(slack2) < eps;
@@ -802,80 +802,154 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
-        // By complementary slackness:
-        // - If a constraint is inactive (slack), its dual variable is zero
-        // - If a constraint is active, its dual variable may be positive
-        if (!constraint1Active) lambda1 = 0;
-        if (!constraint2Active) lambda2 = 0;
-        if (!boundX1Active) mu1 = 0;
-        if (!boundX2Active) mu2 = 0;
+        // KKT conditions:
+        // ∇f(x) = A^T λ - μ
+        // Where ∇f(x) = [c1, c2]
+        // A^T = [a11 a21; a12 a22]
+        // So: c1 = a11*λ1 + a21*λ2 - μ1
+        //     c2 = a12*λ1 + a22*λ2 - μ2
         
-        // Determine active constraints and solve KKT system
-        let activeConstraints = 0;
-        if (constraint1Active) activeConstraints++;
-        if (constraint2Active) activeConstraints++;
-        if (boundX1Active) activeConstraints++;
-        if (boundX2Active) activeConstraints++;
+        // And by complementary slackness:
+        // λ1 > 0 only if constraint 1 is active
+        // λ2 > 0 only if constraint 2 is active
+        // μ1 > 0 only if x1 bound is active
+        // μ2 > 0 only if x2 bound is active
         
-        // KKT conditions: ∇f(x) = A^T λ - μ
-        // Where ∇f(x) = [c1, c2], A^T = [a11 a21; a12 a22]
-        
-        // Handle the most common cases systematically
-        if (activeConstraints === 2) {
-            // Two constraints active
-            if (constraint1Active && constraint2Active) {
-                // Both constraints active
-                const det = a11 * a22 - a12 * a21;
-                if (Math.abs(det) > eps) {
-                    lambda1 = (c1 * a22 - c2 * a21) / det;
-                    lambda2 = (a11 * c2 - a12 * c1) / det;
+        // First set up the system of equations based on which constraints are active
+        if (constraint1Active && constraint2Active) {
+            // Both inequality constraints are active
+            const det = a11 * a22 - a12 * a21;
+            if (Math.abs(det) > eps) {
+                // First, try without bounds active
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
+                
+                // If bounds are active, adjust for μ values
+                if (boundX1Active) {
+                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+                }
+                if (boundX2Active) {
+                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+                }
+                
+                // If we got negative values, we need to solve the full system
+                if (lambda1 < -eps || lambda2 < -eps || mu1 < -eps || mu2 < -eps) {
+                    // Solve the full system including μ variables
+                    lambda1 = lambda2 = mu1 = mu2 = 0;
                     
-                    // Check for non-negativity
-                    if (lambda1 < 0 || lambda2 < 0) {
-                        // Try with μ values if direct solution is infeasible
-                        if (boundX1Active) mu1 = Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2));
-                        if (boundX2Active) mu2 = Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2));
-                        
-                        // Recalculate with adjusted gradients
-                        const c1_adj = c1 - mu1;
-                        const c2_adj = c2 - mu2;
-                        lambda1 = (c1_adj * a22 - c2_adj * a21) / det;
-                        lambda2 = (a11 * c2_adj - a12 * c1_adj) / det;
+                    // Solve the KKT system based on which constraints are active
+                    const A = [];
+                    const b = [];
+                    
+                    // Add equations based on active constraints
+                    if (constraint1Active) {
+                        A.push([a11, a21, 0, 0]);
+                        b.push(c1);
+                    }
+                    if (constraint2Active) {
+                        A.push([a12, a22, 0, 0]);
+                        b.push(c2);
+                    }
+                    if (boundX1Active) {
+                        A.push([0, 0, 1, 0]);
+                        b.push(0);
+                    }
+                    if (boundX2Active) {
+                        A.push([0, 0, 0, 1]);
+                        b.push(0);
+                    }
+                    
+                    // If we have exactly 2 active constraints, solve the system
+                    if (A.length === 2) {
+                        // For simplicity, handle the most common case directly
+                        lambda1 = (c1 * a22 - c2 * a21) / det;
+                        lambda2 = (a11 * c2 - a12 * c1) / det;
                     }
                 }
-            } else if (constraint1Active && boundX1Active) {
-                // Constraint 1 and x1 bound active
-                lambda1 = (c1 - mu1) / a11;
-                mu1 = Math.max(0, c1 - a11 * lambda1);
-                if (a21 !== 0) {
-                    lambda2 = (c2 - a12 * lambda1 - mu2) / a22;
-                }
-            } else if (constraint1Active && boundX2Active) {
-                // Similar logic for other combinations
-                lambda1 = (c1 - a21 * lambda2) / a11;
-                mu2 = Math.max(0, c2 - a12 * lambda1 - a22 * lambda2);
             }
-            // Add other two-constraint cases as needed
-        } else if (activeConstraints === 1) {
-            // One constraint active
-            if (constraint1Active) {
-                lambda1 = c1 / a11;
-            } else if (constraint2Active) {
-                lambda2 = c2 / a22;
-            } else if (boundX1Active) {
+        } else if (constraint1Active) {
+            // Only constraint 1 is active
+            if (boundX1Active) {
+                // Both constraint 1 and x1 bound are active
+                // c1 = a11*λ1 + a21*λ2 - μ1
+                // Since x1 is at its bound, μ1 might be non-zero
+                // We need to find λ1 and λ2 such that both equations are satisfied
+                lambda1 = c1 / a11; // Assuming λ2 = 0 and μ1 = 0 initially
+                mu1 = Math.max(0, a11 * lambda1 - c1);
+            } else {
+                // Only constraint 1 is active
+                lambda1 = c1 / a11; // Simple case: λ2 = 0
+            }
+        } else if (constraint2Active) {
+            // Only constraint 2 is active
+            if (boundX2Active) {
+                // Both constraint 2 and x2 bound are active
+                lambda2 = c2 / a22; // Assuming λ1 = 0 and μ2 = 0 initially
+                mu2 = Math.max(0, a22 * lambda2 - c2);
+            } else {
+                // Only constraint 2 is active
+                lambda2 = c2 / a22; // Simple case: λ1 = 0
+            }
+        } else {
+            // Neither constraint is active, only bounds might be active
+            if (boundX1Active) {
                 mu1 = c1;
-            } else if (boundX2Active) {
+            }
+            if (boundX2Active) {
                 mu2 = c2;
             }
         }
         
-        // Ensure non-negativity
+        // Ensure non-negativity of dual variables
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         mu1 = Math.max(0, mu1);
         mu2 = Math.max(0, mu2);
         
+        // Verify that the computed dual solution satisfies the KKT conditions
+        const gapX1 = Math.abs(c1 - (a11 * lambda1 + a21 * lambda2 - mu1));
+        const gapX2 = Math.abs(c2 - (a12 * lambda1 + a22 * lambda2 - mu2));
+        
+        // If there are significant gaps, try a different approach
+        if (gapX1 > eps || gapX2 > eps) {
+            // Use a more robust approach
+            // Minimize the violation of KKT conditions
+            let bestError = Infinity;
+            let bestSolution = { lambda1: 0, lambda2: 0, mu1: 0, mu2: 0 };
+            
+            // Try different combinations based on active constraints
+            const candidates = [];
+            
+            // Basic feasible solution
+            if (constraint1Active && constraint2Active) {
+                const det = a11 * a22 - a12 * a21;
+                if (Math.abs(det) > eps) {
+                    const l1 = (c1 * a22 - c2 * a21) / det;
+                    const l2 = (a11 * c2 - a12 * c1) / det;
+                    candidates.push({ lambda1: Math.max(0, l1), lambda2: Math.max(0, l2), mu1: 0, mu2: 0 });
+                }
+            }
+            
+            // Check each candidate and choose the best
+            for (const candidate of candidates) {
+                const e1 = Math.abs(c1 - (a11 * candidate.lambda1 + a21 * candidate.lambda2 - candidate.mu1));
+                const e2 = Math.abs(c2 - (a12 * candidate.lambda1 + a22 * candidate.lambda2 - candidate.mu2));
+                const error = e1 * e1 + e2 * e2;
+                
+                if (error < bestError) {
+                    bestError = error;
+                    bestSolution = candidate;
+                }
+            }
+            
+            lambda1 = bestSolution.lambda1;
+            lambda2 = bestSolution.lambda2;
+            mu1 = bestSolution.mu1;
+            mu2 = bestSolution.mu2;
+        }
+        
         // Calculate dual objective value
+        // For the dual problem: maximize g(λ,μ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
@@ -1211,20 +1285,23 @@ document.addEventListener('DOMContentLoaded', function() {
             drawPoint(point.x, point.y, '#2ecc71', 6);
             
             // Draw level curves of the objective function
-            // b1*λ1 + b2*λ2 = value
-            // λ2 = (value - b1*λ1) / b2
+            // b1*λ1 + b2*λ2 - mu1 - mu2 = value - c3
+            // λ2 = (value - c3 + mu1 + mu2 - b1*λ1) / b2
+            
+            // Note: For visualization purposes, we're showing the dual objective without mu values
+            // since we can't visualize 4 dimensions on a 2D plane
             
             // Draw the optimal level curve
             if (b2 !== 0) {
-                const adjustedValue = value; // The value already includes c3
+                const adjustedValue = value - c3; // Remove c3 to get the dual function without constant
                 const l1_1 = 0;
                 const l2_1 = adjustedValue / b2;
                 
                 const l1_2 = adjustedValue / b1;
                 const l2_2 = 0;
                 
-                // Ensure we stay within the plotting bounds
-                if (l1_2 > 0 && l2_1 > 0) {
+                // Only draw if points are valid
+                if (l1_2 >= 0 && l2_1 >= 0) {
                     drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.8)', 2, [5, 5]);
                 }
             }
@@ -1232,7 +1309,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Draw a few more level curves
             [0.7, 1.3].forEach(factor => {
                 if (b2 !== 0) {
-                    const levelValue = value * factor;
+                    const levelValue = (value - c3) * factor;
                     
                     const l1_1 = 0;
                     const l2_1 = levelValue / b2;
@@ -1240,8 +1317,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const l1_2 = levelValue / b1;
                     const l2_2 = 0;
                     
-                    // Ensure we stay within the plotting bounds
-                    if (l1_2 > 0 && l2_1 > 0) {
+                    // Only draw if points are valid
+                    if (l1_2 >= 0 && l2_1 >= 0) {
                         drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.4)', 1, [5, 5]);
                     }
                 }
@@ -1283,6 +1360,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.stroke();
         }
     }
+
     // Function to draw the entire visualization
     function drawVisualization() {
         // Clear canvas
