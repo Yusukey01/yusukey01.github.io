@@ -800,114 +800,109 @@ document.addEventListener('DOMContentLoaded', function() {
         const boundX1Active = Math.abs(slackX1) < eps;
         const boundX2Active = Math.abs(slackX2) < eps;
         
+        console.log(`Active constraints: C1=${constraint1Active}, C2=${constraint2Active}, X1=${boundX1Active}, X2=${boundX2Active}`);
+        
+        // Initialize dual variables
+        let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
+        
         // By complementary slackness:
         // If slack > 0 (constraint not active), corresponding multiplier = 0
-        const lambda1 = constraint1Active ? null : 0;
-        const lambda2 = constraint2Active ? null : 0;
-        const mu1 = boundX1Active ? null : 0;
-        const mu2 = boundX2Active ? null : 0;
+        // This is enforced throughout the code below
         
-        // Set up the KKT conditions
-        // a11*λ1 + a21*λ2 - μ1 = c1
-        // a12*λ1 + a22*λ2 - μ2 = c2
-        
-        // Initialize our solution variables
-        let solution = {
-            lambda1: 0,
-            lambda2: 0,
-            mu1: 0,
-            mu2: 0
-        };
-        
-        // Solve the KKT system based on which constraints are active
-        if (lambda1 === 0 && lambda2 === 0) {
-            // Both inequality constraints are inactive, use direct solution
-            solution.mu1 = Math.max(0, -c1);
-            solution.mu2 = Math.max(0, -c2);
-        } else if (lambda1 === 0) {
-            // Only constraint 2 is active
-            solution.lambda2 = Math.max(0, c2 / a22);
-            solution.mu1 = Math.max(0, a21 * solution.lambda2 - c1);
-        } else if (lambda2 === 0) {
-            // Only constraint 1 is active
-            solution.lambda1 = Math.max(0, c1 / a11);
-            solution.mu2 = Math.max(0, a12 * solution.lambda1 - c2);
-        } else {
-            // Both inequality constraints are active
+        // First, directly solve the KKT conditions based on active constraints
+        if (constraint1Active && constraint2Active) {
+            // Both inequality constraints are active, solve system of equations
             const det = a11 * a22 - a12 * a21;
             
-            // If the matrix is singular, special handling required
-            if (Math.abs(det) < eps) {
-                // Use a pseudo-inverse or approximate solution
-                solution.lambda1 = Math.max(0, (a22 * c1 - a21 * c2) / (a22 * a11 - a21 * a12 + eps));
-                solution.lambda2 = Math.max(0, (a11 * c2 - a12 * c1) / (a11 * a22 - a12 * a21 + eps));
-            } else {
-                // Standard matrix inversion solution
-                solution.lambda1 = (a22 * c1 - a21 * c2) / det;
-                solution.lambda2 = (a11 * c2 - a12 * c1) / det;
+            if (Math.abs(det) > eps) {
+                // We can directly solve for lambdas assuming initial mu values are 0
+                lambda1 = (a22 * c1 - a21 * c2) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
                 
-                // Ensure non-negativity of lambdas
-                if (solution.lambda1 < 0 || solution.lambda2 < 0) {
-                    // If either lambda is negative, set it to zero and recalculate
-                    if (solution.lambda1 < 0) {
-                        solution.lambda1 = 0;
-                        solution.lambda2 = Math.max(0, c2 / a22);
+                // Check if lambdas are non-negative as required
+                if (lambda1 < 0 || lambda2 < 0) {
+                    // At least one lambda would be negative, which violates constraints
+                    // Reset and try alternative approach
+                    if (lambda1 < 0) {
+                        // Set lambda1 to 0 and solve for lambda2
+                        lambda1 = 0;
+                        // From a12*lambda1 + a22*lambda2 = c2, with lambda1 = 0
+                        lambda2 = c2 / a22;
+                        // If this is also negative, set both to 0
+                        if (lambda2 < 0) lambda2 = 0;
                     } else {
-                        solution.lambda2 = 0;
-                        solution.lambda1 = Math.max(0, c1 / a11);
+                        // Set lambda2 to 0 and solve for lambda1
+                        lambda2 = 0;
+                        // From a11*lambda1 + a21*lambda2 = c1, with lambda2 = 0
+                        lambda1 = c1 / a11;
+                        // If this is also negative, set both to 0
+                        if (lambda1 < 0) lambda1 = 0;
                     }
                 }
             }
+        } else if (constraint1Active) {
+            // Only constraint 1 is active, constraint 2 is not
+            // By complementary slackness, lambda2 must be 0
+            lambda2 = 0;
             
-            // Calculate mu values based on the KKT conditions and bound constraints
-            solution.mu1 = a11 * solution.lambda1 + a21 * solution.lambda2 - c1;
-            solution.mu2 = a12 * solution.lambda1 + a22 * solution.lambda2 - c2;
+            // Try to solve for lambda1 from: a11*lambda1 + a21*lambda2 = c1
+            // Since lambda2 = 0, this gives: a11*lambda1 = c1
+            lambda1 = c1 / a11;
             
-            // Apply complementary slackness for bounds
-            if (mu1 === 0) solution.mu1 = 0;
-            if (mu2 === 0) solution.mu2 = 0;
+            // Ensure non-negativity
+            if (lambda1 < 0) lambda1 = 0;
+        } else if (constraint2Active) {
+            // Only constraint 2 is active, constraint 1 is not
+            // By complementary slackness, lambda1 must be 0
+            lambda1 = 0;
             
-            // Ensure non-negativity of mu values
-            solution.mu1 = Math.max(0, solution.mu1);
-            solution.mu2 = Math.max(0, solution.mu2);
+            // Try to solve for lambda2 from: a12*lambda1 + a22*lambda2 = c2
+            // Since lambda1 = 0, this gives: a22*lambda2 = c2
+            lambda2 = c2 / a22;
+            
+            // Ensure non-negativity
+            if (lambda2 < 0) lambda2 = 0;
+        } else {
+            // No constraints are active, by complementary slackness
+            // both lambda1 and lambda2 must be 0
+            lambda1 = 0;
+            lambda2 = 0;
         }
         
-        // Verify KKT conditions
-        const kkt1 = Math.abs(a11 * solution.lambda1 + a21 * solution.lambda2 - solution.mu1 - c1);
-        const kkt2 = Math.abs(a12 * solution.lambda1 + a22 * solution.lambda2 - solution.mu2 - c2);
+        // Now calculate mu values using the KKT conditions
+        // a11*lambda1 + a21*lambda2 - mu1 = c1
+        // a12*lambda1 + a22*lambda2 - mu2 = c2
         
-        // Adjust if needed
-        if (kkt1 > eps || kkt2 > eps) {
-            // If KKT conditions are not satisfied, make a direct correction
-            if (boundX1Active && boundX2Active) {
-                // If both bounds are active, we know μ values must balance the equations
-                solution.mu1 = Math.max(0, a11 * solution.lambda1 + a21 * solution.lambda2 - c1);
-                solution.mu2 = Math.max(0, a12 * solution.lambda1 + a22 * solution.lambda2 - c2);
-            } else if (constraint1Active && constraint2Active) {
-                // Both inequality constraints active, get a better solution
-                const det = a11 * a22 - a12 * a21;
-                if (Math.abs(det) > eps) {
-                    // Solve the system with existing mu values
-                    solution.lambda1 = ((c1 + solution.mu1) * a22 - (c2 + solution.mu2) * a21) / det;
-                    solution.lambda2 = (a11 * (c2 + solution.mu2) - a12 * (c1 + solution.mu1)) / det;
-                    
-                    // Ensure non-negativity
-                    solution.lambda1 = Math.max(0, solution.lambda1);
-                    solution.lambda2 = Math.max(0, solution.lambda2);
-                }
-            }
+        if (boundX1Active) {
+            // If x1 bound is active, mu1 can be positive
+            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+            // Ensure non-negativity
+            mu1 = Math.max(0, mu1);
+        } else {
+            // If x1 bound is not active, mu1 must be 0 by complementary slackness
+            mu1 = 0;
         }
         
-        // Calculate the dual objective value correctly
-        // This is where the duality gap was happening before:
-        // b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-        const dualValue = b1 * solution.lambda1 + b2 * solution.lambda2 - solution.mu1 - solution.mu2 + c3;
+        if (boundX2Active) {
+            // If x2 bound is active, mu2 can be positive
+            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+            // Ensure non-negativity
+            mu2 = Math.max(0, mu2);
+        } else {
+            // If x2 bound is not active, mu2 must be 0 by complementary slackness
+            mu2 = 0;
+        }
+        
+        // Calculate dual objective value
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        
+        console.log(`Dual solution: λ1=${lambda1}, λ2=${lambda2}, μ1=${mu1}, μ2=${mu2}, value=${dualValue}`);
         
         return {
-            point: { x: solution.lambda1, y: solution.lambda2 },
+            point: { x: lambda1, y: lambda2 },
             value: dualValue,
-            mu1: solution.mu1,
-            mu2: solution.mu2
+            mu1: mu1,
+            mu2: mu2
         };
     }
 
