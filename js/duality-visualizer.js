@@ -781,7 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-   // Function to solve dual problem using strong duality and complementary slackness
+    // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
         if (!primalSolution) return null;
         
@@ -800,79 +800,93 @@ document.addEventListener('DOMContentLoaded', function() {
         const boundX1Active = Math.abs(slackX1) < eps;
         const boundX2Active = Math.abs(slackX2) < eps;
         
+        // Initialize variables
         let lambda1 = 0, lambda2 = 0, mu1 = 0, mu2 = 0;
         
-        // KKT conditions for this problem:
-        // ∇f(x) + A^T λ - μ = 0 because we're minimizing and have inequality constraints
-        // Where ∇f(x) = [c1, c2]
-        // So: c1 + a11*λ1 + a21*λ2 - μ1 = 0  =>  μ1 = c1 + a11*λ1 + a21*λ2
-        //     c2 + a12*λ1 + a22*λ2 - μ2 = 0  =>  μ2 = c2 + a12*λ1 + a22*λ2
+        // We have a system of equations:
+        // a11*λ1 + a21*λ2 - μ1 = c1
+        // a12*λ1 + a22*λ2 - μ2 = c2
         
-        // Solve based on active constraints
+        // With complementary slackness:
+        // λ1*(b1 - a11*x1 - a12*x2) = 0
+        // λ2*(b2 - a21*x1 - a22*x2) = 0
+        // μ1*(x1 - 1) = 0
+        // μ2*(x2 - 1) = 0
+        
+        // Set up system of equations based on active constraints
+        if (constraint1Active) lambda1 = 0;
+        if (constraint2Active) lambda2 = 0;
+        if (boundX1Active) mu1 = 0;
+        if (boundX2Active) mu2 = 0;
+        
+        // Solve the system based on active constraints
         if (constraint1Active && constraint2Active) {
-            // Both inequality constraints active - solve 2x2 system
+            // Both constraints are active, use the equations
+            // a11*λ1 + a21*λ2 = c1 + μ1
+            // a12*λ1 + a22*λ2 = c2 + μ2
+            
+            // Calculate μ values if bounds are active
+            if (boundX1Active) mu1 = 0;
+            if (boundX2Active) mu2 = 0;
+            
+            // Solve for lambda values
             const det = a11 * a22 - a12 * a21;
             if (Math.abs(det) > eps) {
-                lambda1 = (c1 * a22 - c2 * a21) / -det;
-                lambda2 = (a11 * c2 - a12 * c1) / -det;
-                
-                // Calculate μ values based on which bounds are active
-                if (boundX1Active) {
-                    mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
-                } else {
-                    mu1 = 0;
-                }
-                if (boundX2Active) {
-                    mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
-                } else {
-                    mu2 = 0;
-                }
-            }
-        } else if (constraint1Active) {
-            // Only constraint 1 active
-            lambda1 = Math.max(0, c1 / -a11);
-            
-            if (boundX1Active) {
-                mu1 = a11 * lambda1 - c1;
-            }
-            if (boundX2Active) {
-                mu2 = a12 * lambda1 - c2;
-            }
-        } else if (constraint2Active) {
-            // Only constraint 2 active
-            lambda2 = Math.max(0, c2 / -a22);
-            
-            if (boundX1Active) {
-                mu1 = a21 * lambda2 - c1;
-            }
-            if (boundX2Active) {
-                mu2 = a22 * lambda2 - c2;
+                lambda1 = (c1 * a22 - c2 * a21 + mu1 * a22 - mu2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1 + a11 * mu2 - a12 * mu1) / det;
             }
         } else {
-            // Neither constraint is active, only bounds matter
-            if (boundX1Active) {
+            // At least one of the constraints is not active
+            
+            // If x1 > 1, then μ1 = 0 by complementary slackness
+            if (!boundX1Active) mu1 = 0;
+            
+            // If x2 > 1, then μ2 = 0 by complementary slackness
+            if (!boundX2Active) mu2 = 0;
+            
+            // If constraint 1 is not active, λ1 = 0
+            if (!constraint1Active) lambda1 = 0;
+            
+            // If constraint 2 is not active, λ2 = 0
+            if (!constraint2Active) lambda2 = 0;
+            
+            // Now solve the KKT conditions
+            // a11*λ1 + a21*λ2 - μ1 = c1
+            // a12*λ1 + a22*λ2 - μ2 = c2
+            
+            if (constraint1Active && !constraint2Active) {
+                // Only first constraint is active
+                lambda2 = 0;
+                lambda1 = (c1 + mu1) / a11;
+                mu2 = a12 * lambda1 - c2;
+            } else if (!constraint1Active && constraint2Active) {
+                // Only second constraint is active
+                lambda1 = 0;
+                lambda2 = (c2 + mu2) / a22;
+                mu1 = a21 * lambda2 - c1;
+            } else if (!constraint1Active && !constraint2Active) {
+                // Neither constraint is active
+                lambda1 = 0;
+                lambda2 = 0;
                 mu1 = -c1;
-            }
-            if (boundX2Active) {
                 mu2 = -c2;
             }
         }
         
-        // Ensure non-negativity
+        // Ensure non-negativity of dual variables
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
         mu1 = Math.max(0, mu1);
         mu2 = Math.max(0, mu2);
         
         // Calculate dual objective value
-        // The dual problem is: maximize g(λ,μ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-        // But the constraint in this problem is x >= 1, which transforms to -x <= -1
-        // So we need to add the constant term from the bounds to get the correct dual value
         const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         return {
             point: { x: lambda1, y: lambda2 },
-            value: dualValue
+            value: dualValue,
+            mu1: mu1,
+            mu2: mu2
         };
     }
 
@@ -1315,8 +1329,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (dualSolution) {
-            const { point: dPoint, value: dValue } = dualSolution;
-            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(4)}, λ₂ = ${dPoint.y.toFixed(4)}`;
+            const { point: dPoint, value: dValue, mu1, mu2 } = dualSolution;
+            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(4)}, λ₂ = ${dPoint.y.toFixed(4)}, μ₁ = ${mu1.toFixed(4)}, μ₂ = ${mu2.toFixed(4)}`;
             dualValueElement.textContent = dValue.toFixed(4);
         } else {
             dualOptimalElement.textContent = 'Not feasible';
