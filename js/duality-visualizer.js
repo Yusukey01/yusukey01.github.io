@@ -818,12 +818,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Calculate μ values based on which bounds are active
                 if (boundX1Active) {
-                    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+                    mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
                 } else {
                     mu1 = 0;
                 }
                 if (boundX2Active) {
-                    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+                    mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
                 } else {
                     mu2 = 0;
                 }
