@@ -815,8 +815,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const det = a11 * a22 - a12 * a21;
             
             if (Math.abs(det) > eps) {
-                // We can directly solve for lambdas assuming initial mu values are 0
-                lambda1 = (a22 * c1 - a21 * c2) / det;
+                // The correct formulas from linear system solution:
+                lambda1 = (c1 * a22 - c2 * a21) / det;
                 lambda2 = (a11 * c2 - a12 * c1) / det;
                 
                 // Check if lambdas are non-negative as required
@@ -840,44 +840,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
-        } else if (constraint1Active) {
-            // Only constraint 1 is active, constraint 2 is not
-            // By complementary slackness, lambda2 must be 0
-            lambda2 = 0;
-            
-            // Try to solve for lambda1 from: a11*lambda1 + a21*lambda2 = c1
-            // Since lambda2 = 0, this gives: a11*lambda1 = c1
-            lambda1 = c1 / a11;
-            
-            // Ensure non-negativity
-            if (lambda1 < 0) lambda1 = 0;
-        } else if (constraint2Active) {
-            // Only constraint 2 is active, constraint 1 is not
-            // By complementary slackness, lambda1 must be 0
-            lambda1 = 0;
-            
-            // Try to solve for lambda2 from: a12*lambda1 + a22*lambda2 = c2
-            // Since lambda1 = 0, this gives: a22*lambda2 = c2
-            lambda2 = c2 / a22;
-            
-            // Ensure non-negativity
-            if (lambda2 < 0) lambda2 = 0;
-        } else {
-            // No constraints are active, by complementary slackness
-            // both lambda1 and lambda2 must be 0
-            lambda1 = 0;
-            lambda2 = 0;
-        }
-        
-        // Now calculate mu values using the KKT conditions
-        // a11*lambda1 + a21*lambda2 - mu1 = c1
-        // a12*lambda1 + a22*lambda2 - mu2 = c2
-        
-        if (boundX1Active) {
-            // If x1 bound is active, mu1 can be positive
-            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-            // Ensure non-negativity
-            mu1 = Math.max(0, mu1);
         } else {
             // If x1 bound is not active, mu1 must be 0 by complementary slackness
             mu1 = 0;
