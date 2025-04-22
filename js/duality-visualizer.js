@@ -775,7 +775,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 }
 
-    // Function to solve dual problem using the simplex method
+    // Function to solve the dual problem using the simplex method
     function solveDualSimplex() {
         // In the dual problem:
         // Maximize: g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
@@ -783,11 +783,6 @@ document.addEventListener('DOMContentLoaded', function() {
         //  a11*λ1 + a21*λ2 - μ1 = c1
         //  a12*λ1 + a22*λ2 - μ2 = c2
         //  λ1, λ2, μ1, μ2 ≥ 0
-        
-        // First, let's solve for the vertices of the feasible region defined by:
-        // a11*λ1 + a21*λ2 ≥ c1
-        // a12*λ1 + a22*λ2 ≥ c2
-        // λ1, λ2 ≥ 0
         
         const vertices = [];
         
@@ -826,8 +821,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Filter out duplicates and invalid vertices
         const feasibleVertices = vertices.filter((v, index, self) => 
             v.x >= 0 && v.y >= 0 && 
-            a11 * v.x + a21 * v.y >= c1 - 1e-10 && 
-            a12 * v.x + a22 * v.y >= c2 - 1e-10 &&
+            (a11 * v.x + a21 * v.y >= c1 - 1e-10 || isEffectivelyZero(a11 * v.x + a21 * v.y - c1)) && 
+            (a12 * v.x + a22 * v.y >= c2 - 1e-10 || isEffectivelyZero(a12 * v.x + a22 * v.y - c2)) &&
             self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
         );
         
@@ -841,12 +836,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         feasibleVertices.forEach(v => {
             // Calculate μ1 and μ2 values from the equality constraints
+            // mu1 = a11*λ1 + a21*λ2 - c1
+            // mu2 = a12*λ1 + a22*λ2 - c2
             const mu1Value = Math.max(0, a11 * v.x + a21 * v.y - c1);
             const mu2Value = Math.max(0, a12 * v.x + a22 * v.y - c2);
             
-            // Calculate dual objective value
+            // Calculate dual objective value:
             // g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
-            const objValue = b1 * v.x + b2 * v.y - 1 * mu1Value - 1 * mu2Value + c3;
+            const objValue = b1 * v.x + b2 * v.y - mu1Value - mu2Value + c3;
             
             if (objValue > optimalValue) {
                 optimalValue = objValue;
@@ -856,13 +853,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        // Handle numerical precision for optimal value
+        // Adjust for any tiny floating point errors
+        // This is important for eliminating small duality gaps due to precision
+        if (optimalPoint) {
+            const preciseObjValue = b1 * optimalPoint.x + b2 * optimalPoint.y - 
+                                optimalMu1 - optimalMu2 + c3;
+            
+            // Round to 9 decimal places to handle floating point errors
+            optimalValue = parseFloat(preciseObjValue.toFixed(9));
+        }
+        
         return {
             point: optimalPoint,
             value: optimalValue,
             mu1: optimalMu1,
-            mu2: optimalMu2,
-            vertices: feasibleVertices // Return all vertices for debugging
+            mu2: optimalMu2
         };
+    }
+
+    // Helper function to check if a value is effectively zero
+    function isEffectivelyZero(value, epsilon = 1e-10) {
+        return Math.abs(value) < epsilon;
     }
 
     // Function to draw the primal problem
