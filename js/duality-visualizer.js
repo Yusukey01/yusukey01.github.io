@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="control-group">
                 <h3>Dual Problem</h3>
                 <div class="problem-display">
-                    <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - μ₁ - μ₂</div>
+                    <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - μ₁ - μ₂ + c₃</div>
                     <div class="constraint">Subject to:</div>
                     <div class="constraint-list">
                         <div class="constraint">a₁₁λ₁ + a₂₁λ₂ - μ₁ = c₁</div>
@@ -901,8 +901,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     // Both lambdas are positive, calculate mu values
-                    mu1 = boundX1Active ? (a11 * lambda1 + a21 * lambda2 - c1) : 0;
-                    mu2 = boundX2Active ? (a12 * lambda1 + a22 * lambda2 - c2) : 0;
+                    mu1 = boundX1Active ? Math.max(0, a11 * lambda1 + a21 * lambda2 - c1) : 0;
+                    mu2 = boundX2Active ? Math.max(0, a12 * lambda1 + a22 * lambda2 - c2) : 0;
                 }
             } else {
                 // System is degenerate, handle as a special case
@@ -933,14 +933,9 @@ document.addEventListener('DOMContentLoaded', function() {
         lambda1 = Math.max(0, lambda1 || 0);
         lambda2 = Math.max(0, lambda2 || 0);
         mu1 = Math.max(0, mu1 || 0);
-        mu2 = Math.max(0, mu2 || 0);
+        mu2 = Math.max(0, mu2 || 0); 
         
-        // THE KEY INSIGHT: For lower bounds like x ≥ 1, the dual objective includes +μ, not -μ
-        // This is because when converting x ≥ 1 to standard form, we get -x ≤ -1
-        // The dual constraint is still: a11*λ1 + a21*λ2 - μ1 = c1
-        // But the dual objective gets: b1*λ1 + b2*λ2 + μ1 + μ2 + c3
-        
-        const dualValue = b1 * lambda1 + b2 * lambda2 + mu1 + mu2 + c3;
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
         
         console.log(`Dual solution: λ₁=${lambda1}, λ₂=${lambda2}, μ₁=${mu1}, μ₂=${mu2}, value=${dualValue}`);
         
@@ -1405,10 +1400,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const dualValue = dualSolution.value;
             const gap = Math.abs(primalValue - dualValue);
             
-            // Use a very small threshold to account for floating-point precision
-            const threshold = 1e-8;
-            
-            if (gap < threshold) {
+            // Use a small threshold to account for floating-point precision
+            if (isEffectivelyZero(gap)) {
                 dualityGapElement.textContent = "0.0000";
                 dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
                 dualityGapElement.title = "Strong duality achieved";
@@ -1421,6 +1414,11 @@ document.addEventListener('DOMContentLoaded', function() {
             dualityGapElement.textContent = '-';
             dualityGapElement.style.color = 'inherit';
         }
+    }
+
+
+    function isEffectivelyZero(value, epsilon = 1e-6) {
+        return Math.abs(value) < epsilon;
     }
 
     // Function to update the display of parameter values
