@@ -790,10 +790,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const eps = 1e-8;
     
         const primalPoint = primalSolution.point;
-        const slack1 = b1 - (a11 * primalPoint.x + a12 * primalPoint.y);
-        const slack2 = b2 - (a21 * primalPoint.x + a22 * primalPoint.y);
-        const slackX1 = primalPoint.x - 1;
-        const slackX2 = primalPoint.y - 1;
     
         // Solve Aᵗλ = c
         const det = a11 * a22 - a12 * a21;
@@ -802,28 +798,34 @@ document.addEventListener('DOMContentLoaded', function() {
         let lambda1 = (c1 * a22 - c2 * a21) / det;
         let lambda2 = (a11 * c2 - a12 * c1) / det;
     
-        // Dual slacks from complementary slackness
-        let mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-        let mu2 = a12 * lambda1 + a22 * lambda2 - c2;
-    
-        // Clip negatives to zero
         lambda1 = Math.max(0, lambda1);
         lambda2 = Math.max(0, lambda2);
+    
+        // μ₁, μ₂ from complementary slackness: μᵢ(xᵢ - 1) = 0
+        let mu1 = 0, mu2 = 0;
+        if (Math.abs(primalPoint.x - 1) < eps) {
+            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+        }
+        if (Math.abs(primalPoint.y - 1) < eps) {
+            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+        }
+    
         mu1 = Math.max(0, mu1);
         mu2 = Math.max(0, mu2);
     
-        // Compute dual objective
-        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        // Dual objective value
+        const dualValue = b1 * lambda1 + b2 * lambda2 + c3 - mu1 - mu2;
     
         console.log(`Dual solution: λ₁=${lambda1.toFixed(6)}, λ₂=${lambda2.toFixed(6)}, μ₁=${mu1.toFixed(6)}, μ₂=${mu2.toFixed(6)}, value=${dualValue.toFixed(6)}`);
     
         return {
             point: { x: lambda1, y: lambda2 },
             value: dualValue,
-            mu1: mu1,
-            mu2: mu2
+            mu1,
+            mu2
         };
     }
+    
     
 
     // Function to compute the dual feasible region
