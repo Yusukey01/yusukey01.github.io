@@ -1134,15 +1134,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Draw constraint lines
-        // Constraint 1: a11*λ1 + a21*λ2 = c1
-        const c1l1 = c1 / a11;
-        const c1l2 = c1 / a21;
-        drawLine(c1l1, 0, 0, c1l2, 'rgba(231, 76, 60, 0.8)', 2);
-        
+       // Constraint 1: a11*λ1 + a21*λ2 = c1
+        if (a11 !== 0 && a21 !== 0) {
+            const x1 = 0;
+            const y1 = c1 / a21;
+            const x2 = c1 / a11;
+            const y2 = 0;
+            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
+        }
+
         // Constraint 2: a12*λ1 + a22*λ2 = c2
-        const c2l1 = c2 / a12;
-        const c2l2 = c2 / a22;
-        drawLine(c2l1, 0, 0, c2l2, 'rgba(231, 76, 60, 0.8)', 2);
+        if (a12 !== 0 && a22 !== 0) {
+            const x1 = 0;
+            const y1 = c2 / a22;
+            const x2 = c2 / a12;
+            const y2 = 0;
+            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
+        }
         
         // Get primal solution first to derive dual solution
         const primalSolution = solvePrimalSimplex();
