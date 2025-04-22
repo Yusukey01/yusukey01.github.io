@@ -795,10 +795,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const slackX2 = primalPoint.y - 1;
         
         // Identify active constraints
-        const constraint1Active = Math.abs(slack1) < eps;
-        const constraint2Active = Math.abs(slack2) < eps;
-        const boundX1Active = Math.abs(slackX1) < eps;
-        const boundX2Active = Math.abs(slackX2) < eps;
+        const constraint1Active = slack1 < eps;
+        const constraint2Active = slack2 < eps;
+        const boundX1Active = slackX1 < eps;
+        const boundX2Active = slackX2 < eps;
         
         console.log(`Primal point: (${primalPoint.x}, ${primalPoint.y})`);
         console.log(`Active constraints: C1=${constraint1Active}, C2=${constraint2Active}, X1=${boundX1Active}, X2=${boundX2Active}`);
@@ -901,8 +901,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     // Both lambdas are positive, calculate mu values
-                    mu1 = boundX1Active ? Math.max(0, a11 * lambda1 + a21 * lambda2 - c1) : 0;
-                    mu2 = boundX2Active ? Math.max(0, a12 * lambda1 + a22 * lambda2 - c2) : 0;
+                    mu1 = boundX1Active ? c1 - (a11 * lambda1 + a21 * lambda2) : 0;
+                    mu2 = boundX2Active ? c2 - (a12 * lambda1 + a22 * lambda2) : 0;
                 }
             } else {
                 // System is degenerate, handle as a special case
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    function isEffectivelyZero(value, epsilon = 1e-6) {
+    function isEffectivelyZero(value, epsilon = 1e-5) {
         return Math.abs(value) < epsilon;
     }
 
