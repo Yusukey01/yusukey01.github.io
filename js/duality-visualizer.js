@@ -700,11 +700,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve linear program using the simplex method
-    // Function to solve linear program using the simplex method
-function solvePrimalSimplex() {
+    function solvePrimalSimplex() {
     const vertices = [];
     
-    // Start with minimum constraints
+    // Start with minimum constraints (x₁ ≥ 1, x₂ ≥ 1)
     vertices.push({ x: 1, y: 1 });
     
     // Find intersections with constraints at x₁ = 1
@@ -771,107 +770,100 @@ function solvePrimalSimplex() {
     
     return {
         point: optimalPoint,
-        value: optimalValue
+        value: optimalValue,
+        vertices: feasibleVertices // Return all vertices for debugging
     };
 }
 
     // Function to solve dual problem using the simplex method
-function solveDualSimplex() {
-    // In the dual problem:
-    // Maximize: g(λ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-    // Subject to:
-    //  a11*λ1 + a21*λ2 - μ1 = c1
-    //  a12*λ1 + a22*λ2 - μ2 = c2
-    //  λ1, λ2, μ1, μ2 ≥ 0
-    
-    // Step 1: Express μ1 and μ2 in terms of λ1 and λ2
-    // μ1 = a11*λ1 + a21*λ2 - c1
-    // μ2 = a12*λ1 + a22*λ2 - c2
-    
-    // Step 2: For μ1, μ2 ≥ 0, we need:
-    // a11*λ1 + a21*λ2 ≥ c1
-    // a12*λ1 + a22*λ2 ≥ c2
-    
-    // Step 3: The objective becomes:
-    // Maximize: b1*λ1 + b2*λ2 - (a11*λ1 + a21*λ2 - c1) - (a12*λ1 + a22*λ2 - c2) + c3
-    // Simplify: (b1 - a11 - a12)*λ1 + (b2 - a21 - a22)*λ2 + c1 + c2 + c3
-    
-    // Find all vertices of the feasible region
-    const vertices = [];
-    
-    // Start with origin (if feasible)
-    if (c1 <= 0 && c2 <= 0) {
-        vertices.push({ x: 0, y: 0 });
-    }
-    
-    // Find intersections with axes
-    // λ1 = 0 line
-    if (a21 !== 0 && c1 / a21 >= 0) {
-        vertices.push({ x: 0, y: c1 / a21 });
-    }
-    
-    if (a22 !== 0 && c2 / a22 >= 0) {
-        vertices.push({ x: 0, y: c2 / a22 });
-    }
-    
-    // λ2 = 0 line
-    if (a11 !== 0 && c1 / a11 >= 0) {
-        vertices.push({ x: c1 / a11, y: 0 });
-    }
-    
-    if (a12 !== 0 && c2 / a12 >= 0) {
-        vertices.push({ x: c2 / a12, y: 0 });
-    }
-    
-    // Find intersection of two constraint lines
-    const det = a11 * a22 - a12 * a21;
-    if (Math.abs(det) > 1e-10) {
-        const x = (c1 * a22 - c2 * a21) / det;
-        const y = (a11 * c2 - a12 * c1) / det;
-        if (x >= 0 && y >= 0) {
-            vertices.push({ x, y });
-        }
-    }
-    
-    // Remove duplicates and invalid vertices
-    const feasibleVertices = vertices.filter((v, index, self) => 
-        v.x >= 0 && v.y >= 0 && 
-        a11 * v.x + a21 * v.y >= c1 - 1e-10 && 
-        a12 * v.x + a22 * v.y >= c2 - 1e-10 &&
-        self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
-    );
-    
-    if (feasibleVertices.length === 0) return null;
-    
-    // Find optimal solution (maximum)
-    let optimalValue = -Infinity;
-    let optimalPoint = null;
-    let mu1 = 0;
-    let mu2 = 0;
-    
-    feasibleVertices.forEach(v => {
-        // Calculate μ1 and μ2 values
-        const mu1Value = a11 * v.x + a21 * v.y - c1;
-        const mu2Value = a12 * v.x + a22 * v.y - c2;
+    function solveDualSimplex() {
+        // In the dual problem:
+        // Maximize: g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
+        // Subject to:
+        //  a11*λ1 + a21*λ2 - μ1 = c1
+        //  a12*λ1 + a22*λ2 - μ2 = c2
+        //  λ1, λ2, μ1, μ2 ≥ 0
         
-        // Calculate objective value
-        const objValue = b1 * v.x + b2 * v.y - mu1Value - mu2Value + c3;
+        // First, let's solve for the vertices of the feasible region defined by:
+        // a11*λ1 + a21*λ2 ≥ c1
+        // a12*λ1 + a22*λ2 ≥ c2
+        // λ1, λ2 ≥ 0
         
-        if (objValue > optimalValue) {
-            optimalValue = objValue;
-            optimalPoint = v;
-            mu1 = mu1Value;
-            mu2 = mu2Value;
+        const vertices = [];
+        
+        // Origin (if feasible)
+        if (c1 <= 0 && c2 <= 0) {
+            vertices.push({ x: 0, y: 0 });
         }
-    });
-    
-    return {
-        point: optimalPoint,
-        value: optimalValue,
-        mu1: mu1,
-        mu2: mu2
-    };
-}
+        
+        // Intersections with axes
+        if (a21 !== 0 && c1 / a21 >= 0) {
+            vertices.push({ x: 0, y: c1 / a21 });
+        }
+        
+        if (a22 !== 0 && c2 / a22 >= 0) {
+            vertices.push({ x: 0, y: c2 / a22 });
+        }
+        
+        if (a11 !== 0 && c1 / a11 >= 0) {
+            vertices.push({ x: c1 / a11, y: 0 });
+        }
+        
+        if (a12 !== 0 && c2 / a12 >= 0) {
+            vertices.push({ x: c2 / a12, y: 0 });
+        }
+        
+        // Intersection of the two constraint lines
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > 1e-10) {
+            const x = (c1 * a22 - c2 * a21) / det;
+            const y = (a11 * c2 - a12 * c1) / det;
+            if (x >= 0 && y >= 0) {
+                vertices.push({ x, y });
+            }
+        }
+        
+        // Filter out duplicates and invalid vertices
+        const feasibleVertices = vertices.filter((v, index, self) => 
+            v.x >= 0 && v.y >= 0 && 
+            a11 * v.x + a21 * v.y >= c1 - 1e-10 && 
+            a12 * v.x + a22 * v.y >= c2 - 1e-10 &&
+            self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
+        );
+        
+        if (feasibleVertices.length === 0) return null;
+        
+        // Find optimal solution (maximum)
+        let optimalValue = -Infinity;
+        let optimalPoint = null;
+        let optimalMu1 = 0;
+        let optimalMu2 = 0;
+        
+        feasibleVertices.forEach(v => {
+            // Calculate μ1 and μ2 values from the equality constraints
+            const mu1Value = Math.max(0, a11 * v.x + a21 * v.y - c1);
+            const mu2Value = Math.max(0, a12 * v.x + a22 * v.y - c2);
+            
+            // Calculate dual objective value
+            // g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
+            const objValue = b1 * v.x + b2 * v.y - 1 * mu1Value - 1 * mu2Value + c3;
+            
+            if (objValue > optimalValue) {
+                optimalValue = objValue;
+                optimalPoint = v;
+                optimalMu1 = mu1Value;
+                optimalMu2 = mu2Value;
+            }
+        });
+        
+        return {
+            point: optimalPoint,
+            value: optimalValue,
+            mu1: optimalMu1,
+            mu2: optimalMu2,
+            vertices: feasibleVertices // Return all vertices for debugging
+        };
+    }
 
     // Function to draw the primal problem
     function drawPrimal() {
