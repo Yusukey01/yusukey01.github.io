@@ -700,78 +700,80 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve linear program using the simplex method
-    function solvePrimalSimplex() {
-        const vertices = [];
-        
-        // Start with minimum constraints
-        vertices.push({ x: 1, y: 1 });
-        
-        // Find intersections with constraints
-        if (a11 !== 0) {
-            const x1 = (b1 - a12) / a11;
-            if (x1 >= 1 && a21*x1 + a22 <= b2) {
-                vertices.push({ x: x1, y: 1 });
-            }
+    // Function to solve linear program using the simplex method
+function solvePrimalSimplex() {
+    const vertices = [];
+    
+    // Start with minimum constraints
+    vertices.push({ x: 1, y: 1 });
+    
+    // Find intersections with constraints at x₁ = 1
+    if (a12 !== 0) {
+        const y1 = (b1 - a11) / a12;
+        if (y1 >= 1 && a21 + a22*y1 <= b2) {
+            vertices.push({ x: 1, y: y1 });
         }
-        
-        if (a12 !== 0) {
-            const y1 = (b1 - a11) / a12;
-            if (y1 >= 1 && a21 + a22*y1 <= b2) {
-                vertices.push({ x: 1, y: y1 });
-            }
-        }
-        
-        if (a21 !== 0) {
-            const x2 = (b2 - a22) / a21;
-            if (x2 >= 1 && a11*x2 + a12 <= b1) {
-                vertices.push({ x: x2, y: 1 });
-            }
-        }
-        
-        if (a22 !== 0) {
-            const y2 = (b2 - a21) / a22;
-            if (y2 >= 1 && a11 + a12*y2 <= b1) {
-                vertices.push({ x: 1, y: y2 });
-            }
-        }
-        
-        // Find intersection of two constraints
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > 1e-10) {
-            const x = (b1 * a22 - b2 * a12) / det;
-            const y = (a11 * b2 - a21 * b1) / det;
-            if (x >= 1 && y >= 1) {
-                vertices.push({ x, y });
-            }
-        }
-        
-        // Remove duplicates and invalid vertices
-        const feasibleVertices = vertices.filter((v, index, self) => 
-            v.x >= 1 && v.y >= 1 && 
-            a11 * v.x + a12 * v.y <= b1 + 1e-10 && 
-            a21 * v.x + a22 * v.y <= b2 + 1e-10 &&
-            self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
-        );
-        
-        if (feasibleVertices.length === 0) return null;
-        
-        // Find optimal solution
-        let optimalValue = Infinity;
-        let optimalPoint = null;
-        
-        feasibleVertices.forEach(v => {
-            const objValue = c1 * v.x + c2 * v.y + c3;
-            if (objValue < optimalValue) {
-                optimalValue = objValue;
-                optimalPoint = v;
-            }
-        });
-        
-        return {
-            point: optimalPoint,
-            value: optimalValue
-        };
     }
+    
+    if (a22 !== 0) {
+        const y2 = (b2 - a21) / a22;
+        if (y2 >= 1 && a11 + a12*y2 <= b1) {
+            vertices.push({ x: 1, y: y2 });
+        }
+    }
+    
+    // Find intersections with constraints at x₂ = 1
+    if (a11 !== 0) {
+        const x1 = (b1 - a12) / a11;
+        if (x1 >= 1 && a21*x1 + a22 <= b2) {
+            vertices.push({ x: x1, y: 1 });
+        }
+    }
+    
+    if (a21 !== 0) {
+        const x2 = (b2 - a22) / a21;
+        if (x2 >= 1 && a11*x2 + a12 <= b1) {
+            vertices.push({ x: x2, y: 1 });
+        }
+    }
+    
+    // Find intersection of two main constraints
+    const det = a11 * a22 - a12 * a21;
+    if (Math.abs(det) > 1e-10) {
+        const x = (b1 * a22 - b2 * a12) / det;
+        const y = (a11 * b2 - a21 * b1) / det;
+        if (x >= 1 && y >= 1) {
+            vertices.push({ x, y });
+        }
+    }
+    
+    // Remove duplicates and invalid vertices
+    const feasibleVertices = vertices.filter((v, index, self) => 
+        v.x >= 1 && v.y >= 1 && 
+        a11 * v.x + a12 * v.y <= b1 + 1e-10 && 
+        a21 * v.x + a22 * v.y <= b2 + 1e-10 &&
+        self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
+    );
+    
+    if (feasibleVertices.length === 0) return null;
+    
+    // Find optimal solution by evaluating objective function at each vertex
+    let optimalValue = Infinity;
+    let optimalPoint = null;
+    
+    feasibleVertices.forEach(v => {
+        const objValue = c1 * v.x + c2 * v.y + c3;
+        if (objValue < optimalValue) {
+            optimalValue = objValue;
+            optimalPoint = v;
+        }
+    });
+    
+    return {
+        point: optimalPoint,
+        value: optimalValue
+    };
+}
 
     // Function to solve dual problem using complementary slackness
     function solveDualFromPrimal(primalSolution) {
