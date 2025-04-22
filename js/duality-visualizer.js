@@ -784,42 +784,82 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve dual problem using strong duality and complementary slackness
-    function solveDualFromPrimal(primalSolution) {
-        if (!primalSolution) return null;
-    
+    function solveDualFromPrimal() {
         const eps = 1e-8;
-        const { x: x1, y: x2 } = primalSolution.point;
+        const feasiblePoints = [];
     
-        // Solve Aᵗ λ = c + μ  → we'll get μ = Aᵗλ - c
+        // Enumerate potential corner points (λ₁, λ₂) from μ ≥ 0 and λ ≥ 0
+    
+        // The constraint lines:
+        // μ₁ = a11*λ₁ + a21*λ₂ - c1 ≥ 0  ⇒  a11*λ₁ + a21*λ₂ ≥ c1
+        // μ₂ = a12*λ₁ + a22*λ₂ - c2 ≥ 0  ⇒  a12*λ₁ + a22*λ₂ ≥ c2
+        // λ₁ ≥ 0, λ₂ ≥ 0
+    
+        // Find intersections of the lines:
         const det = a11 * a22 - a12 * a21;
         if (Math.abs(det) < eps) return null;
     
-        // Solve Aᵗ λ = c (initially, ignoring μ), we'll adjust with μ later
-        let lambda1 = (c1 * a22 - c2 * a21) / det;
-        let lambda2 = (a11 * c2 - a12 * c1) / det;
+        // Intersection of the two constraint lines (μ₁ = 0, μ₂ = 0)
+        const l1 = (c1 * a22 - c2 * a21) / det;
+        const l2 = (a11 * c2 - a12 * c1) / det;
     
-        lambda1 = Math.max(0, lambda1);
-        lambda2 = Math.max(0, lambda2);
+        if (l1 >= -eps && l2 >= -eps) {
+            feasiblePoints.push({ l1, l2 });
+        }
     
-        // Compute μ₁, μ₂ from: μ = Aᵗ λ - c
-        let mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-        let mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+        // Intersect each line with axes (λ₁ = 0 or λ₂ = 0)
+        // μ₁ = 0 when: a11*λ₁ + a21*λ₂ = c1
+        if (a21 !== 0) {
+            const λ2 = c1 / a21;
+            if (λ2 >= 0) feasiblePoints.push({ l1: 0, l2: λ2 });
+        }
+        if (a11 !== 0) {
+            const λ1 = c1 / a11;
+            if (λ1 >= 0) feasiblePoints.push({ l1: λ1, l2: 0 });
+        }
     
-        mu1 = Math.max(0, mu1);
-        mu2 = Math.max(0, mu2);
+        // μ₂ = 0 when: a12*λ₁ + a22*λ₂ = c2
+        if (a22 !== 0) {
+            const λ2 = c2 / a22;
+            if (λ2 >= 0) feasiblePoints.push({ l1: 0, l2: λ2 });
+        }
+        if (a12 !== 0) {
+            const λ1 = c2 / a12;
+            if (λ1 >= 0) feasiblePoints.push({ l1: λ1, l2: 0 });
+        }
     
-        // Dual objective
-        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        let bestValue = -Infinity;
+        let bestPoint = null;
+        let bestMu1 = null;
+        let bestMu2 = null;
     
-        console.log(`Dual solution: λ₁=${lambda1.toFixed(6)}, λ₂=${lambda2.toFixed(6)}, μ₁=${mu1.toFixed(6)}, μ₂=${mu2.toFixed(6)}, value=${dualValue.toFixed(6)}`);
+        for (const pt of feasiblePoints) {
+            const { l1, l2 } = pt;
+            const mu1 = a11 * l1 + a21 * l2 - c1;
+            const mu2 = a12 * l1 + a22 * l2 - c2;
+            if (l1 >= -eps && l2 >= -eps && mu1 >= -eps && mu2 >= -eps) {
+                const value = b1 * l1 + b2 * l2 - mu1 - mu2 + c3;
+                if (value > bestValue) {
+                    bestValue = value;
+                    bestPoint = { x: l1, y: l2 };
+                    bestMu1 = mu1;
+                    bestMu2 = mu2;
+                }
+            }
+        }
+    
+        if (!bestPoint) return null;
+    
+        console.log(`Dual solution: λ₁=${bestPoint.x.toFixed(4)}, λ₂=${bestPoint.y.toFixed(4)}, μ₁=${bestMu1.toFixed(4)}, μ₂=${bestMu2.toFixed(4)}, value=${bestValue.toFixed(4)}`);
     
         return {
-            point: { x: lambda1, y: lambda2 },
-            value: dualValue,
-            mu1,
-            mu2
+            point: bestPoint,
+            value: bestValue,
+            mu1: bestMu1,
+            mu2: bestMu2
         };
-    }  
+    }
+    
     
     // Function to compute the dual feasible region
     function computeDualFeasibleRegion() {
