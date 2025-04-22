@@ -453,12 +453,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let c1 = 3, c2 = 4, c3 = -20;
     let a11 = 2, a12 = 1, a21 = 1, a22 = 3;
     let b1 = 10, b2 = 15;
+
+    const eps = 1e-8;
     
     // Get DOM elements
     const canvas = document.getElementById('duality-canvas');
     const ctx = canvas.getContext('2d');
     const toggleViewBtn = document.getElementById('toggle-view-btn');
-    
+
     // Get parameter sliders and value displays
     const c1Slider = document.getElementById('c1-slider');
     const c2Slider = document.getElementById('c2-slider');
