@@ -785,51 +785,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to solve dual problem using strong duality and complementary slackness
     function solveDualFromPrimal(primalSolution) {
-    if (!primalSolution) return null;
-
-    const eps = 1e-8;
-
-    const primalPoint = primalSolution.point;
-
-    // Solve Aᵗλ = c
-    const det = a11 * a22 - a12 * a21;
-    if (Math.abs(det) < eps) return null;
-
-    let lambda1 = (c1 * a22 - c2 * a21) / det;
-    let lambda2 = (a11 * c2 - a12 * c1) / det;
-
-    lambda1 = Math.max(0, lambda1);
-    lambda2 = Math.max(0, lambda2);
-
-    // μ₁, μ₂ from complementary slackness: μᵢ(xᵢ - 1) = 0
-    //let mu1 = 0, mu2 = 0;
-    //if (Math.abs(primalPoint.x - 1) < eps) {
-    //    mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-    //}
-    //if (Math.abs(primalPoint.y - 1) < eps) {
-    //    mu2 = a12 * lambda1 + a22 * lambda2 - c2;
-    //}
-
-    //mu1 = Math.max(0, mu1);
-    //mu2 = Math.max(0, mu2);
-
-    let mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-    let mu2 = a12 * lambda1 + a22 * lambda2 - c2;
-    mu1 = Math.max(0, mu1);
-    mu2 = Math.max(0, mu2);
-
-    // Dual objective value
-    const dualValue = b1 * lambda1 + b2 * lambda2 + c3 - mu1 - mu2;
-
-    console.log(`Dual solution: λ₁=${lambda1.toFixed(6)}, λ₂=${lambda2.toFixed(6)}, μ₁=${mu1.toFixed(6)}, μ₂=${mu2.toFixed(6)}, value=${dualValue.toFixed(6)}`);
-
-    return {
-        point: { x: lambda1, y: lambda2 },
-        value: dualValue,
-        mu1,
-        mu2
-    };
-}
+        if (!primalSolution) return null;
+    
+        const eps = 1e-8;
+        const { x: x1, y: x2 } = primalSolution.point;
+    
+        // Solve Aᵗ λ = c + μ  → we'll get μ = Aᵗλ - c
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) < eps) return null;
+    
+        // Solve Aᵗ λ = c (initially, ignoring μ), we'll adjust with μ later
+        let lambda1 = (c1 * a22 - c2 * a21) / det;
+        let lambda2 = (a11 * c2 - a12 * c1) / det;
+    
+        lambda1 = Math.max(0, lambda1);
+        lambda2 = Math.max(0, lambda2);
+    
+        // Compute μ₁, μ₂ from: μ = Aᵗ λ - c
+        let mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+        let mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+    
+        mu1 = Math.max(0, mu1);
+        mu2 = Math.max(0, mu2);
+    
+        // Dual objective
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+    
+        console.log(`Dual solution: λ₁=${lambda1.toFixed(6)}, λ₂=${lambda2.toFixed(6)}, μ₁=${mu1.toFixed(6)}, μ₂=${mu2.toFixed(6)}, value=${dualValue.toFixed(6)}`);
+    
+        return {
+            point: { x: lambda1, y: lambda2 },
+            value: dualValue,
+            mu1,
+            mu2
+        };
+    }  
     
     // Function to compute the dual feasible region
     function computeDualFeasibleRegion() {
