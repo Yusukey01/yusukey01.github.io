@@ -813,6 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve the dual problem using the simplex method
+    // Function to solve the dual problem using the simplex method
     function solveDualSimplex() {
         // The dual problem for our standard form is:
         // Maximize: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
@@ -1107,6 +1108,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 mu2 = Math.max(0, mu2);
             }
         }
+        
+        // Ensure all variables are non-negative
+        lambda1 = Math.max(0, lambda1);
+        lambda2 = Math.max(0, lambda2);
+        mu1 = Math.max(0, mu1);
+        mu2 = Math.max(0, mu2);
+        
+        // Calculate the value of the dual objective function
+        // Dual objective: Maximize: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        
+        // Return the dual solution
+        return {
+            point: { x: lambda1, y: lambda2 },
+            value: dualValue,
+            mu1: mu1,
+            mu2: mu2
+        };
     }
     
     // Add this helper function to verify strong duality
