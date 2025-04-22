@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - μ₁ - μ₂ + c₃</div>
                     <div class="constraint">Subject to:</div>
                     <div class="constraint-list">
-                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ - μ₁ = c₁</div>
-                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ - μ₂ = c₂</div>
+                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ - μ₁ ≤ c₁</div>
+                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ - μ₂ ≤ c₂</div>
                         <div class="constraint">λ₁, λ₂, μ₁, μ₂ ≥ 0</div>
                     </div>
                 </div>
@@ -814,6 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to solve the dual problem using the simplex method
     // Function to solve the dual problem using the simplex method
+    // Function to solve the dual problem using the simplex method
     function solveDualSimplex() {
         // The dual problem for our standard form is:
         // Maximize: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
@@ -868,8 +869,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("x2 binding:", isX2Binding);
         
         // The dual constraints always need to be satisfied:
-        // a11*λ1 + a21*λ2 - μ1 = c1
-        // a12*λ1 + a22*λ2 - μ2 = c2
+        // a11*λ1 + a21*λ2 - μ1 ≤ c1
+        // a12*λ1 + a22*λ2 - μ2 ≤ c2
         
         // Handle different cases based on active constraints
         if (isConstraint1Active && isConstraint2Active) {
