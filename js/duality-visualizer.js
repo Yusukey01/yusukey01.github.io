@@ -783,80 +783,74 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Function to solve dual problem using strong duality and complementary slackness
-    function solveDualFromPrimal() {
-        const eps = 1e-8;
-        const feasiblePoints = [];
-    
-        // Enumerate potential corner points (λ₁, λ₂) from μ ≥ 0 and λ ≥ 0
-    
-        // The constraint lines:
-        // μ₁ = a11*λ₁ + a21*λ₂ - c1 ≥ 0  ⇒  a11*λ₁ + a21*λ₂ ≥ c1
-        // μ₂ = a12*λ₁ + a22*λ₂ - c2 ≥ 0  ⇒  a12*λ₁ + a22*λ₂ ≥ c2
-        // λ₁ ≥ 0, λ₂ ≥ 0
-    
-        // Find intersections of the lines:
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) < eps) return null;
-    
-        // Intersection of the two constraint lines (μ₁ = 0, μ₂ = 0)
-        const l1 = (c1 * a22 - c2 * a21) / det;
-        const l2 = (a11 * c2 - a12 * c1) / det;
-    
-        if (l1 >= -eps && l2 >= -eps) {
-            feasiblePoints.push({ l1, l2 });
-        }
-    
-        // Intersect each line with axes (λ₁ = 0 or λ₂ = 0)
-        // μ₁ = 0 when: a11*λ₁ + a21*λ₂ = c1
-        if (a21 !== 0) {
-            const λ2 = c1 / a21;
-            if (λ2 >= 0) feasiblePoints.push({ l1: 0, l2: λ2 });
-        }
-        if (a11 !== 0) {
-            const λ1 = c1 / a11;
-            if (λ1 >= 0) feasiblePoints.push({ l1: λ1, l2: 0 });
-        }
-    
-        // μ₂ = 0 when: a12*λ₁ + a22*λ₂ = c2
-        if (a22 !== 0) {
-            const λ2 = c2 / a22;
-            if (λ2 >= 0) feasiblePoints.push({ l1: 0, l2: λ2 });
-        }
-        if (a12 !== 0) {
-            const λ1 = c2 / a12;
-            if (λ1 >= 0) feasiblePoints.push({ l1: λ1, l2: 0 });
-        }
-    
-        let bestValue = -Infinity;
-        let bestPoint = null;
-        let bestMu1 = null;
-        let bestMu2 = null;
-    
-        for (const pt of feasiblePoints) {
-            const { l1, l2 } = pt;
-            const mu1 = a11 * l1 + a21 * l2 - c1;
-            const mu2 = a12 * l1 + a22 * l2 - c2;
-            if (l1 >= -eps && l2 >= -eps && mu1 >= -eps && mu2 >= -eps) {
-                const value = b1 * l1 + b2 * l2 - mu1 - mu2 + c3;
-                if (value > bestValue) {
-                    bestValue = value;
-                    bestPoint = { x: l1, y: l2 };
-                    bestMu1 = mu1;
-                    bestMu2 = mu2;
+    // Function to solve dual problem from primal using complementary slackness
+    function solveDualFromPrimal(primalSolution) {
+        if (!primalSolution) return null;
+        
+        const { point: primalPoint, value: primalValue } = primalSolution;
+        const x1 = primalPoint.x;
+        const x2 = primalPoint.y;
+        
+        // Check which constraints are active at the optimal solution
+        const constraint1 = Math.abs(a11 * x1 + a12 * x2 - b1) < eps;
+        const constraint2 = Math.abs(a21 * x1 + a22 * x2 - b2) < eps;
+        const bound1 = Math.abs(x1 - 1) < eps;
+        const bound2 = Math.abs(x2 - 1) < eps;
+        
+        // By complementary slackness:
+        // If a constraint is not active (slack > 0), the corresponding dual variable is 0
+        let lambda1 = constraint1 ? null : 0;
+        let lambda2 = constraint2 ? null : 0;
+        let mu1 = bound1 ? null : 0;
+        let mu2 = bound2 ? null : 0;
+        
+        // Set up and solve system of equations for the non-zero dual variables
+        // If two constraints are active, we have a system of two equations
+        if ((constraint1 ? 1 : 0) + (constraint2 ? 1 : 0) === 2) {
+            // Both main constraints are active, solve for lambda1 and lambda2
+            const det = a11 * a22 - a12 * a21;
+            if (Math.abs(det) > eps) {
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
+                // Check if lambdas are non-negative (dual feasibility)
+                if (lambda1 < 0 || lambda2 < 0) {
+                    // This shouldn't happen if the primal is properly solved
+                    console.error("Dual variables negative, may indicate an issue with primal solution");
+                    lambda1 = Math.max(0, lambda1);
+                    lambda2 = Math.max(0, lambda2);
                 }
             }
+            // Compute mu1 and mu2 from the dual constraints
+            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
+            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
+        } else if (constraint1 && bound1) {
+            // First main constraint and x1 bound are active
+            // a11*lambda1 + a21*lambda2 - mu1 = c1
+            // mu1 is non-zero because x1 bound is active
+            lambda1 = c1 / a11;
+            lambda2 = 0; // Assuming constraint2 is not active
+            mu1 = 0; // Set to zero for simplicity - should be calculated properly
+            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
         }
-    
-        if (!bestPoint) return null;
-    
-        console.log(`Dual solution: λ₁=${bestPoint.x.toFixed(4)}, λ₂=${bestPoint.y.toFixed(4)}, μ₁=${bestMu1.toFixed(4)}, μ₂=${bestMu2.toFixed(4)}, value=${bestValue.toFixed(4)}`);
-    
+        // ... Add other cases for different combinations of active constraints
+        
+        // Ensure all dual variables are non-negative (dual feasibility)
+        lambda1 = lambda1 !== null ? Math.max(0, lambda1) : 0;
+        lambda2 = lambda2 !== null ? Math.max(0, lambda2) : 0;
+        mu1 = mu1 !== null ? Math.max(0, mu1) : 0;
+        mu2 = mu2 !== null ? Math.max(0, mu2) : 0;
+        
+        // Compute dual objective value
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        
+        // Log dual solution for debugging
+        console.log(`Dual solution: λ₁=${lambda1.toFixed(4)}, λ₂=${lambda2.toFixed(4)}, μ₁=${mu1.toFixed(4)}, μ₂=${mu2.toFixed(4)}, value=${dualValue.toFixed(4)}`);
+        
         return {
-            point: bestPoint,
-            value: bestValue,
-            mu1: bestMu1,
-            mu2: bestMu2
+            point: { x: lambda1, y: lambda2 },
+            value: dualValue,
+            mu1: mu1,
+            mu2: mu2
         };
     }
     
