@@ -701,180 +701,424 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to solve linear program using the simplex method
     function solvePrimalSimplex() {
-    const vertices = [];
-    
-    // Start with minimum constraints (x₁ ≥ 1, x₂ ≥ 1)
-    vertices.push({ x: 1, y: 1 });
-    
-    // Find intersections with constraints at x₁ = 1
-    if (a12 !== 0) {
-        const y1 = (b1 - a11) / a12;
-        if (y1 >= 1 && a21 + a22*y1 <= b2) {
-            vertices.push({ x: 1, y: y1 });
-        }
-    }
-    
-    if (a22 !== 0) {
-        const y2 = (b2 - a21) / a22;
-        if (y2 >= 1 && a11 + a12*y2 <= b1) {
-            vertices.push({ x: 1, y: y2 });
-        }
-    }
-    
-    // Find intersections with constraints at x₂ = 1
-    if (a11 !== 0) {
-        const x1 = (b1 - a12) / a11;
-        if (x1 >= 1 && a21*x1 + a22 <= b2) {
-            vertices.push({ x: x1, y: 1 });
-        }
-    }
-    
-    if (a21 !== 0) {
-        const x2 = (b2 - a22) / a21;
-        if (x2 >= 1 && a11*x2 + a12 <= b1) {
-            vertices.push({ x: x2, y: 1 });
-        }
-    }
-    
-    // Find intersection of two main constraints
-    const det = a11 * a22 - a12 * a21;
-    if (Math.abs(det) > 1e-10) {
-        const x = (b1 * a22 - b2 * a12) / det;
-        const y = (a11 * b2 - a21 * b1) / det;
-        if (x >= 1 && y >= 1) {
-            vertices.push({ x, y });
-        }
-    }
-    
-    // Remove duplicates and invalid vertices
-    const feasibleVertices = vertices.filter((v, index, self) => 
-        v.x >= 1 && v.y >= 1 && 
-        a11 * v.x + a12 * v.y <= b1 + 1e-10 && 
-        a21 * v.x + a22 * v.y <= b2 + 1e-10 &&
-        self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
-    );
-    
-    if (feasibleVertices.length === 0) return null;
-    
-    // Find optimal solution by evaluating objective function at each vertex
-    let optimalValue = Infinity;
-    let optimalPoint = null;
-    
-    feasibleVertices.forEach(v => {
-        const objValue = c1 * v.x + c2 * v.y + c3;
-        if (objValue < optimalValue) {
-            optimalValue = objValue;
-            optimalPoint = v;
-        }
-    });
-    
-    return {
-        point: optimalPoint,
-        value: optimalValue,
-        vertices: feasibleVertices // Return all vertices for debugging
-    };
-}
-
-    // Function to solve the dual problem using the simplex method
-    function solveDualSimplex() {
-        // In the dual problem:
-        // Maximize: g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
-        // Subject to:
-        //  a11*λ1 + a21*λ2 - μ1 = c1
-        //  a12*λ1 + a22*λ2 - μ2 = c2
-        //  λ1, λ2, μ1, μ2 ≥ 0
+        // For this problem structure:
+        // Minimize: c1*x1 + c2*x2 + c3
+        // Subject to: 
+        //   a11*x1 + a12*x2 <= b1
+        //   a21*x1 + a22*x2 <= b2
+        //   x1 >= 1, x2 >= 1
         
+        // Compute all possible vertices of the feasible region
         const vertices = [];
         
-        // Origin (if feasible)
-        if (c1 <= 0 && c2 <= 0) {
-            vertices.push({ x: 0, y: 0 });
+        // Add minimum boundary point (1,1)
+        vertices.push({ x: 1, y: 1 });
+        
+        // Check constraint 1 intersection with x1 = 1
+        if (a12 !== 0) {
+            const y1 = (b1 - a11) / a12;
+            if (y1 >= 1) {
+                vertices.push({ x: 1, y: y1 });
+            }
         }
         
-        // Intersections with axes
-        if (a21 !== 0 && c1 / a21 >= 0) {
-            vertices.push({ x: 0, y: c1 / a21 });
+        // Check constraint 2 intersection with x1 = 1
+        if (a22 !== 0) {
+            const y2 = (b2 - a21) / a22;
+            if (y2 >= 1) {
+                vertices.push({ x: 1, y: y2 });
+            }
         }
         
-        if (a22 !== 0 && c2 / a22 >= 0) {
-            vertices.push({ x: 0, y: c2 / a22 });
+        // Check constraint 1 intersection with x2 = 1
+        if (a11 !== 0) {
+            const x1 = (b1 - a12) / a11;
+            if (x1 >= 1) {
+                vertices.push({ x: x1, y: 1 });
+            }
         }
         
-        if (a11 !== 0 && c1 / a11 >= 0) {
-            vertices.push({ x: c1 / a11, y: 0 });
+        // Check constraint 2 intersection with x2 = 1
+        if (a21 !== 0) {
+            const x2 = (b2 - a22) / a21;
+            if (x2 >= 1) {
+                vertices.push({ x: x2, y: 1 });
+            }
         }
         
-        if (a12 !== 0 && c2 / a12 >= 0) {
-            vertices.push({ x: c2 / a12, y: 0 });
-        }
-        
-        // Intersection of the two constraint lines
+        // Find intersection of the two main constraints
         const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > 1e-10) {
-            const x = (c1 * a22 - c2 * a21) / det;
-            const y = (a11 * c2 - a12 * c1) / det;
-            if (x >= 0 && y >= 0) {
+        if (Math.abs(det) > eps) {
+            const x = (b1 * a22 - b2 * a12) / det;
+            const y = (a11 * b2 - a21 * b1) / det;
+            if (x >= 1 && y >= 1) {
                 vertices.push({ x, y });
             }
         }
         
-        // Filter out duplicates and invalid vertices
-        const feasibleVertices = vertices.filter((v, index, self) => 
-            v.x >= 0 && v.y >= 0 && 
-            (a11 * v.x + a21 * v.y >= c1 - 1e-10 || isEffectivelyZero(a11 * v.x + a21 * v.y - c1)) && 
-            (a12 * v.x + a22 * v.y >= c2 - 1e-10 || isEffectivelyZero(a12 * v.x + a22 * v.y - c2)) &&
-            self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
-        );
+        // Filter out duplicate vertices and non-feasible points
+        const feasibleVertices = [];
         
-        if (feasibleVertices.length === 0) return null;
-        
-        // Find optimal solution (maximum)
-        let optimalValue = -Infinity;
-        let optimalPoint = null;
-        let optimalMu1 = 0;
-        let optimalMu2 = 0;
-        
-        feasibleVertices.forEach(v => {
-            // Calculate μ1 and μ2 values from the equality constraints
-            // mu1 = a11*λ1 + a21*λ2 - c1
-            // mu2 = a12*λ1 + a22*λ2 - c2
-            const mu1Value = Math.max(0, a11 * v.x + a21 * v.y - c1);
-            const mu2Value = Math.max(0, a12 * v.x + a22 * v.y - c2);
-            
-            // Calculate dual objective value:
-            // g(λ) = b1*λ1 + b2*λ2 - 1*μ1 - 1*μ2 + c3
-            const objValue = b1 * v.x + b2 * v.y - mu1Value - mu2Value + c3;
-            
-            if (objValue > optimalValue) {
-                optimalValue = objValue;
-                optimalPoint = v;
-                optimalMu1 = mu1Value;
-                optimalMu2 = mu2Value;
+        vertices.forEach(v => {
+            // Check if the vertex is feasible (satisfies all constraints)
+            if (v.x >= 1 && v.y >= 1 && 
+                a11 * v.x + a12 * v.y <= b1 + eps && 
+                a21 * v.x + a22 * v.y <= b2 + eps) {
+                
+                // Check if this vertex is not already in the list (avoid duplicates)
+                const isDuplicate = feasibleVertices.some(existingV => 
+                    Math.abs(existingV.x - v.x) < eps && 
+                    Math.abs(existingV.y - v.y) < eps
+                );
+                
+                if (!isDuplicate) {
+                    feasibleVertices.push(v);
+                }
             }
         });
         
-        // Handle numerical precision for optimal value
-        // Adjust for any tiny floating point errors
-        // This is important for eliminating small duality gaps due to precision
-        if (optimalPoint) {
-            const preciseObjValue = b1 * optimalPoint.x + b2 * optimalPoint.y - 
-                                optimalMu1 - optimalMu2 + c3;
-            
-            // Round to 9 decimal places to handle floating point errors
-            optimalValue = parseFloat(preciseObjValue.toFixed(9));
+        if (feasibleVertices.length === 0) {
+            return null; // No feasible solution
         }
+        
+        // Find optimal solution by evaluating objective function at each vertex
+        let optimalValue = Infinity;
+        let optimalPoint = null;
+        
+        feasibleVertices.forEach(v => {
+            const objValue = c1 * v.x + c2 * v.y + c3;
+            if (objValue < optimalValue) {
+                optimalValue = objValue;
+                optimalPoint = v;
+            }
+        });
+        
+        // Determine active constraints at optimal point
+        const isConstraint1Active = Math.abs(a11 * optimalPoint.x + a12 * optimalPoint.y - b1) < eps;
+        const isConstraint2Active = Math.abs(a21 * optimalPoint.x + a22 * optimalPoint.y - b2) < eps;
+        const isX1Binding = Math.abs(optimalPoint.x - 1) < eps;
+        const isX2Binding = Math.abs(optimalPoint.y - 1) < eps;
         
         return {
             point: optimalPoint,
             value: optimalValue,
-            mu1: optimalMu1,
-            mu2: optimalMu2
+            feasibleVertices: feasibleVertices,
+            activeConstraints: {
+                constraint1: isConstraint1Active,
+                constraint2: isConstraint2Active,
+                x1Bound: isX1Binding,
+                x2Bound: isX2Binding
+            }
         };
     }
 
-    // Helper function to check if a value is effectively zero
-    function isEffectivelyZero(value, epsilon = 1e-10) {
-        return Math.abs(value) < epsilon;
+    // Function to solve the dual problem using the simplex method
+    function solveDualSimplex() {
+        // The dual problem for our standard form is:
+        // Maximize: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+        // Subject to:
+        //   a11*λ1 + a21*λ2 - μ1 = c1
+        //   a12*λ1 + a22*λ2 - μ2 = c2
+        //   λ1, λ2, μ1, μ2 >= 0
+        
+        // First, solve the primal to get information about active constraints
+        const primalSolution = solvePrimalSimplex();
+        
+        if (!primalSolution) {
+            return null; // If primal has no solution, dual is unbounded
+        }
+        
+        const { point: pPoint, activeConstraints } = primalSolution;
+        
+        // Construct dual solution based on complementary slackness
+        let lambda1 = 0; // Default value if constraint 1 is not active
+        let lambda2 = 0; // Default value if constraint 2 is not active
+        let mu1 = 0;     // Default value if x1 bound is not active
+        let mu2 = 0;     // Default value if x2 bound is not active
+        
+        // We have a system of 2 equations (from the dual constraints):
+        // a11*λ1 + a21*λ2 - μ1 = c1
+        // a12*λ1 + a22*λ2 - μ2 = c2
+        
+        // Plus complementary slackness conditions:
+        // If constraint i is not tight at the primal optimal, then λi = 0
+        // If xi > 1 (bound not tight), then μi = 0
+        
+        // Case analysis based on which constraints are active
+        if (activeConstraints.constraint1 && activeConstraints.constraint2) {
+            // Both main constraints are active: solve for λ1 and λ2
+            // System: a11*λ1 + a21*λ2 = c1, a12*λ1 + a22*λ2 = c2 (assuming μ1 = μ2 = 0)
+            const det = a11 * a22 - a12 * a21;
+            
+            if (Math.abs(det) > eps) {
+                lambda1 = (c1 * a22 - c2 * a21) / det;
+                lambda2 = (a11 * c2 - a12 * c1) / det;
+                
+                // Check if the computed lambdas are non-negative
+                if (lambda1 < -eps || lambda2 < -eps) {
+                    // Solution would require negative lambdas which are infeasible
+                    // This means some μ values must be nonzero
+                    
+                    // If x1 = 1 (bound is tight), μ1 could be positive
+                    if (activeConstraints.x1Bound) {
+                        // Adjust by adding μ1 to the equation
+                        mu1 = Math.max(0, -(a11 * lambda1 + a21 * lambda2 - c1));
+                    }
+                    
+                    // If x2 = 1 (bound is tight), μ2 could be positive
+                    if (activeConstraints.x2Bound) {
+                        // Adjust by adding μ2 to the equation
+                        mu2 = Math.max(0, -(a12 * lambda1 + a22 * lambda2 - c2));
+                    }
+                    
+                    // If we couldn't fix with μ values, we need to adjust lambdas
+                    if ((lambda1 < -eps || lambda2 < -eps) && 
+                        (!activeConstraints.x1Bound && !activeConstraints.x2Bound)) {
+                        lambda1 = Math.max(0, lambda1);
+                        lambda2 = Math.max(0, lambda2);
+                    }
+                }
+            }
+        } else if (activeConstraints.constraint1) {
+            // Only constraint 1 is active
+            if (activeConstraints.x1Bound && !activeConstraints.x2Bound) {
+                // x1 = 1, x2 > 1, constraint 1 active
+                // From complementary slackness, μ2 = 0
+                // We have: a11*λ1 + a21*λ2 - μ1 = c1, a12*λ1 + a22*λ2 = c2
+                if (a12 !== 0) {
+                    // Solve for λ1 in terms of λ2 from second equation
+                    const lambda1_expr = (c2 - a22 * lambda2) / a12;
+                    
+                    // Substitute into first equation to get μ1
+                    mu1 = a11 * lambda1_expr + a21 * lambda2 - c1;
+                    
+                    // Choose λ2 to maximize the objective while keeping μ1 ≥ 0
+                    // Objective: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+                    
+                    // Substitute λ1 and μ1 into the objective
+                    // This gives us an expression in terms of λ2 only
+                    // We want to maximize this, subject to λ2 ≥ 0 and μ1 ≥ 0
+                    
+                    // Compute the coefficient of λ2 in the objective
+                    const lambda2_coef = b2 - b1 * a22 / a12 - (a21 - a11 * a22 / a12);
+                    
+                    if (Math.abs(lambda2_coef) < eps) {
+                        // Coefficient is basically zero, any valid λ2 gives same objective
+                        lambda2 = 0; // Choose the simplest
+                    } else if (lambda2_coef > 0) {
+                        // Increasing λ2 improves objective, so set it as high as possible
+                        // Find the value where μ1 becomes negative
+                        if (a21 - a11 * a22 / a12 !== 0) {
+                            const lambda2_limit = (c1 - a11 * c2 / a12) / (a21 - a11 * a22 / a12);
+                            lambda2 = Math.max(0, lambda2_limit);
+                        } else {
+                            lambda2 = 0; // No effect on μ1
+                        }
+                    } else {
+                        // Decreasing λ2 improves objective, so use λ2 = 0
+                        lambda2 = 0;
+                    }
+                    
+                    // Compute final λ1 and μ1 based on chosen λ2
+                    lambda1 = (c2 - a22 * lambda2) / a12;
+                    mu1 = Math.max(0, a11 * lambda1 + a21 * lambda2 - c1);
+                    
+                    // Ensure λ1 is non-negative
+                    if (lambda1 < 0) {
+                        lambda1 = 0;
+                        // Recalculate λ2 and μ1
+                        if (a22 !== 0) {
+                            lambda2 = c2 / a22;
+                            mu1 = Math.max(0, a21 * lambda2 - c1);
+                        } else {
+                            // We can't satisfy the constraints, default to zero
+                            lambda2 = 0;
+                            mu1 = Math.max(0, -c1);
+                        }
+                    }
+                }
+            } else if (!activeConstraints.x1Bound && activeConstraints.x2Bound) {
+                // Similar analysis for x1 > 1, x2 = 1, constraint 1 active
+                // Logic follows the previous case but with variables swapped
+                if (a11 !== 0) {
+                    const lambda2_expr = (c1 - a11 * lambda1) / a21;
+                    mu2 = a12 * lambda1 + a22 * lambda2_expr - c2;
+                    
+                    const lambda1_coef = b1 - b2 * a11 / a21 - (a12 - a22 * a11 / a21);
+                    
+                    if (Math.abs(lambda1_coef) < eps) {
+                        lambda1 = 0;
+                    } else if (lambda1_coef > 0) {
+                        if (a12 - a22 * a11 / a21 !== 0) {
+                            const lambda1_limit = (c2 - a22 * c1 / a21) / (a12 - a22 * a11 / a21);
+                            lambda1 = Math.max(0, lambda1_limit);
+                        } else {
+                            lambda1 = 0;
+                        }
+                    } else {
+                        lambda1 = 0;
+                    }
+                    
+                    lambda2 = (c1 - a11 * lambda1) / a21;
+                    mu2 = Math.max(0, a12 * lambda1 + a22 * lambda2 - c2);
+                    
+                    if (lambda2 < 0) {
+                        lambda2 = 0;
+                        if (a11 !== 0) {
+                            lambda1 = c1 / a11;
+                            mu2 = Math.max(0, a12 * lambda1 - c2);
+                        } else {
+                            lambda1 = 0;
+                            mu2 = Math.max(0, -c2);
+                        }
+                    }
+                }
+            } else if (activeConstraints.x1Bound && activeConstraints.x2Bound) {
+                // x1 = 1, x2 = 1, constraint 1 active
+                // Both μ1 and μ2 can be positive
+                lambda1 = 0; // Choose simplest solution
+                lambda2 = 0;
+                mu1 = -c1; // From a11*λ1 + a21*λ2 - μ1 = c1
+                mu2 = -c2; // From a12*λ1 + a22*λ2 - μ2 = c2
+                
+                // Ensure non-negativity
+                mu1 = Math.max(0, mu1);
+                mu2 = Math.max(0, mu2);
+            }
+        } else if (activeConstraints.constraint2) {
+            // Only constraint 2 is active
+            // Logic follows similar pattern to constraint 1 active case
+            if (activeConstraints.x1Bound && !activeConstraints.x2Bound) {
+                if (a12 !== 0) {
+                    const lambda1_expr = (c2 - a22 * lambda2) / a12;
+                    mu1 = a11 * lambda1_expr + a21 * lambda2 - c1;
+                    
+                    const lambda2_coef = b2 - b1 * a22 / a12 - (a21 - a11 * a22 / a12);
+                    
+                    if (Math.abs(lambda2_coef) < eps) {
+                        lambda2 = 0;
+                    } else if (lambda2_coef > 0) {
+                        if (a21 - a11 * a22 / a12 !== 0) {
+                            const lambda2_limit = (c1 - a11 * c2 / a12) / (a21 - a11 * a22 / a12);
+                            lambda2 = Math.max(0, lambda2_limit);
+                        } else {
+                            lambda2 = 0;
+                        }
+                    } else {
+                        lambda2 = 0;
+                    }
+                    
+                    lambda1 = (c2 - a22 * lambda2) / a12;
+                    mu1 = Math.max(0, a11 * lambda1 + a21 * lambda2 - c1);
+                    
+                    if (lambda1 < 0) {
+                        lambda1 = 0;
+                        if (a22 !== 0) {
+                            lambda2 = c2 / a22;
+                            mu1 = Math.max(0, a21 * lambda2 - c1);
+                        } else {
+                            lambda2 = 0;
+                            mu1 = Math.max(0, -c1);
+                        }
+                    }
+                }
+            } else if (!activeConstraints.x1Bound && activeConstraints.x2Bound) {
+                if (a11 !== 0) {
+                    const lambda2_expr = (c1 - a11 * lambda1) / a21;
+                    mu2 = a12 * lambda1 + a22 * lambda2_expr - c2;
+                    
+                    const lambda1_coef = b1 - b2 * a11 / a21 - (a12 - a22 * a11 / a21);
+                    
+                    if (Math.abs(lambda1_coef) < eps) {
+                        lambda1 = 0;
+                    } else if (lambda1_coef > 0) {
+                        if (a12 - a22 * a11 / a21 !== 0) {
+                            const lambda1_limit = (c2 - a22 * c1 / a21) / (a12 - a22 * a11 / a21);
+                            lambda1 = Math.max(0, lambda1_limit);
+                        } else {
+                            lambda1 = 0;
+                        }
+                    } else {
+                        lambda1 = 0;
+                    }
+                    
+                    lambda2 = (c1 - a11 * lambda1) / a21;
+                    mu2 = Math.max(0, a12 * lambda1 + a22 * lambda2 - c2);
+                    
+                    if (lambda2 < 0) {
+                        lambda2 = 0;
+                        if (a11 !== 0) {
+                            lambda1 = c1 / a11;
+                            mu2 = Math.max(0, a12 * lambda1 - c2);
+                        } else {
+                            lambda1 = 0;
+                            mu2 = Math.max(0, -c2);
+                        }
+                    }
+                }
+            } else if (activeConstraints.x1Bound && activeConstraints.x2Bound) {
+                // x1 = 1, x2 = 1, constraint 2 active
+                lambda1 = 0;
+                lambda2 = 0;
+                mu1 = -c1;
+                mu2 = -c2;
+                
+                mu1 = Math.max(0, mu1);
+                mu2 = Math.max(0, mu2);
+            }
+        } else if (activeConstraints.x1Bound && activeConstraints.x2Bound) {
+            // Only the bounds are active, x1 = 1, x2 = 1
+            lambda1 = 0;
+            lambda2 = 0;
+            mu1 = -c1;
+            mu2 = -c2;
+            
+            mu1 = Math.max(0, mu1);
+            mu2 = Math.max(0, mu2);
+        }
+        
+        // Ensure all variables are non-negative (fix any numerical issues)
+        lambda1 = Math.max(0, lambda1);
+        lambda2 = Math.max(0, lambda2);
+        mu1 = Math.max(0, mu1);
+        mu2 = Math.max(0, mu2);
+        
+        // Calculate the dual objective value
+        // g(λ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
+        
+        // Round to specified precision to eliminate floating point errors
+        const roundedDualValue = parseFloat(dualValue.toFixed(9));
+        
+        return {
+            point: { x: lambda1, y: lambda2 },
+            value: roundedDualValue,
+            mu1: mu1,
+            mu2: mu2
+        };
+    }
+    
+    // Add this helper function to verify strong duality
+    function checkStrongDuality() {
+        const primalSolution = solvePrimalSimplex();
+        const dualSolution = solveDualSimplex();
+        
+        if (!primalSolution || !dualSolution) {
+            console.log("One of the problems has no feasible solution");
+            return false;
+        }
+        
+        const primalValue = primalSolution.value;
+        const dualValue = dualSolution.value;
+        const gap = Math.abs(primalValue - dualValue);
+        
+        console.log("Primal solution:", primalSolution);
+        console.log("Dual solution:", dualSolution);
+        console.log("Primal value:", primalValue);
+        console.log("Dual value:", dualValue);
+        console.log("Duality gap:", gap);
+        
+        return gap < 1e-6;
     }
 
     // Function to draw the primal problem
@@ -1324,6 +1568,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const primalSolution = solvePrimalSimplex();
         // Derive dual solution from primal solution
         const dualSolution = solveDualSimplex();
+        
+        // Verify strong duality holds
+        const isDualityStrong = checkStrongDuality();
+        console.log("Strong duality satisfied:", isDualityStrong);
         
         // Draw the appropriate problem based on current view
         if (primalView) {
