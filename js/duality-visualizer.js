@@ -813,248 +813,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to solve the dual problem using the simplex method
-    function solveDualSimplex() {
-        // The dual problem for our standard form is:
-        // Maximize: b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-        // Subject to:
-        //   a11*λ1 + a21*λ2 - μ1 ≤ c1
-        //   a12*λ1 + a22*λ2 - μ2 ≤ c2
-        //   λ1, λ2, μ1, μ2 ≥ 0
-        
-        // First, solve the primal to get information about active constraints
-        const primalSolution = solvePrimalSimplex();
-        
-        if (!primalSolution) {
-            return null; // If primal has no solution, dual is unbounded
-        }
-        
-        const { point: pPoint, value: pValue } = primalSolution;
-        
-        // Recompute which constraints are active with explicit checks
-        const isConstraint1Active = Math.abs(a11 * pPoint.x + a12 * pPoint.y - b1) < eps;
-        const isConstraint2Active = Math.abs(a21 * pPoint.x + a22 * pPoint.y - b2) < eps;
-        const isX1Binding = Math.abs(pPoint.x - 1) < eps;
-        const isX2Binding = Math.abs(pPoint.y - 1) < eps;
-        
-        console.log("Primal solution:", pPoint);
-        console.log("Constraints active:", isConstraint1Active, isConstraint2Active);
-        console.log("Variables binding:", isX1Binding, isX2Binding);
-        
-        // Initialize dual variables
-        let lambda1 = 0;
-        let lambda2 = 0;
-        let mu1 = 0;
-        let mu2 = 0;
-        
-        // Apply complementary slackness correctly:
-        // 1. If a constraint is not binding (active), the corresponding dual variable must be zero
-        if (!isConstraint1Active) lambda1 = 0;
-        if (!isConstraint2Active) lambda2 = 0;
-        
-        // 2. If primal variables are strictly above their bounds, dual constraints must be tight
-        const isX1AboveBound = pPoint.x > 1 + eps;
-        const isX2AboveBound = pPoint.y > 1 + eps; 
-        
-        // We'll solve the system of equations based on which constraints are active
-        if (isConstraint1Active && isConstraint2Active) {
-            // Both constraints active - solve for λ1 and λ2 directly
-            const det = a11 * a22 - a12 * a21;
-            if (Math.abs(det) > eps) {
-                // If non-singular, solve the system
-                if (isX1AboveBound && isX2AboveBound) {
-                    // Both x1 > 1 and x2 > 1, so both dual constraints are tight
-                    lambda1 = (c1 * a22 - c2 * a21) / det;
-                    lambda2 = (a11 * c2 - a12 * c1) / det;
-                    mu1 = 0;
-                    mu2 = 0;
-                } else if (isX1AboveBound) {
-                    // Just x1 > 1, first dual constraint is tight
-                    // a11*λ1 + a21*λ2 = c1 (tight)
-                    // a12*λ1 + a22*λ2 ≤ c2 
-                    if (a11 !== 0) {
-                        // Express λ1 in terms of λ2
-                        // λ1 = (c1 - a21*λ2) / a11
-                        // Substitute into second constraint
-                        // a12*(c1 - a21*λ2)/a11 + a22*λ2 ≤ c2
-                        
-                        // Start with λ2 = 0 and check
-                        lambda2 = 0;
-                        lambda1 = c1 / a11;
-                        
-                        // Check second constraint
-                        if (a12 * lambda1 + a22 * lambda2 > c2 + eps) {
-                            // Constraint violated, need to adjust and set μ2
-                            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
-                        }
-                    } else if (a21 !== 0) {
-                        lambda1 = 0;
-                        lambda2 = c1 / a21;
-                        if (a12 * lambda1 + a22 * lambda2 > c2 + eps) {
-                            mu2 = a12 * lambda1 + a22 * lambda2 - c2;
-                        }
-                    }
-                } else if (isX2AboveBound) {
-                    // Just x2 > 1, second dual constraint is tight
-                    // a11*λ1 + a21*λ2 ≤ c1
-                    // a12*λ1 + a22*λ2 = c2 (tight)
-                    if (a22 !== 0) {
-                        lambda1 = 0;
-                        lambda2 = c2 / a22;
-                        if (a11 * lambda1 + a21 * lambda2 > c1 + eps) {
-                            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-                        }
-                    } else if (a12 !== 0) {
-                        lambda2 = 0;
-                        lambda1 = c2 / a12;
-                        if (a11 * lambda1 + a21 * lambda2 > c1 + eps) {
-                            mu1 = a11 * lambda1 + a21 * lambda2 - c1;
-                        }
-                    }
-                } else {
-                    // Both x1 = 1 and x2 = 1
-                    // Both dual constraints can be slack
-                    // Try to find non-negative λ values
-                    // Start with λ2 = 0 and see if λ1 ≥ 0 works
-                    lambda2 = 0;
-                    if (a11 !== 0) {
-                        lambda1 = Math.min(c1, c2 * a11 / a12) / a11;
-                        if (lambda1 < 0) lambda1 = 0;
-                        
-                        // Compute μ values for tight constraints
-                        mu1 = Math.max(0, a11 * lambda1 + a21 * lambda2 - c1);
-                        mu2 = Math.max(0, a12 * lambda1 + a22 * lambda2 - c2);
-                    } else {
-                        // Try with λ1 = 0
-                        lambda1 = 0;
-                        if (a21 !== 0) {
-                            lambda2 = Math.min(c1, c2 * a21 / a22) / a21;
-                            if (lambda2 < 0) lambda2 = 0;
-                        }
-                        
-                        // Compute μ values
-                        mu1 = Math.max(0, a11 * lambda1 + a21 * lambda2 - c1);
-                        mu2 = Math.max(0, a12 * lambda1 + a22 * lambda2 - c2);
-                    }
-                }
-            } else {
-                // Singular system - constraints are linearly dependent
-                // Try to find a feasible solution
-                if (a11 !== 0) {
-                    lambda1 = c1 / a11;
-                    lambda2 = 0;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a12 * lambda1 - c2);
-                } else if (a21 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c1 / a21;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a22 * lambda2 - c2);
-                } else {
-                    // Fall back to μ values if constraints are degenerate
-                    mu1 = -c1;
-                    mu2 = -c2;
-                    mu1 = Math.max(0, mu1);
-                    mu2 = Math.max(0, mu2);
-                }
-            }
-        } else if (isConstraint1Active) {
-            // Only first constraint is active, λ1 can be non-zero
-            if (isX1AboveBound) {
-                // First dual constraint is tight
-                if (a11 !== 0) {
-                    lambda1 = c1 / a11;
-                    lambda2 = 0;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a12 * lambda1 - c2);
-                } else if (a21 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c1 / a21;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a22 * lambda2 - c2);
-                }
-            } else {
-                // No tight dual constraints, try with λ1 > 0, μ1 = 0
-                if (a11 !== 0) {
-                    lambda1 = c1 / a11;
-                    lambda2 = 0;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a12 * lambda1 - c2);
-                } else if (a21 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c1 / a21;
-                    mu1 = 0;
-                    mu2 = Math.max(0, a22 * lambda2 - c2);
-                } else {
-                    mu1 = Math.max(0, -c1);
-                    mu2 = Math.max(0, -c2);
-                }
-            }
-        } else if (isConstraint2Active) {
-            // Only second constraint is active, λ2 can be non-zero
-            if (isX2AboveBound) {
-                // Second dual constraint is tight
-                if (a22 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c2 / a22;
-                    mu1 = Math.max(0, a21 * lambda2 - c1);
-                    mu2 = 0;
-                } else if (a12 !== 0) {
-                    lambda1 = c2 / a12;
-                    lambda2 = 0;
-                    mu1 = Math.max(0, a11 * lambda1 - c1);
-                    mu2 = 0;
-                }
-            } else {
-                // No tight dual constraints, try with λ2 > 0, μ2 = 0
-                if (a22 !== 0) {
-                    lambda1 = 0;
-                    lambda2 = c2 / a22;
-                    mu1 = Math.max(0, a21 * lambda2 - c1);
-                    mu2 = 0;
-                } else if (a12 !== 0) {
-                    lambda1 = c2 / a12;
-                    lambda2 = 0;
-                    mu1 = Math.max(0, a11 * lambda1 - c1);
-                    mu2 = 0;
-                } else {
-                    mu1 = Math.max(0, -c1);
-                    mu2 = Math.max(0, -c2);
-                }
-            }
-        } else {
-            // No constraints active, fall back to μ values
-            if (isX1Binding) {
-                mu1 = Math.max(0, -c1);
-            }
-            if (isX2Binding) {
-                mu2 = Math.max(0, -c2);
-            }
-        }
-        
-        // Ensure non-negativity of all dual variables
-        lambda1 = Math.max(0, lambda1);
-        lambda2 = Math.max(0, lambda2);
-        mu1 = Math.max(0, mu1);
-        mu2 = Math.max(0, mu2);
-        
-        // Calculate the dual objective value
-        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
-        
-        // Double-check that our solution is feasible for the dual
-        const constraint1 = a11 * lambda1 + a21 * lambda2 - mu1 <= c1 + eps;
-        const constraint2 = a12 * lambda1 + a22 * lambda2 - mu2 <= c2 + eps;
-        
-        console.log("Dual feasibility check:", constraint1, constraint2);
-        console.log("Dual solution:", lambda1, lambda2, mu1, mu2);
-        console.log("Dual value:", dualValue);
-        
-        return {
-            point: { x: lambda1, y: lambda2 },
-            value: dualValue,
-            mu1: mu1,
-            mu2: mu2
-        };
+    // Function to solve the dual problem using the simplex method
+function solveDualSimplex() {
+    // The dual problem for our standard form is:
+    // Maximize: b1*λ1 + b2*λ2 + μ1 + μ2 + c3
+    // Subject to:
+    //   a11*λ1 + a21*λ2 + μ1 = c1
+    //   a12*λ1 + a22*λ2 + μ2 = c2
+    //   λ1, λ2, μ1, μ2 ≥ 0
+    
+    // First, solve the primal to get information about active constraints
+    const primalSolution = solvePrimalSimplex();
+    
+    if (!primalSolution) {
+        return null; // If primal has no solution, dual is unbounded
     }
+    
+    const { point: pPoint, value: pValue } = primalSolution;
+    
+    // Recompute which constraints are active with explicit checks
+    const isConstraint1Active = Math.abs(a11 * pPoint.x + a12 * pPoint.y - b1) < eps;
+    const isConstraint2Active = Math.abs(a21 * pPoint.x + a22 * pPoint.y - b2) < eps;
+    const isX1Binding = Math.abs(pPoint.x - 1) < eps;
+    const isX2Binding = Math.abs(pPoint.y - 1) < eps;
+    
+    // Initialize dual variables
+    let lambda1 = 0;
+    let lambda2 = 0;
+    let mu1 = 0;
+    let mu2 = 0;
+    
+    // Apply complementary slackness principle:
+    // 1. If a primal constraint is not binding (active), the corresponding dual variable must be zero
+    if (!isConstraint1Active) lambda1 = 0;
+    if (!isConstraint2Active) lambda2 = 0;
+    
+    // 2. If a primal variable is strictly above its lower bound, the corresponding dual constraint must be tight
+    // We need to solve the dual constraint equations:
+    // a11*λ1 + a21*λ2 + μ1 = c1
+    // a12*λ1 + a22*λ2 + μ2 = c2
+    
+    if (isX1Binding) {
+        // x1 = 1 (at lower bound), μ1 can be positive
+        mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
+    } else {
+        // x1 > 1, μ1 must be 0 by complementary slackness
+        mu1 = 0;
+    }
+    
+    if (isX2Binding) {
+        // x2 = 1 (at lower bound), μ2 can be positive
+        mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
+    } else {
+        // x2 > 1, μ2 must be 0 by complementary slackness
+        mu2 = 0;
+    }
+    
+    // Ensure non-negativity
+    lambda1 = Math.max(0, lambda1);
+    lambda2 = Math.max(0, lambda2);
+    mu1 = Math.max(0, mu1);
+    mu2 = Math.max(0, mu2);
+    
+    // Calculate the dual objective value (corrected)
+    const dualValue = b1 * lambda1 + b2 * lambda2 + mu1 + mu2 + c3;
+    
+    return {
+        point: { x: lambda1, y: lambda2 },
+        value: dualValue,
+        mu1: mu1,
+        mu2: mu2
+    };
+}
     
     // Add this helper function to verify strong duality
     function checkStrongDuality() {
@@ -1194,16 +1024,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to draw the dual problem
     function drawDual() {
         const { maxX, maxY } = getPlotBounds();
-        
+    
         // Get dual solution
         const primalSolution = solvePrimalSimplex();
         const dualSolution = solveDualSimplex();
         
         // Draw the dual constraint lines (without the μ variables)
-        // a11*λ1 + a21*λ2 = c1 (when μ1 = 0)
-        // a12*λ1 + a22*λ2 = c2 (when μ2 = 0)
+        // a11*λ1 + a21*λ2 = c1 - μ1 (when μ1 = 0)
+        // a12*λ1 + a22*λ2 = c2 - μ2 (when μ2 = 0)
         
-        // Draw first constraint: a11*λ1 + a21*λ2 = c1
+        // Draw first constraint: a11*λ1 + a21*λ2 = c1 (when μ1 = 0)
         if (a11 !== 0 || a21 !== 0) {
             let x1, y1, x2, y2;
             
