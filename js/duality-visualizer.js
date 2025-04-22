@@ -775,196 +775,103 @@ function solvePrimalSimplex() {
     };
 }
 
-    // Function to solve dual problem using complementary slackness
-    function solveDualFromPrimal(primalSolution) {
-        if (!primalSolution) return null;
-        
-        const { point: primalPoint, value: primalValue } = primalSolution;
-        const x1 = primalPoint.x;
-        const x2 = primalPoint.y;
-        
-        // Check which constraints are binding (active) at the optimal solution
-        const constraint1Slack = Math.abs(b1 - (a11 * x1 + a12 * x2));
-        const constraint2Slack = Math.abs(b2 - (a21 * x1 + a22 * x2));
-        const bound1Slack = Math.abs(x1 - 1);
-        const bound2Slack = Math.abs(x2 - 1);
-        
-        // Determine which constraints are active (binding)
-        const constraint1Active = constraint1Slack < eps;
-        const constraint2Active = constraint2Slack < eps;
-        const bound1Active = bound1Slack < eps;
-        const bound2Active = bound2Slack < eps;
-        
-        // By complementary slackness:
-        // If a constraint has slack, the corresponding dual variable = 0
-        let lambda1 = constraint1Active ? null : 0;
-        let lambda2 = constraint2Active ? null : 0;
-        let mu1 = bound1Active ? null : 0;
-        let mu2 = bound2Active ? null : 0;
-        
-        // Create a system of equations for the dual variables
-        let equations = [];
-        
-        // Include equations for dual constraints based on non-zero primal variables
-        // If x1 > 1, then by complementary slackness, mu1 = 0 and we have:
-        // a11*λ1 + a21*λ2 = c1
-        if (x1 > 1 + eps) {
-            equations.push({ type: 'mu1=0', a: a11, b: a21, c: c1 });
-        }
-        
-        // If x2 > 1, then by complementary slackness, mu2 = 0 and we have:
-        // a12*λ1 + a22*λ2 = c2
-        if (x2 > 1 + eps) {
-            equations.push({ type: 'mu2=0', a: a12, b: a22, c: c2 });
-        }
-        
-        // Add equations for active constraints
-        if (constraint1Active) {
-            equations.push({ type: 'lambda1>0', var: 'lambda1' });
-        }
-        
-        if (constraint2Active) {
-            equations.push({ type: 'lambda2>0', var: 'lambda2' });
-        }
-        
-        // Solve the system of equations
-        if (equations.length >= 2) {
-            // Find equations that determine lambda1 and lambda2
-            let eqMu1 = equations.find(eq => eq.type === 'mu1=0');
-            let eqMu2 = equations.find(eq => eq.type === 'mu2=0');
-            
-            if (eqMu1 && eqMu2) {
-                // We have both equations from dual constraints
-                const det = eqMu1.a * eqMu2.b - eqMu1.b * eqMu2.a;
-                
-                if (Math.abs(det) > eps) {
-                    lambda1 = (eqMu1.c * eqMu2.b - eqMu1.b * eqMu2.c) / det;
-                    lambda2 = (eqMu1.a * eqMu2.c - eqMu1.c * eqMu2.a) / det;
-                }
-            } else if (eqMu1) {
-                // Only have one equation from dual constraints
-                if (lambda2 === 0 && eqMu1.a !== 0) {
-                    lambda1 = eqMu1.c / eqMu1.a;
-                } else if (lambda1 === 0 && eqMu1.b !== 0) {
-                    lambda2 = eqMu1.c / eqMu1.b;
-                }
-            } else if (eqMu2) {
-                // Only have one equation from dual constraints
-                if (lambda2 === 0 && eqMu2.a !== 0) {
-                    lambda1 = eqMu2.c / eqMu2.a;
-                } else if (lambda1 === 0 && eqMu2.b !== 0) {
-                    lambda2 = eqMu2.c / eqMu2.b;
-                }
-            }
-        } else if (equations.length === 1) {
-            // One equation case
-            let eq = equations[0];
-            if (eq.type === 'mu1=0') {
-                if (lambda2 === 0 && eq.a !== 0) {
-                    lambda1 = eq.c / eq.a;
-                } else if (lambda1 === 0 && eq.b !== 0) {
-                    lambda2 = eq.c / eq.b;
-                }
-            } else if (eq.type === 'mu2=0') {
-                if (lambda2 === 0 && eq.a !== 0) {
-                    lambda1 = eq.c / eq.a;
-                } else if (lambda1 === 0 && eq.b !== 0) {
-                    lambda2 = eq.c / eq.b;
-                }
-            } else if (eq.type === 'lambda1>0') {
-                lambda1 = 1; // Arbitrary positive value as starting point
-            } else if (eq.type === 'lambda2>0') {
-                lambda2 = 1; // Arbitrary positive value as starting point
-            }
-        }
-        
-        // Ensure lambda values are non-negative (dual feasibility)
-        lambda1 = lambda1 !== null ? Math.max(0, lambda1) : 0;
-        lambda2 = lambda2 !== null ? Math.max(0, lambda2) : 0;
-        
-        // Calculate mu1 and mu2 from the dual constraints
-        // a11*λ1 + a21*λ2 - μ1 = c1
-        // a12*λ1 + a22*λ2 - μ2 = c2
-        mu1 = Math.max(0, a11 * lambda1 + a21 * lambda2 - c1);
-        mu2 = Math.max(0, a12 * lambda1 + a22 * lambda2 - c2);
-        
-        // Calculate the dual objective value
-        // b1*λ1 + b2*λ2 - μ1 - μ2 + c3
-        const dualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
-        
-        // For debugging - calculate the duality gap
-        const dualityGap = Math.abs(primalValue - dualValue);
-        
-        // If the gap is still too large, refine the solution
-        if (dualityGap > 1e-4) {
-            // Use complementary slackness to refine the solution iteratively
-            // This is a simplified form of the primal-dual algorithm
-            
-            // If a primal constraint is tight, its dual variable can be positive
-            // If a primal constraint has slack, its dual variable must be zero
-            
-            // Try to find values that satisfy KKT conditions and result in equal objective values
-            
-            // For our case, since we know the primal optimal solution,
-            // we can directly use it to derive the dual solution
-            
-            // Calculate mu values to ensure strong duality
-            const directDualValue = b1 * lambda1 + b2 * lambda2 + c3;
-            const muSum = directDualValue - primalValue;
-            
-            if (muSum > 0) {
-                // Adjust mu values to ensure strong duality
-                if (bound1Active && !bound2Active) {
-                    mu1 = muSum;
-                    mu2 = 0;
-                } else if (!bound1Active && bound2Active) {
-                    mu1 = 0;
-                    mu2 = muSum;
-                } else if (bound1Active && bound2Active) {
-                    // Split the adjustment between mu1 and mu2
-                    mu1 = muSum / 2;
-                    mu2 = muSum / 2;
-                } else {
-                    // If neither bound is active, distribute proportionally
-                    // This is a heuristic approach
-                    const lambda_sum = lambda1 + lambda2;
-                    if (lambda_sum > eps) {
-                        mu1 = (lambda1 / lambda_sum) * muSum;
-                        mu2 = (lambda2 / lambda_sum) * muSum;
-                    } else {
-                        mu1 = muSum / 2;
-                        mu2 = muSum / 2;
-                    }
-                }
-                
-                // Recalculate dual value
-                const adjustedDualValue = b1 * lambda1 + b2 * lambda2 - mu1 - mu2 + c3;
-                
-                // Final check that duality gap is close to zero
-                const finalGap = Math.abs(primalValue - adjustedDualValue);
-                
-                if (finalGap > 1e-4) {
-                    console.warn(`Warning: Failed to achieve zero duality gap. Final gap: ${finalGap.toFixed(8)}`);
-                } else {
-                    console.log(`Dual solution refined: λ₁=${lambda1.toFixed(4)}, λ₂=${lambda2.toFixed(4)}, μ₁=${mu1.toFixed(4)}, μ₂=${mu2.toFixed(4)}, value=${adjustedDualValue.toFixed(4)}`);
-                }
-                
-                return {
-                    point: { x: lambda1, y: lambda2 },
-                    value: adjustedDualValue,
-                    mu1: mu1,
-                    mu2: mu2
-                };
-            }
-        }
-        
-        return {
-            point: { x: lambda1, y: lambda2 },
-            value: dualValue,
-            mu1: mu1,
-            mu2: mu2
-        };
+    // Function to solve dual problem using the simplex method
+function solveDualSimplex() {
+    // In the dual problem:
+    // Maximize: g(λ) = b1*λ1 + b2*λ2 - μ1 - μ2 + c3
+    // Subject to:
+    //  a11*λ1 + a21*λ2 - μ1 = c1
+    //  a12*λ1 + a22*λ2 - μ2 = c2
+    //  λ1, λ2, μ1, μ2 ≥ 0
+    
+    // Step 1: Express μ1 and μ2 in terms of λ1 and λ2
+    // μ1 = a11*λ1 + a21*λ2 - c1
+    // μ2 = a12*λ1 + a22*λ2 - c2
+    
+    // Step 2: For μ1, μ2 ≥ 0, we need:
+    // a11*λ1 + a21*λ2 ≥ c1
+    // a12*λ1 + a22*λ2 ≥ c2
+    
+    // Step 3: The objective becomes:
+    // Maximize: b1*λ1 + b2*λ2 - (a11*λ1 + a21*λ2 - c1) - (a12*λ1 + a22*λ2 - c2) + c3
+    // Simplify: (b1 - a11 - a12)*λ1 + (b2 - a21 - a22)*λ2 + c1 + c2 + c3
+    
+    // Find all vertices of the feasible region
+    const vertices = [];
+    
+    // Start with origin (if feasible)
+    if (c1 <= 0 && c2 <= 0) {
+        vertices.push({ x: 0, y: 0 });
     }
+    
+    // Find intersections with axes
+    // λ1 = 0 line
+    if (a21 !== 0 && c1 / a21 >= 0) {
+        vertices.push({ x: 0, y: c1 / a21 });
+    }
+    
+    if (a22 !== 0 && c2 / a22 >= 0) {
+        vertices.push({ x: 0, y: c2 / a22 });
+    }
+    
+    // λ2 = 0 line
+    if (a11 !== 0 && c1 / a11 >= 0) {
+        vertices.push({ x: c1 / a11, y: 0 });
+    }
+    
+    if (a12 !== 0 && c2 / a12 >= 0) {
+        vertices.push({ x: c2 / a12, y: 0 });
+    }
+    
+    // Find intersection of two constraint lines
+    const det = a11 * a22 - a12 * a21;
+    if (Math.abs(det) > 1e-10) {
+        const x = (c1 * a22 - c2 * a21) / det;
+        const y = (a11 * c2 - a12 * c1) / det;
+        if (x >= 0 && y >= 0) {
+            vertices.push({ x, y });
+        }
+    }
+    
+    // Remove duplicates and invalid vertices
+    const feasibleVertices = vertices.filter((v, index, self) => 
+        v.x >= 0 && v.y >= 0 && 
+        a11 * v.x + a21 * v.y >= c1 - 1e-10 && 
+        a12 * v.x + a22 * v.y >= c2 - 1e-10 &&
+        self.findIndex(t => Math.abs(t.x - v.x) < 1e-10 && Math.abs(t.y - v.y) < 1e-10) === index
+    );
+    
+    if (feasibleVertices.length === 0) return null;
+    
+    // Find optimal solution (maximum)
+    let optimalValue = -Infinity;
+    let optimalPoint = null;
+    let mu1 = 0;
+    let mu2 = 0;
+    
+    feasibleVertices.forEach(v => {
+        // Calculate μ1 and μ2 values
+        const mu1Value = a11 * v.x + a21 * v.y - c1;
+        const mu2Value = a12 * v.x + a22 * v.y - c2;
+        
+        // Calculate objective value
+        const objValue = b1 * v.x + b2 * v.y - mu1Value - mu2Value + c3;
+        
+        if (objValue > optimalValue) {
+            optimalValue = objValue;
+            optimalPoint = v;
+            mu1 = mu1Value;
+            mu2 = mu2Value;
+        }
+    });
+    
+    return {
+        point: optimalPoint,
+        value: optimalValue,
+        mu1: mu1,
+        mu2: mu2
+    };
+}
 
     // Function to draw the primal problem
     function drawPrimal() {
@@ -1084,7 +991,7 @@ function solvePrimalSimplex() {
         
         // Get dual solution
         const primalSolution = solvePrimalSimplex();
-        const dualSolution = solveDualFromPrimal(primalSolution);
+        const dualSolution = solveDualSimplex();
         
         // Draw the dual constraint lines (without the μ variables)
         // a11*λ1 + a21*λ2 = c1 (when μ1 = 0)
@@ -1412,7 +1319,7 @@ function solvePrimalSimplex() {
         // Solve primal problem using the new simplex method
         const primalSolution = solvePrimalSimplex();
         // Derive dual solution from primal solution
-        const dualSolution = solveDualFromPrimal(primalSolution);
+        const dualSolution = solveDualSimplex();
         
         // Draw the appropriate problem based on current view
         if (primalView) {
