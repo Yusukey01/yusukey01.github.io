@@ -813,12 +813,46 @@ document.addEventListener('DOMContentLoaded', function() {
         // a12*λ1 + a22*λ2 - μ2 = c2
         
         const det = a11 * a22 - a12 * a21;
-        
+       
         if (lambda1 === 0 && lambda2 === 0) {
-            // Both primal inequality constraints are inactive
-            // This means the solution is driven by bounds
-            mu1 = boundX1Active ? c1 : 0;
-            mu2 = boundX2Active ? c2 : 0;
+            // Check if we can satisfy the constraints with μ₁, μ₂ ≥ 0
+            if (c1 <= 0 && c2 <= 0) {
+                mu1 = -c1;  // Exactly satisfy the first constraint
+                mu2 = -c2;  // Exactly satisfy the second constraint
+            } else {
+                // At least one constraint can't be satisfied with λ₁ = λ₂ = 0
+                // One or both λ values must be positive
+                // Try finding the smallest λ value that satisfies all constraints
+                if (c1 > 0) {
+                    lambda1 = c1 / a11;  // Use the first constraint
+                    mu2 = a12 * lambda1 - c2;  // Calculate μ₂ from second constraint
+                    if (mu2 < 0) {
+                        // Need to adjust - both λ values needed
+                        const det = a11 * a22 - a12 * a21;
+                        if (Math.abs(det) > eps) {
+                            lambda1 = (c1 * a22 - c2 * a21) / det;
+                            lambda2 = (a11 * c2 - a12 * c1) / det;
+                            mu1 = mu2 = 0;
+                        }
+                    } else {
+                        mu1 = 0;  // First constraint exactly satisfied
+                    }
+                } else {
+                    lambda2 = c2 / a22;  // Use the second constraint
+                    mu1 = a21 * lambda2 - c1;  // Calculate μ₁ from first constraint
+                    if (mu1 < 0) {
+                        // Need to adjust - both λ values needed
+                        const det = a11 * a22 - a12 * a21;
+                        if (Math.abs(det) > eps) {
+                            lambda1 = (c1 * a22 - c2 * a21) / det;
+                            lambda2 = (a11 * c2 - a12 * c1) / det;
+                            mu1 = mu2 = 0;
+                        }
+                    } else {
+                        mu2 = 0;  // Second constraint exactly satisfied
+                    }
+                }
+            }
         }
         else if (lambda1 === 0) {
             // Only the second constraint is active
@@ -963,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const constraint1 = a11 * intersection.x + a21 * intersection.y;
             const constraint2 = a12 * intersection.x + a22 * intersection.y;
             
-            if (constraint1 >= c1 - 1e-6 && constraint2 >= c2 - 1e-6) {
+            if (constraint1 >= c1 - eps && constraint2 >= c2 - eps) {
                 vertices.push(intersection);
             }
         }
