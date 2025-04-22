@@ -924,8 +924,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Calculate mu values based on current lambda values
-                mu1 = boundX1Active ? Math.max(0, (a11 * lambda1 + a21 * lambda2 - c1)) : 0;
-                mu2 = boundX2Active ? Math.max(0, (a12 * lambda1 + a22 * lambda2 - c2)) : 0;
+                mu1 = boundX1Active ? Math.max(0, c1 - (a11 * lambda1 + a21 * lambda2)) : 0;
+                mu2 = boundX2Active ? Math.max(0, c2 - (a12 * lambda1 + a22 * lambda2)) : 0;
             }
         }
         
