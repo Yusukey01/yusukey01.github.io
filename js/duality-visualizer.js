@@ -158,10 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <h4>Visualization Guide</h4>
               <ul>
                 <li>The <span style="color:#3498db">blue region</span> represents the feasible region of the primal problem.</li>
-                <li>The <span style="color:#e74c3c">red lines</span> represent the constraints in the dual problem.</li>
+                <li>The <span style="color:#e74c3c">red lines</span> represent the equality constraints in the dual problem (where μ = 0).</li>
                 <li>The <span style="color:#2ecc71">green point</span> shows the optimal solution.</li>
+                <li>For the dual view, the optimal point may appear off the constraint lines - this is due to the μ variables which aren't shown directly.</li>
+                <li>Dashed lines from the constraint lines to the optimal point represent the μ variable values.</li>
                 <li>Adjust the sliders to modify parameters and see how both problems change.</li>
-                <li>Use the "Switch View" button to toggle between primal and dual visualizations.</li>
               </ul>
             </div>
           </div>
@@ -854,136 +855,57 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    
-    // Function to compute the dual feasible region
+    // Function to compute the dual space representation
     function computeDualFeasibleRegion() {
         const { maxX, maxY } = getPlotBounds();
         let vertices = [];
         
-        // Dual constraints: a11*λ1 + a21*λ2 >= c1 and a12*λ1 + a22*λ2 >= c2
+        // In the dual problem, we have equality constraints:
+        // a11*λ1 + a21*λ2 - μ1 = c1
+        // a12*λ1 + a22*λ2 - μ2 = c2
         
-        // Find the intersection of the constraint lines
-        const intersection = findIntersection(a11, a21, c1, a12, a22, c2);
-        if (intersection && intersection.x >= 0 && intersection.y >= 0) {
-            // Check if this point satisfies both constraints
-            const constraint1 = a11 * intersection.x + a21 * intersection.y;
-            const constraint2 = a12 * intersection.x + a22 * intersection.y;
+        // For visualization purposes, we'll show the lines where these constraints are satisfied with μ1=0 and μ2=0:
+        // a11*λ1 + a21*λ2 = c1
+        // a12*λ1 + a22*λ2 = c2
+        
+        // The intersection point of these two constraint lines
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > eps) {
+            const x = (c1 * a22 - c2 * a21) / det;
+            const y = (a11 * c2 - a12 * c1) / det;
             
-            if (constraint1 >= c1 - eps && constraint2 >= c2 - eps) {
-                vertices.push(intersection);
+            // Add this point if it's in the first quadrant
+            if (x >= 0 && y >= 0) {
+                vertices.push({ x, y });
             }
         }
         
-        // Find points where constraints meet the axes
-        // Constraint 1 meets x-axis
-        if (a11 > 0) {
-            const xIntercept = c1 / a11;
-            if (xIntercept >= 0 && a12 * xIntercept >= c2) {
-                vertices.push({ x: xIntercept, y: 0 });
-            }
+        // Add points where constraints meet axes
+        // First constraint: a11*λ1 + a21*λ2 = c1
+        if (a11 !== 0 && c1 / a11 >= 0) {
+            vertices.push({ x: c1 / a11, y: 0 }); // λ2 = 0
+        }
+        if (a21 !== 0 && c1 / a21 >= 0) {
+            vertices.push({ x: 0, y: c1 / a21 }); // λ1 = 0
         }
         
-        // Constraint 1 meets y-axis
-        if (a21 > 0) {
-            const yIntercept = c1 / a21;
-            if (yIntercept >= 0 && a22 * yIntercept >= c2) {
-                vertices.push({ x: 0, y: yIntercept });
-            }
+        // Second constraint: a12*λ1 + a22*λ2 = c2
+        if (a12 !== 0 && c2 / a12 >= 0) {
+            vertices.push({ x: c2 / a12, y: 0 }); // λ2 = 0
+        }
+        if (a22 !== 0 && c2 / a22 >= 0) {
+            vertices.push({ x: 0, y: c2 / a22 }); // λ1 = 0
         }
         
-        // Constraint 2 meets x-axis
-        if (a12 > 0) {
-            const xIntercept = c2 / a12;
-            if (xIntercept >= 0 && a11 * xIntercept >= c1) {
-                vertices.push({ x: xIntercept, y: 0 });
-            }
-        }
+        // Add origin for reference
+        vertices.push({ x: 0, y: 0 });
         
-        // Constraint 2 meets y-axis
-        if (a22 > 0) {
-            const yIntercept = c2 / a22;
-            if (yIntercept >= 0 && a21 * yIntercept >= c1) {
-                vertices.push({ x: 0, y: yIntercept });
-            }
-        }
-        
-        // Add points at plot bounds to show the unbounded nature
-        const boundaryPoints = [];
-        
-        // Right boundary
-        for (let y = 0; y <= maxY; y += 1) {
-            const constraint1 = a11 * maxX + a21 * y;
-            const constraint2 = a12 * maxX + a22 * y;
-            if (constraint1 >= c1 && constraint2 >= c2) {
-                boundaryPoints.push({ x: maxX, y: y });
-                break;
-            }
-        }
-        
-        // Top boundary
-        for (let x = 0; x <= maxX; x += 1) {
-            const constraint1 = a11 * x + a21 * maxY;
-            const constraint2 = a12 * x + a22 * maxY;
-            if (constraint1 >= c1 && constraint2 >= c2) {
-                boundaryPoints.push({ x: x, y: maxY });
-                break;
-            }
-        }
-        
-        // Find points along the constraint lines at the boundaries
-        const y1_at_maxX = (c1 - a11 * maxX) / a21;
-        const y2_at_maxX = (c2 - a12 * maxX) / a22;
-        
-        if (y1_at_maxX >= 0 && y1_at_maxX <= maxY) {
-            const constraint2 = a12 * maxX + a22 * y1_at_maxX;
-            if (constraint2 >= c2) {
-                vertices.push({ x: maxX, y: y1_at_maxX });
-            }
-        }
-        
-        if (y2_at_maxX >= 0 && y2_at_maxX <= maxY) {
-            const constraint1 = a11 * maxX + a21 * y2_at_maxX;
-            if (constraint1 >= c1) {
-                vertices.push({ x: maxX, y: y2_at_maxX });
-            }
-        }
-        
-        const x1_at_maxY = (c1 - a21 * maxY) / a11;
-        const x2_at_maxY = (c2 - a22 * maxY) / a12;
-        
-        if (x1_at_maxY >= 0 && x1_at_maxY <= maxX) {
-            const constraint2 = a12 * x1_at_maxY + a22 * maxY;
-            if (constraint2 >= c2) {
-                vertices.push({ x: x1_at_maxY, y: maxY });
-            }
-        }
-        
-        if (x2_at_maxY >= 0 && x2_at_maxY <= maxX) {
-            const constraint1 = a11 * x2_at_maxY + a21 * maxY;
-            if (constraint1 >= c1) {
-                vertices.push({ x: x2_at_maxY, y: maxY });
-            }
-        }
-        
-        // Add corner point if feasible
-        const constraint1_corner = a11 * maxX + a21 * maxY;
-        const constraint2_corner = a12 * maxX + a22 * maxY;
-        if (constraint1_corner >= c1 && constraint2_corner >= c2) {
-            vertices.push({ x: maxX, y: maxY });
-        }
-        
-        // Remove duplicates
+        // Filter out any duplicate points
         vertices = vertices.filter((v, index, self) => 
             index === self.findIndex(t => 
                 Math.abs(t.x - v.x) < 1e-6 && Math.abs(t.y - v.y) < 1e-6
             )
         );
-        
-        // Sort vertices to form proper polygon
-        if (vertices.length >= 3) {
-            // First, find the convex hull to properly order the boundary vertices
-            vertices = computeConvexHull(vertices);
-        }
         
         return vertices;
     }
@@ -1154,120 +1076,220 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawDual() {
         const { maxX, maxY } = getPlotBounds();
         
-        // Draw the feasible region
-        const feasibleRegion = computeDualFeasibleRegion();
-        if (feasibleRegion.length >= 3) {
-            fillPolygon(
-                feasibleRegion, 
-                'rgba(231, 76, 60, 0.2)', 
-                'rgba(231, 76, 60, 0.8)'
-            );
-        }
-        
-        // Draw constraint lines
-       // Constraint 1: a11*λ1 + a21*λ2 = c1
-        if (a11 !== 0 && a21 !== 0) {
-            const x1 = 0;
-            const y1 = c1 / a21;
-            const x2 = c1 / a11;
-            const y2 = 0;
-            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-        }
-
-        // Constraint 2: a12*λ1 + a22*λ2 = c2
-        if (a12 !== 0 && a22 !== 0) {
-            const x1 = 0;
-            const y1 = c2 / a22;
-            const x2 = c2 / a12;
-            const y2 = 0;
-            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-        }
-        
-        // Get primal solution first to derive dual solution
+        // Get dual solution
         const primalSolution = solvePrimalSimplex();
-        const optimalSolution = solveDualFromPrimal(primalSolution);
+        const dualSolution = solveDualFromPrimal(primalSolution);
         
-        // Draw objective function level curves
-        if (optimalSolution) {
-            const { point, value } = optimalSolution;
+        // Draw constraint lines as equalities, not regions
+        // Constraint 1: a11*λ1 + a21*λ2 = c1
+        if (a11 !== 0 || a21 !== 0) {
+            let x1, y1, x2, y2;
+            
+            if (a21 !== 0) {
+                // Point on y-axis
+                x1 = 0;
+                y1 = c1 / a21;
+            } else {
+                // Handle case where a21 = 0
+                x1 = 0;
+                y1 = maxY;
+            }
+            
+            if (a11 !== 0) {
+                // Point on x-axis
+                x2 = c1 / a11;
+                y2 = 0;
+            } else {
+                // Handle case where a11 = 0
+                x2 = maxX;
+                y2 = 0;
+            }
+            
+            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
+        }
+        
+        // Constraint 2: a12*λ1 + a22*λ2 = c2
+        if (a12 !== 0 || a22 !== 0) {
+            let x1, y1, x2, y2;
+            
+            if (a22 !== 0) {
+                // Point on y-axis
+                x1 = 0;
+                y1 = c2 / a22;
+            } else {
+                // Handle case where a22 = 0
+                x1 = 0;
+                y1 = maxY;
+            }
+            
+            if (a12 !== 0) {
+                // Point on x-axis
+                x2 = c2 / a12;
+                y2 = 0;
+            } else {
+                // Handle case where a12 = 0
+                x2 = maxX;
+                y2 = 0;
+            }
+            
+            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
+        }
+        
+        // Draw non-negativity constraints
+        drawLine(0, 0, 0, maxY, 'rgba(231, 76, 60, 0.8)', 2); // λ1 = 0
+        drawLine(0, 0, maxX, 0, 'rgba(231, 76, 60, 0.8)', 2); // λ2 = 0
+        
+        // Mark the origin
+        drawPoint(0, 0, 'rgba(231, 76, 60, 0.5)', 4);
+        
+        // Draw optimal dual solution
+        if (dualSolution) {
+            const { point, value, mu1, mu2 } = dualSolution;
             
             // Draw optimal point
             drawPoint(point.x, point.y, '#2ecc71', 6);
             
-            // Draw level curves of the objective function
-            // b1*λ1 + b2*λ2 - mu1 - mu2 = value - c3
-            // λ2 = (value - c3 + mu1 + mu2 - b1*λ1) / b2
+            // Draw labels for clarity
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
             
-            // Note: For visualization purposes, we're showing the dual objective without mu values
-            // since we can't visualize 4 dimensions on a 2D plane
+            const labelPoint = dataToCanvas(point.x + 0.5, point.y + 0.5);
+            ctx.fillText(`(λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`, labelPoint.x, labelPoint.y);
             
-            // Draw the optimal level curve
-            if (b2 !== 0) {
-                const adjustedValue = value - c3; // Remove c3 to get the dual function without constant
-                const l1_1 = 0;
-                const l2_1 = adjustedValue / b2;
+            // Draw arrows showing surplus from constraints (representing μ values)
+            if (mu1 > eps) {
+                // Calculate a point on the first constraint line
+                const base = { 
+                    x: point.x - mu1 * a11 / (a11*a11 + a21*a21),
+                    y: point.y - mu1 * a21 / (a11*a11 + a21*a21)
+                };
                 
-                const l1_2 = adjustedValue / b1;
-                const l2_2 = 0;
+                // Draw a line from this base point to the dual solution
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
                 
-                // Only draw if points are valid
-                if (l1_2 >= 0 && l2_1 >= 0) {
-                    drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.8)', 2, [5, 5]);
+                const startPoint = dataToCanvas(base.x, base.y);
+                const endPoint = dataToCanvas(point.x, point.y);
+                
+                ctx.moveTo(startPoint.x, startPoint.y);
+                ctx.lineTo(endPoint.x, endPoint.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Add label for μ1
+                const midPoint = { 
+                    x: (base.x + point.x) / 2,
+                    y: (base.y + point.y) / 2 
+                };
+                const canvasMidPoint = dataToCanvas(midPoint.x, midPoint.y);
+                ctx.fillText(`μ₁=${mu1.toFixed(2)}`, canvasMidPoint.x + 5, canvasMidPoint.y + 5);
+            }
+            
+            if (mu2 > eps) {
+                // Calculate a point on the second constraint line
+                const base = {
+                    x: point.x - mu2 * a12 / (a12*a12 + a22*a22),
+                    y: point.y - mu2 * a22 / (a12*a12 + a22*a22)
+                };
+                
+                // Draw a line from this base point to the dual solution
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+                
+                const startPoint = dataToCanvas(base.x, base.y);
+                const endPoint = dataToCanvas(point.x, point.y);
+                
+                ctx.moveTo(startPoint.x, startPoint.y);
+                ctx.lineTo(endPoint.x, endPoint.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Add label for μ2
+                const midPoint = {
+                    x: (base.x + point.x) / 2,
+                    y: (base.y + point.y) / 2
+                };
+                const canvasMidPoint = dataToCanvas(midPoint.x, midPoint.y);
+                ctx.fillText(`μ₂=${mu2.toFixed(2)}`, canvasMidPoint.x + 5, canvasMidPoint.y - 5);
+            }
+            
+            // Draw objective level curve through optimal point
+            if (b1 !== 0 || b2 !== 0) {
+                // Calculate the value of the objective at optimal point
+                // b1*λ1 + b2*λ2 - μ1 - μ2 + c3 = value
+                
+                // For visualization, we'll draw the level curve without μ terms:
+                // b1*λ1 + b2*λ2 = value - c3 + μ1 + μ2
+                const objValue = value - c3 + mu1 + mu2;
+                
+                if (b2 !== 0) {
+                    // Draw level curve for the objective function
+                    const x1 = 0;
+                    const y1 = objValue / b2;
+                    
+                    const x2 = objValue / b1;
+                    const y2 = 0;
+                    
+                    if (y1 >= 0 && x2 >= 0) {
+                        drawLine(x1, y1, x2, y2, 'rgba(46, 204, 113, 0.8)', 2, [5, 5]);
+                    }
+                } else if (b1 !== 0) {
+                    // Handle case where b2 = 0
+                    const x = objValue / b1;
+                    if (x >= 0) {
+                        drawLine(x, 0, x, maxY, 'rgba(46, 204, 113, 0.8)', 2, [5, 5]);
+                    }
                 }
             }
             
-            // Draw a few more level curves
-            [0.7, 1.3].forEach(factor => {
-                if (b2 !== 0) {
-                    const levelValue = (value - c3) * factor;
-                    
-                    const l1_1 = 0;
-                    const l2_1 = levelValue / b2;
-                    
-                    const l1_2 = levelValue / b1;
-                    const l2_2 = 0;
-                    
-                    // Only draw if points are valid
-                    if (l1_2 >= 0 && l2_1 >= 0) {
-                        drawLine(l1_1, l2_1, l1_2, l2_2, 'rgba(52, 152, 219, 0.4)', 1, [5, 5]);
-                    }
-                }
-            });
-            
-            // Draw arrow to show gradient direction (direction of increasing objective)
+            // Draw direction of improvement (gradient of objective function)
             const gradLen = 1;
             const normFactor = Math.sqrt(b1*b1 + b2*b2);
             
-            // Start at the optimal point and draw in the direction of gradient
-            const arrowX = point.x + (b1 / normFactor) * gradLen;
-            const arrowY = point.y + (b2 / normFactor) * gradLen;
-            
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([]);
-            
-            const start = dataToCanvas(point.x, point.y);
-            const end = dataToCanvas(arrowX, arrowY);
-            
-            ctx.moveTo(start.x, start.y);
-            ctx.lineTo(end.x, end.y);
-            
-            // Add arrow head
-            const angle = Math.atan2(end.y - start.y, end.x - start.x);
-            const headSize = 10;
-            
-            ctx.lineTo(
-                end.x - headSize * Math.cos(angle - Math.PI/6),
-                end.y - headSize * Math.sin(angle - Math.PI/6)
-            );
-            ctx.moveTo(end.x, end.y);
-            ctx.lineTo(
-                end.x - headSize * Math.cos(angle + Math.PI/6),
-                end.y - headSize * Math.sin(angle + Math.PI/6)
-            );
-            
-            ctx.stroke();
+            if (normFactor > 0) {
+                const arrowX = point.x + (b1 / normFactor) * gradLen;
+                const arrowY = point.y + (b2 / normFactor) * gradLen;
+                
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                
+                const start = dataToCanvas(point.x, point.y);
+                const end = dataToCanvas(arrowX, arrowY);
+                
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                
+                // Add arrow head
+                const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                const headSize = 10;
+                
+                ctx.lineTo(
+                    end.x - headSize * Math.cos(angle - Math.PI/6),
+                    end.y - headSize * Math.sin(angle - Math.PI/6)
+                );
+                ctx.moveTo(end.x, end.y);
+                ctx.lineTo(
+                    end.x - headSize * Math.cos(angle + Math.PI/6),
+                    end.y - headSize * Math.sin(angle + Math.PI/6)
+                );
+                
+                ctx.stroke();
+            }
+        }
+        
+        // Update the legend and explanation text
+        const legendSection = document.querySelector('.legend');
+        if (legendSection) {
+            const dualItem = legendSection.querySelector('.legend-item:nth-child(2)');
+            if (dualItem) {
+                dualItem.innerHTML = '<span class="legend-color dual"></span> Dual Constraint Lines';
+            }
         }
     }
 
