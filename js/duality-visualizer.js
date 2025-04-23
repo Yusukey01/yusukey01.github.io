@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     const padding = 50;
-    const scale = 20; // Scale factor for visualization
+    let  scale = 20; 
     
     // Function to draw the grid and axes
     function drawGrid() {
@@ -679,20 +679,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adjust canvas setup for better scaling
     function setupCanvas() {
-        // Make canvas adjust dynamically based on constraints
+        // Compute visible bounds
         const bounds = computeVisibleBounds();
         
-        // Update the scale with a safety margin
-        scale = Math.min(
-            (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX),
-            (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY)
-        ) * 0.8;
+        // Calculate appropriate scale factor
+        const scaleX = (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX || 1);
+        const scaleY = (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY || 1);
         
-        // Set the boundaries
+        // Use the smaller scale to ensure everything fits
+        scale = Math.min(scaleX, scaleY) * 0.8;
+        
+        // Set origin offsets
         xMin = bounds.minX;
         yMin = bounds.minY;
         
-        // Clear previous content
+        // Clear the canvas
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     }
 
