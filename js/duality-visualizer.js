@@ -465,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let c1 = 3, c2 = 4, c3 = -20;
     let a11 = 2, a12 = 1, a21 = 1, a22 = 3;
     let b1 = 10, b2 = 15;
-
+    let xMin = 0, yMin = 0; 
     const eps = 1e-8;
     
     // Get DOM elements
@@ -581,8 +581,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to convert data coordinates to canvas coordinates
     function dataToCanvas(x, y) {
         return {
-            x: padding + x * scale,
-            y: canvasHeight - padding - y * scale
+            x: padding + (x - xMin) * scale,
+            y: canvasHeight - padding - (y - yMin) * scale
         };
     }
     
@@ -681,13 +681,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupCanvas() {
         // Make canvas adjust dynamically based on constraints
         const bounds = computeVisibleBounds();
-        const scaleFactor = Math.min(
-            (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX),
-            (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY)
-        );
         
         // Update the scale with a safety margin
-        scale = scaleFactor * 0.8;
+        scale = Math.min(
+            (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX),
+            (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY)
+        ) * 0.8;
         
         // Set the boundaries
         xMin = bounds.minX;
