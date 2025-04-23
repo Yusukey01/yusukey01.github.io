@@ -1270,27 +1270,12 @@ function solveDualSimplex() {
         
         // Draw optimal dual solution with clear indication of μ variables
         if (dualSolution) {
-            const { point, value, mu1, mu2 } = dualSolution;
+            const { point } = dualSolution;
     
             // Draw optimal point with minimal labeling
             drawPoint(point.x, point.y, '#2ecc71', 6);
             
-            // Simple label showing just the lambda values
-            const labelText = `(${point.x.toFixed(2)},${point.y.toFixed(2)})`;
-            
-            // Calculate position to ensure label is visible
-            const labelX = point.x + 0.3;
-            const labelY = point.y + 0.3;
-            
-            // Draw a background behind the label for better readability
-            const p = dataToCanvas(labelX, labelY);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillRect(p.x - 5, p.y - 15, 70, 20);
-            
-            // Draw the text
-            ctx.fillStyle = '#2ecc71';
-            ctx.font = '14px Arial';
-            ctx.fillText(labelText, p.x, p.y);
+           
         }
         
         // Update the legend text to clarify what's being shown
