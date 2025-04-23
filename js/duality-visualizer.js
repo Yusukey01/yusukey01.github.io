@@ -1015,7 +1015,6 @@ function solveDualSimplex() {
 
     // Function to draw the primal problem
     function drawPrimal() {
-        
         // Draw the feasible region
         const feasibleRegion = computePrimalFeasibleRegion();
         if (feasibleRegion.length >= 3) {
@@ -1028,44 +1027,26 @@ function solveDualSimplex() {
         
         // Draw constraint lines
         // Constraint 1: a11*x1 + a12*x2 = b1
-        const c1x1 = b1 / a11;
-        const c1x2 = b1 / a12;
-        drawLine(c1x1, 0, 0, c1x2, 'rgba(52, 152, 219, 0.8)', 2);
+        if (a11 !== 0 && a12 !== 0) {
+            const c1x1 = b1 / a11;
+            const c1x2 = b1 / a12;
+            drawLine(c1x1, 0, 0, c1x2, 'rgba(52, 152, 219, 0.8)', 2);
+        }
         
         // Constraint 2: a21*x1 + a22*x2 = b2
-        const c2x1 = b2 / a21;
-        const c2x2 = b2 / a22;
-        drawLine(c2x1, 0, 0, c2x2, 'rgba(52, 152, 219, 0.8)', 2);
+        if (a21 !== 0 && a22 !== 0) {
+            const c2x1 = b2 / a21;
+            const c2x2 = b2 / a22;
+            drawLine(c2x1, 0, 0, c2x2, 'rgba(52, 152, 219, 0.8)', 2);
+        }
         
         // Draw objective function level curves
         const optimalSolution = solvePrimalSimplex();
         if (optimalSolution) {
             const { point } = optimalSolution;
             
-            // Draw optimal point
+            // Draw optimal point - no arrow
             drawPoint(point.x, point.y, '#2ecc71', 6);
-            
-            const start = dataToCanvas(point.x, point.y);
-            const end = dataToCanvas(arrowX, arrowY);
-            
-            ctx.moveTo(start.x, start.y);
-            ctx.lineTo(end.x, end.y);
-            
-            // Add arrow head
-            const angle = Math.atan2(end.y - start.y, end.x - start.x);
-            const headSize = 10;
-            
-            ctx.lineTo(
-                end.x - headSize * Math.cos(angle - Math.PI/6),
-                end.y - headSize * Math.sin(angle - Math.PI/6)
-            );
-            ctx.moveTo(end.x, end.y);
-            ctx.lineTo(
-                end.x - headSize * Math.cos(angle + Math.PI/6),
-                end.y - headSize * Math.sin(angle + Math.PI/6)
-            );
-            
-            ctx.stroke();
         }
     }
 
