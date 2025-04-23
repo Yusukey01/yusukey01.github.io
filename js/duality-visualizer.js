@@ -1223,11 +1223,11 @@ function solveDualSimplex() {
                 y1 = c2 / a22;
                 x2 = maxX;
                 y2 = c2 / a22;
-                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
+                drawLine(x1, y1, x2, y2, 'rgba(8, 8, 8, 0.8)', 2);
                 
                 // Add label for constraint
                 const labelPoint = dataToCanvas(maxX / 2, y1 + 0.5);
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+                ctx.fillStyle = 'rgba(8, 8, 8, 0.8)';
                 ctx.font = '12px Arial';
                 ctx.fillText('a₁₂λ₁ + a₂₂λ₂ = c₂ (μ₂=0)', labelPoint.x, labelPoint.y + 15);
                 return;
@@ -1245,28 +1245,6 @@ function solveDualSimplex() {
         drawLine(0, 0, 0, maxY, 'rgba(231, 76, 60, 0.8)', 2); // λ1 = 0
         drawLine(0, 0, maxX, 0, 'rgba(231, 76, 60, 0.8)', 2); // λ2 = 0
         
-        // Add origin label
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-        ctx.font = '12px Arial';
-        ctx.fillText('(0,0)', padding - 30, canvasHeight - padding + 15);
-        
-        // Mark the μ=0 feasible region (intersection of equality constraints if in the first quadrant)
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > eps) {
-            const intersectX = (c1 * a22 - c2 * a21) / det;
-            const intersectY = (a11 * c2 - a12 * c1) / det;
-            
-            if (intersectX >= 0 && intersectY >= 0) {
-                // Draw intersection point
-                drawPoint(intersectX, intersectY, 'rgba(231, 76, 60, 0.6)', 5);
-                
-                // Label the intersection point
-                const labelPoint = dataToCanvas(intersectX + 0.3, intersectY + 0.3);
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-                ctx.font = '12px Arial';
-                ctx.fillText(`(${intersectX.toFixed(2)},${intersectY.toFixed(2)})`, labelPoint.x, labelPoint.y);
-            }
-        }
         
         // Draw optimal dual solution with clear indication of μ variables
         if (dualSolution) {
