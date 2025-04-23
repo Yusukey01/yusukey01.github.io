@@ -1040,23 +1040,10 @@ function solveDualSimplex() {
         // Draw objective function level curves
         const optimalSolution = solvePrimalSimplex();
         if (optimalSolution) {
-            const { point, value } = optimalSolution;
+            const { point } = optimalSolution;
             
             // Draw optimal point
             drawPoint(point.x, point.y, '#2ecc71', 6);
-
-            // Draw arrow to show gradient direction (direction of decreasing objective)
-            const gradLen = 1;
-            const normFactor = Math.sqrt(c1*c1 + c2*c2);
-            
-            // Start at the optimal point and draw in the direction of -gradient
-            const arrowX = point.x - (c1 / normFactor) * gradLen;
-            const arrowY = point.y - (c2 / normFactor) * gradLen;
-            
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(231, 76, 60, 0.8)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([]);
             
             const start = dataToCanvas(point.x, point.y);
             const end = dataToCanvas(arrowX, arrowY);
