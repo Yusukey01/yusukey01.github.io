@@ -1272,122 +1272,33 @@ function solveDualSimplex() {
         if (dualSolution) {
             const { point, value, mu1, mu2 } = dualSolution;
             
-            drawPoint(point.x, point.y, '#2ecc71', 6, 
-                `(λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`, 
-                {x: 0.4, y: 0.4});
-            
+            drawPoint(point.x, point.y, '#2ecc71', 6);
+
+            const labelText = `Optimal: (λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`;
+            drawLabel(point.x + 0.5, point.y, labelText, '#2ecc71');
+
             // Draw labels for the point
             ctx.fillStyle = '#333';
             ctx.font = '14px Arial';
 
-           
-            // Draw lines showing the effect of μ variables (distance from constraint lines)
-            if (mu1 > eps) {
-                // Calculate the closest point on the μ1=0 line to the optimal solution
-                let baseX, baseY;
-                
-                if (a11 === 0 && a21 !== 0) {
-                    // Vertical line
-                    baseX = point.x;
-                    baseY = c1 / a21;
-                } else if (a21 === 0 && a11 !== 0) {
-                    // Horizontal line
-                    baseX = c1 / a11;
-                    baseY = point.y;
-                } else {
-                    // General line: a11*x + a21*y = c1
-                    // Project point onto line
-                    const num = c1 - (a11 * point.x + a21 * point.y);
-                    const denom = a11 * a11 + a21 * a21;
-                    const t = num / denom;
-                    
-                    baseX = point.x + t * a11;
-                    baseY = point.y + t * a21;
-                }
-                
-                // Draw line from the constraint line to the dual solution
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                
-                const startPoint = dataToCanvas(baseX, baseY);
-                const endPoint = dataToCanvas(point.x, point.y);
-                
-                ctx.moveTo(startPoint.x, startPoint.y);
-                ctx.lineTo(endPoint.x, endPoint.y);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // Add label for μ1
-                const midX = (baseX + point.x) / 2;
-                const midY = (baseY + point.y) / 2;
-                drawLabel(midX, midY, `μ₁=${mu1.toFixed(2)}`, '#e74c3c');
+            // If μ values are significant, show them in a separate label below
+            if (mu1 > eps || mu2 > eps) {
+                const muText = `μ₁=${mu1.toFixed(2)}, μ₂=${mu2.toFixed(2)}`;
+                drawLabel(point.x + 0.5, point.y - 1, muText, '#e74c3c');
             }
-            
-            if (mu2 > eps) {
-                // Calculate the closest point on the μ2=0 line to the optimal solution
-                let baseX, baseY;
-                
-                if (a12 === 0 && a22 !== 0) {
-                    // Vertical line
-                    baseX = point.x;
-                    baseY = c2 / a22;
-                } else if (a22 === 0 && a12 !== 0) {
-                    // Horizontal line
-                    baseX = c2 / a12;
-                    baseY = point.y;
-                } else {
-                    // General line: a12*x + a22*y = c2
-                    // Project point onto line
-                    const num = c2 - (a12 * point.x + a22 * point.y);
-                    const denom = a12 * a12 + a22 * a22;
-                    const t = num / denom;
-                    
-                    baseX = point.x + t * a12;
-                    baseY = point.y + t * a22;
-                }
-                
-                // Draw line from the constraint line to the dual solution
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                
-                const startPoint = dataToCanvas(baseX, baseY);
-                const endPoint = dataToCanvas(point.x, point.y);
-                
-                ctx.moveTo(startPoint.x, startPoint.y);
-                ctx.lineTo(endPoint.x, endPoint.y);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // Add label for μ2
-                const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-                drawLabel(midPoint.x, midPoint.y - 0.5, `b₁λ₁ + b₂λ₂ = ${objValue.toFixed(1)}`, 'rgba(46, 204, 113, 1)');
-            }
-            
-            // Draw objective function level line through the optimal point
-            const objValue = value - c3;
-            
+
+            // Simplify the objective function visualization - just show one level curve
             if (b1 !== 0 && b2 !== 0) {
-                // Draw level curve for the objective function
-                // b1*λ1 + b2*λ2 = objValue
+                const objValue = value - c3;
                 const x1 = 0;
                 const y1 = objValue / b2;
-                
                 const x2 = objValue / b1;
                 const y2 = 0;
                 
                 if (y1 >= 0 && x2 >= 0) {
                     drawLine(x1, y1, x2, y2, 'rgba(46, 204, 113, 0.8)', 2, [5, 5]);
-                    
-                    // Add label for objective function level curve
-                    const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-                    const labelPoint = dataToCanvas(midPoint.x, midPoint.y);
-                    ctx.fillStyle = 'rgba(46, 204, 113, 0.8)';
-                    ctx.font = '12px Arial';
-                    ctx.fillText(`b₁λ₁ + b₂λ₂ = ${objValue.toFixed(1)}`, labelPoint.x, labelPoint.y - 10);
+                    drawLabel((x1 + x2) / 2, (y1 + y2) / 2 + 0.5, 
+                            `Objective value: ${value.toFixed(2)}`, 'rgba(46, 204, 113, 1)');
                 }
             }
             
