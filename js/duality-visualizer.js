@@ -1074,6 +1074,7 @@ function solveDualSimplex() {
         const { maxX, maxY } = getPlotBounds();
     
         // Get dual solution
+        const primalSolution = solvePrimalSimplex();
         const dualSolution = solveDualSimplex();
         
         // Draw the dual constraint lines (without the μ variables)
