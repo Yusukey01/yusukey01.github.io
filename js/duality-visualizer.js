@@ -1271,72 +1271,26 @@ function solveDualSimplex() {
         // Draw optimal dual solution with clear indication of μ variables
         if (dualSolution) {
             const { point, value, mu1, mu2 } = dualSolution;
-            
+    
+            // Draw optimal point with minimal labeling
             drawPoint(point.x, point.y, '#2ecc71', 6);
-
-            const labelText = `Optimal: (λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`;
-            drawLabel(point.x + 0.5, point.y, labelText, '#2ecc71');
-
-            // Draw labels for the point
-            ctx.fillStyle = '#333';
+            
+            // Simple label showing just the lambda values
+            const labelText = `(${point.x.toFixed(2)},${point.y.toFixed(2)})`;
+            
+            // Calculate position to ensure label is visible
+            const labelX = point.x + 0.3;
+            const labelY = point.y + 0.3;
+            
+            // Draw a background behind the label for better readability
+            const p = dataToCanvas(labelX, labelY);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(p.x - 5, p.y - 15, 70, 20);
+            
+            // Draw the text
+            ctx.fillStyle = '#2ecc71';
             ctx.font = '14px Arial';
-
-            // If μ values are significant, show them in a separate label below
-            if (mu1 > eps || mu2 > eps) {
-                const muText = `μ₁=${mu1.toFixed(2)}, μ₂=${mu2.toFixed(2)}`;
-                drawLabel(point.x + 0.5, point.y - 1, muText, '#e74c3c');
-            }
-
-            // Simplify the objective function visualization - just show one level curve
-            if (b1 !== 0 && b2 !== 0) {
-                const objValue = value - c3;
-                const x1 = 0;
-                const y1 = objValue / b2;
-                const x2 = objValue / b1;
-                const y2 = 0;
-                
-                if (y1 >= 0 && x2 >= 0) {
-                    drawLine(x1, y1, x2, y2, 'rgba(46, 204, 113, 0.8)', 2, [5, 5]);
-                    drawLabel((x1 + x2) / 2, (y1 + y2) / 2 + 0.5, 
-                            `Objective value: ${value.toFixed(2)}`, 'rgba(46, 204, 113, 1)');
-                }
-            }
-            
-            // Draw arrow showing the gradient of the objective function (direction of maximum increase)
-            const gradLen = 1;
-            const normFactor = Math.sqrt(b1*b1 + b2*b2);
-            
-            if (normFactor > 0) {
-                const arrowX = point.x + (b1 / normFactor) * gradLen;
-                const arrowY = point.y + (b2 / normFactor) * gradLen;
-                
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([]);
-                
-                const start = dataToCanvas(point.x, point.y);
-                const end = dataToCanvas(arrowX, arrowY);
-                
-                ctx.moveTo(start.x, start.y);
-                ctx.lineTo(end.x, end.y);
-                
-                // Add arrow head
-                const angle = Math.atan2(end.y - start.y, end.x - start.x);
-                const headSize = 10;
-                
-                ctx.lineTo(
-                    end.x - headSize * Math.cos(angle - Math.PI/6),
-                    end.y - headSize * Math.sin(angle - Math.PI/6)
-                );
-                ctx.moveTo(end.x, end.y);
-                ctx.lineTo(
-                    end.x - headSize * Math.cos(angle + Math.PI/6),
-                    end.y - headSize * Math.sin(angle + Math.PI/6)
-                );
-                
-                ctx.stroke();
-            }
+            ctx.fillText(labelText, p.x, p.y);
         }
         
         // Update the legend text to clarify what's being shown
