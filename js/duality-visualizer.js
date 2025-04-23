@@ -303,14 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .legend {
-        margin-top: 10px;
-        display: flex;
-        gap: 15px;
-        font-size: 0.9rem;
-        color: #666;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
+        margin-top: 15px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+     }
       
       .legend-item {
         display: flex;
@@ -445,6 +443,19 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-bottom: 8px;
         line-height: 1.4;
       }
+
+      .result-value {
+    font-family: "Computer Modern", serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background-color: #f5f5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    margin-top: 4px;
+    }
+
     `;
     
     document.head.appendChild(styleElement);
@@ -594,6 +605,29 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
     }
+
+    // Improved label rendering with background for better readability
+    function drawLabel(x, y, text, color = '#333', bgColor = 'rgba(255, 255, 255, 0.8)') {
+        const point = dataToCanvas(x, y);
+        
+        // Text metrics to size the background
+        ctx.font = '14px Arial';
+        const metrics = ctx.measureText(text);
+        const padding = 4;
+        
+        // Draw background rectangle
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(
+            point.x - padding, 
+            point.y - 16 - padding, 
+            metrics.width + padding * 2, 
+            20 + padding * 2
+        );
+        
+        // Draw text
+        ctx.fillStyle = color;
+        ctx.fillText(text, point.x, point.y);
+    }
     
     // Function to fill a polygon
     function fillPolygon(points, fillColor, strokeColor = null) {
@@ -621,13 +655,84 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function to draw a point
-    function drawPoint(x, y, color = '#333', radius = 5) {
+    function drawPoint(x, y, color = '#333', radius = 5, label = null, labelOffset = {x: 0.3, y: 0.3}) {
         const p = dataToCanvas(x, y);
         
+        // Draw point with border for better visibility
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Add white border
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1.5;
+        ctx.arc(p.x, p.y, radius + 1, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Add label if provided
+        if (label) {
+            drawLabel(x + labelOffset.x, y + labelOffset.y, label, color);
+        }
+    }
+
+    // Adjust canvas setup for better scaling
+    function setupCanvas() {
+        // Make canvas adjust dynamically based on constraints
+        const bounds = computeVisibleBounds();
+        const scaleFactor = Math.min(
+            (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX),
+            (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY)
+        );
+        
+        // Update the scale with a safety margin
+        scale = scaleFactor * 0.8;
+        
+        // Set the boundaries
+        xMin = bounds.minX;
+        yMin = bounds.minY;
+        
+        // Clear previous content
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    }
+
+    // Compute bounds that ensure all important parts are visible
+    function computeVisibleBounds() {
+        let points = [];
+        
+        // Add important points from constraints
+        if (a11 !== 0) points.push({x: b1/a11, y: 0});
+        if (a12 !== 0) points.push({x: 0, y: b1/a12});
+        if (a21 !== 0) points.push({x: b2/a21, y: 0});
+        if (a22 !== 0) points.push({x: 0, y: b2/a22});
+        
+        // Add minimum point
+        points.push({x: 1, y: 1});
+        
+        // Add primal solution if available
+        const primalSolution = solvePrimalSimplex();
+        if (primalSolution && primalSolution.point) {
+            points.push(primalSolution.point);
+        }
+        
+        // Find the bounding box
+        let minX = Math.min(...points.map(p => p.x));
+        let maxX = Math.max(...points.map(p => p.x));
+        let minY = Math.min(...points.map(p => p.y));
+        let maxY = Math.max(...points.map(p => p.y));
+        
+        // Add margins
+        const margin = 0.2;
+        const xRange = maxX - minX;
+        const yRange = maxY - minY;
+        
+        minX = Math.max(0, minX - xRange * margin);
+        maxX = maxX + xRange * margin;
+        minY = Math.max(0, minY - yRange * margin);
+        maxY = maxY + yRange * margin;
+        
+        return { minX, maxX, minY, maxY };
     }
     
     // Function to find the bounds of the plot
@@ -1079,13 +1184,9 @@ function solveDualSimplex() {
             
             // Draw constraint line
             drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-            
-            // Add label for constraint
+        
             const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-            const labelPoint = dataToCanvas(midPoint.x, midPoint.y);
-            ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-            ctx.font = '12px Arial';
-            ctx.fillText('a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', labelPoint.x + 5, labelPoint.y - 10);
+            drawLabel(midPoint.x, midPoint.y - 0.5, 'a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', 'rgba(231, 76, 60, 1)');
         }
         
         // Draw second constraint: a12*λ1 + a22*λ2 = c2
@@ -1137,10 +1238,7 @@ function solveDualSimplex() {
             
             // Add label for constraint
             const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-            const labelPoint = dataToCanvas(midPoint.x, midPoint.y);
-            ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-            ctx.font = '12px Arial';
-            ctx.fillText('a₁₂λ₁ + a₂₂λ₂ = c₂ (μ₂=0)', labelPoint.x - 5, labelPoint.y + 15);
+            drawLabel(midPoint.x, midPoint.y - 0.5, 'a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', 'rgba(231, 76, 60, 1)');
         }
         
         // Draw non-negativity constraints
@@ -1174,16 +1272,15 @@ function solveDualSimplex() {
         if (dualSolution) {
             const { point, value, mu1, mu2 } = dualSolution;
             
-            // Draw optimal point
-            drawPoint(point.x, point.y, '#2ecc71', 6);
+            drawPoint(point.x, point.y, '#2ecc71', 6, 
+                `(λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`, 
+                {x: 0.4, y: 0.4});
             
             // Draw labels for the point
             ctx.fillStyle = '#333';
             ctx.font = '14px Arial';
-            
-            const labelPoint = dataToCanvas(point.x + 0.3, point.y + 0.3);
-            ctx.fillText(`(λ₁,λ₂) = (${point.x.toFixed(2)},${point.y.toFixed(2)})`, labelPoint.x, labelPoint.y);
-            
+
+           
             // Draw lines showing the effect of μ variables (distance from constraint lines)
             if (mu1 > eps) {
                 // Calculate the closest point on the μ1=0 line to the optimal solution
@@ -1225,8 +1322,7 @@ function solveDualSimplex() {
                 // Add label for μ1
                 const midX = (baseX + point.x) / 2;
                 const midY = (baseY + point.y) / 2;
-                const canvasMidPoint = dataToCanvas(midX, midY);
-                ctx.fillText(`μ₁=${mu1.toFixed(2)}`, canvasMidPoint.x + 5, canvasMidPoint.y - 5);
+                drawLabel(midX, midY, `μ₁=${mu1.toFixed(2)}`, '#e74c3c');
             }
             
             if (mu2 > eps) {
@@ -1267,10 +1363,8 @@ function solveDualSimplex() {
                 ctx.setLineDash([]);
                 
                 // Add label for μ2
-                const midX = (baseX + point.x) / 2;
-                const midY = (baseY + point.y) / 2;
-                const canvasMidPoint = dataToCanvas(midX, midY);
-                ctx.fillText(`μ₂=${mu2.toFixed(2)}`, canvasMidPoint.x - 25, canvasMidPoint.y + 15);
+                const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+                drawLabel(midPoint.x, midPoint.y - 0.5, `b₁λ₁ + b₂λ₂ = ${objValue.toFixed(1)}`, 'rgba(46, 204, 113, 1)');
             }
             
             // Draw objective function level line through the optimal point
@@ -1346,9 +1440,10 @@ function solveDualSimplex() {
 
     // Function to draw the entire visualization
     function drawVisualization() {
-        // Clear canvas
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
+        // Set up the canvas with appropriate scaling
+        setupCanvas();
+
         // Draw grid and axes
         drawGrid();
         
