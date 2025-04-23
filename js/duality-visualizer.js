@@ -158,10 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
               <h4>Visualization Guide</h4>
               <ul>
                 <li>The <span style="color:#3498db">blue region</span> represents the feasible region of the primal problem.</li>
-                <li>The <span style="color:#e74c3c">red lines</span> represent the equality constraints in the dual problem (where μ = 0).</li>
+                <li>The <span style="color:#e74c3c">red lines</span> in the dual view represent the constraints if the μ variables were zero.</li>
                 <li>The <span style="color:#2ecc71">green point</span> shows the optimal solution.</li>
-                <li>For the dual view, the optimal point may appear off the constraint lines - this is due to the μ variables which aren't shown directly.</li>
-                <li>Dashed lines from the constraint lines to the optimal point represent the μ variable values.</li>
+                <li>In the dual view, the optimal point may not lie exactly on the constraint lines when the corresponding primal variables are at their bounds.</li>
                 <li>Adjust the sliders to modify parameters and see how both problems change.</li>
               </ul>
             </div>
@@ -1045,49 +1044,6 @@ function solveDualSimplex() {
             
             // Draw optimal point
             drawPoint(point.x, point.y, '#2ecc71', 6);
-            
-            // Draw level curves of the objective function
-            // c1*x1 + c2*x2 = value
-            // x2 = (value - c1*x1) / c2
-            
-            // Draw the optimal level curve
-            if (c2 !== 0) {
-                const adjustedValue = value - c3; // Adjust for the constant term
-                const x1_1 = 0;
-                const x2_1 = adjustedValue / c2;
-                
-                const x1_2 = adjustedValue / c1;
-                const x2_2 = 0;
-                
-                // Only draw if points are valid
-                if (x1_2 >= 0 && x2_1 >= 0) {
-                    drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.8)', 2, [5, 5]);
-                }
-            } else if (c1 !== 0) {
-                // Handle case where c2 is zero
-                const adjustedValue = value - c3;
-                const x1 = adjustedValue / c1;
-                drawLine(x1, 0, x1, getPlotBounds().maxY, 'rgba(231, 76, 60, 0.8)', 2, [5, 5]);
-            }
-            
-            // Draw a few more level curves
-            [0.7, 1.3].forEach(factor => {
-                if (c2 !== 0) {
-                    const levelValue = (value - c3) * factor;
-                    
-                    const x1_1 = 0;
-                    const x2_1 = levelValue / c2;
-                    
-                    const x1_2 = levelValue / c1;
-                    const x2_2 = 0;
-                    
-                    // Only draw if points are valid and within bounds
-                    if (x1_2 >= 0 && x2_1 >= 0 && 
-                        x1_2 <= getPlotBounds().maxX && x2_1 <= getPlotBounds().maxY) {
-                        drawLine(x1_1, x2_1, x1_2, x2_2, 'rgba(231, 76, 60, 0.4)', 1, [5, 5]);
-                    }
-                }
-            });
 
             // Draw arrow to show gradient direction (direction of decreasing objective)
             const gradLen = 1;
