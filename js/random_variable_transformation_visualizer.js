@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <div class="button-group">
-              <button id="update-btn" class="primary-btn">Update Visualization</button>
               <button id="reset-btn" class="secondary-btn">Reset to Defaults</button>
             </div>
             
@@ -430,7 +429,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const transformationType = document.getElementById('transformation-type');
     const inputDistribution = document.getElementById('input-distribution');
     const transformationFunction = document.getElementById('transformation-function');
-    const updateBtn = document.getElementById('update-btn');
     const resetBtn = document.getElementById('reset-btn');
     const binCount = document.getElementById('bin-count');
     const binCountValue = document.getElementById('bin-count-value');
@@ -491,146 +489,95 @@ document.addEventListener('DOMContentLoaded', function() {
     // Current parameters
     let params = Object.assign({}, defaultParams);
     
-    // Initialize visualization
-    function initialize() {
-      // Set up event listeners
-      transformationType.addEventListener('change', function() {
-        params.transformationType = this.value;
-        updateTransformationType();
-      });
-      
-      inputDistribution.addEventListener('change', function() {
-        params.inputDistribution = this.value;
-        updateInputDistribution();
-      });
-      
-      transformationFunction.addEventListener('change', function() {
-        params.transformationFunction = this.value;
-        updateTransformationFunction();
-      });
-      
-      binCount.addEventListener('input', function() {
-        params.binCount = parseInt(this.value);
-        binCountValue.textContent = params.binCount;
-      });
-      
-      numSamples.addEventListener('input', function() {
-        params.numSamples = parseInt(this.value);
-        numSamplesValue.textContent = params.numSamples;
-      });
-      
-      updateBtn.addEventListener('click', updateVisualization);
-      resetBtn.addEventListener('click', resetParameters);
-      
-      // Input distribution parameter event listeners
-      normalMean.addEventListener('input', function() {
-        params.normalMean = parseFloat(this.value);
-      });
-      
-      normalStd.addEventListener('input', function() {
-        params.normalStd = parseFloat(this.value);
-      });
-      
-      uniformMin.addEventListener('input', function() {
-        params.uniformMin = parseFloat(this.value);
-      });
-      
-      uniformMax.addEventListener('input', function() {
-        params.uniformMax = parseFloat(this.value);
-      });
-      
-      exponentialRate.addEventListener('input', function() {
-        params.exponentialRate = parseFloat(this.value);
-      });
-      
-      betaAlpha.addEventListener('input', function() {
-        params.betaAlpha = parseFloat(this.value);
-      });
-      
-      betaBeta.addEventListener('input', function() {
-        params.betaBeta = parseFloat(this.value);
-      });
-      
-      gammaShape.addEventListener('input', function() {
-        params.gammaShape = parseFloat(this.value);
-      });
-      
-      gammaScale.addEventListener('input', function() {
-        params.gammaScale = parseFloat(this.value);
-      });
-
-      normalMean.addEventListener('input', function() {
-        params.normalMean = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      normalStd.addEventListener('input', function() {
-        params.normalStd = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      uniformMin.addEventListener('input', function() {
-        params.uniformMin = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      uniformMax.addEventListener('input', function() {
-        params.uniformMax = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      exponentialRate.addEventListener('input', function() {
-        params.exponentialRate = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      betaAlpha.addEventListener('input', function() {
-        params.betaAlpha = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      betaBeta.addEventListener('input', function() {
-        params.betaBeta = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      gammaShape.addEventListener('input', function() {
-        params.gammaShape = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      gammaScale.addEventListener('input', function() {
-        params.gammaScale = parseFloat(this.value);
-        updateVisualization(); // Immediately update
-      });
-      
-      // Add immediate updates for transformation type and function changes too
-      transformationType.addEventListener('change', function() {
-        params.transformationType = this.value;
-        updateTransformationType();
-        updateVisualization(); // Immediately update
-      });
-      
-      inputDistribution.addEventListener('change', function() {
-        params.inputDistribution = this.value;
-        updateInputDistribution();
-        updateVisualization(); // Immediately update
-      });
-      
-      transformationFunction.addEventListener('change', function() {
-        params.transformationFunction = this.value;
-        updateTransformationFunction();
-        updateVisualization(); // Immediately update
-      });
-      
-      // Update UI based on initial parameters
+   // Initialize visualization
+function initialize() {
+    // Set up event listeners with immediate updates
+    transformationType.addEventListener('change', function() {
+      params.transformationType = this.value;
       updateTransformationType();
-      updateInputDistribution();
-      updateTransformationFunction();
-      
-      // Initial visualization
       updateVisualization();
-    }
+    });
+    
+    inputDistribution.addEventListener('change', function() {
+      params.inputDistribution = this.value;
+      updateInputDistribution();
+      updateVisualization();
+    });
+    
+    transformationFunction.addEventListener('change', function() {
+      params.transformationFunction = this.value;
+      updateTransformationFunction();
+      updateVisualization();
+    });
+    
+    binCount.addEventListener('input', function() {
+      params.binCount = parseInt(this.value);
+      binCountValue.textContent = params.binCount;
+      updateVisualization();
+    });
+    
+    numSamples.addEventListener('input', function() {
+      params.numSamples = parseInt(this.value);
+      numSamplesValue.textContent = params.numSamples;
+      updateVisualization();
+    });
+    
+    resetBtn.addEventListener('click', resetParameters);
+    
+    // Input distribution parameter event listeners with immediate updates
+    normalMean.addEventListener('input', function() {
+      params.normalMean = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    normalStd.addEventListener('input', function() {
+      params.normalStd = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    uniformMin.addEventListener('input', function() {
+      params.uniformMin = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    uniformMax.addEventListener('input', function() {
+      params.uniformMax = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    exponentialRate.addEventListener('input', function() {
+      params.exponentialRate = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    betaAlpha.addEventListener('input', function() {
+      params.betaAlpha = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    betaBeta.addEventListener('input', function() {
+      params.betaBeta = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    gammaShape.addEventListener('input', function() {
+      params.gammaShape = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    gammaScale.addEventListener('input', function() {
+      params.gammaScale = parseFloat(this.value);
+      updateVisualization();
+    });
+    
+    // Update UI based on initial parameters
+    updateTransformationType();
+    updateInputDistribution();
+    updateTransformationFunction();
+    
+    // Initial visualization
+    updateVisualization();
+  }
     
     // Update transformation type UI
     function updateTransformationType() {
