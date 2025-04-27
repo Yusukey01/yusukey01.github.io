@@ -558,6 +558,70 @@ document.addEventListener('DOMContentLoaded', function() {
       gammaScale.addEventListener('input', function() {
         params.gammaScale = parseFloat(this.value);
       });
+
+      normalMean.addEventListener('input', function() {
+        params.normalMean = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      normalStd.addEventListener('input', function() {
+        params.normalStd = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      uniformMin.addEventListener('input', function() {
+        params.uniformMin = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      uniformMax.addEventListener('input', function() {
+        params.uniformMax = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      exponentialRate.addEventListener('input', function() {
+        params.exponentialRate = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      betaAlpha.addEventListener('input', function() {
+        params.betaAlpha = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      betaBeta.addEventListener('input', function() {
+        params.betaBeta = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      gammaShape.addEventListener('input', function() {
+        params.gammaShape = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      gammaScale.addEventListener('input', function() {
+        params.gammaScale = parseFloat(this.value);
+        updateVisualization(); // Immediately update
+      });
+      
+      // Add immediate updates for transformation type and function changes too
+      transformationType.addEventListener('change', function() {
+        params.transformationType = this.value;
+        updateTransformationType();
+        updateVisualization(); // Immediately update
+      });
+      
+      inputDistribution.addEventListener('change', function() {
+        params.inputDistribution = this.value;
+        updateInputDistribution();
+        updateVisualization(); // Immediately update
+      });
+      
+      transformationFunction.addEventListener('change', function() {
+        params.transformationFunction = this.value;
+        updateTransformationFunction();
+        updateVisualization(); // Immediately update
+      });
       
       // Update UI based on initial parameters
       updateTransformationType();
@@ -1253,34 +1317,34 @@ function drawTransformationFunction() {
     
     // Draw a scatterplot of input and output samples (for Monte Carlo method)
     function drawScatterplot(inputSamples, outputSamples) {
-      // Draw points
-      ctx.fillStyle = '#9b59b6';
-      ctx.globalAlpha = 0.3;
-      
-      for (let i = 0; i < inputSamples.length; i++) {
-        const x = inputSamples[i];
-        const y = outputSamples[i];
+        // Draw points
+        ctx.fillStyle = '#9b59b6';
+        ctx.globalAlpha = 0.3;
         
-        // Skip points that would be outside the visible area
-        if (x < -6 || x > 6 || y < -6 || y > 6) {
-          continue;
+        for (let i = 0; i < inputSamples.length; i++) {
+          const x = inputSamples[i];
+          const y = outputSamples[i];
+          
+          // Skip points that would be outside the visible area
+          if (x < -6 || x > 6 || y < -6 || y > 6) {
+            continue;
+          }
+          
+          // Map x from [-6,6] to canvas coordinates
+          const canvasX = padding + ((x + 6) / 12) * plotWidth;
+          
+          // Map y from [-6,6] to canvas coordinates - FIXED to match drawTransformationFunction
+          const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
+          
+          // Draw a small circle
+          ctx.beginPath();
+          ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
+          ctx.fill();
         }
         
-        // Map x from [-6,6] to canvas coordinates
-        const canvasX = padding + ((x + 6) / 12) * plotWidth;
-        
-        // Map y from [-6,6] to canvas coordinates
-        const canvasY = padding + ((6 - y) / 12) * plotHeight;
-        
-        // Draw a small circle
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.globalAlpha = 1.0;
       }
-      
-      ctx.globalAlpha = 1.0;
-    }
-    
+
     // PDF functions for different distributions
     
     // Normal distribution PDF
