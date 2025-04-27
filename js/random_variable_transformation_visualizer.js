@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
-    const container = document.getElementById('random-variable-transformation-visualizer');
+    const container = document.getElementById('random_variable_transformation_visualizer');
     
     if (!container) {
       console.error('Container element not found!');
@@ -1211,40 +1211,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Draw the transformation function
-    function drawTransformationFunction() {
-      ctx.strokeStyle = '#2ecc71';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+    // Draw the transformation function
+function drawTransformationFunction() {
+    ctx.strokeStyle = '#2ecc71';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    // Range of x values for the transformation function
+    const min = -6;
+    const max = 6;
+    const step = (max - min) / 200;
+    
+    let started = false; // Add this flag to track if we've started the path
+    
+    // Draw the transformation curve
+    for (let x = min; x <= max; x += step) {
+      const y = transformSample(x);
       
-      // Range of x values for the transformation function
-      const min = -6;
-      const max = 6;
-      const step = (max - min) / 200;
-      
-      // Draw the transformation curve
-      for (let x = min; x <= max; x += step) {
-        const y = transformSample(x);
-        
-        // Skip points that would be outside the visible area
-        if (y < -6 || y > 6) {
-          continue;
-        }
-        
-        // Map x from [-6,6] to canvas coordinates
-        const canvasX = padding + ((x + 6) / 12) * plotWidth;
-        
-        // Map y from [-6,6] to canvas coordinates
-        const canvasY = padding + ((6 - y) / 12) * plotHeight;
-        
-        if (x === min) {
-          ctx.moveTo(canvasX, canvasY);
-        } else {
-          ctx.lineTo(canvasX, canvasY);
-        }
+      // Skip points that would be outside the visible area
+      if (y < -6 || y > 6) {
+        started = false; // Reset the flag when we encounter points outside range
+        continue;
       }
       
-      ctx.stroke();
+      // Map x from [-6,6] to canvas coordinates
+      const canvasX = padding + ((x + 6) / 12) * plotWidth;
+      
+      // Map y from [-6,6] to canvas coordinates
+      const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
+      
+      if (!started) {
+        ctx.moveTo(canvasX, canvasY);
+        started = true;
+      } else {
+        ctx.lineTo(canvasX, canvasY);
+      }
     }
+    
+    ctx.stroke();
+  }
     
     // Draw a scatterplot of input and output samples (for Monte Carlo method)
     function drawScatterplot(inputSamples, outputSamples) {
