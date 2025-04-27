@@ -809,9 +809,11 @@ function initialize() {
     function updateVisualization() {
       // Clear canvas
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      console.log("Updating visualization with parameters:", JSON.stringify(params));
       
       // Draw grid and axes
       drawGrid();
+      
       
       // Generate input distribution
       const inputPDF = generateInputPDF();
