@@ -118,10 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <label for="transformation-function">Transformation Function y = f(x):</label>
               <select id="transformation-function" class="full-width">
                 <option value="quadratic">Quadratic: y = x²</option>
-                <option value="cubic">Cubic: y = x³</option>
                 <option value="exp">Exponential: y = e^x</option>
                 <option value="log">Logarithmic: y = ln(x)</option>
-                <option value="sine">Sine: y = sin(x)</option>
                 <option value="sqrt">Square Root: y = √x</option>
                 <option value="abs">Absolute Value: y = |x|</option>
               </select>
@@ -660,9 +658,7 @@ function initialize() {
       // Default options for invertible transformations
       const invertibleOptions = [
         { value: 'quadratic', text: 'Quadratic: y = x²' },
-        { value: 'cubic', text: 'Cubic: y = x³' },
         { value: 'exp', text: 'Exponential: y = e^x' },
-        { value: 'sine', text: 'Sine: y = sin(x)' }
       ];
       
       // Add options for non-invertible transformations
@@ -720,12 +716,6 @@ function initialize() {
           inverse = 'x = ±√y';
           transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(√y) · 1/(2√y) + p<sub>X</sub>(-√y) · 1/(2√y)`;
           break;
-        case 'cubic':
-          formula = 'y = x³';
-          jacobian = '|dx/dy| = 1/(3y²ʸ³)';
-          inverse = 'x = y^(1/3)';
-          transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(y<sup>1/3</sup>) · 1/(3·y<sup>2/3</sup>)`;
-          break;
         case 'exp':
           formula = 'y = e^x';
           jacobian = '|dx/dy| = 1/y';
@@ -737,12 +727,6 @@ function initialize() {
           jacobian = '|dx/dy| = e^y';
           inverse = 'x = e^y';
           transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(e<sup>y</sup>) · e<sup>y</sup>`;
-          break;
-        case 'sine':
-          formula = 'y = sin(x)';
-          jacobian = '|dx/dy| = 1/√(1-y²)';
-          inverse = 'x = arcsin(y) + 2πk';
-          transformationEquation.innerHTML = `p<sub>Y</sub>(y) = Σ p<sub>X</sub>(arcsin(y) + 2πk) · 1/√(1-y²)`;
           break;
         case 'sqrt':
           formula = 'y = √x';
@@ -906,11 +890,6 @@ function initialize() {
               p = p1 + p2;
             }
             break;
-          case 'cubic':
-            // y = x^3, x = y^(1/3)
-            const x = Math.cbrt(y);
-            p = interpolatePDF(inputPDF, x) / (3 * Math.pow(Math.abs(y), 2/3));
-            break;
           case 'exp':
             // y = e^x, x = ln(y)
             if (y > 0) {
@@ -922,20 +901,6 @@ function initialize() {
             // y = ln(x), x = e^y
             const x_log = Math.exp(y);
             p = interpolatePDF(inputPDF, x_log) * x_log;
-            break;
-          case 'sine':
-            // y = sin(x)
-            // This is a multi-valued inverse, so we need to sum over all preimages
-            if (y >= -1 && y <= 1) {
-              // Include a few periods
-              for (let k = -2; k <= 2; k++) {
-                const x1 = Math.asin(y) + 2 * Math.PI * k;
-                const x2 = Math.PI - Math.asin(y) + 2 * Math.PI * k;
-                const jacobian = 1 / Math.sqrt(1 - y * y);
-                p += interpolatePDF(inputPDF, x1) * jacobian;
-                p += interpolatePDF(inputPDF, x2) * jacobian;
-              }
-            }
             break;
           case 'sqrt':
             // y = √x, x = y^2
@@ -1029,14 +994,10 @@ function initialize() {
       switch (params.transformationFunction) {
         case 'quadratic':
           return x * x;
-        case 'cubic':
-          return x * x * x;
         case 'exp':
           return Math.exp(x);
         case 'log':
           return x > 0 ? Math.log(x) : -10; // Default value for negative inputs
-        case 'sine':
-          return Math.sin(x);
         case 'sqrt':
           return x >= 0 ? Math.sqrt(x) : Math.sqrt(-x); // Take sqrt of abs value
         case 'abs':
