@@ -1105,7 +1105,7 @@ function initialize() {
             break;
           case 'beta':
             // Scale back to [-6,6] for visualization
-            sample = randomBeta(params.betaAlpha, params.betaBeta) * 12 - 6;
+            sample = randomBeta(params.betaAlpha, params.betaBeta);
             break;
           case 'gamma':
             sample = randomGamma(params.gammaShape, params.gammaScale);
@@ -1277,18 +1277,18 @@ function initialize() {
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
       
-      // x-axis labels
-      for (let x = -5; x <= 5; x++) {
-        const xPos = padding + ((x + 5) / 10) * plotWidth;
-        ctx.fillText(x.toString(), xPos, canvasHeight - padding + 15);
-      }
-      
-      // y-axis labels
-      ctx.textAlign = 'right';
-      for (let y = 0; y <= 1; y += 0.2) {
-        const yPos = canvasHeight - padding - y * plotHeight;
-        ctx.fillText(y.toFixed(1), padding - 5, yPos + 4);
-      }
+        // x-axis labels
+        for (let x = 0; x <= 10; x++) {
+            const xPos = padding + (x / 10) * plotWidth;
+            ctx.fillText((x / 10).toFixed(1), xPos, canvasHeight - padding + 15);
+        }
+        
+        // y-axis labels
+        ctx.textAlign = 'right';
+        for (let y = 0; y <= 5; y += 1) {  // Change to increment by 1 from 0 to 5
+            const yPos = canvasHeight - padding - (y / 5) * plotHeight;  // Scale to 0-5 range
+            ctx.fillText(y.toFixed(0), padding - 5, yPos + 4);
+        }
       
       // Axis titles
       ctx.font = '14px Arial';
@@ -1362,8 +1362,8 @@ function drawTransformationFunction() {
       // Map x from [0,1] to canvas coordinates
       const canvasX = padding + x * plotWidth;
       
-      // Map y from [-6,6] to canvas coordinates
-      const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
+      // Map y from [0,5] to canvas coordinates
+      const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
       
       if (!started) {
         ctx.moveTo(canvasX, canvasY);
@@ -1394,8 +1394,8 @@ function drawTransformationFunction() {
           // Map x from [0,1] to canvas coordinates
           const canvasX = padding + x * plotWidth;
           
-          // Map y from [-6,6] to canvas coordinates - FIXED to match drawTransformationFunction
-          const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
+          // Map y from [0, 5] to canvas coordinates - FIXED to match drawTransformationFunction
+          const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
           
           // Draw a small circle
           ctx.beginPath();
