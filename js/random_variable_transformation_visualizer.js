@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const exponentialParams = document.getElementById('exponential-params');
     const betaParams = document.getElementById('beta-params');
     const gammaParams = document.getElementById('gamma-params');
-    
+    const binCountControl = document.getElementById('bin-count-control');
     // Input distribution parameters
     const normalMean = document.getElementById('normal-mean');
     const normalStd = document.getElementById('normal-std');
