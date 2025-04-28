@@ -134,12 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="help-text">More samples = better approximation, but slower</div>
             </div>
             
-            <div class="control-group">
-              <label for="bin-count">Histogram Bin Count:</label>
-              <input type="range" id="bin-count" min="10" max="100" step="5" value="50">
-              <span id="bin-count-value">50</span>
+           <div class="control-group" id="bin-count-control">
+                <label for="bin-count">Histogram Bin Count:</label>
+                <input type="range" id="bin-count" min="10" max="100" step="5" value="50">
+                <span id="bin-count-value">50</span>
             </div>
-            
+
             <div class="equation-display" id="equation-container">
               <div class="equation-title">Transformation Formula:</div>
               <div id="transformation-equation" class="equation">p<sub>Y</sub>(y) = p<sub>X</sub>(x) · |dx/dy|</div>
@@ -585,6 +585,7 @@ function initialize() {
         monteCarloControl.style.display = 'none';
         mcSamplesLegend.style.display = 'none';
         jacobianEquation.style.display = 'block';
+        binCountControl.style.display = 'none';
         explanationTitle.textContent = 'Invertible Transformation (Jacobian Method)';
         explanationContent.innerHTML = `
           <p>When Y = f(X) is invertible, we can compute p<sub>Y</sub>(y) using the change of variable formula:</p>
@@ -596,6 +597,7 @@ function initialize() {
         monteCarloControl.style.display = 'block';
         mcSamplesLegend.style.display = 'inline-flex';
         jacobianEquation.style.display = 'none';
+        binCountControl.style.display = 'block';
         explanationTitle.textContent = 'Non-Invertible Transformation (Monte Carlo Method)';
         explanationContent.innerHTML = `
           <p>When Y = f(X) is not invertible (or difficult to invert), we can use Monte Carlo simulation:</p>
@@ -813,7 +815,7 @@ function initialize() {
       
       // Draw grid and axes
       drawGrid();
-      
+
       
       // Generate input distribution
       const inputPDF = generateInputPDF();
