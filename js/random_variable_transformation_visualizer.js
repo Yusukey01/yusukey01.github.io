@@ -120,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <option value="quadratic">Quadratic: y = x²</option>
                 <option value="exp">Exponential: y = e^x</option>
                 <option value="log">Logarithmic: y = ln(x)</option>
-                <option value="sqrt">Square Root: y = √x</option>
                 <option value="abs">Absolute Value: y = |x|</option>
               </select>
             </div>
@@ -657,6 +656,7 @@ function initialize() {
       
       // Default options for invertible transformations
       const invertibleOptions = [
+        { value: 'linear', text: 'Linear: y = ax + b' }
         { value: 'quadratic', text: 'Quadratic: y = x²' },
         { value: 'exp', text: 'Exponential: y = e^x' },
       ];
@@ -671,10 +671,7 @@ function initialize() {
       // Special options for special distributions
       if (params.inputDistribution === 'exponential' || params.inputDistribution === 'gamma' || params.inputDistribution === 'beta') {
         invertibleOptions.push({ value: 'log', text: 'Logarithmic: y = ln(x)' });
-        invertibleOptions.push({ value: 'sqrt', text: 'Square Root: y = √x' });
-      } else {
-        invertibleOptions.push({ value: 'sqrt', text: 'Square Root: y = √|x|' });
-      }
+      } 
       
       // Add options based on transformation type
       let options = invertibleOptions;
@@ -727,12 +724,6 @@ function initialize() {
           jacobian = '|dx/dy| = e^y';
           inverse = 'x = e^y';
           transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(e<sup>y</sup>) · e<sup>y</sup>`;
-          break;
-        case 'sqrt':
-          formula = 'y = √x';
-          jacobian = '|dx/dy| = 2y';
-          inverse = 'x = y²';
-          transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(y²) · 2y`;
           break;
         case 'abs':
           formula = 'y = |x|';
@@ -880,6 +871,13 @@ function initialize() {
         
         // Compute the transformed PDF based on the transformation function
         switch (params.transformationFunction) {
+            case 'linear':
+                // y = ax + b, x = (y-b)/a
+                const a = 2; // Same values as above
+                const b = 1;
+                const x_linear = (y - b) / a;
+                p = interpolatePDF(inputPDF, x_linear) / Math.abs(a);
+                break;
           case 'quadratic':
             // y = x^2, x = ±√y
             if (y >= 0) {
@@ -901,13 +899,6 @@ function initialize() {
             // y = ln(x), x = e^y
             const x_log = Math.exp(y);
             p = interpolatePDF(inputPDF, x_log) * x_log;
-            break;
-          case 'sqrt':
-            // y = √x, x = y^2
-            if (y >= 0) {
-              const x_sqrt = y * y;
-              p = interpolatePDF(inputPDF, x_sqrt) * 2 * y;
-            }
             break;
         }
         
@@ -992,14 +983,16 @@ function initialize() {
     // Transform a single sample
     function transformSample(x) {
       switch (params.transformationFunction) {
+        case 'linear':
+            const a = 2; // make these configurable parameters if desired
+            const b = 1;
+        return a * x + b;
         case 'quadratic':
           return x * x;
         case 'exp':
           return Math.exp(x);
         case 'log':
           return x > 0 ? Math.log(x) : -10; // Default value for negative inputs
-        case 'sqrt':
-          return x >= 0 ? Math.sqrt(x) : Math.sqrt(-x); // Take sqrt of abs value
         case 'abs':
           return Math.abs(x);
         case 'modulo':
