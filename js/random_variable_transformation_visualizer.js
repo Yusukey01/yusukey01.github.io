@@ -34,8 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="legend-item"><span class="legend-color mapping"></span> Transformation y = f(x)</div>
               <div class="legend-item" id="mc-samples-legend" style="display: none;"><span class="legend-color samples"></span> Monte Carlo samples</div>
             </div>
+            <div id="input-credible-interval-display" class="credible-interval">
+                <span>Input 95% Credible Interval: <span id="input-credible-interval">[--, --]</span></span>
+            </div>
             <div id="credible-interval-display" class="credible-interval">
-                <span>95% Credible Interval: <span id="credible-interval">[--, --]</span></span>
+                <span>Output 95% Credible Interval: <span id="credible-interval">[--, --]</span></span>
             </div>
           </div>
           
@@ -387,14 +390,23 @@ document.addEventListener('DOMContentLoaded', function() {
         border-left: 4px solid #3498db;
         margin-bottom: 20px;
       }
-        .credible-interval {
+       
+      .credible-interval {
             text-align: center;
             margin-top: 5px;
             font-size: 0.9rem;
-            color:rgb(206, 13, 177);
             font-weight: bold;
         }
-      
+
+        #input-credible-interval-display {
+            color: #3498db;  /* Blue to match input distribution color */
+            margin-bottom: 5px;
+        }
+
+        #credible-interval-display {
+            color: #e74c3c;  /* Red to match output distribution color */
+        }
+
       .explanation-container h3 {
         margin-top: 0;
         margin-bottom: 10px;
@@ -805,6 +817,10 @@ function initialize() {
       
       // Generate input distribution
       const inputPDF = generateInputPDF();
+
+      // For clarity, update the output credible interval label
+        document.getElementById('credible-interval-display').querySelector('span').textContent = 
+        "Output 95% Credible Interval: ";
       
       // Transform distribution
       let outputPDF;
@@ -862,7 +878,62 @@ function initialize() {
         
         pdf.push({ x, p });
       }
-      
+
+        // Calculate cumulative distribution for credible interval
+        const cdf = [];
+        let cumProb = 0;
+
+        // Sort by x value first (should already be sorted, but just to be safe)
+        const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
+
+        // Calculate total area under PDF curve (for normalization)
+        const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
+            if (i === 0) return sum;
+            const width = point.x - arr[i-1].x;
+            const height = (point.p + arr[i-1].p) / 2; // Trapezoidal approximation
+            return sum + width * height;
+        }, 0);
+
+        // Calculate normalized CDF
+        sortedPDF.forEach((point, i, arr) => {
+            if (i === 0) {
+                cumProb = 0;
+            } else {
+                const width = point.x - arr[i-1].x;
+                const height = (point.p + arr[i-1].p) / 2;
+                cumProb += (width * height) / totalArea;
+            }
+            cdf.push({ x: point.x, p: cumProb });
+        });
+
+        // Find 95% credible interval (alpha = 0.05)
+        const alpha = 0.05;
+        let lowerBound = null;
+        let upperBound = null;
+
+        // Find points closest to alpha/2 and 1-alpha/2
+        for (let i = 0; i < cdf.length - 1; i++) {
+            if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
+                // Linear interpolation for lower bound
+                const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
+                lowerBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
+            }
+            if (cdf[i].p <= 1-alpha/2 && cdf[i+1].p >= 1-alpha/2) {
+                // Linear interpolation for upper bound
+                const t = (1-alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
+                upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
+            }
+        }
+
+        // Update the input credible interval display
+        const inputCredibleIntervalDisplay = document.getElementById('input-credible-interval');
+        if (lowerBound !== null && upperBound !== null && inputCredibleIntervalDisplay) {
+            inputCredibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            console.log(`Input ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+        } else if (inputCredibleIntervalDisplay) {
+            inputCredibleIntervalDisplay.textContent = "Could not calculate interval";
+        }
+            
       return pdf;
     }
     
@@ -962,12 +1033,12 @@ function initialize() {
         }
         }
 
-        // Update the credible interval display
+       // Update the output credible interval display
         if (lowerBound !== null && upperBound !== null) {
-        credibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-        console.log(`Analytical ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+            credibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            console.log(`Output ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
         } else {
-        credibleIntervalDisplay.textContent = "Could not calculate interval";
+            credibleIntervalDisplay.textContent = "Could not calculate interval";
         }
       
         return transformedPDF;
@@ -995,11 +1066,11 @@ function initialize() {
         const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
         const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
 
-        // Update the credible interval display
+       // Update the output credible interval display
         credibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
 
         // Report the credible interval
-        console.log(`Estimated ${(1-alpha)*100}% credible interval: [${lowerBound}, ${upperBound}]`);
+        console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound}, ${upperBound}]`);
 
 
       // Compute histogram of transformed samples
