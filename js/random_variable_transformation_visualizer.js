@@ -656,7 +656,7 @@ function initialize() {
       
       // Default options for invertible transformations
       const invertibleOptions = [
-        { value: 'linear', text: 'Linear: y = ax + b' }
+        { value: 'linear', text: 'Linear: y = ax + b' },
         { value: 'quadratic', text: 'Quadratic: y = x²' },
         { value: 'exp', text: 'Exponential: y = e^x' },
       ];
