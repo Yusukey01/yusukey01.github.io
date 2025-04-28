@@ -658,7 +658,7 @@ function initialize() {
       const invertibleOptions = [
         { value: 'linear', text: 'Linear: y = ax + b' },
         { value: 'quadratic', text: 'Quadratic: y = x²' },
-        { value: 'exp', text: 'Exponential: y = e^x' },
+        { value: 'exp', text: 'Exponential: y = e^x' }
       ];
       
       // Add options for non-invertible transformations
@@ -837,7 +837,7 @@ function initialize() {
             break;
           case 'beta':
             // Scale beta from [0,1] to [-6,6] for visualization
-            const scaledX = (x + 6) / 12;
+            scaledX = (x + 6) / 12;
             if (scaledX >= 0 && scaledX <= 1) {
               p = betaPDF(scaledX, params.betaAlpha, params.betaBeta) / 12;
             }
