@@ -465,7 +465,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const betaParams = document.getElementById('beta-params');
     const gammaParams = document.getElementById('gamma-params');
     const binCountControl = document.getElementById('bin-count-control');
-    const credibleIntervalDisplay = document.getElementById('credible-interval');
+    const inputCredibleInterval = document.getElementById('input-credible-interval');
+    const outputCredibleInterval = document.getElementById('credible-interval');
     // Input distribution parameters
     const normalMean = document.getElementById('normal-mean');
     const normalStd = document.getElementById('normal-std');
@@ -1035,10 +1036,10 @@ function initialize() {
 
        // Update the output credible interval display
         if (lowerBound !== null && upperBound !== null) {
-            credibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
             console.log(`Output ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
         } else {
-            credibleIntervalDisplay.textContent = "Could not calculate interval";
+            outputCredibleInterval.textContent = "Could not calculate interval";
         }
       
         return transformedPDF;
@@ -1066,8 +1067,8 @@ function initialize() {
         const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
         const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
 
-       // Update the output credible interval display
-        credibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+        // Update the output credible interval display
+        outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
 
         // Report the credible interval
         console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound}, ${upperBound}]`);
