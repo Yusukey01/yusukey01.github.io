@@ -959,7 +959,25 @@ function initialize() {
       
       // Transform samples
       const transformedSamples = samples.map(x => transformSample(x));
-      
+
+      // Sort samples
+        const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
+
+        // Set alpha level
+        const alpha = 0.05; // (or get it dynamically from UI)
+
+        // Find approximate quantiles
+        const lowerIndex = Math.ceil((alpha / 2) * sortedSamples.length) - 1;
+        const upperIndex = Math.ceil((1 - alpha / 2) * sortedSamples.length) - 1;
+
+        // Guard against out of bounds
+        const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
+        const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
+
+        // Report the credible interval
+        console.log(`Estimated ${(1-alpha)*100}% credible interval: [${lowerBound}, ${upperBound}]`);
+
+
       // Compute histogram of transformed samples
       const histogram = computeHistogram(transformedSamples, params.binCount);
       
