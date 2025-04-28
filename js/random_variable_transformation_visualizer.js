@@ -496,8 +496,8 @@ document.addEventListener('DOMContentLoaded', function() {
       transformationFunction: 'quadratic',
       normalMean: 0,
       normalStd: 1,
-      uniformMin: -3,
-      uniformMax: 3,
+      uniformMin: 0,
+      uniformMax: 1,
       exponentialRate: 1,
       betaAlpha: 2,
       betaBeta: 2,
@@ -842,8 +842,8 @@ function initialize() {
     // Generate input PDF based on selected distribution
     function generateInputPDF() {
       // Range of x values to compute the PDF over
-      const min = -6;
-      const max = 6;
+      const min = 0;
+      const max = 1;
       const step = (max - min) / 200;
       
       // Initialize PDF array
@@ -864,10 +864,8 @@ function initialize() {
             p = exponentialPDF(x, params.exponentialRate);
             break;
           case 'beta':
-            // Scale beta from [0,1] to [-6,6] for visualization
-            scaledX = (x + 6) / 12;
-            if (scaledX >= 0 && scaledX <= 1) {
-              p = betaPDF(scaledX, params.betaAlpha, params.betaBeta) / 12;
+            if (x >= 0 && x <= 1) {
+                p = betaPDF(x, params.betaAlpha, params.betaBeta);
             }
             break;
           case 'gamma':
@@ -941,8 +939,8 @@ function initialize() {
     // Transform distribution using Jacobian method (for invertible transformations)
     function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
-      const min = -6;
-      const max = 6;
+      const min = 0;
+      const max = 1;
       const step = (max - min) / 200;
       
       // Initialize transformed PDF array
@@ -1231,23 +1229,23 @@ function initialize() {
       ctx.strokeStyle = '#eee';
       ctx.lineWidth = 1;
       
-      // Vertical grid lines
-      for (let x = 0; x <= 10; x++) {
-        const xPos = padding + (x / 10) * plotWidth;
-        ctx.beginPath();
-        ctx.moveTo(xPos, padding);
-        ctx.lineTo(xPos, canvasHeight - padding);
-        ctx.stroke();
-      }
-      
-      // Horizontal grid lines
-      for (let y = 0; y <= 10; y++) {
-        const yPos = padding + (y / 10) * plotHeight;
-        ctx.beginPath();
-        ctx.moveTo(padding, yPos);
-        ctx.lineTo(canvasWidth - padding, yPos);
-        ctx.stroke();
-      }
+      // Horizontal grid lines (across the width)
+        for (let x = 0; x <= 10; x++) {
+            const xPos = padding + (x / 10) * plotWidth;
+            ctx.beginPath();
+            ctx.moveTo(xPos, padding);
+            ctx.lineTo(xPos, canvasHeight - padding);
+            ctx.stroke();
+        }
+                
+        // Vertical grid lines (across the height)
+        for (let y = 0; y <= 10; y++) {
+            const yPos = padding + (y / 10) * plotHeight;
+            ctx.beginPath();
+            ctx.moveTo(padding, yPos);
+            ctx.lineTo(canvasWidth - padding, yPos);
+            ctx.stroke();
+        }
       
       // Draw axes
       ctx.strokeStyle = '#666';
@@ -1322,7 +1320,7 @@ function initialize() {
         const { x, p } = pdf[i];
         
         // Map x from [-6,6] to canvas coordinates
-        const canvasX = padding + ((x + 6) / 12) * plotWidth;
+        const canvasX = padding + (x) * plotWidth;
         
         // Map p to canvas coordinates (inverted, since canvas y grows downward)
         const canvasY = canvasHeight - padding - p * scaleFactor;
@@ -1345,8 +1343,8 @@ function drawTransformationFunction() {
     ctx.beginPath();
     
     // Range of x values for the transformation function
-    const min = -6;
-    const max = 6;
+    const min = 0;
+    const max = 1;
     const step = (max - min) / 200;
     
     let started = false; // Add this flag to track if we've started the path
@@ -1361,8 +1359,8 @@ function drawTransformationFunction() {
         continue;
       }
       
-      // Map x from [-6,6] to canvas coordinates
-      const canvasX = padding + ((x + 6) / 12) * plotWidth;
+      // Map x from [0,1] to canvas coordinates
+      const canvasX = padding + x * plotWidth;
       
       // Map y from [-6,6] to canvas coordinates
       const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
@@ -1389,12 +1387,12 @@ function drawTransformationFunction() {
           const y = outputSamples[i];
           
           // Skip points that would be outside the visible area
-          if (x < -6 || x > 6 || y < -6 || y > 6) {
+          if (x < 0 || x > 1 || y < -6 || y > 6) {
             continue;
           }
           
-          // Map x from [-6,6] to canvas coordinates
-          const canvasX = padding + ((x + 6) / 12) * plotWidth;
+          // Map x from [0,1] to canvas coordinates
+          const canvasX = padding + x * plotWidth;
           
           // Map y from [-6,6] to canvas coordinates - FIXED to match drawTransformationFunction
           const canvasY = canvasHeight - padding - ((y + 6) / 12) * plotHeight;
