@@ -1035,62 +1035,49 @@ function initialize() {
   }
   
   // Transform distribution using Monte Carlo method (for non-invertible transformations)
+  // Modify transformDistributionMonteCarlo to correctly draw the credible interval
   function transformDistributionMonteCarlo() {
-      // In a proper Bayesian setting, we would:
-      // 1. Generate samples from the prior distribution (our input distribution)
-      // 2. For each sample, evaluate the likelihood given the data
-      // 3. Apply a simple Metropolis-Hastings or other MCMC algorithm to sample from posterior
-      // 4. Then transform those posterior samples through our function
-      
-      const priorSamples = generateSamples(params.numSamples);
-      
-      // For visualization purposes, let's simulate a simple likelihood (normally distributed)
-      // We'll assume some "fake data" where the mean is 0.5 and the variance is 0.1
-      const dataLikelihoodMean = 0.5;
-      const dataLikelihoodVar = 0.1;
-      
-      // Apply a simple Metropolis-Hastings to get posterior samples
-      // (This is a simplified implementation for educational purposes)
-      const posteriorSamples = generatePosteriorSamples(priorSamples, dataLikelihoodMean, dataLikelihoodVar);
-      
-      // Transform the posterior samples
-      const transformedSamples = posteriorSamples.map(x => transformSample(x));
+    // Generate samples from the input distribution
+    const samples = generateSamples(params.numSamples);
+    
+    // Transform samples
+    const transformedSamples = samples.map(x => transformSample(x));
 
-      // Sort samples for credible interval calculation
-      const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
+    // Sort samples for credible interval calculation
+    const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
 
-      // Set alpha level for 95% credible interval
-      const alpha = 0.05;
+    // Set alpha level for 95% credible interval
+    const alpha = 0.05;
 
-      // Find approximate quantiles using Monte Carlo approximation
-      const lowerIndex = Math.floor((alpha / 2) * sortedSamples.length);
-      const upperIndex = Math.floor((1 - alpha / 2) * sortedSamples.length);
+    // Find approximate quantiles
+    const lowerIndex = Math.ceil((alpha / 2) * sortedSamples.length) - 1;
+    const upperIndex = Math.ceil((1 - alpha / 2) * sortedSamples.length) - 1;
 
-      // Guard against out of bounds
-      const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
-      const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
+    // Guard against out of bounds
+    const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
+    const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
 
-      // Update the output credible interval display
-      outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+    // Update the output credible interval display
+    outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
 
-      // Report the credible interval
-      console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+    // Report the credible interval
+    console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
 
-      // Compute histogram of transformed posterior samples
-      const histogram = computeHistogram(transformedSamples, params.binCount);
-      
-      // Convert histogram to PDF
-      const transformedPDF = histogramToPDF(histogram);
-      
-      // Draw the Monte Carlo samples if in non-invertible mode
-      drawScatterplot(posteriorSamples, transformedSamples);
-      
-      // Also draw the credible interval on the plot
-      drawCredibleInterval(transformedPDF, lowerBound, upperBound, '#e74c3c');
-      
-      return transformedPDF;
+    // Compute histogram of transformed samples
+    const histogram = computeHistogram(transformedSamples, params.binCount);
+    
+    // Convert histogram to PDF
+    const transformedPDF = histogramToPDF(histogram);
+    
+    // Draw the Monte Carlo samples
+    drawScatterplot(samples, transformedSamples);
+    
+    // Also draw the credible interval on the plot
+    drawCredibleInterval(transformedPDF, lowerBound, upperBound, '#e74c3c');
+    
+    return transformedPDF;
   }
-  
+   
   // Add function to generate posterior samples using Metropolis-Hastings algorithm
   function generatePosteriorSamples(priorSamples, likelihoodMean, likelihoodVar) {
     const posteriorSamples = [];
@@ -1124,7 +1111,7 @@ function initialize() {
     return posteriorSamples;
   }
 
-  // Add function to draw credible interval on the plot
+  // Function to draw credible interval as a shaded region
   function drawCredibleInterval(pdf, lowerBound, upperBound, color) {
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.2;
@@ -1167,6 +1154,7 @@ function initialize() {
     
     ctx.globalAlpha = 1.0;
   }
+
   // Generate samples from the input distribution
   function generateSamples(numSamples) {
     const samples = [];
@@ -1382,33 +1370,48 @@ function initialize() {
   
   // Draw a distribution
   function drawDistribution(pdf, color) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+    // Check if pdf is defined and has data
+    if (!pdf || !Array.isArray(pdf) || pdf.length === 0) {
+        console.error('Invalid or empty PDF data');
+        return;
+    }
     
-      // Use a fixed y-axis scale from 0 to 5 for probability densities
-      const maxYScale = 5;
-      const scaleFactor = plotHeight / maxYScale;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
 
-
-      // Draw the PDF curve
-      for (let i = 0; i < pdf.length; i++) {
-          const { x, p } = pdf[i];
-          
-          // Map x from [-6,6] to canvas coordinates
-          const canvasX = padding + (x) * plotWidth;
-      
-          // Map p to canvas coordinates with fixed scaling
-          const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
-          
-          if (i === 0) {
-          ctx.moveTo(canvasX, canvasY);
-          } else {
-          ctx.lineTo(canvasX, canvasY);
-          }
-       }
+    // Use a fixed y-axis scale from 0 to 5 for probability densities
+    const maxYScale = 5;
+    const scaleFactor = plotHeight / maxYScale;
     
-      ctx.stroke();
+    // Find the actual data range
+    let minX = Math.min(...pdf.map(point => point.x));
+    let maxX = Math.max(...pdf.map(point => point.x));
+    
+    // Ensure the range is valid
+    if (minX === maxX) {
+        minX = minX - 0.5;
+        maxX = maxX + 0.5;
+    }
+
+    // Draw the PDF curve
+    for (let i = 0; i < pdf.length; i++) {
+        const { x, p } = pdf[i];
+        
+        // Map x to canvas coordinates using the actual data range
+        const canvasX = padding + ((x - minX) / (maxX - minX)) * plotWidth;
+    
+        // Map p to canvas coordinates with fixed scaling
+        const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
+        
+        if (i === 0) {
+            ctx.moveTo(canvasX, canvasY);
+        } else {
+            ctx.lineTo(canvasX, canvasY);
+        }
+    }
+
+    ctx.stroke();
   }
   
   // Draw a scatterplot of input and output samples (for Monte Carlo method)
