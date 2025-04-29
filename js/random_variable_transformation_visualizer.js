@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="legend">
               <div class="legend-item"><span class="legend-color input"></span> Input distribution p<sub>X</sub>(x)</div>
               <div class="legend-item"><span class="legend-color output"></span> Output distribution p<sub>Y</sub>(y)</div>
-              <div class="legend-item"><span class="legend-color mapping"></span> Transformation y = f(x)</div>
               <div class="legend-item" id="mc-samples-legend" style="display: none;"><span class="legend-color samples"></span> Monte Carlo samples</div>
             </div>
             <div id="input-credible-interval-display" class="credible-interval">
@@ -835,9 +834,6 @@ function initialize() {
         // Draw input and output distributions
         drawDistribution(inputPDF, '#3498db');
         drawDistribution(outputPDF, '#e74c3c');
-        
-        // Draw transformation function
-        drawTransformationFunction();
     }
     
     // Generate input PDF based on selected distribution
@@ -1001,10 +997,7 @@ function initialize() {
         switch (params.transformationFunction) {
             case 'linear':
                 // y = ax + b, x = (y-b)/a
-                const a = 2; // Same values as above
-                const b = 1;
-                const x_linear = (y - b) / a;
-                p = interpolatePDF(inputPDF, x_linear) / Math.abs(a);
+                p = interpolatePDF(inputPDF, (y - 0.1) / 0.8) / Math.abs(0.8);
                 break;
             case 'quadratic':
             // y = x^2, x = ±√y
@@ -1019,14 +1012,12 @@ function initialize() {
             case 'exp':
             // y = e^x, x = ln(y)
             if (y > 0) {
-                const x = Math.log(y);
-                p = interpolatePDF(inputPDF, x) / y;
+                p = interpolatePDF(inputPDF, Math.log(y)) / y;
             }
             break;
             case 'log':
             // y = ln(x), x = e^y
-            const x_log = Math.exp(y);
-            p = interpolatePDF(inputPDF, x_log) * x_log;
+            p = interpolatePDF(inputPDF, Math.exp(y)) * Math.exp(y);
             break;
         }
         
@@ -1062,8 +1053,8 @@ function initialize() {
 
         // Find 95% credible interval (alpha = 0.05)
         const alpha = 0.05;
-       
-
+        let lowerBound = null;
+        let upperBound = null;
         // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
         if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
@@ -1079,7 +1070,6 @@ function initialize() {
         }
 
        // Update the output credible interval display
-       const { lowerBound, upperBound } = calculateCredibleInterval(transformedPDF);
         if (lowerBound !== null && upperBound !== null) {
             outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
             console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
@@ -1165,11 +1155,10 @@ function initialize() {
     
     // Transform a single sample
     function transformSample(x) {
-        const a = 0.8;
-        const b = 0.1;
+        
       switch (params.transformationFunction) {
         case 'linear':
-        return a * x + b;
+        return 0.8 * x + 0.1;
         case 'quadratic':
           return x * x;
         case 'exp':
@@ -1381,47 +1370,6 @@ function initialize() {
         ctx.stroke();
     }
     
-    // Draw the transformation function
-    // Draw the transformation function
-function drawTransformationFunction() {
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    // Range of x values for the transformation function
-    const min = 0;
-    const max = 1;
-    const step = (max - min) / 200;
-    
-    let started = false; // Add this flag to track if we've started the path
-    
-    // Draw the transformation curve
-    for (let x = min; x <= max; x += step) {
-      const y = transformSample(x);
-      
-      // Skip points that would be outside the visible area
-      if (y < -6 || y > 6) {
-        started = false; // Reset the flag when we encounter points outside range
-        continue;
-      }
-      
-      // Map x from [0,1] to canvas coordinates
-      const canvasX = padding + x * plotWidth;
-      
-      // Map y from [0,5] to canvas coordinates
-      const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
-      
-      if (!started) {
-        ctx.moveTo(canvasX, canvasY);
-        started = true;
-      } else {
-        ctx.lineTo(canvasX, canvasY);
-      }
-    }
-    
-    ctx.stroke();
-  }
-    
     // Draw a scatterplot of input and output samples (for Monte Carlo method)
     function drawScatterplot(inputSamples, outputSamples) {
         // Draw points
@@ -1451,6 +1399,7 @@ function drawTransformationFunction() {
         
         ctx.globalAlpha = 1.0;
       }
+
 
     // PDF functions for different distributions
     
