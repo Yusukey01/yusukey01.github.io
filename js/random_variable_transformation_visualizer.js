@@ -1,6 +1,5 @@
-// random_variable_transformation_visualizer.js
-// A JavaScript implementation of the Random Variable Transformation Visualizer
-// Includes both invertible and non-invertible transformation visualizations
+// monte_carlo_visualizer.js
+// A visualizer for Monte Carlo approximation of credible intervals
 
 document.addEventListener('DOMContentLoaded', function() {
   // Get the container element
@@ -18,159 +17,144 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="canvas-container">
           <div class="visualization-mode-toggle">
             <label class="toggle-control">
-              <select id="transformation-type" class="full-width">
-                <option value="invertible">Invertible Transformation (Jacobian Method)</option>
-                <option value="noninvertible">Non-Invertible Transformation (Monte Carlo Method)</option>
+              <select id="distribution-type" class="full-width">
+                <option value="normal">Normal Distribution</option>
+                <option value="gamma">Gamma Distribution</option>
+                <option value="beta">Beta Distribution</option>
+                <option value="bimodal">Bimodal Distribution</option>
               </select>
             </label>
           </div>
-          <div class="instruction" id="instruction-text">Observe how the PDF of X transforms into the PDF of Y = f(X)</div>
+          <div class="instruction">Visualizing Monte Carlo approximation of credible intervals</div>
           <div id="canvas-wrapper">
-            <canvas id="transformation-canvas" width="800" height="500"></canvas>
+            <canvas id="monte-carlo-canvas" width="800" height="500"></canvas>
           </div>
           <div class="legend">
-            <div class="legend-item"><span class="legend-color input"></span> Input distribution p<sub>X</sub>(x)</div>
-            <div class="legend-item"><span class="legend-color output"></span> Output distribution p<sub>Y</sub>(y)</div>
-            <div class="legend-item" id="mc-samples-legend" style="display: none;"><span class="legend-color samples"></span> Monte Carlo samples</div>
-          </div>
-          <div id="input-credible-interval-display" class="credible-interval">
-              <span>Input 95% Credible Interval: <span id="input-credible-interval">[--, --]</span></span>
-          </div>
-          <div id="output-credible-interval-display" class="credible-interval">
-              <span>Output 95% Credible Interval: <span id="output-credible-interval">[--, --]</span></span>
+            <div class="legend-item"><span class="legend-color true"></span> True Distribution</div>
+            <div class="legend-item"><span class="legend-color samples"></span> Monte Carlo Samples</div>
+            <div class="legend-item"><span class="legend-color credible"></span> Credible Interval</div>
           </div>
         </div>
         
         <div class="controls-panel">
-          <div class="control-group" id="input-distribution-control">
-            <label for="input-distribution">Input Distribution p<sub>X</sub>(x):</label>
-            <select id="input-distribution" class="full-width">
-              <option value="normal">Normal Distribution (Gaussian)</option>
-              <option value="uniform">Uniform Distribution</option>
-              <option value="exponential">Exponential Distribution</option>
-              <option value="beta">Beta Distribution</option>
-              <option value="gamma">Gamma Distribution</option>
-            </select>
+          <div class="control-group">
+            <label for="sample-size">Number of Samples:</label>
+            <input type="range" id="sample-size" min="10" max="10000" step="10" value="1000" class="full-width">
+            <span id="sample-size-value">1000</span>
           </div>
           
-          <div class="param-group" id="normal-params">
+          <div class="control-group">
+            <label for="credible-interval">Credible Interval (%):</label>
+            <input type="range" id="credible-interval" min="50" max="99" step="1" value="95" class="full-width">
+            <span id="credible-interval-value">95%</span>
+          </div>
+          
+          <div class="control-group" id="normal-params">
             <label>Normal Distribution Parameters:</label>
-            <div class="param-row">
-              <div class="param-field">
-                <label for="normal-mean">Mean (μ):</label>
-                <input type="number" id="normal-mean" value="0" step="0.5">
+            <div class="param-inputs">
+              <div class="param-input">
+                <label>Mean (μ):</label>
+                <input type="number" id="normal-mean" value="0" step="0.1" class="param-field">
               </div>
-              <div class="param-field">
-                <label for="normal-std">Std Dev (σ):</label>
-                <input type="number" id="normal-std" value="1" min="0.1" step="0.1">
-              </div>
-            </div>
-          </div>
-          
-          <div class="param-group" id="uniform-params" style="display: none;">
-            <label>Uniform Distribution Parameters:</label>
-            <div class="param-row">
-              <div class="param-field">
-                <label for="uniform-min">Min (a):</label>
-                <input type="number" id="uniform-min" value="-3" step="0.5">
-              </div>
-              <div class="param-field">
-                <label for="uniform-max">Max (b):</label>
-                <input type="number" id="uniform-max" value="3" step="0.5">
+              <div class="param-input">
+                <label>Std Dev (σ):</label>
+                <input type="number" id="normal-std" value="1" min="0.1" step="0.1" class="param-field">
               </div>
             </div>
           </div>
           
-          <div class="param-group" id="exponential-params" style="display: none;">
-            <label>Exponential Distribution Parameters:</label>
-            <div class="param-row">
-              <div class="param-field">
-                <label for="exponential-rate">Rate (λ):</label>
-                <input type="number" id="exponential-rate" value="1" min="0.1" step="0.1">
-              </div>
-            </div>
-          </div>
-          
-          <div class="param-group" id="beta-params" style="display: none;">
-            <label>Beta Distribution Parameters:</label>
-            <div class="param-row">
-              <div class="param-field">
-                <label for="beta-alpha">Alpha (α):</label>
-                <input type="number" id="beta-alpha" value="2" min="0.1" step="0.1">
-              </div>
-              <div class="param-field">
-                <label for="beta-beta">Beta (β):</label>
-                <input type="number" id="beta-beta" value="2" min="0.1" step="0.1">
-              </div>
-            </div>
-          </div>
-          
-          <div class="param-group" id="gamma-params" style="display: none;">
+          <div class="control-group" id="gamma-params" style="display: none;">
             <label>Gamma Distribution Parameters:</label>
-            <div class="param-row">
-              <div class="param-field">
-                <label for="gamma-shape">Shape (k):</label>
-                <input type="number" id="gamma-shape" value="2" min="0.1" step="0.1">
+            <div class="param-inputs">
+              <div class="param-input">
+                <label>Shape (α):</label>
+                <input type="number" id="gamma-shape" value="2" min="0.1" step="0.1" class="param-field">
               </div>
-              <div class="param-field">
-                <label for="gamma-scale">Scale (θ):</label>
-                <input type="number" id="gamma-scale" value="1" min="0.1" step="0.1">
+              <div class="param-input">
+                <label>Rate (β):</label>
+                <input type="number" id="gamma-rate" value="1" min="0.1" step="0.1" class="param-field">
               </div>
             </div>
           </div>
           
-          <div class="control-group" id="transformation-function-control">
-            <label for="transformation-function">Transformation Function y = f(x):</label>
-            <select id="transformation-function" class="full-width">
-              <option value="quadratic">Quadratic: y = x²</option>
-              <option value="exp">Exponential: y = e^x</option>
-              <option value="log">Logarithmic: y = ln(x)</option>
-              <option value="abs">Absolute Value: y = |x|</option>
-            </select>
-          </div>
-
-          <div class="control-group" id="monte-carlo-control" style="display: none;">
-            <label for="num-samples">Number of Monte Carlo Samples:</label>
-            <input type="range" id="num-samples" min="100" max="10000" step="100" value="1000">
-            <span id="num-samples-value">1000</span>
-            <div class="help-text">More samples = better approximation, but slower</div>
+          <div class="control-group" id="beta-params" style="display: none;">
+            <label>Beta Distribution Parameters:</label>
+            <div class="param-inputs">
+              <div class="param-input">
+                <label>Alpha (α):</label>
+                <input type="number" id="beta-alpha" value="2" min="0.1" step="0.1" class="param-field">
+              </div>
+              <div class="param-input">
+                <label>Beta (β):</label>
+                <input type="number" id="beta-beta" value="5" min="0.1" step="0.1" class="param-field">
+              </div>
+            </div>
           </div>
           
-         <div class="control-group" id="bin-count-control">
-              <label for="bin-count">Histogram Bin Count:</label>
-              <input type="range" id="bin-count" min="10" max="100" step="5" value="50">
-              <span id="bin-count-value">50</span>
-          </div>
-
-          <div class="equation-display" id="equation-container">
-            <div class="equation-title">Transformation Formula:</div>
-            <div id="transformation-equation" class="equation">p<sub>Y</sub>(y) = p<sub>X</sub>(x) · |dx/dy|</div>
-            <div id="jacobian-equation" class="equation">= p<sub>X</sub>(f<sup>-1</sup>(y)) · |1/f'(f<sup>-1</sup>(y))|</div>
+          <div class="control-group" id="bimodal-params" style="display: none;">
+            <label>Bimodal Distribution Parameters:</label>
+            <div class="param-inputs">
+              <div class="param-input">
+                <label>Mean 1:</label>
+                <input type="number" id="bimodal-mean1" value="-2" step="0.1" class="param-field">
+              </div>
+              <div class="param-input">
+                <label>Mean 2:</label>
+                <input type="number" id="bimodal-mean2" value="2" step="0.1" class="param-field">
+              </div>
+              <div class="param-input">
+                <label>Std Dev:</label>
+                <input type="number" id="bimodal-std" value="1" min="0.1" step="0.1" class="param-field">
+              </div>
+              <div class="param-input">
+                <label>Weight:</label>
+                <input type="number" id="bimodal-weight" value="0.5" min="0" max="1" step="0.1" class="param-field">
+              </div>
+            </div>
           </div>
           
-          <div class="button-group">
-            <button id="reset-btn" class="secondary-btn">Reset to Defaults</button>
+          <div class="results-box">
+            <h3>Monte Carlo Results:</h3>
+            <div class="result-row">
+              <div class="result-label">Credible Interval:</div>
+              <div class="result-value" id="result-ci">[0.000, 0.000]</div>
+            </div>
+            <div class="result-row">
+              <div class="result-label">Theoretical CI:</div>
+              <div class="result-value" id="result-theoretical">[0.000, 0.000]</div>
+            </div>
+            <div class="result-row">
+              <div class="result-label">Approximation Error:</div>
+              <div class="result-value" id="result-error">0.000</div>
+            </div>
           </div>
+          
+          <button id="resample-btn" class="primary-btn">Generate New Samples</button>
           
           <div class="explanation-container">
-            <h3 id="explanation-title">Random Variable Transformation</h3>
-            <div id="explanation-content">
-              <p><strong>Invertible Transformation:</strong> When Y = f(X) is invertible, we can use the change of variable formula with the Jacobian determinant:</p>
-              <p>p<sub>Y</sub>(y) = p<sub>X</sub>(f<sup>-1</sup>(y)) · |dx/dy|</p>
-              <p>For non-invertible transformations, we use Monte Carlo simulation to approximate the output distribution.</p>
-            </div>
+            <h3>How Monte Carlo Approximation Works</h3>
+            <p>Monte Carlo approximation estimates credible intervals by:</p>
+            <ol>
+              <li>Drawing many random samples from the posterior distribution</li>
+              <li>Sorting the samples in ascending order</li>
+              <li>Finding the appropriate quantiles (e.g., 2.5% and 97.5% for a 95% interval)</li>
+            </ol>
+            <p>As the number of samples increases, the Monte Carlo approximation becomes more accurate.</p>
+            <p>The formula used is:<br>
+            <code>l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></code></p>
+            <p>Where <code>S</code> is the number of samples and <code>α</code> is the significance level.</p>
           </div>
         </div>
       </div>
     </div>
   `;
   
-  // Styles
+  // Add styles
   const styleElement = document.createElement('style');
   styleElement.textContent = `
     .visualizer-container {
-      margin-bottom: 20px;
       font-family: Arial, sans-serif;
+      margin-bottom: 20px;
     }
     
     .visualizer-layout {
@@ -179,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
       gap: 20px;
     }
     
-    /* Canvas first on mobile, controls second */
     @media (min-width: 992px) {
       .visualizer-layout {
         flex-direction: row;
@@ -196,13 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    .controls-panel {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-    
     .canvas-container {
       display: flex;
       flex-direction: column;
@@ -213,22 +189,43 @@ document.addEventListener('DOMContentLoaded', function() {
       width: 100%;
     }
     
-    .visualization-mode-toggle {
-      margin-bottom: 10px;
-      background-color: #f0f7ff;
-      padding: 8px 12px;
+    #monte-carlo-canvas {
+      border: 1px solid #ddd;
       border-radius: 4px;
-      border-left: 3px solid #3498db;
+      background-color: white;
+      max-width: 100%;
+      height: auto;
+      display: block;
     }
     
-    .control-group, .param-group {
+    .controls-panel {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .control-group {
       margin-bottom: 20px;
     }
     
-    .control-group label, .param-group > label {
+    .control-group label {
       display: block;
       font-weight: bold;
       margin-bottom: 8px;
+    }
+    
+    .param-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    
+    .param-field {
+      width: 80px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
     
     .full-width {
@@ -238,109 +235,11 @@ document.addEventListener('DOMContentLoaded', function() {
       border-radius: 4px;
     }
     
-    .param-row {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .param-field {
-      flex: 1;
-    }
-    
-    .param-field label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 0.9rem;
-    }
-    
-    .param-field input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .toggle-control {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
-    
-    .toggle-label {
-      margin-left: 8px;
-    }
-    
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .primary-btn, .secondary-btn {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-    }
-    
-    .primary-btn {
-      background-color: #3498db;
-      color: white;
-    }
-    
-    .primary-btn:hover {
-      background-color: #2980b9;
-    }
-    
-    .secondary-btn {
-      background-color: #e9ecef;
-      color: #333;
-    }
-    
-    .secondary-btn:hover {
-      background-color: #dee2e6;
-    }
-    
-    .equation-display {
-      background-color: #f0f7ff;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .equation-title {
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-    
-    .equation {
-      font-family: "Computer Modern", serif;
-      font-size: 1.1rem;
-      background: white;
-      padding: 8px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-    
     .instruction {
       text-align: center;
       margin-bottom: 10px;
       font-size: 0.9rem;
       color: #666;
-    }
-    
-    #transformation-canvas {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: white;
-      max-width: 100%;
-      height: auto;
-      display: block;
     }
     
     .legend {
@@ -366,16 +265,59 @@ document.addEventListener('DOMContentLoaded', function() {
       border-radius: 2px;
     }
     
-    .legend-color.input {
+    .legend-color.true {
       background-color: #3498db;
     }
     
-    .legend-color.output {
+    .legend-color.samples {
+      background-color: #95a5a6;
+    }
+    
+    .legend-color.credible {
       background-color: #e74c3c;
     }
     
-    .legend-color.samples {
-      background-color: #9b59b6;
+    .primary-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    
+    .primary-btn:hover {
+      background-color: #2980b9;
+    }
+    
+    .results-box {
+      background-color: #f0f7ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .results-box h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .result-label {
+      font-weight: bold;
+    }
+    
+    .result-value {
+      font-family: monospace;
     }
     
     .explanation-container {
@@ -383,1188 +325,645 @@ document.addEventListener('DOMContentLoaded', function() {
       padding: 15px;
       border-radius: 8px;
       border-left: 4px solid #3498db;
-      margin-bottom: 20px;
+      margin-top: 20px;
     }
-     
-    .credible-interval {
-          text-align: center;
-          margin-top: 5px;
-          font-size: 0.9rem;
-          font-weight: bold;
-      }
-
-      #input-credible-interval-display {
-          color: #3498db;  /* Blue to match input distribution color */
-          margin-bottom: 5px;
-      }
-
-      #output-credible-interval-display {
-          color: #e74c3c;  /* Red to match output distribution color */
-      }
-
+    
     .explanation-container h3 {
       margin-top: 0;
       margin-bottom: 10px;
       font-size: 1rem;
-      color: #2c3e50;
     }
     
-    .explanation-container p {
-      margin-bottom: 8px;
+    .explanation-container p, .explanation-container ol {
       font-size: 0.9rem;
+      line-height: 1.4;
     }
     
-    .help-text {
-      font-size: 0.8rem;
-      color: #666;
-      margin-top: 5px;
-    }
-    
-    /* Mobile specific styles */
-    @media (max-width: 768px) {
-      .param-row {
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .button-group {
-        flex-direction: column;
-      }
-      
-      .primary-btn, .secondary-btn {
-        width: 100%;
-      }
+    .explanation-container code {
+      background-color: #f1f1f1;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-family: monospace;
     }
   `;
   
   document.head.appendChild(styleElement);
   
   // Get DOM elements
-  const transformationType = document.getElementById('transformation-type');
-  const inputDistribution = document.getElementById('input-distribution');
-  const transformationFunction = document.getElementById('transformation-function');
-  const resetBtn = document.getElementById('reset-btn');
-  const binCount = document.getElementById('bin-count');
-  const binCountValue = document.getElementById('bin-count-value');
-  const numSamples = document.getElementById('num-samples');
-  const numSamplesValue = document.getElementById('num-samples-value');
-  const monteCarloControl = document.getElementById('monte-carlo-control');
-  const mcSamplesLegend = document.getElementById('mc-samples-legend');
-  const transformationEquation = document.getElementById('transformation-equation');
-  const jacobianEquation = document.getElementById('jacobian-equation');
-  const explanationTitle = document.getElementById('explanation-title');
-  const explanationContent = document.getElementById('explanation-content');
-  const normalParams = document.getElementById('normal-params');
-  const uniformParams = document.getElementById('uniform-params');
-  const exponentialParams = document.getElementById('exponential-params');
-  const betaParams = document.getElementById('beta-params');
-  const gammaParams = document.getElementById('gamma-params');
-  const binCountControl = document.getElementById('bin-count-control');
-  const inputCredibleInterval = document.getElementById('input-credible-interval');
-  const outputCredibleInterval = document.getElementById('output-credible-interval');
-  
-  // Input distribution parameters
-  const normalMean = document.getElementById('normal-mean');
-  const normalStd = document.getElementById('normal-std');
-  const uniformMin = document.getElementById('uniform-min');
-  const uniformMax = document.getElementById('uniform-max');
-  const exponentialRate = document.getElementById('exponential-rate');
-  const betaAlpha = document.getElementById('beta-alpha');
-  const betaBeta = document.getElementById('beta-beta');
-  const gammaShape = document.getElementById('gamma-shape');
-  const gammaScale = document.getElementById('gamma-scale');
-  
-  // Canvas and context
-  const canvas = document.getElementById('transformation-canvas');
+  const canvas = document.getElementById('monte-carlo-canvas');
   const ctx = canvas.getContext('2d');
-  
-  // Canvas dimensions
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
-  const padding = 50;
-  const plotWidth = canvasWidth - 2 * padding;
-  const plotHeight = canvasHeight - 2 * padding;
+  const padding = 40;
   
-  // Default parameters
-  let defaultParams = {
-    transformationType: 'invertible',
-    inputDistribution: 'normal',
-    transformationFunction: 'quadratic',
-    normalMean: 0,
-    normalStd: 1,
-    uniformMin: 0,
-    uniformMax: 1,
-    exponentialRate: 1,
-    betaAlpha: 2,
-    betaBeta: 2,
-    gammaShape: 2,
-    gammaScale: 1,
-    binCount: 50,
-    numSamples: 1000
-  };
+  // Control elements
+  const distributionSelect = document.getElementById('distribution-type');
+  const sampleSizeInput = document.getElementById('sample-size');
+  const sampleSizeValue = document.getElementById('sample-size-value');
+  const credibleIntervalInput = document.getElementById('credible-interval');
+  const credibleIntervalValue = document.getElementById('credible-interval-value');
+  const resampleBtn = document.getElementById('resample-btn');
   
-  // Current parameters
-  let params = Object.assign({}, defaultParams);
+  // Parameter controls
+  const normalParams = document.getElementById('normal-params');
+  const gammaParams = document.getElementById('gamma-params');
+  const betaParams = document.getElementById('beta-params');
+  const bimodalParams = document.getElementById('bimodal-params');
   
- // Initialize visualization
-function initialize() {
-  // Set up event listeners with immediate updates
-  transformationType.addEventListener('change', function() {
-    params.transformationType = this.value;
-    updateTransformationType();
-    updateVisualization();
-  });
+  // Normal distribution parameters
+  const normalMean = document.getElementById('normal-mean');
+  const normalStd = document.getElementById('normal-std');
   
-  inputDistribution.addEventListener('change', function() {
-    params.inputDistribution = this.value;
-    updateInputDistribution();
-    updateVisualization();
-  });
+  // Gamma distribution parameters
+  const gammaShape = document.getElementById('gamma-shape');
+  const gammaRate = document.getElementById('gamma-rate');
   
-  transformationFunction.addEventListener('change', function() {
-    params.transformationFunction = this.value;
-    updateTransformationFunction();
-    updateVisualization();
-  });
+  // Beta distribution parameters
+  const betaAlpha = document.getElementById('beta-alpha');
+  const betaBeta = document.getElementById('beta-beta');
   
-  binCount.addEventListener('input', function() {
-    params.binCount = parseInt(this.value);
-    binCountValue.textContent = params.binCount;
-    updateVisualization();
-  });
+  // Bimodal distribution parameters
+  const bimodalMean1 = document.getElementById('bimodal-mean1');
+  const bimodalMean2 = document.getElementById('bimodal-mean2');
+  const bimodalStd = document.getElementById('bimodal-std');
+  const bimodalWeight = document.getElementById('bimodal-weight');
   
-  numSamples.addEventListener('input', function() {
-    params.numSamples = parseInt(this.value);
-    numSamplesValue.textContent = params.numSamples;
-    updateVisualization();
-  });
+  // Result elements
+  const resultCI = document.getElementById('result-ci');
+  const resultTheoretical = document.getElementById('result-theoretical');
+  const resultError = document.getElementById('result-error');
   
-  resetBtn.addEventListener('click', resetParameters);
+  // State variables
+  let samples = [];
+  let distType = 'normal';
+  let sampleSize = 1000;
+  let credibleInterval = 0.95; // 95% by default
   
-  // Input distribution parameter event listeners with immediate updates
-  normalMean.addEventListener('input', function() {
-    params.normalMean = parseFloat(this.value);
-    updateVisualization();
-  });
+  // Drawing settings
+  const plotMargin = 50;
+  const plotWidth = canvasWidth - 2 * plotMargin;
+  const plotHeight = canvasHeight - 2 * plotMargin;
   
-  normalStd.addEventListener('input', function() {
-    params.normalStd = parseFloat(this.value);
-    updateVisualization();
-  });
+  // Distribution functions
+  function normalPDF(x, mean, std) {
+    const variance = std * std;
+    return (1 / Math.sqrt(2 * Math.PI * variance)) * 
+           Math.exp(-Math.pow(x - mean, 2) / (2 * variance));
+  }
   
-  uniformMin.addEventListener('input', function() {
-    params.uniformMin = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  uniformMax.addEventListener('input', function() {
-    params.uniformMax = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  exponentialRate.addEventListener('input', function() {
-    params.exponentialRate = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  betaAlpha.addEventListener('input', function() {
-    params.betaAlpha = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  betaBeta.addEventListener('input', function() {
-    params.betaBeta = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  gammaShape.addEventListener('input', function() {
-    params.gammaShape = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  gammaScale.addEventListener('input', function() {
-    params.gammaScale = parseFloat(this.value);
-    updateVisualization();
-  });
-  
-  // Update UI based on initial parameters
-  updateTransformationType();
-  updateInputDistribution();
-  updateTransformationFunction();
-  
-   
-  // Add debug logging to verify all functions are properly connected
-  console.log("Visualization initialized with parameters:", JSON.stringify(params));
-  console.log("Posterior sampling function exists:", typeof generatePosteriorSamples === 'function');
-  
-  // Initial visualization
-  updateVisualization();
-}
+  function gammaPDF(x, shape, rate) {
+    if (x <= 0) return 0;
+    const scale = 1 / rate;
     
-  // Update transformation type UI
-  function updateTransformationType() {
-    if (params.transformationType === 'invertible') {
-      // Existing code for invertible transformations
-      monteCarloControl.style.display = 'none';
-      mcSamplesLegend.style.display = 'none';
-      jacobianEquation.style.display = 'block';
-      binCountControl.style.display = 'none';
-      explanationTitle.textContent = 'Invertible Transformation (Jacobian Method)';
-      explanationContent.innerHTML = `
-        <p>When Y = f(X) is invertible, we can compute p<sub>Y</sub>(y) using the change of variable formula:</p>
-        <p>p<sub>Y</sub>(y) = p<sub>X</sub>(f<sup>-1</sup>(y)) · |dx/dy|</p>
-        <p>Where |dx/dy| is the absolute value of the Jacobian determinant. For a 1D transformation, this is just |1/f'(x)|.</p>
-        <p>This method is exact but requires that the transformation function is invertible.</p>
-      `;
+    // Simple implementation for visualization
+    // Note: A full implementation would use the gamma function
+    return Math.pow(x, shape - 1) * 
+           Math.exp(-x / scale) / 
+           (Math.pow(scale, shape) * approximateGamma(shape));
+  }
+  
+  function approximateGamma(z) {
+    // Simple Lanczos approximation for demo purposes
+    if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * approximateGamma(1 - z));
+    
+    z -= 1;
+    const p = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+               771.32342877765313, -176.61502916214059, 12.507343278686905,
+               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    
+    let x = p[0];
+    for (let i = 1; i < 9; i++) {
+      x += p[i] / (z + i);
+    }
+    
+    const t = z + 7.5;
+    return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+  }
+  
+  function betaPDF(x, alpha, beta) {
+    if (x <= 0 || x >= 1) return 0;
+    
+    // Simple implementation for visualization
+    // Note: A full implementation would use the beta function
+    const normalizingConstant = 1 / betaFunction(alpha, beta);
+    return normalizingConstant * Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1);
+  }
+  
+  function betaFunction(a, b) {
+    return (approximateGamma(a) * approximateGamma(b)) / approximateGamma(a + b);
+  }
+  
+  function bimodalPDF(x, mean1, mean2, std, weight) {
+    const pdf1 = normalPDF(x, mean1, std);
+    const pdf2 = normalPDF(x, mean2, std);
+    return weight * pdf1 + (1 - weight) * pdf2;
+  }
+  
+  // Random number generation from distributions
+  function generateNormalSample(mean, std) {
+    // Box-Muller transform
+    const u1 = Math.random();
+    const u2 = Math.random();
+    
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    return mean + z0 * std;
+  }
+  
+  function generateGammaSample(shape, rate) {
+    // Marsaglia and Tsang's method (simplified for demo)
+    if (shape < 1) {
+      const scale = 1 / rate;
+      return generateGammaSample(shape + 1, rate) * Math.pow(Math.random(), 1 / shape);
+    }
+    
+    const d = shape - 1/3;
+    const c = 1 / Math.sqrt(9 * d);
+    
+    while (true) {
+      let x, v, u;
+      do {
+        x = generateNormalSample(0, 1);
+        v = 1 + c * x;
+      } while (v <= 0);
+      
+      v = v * v * v;
+      u = Math.random();
+      
+      if (u < 1 - 0.0331 * x * x * x * x || 
+          Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
+        return d * v / rate;
+      }
+    }
+  }
+  
+  function generateBetaSample(alpha, beta) {
+    // Using gamma distribution method
+    const x = generateGammaSample(alpha, 1);
+    const y = generateGammaSample(beta, 1);
+    return x / (x + y);
+  }
+  
+  function generateBimodalSample(mean1, mean2, std, weight) {
+    // Choose one of the two normal distributions based on weight
+    if (Math.random() < weight) {
+      return generateNormalSample(mean1, std);
     } else {
-      // Enhanced explanation for Monte Carlo method in Bayesian context
-      monteCarloControl.style.display = 'block';
-      mcSamplesLegend.style.display = 'inline-flex';
-      jacobianEquation.style.display = 'none';
-      binCountControl.style.display = 'block';
-      explanationTitle.textContent = 'Bayesian Monte Carlo Approximation';
-      explanationContent.innerHTML = `
-        <p>In Bayesian statistics, we use Monte Carlo methods to approximate posterior distributions:</p>
-        <ol>
-          <li>Generate samples from the prior distribution p(θ)</li>
-          <li>Apply the Metropolis-Hastings algorithm to sample from the posterior p(θ|data)</li>
-          <li>Transform these posterior samples using g(θ) to get the distribution of a derived quantity</li>
-          <li>The 95% credible interval represents our uncertainty about the parameter</li>
-        </ol>
-        <p>The shaded region shows the 95% credible interval, representing our uncertainty.</p>
-      `;
-    }
-    
-    // Update the transformation function options based on invertibility
-    updateTransformationFunctionOptions();
-  }
-
-  // Update input distribution UI
-  function updateInputDistribution() {
-    // Hide all parameter groups
-    normalParams.style.display = 'none';
-    uniformParams.style.display = 'none';
-    exponentialParams.style.display = 'none';
-    betaParams.style.display = 'none';
-    gammaParams.style.display = 'none';
-    
-    // Show the appropriate parameter group
-    switch (params.inputDistribution) {
-      case 'normal':
-        normalParams.style.display = 'block';
-        break;
-      case 'uniform':
-        uniformParams.style.display = 'block';
-        break;
-      case 'exponential':
-        exponentialParams.style.display = 'block';
-        break;
-      case 'beta':
-        betaParams.style.display = 'block';
-        break;
-      case 'gamma':
-        gammaParams.style.display = 'block';
-        break;
-    }
-    
-    // Update the transformation function options based on input distribution
-    updateTransformationFunctionOptions();
-  }
-  
-  // Update transformation function UI
-  function updateTransformationFunction() {
-    // Update the transformation equation
-    updateTransformationEquation();
-  }
-  
-  // Update transformation function options based on input distribution and invertibility
-  function updateTransformationFunctionOptions() {
-    // Clear existing options
-    transformationFunction.innerHTML = '';
-    
-    // Default options for invertible transformations
-    const invertibleOptions = [
-      { value: 'quadratic', text: 'Quadratic: y = x²' },
-      { value: 'exp', text: 'Exponential: y = e^x' }
-    ];
-    
-    // Add options for non-invertible transformations
-    const nonInvertibleOptions = [
-      { value: 'abs', text: 'Absolute Value: y = |x|' },
-      { value: 'modulo', text: 'Modulo: y = x mod 1' },
-      { value: 'discretize', text: 'Discretize: y = ⌊x⌋' }
-    ];
-    
-    // Special options for special distributions
-    if (params.inputDistribution === 'exponential' || params.inputDistribution === 'gamma' || params.inputDistribution === 'beta') {
-      invertibleOptions.push({ value: 'log', text: 'Logarithmic: y = ln(x)' });
-    } 
-    
-    // Add options based on transformation type
-    let options = invertibleOptions;
-    if (params.transformationType === 'noninvertible') {
-      options = invertibleOptions.concat(nonInvertibleOptions);
-    }
-    
-    // Populate the select element
-    options.forEach(option => {
-      const optionElement = document.createElement('option');
-      optionElement.value = option.value;
-      optionElement.textContent = option.text;
-      transformationFunction.appendChild(optionElement);
-    });
-    
-    // Set the current value
-    if (options.some(option => option.value === params.transformationFunction)) {
-      transformationFunction.value = params.transformationFunction;
-    } else {
-      // Default to first option if current selection is invalid
-      transformationFunction.value = options[0].value;
-      params.transformationFunction = options[0].value;
-    }
-    
-    // Update the transformation equation
-    updateTransformationEquation();
-  }
-  
-  // Update the transformation equation display
-  function updateTransformationEquation() {
-    let formula = '';
-    let jacobian = '';
-    let inverse = '';
-    
-    switch (params.transformationFunction) {
-      case 'quadratic':
-        formula = 'y = x²';
-        jacobian = '|dx/dy| = 1/(2√y)';
-        inverse = 'x = ±√y';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(√y) · 1/(2√y) + p<sub>X</sub>(-√y) · 1/(2√y)`;
-        break;
-      case 'exp':
-        formula = 'y = e^x';
-        jacobian = '|dx/dy| = 1/y';
-        inverse = 'x = ln(y)';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(ln(y)) · 1/y`;
-        break;
-      case 'log':
-        formula = 'y = ln(x)';
-        jacobian = '|dx/dy| = e^y';
-        inverse = 'x = e^y';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(e<sup>y</sup>) · e<sup>y</sup>`;
-        break;
-      case 'abs':
-        formula = 'y = |x|';
-        jacobian = 'Not invertible';
-        inverse = 'x = ±y';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = p<sub>X</sub>(y) + p<sub>X</sub>(-y)`;
-        break;
-      case 'modulo':
-        formula = 'y = x mod 1';
-        jacobian = 'Not invertible';
-        inverse = 'x = y + k';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = Σ p<sub>X</sub>(y + k)`;
-        break;
-      case 'discretize':
-        formula = 'y = ⌊x⌋';
-        jacobian = 'Not invertible';
-        inverse = 'x ∈ [y, y+1)';
-        transformationEquation.innerHTML = `p<sub>Y</sub>(y) = ∫<sub>y</sub><sup>y+1</sup> p<sub>X</sub>(x) dx`;
-        break;
-    }
-    
-    if (params.transformationType === 'noninvertible') {
-      jacobianEquation.innerHTML = `(Using Monte Carlo with ${params.numSamples} samples)`;
-    } else {
-      jacobianEquation.innerHTML = `where ${jacobian} for ${inverse}`;
+      return generateNormalSample(mean2, std);
     }
   }
   
-  // Reset parameters to defaults
-  function resetParameters() {
-    params = Object.assign({}, defaultParams);
+  // Function to generate samples based on the current distribution
+  function generateSamples() {
+    samples = [];
     
-    // Update UI
-    transformationType.value = params.transformationType;
-    inputDistribution.value = params.inputDistribution;
-    normalMean.value = params.normalMean;
-    normalStd.value = params.normalStd;
-    uniformMin.value = params.uniformMin;
-    uniformMax.value = params.uniformMax;
-    exponentialRate.value = params.exponentialRate;
-    betaAlpha.value = params.betaAlpha;
-    betaBeta.value = params.betaBeta;
-    gammaShape.value = params.gammaShape;
-    gammaScale.value = params.gammaScale;
-    binCount.value = params.binCount;
-    binCountValue.textContent = params.binCount;
-    numSamples.value = params.numSamples;
-    numSamplesValue.textContent = params.numSamples;
-    
-    // Update UI based on reset parameters
-    updateTransformationType();
-    updateInputDistribution();
-    updateTransformationFunction();
-    
-    // Update visualization
-    updateVisualization();
-  }
-  
-  // Main visualization update function
-  function updateVisualization() {
-      // Clear canvas
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      console.log("Updating visualization with parameters:", JSON.stringify(params));
-      
-      // Draw grid and axes
-      drawGrid();
-
-      
-      // Generate input distribution
-      const inputPDF = generateInputPDF();
-
-      // For clarity, update the output credible interval label
-      document.getElementById('output-credible-interval-display').querySelector('span').textContent = 
-      "Output 95% Credible Interval: ";
-      
-      // Transform distribution
-      let outputPDF;
-      if (params.transformationType === 'invertible') {
-      outputPDF = transformDistributionJacobian(inputPDF);
-      } else {
-      outputPDF = transformDistributionMonteCarlo();
-      }
-      
-      // Draw input and output distributions
-      drawDistribution(inputPDF, '#3498db');
-      drawDistribution(outputPDF, '#e74c3c');
-  }
-  
-  // Generate input PDF based on selected distribution
-  function generateInputPDF() {
-      // Range of x values to compute the PDF over
-      const min = 0;
-      const max = 1;
-      const step = (max - min) / 200;
-      
-      // Initialize PDF array
-      const pdf = [];
-      
-      // Generate x values and corresponding PDF values
-      for (let x = min; x <= max; x += step) {
-          let p = 0;
-          
-          switch (params.inputDistribution) {
-          case 'normal':
-              p = normalPDF(x, params.normalMean, params.normalStd);
-              break;
-          case 'uniform':
-              p = uniformPDF(x, params.uniformMin, params.uniformMax);
-              break;
-          case 'exponential':
-              p = exponentialPDF(x, params.exponentialRate);
-              break;
-          case 'beta':
-              if (x >= 0 && x <= 1) {
-                  p = betaPDF(x, params.betaAlpha, params.betaBeta);
-              }
-              break;
-          case 'gamma':
-              if (x >= 0) {
-              p = gammaPDF(x, params.gammaShape, params.gammaScale);
-              }
-              break;
-          }
-          
-          pdf.push({ x, p });
-      }
-
-      // Calculate cumulative distribution for credible interval
-      const cdf = [];
-      let cumProb = 0;
-      
-      // Sort by x value first (should already be sorted, but just to be safe)
-      const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
-
-      // Calculate total area under PDF curve (for normalization)
-      const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
-          if (i === 0) return sum;
-          const width = point.x - arr[i-1].x;
-          const height = (point.p + arr[i-1].p) / 2; // Trapezoidal approximation
-          return sum + width * height;
-      }, 0);
-
-      // Calculate normalized CDF
-      sortedPDF.forEach((point, i, arr) => {
-          if (i === 0) {
-              cumProb = 0;
-          } else {
-              const width = point.x - arr[i-1].x;
-              const height = (point.p + arr[i-1].p) / 2;
-              cumProb += (width * height) / totalArea;
-          }
-          cdf.push({ x: point.x, p: cumProb });
-      });
-
-      // Find 95% credible interval (alpha = 0.05)
-      const alpha = 0.05;
-       // Initialize variables
-       let lowerBound = null;
-       let upperBound = null;
-
-      // Find points closest to alpha/2 and 1-alpha/2
-      for (let i = 0; i < cdf.length - 1; i++) {
-          if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
-              // Linear interpolation for lower bound
-              const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
-              lowerBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
-          }
-          if (cdf[i].p <= 1-alpha/2 && cdf[i+1].p >= 1-alpha/2) {
-              // Linear interpolation for upper bound
-              const t = (1-alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
-              upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
-          }
-      }
-
-      // Update the input credible interval display
-      // Draw the credible interval as a shaded region
-      if (lowerBound !== null && upperBound !== null) {
-        drawCredibleInterval(pdf, lowerBound, upperBound, '#3498db');
-        
-        // Update the input credible interval display
-        inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-      } else {
-          inputCredibleInterval.textContent = "Could not calculate interval";
-      }
-              
-    return pdf;
-  }
-
-
-  // Transform distribution using Jacobian method (for invertible transformations)
-  function transformDistributionJacobian(inputPDF) {
-      // Range of y values to compute the transformed PDF over
-      const min = 0;
-      const max = 1;
-      const step = (max - min) / 200;
-      
-      // Initialize transformed PDF array
-      const transformedPDF = [];
-      
-      // Generate y values and corresponding transformed PDF values
-      for (let y = min; y <= max; y += step) {
-      let p = 0;
-      
-      // Compute the transformed PDF based on the transformation function
-      switch (params.transformationFunction) {
-          case 'quadratic':
-          // y = x^2, x = ±√y
-          if (y >= 0) {
-              const x1 = Math.sqrt(y);
-              const x2 = -Math.sqrt(y);
-              const p1 = interpolatePDF(inputPDF, x1) / (2 * Math.sqrt(y));
-              const p2 = interpolatePDF(inputPDF, x2) / (2 * Math.sqrt(y));
-              p = p1 + p2;
-          }
-          break;
-          case 'exp':
-          // y = e^x, x = ln(y)
-          if (y > 0) {
-              p = interpolatePDF(inputPDF, Math.log(y)) / y;
-          }
-          break;
-          case 'log':
-          // y = ln(x), x = e^y
-          p = interpolatePDF(inputPDF, Math.exp(y)) * Math.exp(y);
-          break;
-      }
-      
-      transformedPDF.push({ x: y, p });
-      }
-
-      // Calculate cumulative distribution for credible interval
-      const cdf = [];
-      let cumProb = 0;
-
-      // Sort by x value first
-      const sortedPDF = transformedPDF.slice().sort((a, b) => a.x - b.x);
-
-      // Calculate total area under PDF curve (for normalization)
-      const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
-      if (i === 0) return sum;
-      const width = point.x - arr[i-1].x;
-      const height = (point.p + arr[i-1].p) / 2; // Trapezoidal approximation
-      return sum + width * height;
-      }, 0);
-
-      // Calculate normalized CDF
-      sortedPDF.forEach((point, i, arr) => {
-      if (i === 0) {
-          cumProb = 0;
-      } else {
-          const width = point.x - arr[i-1].x;
-          const height = (point.p + arr[i-1].p) / 2;
-          cumProb += (width * height) / totalArea;
-      }
-      cdf.push({ x: point.x, p: cumProb });
-      });
-
-      // Find 95% credible interval (alpha = 0.05)
-      const alpha = 0.05;
-      let lowerBound = null;
-      let upperBound = null;
-      // Find points closest to alpha/2 and 1-alpha/2
-      for (let i = 0; i < cdf.length - 1; i++) {
-      if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
-          // Linear interpolation for lower bound
-          const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
-          lowerBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
-      }
-      if (cdf[i].p <= 1-alpha/2 && cdf[i+1].p >= 1-alpha/2) {
-          // Linear interpolation for upper bound
-          const t = (1-alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
-          upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
-      }
-      }
-
-     // Update the output credible interval display
-      if (lowerBound !== null && upperBound !== null) {
-          outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-          console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-      } else {
-          outputCredibleInterval.textContent = "Could not calculate interval";
-      }
-
-      if (lowerBound !== null && upperBound !== null) {
-        // Draw the credible interval
-        drawCredibleInterval(transformedPDF, lowerBound, upperBound, '#e74c3c');
-     }
-
-      return transformedPDF;
-  }
-  
-  // Transform distribution using Monte Carlo method (for non-invertible transformations)
-  function transformDistributionMonteCarlo() {
-    // Generate samples from the input distribution (prior)
-    const priorSamples = generateSamples(params.numSamples);
-    
-    // Generate posterior samples using Metropolis-Hastings algorithm
-    // Using reasonable default values for the likelihood model
-    const likelihoodMean = 0.5;
-    const likelihoodVar = 0.1;
-    const posteriorSamples = generatePosteriorSamples(priorSamples, likelihoodMean, likelihoodVar);
-    
-    // Transform posterior samples
-    const transformedSamples = posteriorSamples.map(x => transformSample(x));
-
-    // Sort samples for credible interval calculation
-    const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
-
-    // Set alpha level for 95% credible interval
-    const alpha = 0.05;
-
-    // Find approximate quantiles
-    const lowerIndex = Math.ceil((alpha / 2) * sortedSamples.length) - 1;
-    const upperIndex = Math.ceil((1 - alpha / 2) * sortedSamples.length) - 1;
-
-    // Guard against out of bounds
-    const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
-    const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
-
-    // Update the output credible interval display
-    outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-
-    // Compute histogram of transformed samples
-    const histogram = computeHistogram(transformedSamples, params.binCount);
-    
-    // Convert histogram to PDF
-    const transformedPDF = histogramToPDF(histogram);
-    
-    // Draw both the prior samples and transformed samples
-    drawScatterplot(priorSamples, transformedSamples);
-    
-    // Draw the credible interval on the plot
-    drawCredibleInterval(transformedPDF, lowerBound, upperBound, '#e74c3c');
-    
-    return transformedPDF;
-  }
-   
-  // Add function to generate posterior samples using Metropolis-Hastings algorithm
-  function generatePosteriorSamples(priorSamples, likelihoodMean, likelihoodVar) {
-    const posteriorSamples = [];
-    
-    // Start with a sensible initial value (the prior mean)
-    let currentSample = priorSamples.reduce((sum, x) => sum + x, 0) / priorSamples.length;
-    
-    // Run a simplified Metropolis-Hastings algorithm
-    for (let i = 0; i < params.numSamples; i++) {
-        // Propose a new sample from the prior
-        const proposedSample = priorSamples[i];
-        
-        // Calculate acceptance probability (simplified for educational purposes)
-        // In a real implementation, this would be min(1, (posterior(proposed)/posterior(current)))
-        const currentLogLikelihood = -Math.pow(currentSample - likelihoodMean, 2) / (2 * likelihoodVar);
-        const proposedLogLikelihood = -Math.pow(proposedSample - likelihoodMean, 2) / (2 * likelihoodVar);
-        
-        // Compute the acceptance ratio (in log space to prevent numerical issues)
-        const logAcceptRatio = proposedLogLikelihood - currentLogLikelihood;
-        const acceptProb = Math.min(1, Math.exp(logAcceptRatio));
-        
-        // Accept or reject based on probability
-        if (Math.random() < acceptProb) {
-            currentSample = proposedSample;
-        }
-        
-        // Store the sample (with burn-in if this were a real implementation)
-        posteriorSamples.push(currentSample);
-    }
-    
-    return posteriorSamples;
-  }
-
-  // Function to draw credible interval as a shaded region
-  function drawCredibleInterval(pdf, lowerBound, upperBound, color) {
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.2;
-    
-    // Find the points in the PDF that correspond to the bounds
-    const lowerIndex = pdf.findIndex(point => point.x >= lowerBound);
-    const upperIndex = pdf.findIndex(point => point.x >= upperBound);
-    
-    if (lowerIndex !== -1 && upperIndex !== -1) {
-        // Create a polygon that represents the credible interval
-        ctx.beginPath();
-        
-        // Use a fixed y-axis scale from 0 to 5 for probability densities
-        const maxYScale = 5;
-        const scaleFactor = plotHeight / maxYScale;
-        
-        // Start at the baseline
-        const baselineY = canvasHeight - padding;
-        
-        // Map x values to canvas coordinates
-        const startX = padding + lowerBound * plotWidth;
-        const endX = padding + upperBound * plotWidth;
-        
-        // Move to the starting point on the baseline
-        ctx.moveTo(startX, baselineY);
-        
-        // Add points along the PDF curve within the interval
-        for (let i = lowerIndex; i <= upperIndex; i++) {
-            const { x, p } = pdf[i];
-            const canvasX = padding + x * plotWidth;
-            const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
-            ctx.lineTo(canvasX, canvasY);
-        }
-        
-        // Complete the polygon by returning to the baseline
-        ctx.lineTo(endX, baselineY);
-        ctx.closePath();
-        ctx.fill();
-    }
-    
-    ctx.globalAlpha = 1.0;
-  }
-
-  // Generate samples from the input distribution
-  function generateSamples(numSamples) {
-    const samples = [];
-    
-    for (let i = 0; i < numSamples; i++) {
+    for (let i = 0; i < sampleSize; i++) {
       let sample;
       
-      switch (params.inputDistribution) {
+      switch (distType) {
         case 'normal':
-          sample = randomNormal(params.normalMean, params.normalStd);
+          sample = generateNormalSample(
+            parseFloat(normalMean.value),
+            parseFloat(normalStd.value)
+          );
           break;
-        case 'uniform':
-          sample = randomUniform(params.uniformMin, params.uniformMax);
-          break;
-        case 'exponential':
-          sample = randomExponential(params.exponentialRate);
-          break;
-        case 'beta':
-          // Scale back to [-6,6] for visualization
-          sample = randomBeta(params.betaAlpha, params.betaBeta);
-          break;
+        
         case 'gamma':
-          sample = randomGamma(params.gammaShape, params.gammaScale);
+          sample = generateGammaSample(
+            parseFloat(gammaShape.value),
+            parseFloat(gammaRate.value)
+          );
           break;
-      }    
+        
+        case 'beta':
+          sample = generateBetaSample(
+            parseFloat(betaAlpha.value),
+            parseFloat(betaBeta.value)
+          );
+          break;
+        
+        case 'bimodal':
+          sample = generateBimodalSample(
+            parseFloat(bimodalMean1.value),
+            parseFloat(bimodalMean2.value),
+            parseFloat(bimodalStd.value),
+            parseFloat(bimodalWeight.value)
+          );
+          break;
+      }
+      
       samples.push(sample);
     }
     
-    return samples;
+    // Sort the samples for Monte Carlo approximation
+    samples.sort((a, b) => a - b);
+    
+    // Calculate the credible interval
+    calculateCredibleInterval();
   }
   
-  // Transform a single sample
-  function transformSample(x) {
-
-    switch (params.transformationFunction) {
-      case 'quadratic':
-        return x * x;
-      case 'exp':
-        return Math.exp(x);
-      case 'log':
-        return x > 0 ? Math.log(x) : -10;
-      case 'abs':
-        return Math.abs(x);
-      case 'modulo':
-        return ((x % 1) + 1) % 1; // Ensure result is in [0,1]
-      case 'discretize':
-        return Math.floor(x);
-    }
-  }
-  
-  // Compute histogram from samples
-  function computeHistogram(samples, binCount) {
-      // Find min and max values
-      let min = Math.min(...samples);
-      let max = Math.max(...samples);
+  // Calculate the credible interval from the samples
+  function calculateCredibleInterval() {
+    const alpha = 1 - credibleInterval;
+    
+    // Calculate indices for the credible interval boundaries
+    const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
+    const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
+    
+    // Get the Monte Carlo approximated credible interval
+    const lower = samples[lowerIndex];
+    const upper = samples[upperIndex];
+    
+    // Calculate theoretical credible interval for normal distribution
+    let theoreticalLower, theoreticalUpper;
+    let error = 0;
+    
+    if (distType === 'normal') {
+      const mean = parseFloat(normalMean.value);
+      const std = parseFloat(normalStd.value);
+      const zScore = getZScore(credibleInterval);
       
-      // Add a small buffer
-      const buffer = (max - min) * 0.1;
-      min -= buffer;
-      max += buffer;
+      theoreticalLower = mean - zScore * std;
+      theoreticalUpper = mean + zScore * std;
       
-      // Initialize bins
-      const bins = new Array(binCount).fill(0);
-      const binWidth = (max - min) / binCount;
-      
-      // Count samples in each bin
-      samples.forEach(sample => {
-      const binIndex = Math.floor((sample - min) / binWidth);
-      if (binIndex >= 0 && binIndex < binCount) {
-          bins[binIndex]++;
-      }
-      });
-      
-      // Return histogram data
-      return {
-      bins,
-      min,
-      max,
-      binWidth
-      };
+      // Calculate error as average percentage difference
+      const lowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
+      const upperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+      error = ((lowerError + upperError) / 2) * 100;
+    } else {
+      theoreticalLower = "N/A";
+      theoreticalUpper = "N/A";
+      error = "N/A";
+    }
+    
+    // Update the result display
+    resultCI.textContent = `[${lower.toFixed(3)}, ${upper.toFixed(3)}]`;
+    
+    if (typeof theoreticalLower === 'number') {
+      resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
+      resultError.textContent = `${error.toFixed(2)}%`;
+    } else {
+      resultTheoretical.textContent = `[${theoreticalLower}, ${theoreticalUpper}]`;
+      resultError.textContent = error;
+    }
+    
+    // Draw the canvas with updated credible interval
+    drawCanvas();
   }
   
-  // Convert histogram to PDF
-  function histogramToPDF(histogram) {
-    const { bins, min, max, binWidth } = histogram;
-    const pdf = [];
-    
-    // Normalize histogram to get PDF
-    const totalSamples = bins.reduce((sum, count) => sum + count, 0);
-    const normalizationFactor = 1 / (totalSamples * binWidth);
-    
-    // Convert bins to PDF points
-    for (let i = 0; i < bins.length; i++) {
-      const x = min + (i + 0.5) * binWidth;
-      const p = bins[i] * normalizationFactor;
-      pdf.push({ x, p });
-    }
-    
-    return pdf;
+  // Helper function to get Z-score for normal distribution based on credible interval
+  function getZScore(interval) {
+    // Simple approximation
+    if (interval >= 0.99) return 2.576;
+    if (interval >= 0.98) return 2.326;
+    if (interval >= 0.95) return 1.96;
+    if (interval >= 0.90) return 1.645;
+    if (interval >= 0.80) return 1.282;
+    if (interval >= 0.70) return 1.036;
+    if (interval >= 0.60) return 0.842;
+    if (interval >= 0.50) return 0.674;
+    return 0.5;
   }
   
-  // Interpolate PDF value at a given x
-  function interpolatePDF(pdf, x) {
-    // Find the two points in the PDF that bracket x
-    let left = 0;
-    let right = pdf.length - 1;
+  // Function to draw the canvas
+  function drawCanvas() {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
-    // Check if x is outside the range
-    if (x <= pdf[left].x) {
-      return pdf[left].p;
-    }
-    if (x >= pdf[right].x) {
-      return pdf[right].p;
-    }
+    // Draw coordinate axes
+    drawAxes();
     
-    // Binary search to find the bracketing points
-    while (right - left > 1) {
-      const mid = Math.floor((left + right) / 2);
-      if (pdf[mid].x < x) {
-        left = mid;
-      } else {
-        right = mid;
-      }
-    }
+    // Calculate display range based on samples
+    const xRange = calculateRange();
     
-    // Linear interpolation
-    const dx = pdf[right].x - pdf[left].x;
-    const dp = pdf[right].p - pdf[left].p;
-    const t = (x - pdf[left].x) / dx;
+    // Draw true distribution
+    drawDistribution(xRange);
     
-    return pdf[left].p + t * dp;
+    // Draw histogram of samples
+    drawHistogram(xRange);
+    
+    // Draw credible interval markers
+    drawCredibleInterval(xRange);
   }
   
-  // Draw grid and axes
-  function drawGrid() {
-    // Draw grid
-    ctx.strokeStyle = '#eee';
+  // Calculate appropriate display range based on the samples
+  function calculateRange() {
+    if (samples.length === 0) {
+      // Default range if no samples yet
+      return { min: -5, max: 5 };
+    }
+    
+    const padding = 0.1; // 10% padding on each side
+    
+    // Different default ranges for different distributions
+    let min, max;
+    
+    switch (distType) {
+      case 'normal':
+        const mean = parseFloat(normalMean.value);
+        std = parseFloat(normalStd.value);
+        min = mean - 4 * std;
+        max = mean + 4 * std;
+        break;
+      
+      case 'gamma':
+        min = 0;
+        max = Math.max(10, samples[samples.length - 1] * 1.2);
+        break;
+      
+      case 'beta':
+        min = 0;
+        max = 1;
+        break;
+      
+      case 'bimodal':
+        const mean1 = parseFloat(bimodalMean1.value);
+        const mean2 = parseFloat(bimodalMean2.value);
+        std = parseFloat(bimodalStd.value);
+        min = Math.min(mean1, mean2) - 4 * std;
+        max = Math.max(mean1, mean2) + 4 * std;
+        break;
+    }
+    
+    // Ensure min-max includes all samples with padding
+    min = Math.min(min, samples[0] - Math.abs(samples[0] * padding));
+    max = Math.max(max, samples[samples.length - 1] + Math.abs(samples[samples.length - 1] * padding));
+    
+    return { min, max };
+  }
+  
+  // Draw coordinate axes
+  function drawAxes() {
+    ctx.strokeStyle = '#888';
     ctx.lineWidth = 1;
     
-      for (let x = 0; x <= 10; x++) {
-          const xPos = padding + (x / 10) * plotWidth;
-          ctx.beginPath();
-          ctx.moveTo(xPos, padding);
-          ctx.lineTo(xPos, canvasHeight - padding);
-          ctx.stroke();
-      }
-              
-      for (let y = 0; y <= 10; y++) {
-          const yPos = padding + (y / 10) * plotHeight;
-          ctx.beginPath();
-          ctx.moveTo(padding, yPos);
-          ctx.lineTo(canvasWidth - padding, yPos);
-          ctx.stroke();
-      }
-    
-    // Draw axes
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 2;
-    
-    // x-axis
+    // X-axis
     ctx.beginPath();
-    ctx.moveTo(padding, canvasHeight - padding);
-    ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
+    ctx.moveTo(plotMargin, canvasHeight - plotMargin);
+    ctx.lineTo(canvasWidth - plotMargin, canvasHeight - plotMargin);
     ctx.stroke();
     
-    // y-axis
+    // Y-axis
     ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvasHeight - padding);
+    ctx.moveTo(plotMargin, plotMargin);
+    ctx.lineTo(plotMargin, canvasHeight - plotMargin);
     ctx.stroke();
     
-    // Draw origin
-    const originX = padding + plotWidth / 2;
-    const originY = canvasHeight - padding;
-    
-    ctx.beginPath();
-    ctx.moveTo(originX, originY - 5);
-    ctx.lineTo(originX, originY + 5);
-    ctx.stroke();
-    
-    // Draw axis labels
+    // X-axis label
     ctx.fillStyle = '#333';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    
-      // x-axis labels
-      for (let x = 0; x <= 10; x++) {
-          const xPos = padding + (x / 10) * plotWidth;
-          ctx.fillText((x / 10).toFixed(1), xPos, canvasHeight - padding + 15);
-      }
-      
-      // y-axis labels
-      ctx.textAlign = 'right';
-      for (let y = 0; y <= 5; y += 1) {  // Change to increment by 1 from 0 to 5
-          const yPos = canvasHeight - padding - (y / 5) * plotHeight;  // Scale to 0-5 range
-          ctx.fillText(y.toFixed(0), padding - 5, yPos + 4);
-      }
-    
-    // Axis titles
     ctx.font = '14px Arial';
     ctx.textAlign = 'center';
+    ctx.fillText('θ (Parameter Value)', canvasWidth / 2, canvasHeight - 10);
     
-    // x-axis title
-    ctx.fillText('x / y', canvasWidth / 2, canvasHeight - 10);
-    
-    // y-axis title
+    // Y-axis label
     ctx.save();
     ctx.translate(15, canvasHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Probability Density', 0, 0);
+    ctx.textAlign = 'center';
+    ctx.fillText('Density', 0, 0);
     ctx.restore();
   }
   
-  // Draw a distribution
-  function drawDistribution(pdf, color) {
-    // Check if pdf is defined and has data
-    if (!pdf || !Array.isArray(pdf) || pdf.length === 0) {
-      console.error('Invalid or empty PDF data');
-      return;
+  // Draw the true distribution
+  function drawDistribution(xRange) {
+    const { min, max } = xRange;
+    const step = (max - min) / 200;
+    
+    let maxDensity = 0;
+    const points = [];
+    
+    // Calculate points for the distribution curve
+    for (let x = min; x <= max; x += step) {
+      let density;
+      
+      switch (distType) {
+        case 'normal':
+          density = normalPDF(
+            x, 
+            parseFloat(normalMean.value), 
+            parseFloat(normalStd.value)
+          );
+          break;
+        
+        case 'gamma':
+          density = gammaPDF(
+            x, 
+            parseFloat(gammaShape.value),
+            parseFloat(gammaRate.value)
+          );
+          break;
+        
+        case 'beta':
+          density = betaPDF(
+            x, 
+            parseFloat(betaAlpha.value),
+            parseFloat(betaBeta.value)
+          );
+          break;
+        
+        case 'bimodal':
+          density = bimodalPDF(
+            x, 
+            parseFloat(bimodalMean1.value),
+            parseFloat(bimodalMean2.value),
+            parseFloat(bimodalStd.value),
+            parseFloat(bimodalWeight.value)
+          );
+          break;
+      }
+      
+      maxDensity = Math.max(maxDensity, density);
+      points.push({ x, density });
     }
     
-    ctx.strokeStyle = color;
+    // Scale points and draw the curve
+    const xScale = plotWidth / (max - min);
+    const yScale = plotHeight / maxDensity;
+    
+    ctx.strokeStyle = '#3498db';
     ctx.lineWidth = 2;
     ctx.beginPath();
-
-    // Use a fixed y-axis scale from 0 to 5 for probability densities
-    const maxYScale = 5;
-    const scaleFactor = plotHeight / maxYScale;
     
-    // Scale the x values to fit the [0,1] range of the canvas
-    // This ensures proper visualization regardless of the actual range of the data
-    
-    // Draw the PDF curve
-    for (let i = 0; i < pdf.length; i++) {
-      const { x, p } = pdf[i];
-      
-      // Map x to canvas coordinates using [0,1] range
-      const canvasX = padding + x * plotWidth;
-
-      // Map p to canvas coordinates with fixed scaling
-      const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
+    points.forEach((point, i) => {
+      const canvasX = plotMargin + (point.x - min) * xScale;
+      const canvasY = canvasHeight - plotMargin - point.density * yScale;
       
       if (i === 0) {
         ctx.moveTo(canvasX, canvasY);
       } else {
         ctx.lineTo(canvasX, canvasY);
       }
-    }
-
+    });
+    
     ctx.stroke();
   }
   
-  // Draw a scatterplot of input and output samples (for Monte Carlo method)
-  function drawScatterplot(inputSamples, outputSamples) {
-      // Draw points
-      ctx.fillStyle = '#9b59b6';
-      ctx.globalAlpha = 0.3;
-      
-      for (let i = 0; i < inputSamples.length; i++) {
-        const x = inputSamples[i];
-        const y = outputSamples[i];
-        
-        // Skip points that would be outside the visible area
-        if (x < 0 || x > 1 || y < -6 || y > 6) {
-          continue;
-        }
-        
-        // Map x from [0,1] to canvas coordinates
-        const canvasX = padding + x * plotWidth;
-        
-        // Map y from [0, 5] to canvas coordinates - FIXED to match drawTransformationFunction
-        const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
-        
-        // Draw a small circle
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
-        ctx.fill();
+  // Draw a histogram of the samples
+  function drawHistogram(xRange) {
+    const { min, max } = xRange;
+    const numBins = Math.min(50, Math.ceil(Math.sqrt(sampleSize)));
+    const binWidth = (max - min) / numBins;
+    
+    const bins = new Array(numBins).fill(0);
+    
+    // Count samples into bins
+    samples.forEach(sample => {
+      const binIndex = Math.floor((sample - min) / binWidth);
+      if (binIndex >= 0 && binIndex < numBins) {
+        bins[binIndex]++;
       }
+    });
+    
+    const maxCount = Math.max(...bins);
+    
+    // Draw the histogram
+    ctx.fillStyle = 'rgba(149, 165, 166, 0.5)';
+    
+    for (let i = 0; i < numBins; i++) {
+      const height = (bins[i] / maxCount) * plotHeight * 0.8; // Scale height to 80% of plot height
       
-      ctx.globalAlpha = 1.0;
+      const x = plotMargin + i * (plotWidth / numBins);
+      const y = canvasHeight - plotMargin - height;
+      const width = plotWidth / numBins - 1;
+      
+      ctx.fillRect(x, y, width, height);
     }
-
-
-  // PDF functions for different distributions
-  
-  // Normal distribution PDF
-  function normalPDF(x, mean, std) {
-    const factor = 1 / (std * Math.sqrt(2 * Math.PI));
-    const exponent = -0.5 * Math.pow((x - mean) / std, 2);
-    return factor * Math.exp(exponent);
   }
   
-  // Uniform distribution PDF
-  function uniformPDF(x, min, max) {
-    if (x >= min && x <= max) {
-      return 1 / (max - min);
-    }
-    return 0;
-  }
-  
-  // Exponential distribution PDF
-  function exponentialPDF(x, rate) {
-    if (x >= 0) {
-      return rate * Math.exp(-rate * x);
-    }
-    return 0;
-  }
-  
-  // Beta distribution PDF
-  function betaPDF(x, alpha, beta) {
-    if (x < 0 || x > 1) {
-      return 0;
-    }
+  // Draw the credible interval markers
+  function drawCredibleInterval(xRange) {
+    const { min, max } = xRange;
+    const alpha = 1 - credibleInterval;
     
-    // Compute Beta function factor
-    const betaFunction = factorial(alpha - 1) * factorial(beta - 1) / factorial(alpha + beta - 1);
+    // Calculate indices for the credible interval boundaries
+    const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
+    const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
     
-    return Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1) / betaFunction;
+    if (lowerIndex >= samples.length || upperIndex >= samples.length) return;
+    
+    // Get the Monte Carlo approximated credible interval
+    const lower = samples[lowerIndex];
+    const upper = samples[upperIndex];
+    
+    // Convert to canvas coordinates
+    const xScale = plotWidth / (max - min);
+    const lowerX = plotMargin + (lower - min) * xScale;
+    const upperX = plotMargin + (upper - min) * xScale;
+    
+    // Draw vertical lines for the credible interval boundaries
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    
+    // Lower bound
+    ctx.beginPath();
+    ctx.moveTo(lowerX, plotMargin);
+    ctx.lineTo(lowerX, canvasHeight - plotMargin);
+    ctx.stroke();
+    
+    // Upper bound
+    ctx.beginPath();
+    ctx.moveTo(upperX, plotMargin);
+    ctx.lineTo(upperX, canvasHeight - plotMargin);
+    ctx.stroke();
+    
+    // Reset line dash
+    ctx.setLineDash([]);
+    
+    // Draw shaded area between the boundaries
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+    ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+    
+    // Add labels for the boundaries
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    
+    ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
+    ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
+    
+    // Add credible interval percentage label
+    ctx.font = '14px Arial';
+    ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
   }
   
-  // Gamma distribution PDF
-  function gammaPDF(x, shape, scale) {
-    if (x < 0) {
-      return 0;
-    }
+  // Handle distribution type change
+  function handleDistributionChange() {
+    distType = distributionSelect.value;
     
-    const factor = 1 / (Math.pow(scale, shape) * factorial(shape - 1));
-    return factor * Math.pow(x, shape - 1) * Math.exp(-x / scale);
+    // Show/hide relevant parameter controls
+    normalParams.style.display = distType === 'normal' ? 'block' : 'none';
+    gammaParams.style.display = distType === 'gamma' ? 'block' : 'none';
+    betaParams.style.display = distType === 'beta' ? 'block' : 'none';
+    bimodalParams.style.display = distType === 'bimodal' ? 'block' : 'none';
+    
+    // Generate new samples
+    generateSamples();
   }
   
-  // Factorial approximation for gamma and beta distributions
-  function factorial(n) {
-    if (n < 0) {
-      return 1;
-    }
+  // Handle sample size change
+  function handleSampleSizeChange() {
+    sampleSize = parseInt(sampleSizeInput.value);
+    sampleSizeValue.textContent = sampleSize.toLocaleString();
     
-    if (n < 1) {
-      return 1;
-    }
-    
-    let result = 1;
-    for (let i = 2; i <= n; i++) {
-      result *= i;
-    }
-    return result;
+    // Generate new samples
+    generateSamples();
   }
   
-  // Random number generators for different distributions
-  
-  // Random normal (Box-Muller transform)
-  function randomNormal(mean, std) {
-    let u = 0, v = 0;
-    while (u === 0) u = Math.random();
-    while (v === 0) v = Math.random();
+  // Handle credible interval change
+  function handleCredibleIntervalChange() {
+    credibleInterval = parseInt(credibleIntervalInput.value) / 100;
+    credibleIntervalValue.textContent = `${credibleIntervalInput.value}%`;
     
-    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    return mean + std * z;
+    // Recalculate credible interval with existing samples
+    calculateCredibleInterval();
   }
   
-  // Random uniform
-  function randomUniform(min, max) {
-    return min + Math.random() * (max - min);
+  // Handle parameter changes
+  function handleParameterChange() {
+    // Generate new samples when parameters change
+    generateSamples();
   }
   
-  // Random exponential
-  function randomExponential(rate) {
-    return -Math.log(1 - Math.random()) / rate;
-  }
-  
-  // Random beta (approximation)
-  function randomBeta(alpha, beta) {
-    // Naive approximation: use normal with matching mean and scaled variance
-    const mean = alpha / (alpha + beta);
-    const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+  // Handle window resize
+  function handleResize() {
+    // Maintain aspect ratio but scale to window size
+    const parent = canvas.parentElement;
+    const ratio = canvasHeight / canvasWidth;
+    const newWidth = parent.clientWidth;
+    const newHeight = newWidth * ratio;
     
-    // Generate a normal random variable and squish it to [0,1]
-    let value = randomNormal(mean, Math.sqrt(variance));
-    return Math.max(0, Math.min(1, value));
+    canvas.style.width = newWidth + 'px';
+    canvas.style.height = newHeight + 'px';
+    
+    drawCanvas();
   }
   
-  // Random gamma (approximation)
-  function randomGamma(shape, scale) {
-    // For integer shape, sum of exponentials
-    if (Math.abs(shape - Math.round(shape)) < 0.0001 && shape > 0) {
-      let result = 0;
-      for (let i = 0; i < shape; i++) {
-        result += randomExponential(1);
-      }
-      return result * scale;
-    }
-    
-    // Otherwise use approximation with normal
-    const mean = shape * scale;
-    const variance = shape * scale * scale;
-    
-    // Generate a normal random variable and ensure it's positive
-    let value = randomNormal(mean, Math.sqrt(variance));
-    return Math.max(0, value);
-  }
+  // Add event listeners
+  distributionSelect.addEventListener('change', handleDistributionChange);
+  sampleSizeInput.addEventListener('input', handleSampleSizeChange);
+  credibleIntervalInput.addEventListener('input', handleCredibleIntervalChange);
+  resampleBtn.addEventListener('click', generateSamples);
+  
+  // Add parameter input change listeners
+  document.querySelectorAll('.param-field').forEach(input => {
+    input.addEventListener('change', handleParameterChange);
+  });
+  
+  window.addEventListener('resize', handleResize);
   
   // Initialize the visualization
-  initialize();
+  generateSamples();
+  handleResize();
+  
+  // Add some explanatory text to complement the course material
+  const explanationText = document.createElement('div');
+  explanationText.className = 'explanation-box';
+  explanationText.innerHTML = `
+    <h3>Relationship to Course Material</h3>
+    <p>This interactive demo demonstrates the Monte Carlo approximation technique for finding credible intervals in Bayesian statistics, as described in the course notes.</p>
+    <p>The key formula is: l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></p>
+    <p>where l is the lower bound, u is the upper bound, S is the number of samples, and α is the significance level (e.g., 0.05 for a 95% credible interval).</p>
+    <p>As the number of samples increases, you'll notice the Monte Carlo approximation converges toward the theoretical value for distributions where it's known.</p>
+  `;
+  
+  container.appendChild(explanationText);
 });
