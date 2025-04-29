@@ -841,42 +841,42 @@ function initialize() {
     
     // Generate input PDF based on selected distribution
     function generateInputPDF() {
-      // Range of x values to compute the PDF over
-      const min = 0;
-      const max = 1;
-      const step = (max - min) / 200;
-      
-      // Initialize PDF array
-      const pdf = [];
-      
-      // Generate x values and corresponding PDF values
-      for (let x = min; x <= max; x += step) {
-        let p = 0;
+        // Range of x values to compute the PDF over
+        const min = 0;
+        const max = 1;
+        const step = (max - min) / 200;
         
-        switch (params.inputDistribution) {
-          case 'normal':
-            p = normalPDF(x, params.normalMean, params.normalStd);
-            break;
-          case 'uniform':
-            p = uniformPDF(x, params.uniformMin, params.uniformMax);
-            break;
-          case 'exponential':
-            p = exponentialPDF(x, params.exponentialRate);
-            break;
-          case 'beta':
-            if (x >= 0 && x <= 1) {
-                p = betaPDF(x, params.betaAlpha, params.betaBeta);
+        // Initialize PDF array
+        const pdf = [];
+        
+        // Generate x values and corresponding PDF values
+        for (let x = min; x <= max; x += step) {
+            let p = 0;
+            
+            switch (params.inputDistribution) {
+            case 'normal':
+                p = normalPDF(x, params.normalMean, params.normalStd);
+                break;
+            case 'uniform':
+                p = uniformPDF(x, params.uniformMin, params.uniformMax);
+                break;
+            case 'exponential':
+                p = exponentialPDF(x, params.exponentialRate);
+                break;
+            case 'beta':
+                if (x >= 0 && x <= 1) {
+                    p = betaPDF(x, params.betaAlpha, params.betaBeta);
+                }
+                break;
+            case 'gamma':
+                if (x >= 0) {
+                p = gammaPDF(x, params.gammaShape, params.gammaScale);
+                }
+                break;
             }
-            break;
-          case 'gamma':
-            if (x >= 0) {
-              p = gammaPDF(x, params.gammaShape, params.gammaScale);
-            }
-            break;
+            
+            pdf.push({ x, p });
         }
-        
-        pdf.push({ x, p });
-      }
 
         // Calculate cumulative distribution for credible interval
         const cdf = [];
@@ -924,13 +924,13 @@ function initialize() {
         }
 
         // Update the input credible interval display
-       
         if (lowerBound !== null && upperBound !== null) {
             inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
             console.log(`Input ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
         } else {
             inputCredibleInterval.textContent = "Could not calculate interval";
         }
+                
       return pdf;
     }
     
@@ -939,8 +939,10 @@ function initialize() {
         // Sort by x value if needed
         const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
         
-        const { lowerBound, upperBound } = calculateCredibleInterval(pdf);
-
+        // Initialize variables
+        let lowerBound = null;
+        let upperBound = null;
+        
         // Calculate total area
         const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
             if (i === 0) return sum;
@@ -963,6 +965,7 @@ function initialize() {
             cdf.push({ x: point.x, p: cumProb });
         });
         
+        // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
             if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
                 const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
@@ -973,16 +976,10 @@ function initialize() {
                 upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
             }
         }
-
-        if (lowerBound !== null && upperBound !== null) {
-            inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-            console.log(`Input ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-        } else {
-            inputCredibleInterval.textContent = "Could not calculate interval";
-        }
         
         return { lowerBound, upperBound };
     }
+
     // Transform distribution using Jacobian method (for invertible transformations)
     function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
@@ -1080,14 +1077,12 @@ function initialize() {
 
        // Update the output credible interval display
        const { lowerBound, upperBound } = calculateCredibleInterval(transformedPDF);
-       if (lowerBound !== null && upperBound !== null) {
-           outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-           console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-       } else {
-           outputCredibleInterval.textContent = "Could not calculate interval";
-       }
-      
-        return transformedPDF;
+        if (lowerBound !== null && upperBound !== null) {
+            outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+        } else {
+            outputCredibleInterval.textContent = "Could not calculate interval";
+        }
     }
     
     // Transform distribution using Monte Carlo method (for non-invertible transformations)
