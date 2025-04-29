@@ -907,8 +907,7 @@ function initialize() {
 
         // Find 95% credible interval (alpha = 0.05)
         const alpha = 0.05;
-        let lowerBound = null;
-        let upperBound = null;
+        const { lowerBound, upperBound } = calculateCredibleInterval(pdf);
 
         // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
@@ -925,17 +924,60 @@ function initialize() {
         }
 
         // Update the input credible interval display
-        const inputCredibleIntervalDisplay = document.getElementById('input-credible-interval');
-        if (lowerBound !== null && upperBound !== null && inputCredibleIntervalDisplay) {
-            inputCredibleIntervalDisplay.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-            console.log(`Input ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-        } else if (inputCredibleIntervalDisplay) {
-            inputCredibleIntervalDisplay.textContent = "Could not calculate interval";
+       
+        if (lowerBound !== null && upperBound !== null) {
+            inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            console.log(`Input ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+        } else {
+            inputCredibleInterval.textContent = "Could not calculate interval";
         }
-            
       return pdf;
     }
     
+    // Ensure both input and output PDFs calculate credible intervals the same way
+    function calculateCredibleInterval(pdf, alpha = 0.05) {
+        // Sort by x value if needed
+        const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
+        
+        // Calculate total area
+        const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
+            if (i === 0) return sum;
+            const width = point.x - arr[i-1].x;
+            const height = (point.p + arr[i-1].p) / 2; // Trapezoidal approximation
+            return sum + width * height;
+        }, 0);
+        
+        // Calculate CDF
+        const cdf = [];
+        let cumProb = 0;
+        sortedPDF.forEach((point, i, arr) => {
+            if (i === 0) {
+                cumProb = 0;
+            } else {
+                const width = point.x - arr[i-1].x;
+                const height = (point.p + arr[i-1].p) / 2;
+                cumProb += (width * height) / totalArea;
+            }
+            cdf.push({ x: point.x, p: cumProb });
+        });
+        
+        // Find credible interval
+        let lowerBound = null;
+        let upperBound = null;
+        
+        for (let i = 0; i < cdf.length - 1; i++) {
+            if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
+                const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
+                lowerBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
+            }
+            if (cdf[i].p <= 1-alpha/2 && cdf[i+1].p >= 1-alpha/2) {
+                const t = (1-alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
+                upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
+            }
+        }
+        
+        return { lowerBound, upperBound };
+    }
     // Transform distribution using Jacobian method (for invertible transformations)
     function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
@@ -1015,8 +1057,7 @@ function initialize() {
 
         // Find 95% credible interval (alpha = 0.05)
         const alpha = 0.05;
-        let lowerBound = null;
-        let upperBound = null;
+       
 
         // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
@@ -1033,57 +1074,57 @@ function initialize() {
         }
 
        // Update the output credible interval display
-        if (lowerBound !== null && upperBound !== null) {
-            outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-            console.log(`Output ${(1-alpha)*100}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-        } else {
-            outputCredibleInterval.textContent = "Could not calculate interval";
-        }
+       const { lowerBound, upperBound } = calculateCredibleInterval(transformedPDF);
+       if (lowerBound !== null && upperBound !== null) {
+           outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+           console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+       } else {
+           outputCredibleInterval.textContent = "Could not calculate interval";
+       }
       
         return transformedPDF;
     }
     
     // Transform distribution using Monte Carlo method (for non-invertible transformations)
-    function transformDistributionMonteCarlo(inputPDF) {
-      // Generate samples from the input distribution
-      const samples = generateSamples(params.numSamples);
-      
-      // Transform samples
-      const transformedSamples = samples.map(x => transformSample(x));
-
-      // Sort samples
+    function transformDistributionMonteCarlo() {
+        // Generate samples from the input distribution
+        const samples = generateSamples(params.numSamples);
+        
+        // Transform samples
+        const transformedSamples = samples.map(x => transformSample(x));
+    
+        // Sort samples for credible interval calculation
         const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
-
-        // Set alpha level
-        const alpha = 0.05; // (or get it dynamically from UI)
-
+    
+        // Set alpha level for 95% credible interval
+        const alpha = 0.05;
+    
         // Find approximate quantiles
         const lowerIndex = Math.ceil((alpha / 2) * sortedSamples.length) - 1;
         const upperIndex = Math.ceil((1 - alpha / 2) * sortedSamples.length) - 1;
-
+    
         // Guard against out of bounds
         const lowerBound = sortedSamples[Math.max(0, lowerIndex)];
         const upperBound = sortedSamples[Math.min(sortedSamples.length - 1, upperIndex)];
-
+    
         // Update the output credible interval display
         outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-
+    
         // Report the credible interval
-        console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound}, ${upperBound}]`);
-
-
-      // Compute histogram of transformed samples
-      const histogram = computeHistogram(transformedSamples, params.binCount);
-      
-      // Convert histogram to PDF
-      const transformedPDF = histogramToPDF(histogram);
-      
-      // Draw the Monte Carlo samples if in non-invertible mode
-      if (params.transformationType === 'noninvertible') {
+        console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+    
+        // Compute histogram of transformed samples
+        const histogram = computeHistogram(transformedSamples, params.binCount);
+        
+        // Convert histogram to PDF
+        const transformedPDF = histogramToPDF(histogram);
+        
+        // Draw the Monte Carlo samples if in non-invertible mode
+        if (params.transformationType === 'noninvertible') {
         drawScatterplot(samples, transformedSamples);
-      }
-      
-      return transformedPDF;
+        }
+        
+        return transformedPDF;
     }
     
     // Generate samples from the input distribution
@@ -1122,8 +1163,8 @@ function initialize() {
     function transformSample(x) {
       switch (params.transformationFunction) {
         case 'linear':
-            const a = 2; // make these configurable parameters if desired
-            const b = 1;
+            const a = 0.8; // make these configurable parameters if desired
+            const b = 0.1;
         return a * x + b;
         case 'quadratic':
           return x * x;
@@ -1307,32 +1348,33 @@ function initialize() {
     
     // Draw a distribution
     function drawDistribution(pdf, color) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
       
-      // Find the maximum PDF value for scaling
-      const maxP = Math.max(...pdf.map(point => point.p));
-      const scaleFactor = maxP > 0 ? plotHeight / maxP : plotHeight;
+        // Use a fixed y-axis scale from 0 to 5 for probability densities
+        const maxYScale = 5;
+        const scaleFactor = plotHeight / maxYScale;
+
+
+        // Draw the PDF curve
+        for (let i = 0; i < pdf.length; i++) {
+            const { x, p } = pdf[i];
+            
+            // Map x from [-6,6] to canvas coordinates
+            const canvasX = padding + (x) * plotWidth;
+        
+            // Map p to canvas coordinates with fixed scaling
+            const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
+            
+            if (i === 0) {
+            ctx.moveTo(canvasX, canvasY);
+            } else {
+            ctx.lineTo(canvasX, canvasY);
+            }
+         }
       
-      // Draw the PDF curve
-      for (let i = 0; i < pdf.length; i++) {
-        const { x, p } = pdf[i];
-        
-        // Map x from [-6,6] to canvas coordinates
-        const canvasX = padding + (x) * plotWidth;
-        
-        // Map p to canvas coordinates (inverted, since canvas y grows downward)
-        const canvasY = canvasHeight - padding - p * scaleFactor;
-        
-        if (i === 0) {
-          ctx.moveTo(canvasX, canvasY);
-        } else {
-          ctx.lineTo(canvasX, canvasY);
-        }
-      }
-      
-      ctx.stroke();
+        ctx.stroke();
     }
     
     // Draw the transformation function
