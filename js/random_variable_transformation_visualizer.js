@@ -1336,17 +1336,21 @@ function initialize() {
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.beginPath();
-      
+    
         // Use a fixed y-axis scale from 0 to 5 for probability densities
         const maxYScale = 5;
         const scaleFactor = plotHeight / maxYScale;
-
+        
+        // Define the data range for x-axis mapping
+        const dataMin = -10;
+        const dataMax = 10;
 
         // Draw the PDF curve
         for (let i = 0; i < pdf.length; i++) {
             const { x, p } = pdf[i];
             
-            const canvasX = padding + ((x - min) / (max - min)) * plotWidth;
+            // Map x to canvas coordinates using the defined range
+            const canvasX = padding + ((x - dataMin) / (dataMax - dataMin)) * plotWidth;
         
             // Map p to canvas coordinates with fixed scaling
             const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
@@ -1356,8 +1360,8 @@ function initialize() {
             } else {
             ctx.lineTo(canvasX, canvasY);
             }
-         }
-      
+        }
+    
         ctx.stroke();
     }
     
@@ -1367,22 +1371,28 @@ function initialize() {
         ctx.fillStyle = '#9b59b6';
         ctx.globalAlpha = 0.3;
         
+        // Define the visualization ranges
+        const dataMin = -10;
+        const dataMax = 10;
+        const maxYScale = 5;
+        const scaleFactor = plotHeight / maxYScale;
+        
         for (let i = 0; i < inputSamples.length; i++) {
-          const x = inputSamples[i];
-          const y = outputSamples[i];
-          
-          // Skip points that would be outside the visible area
-          if (x < 0 || x > 1 || y < -6 || y > 6) {
+        const x = inputSamples[i];
+        const y = outputSamples[i];
+        
+        // Skip points that would be outside the visible area
+        if (x < dataMin || x > dataMax || y < dataMin || y > dataMax) {
             continue;
-          }
-          
-          const canvasX = padding + ((x - min) / (max - min)) * plotWidth;
-          const canvasY = canvasHeight - padding - Math.min(y, maxYScale) * scaleFactor;
-          
-          // Draw a small circle
-          ctx.beginPath();
-          ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
-          ctx.fill();
+        }
+        
+        const canvasX = padding + ((x - dataMin) / (dataMax - dataMin)) * plotWidth;
+        const canvasY = canvasHeight - padding - Math.min(y, maxYScale) * scaleFactor;
+        
+        // Draw a small circle
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
+        ctx.fill();
         }
         
         ctx.globalAlpha = 1.0;
