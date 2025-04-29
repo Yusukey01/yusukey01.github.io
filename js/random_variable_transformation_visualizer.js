@@ -1076,6 +1076,14 @@ function initialize() {
         } else {
             console.error('output-credible-interval element not found');
         }
+
+        if (transformedPDF.length === 0) {
+            console.error('Generated empty PDF data in Jacobian transform');
+            // Create a minimal valid PDF to avoid drawing errors
+            transformedPDF.push({ x: 0, p: 0 });
+            transformedPDF.push({ x: 1, p: 0 });
+        }
+        return transformedPDF;
     }
     
     // Transform distribution using Monte Carlo method (for non-invertible transformations)
