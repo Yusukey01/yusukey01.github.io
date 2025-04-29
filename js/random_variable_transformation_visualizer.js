@@ -939,6 +939,8 @@ function initialize() {
         // Sort by x value if needed
         const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
         
+        const { lowerBound, upperBound } = calculateCredibleInterval(pdf);
+
         // Calculate total area
         const totalArea = sortedPDF.reduce((sum, point, i, arr) => {
             if (i === 0) return sum;
@@ -961,10 +963,6 @@ function initialize() {
             cdf.push({ x: point.x, p: cumProb });
         });
         
-        // Find credible interval
-        let lowerBound = null;
-        let upperBound = null;
-        
         for (let i = 0; i < cdf.length - 1; i++) {
             if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
                 const t = (alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
@@ -974,6 +972,13 @@ function initialize() {
                 const t = (1-alpha/2 - cdf[i].p) / (cdf[i+1].p - cdf[i].p);
                 upperBound = cdf[i].x + t * (cdf[i+1].x - cdf[i].x);
             }
+        }
+
+        if (lowerBound !== null && upperBound !== null) {
+            inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            console.log(`Input ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+        } else {
+            inputCredibleInterval.textContent = "Could not calculate interval";
         }
         
         return { lowerBound, upperBound };
