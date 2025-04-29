@@ -805,8 +805,6 @@ function initialize() {
   function updateVisualization() {
       // Clear canvas
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      document.getElementById('input-credible-interval').textContent = "[--, --]";
-      document.getElementById('output-credible-interval').textContent = "[--, --]";
       console.log("Updating visualization with parameters:", JSON.stringify(params));
       
       // Draw grid and axes
@@ -979,10 +977,9 @@ function initialize() {
   // Transform distribution using Jacobian method (for invertible transformations)
   function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
-      const min = -10; // Use a much wider range
-      const max = 10;  // Use a much wider range
+      const min = 0;
+      const max = 1;
       const step = (max - min) / 200;
-      
       
       // Initialize transformed PDF array
       const transformedPDF = [];
@@ -1065,10 +1062,10 @@ function initialize() {
 
      // Update the output credible interval display
       if (lowerBound !== null && upperBound !== null) {
-          document.getElementById('output-credible-interval').textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+          outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
           console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
       } else {
-          document.getElementById('output-credible-interval').textContent = "Could not calculate interval";
+          outputCredibleInterval.textContent = "Could not calculate interval";
       }
 
       return transformedPDF;
@@ -1336,21 +1333,18 @@ function initialize() {
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.beginPath();
-  
+    
       // Use a fixed y-axis scale from 0 to 5 for probability densities
       const maxYScale = 5;
       const scaleFactor = plotHeight / maxYScale;
-      
-      // Define the data range for x-axis mapping
-      const dataMin = -10;
-      const dataMax = 10;
+
 
       // Draw the PDF curve
       for (let i = 0; i < pdf.length; i++) {
           const { x, p } = pdf[i];
           
-          // Map x to canvas coordinates using the defined range
-          const canvasX = padding + ((x - dataMin) / (dataMax - dataMin)) * plotWidth;
+          // Map x from [-6,6] to canvas coordinates
+          const canvasX = padding + (x) * plotWidth;
       
           // Map p to canvas coordinates with fixed scaling
           const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
@@ -1360,8 +1354,8 @@ function initialize() {
           } else {
           ctx.lineTo(canvasX, canvasY);
           }
-      }
-  
+       }
+    
       ctx.stroke();
   }
   
@@ -1371,32 +1365,29 @@ function initialize() {
       ctx.fillStyle = '#9b59b6';
       ctx.globalAlpha = 0.3;
       
-      // Define the visualization ranges
-      const dataMin = -10;
-      const dataMax = 10;
-      const maxYScale = 5;
-      const scaleFactor = plotHeight / maxYScale;
-      
       for (let i = 0; i < inputSamples.length; i++) {
-      const x = inputSamples[i];
-      const y = outputSamples[i];
-      
-      // Skip points that would be outside the visible area
-      if (x < dataMin || x > dataMax || y < dataMin || y > dataMax) {
+        const x = inputSamples[i];
+        const y = outputSamples[i];
+        
+        // Skip points that would be outside the visible area
+        if (x < 0 || x > 1 || y < -6 || y > 6) {
           continue;
-      }
-      
-      const canvasX = padding + ((x - dataMin) / (dataMax - dataMin)) * plotWidth;
-      const canvasY = canvasHeight - padding - Math.min(y, maxYScale) * scaleFactor;
-      
-      // Draw a small circle
-      ctx.beginPath();
-      ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
-      ctx.fill();
+        }
+        
+        // Map x from [0,1] to canvas coordinates
+        const canvasX = padding + x * plotWidth;
+        
+        // Map y from [0, 5] to canvas coordinates - FIXED to match drawTransformationFunction
+        const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
+        
+        // Draw a small circle
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
+        ctx.fill();
       }
       
       ctx.globalAlpha = 1.0;
-  }
+    }
 
 
   // PDF functions for different distributions
