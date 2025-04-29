@@ -374,10 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
         background-color: #e74c3c;
       }
       
-      .legend-color.mapping {
-        background-color: #2ecc71;
-      }
-      
       .legend-color.samples {
         background-color: #9b59b6;
       }
@@ -680,7 +676,6 @@ function initialize() {
       
       // Default options for invertible transformations
       const invertibleOptions = [
-        { value: 'linear', text: 'Linear: y = ax + b' },
         { value: 'quadratic', text: 'Quadratic: y = x²' },
         { value: 'exp', text: 'Exponential: y = e^x' }
       ];
@@ -995,10 +990,6 @@ function initialize() {
         
         // Compute the transformed PDF based on the transformation function
         switch (params.transformationFunction) {
-            case 'linear':
-                // y = ax + b, x = (y-b)/a
-                p = interpolatePDF(inputPDF, (y - 0.1) / 0.8) / Math.abs(0.8);
-                break;
             case 'quadratic':
             // y = x^2, x = ±√y
             if (y >= 0) {
@@ -1155,10 +1146,8 @@ function initialize() {
     
     // Transform a single sample
     function transformSample(x) {
-        
+
       switch (params.transformationFunction) {
-        case 'linear':
-        return 0.8 * x + 0.1;
         case 'quadratic':
           return x * x;
         case 'exp':
