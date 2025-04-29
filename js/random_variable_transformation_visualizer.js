@@ -828,7 +828,7 @@ function initialize() {
       if (params.transformationType === 'invertible') {
         outputPDF = transformDistributionJacobian(inputPDF);
       } else {
-        outputPDF = transformDistributionMonteCarlo(inputPDF);
+        outputPDF = transformDistributionMonteCarlo();
       }
       
       // Draw input and output distributions
@@ -881,7 +881,7 @@ function initialize() {
         // Calculate cumulative distribution for credible interval
         const cdf = [];
         let cumProb = 0;
-
+        
         // Sort by x value first (should already be sorted, but just to be safe)
         const sortedPDF = pdf.slice().sort((a, b) => a.x - b.x);
 
@@ -907,7 +907,9 @@ function initialize() {
 
         // Find 95% credible interval (alpha = 0.05)
         const alpha = 0.05;
-        const { lowerBound, upperBound } = calculateCredibleInterval(pdf);
+         // Initialize variables
+         let lowerBound = null;
+         let upperBound = null;
 
         // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
@@ -1083,6 +1085,8 @@ function initialize() {
         } else {
             outputCredibleInterval.textContent = "Could not calculate interval";
         }
+
+        return transformedPDF;
     }
     
     // Transform distribution using Monte Carlo method (for non-invertible transformations)
