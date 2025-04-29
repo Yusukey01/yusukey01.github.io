@@ -805,6 +805,8 @@ function initialize() {
     function updateVisualization() {
         // Clear canvas
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        document.getElementById('input-credible-interval').textContent = "[--, --]";
+        document.getElementById('output-credible-interval').textContent = "[--, --]";
         console.log("Updating visualization with parameters:", JSON.stringify(params));
         
         // Draw grid and axes
@@ -977,9 +979,10 @@ function initialize() {
     // Transform distribution using Jacobian method (for invertible transformations)
     function transformDistributionJacobian(inputPDF) {
         // Range of y values to compute the transformed PDF over
-        const min = 0;
-        const max = 1;
+        const min = -10; // Use a much wider range
+        const max = 10;  // Use a much wider range
         const step = (max - min) / 200;
+        
         
         // Initialize transformed PDF array
         const transformedPDF = [];
@@ -1062,10 +1065,10 @@ function initialize() {
 
        // Update the output credible interval display
         if (lowerBound !== null && upperBound !== null) {
-            outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+            document.getElementById('output-credible-interval').textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
             console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
         } else {
-            outputCredibleInterval.textContent = "Could not calculate interval";
+            document.getElementById('output-credible-interval').textContent = "Could not calculate interval";
         }
 
         return transformedPDF;
@@ -1343,8 +1346,7 @@ function initialize() {
         for (let i = 0; i < pdf.length; i++) {
             const { x, p } = pdf[i];
             
-            // Map x from [-6,6] to canvas coordinates
-            const canvasX = padding + (x) * plotWidth;
+            const canvasX = padding + ((x - min) / (max - min)) * plotWidth;
         
             // Map p to canvas coordinates with fixed scaling
             const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
@@ -1374,11 +1376,8 @@ function initialize() {
             continue;
           }
           
-          // Map x from [0,1] to canvas coordinates
-          const canvasX = padding + x * plotWidth;
-          
-          // Map y from [0, 5] to canvas coordinates - FIXED to match drawTransformationFunction
-          const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
+          const canvasX = padding + ((x - min) / (max - min)) * plotWidth;
+          const canvasY = canvasHeight - padding - Math.min(y, maxYScale) * scaleFactor;
           
           // Draw a small circle
           ctx.beginPath();
@@ -1387,7 +1386,7 @@ function initialize() {
         }
         
         ctx.globalAlpha = 1.0;
-      }
+    }
 
 
     // PDF functions for different distributions
