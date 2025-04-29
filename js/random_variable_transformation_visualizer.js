@@ -1105,11 +1105,6 @@ function initialize() {
       // Convert histogram to PDF
       const transformedPDF = histogramToPDF(histogram);
       
-      // Draw the Monte Carlo samples if in non-invertible mode
-      if (params.transformationType === 'noninvertible') {
-      drawScatterplot(samples, transformedSamples);
-      }
-      
       return transformedPDF;
   }
   
@@ -1131,7 +1126,6 @@ function initialize() {
           sample = randomExponential(params.exponentialRate);
           break;
         case 'beta':
-          // Scale back to [-6,6] for visualization
           sample = randomBeta(params.betaAlpha, params.betaBeta);
           break;
         case 'gamma':
@@ -1342,7 +1336,7 @@ function initialize() {
           const { x, p } = pdf[i];
           
           // Map x from [-6,6] to canvas coordinates
-          const canvasX = padding + (x) * plotWidth;
+          const canvasX = padding + ((x - min) / (max - min)) * plotWidth;
       
           // Map p to canvas coordinates with fixed scaling
           const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
@@ -1357,37 +1351,6 @@ function initialize() {
       ctx.stroke();
   }
   
-  // Draw a scatterplot of input and output samples (for Monte Carlo method)
-  function drawScatterplot(inputSamples, outputSamples) {
-      // Draw points
-      ctx.fillStyle = '#9b59b6';
-      ctx.globalAlpha = 0.3;
-      
-      for (let i = 0; i < inputSamples.length; i++) {
-        const x = inputSamples[i];
-        const y = outputSamples[i];
-        
-        // Skip points that would be outside the visible area
-        if (x < 0 || x > 1 || y < -6 || y > 6) {
-          continue;
-        }
-        
-        // Map x from [0,1] to canvas coordinates
-        const canvasX = padding + x * plotWidth;
-        
-        // Map y from [0, 5] to canvas coordinates - FIXED to match drawTransformationFunction
-        const canvasY = canvasHeight - padding - (y / 5) * plotHeight;
-        
-        // Draw a small circle
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 2, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-      
-      ctx.globalAlpha = 1.0;
-    }
-
-
   // PDF functions for different distributions
   
   // Normal distribution PDF
