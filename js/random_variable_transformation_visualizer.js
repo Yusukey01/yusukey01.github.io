@@ -1049,7 +1049,7 @@ function initialize() {
         const alpha = 0.05;
         let lowerBound = null;
         let upperBound = null;
-        
+
         // Find points closest to alpha/2 and 1-alpha/2
         for (let i = 0; i < cdf.length - 1; i++) {
         if (cdf[i].p <= alpha/2 && cdf[i+1].p >= alpha/2) {
@@ -1067,7 +1067,12 @@ function initialize() {
        // Update the output credible interval display
        const outputElement = document.getElementById('output-credible-interval');
         if (outputElement) {
-            outputElement.textContent = "Could not calculate interval";
+            if (lowerBound !== null && upperBound !== null) {
+                outputElement.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
+                console.log(`Output ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+            } else {
+                outputElement.textContent = "Could not calculate interval";
+            }
         } else {
             console.error('output-credible-interval element not found');
         }
@@ -1332,6 +1337,12 @@ function initialize() {
     
     // Draw a distribution
     function drawDistribution(pdf, color) {
+         // Check if pdf is defined and has data
+        if (!pdf || !Array.isArray(pdf) || pdf.length === 0) {
+            console.error('Invalid or empty PDF data');
+            return;
+        }
+        
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.beginPath();
