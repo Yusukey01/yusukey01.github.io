@@ -978,7 +978,7 @@ function initialize() {
   function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
       const min = 0;
-      const max = 1;
+      const max = 6;
       const step = (max - min) / 200;
       
       // Initialize transformed PDF array
@@ -1252,7 +1252,6 @@ function initialize() {
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     
-    // Horizontal grid lines (across the width)
       for (let x = 0; x <= 10; x++) {
           const xPos = padding + (x / 10) * plotWidth;
           ctx.beginPath();
@@ -1261,7 +1260,6 @@ function initialize() {
           ctx.stroke();
       }
               
-      // Vertical grid lines (across the height)
       for (let y = 0; y <= 10; y++) {
           const yPos = padding + (y / 10) * plotHeight;
           ctx.beginPath();
