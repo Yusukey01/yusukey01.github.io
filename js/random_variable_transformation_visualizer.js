@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="input-credible-interval-display" class="credible-interval">
                 <span>Input 95% Credible Interval: <span id="input-credible-interval">[--, --]</span></span>
             </div>
-            <div id="credible-interval-display" class="credible-interval">
-                <span>Output 95% Credible Interval: <span id="credible-interval">[--, --]</span></span>
+            <div id="output-credible-interval-display" class="credible-interval">
+                <span>Output 95% Credible Interval: <span id="output-credible-interval">[--, --]</span></span>
             </div>
           </div>
           
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-bottom: 5px;
         }
 
-        #credible-interval-display {
+        #output-credible-interval-display {
             color: #e74c3c;  /* Red to match output distribution color */
         }
 
@@ -466,7 +466,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const gammaParams = document.getElementById('gamma-params');
     const binCountControl = document.getElementById('bin-count-control');
     const inputCredibleInterval = document.getElementById('input-credible-interval');
-    const outputCredibleInterval = document.getElementById('credible-interval');
+    const outputCredibleInterval = document.getElementById('output-credible-interval');
+    
     // Input distribution parameters
     const normalMean = document.getElementById('normal-mean');
     const normalStd = document.getElementById('normal-std');
@@ -808,35 +809,35 @@ function initialize() {
     
     // Main visualization update function
     function updateVisualization() {
-      // Clear canvas
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      console.log("Updating visualization with parameters:", JSON.stringify(params));
-      
-      // Draw grid and axes
-      drawGrid();
+        // Clear canvas
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        console.log("Updating visualization with parameters:", JSON.stringify(params));
+        
+        // Draw grid and axes
+        drawGrid();
 
-      
-      // Generate input distribution
-      const inputPDF = generateInputPDF();
+        
+        // Generate input distribution
+        const inputPDF = generateInputPDF();
 
-      // For clarity, update the output credible interval label
-        document.getElementById('credible-interval-display').querySelector('span').textContent = 
+        // For clarity, update the output credible interval label
+        document.getElementById('output-credible-interval-display').querySelector('span').textContent = 
         "Output 95% Credible Interval: ";
-      
-      // Transform distribution
-      let outputPDF;
-      if (params.transformationType === 'invertible') {
+        
+        // Transform distribution
+        let outputPDF;
+        if (params.transformationType === 'invertible') {
         outputPDF = transformDistributionJacobian(inputPDF);
-      } else {
+        } else {
         outputPDF = transformDistributionMonteCarlo();
-      }
-      
-      // Draw input and output distributions
-      drawDistribution(inputPDF, '#3498db');
-      drawDistribution(outputPDF, '#e74c3c');
-      
-      // Draw transformation function
-      drawTransformationFunction();
+        }
+        
+        // Draw input and output distributions
+        drawDistribution(inputPDF, '#3498db');
+        drawDistribution(outputPDF, '#e74c3c');
+        
+        // Draw transformation function
+        drawTransformationFunction();
     }
     
     // Generate input PDF based on selected distribution
@@ -984,16 +985,16 @@ function initialize() {
 
     // Transform distribution using Jacobian method (for invertible transformations)
     function transformDistributionJacobian(inputPDF) {
-      // Range of y values to compute the transformed PDF over
-      const min = 0;
-      const max = 1;
-      const step = (max - min) / 200;
-      
-      // Initialize transformed PDF array
-      const transformedPDF = [];
-      
-      // Generate y values and corresponding transformed PDF values
-      for (let y = min; y <= max; y += step) {
+        // Range of y values to compute the transformed PDF over
+        const min = 0;
+        const max = 1;
+        const step = (max - min) / 200;
+        
+        // Initialize transformed PDF array
+        const transformedPDF = [];
+        
+        // Generate y values and corresponding transformed PDF values
+        for (let y = min; y <= max; y += step) {
         let p = 0;
         
         // Compute the transformed PDF based on the transformation function
@@ -1005,24 +1006,24 @@ function initialize() {
                 const x_linear = (y - b) / a;
                 p = interpolatePDF(inputPDF, x_linear) / Math.abs(a);
                 break;
-          case 'quadratic':
+            case 'quadratic':
             // y = x^2, x = ±√y
             if (y >= 0) {
-              const x1 = Math.sqrt(y);
-              const x2 = -Math.sqrt(y);
-              const p1 = interpolatePDF(inputPDF, x1) / (2 * Math.sqrt(y));
-              const p2 = interpolatePDF(inputPDF, x2) / (2 * Math.sqrt(y));
-              p = p1 + p2;
+                const x1 = Math.sqrt(y);
+                const x2 = -Math.sqrt(y);
+                const p1 = interpolatePDF(inputPDF, x1) / (2 * Math.sqrt(y));
+                const p2 = interpolatePDF(inputPDF, x2) / (2 * Math.sqrt(y));
+                p = p1 + p2;
             }
             break;
-          case 'exp':
+            case 'exp':
             // y = e^x, x = ln(y)
             if (y > 0) {
-              const x = Math.log(y);
-              p = interpolatePDF(inputPDF, x) / y;
+                const x = Math.log(y);
+                p = interpolatePDF(inputPDF, x) / y;
             }
             break;
-          case 'log':
+            case 'log':
             // y = ln(x), x = e^y
             const x_log = Math.exp(y);
             p = interpolatePDF(inputPDF, x_log) * x_log;
@@ -1030,7 +1031,7 @@ function initialize() {
         }
         
         transformedPDF.push({ x: y, p });
-      }
+        }
 
         // Calculate cumulative distribution for credible interval
         const cdf = [];
@@ -1155,8 +1156,7 @@ function initialize() {
           case 'gamma':
             sample = randomGamma(params.gammaShape, params.gammaScale);
             break;
-        }
-        
+        }    
         samples.push(sample);
       }
       
@@ -1165,17 +1165,17 @@ function initialize() {
     
     // Transform a single sample
     function transformSample(x) {
+        const a = 0.8;
+        const b = 0.1;
       switch (params.transformationFunction) {
         case 'linear':
-            const a = 0.8; // make these configurable parameters if desired
-            const b = 0.1;
         return a * x + b;
         case 'quadratic':
           return x * x;
         case 'exp':
           return Math.exp(x);
         case 'log':
-          return x > 0 ? Math.log(x) : -10; // Default value for negative inputs
+          return x > 0 ? Math.log(x) : -10;
         case 'abs':
           return Math.abs(x);
         case 'modulo':
@@ -1187,34 +1187,34 @@ function initialize() {
     
     // Compute histogram from samples
     function computeHistogram(samples, binCount) {
-      // Find min and max values
-      let min = Math.min(...samples);
-      let max = Math.max(...samples);
-      
-      // Add a small buffer
-      const buffer = (max - min) * 0.1;
-      min -= buffer;
-      max += buffer;
-      
-      // Initialize bins
-      const bins = new Array(binCount).fill(0);
-      const binWidth = (max - min) / binCount;
-      
-      // Count samples in each bin
-      samples.forEach(sample => {
+        // Find min and max values
+        let min = Math.min(...samples);
+        let max = Math.max(...samples);
+        
+        // Add a small buffer
+        const buffer = (max - min) * 0.1;
+        min -= buffer;
+        max += buffer;
+        
+        // Initialize bins
+        const bins = new Array(binCount).fill(0);
+        const binWidth = (max - min) / binCount;
+        
+        // Count samples in each bin
+        samples.forEach(sample => {
         const binIndex = Math.floor((sample - min) / binWidth);
         if (binIndex >= 0 && binIndex < binCount) {
-          bins[binIndex]++;
+            bins[binIndex]++;
         }
-      });
-      
-      // Return histogram data
-      return {
+        });
+        
+        // Return histogram data
+        return {
         bins,
         min,
         max,
         binWidth
-      };
+        };
     }
     
     // Convert histogram to PDF
