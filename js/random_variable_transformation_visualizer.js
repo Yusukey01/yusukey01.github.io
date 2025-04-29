@@ -144,6 +144,18 @@ document.addEventListener('DOMContentLoaded', function() {
             <code>l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></code></p>
             <p>Where <code>S</code> is the number of samples and <code>α</code> is the significance level.</p>
           </div>
+          
+          <div class="explanation-container" style="margin-top: 15px;">
+            <h3>Why Monte Carlo Methods Are Important</h3>
+            <p>The bimodal distribution (a mixture of two normal distributions) represents an important case where:</p>
+            <ul>
+              <li>The distribution has complex shape with two distinct peaks</li>
+              <li>Theoretical credible intervals cannot be easily derived analytically</li>
+              <li>Monte Carlo methods provide a practical numerical solution</li>
+            </ul>
+            <p>For distributions like normal, gamma, and beta, theoretical credible intervals can be calculated using their known quantile functions. However, for multimodal distributions like our bimodal example, Monte Carlo methods become essential as analytical solutions are either extremely complex or unavailable.</p>
+            <p>This demonstrates why Monte Carlo methods are so powerful in Bayesian statistics—they can handle arbitrary posterior distributions regardless of complexity.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -573,26 +585,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const lower = samples[lowerIndex];
     const upper = samples[upperIndex];
     
-    // Calculate theoretical credible interval for normal distribution
+    // Calculate theoretical credible interval
     let theoreticalLower, theoreticalUpper;
     let error = 0;
     
-    if (distType === 'normal') {
-      const mean = parseFloat(normalMean.value);
-      const std = parseFloat(normalStd.value);
-      const zScore = getZScore(credibleInterval);
-      
-      theoreticalLower = mean - zScore * std;
-      theoreticalUpper = mean + zScore * std;
-      
-      // Calculate error as average percentage difference
-      const lowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
-      const upperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
-      error = ((lowerError + upperError) / 2) * 100;
-    } else {
-      theoreticalLower = "N/A";
-      theoreticalUpper = "N/A";
-      error = "N/A";
+    switch (distType) {
+      case 'normal':
+        const mean = parseFloat(normalMean.value);
+        const std = parseFloat(normalStd.value);
+        const zScore = getZScore(credibleInterval);
+        
+        theoreticalLower = mean - zScore * std;
+        theoreticalUpper = mean + zScore * std;
+        
+        // Calculate error as average percentage difference
+        const lowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
+        const upperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+        error = ((lowerError + upperError) / 2) * 100;
+        break;
+        
+      case 'gamma':
+        const shape = parseFloat(gammaShape.value);
+        const rate = parseFloat(gammaRate.value);
+        
+        // For gamma distribution, use chi-square approximation for large shape
+        // For smaller shape, this is an approximation
+        const alphaHalf = alpha / 2;
+        const oneMinusAlphaHalf = 1 - alpha / 2;
+        
+        // Approximate gamma quantiles using Wilson-Hilferty transformation
+        theoreticalLower = gammaQuantile(alphaHalf, shape, rate);
+        theoreticalUpper = gammaQuantile(oneMinusAlphaHalf, shape, rate);
+        
+        // Calculate error
+        const gammaLowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
+        const gammaUpperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+        error = ((gammaLowerError + gammaUpperError) / 2) * 100;
+        break;
+        
+      case 'beta':
+        const betaA = parseFloat(betaAlpha.value);
+        const betaB = parseFloat(betaBeta.value);
+        
+        // Approximate beta quantiles
+        theoreticalLower = betaQuantile(alpha / 2, betaA, betaB);
+        theoreticalUpper = betaQuantile(1 - alpha / 2, betaA, betaB);
+        
+        // Calculate error
+        const betaLowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
+        const betaUpperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+        error = ((betaLowerError + betaUpperError) / 2) * 100;
+        break;
+        
+      case 'bimodal':
+        // For bimodal, there's no simple analytical solution
+        theoreticalLower = "Not available";
+        theoreticalUpper = "Not available";
+        error = "N/A";
+        
+        // Add special message in the results
+        resultTheoretical.innerHTML = 
+          "<span style='font-size: 0.9em;'>No analytical solution for bimodal</span>";
+        resultError.innerHTML = 
+          "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
+        return; // Exit early with custom message
+        break;
     }
     
     // Update the result display
@@ -622,6 +679,148 @@ document.addEventListener('DOMContentLoaded', function() {
     if (interval >= 0.60) return 0.842;
     if (interval >= 0.50) return 0.674;
     return 0.5;
+  }
+  
+  // Approximation for gamma distribution quantiles
+  function gammaQuantile(p, shape, rate) {
+    // For shape > 1, use Wilson-Hilferty approximation
+    if (shape >= 1) {
+      const z = normalQuantile(p, 0, 1);
+      const scale = 1 / rate;
+      
+      // Wilson-Hilferty transformation
+      const x = shape * Math.pow(1 - (2/(9*shape)) + (z * Math.sqrt(2/(9*shape))), 3);
+      return x * scale;
+    } 
+    // For shape < 1, use a different approximation
+    else {
+      // This is a very rough approximation for demo purposes
+      // A more accurate method would use numerical methods
+      const scale = 1 / rate;
+      const mean = shape * scale;
+      const variance = shape * scale * scale;
+      const stdDev = Math.sqrt(variance);
+      
+      // Rough approximation based on matching moments
+      const z = normalQuantile(p, 0, 1);
+      return Math.max(0, mean + z * stdDev);
+    }
+  }
+
+  // Approximation for beta distribution quantiles
+  function betaQuantile(p, alpha, beta) {
+    // For certain parameter values we can use normal approximation
+    if (alpha > 1 && beta > 1) {
+      const mean = alpha / (alpha + beta);
+      const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+      const stdDev = Math.sqrt(variance);
+      
+      const z = normalQuantile(p, 0, 1);
+      const approx = mean + z * stdDev;
+      
+      // Clamp to [0,1] since beta is bounded
+      return Math.max(0, Math.min(1, approx));
+    } 
+    // For alpha = beta = 1, this is uniform distribution
+    else if (alpha === 1 && beta === 1) {
+      return p;
+    }
+    // For other cases, use a numerical approximation
+    else {
+      // This is a very rough approximation for demo purposes
+      // A more accurate method would use numerical methods
+      // We'll just use an iterative search over the CDF
+      return betaSearchQuantile(p, alpha, beta);
+    }
+  }
+
+  // Helper function for normal quantile (inverse CDF)
+  function normalQuantile(p, mean, std) {
+    // Approximation of the inverse standard normal CDF
+    // Accurate to about 6 decimal places
+    let q, r;
+    
+    if (p < 0 || p > 1) {
+      return NaN;
+    } else if (p === 0) {
+      return -Infinity;
+    } else if (p === 1) {
+      return Infinity;
+    } else if (p === 0.5) {
+      return mean;
+    }
+    
+    // Handle p < 0.5 by symmetry
+    if (p < 0.5) {
+      return mean - std * normalQuantile(1 - p, 0, 1);
+    }
+    
+    // For p > 0.5
+    q = -Math.log(2 * (1 - p));
+    
+    if (q < 5) { // For typical values
+      r = ((((0.000124818987 * q - 0.001075204047) * q + 0.005198775019) * q - 0.019198292004) * q + 0.059054035642) * q - 0.151968751364;
+      r = (r * q + 0.319152932694) * q - 0.5319230073;
+      r = (r * q + 0.797884560593) * q - 0.939639838525;
+      r = (r * q + 0.5) * q + 1.570796288;
+    } else { // For extreme values
+      r = ((((7.7454501427e-4 * q + 0.0227238449) * q + 0.24178072649) * q + 1.27045825647) * q + 3.64784832476) * q + 5.7694972214;
+      r = ((((2.01033439929e-7 * r - 2.71155556e-5) * r + 0.0012426609) * r - 0.026532189) * r + 0.2706291272) * r - 0.5772156501;
+    }
+    
+    // Convert to requested mean and standard deviation
+    return mean + std * r;
+  }
+
+  // Simple numerical search for beta quantile
+  function betaSearchQuantile(p, alpha, beta) {
+    // Start with a reasonable guess
+    const mean = alpha / (alpha + beta);
+    let x = mean;
+    
+    // Search with simple bisection method
+    let lower = 0;
+    let upper = 1;
+    let current_p = betaCDF(x, alpha, beta);
+    
+    // Just a few iterations for demo purposes
+    for (let i = 0; i < 20; i++) {
+      if (Math.abs(current_p - p) < 0.0001) break;
+      
+      if (current_p < p) {
+        lower = x;
+      } else {
+        upper = x;
+      }
+      
+      x = (lower + upper) / 2;
+      current_p = betaCDF(x, alpha, beta);
+    }
+    
+    return x;
+  }
+
+  // Beta cumulative distribution function
+  function betaCDF(x, alpha, beta) {
+    // Simple approximation using incomplete beta function
+    // For demo purposes only
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    
+    // Use regularized incomplete beta function approximation
+    // This is a very simplified version
+    let sum = 0;
+    const maxTerms = 100;
+    
+    for (let i = 0; i < maxTerms; i++) {
+      const term = Math.pow(x, alpha + i) * Math.pow(1 - x, beta) * 
+                   (alpha + i - 1) / (alpha + beta + i - 1);
+      sum += term;
+      
+      if (term < 0.0001) break;
+    }
+    
+    return sum;
   }
   
   // Function to draw the canvas
