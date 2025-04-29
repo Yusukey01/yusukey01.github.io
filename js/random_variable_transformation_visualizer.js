@@ -978,7 +978,7 @@ function initialize() {
   function transformDistributionJacobian(inputPDF) {
       // Range of y values to compute the transformed PDF over
       const min = 0;
-      const max = 6;
+      const max = 1;
       const step = (max - min) / 200;
       
       // Initialize transformed PDF array
@@ -1131,6 +1131,7 @@ function initialize() {
           sample = randomExponential(params.exponentialRate);
           break;
         case 'beta':
+          // Scale back to [-6,6] for visualization
           sample = randomBeta(params.betaAlpha, params.betaBeta);
           break;
         case 'gamma':
