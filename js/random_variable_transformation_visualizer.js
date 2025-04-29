@@ -592,46 +592,51 @@ function initialize() {
   updateInputDistribution();
   updateTransformationFunction();
   
+   
+  // Add debug logging to verify all functions are properly connected
+  console.log("Visualization initialized with parameters:", JSON.stringify(params));
+  console.log("Posterior sampling function exists:", typeof generatePosteriorSamples === 'function');
+  
   // Initial visualization
   updateVisualization();
 }
     
-    // Update transformation type UI
-    function updateTransformationType() {
-      if (params.transformationType === 'invertible') {
-          // Existing code for invertible transformations
-          monteCarloControl.style.display = 'none';
-          mcSamplesLegend.style.display = 'none';
-          jacobianEquation.style.display = 'block';
-          binCountControl.style.display = 'none';
-          explanationTitle.textContent = 'Invertible Transformation (Jacobian Method)';
-          explanationContent.innerHTML = `
-              <p>When Y = f(X) is invertible, we can compute p<sub>Y</sub>(y) using the change of variable formula:</p>
-              <p>p<sub>Y</sub>(y) = p<sub>X</sub>(f<sup>-1</sup>(y)) · |dx/dy|</p>
-              <p>Where |dx/dy| is the absolute value of the Jacobian determinant. For a 1D transformation, this is just |1/f'(x)|.</p>
-              <p>This method is exact but requires that the transformation function is invertible.</p>
-          `;
-      } else {
-          // Updated explanation for Monte Carlo method in Bayesian context
-          monteCarloControl.style.display = 'block';
-          mcSamplesLegend.style.display = 'inline-flex';
-          jacobianEquation.style.display = 'none';
-          binCountControl.style.display = 'block';
-          explanationTitle.textContent = 'Bayesian Monte Carlo Approximation';
-          explanationContent.innerHTML = `
-              <p>In Bayesian statistics, we use Monte Carlo methods to approximate posterior distributions:</p>
-              <ol>
-                  <li>Generate samples from the prior distribution (input)</li>
-                  <li>Apply Metropolis-Hastings algorithm to sample from the posterior</li>
-                  <li>Transform these posterior samples using y = f(x)</li>
-                  <li>Compute the 95% credible interval from these samples</li>
-              </ol>
-              <p>The shaded region shows the 95% credible interval, representing our uncertainty about the parameter.</p>
-          `;
-      }
-      
-      // Update the transformation function options based on invertibility
-      updateTransformationFunctionOptions();
+  // Update transformation type UI
+  function updateTransformationType() {
+    if (params.transformationType === 'invertible') {
+      // Existing code for invertible transformations
+      monteCarloControl.style.display = 'none';
+      mcSamplesLegend.style.display = 'none';
+      jacobianEquation.style.display = 'block';
+      binCountControl.style.display = 'none';
+      explanationTitle.textContent = 'Invertible Transformation (Jacobian Method)';
+      explanationContent.innerHTML = `
+        <p>When Y = f(X) is invertible, we can compute p<sub>Y</sub>(y) using the change of variable formula:</p>
+        <p>p<sub>Y</sub>(y) = p<sub>X</sub>(f<sup>-1</sup>(y)) · |dx/dy|</p>
+        <p>Where |dx/dy| is the absolute value of the Jacobian determinant. For a 1D transformation, this is just |1/f'(x)|.</p>
+        <p>This method is exact but requires that the transformation function is invertible.</p>
+      `;
+    } else {
+      // Enhanced explanation for Monte Carlo method in Bayesian context
+      monteCarloControl.style.display = 'block';
+      mcSamplesLegend.style.display = 'inline-flex';
+      jacobianEquation.style.display = 'none';
+      binCountControl.style.display = 'block';
+      explanationTitle.textContent = 'Bayesian Monte Carlo Approximation';
+      explanationContent.innerHTML = `
+        <p>In Bayesian statistics, we use Monte Carlo methods to approximate posterior distributions:</p>
+        <ol>
+          <li>Generate samples from the prior distribution p(θ)</li>
+          <li>Apply the Metropolis-Hastings algorithm to sample from the posterior p(θ|data)</li>
+          <li>Transform these posterior samples using g(θ) to get the distribution of a derived quantity</li>
+          <li>The 95% credible interval represents our uncertainty about the parameter</li>
+        </ol>
+        <p>The shaded region shows the 95% credible interval, representing our uncertainty.</p>
+      `;
+    }
+    
+    // Update the transformation function options based on invertibility
+    updateTransformationFunctionOptions();
   }
 
   // Update input distribution UI
@@ -921,9 +926,12 @@ function initialize() {
       }
 
       // Update the input credible interval display
+      // Draw the credible interval as a shaded region
       if (lowerBound !== null && upperBound !== null) {
-          inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
-          console.log(`Input ${95}% credible interval: [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
+        drawCredibleInterval(pdf, lowerBound, upperBound, '#3498db');
+        
+        // Update the input credible interval display
+        inputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
       } else {
           inputCredibleInterval.textContent = "Could not calculate interval";
       }
@@ -1035,13 +1043,18 @@ function initialize() {
   }
   
   // Transform distribution using Monte Carlo method (for non-invertible transformations)
-  // Modify transformDistributionMonteCarlo to correctly draw the credible interval
   function transformDistributionMonteCarlo() {
-    // Generate samples from the input distribution
-    const samples = generateSamples(params.numSamples);
+    // Generate samples from the input distribution (prior)
+    const priorSamples = generateSamples(params.numSamples);
     
-    // Transform samples
-    const transformedSamples = samples.map(x => transformSample(x));
+    // Generate posterior samples using Metropolis-Hastings algorithm
+    // Using reasonable default values for the likelihood model
+    const likelihoodMean = 0.5;
+    const likelihoodVar = 0.1;
+    const posteriorSamples = generatePosteriorSamples(priorSamples, likelihoodMean, likelihoodVar);
+    
+    // Transform posterior samples
+    const transformedSamples = posteriorSamples.map(x => transformSample(x));
 
     // Sort samples for credible interval calculation
     const sortedSamples = transformedSamples.slice().sort((a, b) => a - b);
@@ -1060,19 +1073,16 @@ function initialize() {
     // Update the output credible interval display
     outputCredibleInterval.textContent = `[${lowerBound.toFixed(2)}, ${upperBound.toFixed(2)}]`;
 
-    // Report the credible interval
-    console.log(`Output ${(1-alpha)*100}% credible interval (Monte Carlo): [${lowerBound.toFixed(4)}, ${upperBound.toFixed(4)}]`);
-
     // Compute histogram of transformed samples
     const histogram = computeHistogram(transformedSamples, params.binCount);
     
     // Convert histogram to PDF
     const transformedPDF = histogramToPDF(histogram);
     
-    // Draw the Monte Carlo samples
-    drawScatterplot(samples, transformedSamples);
+    // Draw both the prior samples and transformed samples
+    drawScatterplot(priorSamples, transformedSamples);
     
-    // Also draw the credible interval on the plot
+    // Draw the credible interval on the plot
     drawCredibleInterval(transformedPDF, lowerBound, upperBound, '#e74c3c');
     
     return transformedPDF;
@@ -1372,8 +1382,8 @@ function initialize() {
   function drawDistribution(pdf, color) {
     // Check if pdf is defined and has data
     if (!pdf || !Array.isArray(pdf) || pdf.length === 0) {
-        console.error('Invalid or empty PDF data');
-        return;
+      console.error('Invalid or empty PDF data');
+      return;
     }
     
     ctx.strokeStyle = color;
@@ -1384,31 +1394,24 @@ function initialize() {
     const maxYScale = 5;
     const scaleFactor = plotHeight / maxYScale;
     
-    // Find the actual data range
-    let minX = Math.min(...pdf.map(point => point.x));
-    let maxX = Math.max(...pdf.map(point => point.x));
+    // Scale the x values to fit the [0,1] range of the canvas
+    // This ensures proper visualization regardless of the actual range of the data
     
-    // Ensure the range is valid
-    if (minX === maxX) {
-        minX = minX - 0.5;
-        maxX = maxX + 0.5;
-    }
-
     // Draw the PDF curve
     for (let i = 0; i < pdf.length; i++) {
-        const { x, p } = pdf[i];
-        
-        // Map x to canvas coordinates using the actual data range
-        const canvasX = padding + ((x - minX) / (maxX - minX)) * plotWidth;
-    
-        // Map p to canvas coordinates with fixed scaling
-        const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
-        
-        if (i === 0) {
-            ctx.moveTo(canvasX, canvasY);
-        } else {
-            ctx.lineTo(canvasX, canvasY);
-        }
+      const { x, p } = pdf[i];
+      
+      // Map x to canvas coordinates using [0,1] range
+      const canvasX = padding + x * plotWidth;
+
+      // Map p to canvas coordinates with fixed scaling
+      const canvasY = canvasHeight - padding - Math.min(p, maxYScale) * scaleFactor;
+      
+      if (i === 0) {
+        ctx.moveTo(canvasX, canvasY);
+      } else {
+        ctx.lineTo(canvasX, canvasY);
+      }
     }
 
     ctx.stroke();
