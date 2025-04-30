@@ -424,42 +424,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function gammaPDF(x, shape, rate) {
-    if (x <= 0) return 0;
-    const scale = 1 / rate;
-    
-    // Simple implementation for visualization
-    // Note: A full implementation would use the gamma function
-    return Math.pow(x, shape - 1) * 
-           Math.exp(-x / scale) / 
-           (Math.pow(scale, shape) * approximateGamma(shape));
+    return jStat.gamma.pdf(x * rate, shape) * rate;
   }
   
-  function approximateGamma(z) {
-    // Simple Lanczos approximation for demo purposes
-    if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * approximateGamma(1 - z));
-    
-    z -= 1;
-    const p = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
-               771.32342877765313, -176.61502916214059, 12.507343278686905,
-               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
-    
-    let x = p[0];
-    for (let i = 1; i < 9; i++) {
-      x += p[i] / (z + i);
-    }
-    
-    const t = z + 7.5;
-    return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
-  }
   
   function betaPDF(x, alpha, beta) {
-    if (x <= 0 || x >= 1) return 0;
-    
-    // Simple implementation for visualization
-    // Note: A full implementation would use the beta function
-    const normalizingConstant = 1 / betaFunction(alpha, beta);
-    return normalizingConstant * Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1);
+    return jStat.beta.pdf(x, alpha, beta);
   }
+  
   
   function bimodalPDF(x, mean1, mean2, std, weight) {
     const pdf1 = normalPDF(x, mean1, std);
@@ -730,76 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return jStat.beta.inv(p, alpha, beta);
   }
   
-  // Beta function implementation
-  function betaFunction(a, b) {
-    // Use Stirling's approximation for larger values
-    if (a > 10 && b > 10) {
-      // Stirling's approximation: Γ(z) ≈ sqrt(2π/z) * (z/e)^z
-      function stirlingApprox(z) {
-        return Math.sqrt(2 * Math.PI / z) * Math.pow(z / Math.E, z);
-      }
-      
-      // B(a,b) = Γ(a)Γ(b)/Γ(a+b)
-      return stirlingApprox(a) * stirlingApprox(b) / stirlingApprox(a + b);
-    }
-    
-    // For moderate values, use logarithms to avoid overflow
-    if (a > 1 && b > 1) {
-      const lnGammaA = lnGamma(a);
-      const lnGammaB = lnGamma(b);
-      const lnGammaSum = lnGamma(a + b);
-      return Math.exp(lnGammaA + lnGammaB - lnGammaSum);
-    }
-    
-    // For small values, use a direct approximation
-    // This is a simplified implementation for visualization purposes
-    function gamma(z) {
-      if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
-      
-      // Lanczos approximation coefficients
-      const p = [
-        676.5203681218851, -1259.1392167224028, 771.32342877765313,
-        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
-        9.9843695780195716e-6, 1.5056327351493116e-7
-      ];
-      
-      z -= 1;
-      let x = 0.99999999999980993;
-      for (let i = 0; i < p.length; i++) {
-        x += p[i] / (z + i + 1);
-      }
-      
-      const t = z + p.length - 0.5;
-      return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
-    }
-    
-    return (gamma(a) * gamma(b)) / gamma(a + b);
-  }
-  
-  // Log-gamma function for numerical stability
-  function lnGamma(z) {
-    // Lanczos approximation coefficients
-    const p = [
-      676.5203681218851, -1259.1392167224028, 771.32342877765313,
-      -176.61502916214059, 12.507343278686905, -0.13857109526572012,
-      9.9843695780195716e-6, 1.5056327351493116e-7
-    ];
-    
-    if (z < 0.5) {
-      return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - lnGamma(1 - z);
-    }
-    
-    z -= 1;
-    let x = 0.99999999999980993;
-    for (let i = 0; i < p.length; i++) {
-      x += p[i] / (z + i + 1);
-    }
-    
-    const t = z + p.length - 0.5;
-    return Math.log(Math.sqrt(2 * Math.PI)) + 
-           (z + 0.5) * Math.log(t) - t + 
-           Math.log(x);
-  }
   
   // Function to draw the canvas
   function drawCanvas() {
