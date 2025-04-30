@@ -585,18 +585,25 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           break;
           
-        case 'bimodal':
-          // For bimodal, there's no simple analytical solution
-          theoreticalLower = "Not available";
-          theoreticalUpper = "Not available";
-          error = "N/A";
-          
-          // Add special message in the results
-          resultTheoretical.innerHTML = 
-            "<span style='font-size: 0.9em;'>No analytical solution for bimodal</span>";
-          resultError.innerHTML = 
-            "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
-          return; // Exit early with custom message
+          case 'bimodal':
+            // For bimodal, there's no simple analytical solution
+            theoreticalLower = "Not available";
+            theoreticalUpper = "Not available";
+            error = "N/A";
+            
+            // Add special message in the results
+            resultTheoretical.innerHTML = 
+              "<span style='font-size: 0.9em;'>No analytical solution for bimodal</span>";
+            resultError.innerHTML = 
+              "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
+            
+            // Update the result display
+            resultCI.textContent = `[${lower.toFixed(3)}, ${upper.toFixed(3)}]`;
+            
+            // Draw the canvas with updated credible interval
+            drawCanvas();
+            
+            return; 
       }
     } catch (e) {
       // Handle any errors in the calculations
