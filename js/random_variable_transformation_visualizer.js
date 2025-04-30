@@ -587,17 +587,9 @@ document.addEventListener('DOMContentLoaded', function() {
           
           case 'bimodal':
             // Use the empirical values from Monte Carlo sampling
-            // Don't set theoretical values to strings
             theoreticalLower = lower;
             theoreticalUpper = upper;
-            error = 0;
-            
-            // Update all required display elements
-            resultCI.textContent = `[${lower.toFixed(3)}, ${upper.toFixed(3)}]`;
-            resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
-            resultError.textContent = "Monte Carlo estimate";
-            
-            // Important: do NOT return here - let the function continue
+            error = "Monte Carlo estimate"; 
           break;
           
       }
