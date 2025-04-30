@@ -461,10 +461,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return normalizingConstant * Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1);
   }
   
-  function betaFunction(a, b) {
-    return (approximateGamma(a) * approximateGamma(b)) / approximateGamma(a + b);
-  }
-  
   function bimodalPDF(x, mean1, mean2, std, weight) {
     const pdf1 = normalPDF(x, mean1, std);
     const pdf2 = normalPDF(x, mean2, std);
@@ -589,99 +585,96 @@ document.addEventListener('DOMContentLoaded', function() {
     let theoreticalLower, theoreticalUpper;
     let error = 0;
     
-    switch (distType) {
-      case 'normal':
-        const mean = parseFloat(normalMean.value);
-        const std = parseFloat(normalStd.value);
-        const zScore = getZScore(credibleInterval);
-        
-        theoreticalLower = mean - zScore * std;
-        theoreticalUpper = mean + zScore * std;
-        
-        // Calculate error as average percentage difference
-        const lowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
-        const upperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
-        error = ((lowerError + upperError) / 2) * 100;
-        break;
-        
-      case 'gamma':
-        const shape = parseFloat(gammaShape.value);
-        const rate = parseFloat(gammaRate.value);
-        
-        // For gamma distribution, use chi-square approximation for large shape
-        // For smaller shape, this is an approximation
-        const alphaHalf = alpha / 2;
-        const oneMinusAlphaHalf = 1 - alpha / 2;
-        
-        // Approximate gamma quantiles using Wilson-Hilferty transformation
-        theoreticalLower = gammaQuantile(alphaHalf, shape, rate);
-        theoreticalUpper = gammaQuantile(oneMinusAlphaHalf, shape, rate);
-        
-        // Calculate error - Handle potential division by zero or negative values
-        let gammaLowerError = 0, gammaUpperError = 0;
-        
-        if (theoreticalLower !== 0 && !isNaN(theoreticalLower)) {
-          gammaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
-        }
-        
-        if (theoreticalUpper !== 0 && !isNaN(theoreticalUpper)) {
-          gammaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
-        }
-        
-        error = ((gammaLowerError + gammaUpperError) / 2) * 100;
-        
-        // Check for NaN or infinity in error calculation
-        if (isNaN(error) || !isFinite(error)) {
-          error = "Calculation error";
-        }
-        break;
-        
-      case 'beta':
-        const betaA = parseFloat(betaAlpha.value);
-        const betaB = parseFloat(betaBeta.value);
-        
-        // Approximate beta quantiles
-        theoreticalLower = betaQuantile(alpha / 2, betaA, betaB);
-        theoreticalUpper = betaQuantile(1 - alpha / 2, betaA, betaB);
-        
-        // Calculate error - Handle potential division by zero or negative values
-        let betaLowerError = 0, betaUpperError = 0;
-        
-        if (theoreticalLower !== 0 && !isNaN(theoreticalLower)) {
-          betaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
-        }
-        
-        if (theoreticalUpper !== 0 && !isNaN(theoreticalUpper)) {
-          betaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
-        }
-        
-        error = ((betaLowerError + betaUpperError) / 2) * 100;
-        
-        // Check for NaN or infinity in error calculation
-        if (isNaN(error) || !isFinite(error)) {
-          error = "Calculation error";
-        }
-        break;
-        
-      case 'bimodal':
-        // For bimodal, there's no simple analytical solution
-        theoreticalLower = "Not available";
-        theoreticalUpper = "Not available";
-        error = "N/A";
-        
-        // Add special message in the results
-        resultTheoretical.innerHTML = 
-          "<span style='font-size: 0.9em;'>No analytical solution for bimodal</span>";
-        resultError.innerHTML = 
-          "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
-        return; // Exit early with custom message
+    try {
+      switch (distType) {
+        case 'normal':
+          const mean = parseFloat(normalMean.value);
+          const std = parseFloat(normalStd.value);
+          
+          // Use direct quantile function instead of z-score
+          theoreticalLower = normalQuantile(alpha / 2, mean, std);
+          theoreticalUpper = normalQuantile(1 - alpha / 2, mean, std);
+          
+          // Calculate error as average percentage difference
+          const lowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+          const upperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+          error = ((lowerError + upperError) / 2) * 100;
+          break;
+          
+        case 'gamma':
+          const shape = parseFloat(gammaShape.value);
+          const rate = parseFloat(gammaRate.value);
+          
+          // Use improved gamma quantile function
+          theoreticalLower = gammaQuantile(alpha / 2, shape, rate);
+          theoreticalUpper = gammaQuantile(1 - alpha / 2, shape, rate);
+          
+          // Calculate error with proper error checking
+          if (theoreticalLower !== 0 && !isNaN(theoreticalLower) && isFinite(theoreticalLower) &&
+              theoreticalUpper !== 0 && !isNaN(theoreticalUpper) && isFinite(theoreticalUpper)) {
+              
+            const gammaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+            const gammaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+            error = ((gammaLowerError + gammaUpperError) / 2) * 100;
+            
+            // Clip very large errors to 100% for display
+            if (error > 100) error = 100;
+          } else {
+            error = "Calculation issue";
+          }
+          break;
+          
+        case 'beta':
+          const betaA = parseFloat(betaAlpha.value);
+          const betaB = parseFloat(betaBeta.value);
+          
+          // Use improved beta quantile function
+          theoreticalLower = betaQuantile(alpha / 2, betaA, betaB);
+          theoreticalUpper = betaQuantile(1 - alpha / 2, betaA, betaB);
+          
+          // Calculate error with proper error checking
+          if (theoreticalLower !== 0 && !isNaN(theoreticalLower) && isFinite(theoreticalLower) &&
+              theoreticalUpper !== 0 && !isNaN(theoreticalUpper) && isFinite(theoreticalUpper)) {
+              
+            const betaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+            const betaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+            error = ((betaLowerError + betaUpperError) / 2) * 100;
+            
+            // Clip very large errors to 100% for display
+            if (error > 100) error = 100;
+          } else {
+            error = "Calculation issue";
+          }
+          break;
+          
+        case 'bimodal':
+          // For bimodal, there's no simple analytical solution
+          theoreticalLower = "Not available";
+          theoreticalUpper = "Not available";
+          error = "N/A";
+          
+          // Add special message in the results
+          resultTheoretical.innerHTML = 
+            "<span style='font-size: 0.9em;'>No analytical solution for bimodal</span>";
+          resultError.innerHTML = 
+            "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
+          return; // Exit early with custom message
+      }
+    } catch (e) {
+      // Handle any errors in the calculations
+      console.error("Error calculating theoretical CI:", e);
+      theoreticalLower = "Error";
+      theoreticalUpper = "Error";
+      error = "Calculation error";
     }
     
     // Update the result display
     resultCI.textContent = `[${lower.toFixed(3)}, ${upper.toFixed(3)}]`;
     
-    if (typeof theoreticalLower === 'number') {
+    if (typeof theoreticalLower === 'number' && !isNaN(theoreticalLower) && isFinite(theoreticalLower) &&
+        typeof theoreticalUpper === 'number' && !isNaN(theoreticalUpper) && isFinite(theoreticalUpper)) {
       resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
+      
       if (typeof error === 'number') {
         resultError.textContent = `${error.toFixed(2)}%`;
       } else {
@@ -691,275 +684,294 @@ document.addEventListener('DOMContentLoaded', function() {
       resultTheoretical.textContent = `[${theoreticalLower}, ${theoreticalUpper}]`;
       resultError.textContent = error;
     }
-  
     
     // Draw the canvas with updated credible interval
     drawCanvas();
   }
   
-  // Helper function to get Z-score for normal distribution based on credible interval
-  function getZScore(interval) {
-    // Simple approximation
-    if (interval >= 0.99) return 2.576;
-    if (interval >= 0.98) return 2.326;
-    if (interval >= 0.95) return 1.96;
-    if (interval >= 0.90) return 1.645;
-    if (interval >= 0.80) return 1.282;
-    if (interval >= 0.70) return 1.036;
-    if (interval >= 0.60) return 0.842;
-    if (interval >= 0.50) return 0.674;
-    return 0.5;
-  }
-  
-  // Improved approximation for gamma distribution quantiles
-function gammaQuantile(p, shape, rate) {
-  // Special case for p = 0.5 (median)
-  if (p === 0.5) {
-    // Wilson-Hilferty approximation for median
-    const scale = 1 / rate;
-    return shape * scale * Math.pow(1 - 1/(9*shape), 3);
-  }
-  
-  // Use different approximation methods based on shape parameter
-  if (shape >= 1) {
-    // For larger shape parameters, use a modified Wilson-Hilferty approximation
-    const z = normalQuantile(p, 0, 1);
-    const scale = 1 / rate;
+  // Improved helper function for normal quantile (inverse CDF)
+  function normalQuantile(p, mean, std) {
+    // Calculation based on the rational approximation of the normal CDF inverse
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
     
-    // Improved Wilson-Hilferty transformation with correction term
-    const term1 = 1 - (2/(9*shape)) + (z * Math.sqrt(2/(9*shape)));
-    const term2 = 1 + (z*z - 1)/(18*shape); // Second-order correction
+    // Standardize to N(0,1)
+    if (p === 0.5) return mean;
     
-    return shape * scale * Math.pow(term1, 3) * term2;
-  } 
-  // For small shape parameters, use a different approach
-  else {
-    // For small shape, the distribution is highly skewed
-    // Use an approximation based on chi-square distribution with adjustment
-    const scale = 1 / rate;
+    let q = p < 0.5 ? p : 1 - p;
+    let t = Math.sqrt(-2 * Math.log(q));
     
-    // For very small p values, prevent extreme results
-    if (p < 0.01) {
-      return 0.001 * scale * shape;
+    // Coefficients for rational approximation
+    const c0 = 2.515517;
+    const c1 = 0.802853;
+    const c2 = 0.010328;
+    const d1 = 1.432788;
+    const d2 = 0.189269;
+    const d3 = 0.001308;
+    
+    // Formula implementation
+    let x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
+    
+    if (p < 0.5) {
+      x = -x;
     }
     
-    // For very high p values with small shape, use approximation
+    // Scale and shift to specified mean and std
+    return mean + std * x;
+  }
+  
+  // Improved gamma quantile function based on Wilson-Hilferty transformation
+  function gammaQuantile(p, shape, rate) {
+    if (p <= 0) return 0;
+    if (p >= 1) return Infinity;
+    
+    const scale = 1 / rate;
+    
+    // For shape >= 1, use Wilson-Hilferty transformation
+    if (shape >= 1) {
+      const z = normalQuantile(p, 0, 1);
+      const w = 1 - (2 / (9 * shape)) + (z * Math.sqrt(2 / (9 * shape)));
+      return shape * scale * Math.pow(Math.max(0, w), 3);
+    }
+    
+    // For shape < 1, use approximation based on chi-square
+    // This is less accurate but reasonable for visualization
+    if (shape < 0.1) shape = 0.1; // Prevent extreme values
+    
+    // For very small p, prevent numerical issues
+    if (p < 0.01) return 0.01 * scale * shape;
+    
+    // For very large p with small shape
     if (p > 0.99 && shape < 0.3) {
       const mean = shape * scale;
       const variance = shape * scale * scale;
       return mean + 4 * Math.sqrt(variance);
     }
     
-    // Use a relationship with chi-square distribution
-    const chi2p = chiSquareQuantile(p, 2 * shape);
-    return (chi2p / 2) * scale;
-  }
-}
-
-// Chi-square quantile approximation (for gamma quantile calculation)
-function chiSquareQuantile(p, df) {
-  // Wilson-Hilferty transformation for chi-square
-  const z = normalQuantile(p, 0, 1);
-  
-  // Approximation is more accurate for larger degrees of freedom
-  if (df >= 2) {
-    const h = 2/(9*df);
-    return df * Math.pow(1 - h + z * Math.sqrt(h), 3);
-  } else {
-    // For small df, use a different approximation
-    // This is less accurate but better than the alternative
-    return Math.max(0.001, df * Math.pow(normalQuantile(p, 1, 1/Math.sqrt(df)), 2));
-  }
-}
-
-// Improved approximation for beta distribution quantiles
-function betaQuantile(p, alpha, beta) {
-  // Handle boundary cases
-  if (p <= 0) return 0;
-  if (p >= 1) return 1;
-  
-  // Special cases for specific parameter values
-  if (alpha === 1 && beta === 1) {
-    // This is a uniform distribution
-    return p;
-  } else if (alpha === 1) {
-    // Simplifies to a power function
-    return 1 - Math.pow(1 - p, 1/beta);
-  } else if (beta === 1) {
-    // Simplifies to a power function
-    return Math.pow(p, 1/alpha);
-  }
-  
-  // For moderate to large values of alpha and beta, use normal approximation
-  if (alpha > 5 && beta > 5) {
-    const mean = alpha / (alpha + beta);
-    const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
-    const stdDev = Math.sqrt(variance);
+    // Use relationship with normal distribution for middle range
+    const mean = shape * scale;
+    const variance = shape * scale * scale;
+    const skewness = 2 / Math.sqrt(shape);
     
+    // Cornish-Fisher expansion for skewed distributions
     const z = normalQuantile(p, 0, 1);
-    const approx = mean + z * stdDev;
+    const hp = z + (skewness * (z*z - 1)) / 6;
     
-    // Apply a correction for skewness
-    const skewness = (2 * (beta - alpha) * Math.sqrt(alpha + beta + 1)) / 
-                     ((alpha + beta + 2) * Math.sqrt(alpha * beta));
-    const correction = (skewness * (z*z - 1)) / 6;
-    
-    // Clamp to [0,1] since beta is bounded
-    return Math.max(0, Math.min(1, approx + correction));
-  } 
-  
-  // For other parameter values, use simplified numerical inversion
-  // Using inverse incomplete beta function approximation
-  return betaSearchQuantile(p, alpha, beta);
-}
-
-// Improved beta search quantile
-function betaSearchQuantile(p, alpha, beta) {
-  // Initial guess based on mean or transformed normal approximation
-  let x;
-  
-  // Use mean as starting point for moderate parameter values
-  if (alpha > 1 && beta > 1) {
-    x = alpha / (alpha + beta);
-  } 
-  // For small alpha, start near 0
-  else if (alpha < 1 && beta >= 1) {
-    x = 0.1;
-  } 
-  // For small beta, start near 1
-  else if (beta < 1 && alpha >= 1) {
-    x = 0.9;
-  }
-  // For small alpha and beta, use transformed normal approx
-  else {
-    const mean = alpha / (alpha + beta);
-    x = mean;
+    return Math.max(0, mean + Math.sqrt(variance) * hp);
   }
   
-  // Refined search with more iterations for accuracy
-  let lower = 0;
-  let upper = 1;
-  let current_p = betaCDF(x, alpha, beta);
-  
-  // More iterations for better accuracy
-  const maxIterations = 30;
-  const tolerance = 0.00001;
-  
-  for (let i = 0; i < maxIterations; i++) {
-    if (Math.abs(current_p - p) < tolerance) break;
+  // Improved beta quantile function
+  function betaQuantile(p, alpha, beta) {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
     
-    if (current_p < p) {
-      lower = x;
-    } else {
-      upper = x;
+    // Handle special cases
+    if (alpha === 1 && beta === 1) return p;  // Uniform distribution
+    if (alpha === 1) return 1 - Math.pow(1 - p, 1/beta);  // Power function
+    if (beta === 1) return Math.pow(p, 1/alpha);  // Power function
+    
+    // For larger values of alpha and beta, use normal approximation with skewness correction
+    if (alpha > 1 && beta > 1) {
+      const mean = alpha / (alpha + beta);
+      const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+      const stdDev = Math.sqrt(variance);
+      
+      // Add skewness correction
+      const skewness = (2 * (beta - alpha) * Math.sqrt(alpha + beta + 1)) / 
+                      ((alpha + beta + 2) * Math.sqrt(alpha * beta));
+      
+      const z = normalQuantile(p, 0, 1);
+      const correction = (skewness * (z*z - 1)) / 6;
+      
+      let approx = mean + z * stdDev + correction;
+      
+      // Ensure result is in [0,1]
+      return Math.max(0, Math.min(1, approx));
     }
     
-    // Midpoint method with squeeze in later iterations
-    if (i < 10) {
-      x = (lower + upper) / 2; // Simple bisection
+    // For small alpha, beta use Newton-Raphson method with good initial guess
+    return betaNewtonRaphson(p, alpha, beta);
+  }
+  
+  // Newton-Raphson method for beta quantile
+  function betaNewtonRaphson(p, alpha, beta) {
+    // Initial guess based on basic properties
+    let x;
+    
+    if (alpha > 1 && beta > 1) {
+      // Mode for alpha,beta > 1
+      x = (alpha - 1) / (alpha + beta - 2);
+    } else if (alpha <= 1 && beta > 1) {
+      // Mode at 0 for alpha <= 1, beta > 1
+      x = 0.1;
+    } else if (alpha > 1 && beta <= 1) {
+      // Mode at 1 for alpha > 1, beta <= 1
+      x = 0.9;
     } else {
-      // Newton-like step for faster convergence
-      const pdf = betaPDF(x, alpha, beta);
-      if (pdf > tolerance) { // Avoid division by zero
-        const step = (p - current_p) / pdf;
-        const next = x + step;
-        
-        // Keep within bounds and prevent overshoot
-        if (next > lower && next < upper) {
-          x = next;
-        } else {
-          x = (lower + upper) / 2;
-        }
-      } else {
-        x = (lower + upper) / 2;
+      // alpha <= 1, beta <= 1, bimodal at 0 and 1
+      x = 0.5;
+    }
+    
+    // Run Newton-Raphson
+    const maxIterations = 30;
+    const tolerance = 1e-6;
+    
+    for (let i = 0; i < maxIterations; i++) {
+      // Calculate F(x) - p
+      const currentP = betaCDF(x, alpha, beta);
+      const error = currentP - p;
+      
+      if (Math.abs(error) < tolerance) {
+        break;
       }
+      
+      // Calculate f(x)
+      const pdf = Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1) / betaFunction(alpha, beta);
+      
+      // Newton step
+      const newX = x - error / (pdf || 0.0001); // Avoid division by zero
+      
+      // Make sure we stay in (0, 1)
+      x = Math.max(0.00001, Math.min(0.99999, newX));
     }
     
-    current_p = betaCDF(x, alpha, beta);
+    return x;
   }
   
-  return x;
-}
-
-// Improved beta CDF approximation
-function betaCDF(x, alpha, beta) {
-  // Handle boundary cases
-  if (x <= 0) return 0;
-  if (x >= 1) return 1;
+  // Improved beta CDF calculation
+  function betaCDF(x, alpha, beta) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    
+    // For integer parameters, use direct formula when possible
+    if (alpha === 1) return 1 - Math.pow(1 - x, beta);
+    if (beta === 1) return Math.pow(x, alpha);
+    
+    // For small alpha or beta, these methods might not be accurate
+    // For visualization purposes, we'll use the normal approximation when alpha, beta > 2
+    if (alpha > 2 && beta > 2) {
+      const mean = alpha / (alpha + beta);
+      const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+      const stdDev = Math.sqrt(variance);
+      
+      // Calculate z-score with continuity correction
+      const z = (x - mean) / stdDev;
+      
+      // Apply skewness correction
+      const skewness = (2 * (beta - alpha) * Math.sqrt(alpha + beta + 1)) / 
+                      ((alpha + beta + 2) * Math.sqrt(alpha * beta));
+      
+      // Approximation using skewness-corrected z
+      const correctedZ = z - (skewness * (z*z - 1)) / 6;
+      
+      // Use normal CDF approx
+      return normalCDF(correctedZ, 0, 1);
+    }
+    
+    // For other cases, use a simple numerical integration
+    // This is not as accurate as a proper implementation but works for visualization
+    return betaRegularizedIncomplete(x, alpha, beta);
+  }
   
-  // For integer and half-integer parameters, use specialized code
-  if (Math.floor(alpha) === alpha && Math.floor(beta) === beta) {
-    // For integer parameters, use direct formula based on binomial expansion
+  // Normal CDF approximation
+  function normalCDF(x, mean, std) {
+    // Standard normal CDF approximation
+    const z = (x - mean) / std;
+    
+    // Abramowitz & Stegun approximation
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989423 * Math.exp(-z * z / 2);
+    const prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    
+    return z > 0 ? 1 - prob : prob;
+  }
+  
+  // Regularized incomplete beta function (simplified for visualization)
+  function betaRegularizedIncomplete(x, alpha, beta) {
+    // Very simplified numerical integration
+    // For visualization purposes only
+    const steps = 50;
+    const dx = x / steps;
     let sum = 0;
-    for (let i = 0; i <= alpha - 1; i++) {
-      // Compute binomial coefficient (beta+i-1) choose (i)
-      let binomCoeff = 1;
-      for (let j = 0; j < i; j++) {
-        binomCoeff *= (beta + j) / (j + 1);
+    
+    for (let i = 0; i < steps; i++) {
+      const t = i * dx + dx / 2;
+      sum += dx * Math.pow(t, alpha - 1) * Math.pow(1 - t, beta - 1);
+    }
+    
+    return sum / betaFunction(alpha, beta);
+  }
+  
+  // Beta function implementation
+  function betaFunction(a, b) {
+    // Use Stirling's approximation for larger values
+    if (a > 10 && b > 10) {
+      // Stirling's approximation: Γ(z) ≈ sqrt(2π/z) * (z/e)^z
+      function stirlingApprox(z) {
+        return Math.sqrt(2 * Math.PI / z) * Math.pow(z / Math.E, z);
       }
-      sum += binomCoeff * Math.pow(1 - x, beta + i) * Math.pow(x, alpha - i) / (beta + i);
+      
+      // B(a,b) = Γ(a)Γ(b)/Γ(a+b)
+      return stirlingApprox(a) * stirlingApprox(b) / stirlingApprox(a + b);
     }
-    return 1 - sum;
+    
+    // For moderate values, use logarithms to avoid overflow
+    if (a > 1 && b > 1) {
+      const lnGammaA = lnGamma(a);
+      const lnGammaB = lnGamma(b);
+      const lnGammaSum = lnGamma(a + b);
+      return Math.exp(lnGammaA + lnGammaB - lnGammaSum);
+    }
+    
+    // For small values, use a direct approximation
+    // This is a simplified implementation for visualization purposes
+    function gamma(z) {
+      if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+      
+      // Lanczos approximation coefficients
+      const p = [
+        676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+        9.9843695780195716e-6, 1.5056327351493116e-7
+      ];
+      
+      z -= 1;
+      let x = 0.99999999999980993;
+      for (let i = 0; i < p.length; i++) {
+        x += p[i] / (z + i + 1);
+      }
+      
+      const t = z + p.length - 0.5;
+      return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+    }
+    
+    return (gamma(a) * gamma(b)) / gamma(a + b);
   }
   
-  // For other cases, use series expansion approximation
-  const maxTerms = 200;
-  let sum = 0;
-  let term = Math.pow(x, alpha) * Math.pow(1 - x, beta) / alpha / betaFunction(alpha, beta);
-  
-  sum += term;
-  
-  for (let i = 1; i < maxTerms; i++) {
-    const oldTerm = term;
-    term *= (alpha + i - 1) * x / i / (alpha + beta + i - 1);
-    sum += term;
+  // Log-gamma function for numerical stability
+  function lnGamma(z) {
+    // Lanczos approximation coefficients
+    const p = [
+      676.5203681218851, -1259.1392167224028, 771.32342877765313,
+      -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+      9.9843695780195716e-6, 1.5056327351493116e-7
+    ];
     
-    // Check for convergence
-    if (Math.abs(term) < 0.000001 * sum || term === oldTerm) break;
+    if (z < 0.5) {
+      return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - lnGamma(1 - z);
+    }
+    
+    z -= 1;
+    let x = 0.99999999999980993;
+    for (let i = 0; i < p.length; i++) {
+      x += p[i] / (z + i + 1);
+    }
+    
+    const t = z + p.length - 0.5;
+    return Math.log(Math.sqrt(2 * Math.PI)) + 
+           (z + 0.5) * Math.log(t) - t + 
+           Math.log(x);
   }
-  
-  return sum;
-}
-
-  // Helper function for normal quantile (inverse CDF)
-  function normalQuantile(p, mean, std) {
-    // Approximation of the inverse standard normal CDF
-    // Accurate to about 6 decimal places
-    let q, r;
-    
-    if (p < 0 || p > 1) {
-      return NaN;
-    } else if (p === 0) {
-      return -Infinity;
-    } else if (p === 1) {
-      return Infinity;
-    } else if (p === 0.5) {
-      return mean;
-    }
-    
-    // Handle p < 0.5 by symmetry
-    if (p < 0.5) {
-      return mean - std * normalQuantile(1 - p, 0, 1);
-    }
-    
-    // For p > 0.5
-    q = -Math.log(2 * (1 - p));
-    
-    if (q < 5) { // For typical values
-      r = ((((0.000124818987 * q - 0.001075204047) * q + 0.005198775019) * q - 0.019198292004) * q + 0.059054035642) * q - 0.151968751364;
-      r = (r * q + 0.319152932694) * q - 0.5319230073;
-      r = (r * q + 0.797884560593) * q - 0.939639838525;
-      r = (r * q + 0.5) * q + 1.570796288;
-    } else { // For extreme values
-      r = ((((7.7454501427e-4 * q + 0.0227238449) * q + 0.24178072649) * q + 1.27045825647) * q + 3.64784832476) * q + 5.7694972214;
-      r = ((((2.01033439929e-7 * r - 2.71155556e-5) * r + 0.0012426609) * r - 0.026532189) * r + 0.2706291272) * r - 0.5772156501;
-    }
-    
-    // Convert to requested mean and standard deviation
-    return mean + std * r;
-  }
-
- 
   
   // Function to draw the canvas
   function drawCanvas() {
@@ -996,7 +1008,7 @@ function betaCDF(x, alpha, beta) {
     switch (distType) {
       case 'normal':
         const mean = parseFloat(normalMean.value);
-        std = parseFloat(normalStd.value);
+        const std = parseFloat(normalStd.value);
         min = mean - 4 * std;
         max = mean + 4 * std;
         break;
