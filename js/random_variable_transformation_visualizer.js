@@ -431,9 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   
   function bimodalPDF(x, mean1, mean2, std, weight) {
-    const pdf1 = normalPDF(x, mean1, std);
-    const pdf2 = normalPDF(x, mean2, std);
-    return weight * pdf1 + (1 - weight) * pdf2;
+    return weight * normalPDF(x, mean1, std) + (1 - weight) * normalPDF(x, mean2, std);
   }
   
   // Random number generation from distributions
@@ -589,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Use the empirical values from Monte Carlo sampling
             theoreticalLower = lower;
             theoreticalUpper = upper;
-            error = "Monte Carlo estimate"; 
+            error = "Monte Carlo estimate";  // Set this as a string to bypass percentage calculation
           break;
           
       }
