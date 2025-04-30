@@ -586,23 +586,18 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
           
           case 'bimodal':
-          // Although there's no simple analytical solution for bimodal distribution,
-          // we can still display the Monte Carlo approximation
-          // This will allow the visualization to work properly
-          
-          // For bimodal, we'll use the empirical quantiles as our best estimate
-          theoreticalLower = lower;  // Use the Monte Carlo lower bound
-          theoreticalUpper = upper;  // Use the Monte Carlo upper bound
-          
-          // Since we're using the empirical values themselves, the error is 0
-          error = 0;
-          
-          // Add informative message in the results instead of early return
-          resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
-          resultError.innerHTML = 
-            "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
-          
-          // No return statement - let the function continue to draw the canvas
+            // Use the empirical values from Monte Carlo sampling
+            // Don't set theoretical values to strings
+            theoreticalLower = lower;
+            theoreticalUpper = upper;
+            error = 0;
+            
+            // Update all required display elements
+            resultCI.textContent = `[${lower.toFixed(3)}, ${upper.toFixed(3)}]`;
+            resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
+            resultError.textContent = "Monte Carlo estimate";
+            
+            // Important: do NOT return here - let the function continue
           break;
           
       }
