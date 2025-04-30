@@ -366,8 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const ctx = canvas.getContext('2d');
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
-  const padding = 40;
-  
+
   // Control elements
   const distributionSelect = document.getElementById('distribution-type');
   const sampleSizeInput = document.getElementById('sample-size');
@@ -438,55 +437,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Random number generation from distributions
+  
   function generateNormalSample(mean, std) {
-    // Box-Muller transform
-    const u1 = Math.random();
-    const u2 = Math.random();
-    
-    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-    return mean + z0 * std;
+    return jStat.normal.sample(mean, std);
   }
   
   function generateGammaSample(shape, rate) {
-    // Marsaglia and Tsang's method (simplified for demo)
-    if (shape < 1) {
-      const scale = 1 / rate;
-      return generateGammaSample(shape + 1, rate) * Math.pow(Math.random(), 1 / shape);
-    }
-    
-    const d = shape - 1/3;
-    const c = 1 / Math.sqrt(9 * d);
-    
-    while (true) {
-      let x, v, u;
-      do {
-        x = generateNormalSample(0, 1);
-        v = 1 + c * x;
-      } while (v <= 0);
-      
-      v = v * v * v;
-      u = Math.random();
-      
-      if (u < 1 - 0.0331 * x * x * x * x || 
-          Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
-        return d * v / rate;
-      }
-    }
+    return jStat.gamma.sample(shape) / rate; //jStat.gamma.sample(shape) assumes scale = 1
   }
   
   function generateBetaSample(alpha, beta) {
-    // Using gamma distribution method
-    const x = generateGammaSample(alpha, 1);
-    const y = generateGammaSample(beta, 1);
-    return x / (x + y);
+    return jStat.beta.sample(alpha, beta);
   }
-  
+
   function generateBimodalSample(mean1, mean2, std, weight) {
-    // Choose one of the two normal distributions based on weight
     if (Math.random() < weight) {
-      return generateNormalSample(mean1, std);
+      return jStat.normal.sample(mean1, std);
     } else {
-      return generateNormalSample(mean2, std);
+      return jStat.normal.sample(mean2, std);
     }
   }
   
