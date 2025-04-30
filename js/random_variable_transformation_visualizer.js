@@ -449,12 +449,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function generateBimodalSample(mean1, mean2, std, weight) {
+    // Choose one of the two normal distributions based on weight
     if (Math.random() < weight) {
-      return jStat.normal.sample(mean1, std);
+      return generateNormalSample(mean1, std);
     } else {
-      return jStat.normal.sample(mean2, std);
+      return generateNormalSample(mean2, std);
     }
   }
+  
   
   // Function to generate samples based on the current distribution
   function generateSamples() {
