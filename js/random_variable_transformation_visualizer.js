@@ -617,10 +617,23 @@ document.addEventListener('DOMContentLoaded', function() {
         theoreticalLower = gammaQuantile(alphaHalf, shape, rate);
         theoreticalUpper = gammaQuantile(oneMinusAlphaHalf, shape, rate);
         
-        // Calculate error
-        const gammaLowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
-        const gammaUpperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+        // Calculate error - Handle potential division by zero or negative values
+        let gammaLowerError = 0, gammaUpperError = 0;
+        
+        if (theoreticalLower !== 0 && !isNaN(theoreticalLower)) {
+          gammaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+        }
+        
+        if (theoreticalUpper !== 0 && !isNaN(theoreticalUpper)) {
+          gammaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+        }
+        
         error = ((gammaLowerError + gammaUpperError) / 2) * 100;
+        
+        // Check for NaN or infinity in error calculation
+        if (isNaN(error) || !isFinite(error)) {
+          error = "Calculation error";
+        }
         break;
         
       case 'beta':
@@ -631,10 +644,23 @@ document.addEventListener('DOMContentLoaded', function() {
         theoreticalLower = betaQuantile(alpha / 2, betaA, betaB);
         theoreticalUpper = betaQuantile(1 - alpha / 2, betaA, betaB);
         
-        // Calculate error
-        const betaLowerError = Math.abs((lower - theoreticalLower) / theoreticalLower);
-        const betaUpperError = Math.abs((upper - theoreticalUpper) / theoreticalUpper);
+        // Calculate error - Handle potential division by zero or negative values
+        let betaLowerError = 0, betaUpperError = 0;
+        
+        if (theoreticalLower !== 0 && !isNaN(theoreticalLower)) {
+          betaLowerError = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+        }
+        
+        if (theoreticalUpper !== 0 && !isNaN(theoreticalUpper)) {
+          betaUpperError = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+        }
+        
         error = ((betaLowerError + betaUpperError) / 2) * 100;
+        
+        // Check for NaN or infinity in error calculation
+        if (isNaN(error) || !isFinite(error)) {
+          error = "Calculation error";
+        }
         break;
         
       case 'bimodal':
@@ -649,7 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resultError.innerHTML = 
           "<span style='font-size: 0.9em;'>Monte Carlo is essential here</span>";
         return; // Exit early with custom message
-        break;
     }
     
     // Update the result display
@@ -657,11 +682,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof theoreticalLower === 'number') {
       resultTheoretical.textContent = `[${theoreticalLower.toFixed(3)}, ${theoreticalUpper.toFixed(3)}]`;
-      resultError.textContent = `${error.toFixed(2)}%`;
+      if (typeof error === 'number') {
+        resultError.textContent = `${error.toFixed(2)}%`;
+      } else {
+        resultError.textContent = error;
+      }
     } else {
       resultTheoretical.textContent = `[${theoreticalLower}, ${theoreticalUpper}]`;
       resultError.textContent = error;
     }
+  
     
     // Draw the canvas with updated credible interval
     drawCanvas();
