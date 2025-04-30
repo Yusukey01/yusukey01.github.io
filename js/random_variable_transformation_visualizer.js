@@ -720,47 +720,12 @@ document.addEventListener('DOMContentLoaded', function() {
     return mean + std * x;
   }
   
-  // Improved gamma quantile function based on Wilson-Hilferty transformation
+  // gamma quantile function based on Wilson-Hilferty transformation
   function gammaQuantile(p, shape, rate) {
-    if (p <= 0) return 0;
-    if (p >= 1) return Infinity;
-    
-    const scale = 1 / rate;
-    
-    // For shape >= 1, use Wilson-Hilferty transformation
-    if (shape >= 1) {
-      const z = normalQuantile(p, 0, 1);
-      const w = 1 - (2 / (9 * shape)) + (z * Math.sqrt(2 / (9 * shape)));
-      return shape * scale * Math.pow(Math.max(0, w), 3);
-    }
-    
-    // For shape < 1, use approximation based on chi-square
-    // This is less accurate but reasonable for visualization
-    if (shape < 0.1) shape = 0.1; // Prevent extreme values
-    
-    // For very small p, prevent numerical issues
-    if (p < 0.01) return 0.01 * scale * shape;
-    
-    // For very large p with small shape
-    if (p > 0.99 && shape < 0.3) {
-      const mean = shape * scale;
-      const variance = shape * scale * scale;
-      return mean + 4 * Math.sqrt(variance);
-    }
-    
-    // Use relationship with normal distribution for middle range
-    const mean = shape * scale;
-    const variance = shape * scale * scale;
-    const skewness = 2 / Math.sqrt(shape);
-    
-    // Cornish-Fisher expansion for skewed distributions
-    const z = normalQuantile(p, 0, 1);
-    const hp = z + (skewness * (z*z - 1)) / 6;
-    
-    return Math.max(0, mean + Math.sqrt(variance) * hp);
+    return jStat.gamma.inv(p, shape) / rate;
   }
   
-  // Improved beta quantile function
+  // beta quantile function
   function betaQuantile(p, alpha, beta) {
     return jStat.beta.inv(p, alpha, beta);
   }
