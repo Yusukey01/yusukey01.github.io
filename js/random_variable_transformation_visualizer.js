@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }  
   
   function gammaPDF(x, shape, rate) {
-    return jStat.gamma.pdf(x * rate, shape) * rate;
+    return jStat.gamma.pdf(x, shape, 1/rate);
   }
   
   
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function generateGammaSample(shape, rate) {
-    return jStat.gamma.sample(shape) / rate; //jStat.gamma.sample(shape) assumes scale = 1
+    return jStat.gamma.sample(shape, 1 / rate);
   }
   
   function generateBetaSample(alpha, beta) {
@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // gamma quantile function
   function gammaQuantile(p, shape, rate) {
-    return jStat.gamma.inv(p, shape) / rate;
+    return jStat.gamma.inv(p, shape, 1/rate);
   }
   
   // beta quantile function
