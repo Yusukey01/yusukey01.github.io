@@ -418,10 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Distribution functions
   function normalPDF(x, mean, std) {
-    const variance = std * std;
-    return (1 / Math.sqrt(2 * Math.PI * variance)) * 
-           Math.exp(-Math.pow(x - mean, 2) / (2 * variance));
-  }
+    return jStat.normal.pdf(x, mean, std);
+  }  
   
   function gammaPDF(x, shape, rate) {
     return jStat.gamma.pdf(x * rate, shape) * rate;
@@ -661,38 +659,12 @@ document.addEventListener('DOMContentLoaded', function() {
     drawCanvas();
   }
   
-  // Improved helper function for normal quantile (inverse CDF)
+  // normal quantile function
   function normalQuantile(p, mean, std) {
-    // Calculation based on the rational approximation of the normal CDF inverse
-    if (p <= 0) return -Infinity;
-    if (p >= 1) return Infinity;
-    
-    // Standardize to N(0,1)
-    if (p === 0.5) return mean;
-    
-    let q = p < 0.5 ? p : 1 - p;
-    let t = Math.sqrt(-2 * Math.log(q));
-    
-    // Coefficients for rational approximation
-    const c0 = 2.515517;
-    const c1 = 0.802853;
-    const c2 = 0.010328;
-    const d1 = 1.432788;
-    const d2 = 0.189269;
-    const d3 = 0.001308;
-    
-    // Formula implementation
-    let x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-    
-    if (p < 0.5) {
-      x = -x;
-    }
-    
-    // Scale and shift to specified mean and std
-    return mean + std * x;
+    return jStat.normal.inv(p, mean, std);
   }
-  
-  // gamma quantile function based on Wilson-Hilferty transformation
+
+  // gamma quantile function
   function gammaQuantile(p, shape, rate) {
     return jStat.gamma.inv(p, shape) / rate;
   }
@@ -1037,8 +1009,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const explanationText = document.createElement('div');
   explanationText.className = 'explanation-box';
   explanationText.innerHTML = `
-    <h3>Relationship to Course Material</h3>
-    <p>This interactive demo demonstrates the Monte Carlo approximation technique for finding credible intervals in Bayesian statistics, as described in the course notes.</p>
+    <p>This interactive demo demonstrates the Monte Carlo approximation technique for finding credible intervals in Bayesian statistics.</p>
     <p>The key formula is: l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></p>
     <p>where l is the lower bound, u is the upper bound, S is the number of samples, and α is the significance level (e.g., 0.05 for a 95% credible interval).</p>
     <p>As the number of samples increases, you'll notice the Monte Carlo approximation converges toward the theoretical value for distributions where it's known.</p>
