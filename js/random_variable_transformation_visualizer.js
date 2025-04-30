@@ -711,58 +711,215 @@ document.addEventListener('DOMContentLoaded', function() {
     return 0.5;
   }
   
-  // Approximation for gamma distribution quantiles
-  function gammaQuantile(p, shape, rate) {
-    // For shape > 1, use Wilson-Hilferty approximation
-    if (shape >= 1) {
-      const z = normalQuantile(p, 0, 1);
-      const scale = 1 / rate;
-      
-      // Wilson-Hilferty transformation
-      const x = shape * Math.pow(1 - (2/(9*shape)) + (z * Math.sqrt(2/(9*shape))), 3);
-      return x * scale;
-    } 
-    // For shape < 1, use a different approximation
-    else {
-      // This is a very rough approximation for demo purposes
-      // A more accurate method would use numerical methods
-      const scale = 1 / rate;
+  // Improved approximation for gamma distribution quantiles
+function gammaQuantile(p, shape, rate) {
+  // Special case for p = 0.5 (median)
+  if (p === 0.5) {
+    // Wilson-Hilferty approximation for median
+    const scale = 1 / rate;
+    return shape * scale * Math.pow(1 - 1/(9*shape), 3);
+  }
+  
+  // Use different approximation methods based on shape parameter
+  if (shape >= 1) {
+    // For larger shape parameters, use a modified Wilson-Hilferty approximation
+    const z = normalQuantile(p, 0, 1);
+    const scale = 1 / rate;
+    
+    // Improved Wilson-Hilferty transformation with correction term
+    const term1 = 1 - (2/(9*shape)) + (z * Math.sqrt(2/(9*shape)));
+    const term2 = 1 + (z*z - 1)/(18*shape); // Second-order correction
+    
+    return shape * scale * Math.pow(term1, 3) * term2;
+  } 
+  // For small shape parameters, use a different approach
+  else {
+    // For small shape, the distribution is highly skewed
+    // Use an approximation based on chi-square distribution with adjustment
+    const scale = 1 / rate;
+    
+    // For very small p values, prevent extreme results
+    if (p < 0.01) {
+      return 0.001 * scale * shape;
+    }
+    
+    // For very high p values with small shape, use approximation
+    if (p > 0.99 && shape < 0.3) {
       const mean = shape * scale;
       const variance = shape * scale * scale;
-      const stdDev = Math.sqrt(variance);
-      
-      // Rough approximation based on matching moments
-      const z = normalQuantile(p, 0, 1);
-      return Math.max(0, mean + z * stdDev);
+      return mean + 4 * Math.sqrt(variance);
     }
+    
+    // Use a relationship with chi-square distribution
+    const chi2p = chiSquareQuantile(p, 2 * shape);
+    return (chi2p / 2) * scale;
   }
+}
 
-  // Approximation for beta distribution quantiles
-  function betaQuantile(p, alpha, beta) {
-    // For certain parameter values we can use normal approximation
-    if (alpha > 1 && beta > 1) {
-      const mean = alpha / (alpha + beta);
-      const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
-      const stdDev = Math.sqrt(variance);
-      
-      const z = normalQuantile(p, 0, 1);
-      const approx = mean + z * stdDev;
-      
-      // Clamp to [0,1] since beta is bounded
-      return Math.max(0, Math.min(1, approx));
-    } 
-    // For alpha = beta = 1, this is uniform distribution
-    else if (alpha === 1 && beta === 1) {
-      return p;
-    }
-    // For other cases, use a numerical approximation
-    else {
-      // This is a very rough approximation for demo purposes
-      // A more accurate method would use numerical methods
-      // We'll just use an iterative search over the CDF
-      return betaSearchQuantile(p, alpha, beta);
-    }
+// Chi-square quantile approximation (for gamma quantile calculation)
+function chiSquareQuantile(p, df) {
+  // Wilson-Hilferty transformation for chi-square
+  const z = normalQuantile(p, 0, 1);
+  
+  // Approximation is more accurate for larger degrees of freedom
+  if (df >= 2) {
+    const h = 2/(9*df);
+    return df * Math.pow(1 - h + z * Math.sqrt(h), 3);
+  } else {
+    // For small df, use a different approximation
+    // This is less accurate but better than the alternative
+    return Math.max(0.001, df * Math.pow(normalQuantile(p, 1, 1/Math.sqrt(df)), 2));
   }
+}
+
+// Improved approximation for beta distribution quantiles
+function betaQuantile(p, alpha, beta) {
+  // Handle boundary cases
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  
+  // Special cases for specific parameter values
+  if (alpha === 1 && beta === 1) {
+    // This is a uniform distribution
+    return p;
+  } else if (alpha === 1) {
+    // Simplifies to a power function
+    return 1 - Math.pow(1 - p, 1/beta);
+  } else if (beta === 1) {
+    // Simplifies to a power function
+    return Math.pow(p, 1/alpha);
+  }
+  
+  // For moderate to large values of alpha and beta, use normal approximation
+  if (alpha > 5 && beta > 5) {
+    const mean = alpha / (alpha + beta);
+    const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+    const stdDev = Math.sqrt(variance);
+    
+    const z = normalQuantile(p, 0, 1);
+    const approx = mean + z * stdDev;
+    
+    // Apply a correction for skewness
+    const skewness = (2 * (beta - alpha) * Math.sqrt(alpha + beta + 1)) / 
+                     ((alpha + beta + 2) * Math.sqrt(alpha * beta));
+    const correction = (skewness * (z*z - 1)) / 6;
+    
+    // Clamp to [0,1] since beta is bounded
+    return Math.max(0, Math.min(1, approx + correction));
+  } 
+  
+  // For other parameter values, use simplified numerical inversion
+  // Using inverse incomplete beta function approximation
+  return betaSearchQuantile(p, alpha, beta);
+}
+
+// Improved beta search quantile
+function betaSearchQuantile(p, alpha, beta) {
+  // Initial guess based on mean or transformed normal approximation
+  let x;
+  
+  // Use mean as starting point for moderate parameter values
+  if (alpha > 1 && beta > 1) {
+    x = alpha / (alpha + beta);
+  } 
+  // For small alpha, start near 0
+  else if (alpha < 1 && beta >= 1) {
+    x = 0.1;
+  } 
+  // For small beta, start near 1
+  else if (beta < 1 && alpha >= 1) {
+    x = 0.9;
+  }
+  // For small alpha and beta, use transformed normal approx
+  else {
+    const mean = alpha / (alpha + beta);
+    x = mean;
+  }
+  
+  // Refined search with more iterations for accuracy
+  let lower = 0;
+  let upper = 1;
+  let current_p = betaCDF(x, alpha, beta);
+  
+  // More iterations for better accuracy
+  const maxIterations = 30;
+  const tolerance = 0.00001;
+  
+  for (let i = 0; i < maxIterations; i++) {
+    if (Math.abs(current_p - p) < tolerance) break;
+    
+    if (current_p < p) {
+      lower = x;
+    } else {
+      upper = x;
+    }
+    
+    // Midpoint method with squeeze in later iterations
+    if (i < 10) {
+      x = (lower + upper) / 2; // Simple bisection
+    } else {
+      // Newton-like step for faster convergence
+      const pdf = betaPDF(x, alpha, beta);
+      if (pdf > tolerance) { // Avoid division by zero
+        const step = (p - current_p) / pdf;
+        const next = x + step;
+        
+        // Keep within bounds and prevent overshoot
+        if (next > lower && next < upper) {
+          x = next;
+        } else {
+          x = (lower + upper) / 2;
+        }
+      } else {
+        x = (lower + upper) / 2;
+      }
+    }
+    
+    current_p = betaCDF(x, alpha, beta);
+  }
+  
+  return x;
+}
+
+// Improved beta CDF approximation
+function betaCDF(x, alpha, beta) {
+  // Handle boundary cases
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  
+  // For integer and half-integer parameters, use specialized code
+  if (Math.floor(alpha) === alpha && Math.floor(beta) === beta) {
+    // For integer parameters, use direct formula based on binomial expansion
+    let sum = 0;
+    for (let i = 0; i <= alpha - 1; i++) {
+      // Compute binomial coefficient (beta+i-1) choose (i)
+      let binomCoeff = 1;
+      for (let j = 0; j < i; j++) {
+        binomCoeff *= (beta + j) / (j + 1);
+      }
+      sum += binomCoeff * Math.pow(1 - x, beta + i) * Math.pow(x, alpha - i) / (beta + i);
+    }
+    return 1 - sum;
+  }
+  
+  // For other cases, use series expansion approximation
+  const maxTerms = 200;
+  let sum = 0;
+  let term = Math.pow(x, alpha) * Math.pow(1 - x, beta) / alpha / betaFunction(alpha, beta);
+  
+  sum += term;
+  
+  for (let i = 1; i < maxTerms; i++) {
+    const oldTerm = term;
+    term *= (alpha + i - 1) * x / i / (alpha + beta + i - 1);
+    sum += term;
+    
+    // Check for convergence
+    if (Math.abs(term) < 0.000001 * sum || term === oldTerm) break;
+  }
+  
+  return sum;
+}
 
   // Helper function for normal quantile (inverse CDF)
   function normalQuantile(p, mean, std) {
@@ -802,56 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return mean + std * r;
   }
 
-  // Simple numerical search for beta quantile
-  function betaSearchQuantile(p, alpha, beta) {
-    // Start with a reasonable guess
-    const mean = alpha / (alpha + beta);
-    let x = mean;
-    
-    // Search with simple bisection method
-    let lower = 0;
-    let upper = 1;
-    let current_p = betaCDF(x, alpha, beta);
-    
-    // Just a few iterations for demo purposes
-    for (let i = 0; i < 20; i++) {
-      if (Math.abs(current_p - p) < 0.0001) break;
-      
-      if (current_p < p) {
-        lower = x;
-      } else {
-        upper = x;
-      }
-      
-      x = (lower + upper) / 2;
-      current_p = betaCDF(x, alpha, beta);
-    }
-    
-    return x;
-  }
-
-  // Beta cumulative distribution function
-  function betaCDF(x, alpha, beta) {
-    // Simple approximation using incomplete beta function
-    // For demo purposes only
-    if (x <= 0) return 0;
-    if (x >= 1) return 1;
-    
-    // Use regularized incomplete beta function approximation
-    // This is a very simplified version
-    let sum = 0;
-    const maxTerms = 100;
-    
-    for (let i = 0; i < maxTerms; i++) {
-      const term = Math.pow(x, alpha + i) * Math.pow(1 - x, beta) * 
-                   (alpha + i - 1) / (alpha + beta + i - 1);
-      sum += term;
-      
-      if (term < 0.0001) break;
-    }
-    
-    return sum;
-  }
+ 
   
   // Function to draw the canvas
   function drawCanvas() {
