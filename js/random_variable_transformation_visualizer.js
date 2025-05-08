@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p>
             Monte Carlo approximation estimates credible intervals by using samples drawn from the posterior distribution. For a central credible interval, the steps are:
             </p>
-            <ol>
+            <ol style="padding-left: 40px;">
               <li>Draw many random samples from the posterior distribution</li>
               <li>Sort the samples in ascending order</li>
               <li>Use quantiles to estimate the interval (e.g., the 2.5% and 97.5% quantiles for a 95% interval)</li>
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p>
             However, in complex cases like <strong>bimodal distributions</strong> (a mixture of two distinct peaks), using empirical quantiles to compute credible intervals can be problematic. The resulting interval might:
             </p>
-            <ul>
+            <ul style="padding-left: 40px;">
               <li>Fall in a low-density region between the modes</li>
               <li>Exclude one of the peaks entirely</li>
               <li>Misrepresent the uncertainty or shape of the distribution</li>
@@ -1019,15 +1019,4 @@ document.addEventListener('DOMContentLoaded', function() {
   generateSamples();
   handleResize();
   
-  // Add some explanatory text to complement the course material
-  const explanationText = document.createElement('div');
-  explanationText.className = 'explanation-box';
-  explanationText.innerHTML = `
-    <p>This interactive demo demonstrates the Monte Carlo approximation technique for finding credible intervals in Bayesian statistics.</p>
-    <p>The key formula is: l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></p>
-    <p>where l is the lower bound, u is the upper bound, S is the number of samples, and α is the significance level (e.g., 0.05 for a 95% credible interval).</p>
-    <p>As the number of samples increases, you'll notice the Monte Carlo approximation converges toward the theoretical value for distributions where it's known.</p>
-  `;
-  
-  container.appendChild(explanationText);
 });
