@@ -627,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const lowerError_b = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
           const upperError_b = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
-          error = ((lowerError + upperError) / 2) * 100;
+          error = ((lowerError_b + upperError_b) / 2) * 100;
           break;
           
       }
