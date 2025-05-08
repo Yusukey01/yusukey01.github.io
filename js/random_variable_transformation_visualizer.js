@@ -585,10 +585,41 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           break;
           
-          case 'bimodal':
-            theoreticalLower = "N/A";
-            theoreticalUpper = "N/A";
-            error = "Unreliable (Bimodal)";
+        case 'bimodal':
+          // Numerically approximate the CDF and invert it
+          const mean1 = parseFloat(bimodalMean1.value);
+          const mean2 = parseFloat(bimodalMean2.value);
+          const std_b = parseFloat(bimodalStd.value);
+          const weight = parseFloat(bimodalWeight.value);
+
+          const xVals = [];
+          const cdfVals = [];
+          let cdf = 0;
+          const step = 0.01;
+
+          for (let x = -10; x <= 10; x += step) {
+            xVals.push(x);
+            const pdf = bimodalPDF(x, mean1, mean2, std_b, weight);
+            cdf += pdf * step;
+            cdfVals.push(cdf);
+          }
+
+          const norm = cdf; // total area
+          const findQuantile = (p) => {
+            for (let i = 0; i < cdfVals.length; i++) {
+              if (cdfVals[i] / norm >= p) {
+                return xVals[i];
+              }
+            }
+            return xVals[xVals.length - 1];
+          };
+
+          theoreticalLower = findQuantile(alpha / 2);
+          theoreticalUpper = findQuantile(1 - alpha / 2);
+
+          const lowerError_b = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
+          const upperError_ = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+          error = ((lowerError + upperError) / 2) * 100;
           break;
           
       }
