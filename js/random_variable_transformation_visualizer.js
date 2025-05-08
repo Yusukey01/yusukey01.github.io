@@ -132,29 +132,42 @@ document.addEventListener('DOMContentLoaded', function() {
           <button id="resample-btn" class="primary-btn">Generate New Samples</button>
           
           <div class="explanation-container">
-            <h3>How Monte Carlo Approximation Works</h3>
-            <p>Monte Carlo approximation estimates credible intervals by:</p>
+           <h3>How Monte Carlo Approximation Works</h3>
+            <p>
+            Monte Carlo approximation estimates credible intervals by using samples drawn from the posterior distribution. For a central credible interval, the steps are:
+            </p>
             <ol>
-              <li>Drawing many random samples from the posterior distribution</li>
-              <li>Sorting the samples in ascending order</li>
-              <li>Finding the appropriate quantiles (e.g., 2.5% and 97.5% for a 95% interval)</li>
+              <li>Draw many random samples from the posterior distribution</li>
+              <li>Sort the samples in ascending order</li>
+              <li>Use quantiles to estimate the interval (e.g., the 2.5% and 97.5% quantiles for a 95% interval)</li>
             </ol>
-            <p>As the number of samples increases, the Monte Carlo approximation becomes more accurate.</p>
-            <p>The formula used is:<br>
-            <code>l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></code></p>
-            <p>Where <code>S</code> is the number of samples and <code>α</code> is the significance level.</p>
+            <p>
+            The formula for the bounds is:<br>
+            <code>l ≈ θ<sup>(⌈S×α/2⌉)</sup>, u ≈ θ<sup>(⌈S×(1-α/2)⌉)</sup></code><br>
+            where <code>S</code> is the number of samples and <code>α</code> is the significance level.
+            </p>
+            <p>
+            As the number of samples increases, the approximation of the <strong>overall posterior distribution</strong> becomes more accurate. However, credible intervals based on quantiles may still be misleading—especially in multimodal or skewed distributions—because they may fall in low-probability regions or exclude important modes.
+            </p>
+
           </div>
           
           <div class="explanation-container" style="margin-top: 15px;">
-            <h3>Why Monte Carlo Methods Are Important</h3>
-            <p>The bimodal distribution (a mixture of two normal distributions) represents an important case where:</p>
+            <h3>Why Monte Carlo Methods Are Useful (and Sometimes Misleading)</h3>
+            <p>
+            Monte Carlo methods are widely used to approximate posterior distributions when closed-form solutions are unavailable. They work by drawing samples from the distribution and using those samples to estimate quantities of interest, including credible intervals.
+            </p>
+            <p>
+            However, in complex cases like <strong>bimodal distributions</strong> (a mixture of two distinct peaks), using empirical quantiles to compute credible intervals can be problematic. The resulting interval might:
+            </p>
             <ul>
-              <li>The distribution has complex shape with two distinct peaks</li>
-              <li>Theoretical credible intervals cannot be easily derived analytically</li>
-              <li>Monte Carlo methods provide a practical numerical solution</li>
+              <li>Fall in a low-density region between the modes</li>
+              <li>Exclude one of the peaks entirely</li>
+              <li>Misrepresent the uncertainty or shape of the distribution</li>
             </ul>
-            <p>For distributions like normal, gamma, and beta, theoretical credible intervals can be calculated using their known quantile functions. However, for multimodal distributions like our bimodal example, Monte Carlo methods become essential as analytical solutions are either extremely complex or unavailable.</p>
-            <p>This demonstrates why Monte Carlo methods are so powerful in Bayesian statistics—they can handle arbitrary posterior distributions regardless of complexity.</p>
+            <p>
+            While Monte Carlo sampling still helps approximate the overall shape of the distribution, <strong>quantile-based credible intervals can be misleading in multimodal settings</strong>. Alternative approaches like high posterior density (HPD) intervals, visual inspection, or more advanced sampling techniques may be needed to better capture the distribution’s structure.
+            </p>
           </div>
         </div>
       </div>
