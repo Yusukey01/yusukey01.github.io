@@ -586,10 +586,9 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
           
           case 'bimodal':
-            // Use the empirical values from Monte Carlo sampling
-            theoreticalLower = lower;
-            theoreticalUpper = upper;
-            error = "Monte Carlo estimate";  // Set this as a string to bypass percentage calculation
+            theoreticalLower = "N/A";
+            theoreticalUpper = "N/A";
+            error = "Unreliable (Bimodal)";
           break;
           
       }
@@ -691,9 +690,9 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'bimodal':
         const mean1 = parseFloat(bimodalMean1.value);
         const mean2 = parseFloat(bimodalMean2.value);
-        std = parseFloat(bimodalStd.value);
-        min = Math.min(mean1, mean2) - 4 * std;
-        max = Math.max(mean1, mean2) + 4 * std;
+        const std_b = parseFloat(bimodalStd.value);
+        min = Math.min(mean1, mean2) - 4 * std_b;
+        max = Math.max(mean1, mean2) + 4 * std_b;
         break;
     }
     
