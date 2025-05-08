@@ -586,7 +586,6 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
           
         case 'bimodal':
-          // Numerically approximate the CDF and invert it
           const mean1 = parseFloat(bimodalMean1.value);
           const mean2 = parseFloat(bimodalMean2.value);
           const std_b = parseFloat(bimodalStd.value);
@@ -594,20 +593,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const xVals = [];
           const cdfVals = [];
-          let cdf = 0;
           const step = 0.01;
+          let cdf = 0;
 
-          for (let x = -10; x <= 10; x += step) {
-            xVals.push(x);
+          for (let x = -20; x <= 20; x += step) {
             const pdf = bimodalPDF(x, mean1, mean2, std_b, weight);
+            if (isNaN(pdf) || !isFinite(pdf)) continue;
+            xVals.push(x);
             cdf += pdf * step;
             cdfVals.push(cdf);
           }
 
-          const norm = cdf; // total area
+          if (cdfVals.length === 0) {
+            throw new Error("Bimodal PDF integration failed.");
+          }
+
+          // Normalize the CDF
+          const total = cdfVals[cdfVals.length - 1];
+          const normalizedCDF = cdfVals.map(v => v / total);
+
+          // Approximate inverse CDF
           const findQuantile = (p) => {
-            for (let i = 0; i < cdfVals.length; i++) {
-              if (cdfVals[i] / norm >= p) {
+            for (let i = 0; i < normalizedCDF.length; i++) {
+              if (normalizedCDF[i] >= p) {
                 return xVals[i];
               }
             }
@@ -618,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
           theoreticalUpper = findQuantile(1 - alpha / 2);
 
           const lowerError_b = Math.abs((lower - theoreticalLower) / Math.abs(theoreticalLower));
-          const upperError_ = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
+          const upperError_b = Math.abs((upper - theoreticalUpper) / Math.abs(theoreticalUpper));
           error = ((lowerError + upperError) / 2) * 100;
           break;
           
