@@ -514,6 +514,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let lower, upper;
     if (intervalType === 'hpd') {
       [lower, upper] = computeHPD(samples, alpha);
+      resultTheoretical.textContent = `[N/A]`;
+      resultError.textContent = `N/A`;
+      drawCanvas(); // still redraw
+      return;
     } else {
       lower = samples[lowerIndex];
       upper = samples[upperIndex];
