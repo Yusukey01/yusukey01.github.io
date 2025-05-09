@@ -32,7 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="legend">
             <div class="legend-item"><span class="legend-color true"></span> True Distribution</div>
             <div class="legend-item"><span class="legend-color samples"></span> Monte Carlo Samples</div>
-            <div class="legend-item"><span class="legend-color credible"></span> Credible Interval</div>
+            <div class="legend-item" id="legend-interval-label">
+            <span class="legend-color credible"></span> Credible Interval (Quantile)
+          </div>
           </div>
         </div>
         
@@ -112,7 +114,15 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
           </div>
-          
+
+          <div class="control-group">
+          <label for="interval-type">Interval Type:</label>
+          <select id="interval-type" class="full-width">
+            <option value="quantile">Quantile-based</option>
+            <option value="hpd">HPD</option>
+          </select>
+        </div>
+
           <div class="results-box">
             <h3>Monte Carlo Results:</h3>
             <div class="result-row">
@@ -484,14 +494,26 @@ document.addEventListener('DOMContentLoaded', function() {
   // Calculate the credible interval from the samples
   function calculateCredibleInterval() {
     const alpha = 1 - credibleInterval;
-    
+    const intervalType = document.getElementById('interval-type').value;
+    const legendLabel = document.getElementById('legend-interval-label');
+    if (legendLabel) {
+      legendLabel.innerHTML = `
+        <span class="legend-color credible"></span> Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Quantile'})
+      `;
+    }
+   
     // Calculate indices for the credible interval boundaries
     const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
     const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
     
     // Get the Monte Carlo approximated credible interval
-    const lower = samples[lowerIndex];
-    const upper = samples[upperIndex];
+    let lower, upper;
+    if (intervalType === 'hpd') {
+      [lower, upper] = computeHPD(samples, alpha);
+    } else {
+      lower = samples[lowerIndex];
+      upper = samples[upperIndex];
+    }
     
     // Calculate theoretical credible interval
     let theoreticalLower, theoreticalUpper;
@@ -962,6 +984,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     drawCanvas();
   }
+
+  function computeHPD(samples, alpha) {
+    const sorted = [...samples].sort((a, b) => a - b);
+    const n = sorted.length;
+    const intervalSize = Math.floor(n * (1 - alpha));
+  
+    let bestStart = 0;
+    let minWidth = Infinity;
+  
+    for (let i = 0; i <= n - intervalSize - 1; i++) {
+      const width = sorted[i + intervalSize] - sorted[i];
+      if (width < minWidth) {
+        minWidth = width;
+        bestStart = i;
+      }
+    }
+  
+    return [sorted[bestStart], sorted[bestStart + intervalSize]];
+  }
+  
   
   // Add event listeners
   distributionSelect.addEventListener('change', handleDistributionChange);
