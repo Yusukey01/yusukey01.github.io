@@ -901,78 +901,48 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Draw the credible interval markers
   function drawCredibleInterval(xRange) {
-    const { min, max } = xRange;
-    const alpha = 1 - credibleInterval;
-    
-    // Calculate indices for the credible interval boundaries
-    const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
-    const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
-    
-    if (lowerIndex >= samples.length || upperIndex >= samples.length) return;
-    
-    // Get the Monte Carlo approximated credible interval
-    const lower = samples[lowerIndex];
-    const upper = samples[upperIndex];
-    
-    // Convert to canvas coordinates
+    const ctx = canvas.getContext('2d');
+    const [min, max] = xRange;
+    const plotWidth = canvasWidth - 2 * plotMargin;
+    const plotHeight = canvasHeight - 2 * plotMargin;
     const xScale = plotWidth / (max - min);
-    const lowerX = plotMargin + (lower - min) * xScale;
-    const upperX = plotMargin + (upper - min) * xScale;
-    
-    // Draw shaded area between the boundaries
-    
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-    if (intervalType === 'hpd') {
-      const hpdIntervals = computeHPDIntervals(samples, 1 - credibleInterval);
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
-      for (const { start, end } of hpdIntervals) {
-        const startX = plotMargin + (start - min) * xScale;
-        const endX = plotMargin + (end - min) * xScale;
-        ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
-      }
-    } else {
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
-    }
-    
     const intervalType = document.getElementById('interval-type')?.value;
-
+  
     ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-
+  
     if (intervalType === 'hpd') {
       const { intervals: hpdIntervals } = computeHPDIntervals(samples, 1 - credibleInterval);
-
+  
       for (const { start, end } of hpdIntervals) {
         const startX = plotMargin + (start - min) * xScale;
         const endX = plotMargin + (end - min) * xScale;
         ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
       }
-
+  
       ctx.fillStyle = '#e74c3c';
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(`${Math.round(credibleInterval * 100)}% HPD Interval`, canvasWidth / 2, plotMargin - 10);
-
+  
     } else {
-      // Quantile-based mode
       const alpha = 1 - credibleInterval;
       const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
       const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
-
+  
       if (lowerIndex < samples.length && upperIndex < samples.length) {
         const lower = samples[lowerIndex];
         const upper = samples[upperIndex];
-
+  
         const lowerX = plotMargin + (lower - min) * xScale;
         const upperX = plotMargin + (upper - min) * xScale;
-
+  
         ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
-
+  
         ctx.fillStyle = '#e74c3c';
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
-
+  
         ctx.font = '12px Arial';
         ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
         ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
