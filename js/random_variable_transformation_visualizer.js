@@ -512,11 +512,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get the Monte Carlo approximated credible interval
     let lower, upper;
+
     if (intervalType === 'hpd') {
-      [lower, upper] = computeHPD(samples, alpha);
+      const { intervals: hpdIntervals, densityThreshold } = computeHPDIntervals(samples, alpha);
+      resultCI.textContent = hpdIntervals
+        .map(({ start, end }) => `[${start.toFixed(2)}, ${end.toFixed(2)}]`)
+        .join(' ∪ ');
+
       resultTheoretical.textContent = `[N/A]`;
-      resultError.textContent = `N/A`;
-      drawCanvas(); // still redraw
+      resultError.textContent = `Min density: ${densityThreshold.toFixed(4)}`;
+
+      drawCanvas();
       return;
     } else {
       lower = samples[lowerIndex];
@@ -932,7 +938,18 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.setLineDash([]);
     } else {
       ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+      if (intervalType === 'hpd') {
+        const hpdIntervals = computeHPDIntervals(samples, 1 - credibleInterval);
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
+        for (const { start, end } of hpdIntervals) {
+          const startX = plotMargin + (start - min) * xScale;
+          const endX = plotMargin + (end - min) * xScale;
+          ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
+        }
+      } else {
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+        ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+      }
     }
     
     // Add labels for the boundaries
@@ -999,26 +1016,60 @@ document.addEventListener('DOMContentLoaded', function() {
     
     drawCanvas();
   }
-
-  function computeHPD(samples, alpha) {
+  
+  function computeHPDIntervals(samples, alpha) {
     const sorted = [...samples].sort((a, b) => a - b);
     const n = sorted.length;
-    const intervalSize = Math.floor(n * (1 - alpha));
+    const binCount = Math.ceil(Math.sqrt(n));
+    const min = sorted[0];
+    const max = sorted[n - 1];
+    const binWidth = (max - min) / binCount;
   
-    let bestStart = 0;
-    let minWidth = Infinity;
-  
-    for (let i = 0; i <= n - intervalSize - 1; i++) {
-      const width = sorted[i + intervalSize] - sorted[i];
-      if (width < minWidth) {
-        minWidth = width;
-        bestStart = i;
-      }
+    const bins = [];
+    for (let i = 0; i < binCount; i++) {
+      bins.push({
+        start: min + i * binWidth,
+        end: min + (i + 1) * binWidth,
+        count: 0,
+      });
     }
   
-    return [sorted[bestStart], sorted[bestStart + intervalSize]];
-  }
+    for (const x of sorted) {
+      const idx = Math.min(Math.floor((x - min) / binWidth), binCount - 1);
+      bins[idx].count++;
+    }
   
+    bins.sort((a, b) => b.count - a.count);
+  
+    const requiredMass = n * (1 - alpha);
+    const selectedBins = [];
+    let accumulated = 0;
+  
+    for (const bin of bins) {
+      selectedBins.push(bin);
+      accumulated += bin.count;
+      if (accumulated >= requiredMass) break;
+    }
+  
+    selectedBins.sort((a, b) => a.start - b.start);
+  
+    const intervals = [];
+    let current = { start: selectedBins[0].start, end: selectedBins[0].end };
+  
+    for (let i = 1; i < selectedBins.length; i++) {
+      const bin = selectedBins[i];
+      if (bin.start <= current.end + 1e-6) {
+        current.end = bin.end;
+      } else {
+        intervals.push({ ...current });
+        current = { start: bin.start, end: bin.end };
+      }
+    }
+    intervals.push({ ...current });
+  
+    const densityThreshold = selectedBins[selectedBins.length - 1].count / (binWidth * n);
+    return { intervals, densityThreshold };
+  }
   
   // Add event listeners
   distributionSelect.addEventListener('change', handleDistributionChange);
