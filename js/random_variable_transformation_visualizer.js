@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="result-value" id="result-theoretical">[0.000, 0.000]</div>
             </div>
             <div class="result-row">
-              <div class="result-label">Approximation Error:</div>
+              <div class="result-label" for-error>Approximation Error:</div>
               <div class="result-value" id="result-error">0.000</div>
             </div>
           </div>
@@ -521,9 +521,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
       resultTheoretical.textContent = `[N/A]`;
       resultError.textContent = `Min density: ${densityThreshold.toFixed(4)}`;
+      const errorLabel = document.querySelector('.result-label[for-error]');
+      if (errorLabel) {
+        errorLabel.textContent = 'Min HPD Density:';
+      }
 
       drawCanvas();
       return;
+
     } else {
       lower = samples[lowerIndex];
       upper = samples[upperIndex];
@@ -952,17 +957,46 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // Add labels for the boundaries
-    ctx.fillStyle = '#e74c3c';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    
-    ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
-    ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
-    
-    // Add credible interval percentage label
-    ctx.font = '14px Arial';
-    ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
+    const intervalType = document.getElementById('interval-type')?.value;
+
+    if (intervalType === 'hpd') {
+      const { intervals: hpdIntervals } = computeHPDIntervals(samples, 1 - credibleInterval);
+
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      for (const { start, end } of hpdIntervals) {
+        const startX = plotMargin + (start - min) * xScale;
+        const endX = plotMargin + (end - min) * xScale;
+        ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
+
+        // Draw labels for each sub-interval
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(start.toFixed(2), startX, canvasHeight - plotMargin + 20);
+        ctx.fillText(end.toFixed(2), endX, canvasHeight - plotMargin + 20);
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      }
+
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#e74c3c';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.round(credibleInterval * 100)}% HPD Interval`, canvasWidth / 2, plotMargin - 10);
+
+    } else {
+      // Default: quantile-based interval
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
+
+      ctx.font = '12px Arial';
+      ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
+      ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
+    }
+
   }
   
   // Handle distribution type change
