@@ -973,11 +973,12 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
 
         // Draw labels for each sub-interval
-        ctx.font = '14px Arial';
         ctx.fillStyle = '#e74c3c';
+        ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`${Math.round(credibleInterval * 100)}% HPD Interval`, canvasWidth / 2, plotMargin - 10);
-
+        ctx.fillText(start.toFixed(2), startX, canvasHeight - plotMargin + 20);
+        ctx.fillText(end.toFixed(2), endX, canvasHeight - plotMargin + 20);
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
       }
 
       ctx.font = '14px Arial';
