@@ -919,88 +919,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const lowerX = plotMargin + (lower - min) * xScale;
     const upperX = plotMargin + (upper - min) * xScale;
     
-    // Draw vertical lines for the credible interval boundaries
-    ctx.strokeStyle = '#e74c3c';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
-    
-    // Lower bound
-    ctx.beginPath();
-    ctx.moveTo(lowerX, plotMargin);
-    ctx.lineTo(lowerX, canvasHeight - plotMargin);
-    ctx.stroke();
-    
-    // Upper bound
-    ctx.beginPath();
-    ctx.moveTo(upperX, plotMargin);
-    ctx.lineTo(upperX, canvasHeight - plotMargin);
-    ctx.stroke();
-    
-    // Reset line dash
-    ctx.setLineDash([]);
-    
     // Draw shaded area between the boundaries
-    if (document.getElementById('interval-type')?.value === 'hpd') {
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
-      ctx.setLineDash([3, 2]);
-      ctx.strokeRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
-      ctx.setLineDash([]);
-    } else {
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-      if (intervalType === 'hpd') {
-        const hpdIntervals = computeHPDIntervals(samples, 1 - credibleInterval);
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
-        for (const { start, end } of hpdIntervals) {
-          const startX = plotMargin + (start - min) * xScale;
-          const endX = plotMargin + (end - min) * xScale;
-          ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
-        }
-      } else {
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-        ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
-      }
-    }
-
-    const intervalType = document.getElementById('interval-type')?.value;
-
+    
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
     if (intervalType === 'hpd') {
-      const { intervals: hpdIntervals } = computeHPDIntervals(samples, 1 - credibleInterval);
-
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      const hpdIntervals = computeHPDIntervals(samples, 1 - credibleInterval);
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
       for (const { start, end } of hpdIntervals) {
         const startX = plotMargin + (start - min) * xScale;
         const endX = plotMargin + (end - min) * xScale;
         ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
+      }
+    } else {
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+    }
+    
+    const intervalType = document.getElementById('interval-type')?.value;
 
-        // Draw labels for each sub-interval
-        ctx.fillStyle = '#e74c3c';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(start.toFixed(2), startX, canvasHeight - plotMargin + 20);
-        ctx.fillText(end.toFixed(2), endX, canvasHeight - plotMargin + 20);
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+
+    if (intervalType === 'hpd') {
+      const { intervals: hpdIntervals } = computeHPDIntervals(samples, 1 - credibleInterval);
+
+      for (const { start, end } of hpdIntervals) {
+        const startX = plotMargin + (start - min) * xScale;
+        const endX = plotMargin + (end - min) * xScale;
+        ctx.fillRect(startX, plotMargin, endX - startX, plotHeight);
       }
 
-      ctx.font = '14px Arial';
       ctx.fillStyle = '#e74c3c';
+      ctx.font = '14px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(`${Math.round(credibleInterval * 100)}% HPD Interval`, canvasWidth / 2, plotMargin - 10);
 
     } else {
-      // Default: quantile-based interval
-      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+      // Quantile-based mode
+      const alpha = 1 - credibleInterval;
+      const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
+      const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
 
-      ctx.fillStyle = '#e74c3c';
-      ctx.font = '14px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
+      if (lowerIndex < samples.length && upperIndex < samples.length) {
+        const lower = samples[lowerIndex];
+        const upper = samples[upperIndex];
 
-      ctx.font = '12px Arial';
-      ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
-      ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
+        const lowerX = plotMargin + (lower - min) * xScale;
+        const upperX = plotMargin + (upper - min) * xScale;
+
+        ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.round(credibleInterval * 100)}% Credible Interval`, (lowerX + upperX) / 2, plotMargin - 10);
+
+        ctx.font = '12px Arial';
+        ctx.fillText(lower.toFixed(2), lowerX, canvasHeight - plotMargin + 20);
+        ctx.fillText(upper.toFixed(2), upperX, canvasHeight - plotMargin + 20);
+      }
     }
-
   }
   
   // Handle distribution type change
