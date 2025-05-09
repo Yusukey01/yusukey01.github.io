@@ -917,8 +917,15 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.setLineDash([]);
     
     // Draw shaded area between the boundaries
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-    ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+    if (document.getElementById('interval-type')?.value === 'hpd') {
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+      ctx.setLineDash([3, 2]);
+      ctx.strokeRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+      ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+      ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+    }
     
     // Add labels for the boundaries
     ctx.fillStyle = '#e74c3c';
@@ -1009,6 +1016,9 @@ document.addEventListener('DOMContentLoaded', function() {
   distributionSelect.addEventListener('change', handleDistributionChange);
   sampleSizeInput.addEventListener('input', handleSampleSizeChange);
   credibleIntervalInput.addEventListener('input', handleCredibleIntervalChange);
+  document.getElementById('interval-type').addEventListener('change', () => {
+    calculateCredibleInterval();
+  });
   resampleBtn.addEventListener('click', generateSamples);
   
   // Add parameter input change listeners
