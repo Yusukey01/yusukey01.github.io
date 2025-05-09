@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="results-box">
             <h3>Monte Carlo Results:</h3>
             <div class="result-row">
-              <div class="result-label">Credible Interval:</div>
+              <div class="result-label" id="interval-label">Credible Interval (Quantile):</div>
               <div class="result-value" id="result-ci">[0.000, 0.000]</div>
             </div>
             <div class="result-row">
@@ -496,10 +496,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const alpha = 1 - credibleInterval;
     const intervalType = document.getElementById('interval-type').value;
     const legendLabel = document.getElementById('legend-interval-label');
+    const intervalLabel = document.getElementById('interval-label');
     if (legendLabel) {
       legendLabel.innerHTML = `
         <span class="legend-color credible"></span> Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Quantile'})
       `;
+    }
+    if (intervalLabel) {
+      intervalLabel.textContent = `Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Quantile'})`;
     }
    
     // Calculate indices for the credible interval boundaries
@@ -766,7 +770,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.translate(15, canvasHeight / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = 'center';
-    ctx.fillText('Density', 0, 0);
+    ctx.fillText('Posterior Density', 0, 0);
     ctx.restore();
   }
   
