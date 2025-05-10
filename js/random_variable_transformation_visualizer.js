@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
         errorLabel.textContent = 'Min HPD Density:';
       }
 
-      //drawCanvas();
+      drawCanvas();
       return;
 
     } else {
@@ -536,6 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (errorLabel) {
         errorLabel.textContent = 'Approximation Error:';
       }
+      drawCanvas();
     }
     
     // Calculate theoretical credible interval
