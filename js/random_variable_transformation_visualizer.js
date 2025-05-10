@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
         errorLabel.textContent = 'Min HPD Density:';
       }
 
-      drawCanvas();
+      //drawCanvas();
       return;
 
     } else {
