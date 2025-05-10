@@ -520,10 +520,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .join(' ∪ ');
 
       resultTheoretical.textContent = `[N/A]`;
-      resultError.textContent = `Min density: ${densityThreshold.toFixed(4)}`;
+      resultError.textContent = `p* = ${densityThreshold.toFixed(4)}`;
       const errorLabel = document.querySelector('.result-label[for-error]');
       if (errorLabel) {
-        errorLabel.textContent = 'Min HPD Density:';
+        errorLabel.textContent = 'HPD Threshold :';
       }
 
       drawCanvas();
