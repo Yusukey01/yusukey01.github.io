@@ -900,41 +900,75 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Draw the credible interval markers
-  function drawCredibleInterval(xRange) {
-    const ctx = canvas.getContext('2d');
-    const [min, max] = xRange;
-    const plotWidth = canvasWidth - 2 * plotMargin;
-    const plotHeight = canvasHeight - 2 * plotMargin;
-    const xScale = plotWidth / (max - min);
-    const intervalType = document.getElementById('interval-type')?.value;
-    const alpha = 1 - credibleInterval;
+  // Draw the credible interval markers
+function drawCredibleInterval(xRange) {
+  const { min, max } = xRange;  // Fixed: correctly destructure the object
   
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-  
-    if (intervalType === 'hpd') {
-      const { intervals: hpdIntervals } = computeHPDIntervals(samples, alpha);
-      for (const { start, end } of hpdIntervals) {
-        const startX = plotMargin + (start - min) * xScale;
-        const endX = plotMargin + (end - min) * xScale;
-        const left = Math.min(startX, endX);
-        const width = Math.abs(endX - startX);
-        ctx.fillRect(left, plotMargin, width, plotHeight);
-      }
-    } else {
-      const sorted = [...samples].sort((a, b) => a - b);
-      const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
-      const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
-      const lower = sorted[lowerIndex];
-      const upper = sorted[upperIndex];
-      const lowerX = plotMargin + (lower - min) * xScale;
-      const upperX = plotMargin + (upper - min) * xScale;
-      const left = Math.min(lowerX, upperX);
-      const width = Math.abs(upperX - lowerX);
+  const xScale = plotWidth / (max - min);
+  const intervalType = document.getElementById('interval-type').value;
+  const alpha = 1 - credibleInterval;
+
+  // Set color for the interval regions
+  ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';  // Semi-transparent red
+  ctx.strokeStyle = 'rgba(231, 76, 60, 0.8)'; // More opaque red for borders
+  ctx.lineWidth = 2;
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'center';
+
+  if (intervalType === 'hpd') {
+    const { intervals: hpdIntervals } = computeHPDIntervals(samples, alpha);
+    
+    // Draw each HPD interval
+    for (const { start, end } of hpdIntervals) {
+      const startX = plotMargin + (start - min) * xScale;
+      const endX = plotMargin + (end - min) * xScale;
+      const left = Math.min(startX, endX);
+      const width = Math.abs(endX - startX);
+      
+      // Fill the interval area
       ctx.fillRect(left, plotMargin, width, plotHeight);
+      
+      // Draw border lines for better visibility
+      ctx.beginPath();
+      ctx.moveTo(startX, plotMargin);
+      ctx.lineTo(startX, canvasHeight - plotMargin);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(endX, plotMargin);
+      ctx.lineTo(endX, canvasHeight - plotMargin);
+      ctx.stroke();
     }
+  } else {
+    // Quantile-based interval
+    const lowerIndex = Math.ceil(sampleSize * (alpha / 2));
+    const upperIndex = Math.ceil(sampleSize * (1 - alpha / 2)) - 1;
+    
+    // Ensure indices are within bounds
+    const clampedLowerIndex = Math.max(0, Math.min(lowerIndex, samples.length - 1));
+    const clampedUpperIndex = Math.max(0, Math.min(upperIndex, samples.length - 1));
+    
+    const lower = samples[clampedLowerIndex];
+    const upper = samples[clampedUpperIndex];
+    
+    const lowerX = plotMargin + (lower - min) * xScale;
+    const upperX = plotMargin + (upper - min) * xScale;
+    
+    // Fill the interval area
+    ctx.fillRect(lowerX, plotMargin, upperX - lowerX, plotHeight);
+    
+    // Draw border lines for better visibility
+    ctx.beginPath();
+    ctx.moveTo(lowerX, plotMargin);
+    ctx.lineTo(lowerX, canvasHeight - plotMargin);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(upperX, plotMargin);
+    ctx.lineTo(upperX, canvasHeight - plotMargin);
+    ctx.stroke();
   }
+}
   
   
   
