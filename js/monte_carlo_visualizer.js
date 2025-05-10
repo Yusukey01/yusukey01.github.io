@@ -499,11 +499,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const intervalLabel = document.getElementById('interval-label');
     if (legendLabel) {
       legendLabel.innerHTML = `
-        <span class="legend-color credible"></span> Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Quantile'})
+        <span class="legend-color credible"></span> Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Central'})
       `;
     }
     if (intervalLabel) {
-      intervalLabel.textContent = `Credible Interval (${intervalType === 'hpd' ? 'HPD' : 'Quantile'})`;
+      intervalLabel.textContent = `CI (${intervalType === 'hpd' ? 'HPD' : 'Central'}): `;
     }
    
     // Calculate indices for the credible interval boundaries
