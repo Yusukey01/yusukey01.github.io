@@ -18,8 +18,8 @@ uses_python: false
         <div class="topic-nav">
             <a href="#CI">Credible Intervals</a></li>
             <a href="#MC">Monte Carlo Approximation</a></li>
-            <a href="#demo">Monte Carlo Approximation Demo</a>
-            <a href="#"></a>
+            <a href="#demo">Demo: Monte Carlo Approximation for CIs</a>
+            <a href="#HPD">>Highest Posterior Density (HPD)</a>
             <a href="#"></a>
         </div> 
 
@@ -29,7 +29,7 @@ uses_python: false
                 <p>
                     In practice, a probability distribution is often a high-dimensional object, making it difficult to fully capture its characteristics. 
                     In Bayesian statistics, we frequently summarize the uncertainty of a posterior distribution using a <strong>credible interval</strong>. 
-                    A credible interval is not the same as a confidence interval in frequentist statistics, even though they may sometimes numerically coincide.
+                    A credible interval is not the same as a <a href="hypothesis_testing.html"><strong>confidence interval</strong></a> in frequentist statistics, even though they may sometimes numerically coincide.
                 </p>
                 <p>
                     Formally, for a given significance level \(\alpha \in (0,1)\), a \(100(1-\alpha)\%\) <strong>credible interval</strong> is defined as:
@@ -120,62 +120,82 @@ uses_python: false
 
             <section id="demo" class="section-content">
               
-                <h2>Monte Carlo Approximation Demo</h2>
-                <div id="random_variable_transformation_visualizer"></div>
+                <h2>Demo: Monte Carlo Approximation for CIs</h2>
+                <div id="monte_carlo_visualizer"></div>
+
                 <p>
                 Monte Carlo methods are widely used in Bayesian statistics to approximate posterior distributions, especially 
-                when closed-form solutions are unavailable. One common use is estimating credible intervals based on random samples 
-                drawn from the posterior.
-                </p>
-                
-                <p>
-                To approximate a central credible interval using Monte Carlo sampling:
-                </p>
-                
-                <ol style="padding-left: 40px;">
-                  <li>Draw many random samples from the posterior distribution</li>
-                  <li>Sort the samples in ascending order</li>
-                  <li>Select the appropriate quantiles (e.g., the 2.5% and 97.5% quantiles for a 95% interval)</li>
-                </ol>
-                <br>
-                <p>
-                As the number of samples increases, this method provides a better approximation of the overall posterior distribution. However, using quantiles to estimate credible intervals assumes that the distribution is roughly unimodal and symmetric. This can lead to misleading intervals in more complex scenarios.
-                </p>
-                
-                <p>
-                For example, in a <strong>bimodal distribution</strong> (where the posterior has two distinct peaks), the computed interval may:
-                </p>
-                
-                <ul style="padding-left: 40px;">
-                  <li>Fall in a low-probability region between the modes</li>
-                  <li>Omit one of the modes entirely</li>
-                  <li>Misrepresent the true uncertainty or variability in the parameter</li>
-                </ul>
-                <br>
-                <p>
-                While Monte Carlo sampling still gives valuable insight into the shape of the distribution, <strong>quantile-based credible intervals can fail</strong> in 
-                multimodal or highly skewed settings. In such cases, alternative approaches like <strong>highest posterior density (HPD) intervals</strong>, density plots, 
-                or more sophisticated sampling techniques are more appropriate.
+                when closed-form solutions are unavailable. One common application is estimating credible intervals using random 
+                samples drawn from the posterior.
                 </p>
 
                 <p>
-                    A <strong>Highest Posterior Density (HPD)</strong> interval contains the region(s) of the posterior distribution with the highest probability density,
-                    such that the total probability mass inside equals the desired confidence level (e.g., 95%).
+                To construct a <strong>central credible interval</strong> via Monte Carlo sampling:
                 </p>
+
+                <ol style="padding-left: 40px;">
+                <li>Draw many random samples from the posterior distribution</li>
+                <li>Sort the samples in ascending order</li>
+                <li>Select the appropriate quantiles (e.g., the 2.5% and 97.5% quantiles for a 95% interval)</li>
+                </ol>
+
                 <p>
-                    Unlike quantile-based credible intervals, HPD intervals are not constrained to be symmetric or centered. They are especially useful when the posterior
-                    is skewed or multimodal.
+                As the number of samples increases, the approximation of the posterior improves. 
+                However, central credible intervals based on quantiles may not accurately reflect the distribution's 
+                shape — especially in skewed or multimodal cases.
                 </p>
+
                 <p>
-                    Note: HPD intervals are a type of credible interval. While traditional credible intervals are often based on quantiles,
-                    HPD intervals contain the regions with the highest posterior density, making them more informative when the distribution is skewed or multimodal.
-                </p>  
+                For example, in a <strong>bimodal distribution</strong> (with two distinct peaks), the interval may:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                <li>Fall in a low-probability region between the modes</li>
+                <li>Omit one of the peaks entirely</li>
+                <li>Misrepresent the true uncertainty or structure of the posterior</li>
+                </ul>
+
+                <p>
+                In such cases, <strong>highest posterior density (HPD)</strong> regions are preferred. 
+                They represent the region(s) of highest probability mass and always include the most probable values, 
+                even if the result is disjoint. 
+                </p>
             </section>
 
-            <section id="" class="section-content">
-                <h2></h2>
+            <section id="HPD" class="section-content">
+                <h2>Highest Posterior Density (HPD)</h2>
+
                 <p>
+                The <strong>highest posterior density (HPD)</strong> region is defined as the set of values of the parameter &theta; where the posterior 
+                density exceeds a certain threshold \(p^*\), such that the total probability mass within this region equals the desired confidence level \(1 - \alpha\):
                 </p>
+
+                <p style="text-align: center;">
+                \[
+                1 - \alpha = \int_{\theta: p(\theta \mid \mathcal{D}) > p^*} p(\theta \mid \mathcal{D}) \, d\theta
+                \]
+                \[
+                C_{\alpha} (\mathcal{D}) = \{\theta : p(\theta \mid \mathcal{D}) \geq p^*\}
+                \]
+                </p>
+
+                <p>
+                In one dimension, this HPD region corresponds to the interval(s) containing the highest probability density values, 
+                with total mass equal to the target confidence level (e.g., 95%). In this case, HPD regions are sometimes also called 
+                <strong>highest density intervals (HDIs)</strong>.
+                </p>
+
+                <p>
+                Unlike central credible intervals, HPD regions are not required to be symmetric or centered around the mean. 
+                This makes them especially useful when the posterior distribution is skewed  or multimodal. 
+                In such cases, HPD intervals better capture the actual regions of highest likelihood.
+                </p>
+
+                <p>
+                In the demo, you can observe that the HPD interval is often narrower than the central credible interval, and may exclude low-density regions 
+                that the central interval mistakenly includes.
+                </p>
+
             </section>
         </div>
 

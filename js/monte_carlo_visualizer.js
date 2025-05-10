@@ -3,7 +3,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   // Get the container element
-  const container = document.getElementById('random_variable_transformation_visualizer');
+  const container = document.getElementById('monte_carlo_visualizer');
   
   if (!container) {
     console.error('Container element not found!');
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="legend-item"><span class="legend-color true"></span> True Distribution</div>
             <div class="legend-item"><span class="legend-color samples"></span> Monte Carlo Samples</div>
             <div class="legend-item" id="legend-interval-label">
-            <span class="legend-color credible"></span> Credible Interval (Quantile)
+            <span class="legend-color credible"></span> Central Credible Interval 
           </div>
           </div>
         </div>
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="control-group">
           <label for="interval-type">Interval Type:</label>
           <select id="interval-type" class="full-width">
-            <option value="quantile">Quantile-based</option>
+            <option value="quantile">Central Credible Interval</option>
             <option value="hpd">HPD</option>
           </select>
         </div>
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="results-box">
             <h3>Monte Carlo Results:</h3>
             <div class="result-row">
-              <div class="result-label" id="interval-label">Credible Interval (Quantile):</div>
+              <div class="result-label" id="interval-label">Central Credible Interval:</div>
               <div class="result-value" id="result-ci">[0.000, 0.000]</div>
             </div>
             <div class="result-row">
