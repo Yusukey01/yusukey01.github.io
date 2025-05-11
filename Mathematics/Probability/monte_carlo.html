@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Monte Carlo Approximation
+title: Monte Carlo Methods
 level: detail
 description: Intro to Monte Carlo approximation in the context of Bayesian statistics.
 uses_math: true
@@ -11,7 +11,7 @@ uses_python: false
 <html>
     <body>
         <div class="hero-section">
-            <h1 class="webpage-name">Monte Carlo Approximation
+            <h1 class="webpage-name">Monte Carlo Methods
             </h1>
         </div>
 
@@ -20,7 +20,7 @@ uses_python: false
             <a href="#MC">Monte Carlo Approximation</a></li>
             <a href="#demo">Demo: Monte Carlo Approximation for CIs</a>
             <a href="#HPD">Highest Posterior Density (HPD)</a>
-            <a href="#MCMC">Markov Chain Monte Carlo (MCMC)</a>
+            <a href="#MCMC">Intro to Markov Chain Monte Carlo (MCMC)</a>
         </div> 
 
         <div class="container">  
@@ -31,7 +31,7 @@ uses_python: false
                     In Bayesian statistics, we frequently summarize the uncertainty of a posterior distribution using a <strong>credible interval</strong>. 
                     A credible interval is not the same as a <a href="hypothesis_testing.html"><strong>confidence interval</strong></a> in frequentist statistics, even though they may sometimes numerically coincide.
                 </p>
-                <p>
+                <p> 
                     Formally, for a given significance level \(\alpha \in (0,1)\), a \(100(1-\alpha)\%\) <strong>credible interval</strong> is defined as:
                     \[
                     C_{\alpha}(\mathcal{D}) = (l, u) \quad \text{such that} \quad P(l \leq \theta \leq u \mid \mathcal{D}) = 1 - \alpha,
@@ -206,31 +206,67 @@ uses_python: false
 
             <section id="MCMC" class="section-content">
                 <h2>Markov Chain Monte Carlo (MCMC)</h2>
+
                 <p>
-                    In the examples above, we sampled directly from predefined distributions to demonstrate how Monte Carlo methods 
-                    can approximate credible intervals. However, in real Bayesian inference, the posterior distribution 
-                    is rarely available in closed form.
+                    So far, our demo uses predefined distributions to illustrate how Monte Carlo methods can approximate credible intervals.
+                    However, in real Bayesian inference, the full posterior distribution \( p(\theta \mid \mathcal{D}) \) is rarely 
+                    available in closed form.
+                </p>
+    
+                <p>
+                    Instead, we typically work with the <strong>unnormalized posterior</strong>:
+                    \[
+                    p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta) \cdot p(\theta) =  p^*(\theta)
+                    \]
+                    where
+
+                <ul style="padding-left: 40px;">
+                    <li>\( p(\mathcal{D} \mid \theta) \): the <strong>likelihood</strong>, expressing how probable the data is given a parameter</li>
+                    <li>\( p(\theta) \): the <strong>prior</strong> belief about the parameter before seeing data</li>
+                </ul>
+
+                This proportionality holds because the normalizing constant \( p(\mathcal{D}) \) does not depend on \(\theta\) and can be 
+                ignored during sampling. 
+                </p>
+
+                <p>
+                    Remember, to compute the actual posterior \( p(\theta \mid \mathcal{D}) \), we would need to normalize \( p^*(\theta) \) by computing:
+                    \[
+                    p(\mathcal{D}) = \int p(\mathcal{D} \mid \theta) \cdot p(\theta) \, d\theta
+                    \]
+                    which is often intractable, especially in high-dimensional problems.
+                </p>
+                  
+
+                <p>
+                    This is where <strong>Markov Chain Monte Carlo (MCMC)</strong> methods become essential. MCMC algorithms constructs 
+                    a <a href="markov.html"><strong>Markov chain</strong></a> whose long-run behavior (stationary distribution) approximates 
+                    the posterior distribution. This allows us to generate samples from the posterior without needing the normalization 
+                    constant \( p(\mathcal{D}) \).
                 </p>
                     
                 <p>
-                    Instead, we typically have a posterior that is only known up to a constant:
-                    \[
-                    p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta) \cdot p(\theta)
-                    \]
-                    and cannot be sampled from directly.
+                    The following are three classic MCMC methods that are foundational to Bayesian computation:
                 </p>
-                
-                <p>
-                    This is where <strong>Markov Chain Monte Carlo (MCMC)</strong> methods come in. MCMC algorithms generate samples 
-                    from the posterior by constructing a Markov chain that spends more time in regions of high probability. 
-                    Common MCMC algorithms include:
-                    </p>
                     
                     <ul style="padding-left: 40px;">
-                      <li><strong>Metropolis-Hastings:</strong> A general-purpose MCMC method using proposal distributions</li>
-                      <li><strong>Gibbs sampling:</strong> A special case useful when conditional distributions are known</li>
-                      <li><strong>Hamiltonian Monte Carlo (HMC):</strong> A gradient-based MCMC algorithm efficient in high dimensions (used in Stan)</li>
+                      <li><strong>Metropolis-Hastings:</strong> A general-purpose algorithm that proposes new samples and accepts or rejects them based on a probability ratio</li>
+                      <li><strong>Gibbs Sampling:</strong> Efficient when conditional distributions are known, commonly used in simpler models and probabilistic graphical models</li>
+                      <li><strong>Hamiltonian Monte Carlo (HMC):</strong> A gradient-based method well-suited for high-dimensional posteriors; still widely used in probabilistic programming languages like Stan and PyMC</li>
                     </ul>
+                    
+                <p>
+                    While these methods are not used to train large-scale models like LLMs, they remain essential for Bayesian modeling, especially in scientific and uncertainty-aware applications. We will revisit 
+                    each of them in the future. 
+                </p>
+
+                <p>
+                    In modern machine learning and AI — particularly in large-scale models like transformers or LLMs — MCMC is not used for training, due to 
+                    its high computational cost and poor scalability in very high-dimensional parameter spaces. These models are instead trained 
+                    using gradient-based optimization (e.g., stochastic gradient descent or Adam) with maximum likelihood estimation. 
+                    However, Bayesian ideas remain important. Methods inspired by MCMC are still used for uncertainty quantification, 
+                    probabilistic modeling, simulation-based inference, and decision-making under uncertainty. 
+                </p>
             </section>
         </div>
 
