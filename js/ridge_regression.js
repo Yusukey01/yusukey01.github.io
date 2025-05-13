@@ -368,13 +368,14 @@ document.addEventListener('DOMContentLoaded', function() {
   lambda = Math.pow(10, parseFloat(lambdaInput.value) - 3);
   lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
+  let allPoints = [];
   // Functions to generate different types of datasets
   function generateData() {
     const totalPoints = trainSize * 3; // Half for training, half for testing
     const xMin = -1;
     const xMax = 1;
     
-    const allPoints = [];
+    allPoints = [];
     
     // Generate x values
     for (let i = 0; i < totalPoints; i++) {
@@ -420,8 +421,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Split into training and test sets
-    trainingData = allPoints.slice(0, trainSize);
-    testData = allPoints.slice(trainSize, 2 * trainSize);
+    const shuffled = [...allPoints];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Split with remaining data used as test
+    trainingData = shuffled.slice(0, trainSize);
+    testData = shuffled.slice(trainSize);
     
     // Fit models
     fitModels();
