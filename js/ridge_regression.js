@@ -710,8 +710,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Calculate Mean Squared Error
   function calculateMSE(predictions, actual) {
+    if (!predictions || !actual || !Array.isArray(predictions) || !Array.isArray(actual)) {
+      console.error("Invalid inputs for MSE calculation");
+      return 0;
+    }
+  
     if (predictions.length !== actual.length) {
-      console.error("Mismatched lengths in MSE calculation");
+      console.error(`Mismatched lengths in MSE calculation: predictions=${predictions.length}, actual=${actual.length}`);
       return 0;
     }
     
