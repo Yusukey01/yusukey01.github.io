@@ -626,30 +626,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     try {
-      // CHANGE 1: For linear regression, use a much smaller regularization term
-      // or choose a method based on the condition of the matrix
-      const minLambda = 1e-10; // Much smaller than before
-      const identity = [];
-      for (let i = 0; i < XtX.length; i++) {
-        identity[i] = [];
-        for (let j = 0; j < XtX[0].length; j++) {
-          identity[i][j] = i === j ? minLambda : 0;
-        }
+      // CORRECTED: For true linear regression, use no regularization at all
+      // Attempt to compute the inverse without any regularization
+      let linearSuccess = true;
+      let XtX_inv;
+      
+      try {
+        XtX_inv = matrixInverse(XtX);
+      } catch (e) {
+        console.error("Linear regression failed: Matrix is singular", e);
+        linearSuccess = false;
+        
+        // Set linear model error messages
+        linearTrainError.textContent = "Matrix is singular";
+        linearTestError.textContent = "Cannot compute";
+        linearWeightsNorm.textContent = "N/A";
+        
+        // Set empty weights for linear model
+        linearWeights = Array(XtX.length).fill(0);
       }
       
-      // Add tiny regularization to X^T * X for linear regression (just to avoid singularity)
-      const linearRegularized = matrixAdd(XtX, identity);
-      const XtX_inv = matrixInverse(linearRegularized);
-      
-      if (XtX_inv.length === 0) {
-        throw new Error("Failed to compute matrix inverse");
+      if (linearSuccess) {
+        const linearWeightMatrix = matrixMultiply(XtX_inv, Xty);
+        linearWeights = linearWeightMatrix.map(row => row[0]); // Extract to 1D array
       }
       
-      const linearWeightMatrix = matrixMultiply(XtX_inv, Xty);
-      linearWeights = linearWeightMatrix.map(row => row[0]); // Extract to 1D array
-      
-      // CHANGE 2: For ridge regression, make sure we use the lambda from the UI
-      // and ensure it has a noticeable effect
+      // For ridge regression, use the actual lambda from the UI
       const ridgeIdentity = [];
       for (let i = 0; i < XtX.length; i++) {
         ridgeIdentity[i] = [];
@@ -668,68 +670,82 @@ document.addEventListener('DOMContentLoaded', function() {
       const ridgeWeightMatrix = matrixMultiply(ridge_inv, Xty);
       ridgeWeights = ridgeWeightMatrix.map(row => row[0]); // Extract to 1D array
       
-      // Calculate predictions manually with dot products
+      // Calculate predictions and MSE as before...
+      // [rest of the function remains the same]
+      
+      // Calculate predictions and MSE only if linear regression succeeded
       const linear_train_preds = [];
       const ridge_train_preds = [];
       const linear_test_preds = [];
       const ridge_test_preds = [];
   
-      // Calculate training predictions
+      // Calculate ridge regression predictions for training data
       for (let i = 0; i < X_train.length; i++) {
-        let linearPred = 0;
         let ridgePred = 0;
-        
-        for (let j = 0; j < linearWeights.length; j++) {
-          linearPred += X_train[i][j] * linearWeights[j];
+        for (let j = 0; j < ridgeWeights.length; j++) {
           ridgePred += X_train[i][j] * ridgeWeights[j];
         }
-        
-        linear_train_preds.push(linearPred);
         ridge_train_preds.push(ridgePred);
+        
+        // Only calculate linear predictions if linear regression succeeded
+        if (linearSuccess) {
+          let linearPred = 0;
+          for (let j = 0; j < linearWeights.length; j++) {
+            linearPred += X_train[i][j] * linearWeights[j];
+          }
+          linear_train_preds.push(linearPred);
+        }
       }
   
-      // Calculate test predictions
+      // Calculate ridge regression predictions for test data
       for (let i = 0; i < X_test.length; i++) {
-        let linearPred = 0;
         let ridgePred = 0;
-        
-        for (let j = 0; j < linearWeights.length; j++) {
-          linearPred += X_test[i][j] * linearWeights[j];
+        for (let j = 0; j < ridgeWeights.length; j++) {
           ridgePred += X_test[i][j] * ridgeWeights[j];
         }
-        
-        linear_test_preds.push(linearPred);
         ridge_test_preds.push(ridgePred);
+        
+        // Only calculate linear predictions if linear regression succeeded
+        if (linearSuccess) {
+          let linearPred = 0;
+          for (let j = 0; j < linearWeights.length; j++) {
+            linearPred += X_test[i][j] * linearWeights[j];
+          }
+          linear_test_preds.push(linearPred);
+        }
       }
   
       // Extract flat arrays from y_train and y_test
       const y_train_flat = y_train.map(item => item[0]);
       const y_test_flat = y_test.map(item => item[0]);
       
-      // Calculate MSE
-      const linear_train_mse = calculateMSE(linear_train_preds, y_train_flat);
+      // Calculate MSE for ridge regression
       const ridge_train_mse = calculateMSE(ridge_train_preds, y_train_flat);
-      
-      const linear_test_mse = calculateMSE(linear_test_preds, y_test_flat);
       const ridge_test_mse = calculateMSE(ridge_test_preds, y_test_flat);
       
-      // Update result display
-      linearTrainError.textContent = `Train MSE: ${linear_train_mse.toFixed(3)}`;
-      linearTestError.textContent = `Test MSE: ${linear_test_mse.toFixed(3)}`;
-      
+      // Update ridge regression result display
       ridgeTrainError.textContent = `Train MSE: ${ridge_train_mse.toFixed(3)}`;
       ridgeTestError.textContent = `Test MSE: ${ridge_test_mse.toFixed(3)}`;
       
-      // Calculate L2 norms (excluding bias term)
-      const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
-      const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
+      // Calculate and update linear regression results only if it succeeded
+      if (linearSuccess) {
+        const linear_train_mse = calculateMSE(linear_train_preds, y_train_flat);
+        const linear_test_mse = calculateMSE(linear_test_preds, y_test_flat);
+        
+        linearTrainError.textContent = `Train MSE: ${linear_train_mse.toFixed(3)}`;
+        linearTestError.textContent = `Test MSE: ${linear_test_mse.toFixed(3)}`;
+        
+        // Calculate L2 norm for linear weights (excluding bias term)
+        const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
+        linearWeightsNorm.textContent = `Linear: ${linear_l2.toFixed(3)}`;
+      }
       
-      linearWeightsNorm.textContent = `Linear: ${linear_l2.toFixed(3)}`;
+      // Calculate L2 norm for ridge weights (excluding bias term)
+      const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
       ridgeWeightsNorm.textContent = `Ridge: ${ridge_l2.toFixed(3)}`;
       
       // Update weight bars visualization
       updateWeightBars();
-      
     } catch (e) {
       console.error("Error fitting models:", e);
       linearTrainError.textContent = "Error";
@@ -743,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
       updateWeightBars();
     }
   }
-
+  
   // Calculate Mean Squared Error
   function calculateMSE(predictions, actual) {
     if (!predictions || !actual || !Array.isArray(predictions) || !Array.isArray(actual)) {
