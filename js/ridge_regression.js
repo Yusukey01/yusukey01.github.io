@@ -372,8 +372,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Functions to generate different types of datasets
   function generateData() {
     const totalPoints = trainSize * 3;
-    const xMin = -1;
-    const xMax = 1;
+    const xMin = -1.2;
+    const xMax = 1.2;
     
     allPoints = [];
     
