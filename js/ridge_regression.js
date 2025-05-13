@@ -623,9 +623,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
       // Linear regression
       // Prepare for linear regression
-      const yTrainMatrix = y_train.map(v => [v]);
       const XtX = matrixMultiply(transpose(X_train), X_train);
-      const Xty = matrixMultiply(transpose(X_train), yTrainMatrix);
+      const Xty = matrixMultiply(transpose(X_train), y_train);
 
       // Compute linear weights
       const linearWeights = trainLinearRegression(XtX, Xty);
@@ -667,10 +666,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function prepareXY(data) {
     const X = createDesignMatrix(data, polynomialDegree);
-    const y = data.map(p => p.y);
+    const y = data.map(p => [p.y]); // return as [n x 1] matrix
     return { X, y };
   }
-  
   
   function trainLinearRegression(XtX, Xty) {
     if (!Array.isArray(Xty[0])) {
