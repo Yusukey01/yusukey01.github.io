@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="controls-panel">
           <div class="control-group">
             <label for="lambda-value">Regularization Parameter (λ):</label>
-            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="5" class="full-width">
-            <span id="lambda-display">λ = 5</span>
+            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="2.5" class="full-width">
+            <span id="lambda-display">λ = 2.5</span>
           </div>
           
           <div class="control-group">
@@ -1361,8 +1361,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function handleDatasetChange() {
     datasetType = datasetSelect.value;
     
-    lambdaInput.value = 5.0;
-    lambda = Math.pow(10, 5.0 - 3); // For 0-5 range
+    lambdaInput.value = 2.5;
+    lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
     lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
     // Adjust polynomial degree based on dataset type
