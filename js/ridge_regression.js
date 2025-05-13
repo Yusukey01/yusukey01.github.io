@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="controls-panel">
           <div class="control-group">
             <label for="lambda-value">Regularization Parameter (λ):</label>
-            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="2" class="full-width">
-            <span id="lambda-display">λ = 2</span>
+            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="5" class="full-width">
+            <span id="lambda-display">λ = 5</span>
           </div>
           
           <div class="control-group">
@@ -1361,34 +1361,29 @@ document.addEventListener('DOMContentLoaded', function() {
   function handleDatasetChange() {
     datasetType = datasetSelect.value;
     
-    // Adjust polynomial degree & lambda based on dataset type
+    lambdaInput.value = 5.0;
+    lambda = Math.pow(10, 5.0 - 3); // For 0-5 range
+    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+
+    // Adjust polynomial degree based on dataset type
     switch (datasetType) {
       case 'noisy':
         // Use medium polynomial degree for noisy data
         polynomialDegreeInput.value = 8;
         polynomialDegreeDisplay.textContent = "8";
-        polynomialDegree = 8;
-        lambdaInput.value = 2.0;
-        lambda = Math.pow(10, 2.0 - 3); // For 0-5 range
-        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+        polynomialDegree = 8;     
         break;
       case 'outliers':
         // Use higher polynomial degree for outlier data to show the difference
         polynomialDegreeInput.value = 6;
         polynomialDegreeDisplay.textContent = "6";
         polynomialDegree = 6;
-        lambdaInput.value = 2.5;
-        lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
-        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
         break;
       default: 
         // Use higher polynomial degree for polynomial data
         polynomialDegreeInput.value = 12;
         polynomialDegreeDisplay.textContent = "12";
         polynomialDegree = 12;
-        lambdaInput.value = 1.5;
-        lambda = Math.pow(10, 1.5 - 3); // For 0-5 range
-        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
       break;
     }  
     generateData();
