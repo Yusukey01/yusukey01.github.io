@@ -46,19 +46,19 @@ document.addEventListener('DOMContentLoaded', function() {
           
           <div class="control-group">
             <label for="train-size">Training Set Size:</label>
-            <input type="range" id="train-size" min="5" max="50" step="1" value="15" class="full-width">
+            <input type="range" id="train-size" min="5" max="100" step="1" value="30" class="full-width">
             <span id="train-size-display">15 points</span>
           </div>
           
           <div class="control-group">
             <label for="noise-level">Noise Level:</label>
-            <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.5" class="full-width">
+            <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
             <span id="noise-level-display">0.5</span>
           </div>
           
           <div class="control-group" id="polynomial-params">
             <label for="polynomial-degree">Polynomial Degree:</label>
-            <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="3" class="full-width">
+            <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="10" class="full-width">
             <span id="polynomial-degree-display">3</span>
           </div>
           
