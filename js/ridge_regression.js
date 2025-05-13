@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Functions to generate different types of datasets
   function generateData() {
-    const totalPoints = trainSize * 2; // Half for training, half for testing
+    const totalPoints = trainSize * 3; // Half for training, half for testing
     const xMin = -5;
     const xMax = 5;
     const xStep = (xMax - xMin) / (totalPoints - 1);
@@ -1346,9 +1346,9 @@ document.addEventListener('DOMContentLoaded', function() {
     switch (datasetType) {
       case 'polynomial':
         // Use higher polynomial degree for polynomial data
-        polynomialDegreeInput.value = 5;
-        polynomialDegreeDisplay.textContent = "5";
-        polynomialDegree = 5;
+        polynomialDegreeInput.value = 12;
+        polynomialDegreeDisplay.textContent = "12";
+        polynomialDegree = 12;
         break;
       case 'noisy':
         // Use medium polynomial degree for noisy data
