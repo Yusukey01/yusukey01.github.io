@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let linearWeights = [];
   let ridgeWeights = [];
   let datasetType = 'linear';
-  let lambda = 0.5;
+  let lambda;
   let trainSize = 15;
   let noiseLevel = 0.5;
   let polynomialDegree = 3;
@@ -362,6 +362,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const plotMargin = 50;
   const plotWidth = canvasWidth - 2 * plotMargin;
   const plotHeight = canvasHeight - 2 * plotMargin;
+
+  lambda = Math.pow(10, parseFloat(lambdaInput.value) - 3);
+  lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
   // Functions to generate different types of datasets
   function generateData() {
@@ -396,23 +399,25 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
         
         case 'polynomial':
-          y = 0.05 * Math.pow(x, 5) - 0.02 * Math.pow(x, 4) + 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
+          // CHANGE: Made the polynomial more extreme to show regularization effects
+          y = 0.1 * Math.pow(x, 5) - 0.05 * Math.pow(x, 4) + 0.2 * Math.pow(x, 3) - 0.8 * Math.pow(x, 2) + 1.5 * x + 2;
           break;
         
         case 'noisy':
-           y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
+          // CHANGE: Added more high-frequency components
+          y = Math.sin(x) + 0.5 * Math.sin(7 * x) + (x > 0 ? 0.3 * x : -0.3 * x);
           break;
         
         case 'outliers':
-          // y = 1.5x + 2 with occasional outliers
+          // CHANGE: More extreme outliers
           y = 1.5 * x + 2;
           if (Math.random() < 0.15) { // 15% chance of outlier
-            y += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 10;
+            y += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 15;
           }
           break;
       }
       
-      // Add noise
+      // Add noise based on the noise level
       y += (Math.random() * 2 - 1) * noiseLevel;
       
       allPoints[i].y = y;
@@ -589,156 +594,155 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Fit linear regression and ridge regression models
-  // Fit linear regression and ridge regression models
-function fitModels() {
-  if (!trainingData || trainingData.length === 0) {
-    console.error("No training data available");
-    return;
-  }
-
-  const degree = parseInt(polynomialDegreeInput.value);
+  function fitModels() {
+    if (!trainingData || trainingData.length === 0) {
+      console.error("No training data available");
+      return;
+    }
   
-  // Create design matrices
-  const X_train = createDesignMatrix(trainingData, degree);
-  const y_train = trainingData.map(point => [point.y]);
-  
-  const X_test = createDesignMatrix(testData, degree);
-  const y_test = testData.map(point => [point.y]);
-  
-  if (X_train.length === 0 || y_train.length === 0) {
-    console.error("Failed to create design matrices");
-    return;
-  }
-  
-  // Compute X^T * X
-  const XtX = matrixMultiply(transpose(X_train), X_train);
-  
-  // Compute X^T * y
-  const Xty = matrixMultiply(transpose(X_train), y_train);
-  
-  if (XtX.length === 0 || Xty.length === 0) {
-    console.error("Failed to compute X^T * X or X^T * y");
-    return;
-  }
-  
-  try {
-    // Linear regression: w = (X^T * X)^(-1) * X^T * y
-    // Add a small regularization term to prevent singularity
-    const minLambda = 1e-6;
-    const identity = [];
-    for (let i = 0; i < XtX.length; i++) {
-      identity[i] = [];
-      for (let j = 0; j < XtX[0].length; j++) {
-        identity[i][j] = i === j ? minLambda : 0;
-      }
+    const degree = parseInt(polynomialDegreeInput.value);
+    
+    // Create design matrices
+    const X_train = createDesignMatrix(trainingData, degree);
+    const y_train = trainingData.map(point => [point.y]);
+    
+    const X_test = createDesignMatrix(testData, degree);
+    const y_test = testData.map(point => [point.y]);
+    
+    if (X_train.length === 0 || y_train.length === 0) {
+      console.error("Failed to create design matrices");
+      return;
     }
     
-    // Add small regularization to X^T * X for linear regression
-    const linearRegularized = matrixAdd(XtX, identity);
-    const XtX_inv = matrixInverse(linearRegularized);
+    // Compute X^T * X
+    const XtX = matrixMultiply(transpose(X_train), X_train);
     
-    if (XtX_inv.length === 0) {
-      throw new Error("Failed to compute matrix inverse");
+    // Compute X^T * y
+    const Xty = matrixMultiply(transpose(X_train), y_train);
+    
+    if (XtX.length === 0 || Xty.length === 0) {
+      console.error("Failed to compute X^T * X or X^T * y");
+      return;
     }
     
-    const linearWeightMatrix = matrixMultiply(XtX_inv, Xty);
-    linearWeights = linearWeightMatrix.map(row => row[0]); // Extract to 1D array
-    
-    // Ridge regression: w = (X^T * X + λI)^(-1) * X^T * y
-    const ridgeIdentity = [];
-    for (let i = 0; i < XtX.length; i++) {
-      ridgeIdentity[i] = [];
-      for (let j = 0; j < XtX[0].length; j++) {
-        ridgeIdentity[i][j] = i === j ? lambda : 0;
-      }
-    }
-    
-    const ridgeRegularized = matrixAdd(XtX, ridgeIdentity);
-    const ridge_inv = matrixInverse(ridgeRegularized);
-    
-    if (ridge_inv.length === 0) {
-      throw new Error("Failed to compute ridge matrix inverse");
-    }
-    
-    const ridgeWeightMatrix = matrixMultiply(ridge_inv, Xty);
-    ridgeWeights = ridgeWeightMatrix.map(row => row[0]); // Extract to 1D array
-    
-    // Calculate predictions manually with dot products
-    const linear_train_preds = [];
-    const ridge_train_preds = [];
-    const linear_test_preds = [];
-    const ridge_test_preds = [];
-
-    // Calculate training predictions
-    for (let i = 0; i < X_train.length; i++) {
-      let linearPred = 0;
-      let ridgePred = 0;
-      
-      for (let j = 0; j < linearWeights.length; j++) {
-        linearPred += X_train[i][j] * linearWeights[j];
-        ridgePred += X_train[i][j] * ridgeWeights[j];
+    try {
+      // CHANGE 1: For linear regression, use a much smaller regularization term
+      // or choose a method based on the condition of the matrix
+      const minLambda = 1e-10; // Much smaller than before
+      const identity = [];
+      for (let i = 0; i < XtX.length; i++) {
+        identity[i] = [];
+        for (let j = 0; j < XtX[0].length; j++) {
+          identity[i][j] = i === j ? minLambda : 0;
+        }
       }
       
-      linear_train_preds.push(linearPred);
-      ridge_train_preds.push(ridgePred);
-    }
-
-    // Calculate test predictions
-    for (let i = 0; i < X_test.length; i++) {
-      let linearPred = 0;
-      let ridgePred = 0;
+      // Add tiny regularization to X^T * X for linear regression (just to avoid singularity)
+      const linearRegularized = matrixAdd(XtX, identity);
+      const XtX_inv = matrixInverse(linearRegularized);
       
-      for (let j = 0; j < linearWeights.length; j++) {
-        linearPred += X_test[i][j] * linearWeights[j];
-        ridgePred += X_test[i][j] * ridgeWeights[j];
+      if (XtX_inv.length === 0) {
+        throw new Error("Failed to compute matrix inverse");
       }
       
-      linear_test_preds.push(linearPred);
-      ridge_test_preds.push(ridgePred);
-    }
-
-    // Extract flat arrays from y_train and y_test
-    const y_train_flat = y_train.map(item => item[0]);
-    const y_test_flat = y_test.map(item => item[0]);
-    
-    // Calculate MSE
-    const linear_train_mse = calculateMSE(linear_train_preds, y_train_flat);
-    const ridge_train_mse = calculateMSE(ridge_train_preds, y_train_flat);
-    
-    const linear_test_mse = calculateMSE(linear_test_preds, y_test_flat);
-    const ridge_test_mse = calculateMSE(ridge_test_preds, y_test_flat);
-    
-    // Update result display
-    linearTrainError.textContent = `Train MSE: ${linear_train_mse.toFixed(3)}`;
-    linearTestError.textContent = `Test MSE: ${linear_test_mse.toFixed(3)}`;
-    
-    ridgeTrainError.textContent = `Train MSE: ${ridge_train_mse.toFixed(3)}`;
-    ridgeTestError.textContent = `Test MSE: ${ridge_test_mse.toFixed(3)}`;
-    
-    // Calculate L2 norms (excluding bias term)
-    const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
-    const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
-    
-    linearWeightsNorm.textContent = `Linear: ${linear_l2.toFixed(3)}`;
-    ridgeWeightsNorm.textContent = `Ridge: ${ridge_l2.toFixed(3)}`;
-    
-    // Update weight bars visualization
-    updateWeightBars();
-    
-  } catch (e) {
-    console.error("Error fitting models:", e);
-    linearTrainError.textContent = "Error";
-    linearTestError.textContent = "Error";
-    ridgeTrainError.textContent = "Error";
-    ridgeTestError.textContent = "Error";
-    
-    linearWeights = [];
-    ridgeWeights = [];
-    
-    updateWeightBars();
-  }
-}
+      const linearWeightMatrix = matrixMultiply(XtX_inv, Xty);
+      linearWeights = linearWeightMatrix.map(row => row[0]); // Extract to 1D array
+      
+      // CHANGE 2: For ridge regression, make sure we use the lambda from the UI
+      // and ensure it has a noticeable effect
+      const ridgeIdentity = [];
+      for (let i = 0; i < XtX.length; i++) {
+        ridgeIdentity[i] = [];
+        for (let j = 0; j < XtX[0].length; j++) {
+          ridgeIdentity[i][j] = i === j ? lambda : 0;
+        }
+      }
+      
+      const ridgeRegularized = matrixAdd(XtX, ridgeIdentity);
+      const ridge_inv = matrixInverse(ridgeRegularized);
+      
+      if (ridge_inv.length === 0) {
+        throw new Error("Failed to compute ridge matrix inverse");
+      }
+      
+      const ridgeWeightMatrix = matrixMultiply(ridge_inv, Xty);
+      ridgeWeights = ridgeWeightMatrix.map(row => row[0]); // Extract to 1D array
+      
+      // Calculate predictions manually with dot products
+      const linear_train_preds = [];
+      const ridge_train_preds = [];
+      const linear_test_preds = [];
+      const ridge_test_preds = [];
   
+      // Calculate training predictions
+      for (let i = 0; i < X_train.length; i++) {
+        let linearPred = 0;
+        let ridgePred = 0;
+        
+        for (let j = 0; j < linearWeights.length; j++) {
+          linearPred += X_train[i][j] * linearWeights[j];
+          ridgePred += X_train[i][j] * ridgeWeights[j];
+        }
+        
+        linear_train_preds.push(linearPred);
+        ridge_train_preds.push(ridgePred);
+      }
+  
+      // Calculate test predictions
+      for (let i = 0; i < X_test.length; i++) {
+        let linearPred = 0;
+        let ridgePred = 0;
+        
+        for (let j = 0; j < linearWeights.length; j++) {
+          linearPred += X_test[i][j] * linearWeights[j];
+          ridgePred += X_test[i][j] * ridgeWeights[j];
+        }
+        
+        linear_test_preds.push(linearPred);
+        ridge_test_preds.push(ridgePred);
+      }
+  
+      // Extract flat arrays from y_train and y_test
+      const y_train_flat = y_train.map(item => item[0]);
+      const y_test_flat = y_test.map(item => item[0]);
+      
+      // Calculate MSE
+      const linear_train_mse = calculateMSE(linear_train_preds, y_train_flat);
+      const ridge_train_mse = calculateMSE(ridge_train_preds, y_train_flat);
+      
+      const linear_test_mse = calculateMSE(linear_test_preds, y_test_flat);
+      const ridge_test_mse = calculateMSE(ridge_test_preds, y_test_flat);
+      
+      // Update result display
+      linearTrainError.textContent = `Train MSE: ${linear_train_mse.toFixed(3)}`;
+      linearTestError.textContent = `Test MSE: ${linear_test_mse.toFixed(3)}`;
+      
+      ridgeTrainError.textContent = `Train MSE: ${ridge_train_mse.toFixed(3)}`;
+      ridgeTestError.textContent = `Test MSE: ${ridge_test_mse.toFixed(3)}`;
+      
+      // Calculate L2 norms (excluding bias term)
+      const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
+      const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
+      
+      linearWeightsNorm.textContent = `Linear: ${linear_l2.toFixed(3)}`;
+      ridgeWeightsNorm.textContent = `Ridge: ${ridge_l2.toFixed(3)}`;
+      
+      // Update weight bars visualization
+      updateWeightBars();
+      
+    } catch (e) {
+      console.error("Error fitting models:", e);
+      linearTrainError.textContent = "Error";
+      linearTestError.textContent = "Error";
+      ridgeTrainError.textContent = "Error";
+      ridgeTestError.textContent = "Error";
+      
+      linearWeights = [];
+      ridgeWeights = [];
+      
+      updateWeightBars();
+    }
+  }
 
   // Calculate Mean Squared Error
   function calculateMSE(predictions, actual) {
@@ -1029,88 +1033,93 @@ function fitModels() {
   }
 
   // Draw regression lines
-  // Draw regression lines
-function drawRegressionLines(xRange, yRange) {
-  // Only draw if we have weights
-  if (linearWeights.length === 0 || ridgeWeights.length === 0) {
-    return;
+  function drawRegressionLines(xRange, yRange) {
+    // Only draw if we have weights
+    if (linearWeights.length === 0 || ridgeWeights.length === 0) {
+      return;
+    }
+    
+    // Calculate scale
+    const xScale = plotWidth / (xRange.max - xRange.min);
+    const yScale = plotHeight / (yRange.max - yRange.min);
+    
+    const numPoints = 200; // Increased number of points for smoother lines
+    const xStep = (xRange.max - xRange.min) / (numPoints - 1);
+    
+    // Draw linear regression line
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    let firstPoint = true;
+    for (let i = 0; i < numPoints; i++) {
+      const x = xRange.min + i * xStep;
+      
+      // Generate features for polynomial regression
+      const features = [1]; // Start with bias term
+      for (let j = 1; j <= polynomialDegree; j++) {
+        features.push(Math.pow(x, j));
+      }
+      
+      // Calculate prediction using dot product directly
+      let y = 0;
+      for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
+        y += features[j] * linearWeights[j];
+      }
+      
+      const canvasX = plotMargin + (x - xRange.min) * xScale;
+      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+      
+      // Only draw points that are within the canvas boundaries
+      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+        if (firstPoint) {
+          ctx.moveTo(canvasX, canvasY);
+          firstPoint = false;
+        } else {
+          ctx.lineTo(canvasX, canvasY);
+        }
+      }
+    }
+    
+    ctx.stroke();
+    
+    // Draw ridge regression line
+    ctx.strokeStyle = '#2ecc71';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    firstPoint = true;
+    for (let i = 0; i < numPoints; i++) {
+      const x = xRange.min + i * xStep;
+      
+      // Generate features for polynomial regression
+      const features = [1]; // Start with bias term
+      for (let j = 1; j <= polynomialDegree; j++) {
+        features.push(Math.pow(x, j));
+      }
+      
+      // Calculate prediction using dot product directly
+      let y = 0;
+      for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
+        y += features[j] * ridgeWeights[j];
+      }
+      
+      const canvasX = plotMargin + (x - xRange.min) * xScale;
+      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+      
+      // Only draw points that are within the canvas boundaries
+      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+        if (firstPoint) {
+          ctx.moveTo(canvasX, canvasY);
+          firstPoint = false;
+        } else {
+          ctx.lineTo(canvasX, canvasY);
+        }
+      }
+    }
+    
+    ctx.stroke();
   }
-  
-  // Calculate scale
-  const xScale = plotWidth / (xRange.max - xRange.min);
-  const yScale = plotHeight / (yRange.max - yRange.min);
-  
-  const numPoints = 200; // Increased number of points for smoother lines
-  const xStep = (xRange.max - xRange.min) / (numPoints - 1);
-  
-  // Draw linear regression line
-  ctx.strokeStyle = '#e74c3c';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  
-  let firstPoint = true;
-  for (let i = 0; i < numPoints; i++) {
-    const x = xRange.min + i * xStep;
-    
-    // Generate features for polynomial regression
-    const features = [1]; // Start with bias term
-    for (let j = 1; j <= polynomialDegree; j++) {
-      features.push(Math.pow(x, j));
-    }
-    
-    // Calculate prediction using dot product directly
-    let y = 0;
-    for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
-      y += features[j] * linearWeights[j];
-    }
-    
-    const canvasX = plotMargin + (x - xRange.min) * xScale;
-    const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-    
-    if (firstPoint) {
-      ctx.moveTo(canvasX, canvasY);
-      firstPoint = false;
-    } else {
-      ctx.lineTo(canvasX, canvasY);
-    }
-  }
-  
-  ctx.stroke();
-  
-  // Draw ridge regression line
-  ctx.strokeStyle = '#2ecc71';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  
-  firstPoint = true;
-  for (let i = 0; i < numPoints; i++) {
-    const x = xRange.min + i * xStep;
-    
-    // Generate features for polynomial regression
-    const features = [1]; // Start with bias term
-    for (let j = 1; j <= polynomialDegree; j++) {
-      features.push(Math.pow(x, j));
-    }
-    
-    // Calculate prediction using dot product directly
-    let y = 0;
-    for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
-      y += features[j] * ridgeWeights[j];
-    }
-    
-    const canvasX = plotMargin + (x - xRange.min) * xScale;
-    const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-    
-    if (firstPoint) {
-      ctx.moveTo(canvasX, canvasY);
-      firstPoint = false;
-    } else {
-      ctx.lineTo(canvasX, canvasY);
-    }
-  }
-  
-  ctx.stroke();
-}
 
   // Draw data points
   function drawDataPoints(xRange, yRange) {
@@ -1163,8 +1172,12 @@ function drawRegressionLines(xRange, yRange) {
 
   // Handle lambda change
   function handleLambdaChange() {
-    lambda = parseFloat(lambdaInput.value);
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(1)}`;
+    // Convert slider value to logarithmic scale
+    const sliderValue = parseFloat(lambdaInput.value);
+    lambda = Math.pow(10, sliderValue - 3); // For 0-5 range, gives approximately 0.001 to 100
+    
+    // Format displayed value to appropriate decimal places based on magnitude
+    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
     
     // Just refit models without generating new data
     fitModels();
