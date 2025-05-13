@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="visualization-mode-toggle">
             <label class="toggle-control">
               <select id="dataset-type" class="full-width">
-                <option value="linear">Simple Linear Data</option>
                 <option value="polynomial">Polynomial Data</option>
                 <option value="noisy">Noisy Data</option>
                 <option value="outliers">Data with Outliers</option>
@@ -80,6 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="result-value" id="linear-weights">Linear: 0.000</div>
               <div class="result-value" id="ridge-weights">Ridge: 0.000</div>
             </div>
+
+            <div id="model-comparison-message" style="margin-top: 10px; font-weight: bold; color: #c0392b;"></div>
+
           </div>
           
           <div class="weight-visualization">
@@ -392,11 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
       let y = 0;
       
       switch (datasetType) {
-        case 'linear':
-          // y = 2x + 1 + noise
-          y = 2 * x + 1;
-          break;
-        
         case 'polynomial':
           // CHANGE: Made the polynomial more extreme to show regularization effects
           y = 0.1 * Math.pow(x, 5) - 0.05 * Math.pow(x, 4) + 0.2 * Math.pow(x, 3) - 0.8 * Math.pow(x, 2) + 1.5 * x + 2;
@@ -743,6 +740,25 @@ document.addEventListener('DOMContentLoaded', function() {
       const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
       ridgeWeightsNorm.textContent = `Ridge: ${ridge_l2.toFixed(3)}`;
       
+
+      // Optional model comparison message
+      const msgDiv = document.getElementById("model-comparison-message");
+
+      if (linearSuccess) {
+        const linear_test_mse = parseFloat(linearTestError.textContent.split(":")[1]);
+        const ridge_test_mse = parseFloat(ridgeTestError.textContent.split(":")[1]);
+
+        if (linear_test_mse > ridge_test_mse * 10) {
+          msgDiv.textContent = "⚠️ Linear regression is overfitting. Ridge regression generalizes much better.";
+        } else if (ridge_test_mse > linear_test_mse * 5) {
+          msgDiv.textContent = "⚠️ Ridge regression may be underfitting due to too much regularization.";
+        } else {
+          msgDiv.textContent = "";
+        }
+      } else {
+        msgDiv.textContent = "";
+      }
+
       // Update weight bars visualization
       updateWeightBars();
     } catch (e) {
@@ -1119,10 +1135,6 @@ document.addEventListener('DOMContentLoaded', function() {
       let y;
       
       switch (datasetType) {
-        case 'linear':
-          y = 2 * x + 1;
-          break;
-        
         case 'polynomial':
           y = 0.05 * Math.pow(x, 5) - 0.02 * Math.pow(x, 4) + 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
           break;
@@ -1343,12 +1355,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Adjust polynomial degree based on dataset type
     switch (datasetType) {
-      case 'polynomial':
-        // Use higher polynomial degree for polynomial data
-        polynomialDegreeInput.value = 12;
-        polynomialDegreeDisplay.textContent = "12";
-        polynomialDegree = 12;
-        break;
       case 'noisy':
         // Use medium polynomial degree for noisy data
         polynomialDegreeInput.value = 8;
@@ -1361,33 +1367,28 @@ document.addEventListener('DOMContentLoaded', function() {
         polynomialDegreeDisplay.textContent = "6";
         polynomialDegree = 6;
         break;
-      default:
-        // Use lower polynomial degree for linear data
-        polynomialDegreeInput.value = 2;
-        polynomialDegreeDisplay.textContent = "2";
-        polynomialDegree = 2;
+      default: 
+      // Use higher polynomial degree for polynomial data
+      polynomialDegreeInput.value = 12;
+      polynomialDegreeDisplay.textContent = "12";
+      polynomialDegree = 12;
+      break;
     }
     
     // Update lambdaInput based on dataset type
     switch (datasetType) {
-      case 'polynomial':
-      case 'noisy':
-        // Use higher lambda for more complex data
-        lambdaInput.value = 2.0;
-        lambda = Math.pow(10, 2.0 - 3); // For 0-5 range
-        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
-        break;
       case 'outliers':
         // Use even higher lambda for outlier data
         lambdaInput.value = 2.5;
         lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
         lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
         break;
+      case 'noisy':
       default:
-        // Use lower lambda for linear data
-        lambdaInput.value = 1.0;
-        lambda = Math.pow(10, 1.0 - 3); // For 0-5 range
-        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+        // Use higher lambda for more complex data
+      lambdaInput.value = 2.0;
+      lambda = Math.pow(10, 2.0 - 3); // For 0-5 range
+      lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
     }
     
     generateData();
