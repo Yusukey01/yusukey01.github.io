@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="control-group" id="polynomial-params">
             <label for="polynomial-degree">Polynomial Degree:</label>
             <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="3" class="full-width">
-            <span id="polynomial-degree-display">3</span>
+            <span id="polynomial-degree-display">9</span>
           </div>
           
           <div class="results-box">
@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let allPoints = [];
   // Functions to generate different types of datasets
   function generateData() {
-    const totalPoints = trainSize * 3; // Half for training, half for testing
+    const totalPoints = trainSize * 3;
     const xMin = -1;
     const xMax = 1;
     
