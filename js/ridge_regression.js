@@ -592,37 +592,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute X^T * y
     const Xty = matrixMultiply(transpose(X_train), y_train);
     
-    // Linear regression: w = (X^T * X)^(-1) * X^T * y
     try {
+      // Linear regression: w = (X^T * X)^(-1) * X^T * y
       // Add a small regularization term to prevent singularity
       const minLambda = 1e-6;
-      const effectiveLambda = Math.max(lambda, minLambda);
-      
-      // Create identity matrix for regularization
       const identity = [];
       for (let i = 0; i < XtX.length; i++) {
         identity[i] = [];
         for (let j = 0; j < XtX[0].length; j++) {
-          identity[i][j] = i === j ? effectiveLambda : 0;
+          identity[i][j] = i === j ? minLambda : 0;
         }
       }
       
-      // Add regularization to X^T * X
-      const regularized = matrixAdd(XtX, identity);
-      
-      // Try to compute inverse
-      const XtX_inv = matrixInverse(regularized);
-      
-      // Compute weights
+      // Add small regularization to X^T * X for linear regression
+      const linearRegularized = matrixAdd(XtX, identity);
+      const XtX_inv = matrixInverse(linearRegularized);
       linearWeights = matrixMultiply(XtX_inv, Xty).flat();
       
-      // For ridge regression, use a larger lambda
-      const ridgeLambda = Math.max(effectiveLambda * 2, 0.1);
+      // Ridge regression: w = (X^T * X + λI)^(-1) * X^T * y
       const ridgeIdentity = [];
       for (let i = 0; i < XtX.length; i++) {
         ridgeIdentity[i] = [];
         for (let j = 0; j < XtX[0].length; j++) {
-          ridgeIdentity[i][j] = i === j ? ridgeLambda : 0;
+          ridgeIdentity[i][j] = i === j ? lambda : 0;
         }
       }
       
@@ -630,13 +622,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const ridge_inv = matrixInverse(ridgeRegularized);
       ridgeWeights = matrixMultiply(ridge_inv, Xty).flat();
       
-      // Calculate errors
+      // Calculate predictions
       const linear_train_preds = matrixMultiply(X_train, [linearWeights]).flat();
       const ridge_train_preds = matrixMultiply(X_train, [ridgeWeights]).flat();
       
       const linear_test_preds = matrixMultiply(X_test, [linearWeights]).flat();
       const ridge_test_preds = matrixMultiply(X_test, [ridgeWeights]).flat();
       
+      // Calculate MSE
       const linear_train_mse = calculateMSE(linear_train_preds, y_train.flat());
       const ridge_train_mse = calculateMSE(ridge_train_preds, y_train.flat());
       
@@ -650,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function() {
       ridgeTrainError.textContent = `Train MSE: ${ridge_train_mse.toFixed(3)}`;
       ridgeTestError.textContent = `Test MSE: ${ridge_test_mse.toFixed(3)}`;
       
-      // Calculate L2 norms
+      // Calculate L2 norms (excluding bias term)
       const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
       const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
       
@@ -662,27 +655,30 @@ document.addEventListener('DOMContentLoaded', function() {
       
     } catch (e) {
       console.error("Error fitting models:", e);
-      // Handle singular matrix case
-      linearTrainError.textContent = "Increase λ";
+      linearTrainError.textContent = "Error";
       linearTestError.textContent = "Error";
-      ridgeTrainError.textContent = "Increase λ";
+      ridgeTrainError.textContent = "Error";
       ridgeTestError.textContent = "Error";
       
-      // Clear weights
       linearWeights = [];
       ridgeWeights = [];
       
-      // Update weight bars visualization
       updateWeightBars();
     }
   }
+  
 
   // Calculate Mean Squared Error
   function calculateMSE(predictions, actual) {
-    let sum = 0;
+    if (predictions.length !== actual.length) {
+      console.error("Mismatched lengths in MSE calculation");
+      return 0;
+    }
     
+    let sum = 0;
     for (let i = 0; i < predictions.length; i++) {
-      sum += Math.pow(predictions[i] - actual[i], 2);
+      const diff = predictions[i] - actual[i];
+      sum += diff * diff;
     }
     
     return sum / predictions.length;
@@ -966,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const xScale = plotWidth / (xRange.max - xRange.min);
     const yScale = plotHeight / (yRange.max - yRange.min);
     
-    const numPoints = 100;
+    const numPoints = 200; // Increased number of points for smoother lines
     const xStep = (xRange.max - xRange.min) / (numPoints - 1);
     
     // Draw linear regression line
@@ -974,6 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.lineWidth = 2;
     ctx.beginPath();
     
+    let firstPoint = true;
     for (let i = 0; i < numPoints; i++) {
       const x = xRange.min + i * xStep;
       
@@ -992,8 +989,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const canvasX = plotMargin + (x - xRange.min) * xScale;
       const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
       
-      if (i === 0) {
+      if (firstPoint) {
         ctx.moveTo(canvasX, canvasY);
+        firstPoint = false;
       } else {
         ctx.lineTo(canvasX, canvasY);
       }
@@ -1006,6 +1004,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.lineWidth = 2;
     ctx.beginPath();
     
+    firstPoint = true;
     for (let i = 0; i < numPoints; i++) {
       const x = xRange.min + i * xStep;
       
@@ -1024,15 +1023,16 @@ document.addEventListener('DOMContentLoaded', function() {
       const canvasX = plotMargin + (x - xRange.min) * xScale;
       const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
       
-      if (i === 0) {
+      if (firstPoint) {
         ctx.moveTo(canvasX, canvasY);
+        firstPoint = false;
       } else {
         ctx.lineTo(canvasX, canvasY);
       }
     }
     
     ctx.stroke();
-  }
+  } 
 
   // Draw data points
   function drawDataPoints(xRange, yRange) {
