@@ -44,6 +44,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <span id="lambda-display">λ = 0.5</span>
           </div>
           
+          <label for="cv-k">Cross-Validation:</label>
+          <select id="cv-k">
+            <option value="1">None (Hold-out)</option>
+            <option value="5">5-Fold</option>
+            <option value="10">10-Fold</option>
+          </select>
+
           <div class="control-group">
             <label for="train-size">Training Set Size:</label>
             <input type="range" id="train-size" min="5" max="50" step="1" value="15" class="full-width">
@@ -597,6 +604,69 @@ document.addEventListener('DOMContentLoaded', function() {
     return result;
   }
 
+  function performCrossValidation(k) {
+    const foldSize = Math.floor(allPoints.length / k);
+    let ridgeTrainMSE = 0, ridgeTestMSE = 0;
+    let linearTrainMSE = 0, linearTestMSE = 0;
+    let linearSuccess = true;
+  
+    for (let i = 0; i < k; i++) {
+      const valStart = i * foldSize;
+      const valEnd = (i + 1) * foldSize;
+  
+      const testFold = allPoints.slice(valStart, valEnd);
+      const trainFold = [...allPoints.slice(0, valStart), ...allPoints.slice(valEnd)];
+  
+      // Prepare inputs
+      const { X: X_train, y: y_train } = prepareXY(trainFold);
+      const { X: X_test, y: y_test } = prepareXY(testFold);
+  
+      // Linear regression
+      const { weights: linearWeights, success } = trainLinearRegression(X_train, y_train);
+      if (!success) linearSuccess = false;
+      const linear_preds_train = predict(X_train, linearWeights);
+      const linear_preds_test = predict(X_test, linearWeights);
+      linearTrainMSE += calculateMSE(linear_preds_train, y_train);
+      linearTestMSE += calculateMSE(linear_preds_test, y_test);
+  
+      // Ridge regression
+      const lambda = getCurrentLambda();
+      const ridgeWeights = trainRidgeRegression(X_train, y_train, lambda);
+      const ridge_preds_train = predict(X_train, ridgeWeights);
+      const ridge_preds_test = predict(X_test, ridgeWeights);
+      ridgeTrainMSE += calculateMSE(ridge_preds_train, y_train);
+      ridgeTestMSE += calculateMSE(ridge_preds_test, y_test);
+    }
+  
+    // Average MSEs
+    ridgeTrainError.textContent = `CV Train MSE: ${(ridgeTrainMSE / k).toFixed(3)}`;
+    ridgeTestError.textContent = `CV Test MSE: ${(ridgeTestMSE / k).toFixed(3)}`;
+    if (linearSuccess) {
+      linearTrainError.textContent = `CV Train MSE: ${(linearTrainMSE / k).toFixed(3)}`;
+      linearTestError.textContent = `CV Test MSE: ${(linearTestMSE / k).toFixed(3)}`;
+    } else {
+      linearTrainError.textContent = "CV Train MSE: N/A";
+      linearTestError.textContent = "CV Test MSE: N/A";
+    }
+  
+    // Clear canvas or show message
+    document.getElementById("model-comparison-message").textContent =
+      `✅ Cross-validation completed with k = ${k}.`;
+  }
+
+  function prepareXY(data) {
+    const X = [];
+    const y = [];
+  
+    for (const { x, y: target } of data) {
+      const features = generateFeatures(x); // Use your existing function
+      X.push(features);
+      y.push(target);
+    }
+  
+    return { X, y };
+  }
+  
   // Fit linear regression and ridge regression models
   function fitModels() {
     if (!trainingData || trainingData.length === 0) {
@@ -606,6 +676,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
     const degree = parseInt(polynomialDegreeInput.value);
     
+    // Check for cross-validation mode
+    const k = parseInt(document.getElementById("cv-k")?.value || "1");
+    if (k > 1) {
+      performCrossValidation(k);
+      return; // Skip the rest of fitModels()
+    }
+
     // Create design matrices
     const X_train = createDesignMatrix(trainingData, degree);
     const y_train = trainingData.map(point => [point.y]);
