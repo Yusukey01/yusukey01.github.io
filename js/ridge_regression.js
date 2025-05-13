@@ -44,13 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <span id="lambda-display">λ = 0.5</span>
           </div>
           
-          <label for="cv-k">Cross-Validation:</label>
-          <select id="cv-k">
-            <option value="1">None (Hold-out)</option>
-            <option value="5">5-Fold</option>
-            <option value="10">10-Fold</option>
-          </select>
-
           <div class="control-group">
             <label for="train-size">Training Set Size:</label>
             <input type="range" id="train-size" min="5" max="50" step="1" value="15" class="full-width">
@@ -429,14 +422,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Split into training and test sets
     const shuffled = [...allPoints];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
 
-    // Split with remaining data used as test
-    trainingData = shuffled.slice(0, trainSize);
-    testData = shuffled.slice(trainSize);
+  // Split with remaining data used as test
+  trainingData = shuffled.slice(0, trainSize);
+  testData = shuffled.slice(trainSize);
     
     // Fit models
     fitModels();
@@ -604,86 +597,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return result;
   }
 
-  function performCrossValidation(k) {
-    const foldSize = Math.floor(allPoints.length / k);
-    let ridgeTrainMSE = 0, ridgeTestMSE = 0;
-    let linearTrainMSE = 0, linearTestMSE = 0;
-    let linearSuccess = true;
-  
-    for (let i = 0; i < k; i++) {
-      const valStart = i * foldSize;
-      const valEnd = (i + 1) * foldSize;
-  
-      const testFold = allPoints.slice(valStart, valEnd);
-      const trainFold = [...allPoints.slice(0, valStart), ...allPoints.slice(valEnd)];
-  
-      // Prepare inputs
-      const { X: X_train, y: y_train } = prepareXY(trainFold);
-      const { X: X_test, y: y_test } = prepareXY(testFold);
-  
-      // Linear regression
-      // Prepare for linear regression
-      const XtX = matrixMultiply(transpose(X_train), X_train);
-      const Xty = matrixMultiply(transpose(X_train), y_train);
-
-      // Compute linear weights
-      const linearWeights = trainLinearRegression(XtX, Xty);
-      if (!linearWeights) {
-        linearSuccess = false;
-        continue;
-      }
-
-      if (!success) linearSuccess = false;
-      const linear_preds_train = predict(X_train, linearWeights);
-      const linear_preds_test = predict(X_test, linearWeights);
-      linearTrainMSE += calculateMSE(linear_preds_train, y_train);
-      linearTestMSE += calculateMSE(linear_preds_test, y_test);
-  
-      // Ridge regression
-      const lambda = getCurrentLambda();
-      const ridgeWeights = trainRidgeRegression(X_train, y_train, lambda);
-      const ridge_preds_train = predict(X_train, ridgeWeights);
-      const ridge_preds_test = predict(X_test, ridgeWeights);
-      ridgeTrainMSE += calculateMSE(ridge_preds_train, y_train);
-      ridgeTestMSE += calculateMSE(ridge_preds_test, y_test);
-    }
-  
-    // Average MSEs
-    ridgeTrainError.textContent = `CV Train MSE: ${(ridgeTrainMSE / k).toFixed(3)}`;
-    ridgeTestError.textContent = `CV Test MSE: ${(ridgeTestMSE / k).toFixed(3)}`;
-    if (linearSuccess) {
-      linearTrainError.textContent = `CV Train MSE: ${(linearTrainMSE / k).toFixed(3)}`;
-      linearTestError.textContent = `CV Test MSE: ${(linearTestMSE / k).toFixed(3)}`;
-    } else {
-      linearTrainError.textContent = "CV Train MSE: N/A";
-      linearTestError.textContent = "CV Test MSE: N/A";
-    }
-  
-    // Clear canvas or show message
-    document.getElementById("model-comparison-message").textContent =
-      `✅ Cross-validation completed with k = ${k}.`;
-  }
-
-  function prepareXY(data) {
-    const X = createDesignMatrix(data, polynomialDegree);
-    const y = data.map(p => [p.y]); // return as [n x 1] matrix
-    return { X, y };
-  }
-  
-  function trainLinearRegression(XtX, Xty) {
-    if (!Array.isArray(Xty[0])) {
-      Xty = Xty.map(v => [v]);
-    }
-    try {
-      const XtX_inv = matrixInverse(XtX);
-      const W = matrixMultiply(XtX_inv, Xty);
-      return W.map(row => row[0]); // Return flat array
-    } catch (e) {
-      console.error("Linear regression failed: Matrix is singular", e);
-      return null;
-    }
-  }
-
   // Fit linear regression and ridge regression models
   function fitModels() {
     if (!trainingData || trainingData.length === 0) {
@@ -693,13 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
     const degree = parseInt(polynomialDegreeInput.value);
     
-    // Check for cross-validation mode
-    const k = parseInt(document.getElementById("cv-k")?.value || "1");
-    if (k > 1) {
-      performCrossValidation(k);
-      return; // Skip the rest of fitModels()
-    }
-
     // Create design matrices
     const X_train = createDesignMatrix(trainingData, degree);
     const y_train = trainingData.map(point => [point.y]);
@@ -729,15 +635,19 @@ document.addEventListener('DOMContentLoaded', function() {
       let linearSuccess = true;
       let XtX_inv;
       
-      const linearW = trainLinearRegression(XtX, Xty);
-      if (!linearW) {
+      try {
+        XtX_inv = matrixInverse(XtX);
+      } catch (e) {
+        console.error("Linear regression failed: Matrix is singular", e);
         linearSuccess = false;
+        
+        // Set linear model error messages
         linearTrainError.textContent = "Matrix is singular";
         linearTestError.textContent = "Cannot compute";
         linearWeightsNorm.textContent = "N/A";
+        
+        // Set empty weights for linear model
         linearWeights = Array(XtX.length).fill(0);
-      } else {
-        linearWeights = linearW;
       }
       
       if (linearSuccess) {
