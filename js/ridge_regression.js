@@ -785,12 +785,40 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateWeightBars() {
     weightBarsContainer.innerHTML = '';
     
+    // Skip visualization if linear regression failed
+    if (linearTrainError.textContent.includes("Matrix is singular") && ridgeWeights.length === 0) {
+      const messageEl = document.createElement('div');
+      messageEl.className = 'weight-error-message';
+      messageEl.textContent = 'Linear regression failed due to singular matrix. Ridge regression stabilizes the solution.';
+      messageEl.style.color = '#e74c3c';
+      messageEl.style.padding = '10px 0';
+      weightBarsContainer.appendChild(messageEl);
+      return;
+    }
+    
     // Determine max absolute weight for scaling
-    const allWeights = [...linearWeights, ...ridgeWeights];
-    const maxAbsWeight = Math.max(...allWeights.map(w => Math.abs(w)));
+    let maxAbsWeight = 0;
+    
+    // Include ridge weights
+    if (ridgeWeights.length > 0) {
+      maxAbsWeight = Math.max(maxAbsWeight, ...ridgeWeights.map(w => Math.abs(w)));
+    }
+    
+    // Include linear weights only if linear regression succeeded
+    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
+      maxAbsWeight = Math.max(maxAbsWeight, ...linearWeights.map(w => Math.abs(w)));
+    }
+    
+    // If no valid weights, exit
+    if (maxAbsWeight === 0) return;
     
     // Create bars for each weight
-    for (let i = 0; i < linearWeights.length; i++) {
+    const numWeights = Math.max(
+      linearTrainError.textContent.includes("Matrix is singular") ? 0 : linearWeights.length,
+      ridgeWeights.length
+    );
+    
+    for (let i = 0; i < numWeights; i++) {
       const rowEl = document.createElement('div');
       rowEl.className = 'weight-bar-row';
       
@@ -801,22 +829,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const containerEl = document.createElement('div');
       containerEl.className = 'weight-bar-container';
       
-      // Linear weight bar
-      const linearBarEl = document.createElement('div');
-      linearBarEl.className = 'weight-bar linear';
-      const linearWidth = (Math.abs(linearWeights[i]) / maxAbsWeight) * 100;
-      linearBarEl.style.width = `${linearWidth}%`;
-      linearBarEl.style.left = linearWeights[i] >= 0 ? '50%' : `${50 - linearWidth}%`;
-      linearBarEl.title = `Linear: ${linearWeights[i].toFixed(3)}`;
-      
-      // Ridge weight bar
-      const ridgeBarEl = document.createElement('div');
-      ridgeBarEl.className = 'weight-bar ridge';
-      const ridgeWidth = (Math.abs(ridgeWeights[i]) / maxAbsWeight) * 100;
-      ridgeBarEl.style.width = `${ridgeWidth}%`;
-      ridgeBarEl.style.left = ridgeWeights[i] >= 0 ? '50%' : `${50 - ridgeWidth}%`;
-      ridgeBarEl.title = `Ridge: ${ridgeWeights[i].toFixed(3)}`;
-      
       // Add a center line
       const centerLine = document.createElement('div');
       centerLine.style.position = 'absolute';
@@ -825,15 +837,47 @@ document.addEventListener('DOMContentLoaded', function() {
       centerLine.style.bottom = '0';
       centerLine.style.width = '1px';
       centerLine.style.backgroundColor = '#888';
-      
       containerEl.appendChild(centerLine);
-      containerEl.appendChild(linearBarEl);
-      containerEl.appendChild(ridgeBarEl);
+      
+      // Linear weight bar - only if linear regression succeeded
+      if (!linearTrainError.textContent.includes("Matrix is singular") && i < linearWeights.length) {
+        const linearBarEl = document.createElement('div');
+        linearBarEl.className = 'weight-bar linear';
+        const linearWidth = (Math.abs(linearWeights[i]) / maxAbsWeight) * 100;
+        linearBarEl.style.width = `${linearWidth}%`;
+        linearBarEl.style.left = linearWeights[i] >= 0 ? '50%' : `${50 - linearWidth}%`;
+        linearBarEl.title = `Linear: ${linearWeights[i].toFixed(3)}`;
+        containerEl.appendChild(linearBarEl);
+      }
+      
+      // Ridge weight bar
+      if (i < ridgeWeights.length) {
+        const ridgeBarEl = document.createElement('div');
+        ridgeBarEl.className = 'weight-bar ridge';
+        const ridgeWidth = (Math.abs(ridgeWeights[i]) / maxAbsWeight) * 100;
+        ridgeBarEl.style.width = `${ridgeWidth}%`;
+        ridgeBarEl.style.left = ridgeWeights[i] >= 0 ? '50%' : `${50 - ridgeWidth}%`;
+        ridgeBarEl.title = `Ridge: ${ridgeWeights[i].toFixed(3)}`;
+        containerEl.appendChild(ridgeBarEl);
+      }
       
       rowEl.appendChild(labelEl);
       rowEl.appendChild(containerEl);
       
       weightBarsContainer.appendChild(rowEl);
+    }
+    
+    // Add explanation message if linear regression failed
+    if (linearTrainError.textContent.includes("Matrix is singular")) {
+      const messageEl = document.createElement('div');
+      messageEl.className = 'weight-explanation';
+      messageEl.innerHTML = '<strong>Note:</strong> Linear regression failed due to singular matrix. Ridge regression provides a stable solution through regularization.';
+      messageEl.style.marginTop = '15px';
+      messageEl.style.fontSize = '0.9rem';
+      messageEl.style.padding = '8px';
+      messageEl.style.backgroundColor = '#f8f9fa';
+      messageEl.style.borderRadius = '4px';
+      weightBarsContainer.appendChild(messageEl);
     }
   }
 
@@ -886,15 +930,24 @@ document.addEventListener('DOMContentLoaded', function() {
       return { min: -5, max: 5 };
     }
     
+    // First calculate range based only on actual data points
     const yValues = allPoints.map(point => point.y);
     let min = Math.min(...yValues);
     let max = Math.max(...yValues);
     
-    // Add predicted values to ensure they're in view
-    if (linearWeights.length > 0 && ridgeWeights.length > 0) {
+    // Add some padding for data points
+    const dataRangePadding = (max - min) * 0.2;
+    let rangeMin = min - dataRangePadding;
+    let rangeMax = max + dataRangePadding;
+    
+    // Add predicted values ONLY from ridge regression to ensure they're in view
+    // This prevents extreme linear regression values from distorting the scale
+    if (ridgeWeights.length > 0) {
       const xRange = calculateXRange();
       const numPoints = 100;
       const xStep = (xRange.max - xRange.min) / (numPoints - 1);
+      
+      const ridgePredictions = [];
       
       for (let i = 0; i < numPoints; i++) {
         const x = xRange.min + i * xStep;
@@ -905,31 +958,81 @@ document.addEventListener('DOMContentLoaded', function() {
           features.push(Math.pow(x, j));
         }
         
-        // Calculate predictions
-        let linearPred = 0;
+        // Calculate predictions for ridge regression only
         let ridgePred = 0;
-        
-        for (let j = 0; j < features.length; j++) {
-          if (j < linearWeights.length) {
-            linearPred += features[j] * linearWeights[j];
-          }
-          
-          if (j < ridgeWeights.length) {
-            ridgePred += features[j] * ridgeWeights[j];
-          }
+        for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
+          ridgePred += features[j] * ridgeWeights[j];
         }
         
-        min = Math.min(min, linearPred, ridgePred);
-        max = Math.max(max, linearPred, ridgePred);
+        ridgePredictions.push(ridgePred);
+      }
+      
+      // Only expand range if ridge predictions are within a reasonable range of data points
+      // This prevents extreme values from distorting the scale
+      const ridgeMin = Math.min(...ridgePredictions);
+      const ridgeMax = Math.max(...ridgePredictions);
+      
+      // Check if ridge predictions are within a reasonable range (10x the data range)
+      const dataRange = max - min;
+      const reasonableMin = min - 10 * dataRange;
+      const reasonableMax = max + 10 * dataRange;
+      
+      if (ridgeMin > reasonableMin && ridgeMin < reasonableMax) {
+        rangeMin = Math.min(rangeMin, ridgeMin);
+      }
+      
+      if (ridgeMax > reasonableMin && ridgeMax < reasonableMax) {
+        rangeMax = Math.max(rangeMax, ridgeMax);
       }
     }
     
-    // Add some padding
-    const padding = (max - min) * 0.1;
-    min -= padding;
-    max += padding;
+    // Add linear predictions only if linear regression succeeded and values are reasonable
+    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
+      const xRange = calculateXRange();
+      const numPoints = 100;
+      const xStep = (xRange.max - xRange.min) / (numPoints - 1);
+      
+      const linearPredictions = [];
+      
+      for (let i = 0; i < numPoints; i++) {
+        const x = xRange.min + i * xStep;
+        
+        // Generate features
+        const features = [1];
+        for (let j = 1; j <= polynomialDegree; j++) {
+          features.push(Math.pow(x, j));
+        }
+        
+        // Calculate predictions for linear regression
+        let linearPred = 0;
+        for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
+          linearPred += features[j] * linearWeights[j];
+        }
+        
+        linearPredictions.push(linearPred);
+      }
+      
+      // Only include linear predictions that are within a reasonable range
+      const dataRange = max - min;
+      const reasonableMin = min - 10 * dataRange;
+      const reasonableMax = max + 10 * dataRange;
+      
+      const filteredLinearPreds = linearPredictions.filter(
+        pred => pred > reasonableMin && pred < reasonableMax
+      );
+      
+      if (filteredLinearPreds.length > 0) {
+        rangeMin = Math.min(rangeMin, Math.min(...filteredLinearPreds));
+        rangeMax = Math.max(rangeMax, Math.max(...filteredLinearPreds));
+      }
+    }
     
-    return { min, max };
+    // Add some final padding
+    const rangePadding = (rangeMax - rangeMin) * 0.1;
+    return { 
+      min: rangeMin - rangePadding, 
+      max: rangeMax + rangePadding 
+    };
   }
 
   // Draw coordinate axes
@@ -1050,11 +1153,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Draw regression lines
   function drawRegressionLines(xRange, yRange) {
-    // Only draw if we have weights
-    if (linearWeights.length === 0 || ridgeWeights.length === 0) {
-      return;
-    }
-    
     // Calculate scale
     const xScale = plotWidth / (xRange.max - xRange.min);
     const yScale = plotHeight / (yRange.max - yRange.min);
@@ -1062,79 +1160,105 @@ document.addEventListener('DOMContentLoaded', function() {
     const numPoints = 200; // Increased number of points for smoother lines
     const xStep = (xRange.max - xRange.min) / (numPoints - 1);
     
-    // Draw linear regression line
-    ctx.strokeStyle = '#e74c3c';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    let firstPoint = true;
-    for (let i = 0; i < numPoints; i++) {
-      const x = xRange.min + i * xStep;
+    // Draw linear regression line only if it succeeded
+    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
       
-      // Generate features for polynomial regression
-      const features = [1]; // Start with bias term
-      for (let j = 1; j <= polynomialDegree; j++) {
-        features.push(Math.pow(x, j));
-      }
+      let firstPoint = true;
+      let lastValidY = null;
       
-      // Calculate prediction using dot product directly
-      let y = 0;
-      for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
-        y += features[j] * linearWeights[j];
-      }
-      
-      const canvasX = plotMargin + (x - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      // Only draw points that are within the canvas boundaries
-      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-        if (firstPoint) {
-          ctx.moveTo(canvasX, canvasY);
-          firstPoint = false;
-        } else {
-          ctx.lineTo(canvasX, canvasY);
+      for (let i = 0; i < numPoints; i++) {
+        const x = xRange.min + i * xStep;
+        
+        // Generate features for polynomial regression
+        const features = [1]; // Start with bias term
+        for (let j = 1; j <= polynomialDegree; j++) {
+          features.push(Math.pow(x, j));
+        }
+        
+        // Calculate prediction using dot product directly
+        let y = 0;
+        for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
+          y += features[j] * linearWeights[j];
+        }
+        
+        // Skip drawing if the y value is extremely large or small (outside reasonable range)
+        // This prevents very large values from making the rest of the visualization unusable
+        const dataPoints = [...trainingData, ...testData];
+        const yValues = dataPoints.map(point => point.y);
+        const dataMin = Math.min(...yValues);
+        const dataMax = Math.max(...yValues);
+        const dataRange = dataMax - dataMin;
+        
+        // Skip if the prediction is more than 20x the data range away from the center
+        if (y < dataMin - 20 * dataRange || y > dataMax + 20 * dataRange) {
+          continue;
+        }
+        
+        const canvasX = plotMargin + (x - xRange.min) * xScale;
+        const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+        
+        // Skip points that would be outside the visible canvas area
+        if (canvasY < 0 || canvasY > canvasHeight) {
+          continue;
+        }
+        
+        // Only draw points that are within the canvas boundaries
+        if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+          if (firstPoint) {
+            ctx.moveTo(canvasX, canvasY);
+            firstPoint = false;
+          } else {
+            ctx.lineTo(canvasX, canvasY);
+          }
+          lastValidY = y;
         }
       }
+      
+      ctx.stroke();
     }
-    
-    ctx.stroke();
     
     // Draw ridge regression line
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    firstPoint = true;
-    for (let i = 0; i < numPoints; i++) {
-      const x = xRange.min + i * xStep;
+    if (ridgeWeights.length > 0) {
+      ctx.strokeStyle = '#2ecc71';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
       
-      // Generate features for polynomial regression
-      const features = [1]; // Start with bias term
-      for (let j = 1; j <= polynomialDegree; j++) {
-        features.push(Math.pow(x, j));
-      }
+      let firstPoint = true;
       
-      // Calculate prediction using dot product directly
-      let y = 0;
-      for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
-        y += features[j] * ridgeWeights[j];
-      }
-      
-      const canvasX = plotMargin + (x - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      // Only draw points that are within the canvas boundaries
-      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-        if (firstPoint) {
-          ctx.moveTo(canvasX, canvasY);
-          firstPoint = false;
-        } else {
-          ctx.lineTo(canvasX, canvasY);
+      for (let i = 0; i < numPoints; i++) {
+        const x = xRange.min + i * xStep;
+        
+        // Generate features for polynomial regression
+        const features = [1]; // Start with bias term
+        for (let j = 1; j <= polynomialDegree; j++) {
+          features.push(Math.pow(x, j));
+        }
+        
+        // Calculate prediction using dot product directly
+        let y = 0;
+        for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
+          y += features[j] * ridgeWeights[j];
+        }
+        
+        const canvasX = plotMargin + (x - xRange.min) * xScale;
+        const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+        
+        // Only draw points that are within the canvas boundaries
+        if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+          if (firstPoint) {
+            ctx.moveTo(canvasX, canvasY);
+            firstPoint = false;
+          } else {
+            ctx.lineTo(canvasX, canvasY);
+          }
         }
       }
+      
+      ctx.stroke();
     }
-    
-    ctx.stroke();
   }
 
   // Draw data points
@@ -1143,15 +1267,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const xScale = plotWidth / (xRange.max - xRange.min);
     const yScale = plotHeight / (yRange.max - yRange.min);
     
+    // Draw grid lines for better visualization
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    const yStep = (yRange.max - yRange.min) / 10;
+    for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
+      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+      
+      ctx.beginPath();
+      ctx.moveTo(plotMargin, canvasY);
+      ctx.lineTo(canvasWidth - plotMargin, canvasY);
+      ctx.stroke();
+    }
+    
+    // Vertical grid lines
+    const xStep = (xRange.max - xRange.min) / 10;
+    for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
+      const canvasX = plotMargin + (x - xRange.min) * xScale;
+      
+      ctx.beginPath();
+      ctx.moveTo(canvasX, plotMargin);
+      ctx.lineTo(canvasX, canvasHeight - plotMargin);
+      ctx.stroke();
+    }
+    
     // Draw training data points
     ctx.fillStyle = '#3498db';
     for (const point of trainingData) {
       const canvasX = plotMargin + (point.x - xRange.min) * xScale;
       const canvasY = canvasHeight - plotMargin - (point.y - yRange.min) * yScale;
       
-      ctx.beginPath();
-      ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
-      ctx.fill();
+      // Only draw points within the canvas boundaries
+      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin &&
+          canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin) {
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
     
     // Draw test data points
@@ -1160,9 +1314,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const canvasX = plotMargin + (point.x - xRange.min) * xScale;
       const canvasY = canvasHeight - plotMargin - (point.y - yRange.min) * yScale;
       
-      ctx.beginPath();
-      ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
-      ctx.fill();
+      // Only draw points within the canvas boundaries
+      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin &&
+          canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin) {
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
   }
 
@@ -1183,6 +1341,56 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle dataset type change
   function handleDatasetChange() {
     datasetType = datasetSelect.value;
+    
+    // Adjust polynomial degree based on dataset type
+    switch (datasetType) {
+      case 'polynomial':
+        // Use higher polynomial degree for polynomial data
+        polynomialDegreeInput.value = 5;
+        polynomialDegreeDisplay.textContent = "5";
+        polynomialDegree = 5;
+        break;
+      case 'noisy':
+        // Use medium polynomial degree for noisy data
+        polynomialDegreeInput.value = 8;
+        polynomialDegreeDisplay.textContent = "8";
+        polynomialDegree = 8;
+        break;
+      case 'outliers':
+        // Use higher polynomial degree for outlier data to show the difference
+        polynomialDegreeInput.value = 6;
+        polynomialDegreeDisplay.textContent = "6";
+        polynomialDegree = 6;
+        break;
+      default:
+        // Use lower polynomial degree for linear data
+        polynomialDegreeInput.value = 2;
+        polynomialDegreeDisplay.textContent = "2";
+        polynomialDegree = 2;
+    }
+    
+    // Update lambdaInput based on dataset type
+    switch (datasetType) {
+      case 'polynomial':
+      case 'noisy':
+        // Use higher lambda for more complex data
+        lambdaInput.value = 2.0;
+        lambda = Math.pow(10, 2.0 - 3); // For 0-5 range
+        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+        break;
+      case 'outliers':
+        // Use even higher lambda for outlier data
+        lambdaInput.value = 2.5;
+        lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
+        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+        break;
+      default:
+        // Use lower lambda for linear data
+        lambdaInput.value = 1.0;
+        lambda = Math.pow(10, 1.0 - 3); // For 0-5 range
+        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+    }
+    
     generateData();
   }
 
