@@ -354,11 +354,11 @@ document.addEventListener('DOMContentLoaded', function() {
   let testData = [];
   let linearWeights = [];
   let ridgeWeights = [];
-  let datasetType = 'linear';
+  let datasetType = 'plynomial';
   let lambda;
-  let trainSize = 15;
-  let noiseLevel = 0.5;
-  let polynomialDegree = 3;
+  let trainSize = 20;
+  let noiseLevel = 0.8;
+  let polynomialDegree = 10;
   
   // Drawing settings
   const plotMargin = 50;
