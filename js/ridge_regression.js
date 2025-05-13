@@ -622,7 +622,18 @@ document.addEventListener('DOMContentLoaded', function() {
       const { X: X_test, y: y_test } = prepareXY(testFold);
   
       // Linear regression
-      const { weights: linearWeights, success } = trainLinearRegression(X_train, y_train);
+      // Prepare for linear regression
+      const yTrainMatrix = y_train.map(v => [v]);
+      const XtX = matrixMultiply(transpose(X_train), X_train);
+      const Xty = matrixMultiply(transpose(X_train), yTrainMatrix);
+
+      // Compute linear weights
+      const linearWeights = trainLinearRegression(XtX, Xty);
+      if (!linearWeights) {
+        linearSuccess = false;
+        continue;
+      }
+
       if (!success) linearSuccess = false;
       const linear_preds_train = predict(X_train, linearWeights);
       const linear_preds_test = predict(X_test, linearWeights);
@@ -662,6 +673,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   
   function trainLinearRegression(XtX, Xty) {
+    if (!Array.isArray(Xty[0])) {
+      Xty = Xty.map(v => [v]);
+    }
     try {
       const XtX_inv = matrixInverse(XtX);
       const W = matrixMultiply(XtX_inv, Xty);
