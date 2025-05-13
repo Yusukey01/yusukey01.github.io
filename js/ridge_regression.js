@@ -519,13 +519,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
-      // Gauss-Jordan elimination with partial pivoting
+      // Gauss-Jordan elimination
       const augmented = [];
       for (let i = 0; i < n; i++) {
         augmented[i] = [...A[i], ...I[i]];
       }
       
-      // Forward elimination with partial pivoting
+      // Forward elimination
       for (let i = 0; i < n; i++) {
         // Find pivot
         let maxRow = i;
@@ -537,11 +537,6 @@ document.addEventListener('DOMContentLoaded', function() {
             maxVal = absVal;
             maxRow = j;
           }
-        }
-        
-        // Check if matrix is singular or near-singular
-        if (maxVal < 1e-10) {
-          throw new Error("Matrix is singular or near-singular");
         }
         
         // Swap rows if needed
@@ -594,41 +589,21 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Linear regression: w = (X^T * X)^(-1) * X^T * y
       try {
-        // Add a small regularization term to prevent singularity
-        const minLambda = 1e-6;
-        const effectiveLambda = Math.max(lambda, minLambda);
+        const XtX_inv = matrixInverse(XtX);
+        linearWeights = matrixMultiply(XtX_inv, Xty).flat();
         
-        // Create identity matrix for regularization
+        // Ridge regression: w = (X^T * X + λI)^(-1) * X^T * y
         const identity = [];
         for (let i = 0; i < XtX.length; i++) {
           identity[i] = [];
           for (let j = 0; j < XtX[0].length; j++) {
-            identity[i][j] = i === j ? effectiveLambda : 0;
+            identity[i][j] = i === j ? lambda : 0;
           }
         }
         
-        // Add regularization to X^T * X
         const regularized = matrixAdd(XtX, identity);
-        
-        // Try to compute inverse
-        const XtX_inv = matrixInverse(regularized);
-        
-        // Compute weights
-        linearWeights = matrixMultiply(XtX_inv, Xty).flat();
-        
-        // For ridge regression, use a larger lambda
-        const ridgeLambda = Math.max(effectiveLambda * 2, 0.1);
-        const ridgeIdentity = [];
-        for (let i = 0; i < XtX.length; i++) {
-          ridgeIdentity[i] = [];
-          for (let j = 0; j < XtX[0].length; j++) {
-            ridgeIdentity[i][j] = i === j ? ridgeLambda : 0;
-          }
-        }
-        
-        const ridgeRegularized = matrixAdd(XtX, ridgeIdentity);
-        const ridge_inv = matrixInverse(ridgeRegularized);
-        ridgeWeights = matrixMultiply(ridge_inv, Xty).flat();
+        const reg_inv = matrixInverse(regularized);
+        ridgeWeights = matrixMultiply(reg_inv, Xty).flat();
         
         // Calculate errors
         const linear_train_preds = matrixMultiply(X_train, [linearWeights]).flat();
@@ -663,17 +638,10 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (e) {
         console.error("Error fitting models:", e);
         // Handle singular matrix case
-        linearTrainError.textContent = "Increase λ";
+        linearTrainError.textContent = "Singular matrix";
         linearTestError.textContent = "Error";
         ridgeTrainError.textContent = "Increase λ";
         ridgeTestError.textContent = "Error";
-        
-        // Clear weights
-        linearWeights = [];
-        ridgeWeights = [];
-        
-        // Update weight bars visualization
-        updateWeightBars();
       }
     }
   
@@ -977,15 +945,15 @@ document.addEventListener('DOMContentLoaded', function() {
       for (let i = 0; i < numPoints; i++) {
         const x = xRange.min + i * xStep;
         
-        // Generate features for polynomial regression
-        const features = [1]; // Start with bias term
+        // Generate features
+        const features = [1];
         for (let j = 1; j <= polynomialDegree; j++) {
           features.push(Math.pow(x, j));
         }
         
-        // Calculate prediction using dot product
+        // Calculate prediction
         let y = 0;
-        for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
+        for (let j = 0; j < features.length && j < linearWeights.length; j++) {
           y += features[j] * linearWeights[j];
         }
         
@@ -1009,15 +977,15 @@ document.addEventListener('DOMContentLoaded', function() {
       for (let i = 0; i < numPoints; i++) {
         const x = xRange.min + i * xStep;
         
-        // Generate features for polynomial regression
-        const features = [1]; // Start with bias term
+        // Generate features
+        const features = [1];
         for (let j = 1; j <= polynomialDegree; j++) {
           features.push(Math.pow(x, j));
         }
         
-        // Calculate prediction using dot product
+        // Calculate prediction
         let y = 0;
-        for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
+        for (let j = 0; j < features.length && j < ridgeWeights.length; j++) {
           y += features[j] * ridgeWeights[j];
         }
         
