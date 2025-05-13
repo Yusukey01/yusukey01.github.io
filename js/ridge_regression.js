@@ -655,17 +655,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function prepareXY(data) {
-    const X = [];
-    const y = [];
-  
-    for (const { x, y: target } of data) {
-      const features = generateFeatures(x); // Use your existing function
-      X.push(features);
-      y.push(target);
-    }
-  
+    const X = createDesignMatrix(data, polynomialDegree);
+    const y = data.map(p => p.y);
     return { X, y };
   }
+  
   
   // Fit linear regression and ridge regression models
   function fitModels() {
