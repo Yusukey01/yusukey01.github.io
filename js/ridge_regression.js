@@ -433,6 +433,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Create design matrix for polynomial regression
   function createDesignMatrix(data, degree) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error("Invalid data for design matrix");
+      return [];
+    }
+  
     const X = [];
     
     for (let i = 0; i < data.length; i++) {
@@ -450,18 +455,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Matrix multiplication: A * B
   function matrixMultiply(A, B) {
+    if (!A || !B || !Array.isArray(A) || !Array.isArray(B) || A.length === 0 || B.length === 0) {
+      console.error("Invalid matrices for multiplication");
+      return [];
+    }
+  
+    if (A[0].length !== B.length) {
+      console.error("Matrix dimensions do not match for multiplication");
+      return [];
+    }
+  
     const result = [];
+    const rowsA = A.length;
+    const colsB = B[0].length;
     
-    for (let i = 0; i < A.length; i++) {
+    for (let i = 0; i < rowsA; i++) {
       result[i] = [];
-      
-      for (let j = 0; j < B[0].length; j++) {
+      for (let j = 0; j < colsB; j++) {
         let sum = 0;
-        
-        for (let k = 0; k < A[0].length; k++) {
+        for (let k = 0; k < B.length; k++) {
           sum += A[i][k] * B[k][j];
         }
-        
         result[i][j] = sum;
       }
     }
@@ -471,12 +485,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Matrix transpose
   function transpose(A) {
+    if (!A || !Array.isArray(A) || A.length === 0) {
+      console.error("Invalid matrix for transpose");
+      return [];
+    }
+  
     const result = [];
+    const rows = A.length;
+    const cols = A[0].length;
     
-    for (let j = 0; j < A[0].length; j++) {
+    for (let j = 0; j < cols; j++) {
       result[j] = [];
-      
-      for (let i = 0; i < A.length; i++) {
+      for (let i = 0; i < rows; i++) {
         result[j][i] = A[i][j];
       }
     }
@@ -486,97 +506,97 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Matrix addition: A + B
   function matrixAdd(A, B) {
+    if (!A || !B || !Array.isArray(A) || !Array.isArray(B) || 
+        A.length !== B.length || A[0].length !== B[0].length) {
+      console.error("Invalid matrices for addition");
+      return [];
+    }
+  
     const result = [];
+    const rows = A.length;
+    const cols = A[0].length;
     
-    for (let i = 0; i < A.length; i++) {
+    for (let i = 0; i < rows; i++) {
       result[i] = [];
-      
-      for (let j = 0; j < A[0].length; j++) {
+      for (let j = 0; j < cols; j++) {
         result[i][j] = A[i][j] + B[i][j];
       }
     }
     
     return result;
   }
+  
 
   // Matrix inverse (using simplified approach for demo)
   function matrixInverse(A) {
-    // Only for 1x1 to NxN matrices
+    if (!A || !Array.isArray(A) || A.length === 0 || A[0].length !== A.length) {
+      console.error("Invalid matrix for inversion");
+      return [];
+    }
+  
     const n = A.length;
+    const result = [];
     
-    if (n === 1) {
-      return [[1 / A[0][0]]];
-    }
-    
-    // For larger matrices, we'll use LU decomposition
-    // This is a simplified approach and not as numerically stable as proper libraries
-    // Create identity matrix
-    const I = [];
     for (let i = 0; i < n; i++) {
-      I[i] = [];
+      result[i] = [];
       for (let j = 0; j < n; j++) {
-        I[i][j] = i === j ? 1 : 0;
+        result[i][j] = i === j ? 1 : 0;
       }
     }
     
-    // Gauss-Jordan elimination with partial pivoting
-    const augmented = [];
     for (let i = 0; i < n; i++) {
-      augmented[i] = [...A[i], ...I[i]];
-    }
-    
-    // Forward elimination with partial pivoting
-    for (let i = 0; i < n; i++) {
-      // Find pivot
       let maxRow = i;
-      let maxVal = Math.abs(augmented[i][i]);
-      
-      for (let j = i + 1; j < n; j++) {
-        const absVal = Math.abs(augmented[j][i]);
-        if (absVal > maxVal) {
-          maxVal = absVal;
-          maxRow = j;
+      for (let k = i + 1; k < n; k++) {
+        if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) {
+          maxRow = k;
         }
       }
-      
-      // Check if matrix is singular or near-singular
-      if (maxVal < 1e-10) {
-        throw new Error("Matrix is singular or near-singular");
+  
+      const temp = A[i];
+      A[i] = A[maxRow];
+      A[maxRow] = temp;
+  
+      const temp2 = result[i];
+      result[i] = result[maxRow];
+      result[maxRow] = temp2;
+  
+      if (A[i][i] === 0) {
+        console.error("Matrix is singular");
+        return [];
       }
-      
-      // Swap rows if needed
-      if (maxRow !== i) {
-        [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+  
+      for (let k = i + 1; k < n; k++) {
+        const c = A[k][i] / A[i][i];
+        for (let j = 0; j < n; j++) {
+          A[k][j] -= c * A[i][j];
+          result[k][j] -= c * result[i][j];
+        }
       }
-      
-      // Normalize pivot row
-      const pivot = augmented[i][i];
-      for (let j = i; j < 2 * n; j++) {
-        augmented[i][j] /= pivot;
+    }
+  
+    for (let i = n - 1; i >= 0; i--) {
+      for (let k = i + 1; k < n; k++) {
+        const c = A[k][i] / A[i][i];
+        for (let j = 0; j < n; j++) {
+          result[i][j] -= c * result[k][j];
+        }
       }
-      
-      // Eliminate rows
+      const c = 1 / A[i][i];
       for (let j = 0; j < n; j++) {
-        if (j !== i) {
-          const factor = augmented[j][i];
-          for (let k = i; k < 2 * n; k++) {
-            augmented[j][k] -= factor * augmented[i][k];
-          }
-        }
+        result[i][j] *= c;
       }
     }
     
-    // Extract inverse
-    const inverse = [];
-    for (let i = 0; i < n; i++) {
-      inverse[i] = augmented[i].slice(n);
-    }
-    
-    return inverse;
+    return result;
   }
 
   // Fit linear regression and ridge regression models
   function fitModels() {
+    if (!trainingData || trainingData.length === 0) {
+      console.error("No training data available");
+      return;
+    }
+  
     const degree = parseInt(polynomialDegreeInput.value);
     
     // Create design matrices
@@ -586,11 +606,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const X_test = createDesignMatrix(testData, degree);
     const y_test = testData.map(point => [point.y]);
     
+    if (X_train.length === 0 || y_train.length === 0) {
+      console.error("Failed to create design matrices");
+      return;
+    }
+    
     // Compute X^T * X
     const XtX = matrixMultiply(transpose(X_train), X_train);
     
     // Compute X^T * y
     const Xty = matrixMultiply(transpose(X_train), y_train);
+    
+    if (XtX.length === 0 || Xty.length === 0) {
+      console.error("Failed to compute X^T * X or X^T * y");
+      return;
+    }
     
     try {
       // Linear regression: w = (X^T * X)^(-1) * X^T * y
@@ -607,6 +637,11 @@ document.addEventListener('DOMContentLoaded', function() {
       // Add small regularization to X^T * X for linear regression
       const linearRegularized = matrixAdd(XtX, identity);
       const XtX_inv = matrixInverse(linearRegularized);
+      
+      if (XtX_inv.length === 0) {
+        throw new Error("Failed to compute matrix inverse");
+      }
+      
       linearWeights = matrixMultiply(XtX_inv, Xty).flat();
       
       // Ridge regression: w = (X^T * X + λI)^(-1) * X^T * y
@@ -620,6 +655,11 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const ridgeRegularized = matrixAdd(XtX, ridgeIdentity);
       const ridge_inv = matrixInverse(ridgeRegularized);
+      
+      if (ridge_inv.length === 0) {
+        throw new Error("Failed to compute ridge matrix inverse");
+      }
+      
       ridgeWeights = matrixMultiply(ridge_inv, Xty).flat();
       
       // Calculate predictions
