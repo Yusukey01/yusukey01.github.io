@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
           
           <div class="control-group">
             <label for="train-size">Training Set Size:</label>
-            <input type="range" id="train-size" min="5" max="50" step="1" value="20" class="full-width">
-            <span id="train-size-display">20 points</span>
+            <input type="range" id="train-size" min="5" max="50" step="1" value="30" class="full-width">
+            <span id="train-size-display">30 points</span>
           </div>
           
           <div class="control-group">
