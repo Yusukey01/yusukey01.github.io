@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
           
           <div class="control-group">
             <label for="train-size">Training Set Size:</label>
-            <input type="range" id="train-size" min="5" max="50" step="1" value="15" class="full-width">
-            <span id="train-size-display">15 points</span>
+            <input type="range" id="train-size" min="5" max="50" step="1" value="20" class="full-width">
+            <span id="train-size-display">20 points</span>
           </div>
           
           <div class="control-group">
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           <div class="control-group" id="polynomial-params">
             <label for="polynomial-degree">Polynomial Degree:</label>
-            <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="3" class="full-width">
+            <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
             <span id="polynomial-degree-display">9</span>
           </div>
           
