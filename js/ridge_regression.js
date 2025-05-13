@@ -369,15 +369,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Functions to generate different types of datasets
   function generateData() {
     const totalPoints = trainSize * 3; // Half for training, half for testing
-    const xMin = -5;
-    const xMax = 5;
-    const xStep = (xMax - xMin) / (totalPoints - 1);
+    const xMin = -1;
+    const xMax = 1;
     
     const allPoints = [];
     
     // Generate x values
     for (let i = 0; i < totalPoints; i++) {
-      const x = xMin + i * xStep;
+      const x = Math.random() * (xMax - xMin) + xMin;
       allPoints.push({ x });
     }
     
