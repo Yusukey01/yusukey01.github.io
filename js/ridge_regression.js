@@ -396,13 +396,11 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
         
         case 'polynomial':
-          // y = 0.1x^3 - 0.5x^2 + 1.2x + 2 + noise
-          y = 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
+          y = 0.05 * Math.pow(x, 5) - 0.02 * Math.pow(x, 4) + 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
           break;
         
         case 'noisy':
-          // y = sin(x) + noise
-          y = Math.sin(x);
+          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
           break;
         
         case 'outliers':
@@ -1004,11 +1002,11 @@ function fitModels() {
           break;
         
         case 'polynomial':
-          y = 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
+          y = 0.05 * Math.pow(x, 5) - 0.02 * Math.pow(x, 4) + 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
           break;
         
         case 'noisy':
-          y = Math.sin(x);
+          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
           break;
         
         case 'outliers':
