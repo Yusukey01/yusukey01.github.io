@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let testData = [];
   let linearWeights = [];
   let ridgeWeights = [];
-  let datasetType = 'plynomial';
+  let datasetType = 'polynomial';
   let lambda;
   let trainSize = 20;
   let noiseLevel = 0.8;
