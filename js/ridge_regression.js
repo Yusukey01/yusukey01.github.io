@@ -452,6 +452,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function matrixMultiply(A, B) {
       const result = [];
       
+      // Check if matrices are valid
+      if (!A || !A.length || !B || !B.length || !B[0]) {
+        console.error("Invalid matrices for multiplication:", A, B);
+        return [[0]]; // Return a default value to prevent cascading errors
+      }
+      
       for (let i = 0; i < A.length; i++) {
         result[i] = [];
         
