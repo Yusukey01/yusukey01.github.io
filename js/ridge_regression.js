@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="controls-panel">
           <div class="control-group">
             <label for="lambda-value">Regularization Parameter (λ):</label>
-            <input type="range" id="lambda-value" min="0" max="30" step="0.1" value="1.5" class="full-width">
-            <span id="lambda-display">λ = 0.5</span>
+            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="2" class="full-width">
+            <span id="lambda-display">λ = 2</span>
           </div>
           
           <div class="control-group">
@@ -365,8 +365,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const plotWidth = canvasWidth - 2 * plotMargin;
   const plotHeight = canvasHeight - 2 * plotMargin;
 
-  lambda = parseFloat(lambdaSlider.value);
-  lambdaDisplay.textContent = `λ = ${parseFloat(lambdaSlider.value).toFixed(2)}`;
+  lambda = Math.pow(10, parseFloat(lambdaInput.value) - 3);
+  lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
   let allPoints = [];
   // Functions to generate different types of datasets
@@ -1382,17 +1382,36 @@ document.addEventListener('DOMContentLoaded', function() {
       polynomialDegree = 12;
       break;
     }
-    lambdaSlider.value = 1.5;
-    lambda = parseFloat(lambdaSlider.value);
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(2)}`;
+    
+    // Update lambdaInput based on dataset type
+    switch (datasetType) {
+      case 'outliers':
+        // Use even higher lambda for outlier data
+        lambdaInput.value = 2.5;
+        lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
+        lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+        break;
+      case 'noisy':
+      default:
+        // Use higher lambda for more complex data
+      lambdaInput.value = 2.0;
+      lambda = Math.pow(10, 2.0 - 3); // For 0-5 range
+      lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+    }
     
     generateData();
   }
 
   // Handle lambda change
   function handleLambdaChange() {
-    lambda = parseFloat(lambdaSlider.value);
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(2)}`;
+    // Convert slider value to logarithmic scale
+    const sliderValue = parseFloat(lambdaInput.value);
+    lambda = Math.pow(10, sliderValue - 3); // For 0-5 range, gives approximately 0.001 to 100
+    
+    // Format displayed value to appropriate decimal places based on magnitude
+    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+    
+    // Just refit models without generating new data
     fitModels();
     drawCanvas();
   }
