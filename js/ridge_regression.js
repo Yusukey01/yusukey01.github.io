@@ -661,6 +661,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   
+  function trainLinearRegression(XtX, Xty) {
+    try {
+      const XtX_inv = matrixInverse(XtX);
+      const W = matrixMultiply(XtX_inv, Xty);
+      return W.map(row => row[0]); // Return flat array
+    } catch (e) {
+      console.error("Linear regression failed: Matrix is singular", e);
+      return null;
+    }
+  }
+
   // Fit linear regression and ridge regression models
   function fitModels() {
     if (!trainingData || trainingData.length === 0) {
@@ -706,19 +717,15 @@ document.addEventListener('DOMContentLoaded', function() {
       let linearSuccess = true;
       let XtX_inv;
       
-      try {
-        XtX_inv = matrixInverse(XtX);
-      } catch (e) {
-        console.error("Linear regression failed: Matrix is singular", e);
+      const linearW = trainLinearRegression(XtX, Xty);
+      if (!linearW) {
         linearSuccess = false;
-        
-        // Set linear model error messages
         linearTrainError.textContent = "Matrix is singular";
         linearTestError.textContent = "Cannot compute";
         linearWeightsNorm.textContent = "N/A";
-        
-        // Set empty weights for linear model
         linearWeights = Array(XtX.length).fill(0);
+      } else {
+        linearWeights = linearW;
       }
       
       if (linearSuccess) {
