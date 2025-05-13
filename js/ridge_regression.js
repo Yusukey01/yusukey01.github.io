@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <label class="toggle-control">
               <select id="dataset-type" class="full-width">
                 <option value="linear">Simple Linear Data</option>
-                <option value="polynomial" selected>Polynomial Data</option>
+                <option value="polynomial">Polynomial Data</option>
                 <option value="noisy">Noisy Data</option>
                 <option value="outliers">Data with Outliers</option>
               </select>
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let testData = [];
   let linearWeights = [];
   let ridgeWeights = [];
-  let datasetType = 'polynomial';
+  let datasetType = 'linear';
   let lambda = 0.5;
   let trainSize = 15;
   let noiseLevel = 0.5;
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
         
         case 'noisy':
-          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
+           y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
           break;
         
         case 'outliers':
