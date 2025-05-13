@@ -759,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
       updateWeightBars();
     }
   }
-  
+
   // Calculate Mean Squared Error
   function calculateMSE(predictions, actual) {
     if (!predictions || !actual || !Array.isArray(predictions) || !Array.isArray(actual)) {
