@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="control-group">
             <label for="lambda-value">Regularization Parameter (λ):</label>
             <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="3" class="full-width">
-            <span id="lambda-display">λ = 6.00</span>
+            <span id="lambda-display">λ = 3</span>
           </div>
           
           <div class="control-group">
@@ -365,9 +365,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const plotWidth = canvasWidth - 2 * plotMargin;
   const plotHeight = canvasHeight - 2 * plotMargin;
 
-  // Set initial lambda using the new calculation method
-  lambda = 0.01 + (parseFloat(lambdaInput.value) / 5) * 9.99;
-  lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.1 ? 2 : 1)}`;
+  lambda = Math.pow(10, parseFloat(lambdaInput.value) - 3);
+  lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
   let allPoints = [];
   // Functions to generate different types of datasets
@@ -397,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 5* Math.pow(x, 3) - 4 * Math.pow(x, 2) + 3 * x + 2 + (Math.random() * 2 - 1) * 0.5;
+          y = 10* Math.pow(x, 3) - 9 * Math.pow(x, 2) + 8 * x + 7 + (Math.random() * 2 - 1) * 0.5;
           break;
         
         case 'noisy':
@@ -1144,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 5 * Math.pow(x, 3) - 4 * Math.pow(x, 2) + 3 * x + 2;
+          y = 10 * Math.pow(x, 3) - 9 * Math.pow(x, 2) + 8 * x + 7;
           break;
         
         case 'noisy':
@@ -1361,10 +1360,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function handleDatasetChange() {
     datasetType = datasetSelect.value;
     
-    // Set slider to middle position (2.5) which gives lambda = 5.0
-    lambdaInput.value = 2.5;
-    lambda = 0.01 + (2.5 / 5) * 9.99; // Approximately 5.0
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.1 ? 2 : 1)}`;
+    lambdaInput.value = 3;
+    lambda = Math.pow(10, 3 - 3); // For 0-5 range
+    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
     // Adjust polynomial degree based on dataset type
     switch (datasetType) {
@@ -1392,16 +1390,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Handle lambda change
   function handleLambdaChange() {
-     // Convert slider value to a more practical range: 0.01 to 10
-      const sliderValue = parseFloat(lambdaInput.value);
-      // Linear mapping from 0-5 to 0.01-10
-      lambda = 0.01 + (sliderValue / 5) * 9.99;
-      
-      // Format displayed value to appropriate decimal places
-      lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.1 ? 2 : 1)}`;
-      
-      // Just refit models without generating new data
-      fitModels();
+    // Convert slider value to logarithmic scale
+    const sliderValue = parseFloat(lambdaInput.value);
+    lambda = Math.pow(10, sliderValue - 3); // For 0-5 range, gives approximately 0.001 to 100
+    
+    // Format displayed value to appropriate decimal places based on magnitude
+    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+    
+    // Just refit models without generating new data
+    fitModels();
+    drawCanvas();
   }
 
   // Handle training size change
