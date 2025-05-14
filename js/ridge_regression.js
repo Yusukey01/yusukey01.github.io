@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="controls-panel">
           <div class="control-group">
             <label for="lambda-value">Regularization Parameter (λ):</label>
-            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="2.5" class="full-width">
-            <span id="lambda-display">λ = 2.5</span>
+            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="3" class="full-width">
+            <span id="lambda-display">λ = 3</span>
           </div>
           
           <div class="control-group">
@@ -396,20 +396,19 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          // CHANGE: Made the polynomial more extreme to show regularization effects
-          y = 0.1 * Math.pow(x, 5) - 0.05 * Math.pow(x, 4) + 0.2 * Math.pow(x, 3) - 0.8 * Math.pow(x, 2) + 1.5 * x + 2;
+          y = 0.8 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 2 * x + 1 + (Math.random() * 2 - 1) * 0.5;
           break;
         
         case 'noisy':
           // CHANGE: Added more high-frequency components
-          y = Math.sin(x) + 0.5 * Math.sin(7 * x) + (x > 0 ? 0.3 * x : -0.3 * x);
+          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + 0.1 * Math.sin(12 * x) + (x > 0) ? 0.5 * x : -0.2 * x + (Math.random() * 2 - 1) * 0.5;
           break;
         
         case 'outliers':
-          // CHANGE: More extreme outliers
-          y = 1.5 * x + 2;
-          if (Math.random() < 0.15) { // 15% chance of outlier
-            y += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 15;
+          y = 1.2 * x + 2 + (Math.random() * 2 - 1) * 0.5;
+          if (Math.random() < 0.20) { // 20% chance of outlier
+            const direction = (Math.random() < 0.7) ? 1 : -1;
+            y += direction * (10 + Math.random() * 15);
           }
           break;
       }
@@ -757,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const ridge_test_mse = parseFloat(ridgeTestError.textContent.split(":")[1]);
 
         if (linear_test_mse > ridge_test_mse * 10) {
-          msgDiv.textContent = "⚠️ Linear regression is overfitting. Ridge regression generalizes much better.";
+          msgDiv.textContent = "⚠️ Linear regression is overfitting.";
         } else if (ridge_test_mse > linear_test_mse * 5) {
           msgDiv.textContent = "⚠️ Ridge regression may be underfitting due to too much regularization.";
         } else {
@@ -1144,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 0.05 * Math.pow(x, 5) - 0.02 * Math.pow(x, 4) + 0.1 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 1.2 * x + 2;
+          y = 0.8 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 2 * x + 1;
           break;
         
         case 'noisy':
@@ -1152,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
           break;
         
         case 'outliers':
-          y = 1.5 * x + 2;
+          y = 1.2 * x + 0.5;
           break;
       }
       
@@ -1361,8 +1360,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function handleDatasetChange() {
     datasetType = datasetSelect.value;
     
-    lambdaInput.value = 2.5;
-    lambda = Math.pow(10, 2.5 - 3); // For 0-5 range
+    lambdaInput.value = 3;
+    lambda = Math.pow(10, 3 - 3); // For 0-5 range
     lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
 
     // Adjust polynomial degree based on dataset type
