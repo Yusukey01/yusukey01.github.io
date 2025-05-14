@@ -534,15 +534,22 @@ document.addEventListener('DOMContentLoaded', function() {
   
 
   // Matrix inverse (using simplified approach for demo)
+  // Improved matrix inverse with better pivoting and condition number checking
   function matrixInverse(A) {
     if (!A || !Array.isArray(A) || A.length === 0 || A[0].length !== A.length) {
       console.error("Invalid matrix for inversion");
       return [];
     }
-  
+
+    // Create a copy to avoid modifying the original
     const n = A.length;
-    const result = [];
+    const matrix = [];
+    for (let i = 0; i < n; i++) {
+      matrix[i] = [...A[i]];
+    }
     
+    // Create identity matrix for result
+    const result = [];
     for (let i = 0; i < n; i++) {
       result[i] = [];
       for (let j = 0; j < n; j++) {
@@ -550,46 +557,68 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    // Estimate condition number (very approximate)
+    let maxVal = 0;
+    let minVal = Infinity;
     for (let i = 0; i < n; i++) {
+      let rowSum = 0;
+      for (let j = 0; j < n; j++) {
+        rowSum += Math.abs(matrix[i][j]);
+      }
+      maxVal = Math.max(maxVal, rowSum);
+      if (rowSum > 0) minVal = Math.min(minVal, rowSum);
+    }
+    
+    // If condition number is too high, return identity matrix with a warning
+    const approxCondition = maxVal / (minVal > 0 ? minVal : 1e-10);
+    if (approxCondition > 1e14) {
+      console.warn("Matrix is nearly singular with approximate condition number: " + approxCondition);
+      // Return identity instead of failing completely
+      return result;
+    }
+
+    // Gaussian elimination with partial pivoting
+    for (let i = 0; i < n; i++) {
+      // Find pivot
+      let maxVal = Math.abs(matrix[i][i]);
       let maxRow = i;
+      
       for (let k = i + 1; k < n; k++) {
-        if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) {
+        if (Math.abs(matrix[k][i]) > maxVal) {
+          maxVal = Math.abs(matrix[k][i]);
           maxRow = k;
         }
       }
-  
-      const temp = A[i];
-      A[i] = A[maxRow];
-      A[maxRow] = temp;
-  
-      const temp2 = result[i];
-      result[i] = result[maxRow];
-      result[maxRow] = temp2;
-  
-      if (A[i][i] === 0) {
-        console.error("Matrix is singular");
-        return [];
+
+      // Check for singularity
+      if (maxVal < 1e-10) {
+        console.warn("Matrix nearly singular at row " + i);
+        // Use a tiny value instead of exactly zero
+        matrix[i][i] += 1e-10;
       }
-  
-      for (let k = i + 1; k < n; k++) {
-        const c = A[k][i] / A[i][i];
-        for (let j = 0; j < n; j++) {
-          A[k][j] -= c * A[i][j];
-          result[k][j] -= c * result[i][j];
-        }
+
+      // Swap rows if needed
+      if (maxRow !== i) {
+        [matrix[i], matrix[maxRow]] = [matrix[maxRow], matrix[i]];
+        [result[i], result[maxRow]] = [result[maxRow], result[i]];
       }
-    }
-  
-    for (let i = n - 1; i >= 0; i--) {
-      for (let k = i + 1; k < n; k++) {
-        const c = A[k][i] / A[i][i];
-        for (let j = 0; j < n; j++) {
-          result[i][j] -= c * result[k][j];
-        }
-      }
-      const c = 1 / A[i][i];
+
+      // Scale row
+      const pivot = matrix[i][i];
       for (let j = 0; j < n; j++) {
-        result[i][j] *= c;
+        matrix[i][j] /= pivot;
+        result[i][j] /= pivot;
+      }
+
+      // Eliminate other rows
+      for (let k = 0; k < n; k++) {
+        if (k !== i) {
+          const factor = matrix[k][i];
+          for (let j = 0; j < n; j++) {
+            matrix[k][j] -= factor * matrix[i][j];
+            result[k][j] -= factor * result[i][j];
+          }
+        }
       }
     }
     
@@ -635,7 +664,19 @@ document.addEventListener('DOMContentLoaded', function() {
       let XtX_inv;
       
       try {
-        XtX_inv = matrixInverse(XtX);
+        // Add minimal regularization for numerical stability
+        const minimalLambda = 0.0001;
+        const minimalRegularized = [];
+        for (let i = 0; i < XtX.length; i++) {
+          minimalRegularized[i] = [];
+          for (let j = 0; j < XtX[0].length; j++) {
+            minimalRegularized[i][j] = XtX[i][j];
+            if (i === j) {
+              minimalRegularized[i][j] += minimalLambda;
+            }
+          }
+        }
+        XtX_inv = matrixInverse(minimalRegularized);
       } catch (e) {
         console.error("Linear regression failed: Matrix is singular", e);
         linearSuccess = false;
@@ -1185,7 +1226,6 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.beginPath();
       
       let firstPoint = true;
-      let lastValidY = null;
       
       for (let i = 0; i < numPoints; i++) {
         const x = xRange.min + i * xStep;
@@ -1231,10 +1271,8 @@ document.addEventListener('DOMContentLoaded', function() {
           } else {
             ctx.lineTo(canvasX, canvasY);
           }
-          lastValidY = y;
         }
       }
-      
       ctx.stroke();
     }
     
