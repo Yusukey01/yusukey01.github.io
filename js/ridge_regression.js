@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 3* Math.pow(x, 3) - 2 * Math.pow(x, 2) + 2 * x + 1 + (Math.random() * 2 - 1) * 0.5;
+          y = 5* Math.pow(x, 3) - 4 * Math.pow(x, 2) + 3 * x + 2 + (Math.random() * 2 - 1) * 0.5;
           break;
         
         case 'noisy':
@@ -1143,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 3 * Math.pow(x, 3) - 2 * Math.pow(x, 2) + 2 * x + 1;
+          y = 5 * Math.pow(x, 3) - 4 * Math.pow(x, 2) + 3 * x + 2;
           break;
         
         case 'noisy':
