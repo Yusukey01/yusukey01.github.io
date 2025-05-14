@@ -372,8 +372,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Functions to generate different types of datasets
   function generateData() {
     const totalPoints = trainSize * 3;
-    const xMin = -1.2;
-    const xMax = 1.2;
+    const xMin = -1;
+    const xMax = 1;
     
     allPoints = [];
     
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 10* Math.pow(x, 3) - 9 * Math.pow(x, 2) + 8 * x + 7 + (Math.random() * 2 - 1) * 0.5;
+          y = 0.8* Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 0.3 * x + 1 + (Math.random() * 2 - 1) * 0.5;
           break;
         
         case 'noisy':
@@ -1143,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       switch (datasetType) {
         case 'polynomial':
-          y = 10 * Math.pow(x, 3) - 9 * Math.pow(x, 2) + 8 * x + 7;
+          y = 0.8 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 0.3 * x + 1;
           break;
         
         case 'noisy':
