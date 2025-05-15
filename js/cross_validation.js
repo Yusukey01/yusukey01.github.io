@@ -539,8 +539,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
       lambdaValues = [];
       const minLambda = 0.001;
-      const maxLambda = 100;
-      const steps = 20;
+      const maxLambda = 10;
+      const steps = 30;
       
       for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1);
