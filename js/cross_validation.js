@@ -1332,14 +1332,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mark optimal lambda
         if (optimalLambda > 0) {
-            const logOptimal = Math.log(optimalLambda);
-            const tOptimal = (logOptimal - logMin) / logRange;
-            const xPos = margin.left + width * tOptimal;
+            
             
             // Find the corresponding error - FIXED
-            const index = lambdaValues.findIndex(lambda => lambda === optimalLambda);
-            const error = index >= 0 ? cvErrors[index] : 0;
-            const yPos = margin.top + height - (error * yScale);
+            let minDiff = Infinity;
+            let closestIndex = 0;
+
+            for (let i = 0; i < lambdaValues.length; i++) {
+            const diff = Math.abs(lambdaValues[i] - optimalLambda);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestIndex = i;
+            }
+            }
+
+            const logOptimal = Math.log(lambdaValues[closestIndex]);
+            const tOptimal = (logOptimal - logMin) / logRange;
+            const xPos = margin.left + width * tOptimal;
+            const yPos = margin.top + height - (cvErrors[closestIndex] * yScale);
 
             // Draw vertical line
             cvCtx.strokeStyle = '#2ecc71';
