@@ -1411,12 +1411,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handlePolynomialDegreeChange() {
         polynomialDegree = parseInt(polynomialDegreeInput.value);
         polynomialDegreeDisplay.textContent = polynomialDegree.toString();
-      
-        if (lambdaValues.length > 0 && optimalLambda > 0) {
-          optimalWeights = fitRidgeRegression(trainingData, optimalLambda);
-        }
-      
-        drawCanvas();
+        generateData(); // Regenerates data, resets model state, redraws all
     }
     
     // Add event listeners
