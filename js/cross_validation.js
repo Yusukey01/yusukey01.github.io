@@ -403,9 +403,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Control elements
     const kFoldsInput = document.getElementById('k-folds');
     const kFoldsDisplay = document.getElementById('k-folds-display');
-    const lambdaMinInput = document.getElementById('lambda-min');
-    const lambdaMaxInput = document.getElementById('lambda-max');
-    const lambdaStepsInput = document.getElementById('lambda-steps');
     const trainSizeInput = document.getElementById('train-size');
     const trainSizeDisplay = document.getElementById('train-size-display');
     const testPercentageInput = document.getElementById('test-percentage');
@@ -1412,26 +1409,12 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCanvas();
     }
     
-    function handleLambdaRangeChange() {
-      lambdaMin = parseFloat(lambdaMinInput.value);
-      lambdaMax = parseFloat(lambdaMaxInput.value);
-      lambdaSteps = parseInt(lambdaStepsInput.value);
-      
-      // Reset CV results
-      lambdaValues = [];
-      cvErrors = [];
-      drawCvErrorPlot();
-    }
-    
     // Add event listeners
     kFoldsInput.addEventListener('input', handleKFoldsChange);
     trainSizeInput.addEventListener('input', handleTrainSizeChange);
     testPercentageInput.addEventListener('input', handleTestPercentageChange);
     noiseLevelInput.addEventListener('input', handleNoiseLevelChange);
     polynomialDegreeInput.addEventListener('input', handlePolynomialDegreeChange);
-    lambdaMinInput.addEventListener('input', handleLambdaRangeChange);
-    lambdaMaxInput.addEventListener('input', handleLambdaRangeChange);
-    lambdaStepsInput.addEventListener('input', handleLambdaRangeChange);
     runCvBtn.addEventListener('click', runCrossValidation);
     generateBtn.addEventListener('click', generateData);
     
