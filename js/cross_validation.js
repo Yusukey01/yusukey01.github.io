@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         width: 100%;
       }
       
-      #ridge-regression-canvas {
+      #cv-regression-canvas {
         border: 1px solid #ddd;
         border-radius: 4px;
         background-color: white;
@@ -407,111 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.head.appendChild(styleElement);
     
-    // Insert the HTML first
-    container.innerHTML = `
-      <div class="visualizer-container">
-        <div class="visualizer-layout">
-          <div class="canvas-container">
-            <div class="instruction">Ridge Regression with K-Fold Cross-Validation</div>
-            <div id="canvas-wrapper">
-              <canvas id="cv-regression-canvas" width="800" height="500"></canvas>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="legend-color training"></span> Training Data</div>
-              <div class="legend-item"><span class="legend-color validation"></span> Validation Data</div>
-              <div class="legend-item"><span class="legend-color test"></span> Test Data (Held Out)</div>
-              <div class="legend-item"><span class="legend-color model"></span> Ridge Regression</div>
-              <div class="legend-item"><span class="legend-color true"></span> True Function</div>
-            </div>
-          </div>
-          
-          <div class="controls-panel">
-            <div class="cv-plot-container">
-              <h3>Cross-Validation Error</h3>
-              <canvas id="cv-error-plot" width="400" height="250"></canvas>
-            </div>
-            
-            <div class="control-group">
-              <label for="k-folds">Number of Folds (K):</label>
-              <input type="range" id="k-folds" min="2" max="10" step="1" value="5" class="full-width">
-              <span id="k-folds-display">5 folds</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="lambda-range">Regularization Parameter Search Space:</label>
-              <div class="lambda-range-controls">
-                <div>
-                  <label for="lambda-min">Min λ:</label>
-                  <input type="number" id="lambda-min" min="0.001" max="1" step="0.001" value="0.001" class="number-input">
-                </div>
-                <div>
-                  <label for="lambda-max">Max λ:</label>
-                  <input type="number" id="lambda-max" min="1" max="100" step="1" value="100" class="number-input">
-                </div>
-                <div>
-                  <label for="lambda-steps">Steps:</label>
-                  <input type="number" id="lambda-steps" min="5" max="50" step="1" value="20" class="number-input">
-                </div>
-              </div>
-            </div>
-            
-            <div class="control-group">
-              <label for="train-size">Total Dataset Size:</label>
-              <input type="range" id="train-size" min="20" max="100" step="5" value="50" class="full-width">
-              <span id="train-size-display">50 points</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="test-percentage">Test Set Percentage:</label>
-              <input type="range" id="test-percentage" min="10" max="40" step="5" value="20" class="full-width">
-              <span id="test-percentage-display">20%</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="noise-level">Noise Level:</label>
-              <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
-              <span id="noise-level-display">0.8</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="polynomial-degree">Polynomial Degree:</label>
-              <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
-              <span id="polynomial-degree-display">9</span>
-            </div>
-            
-            <div class="results-box">
-              <h3>Cross-Validation Results:</h3>
-              <div class="result-row">
-                <div class="result-label">Optimal λ:</div>
-                <div class="result-value" id="optimal-lambda">λ = 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">CV Error:</div>
-                <div class="result-value" id="cv-error">MSE: 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">Test Error:</div>
-                <div class="result-value" id="test-error">MSE: 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">Model Complexity:</div>
-                <div class="result-value" id="model-complexity">L2 Norm: 0.000</div>
-              </div>
-            </div>
-            
-            <div class="fold-visualization">
-              <h3>Cross-Validation Folds:</h3>
-              <div id="fold-container"></div>
-            </div>
-            
-            <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
-            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    // Get DOM elements AFTER the HTML has been inserted
+    // Get DOM elements
     const canvas = document.getElementById('cv-regression-canvas');
     const ctx = canvas.getContext('2d');
     const canvasWidth = canvas.width;
@@ -1309,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Set margins and plot dimensions
-      const margin = { top: 15, right: 10, bottom: 30, left: 35 };
+      const margin = { top: 20, right: 20, bottom: 40, left: 50 };
       const width = cvCanvasWidth - margin.left - margin.right;
       const height = cvCanvasHeight - margin.top - margin.bottom;
       
@@ -1336,8 +1232,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const numYTicks = 5;
       for (let i = 0; i <= numYTicks; i++) {
-        const y = maxError * (1 - i / numYTicks);
-        const yPos = margin.top + y * yScale;
+        const y = maxError * (i / numYTicks);
+        const yPos = margin.top + height - (y * yScale)
         
         cvCtx.beginPath();
         cvCtx.moveTo(margin.left - 5, yPos);
@@ -1375,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Draw axis labels
       cvCtx.textAlign = 'center';
       cvCtx.font = '11px Arial';
-      cvCtx.fillText('λ', margin.left + width / 2, margin.top + height + 20);
+      cvCtx.fillText('Regularization Parameter (λ)', margin.left + width / 2, margin.top + height + 20);
       
       cvCtx.save();
       cvCtx.translate(10, margin.top + height / 2);
@@ -1420,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const logLambda = Math.log(lambdaValues[i]);
           const t = (logLambda - logMin) / logRange;
           const xPos = margin.left + width * t;
-          const yPos = margin.top + (maxError - cvErrors[i]) * yScale;
+          const yPos = margin.top + height - (cvErrors[i] * yScale)
           
           if (i === 0) {
             cvCtx.moveTo(xPos, yPos);
@@ -1446,92 +1342,73 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mark optimal lambda
         if (optimalLambda > 0) {
-          const logOptimal = Math.log(optimalLambda);
-          const tOptimal = (logOptimal - logMin) / logRange;
-          const xPos = margin.left + width * tOptimal;
+            const logOptimal = Math.log(optimalLambda);
+            const tOptimal = (logOptimal - logMin) / logRange;
+            const xPos = margin.left + width * tOptimal;
+            
+            // Find the corresponding error - FIXED
+            const index = lambdaValues.findIndex(lambda => lambda === optimalLambda);
+            const error = index >= 0 ? cvErrors[index] : 0;
+            const yPos = margin.top + height - (error * yScale);
+
+            // Draw vertical line
+            cvCtx.strokeStyle = '#2ecc71';
+            cvCtx.lineWidth = 2;
+            cvCtx.setLineDash([5, 3]);
+            cvCtx.beginPath();
+            cvCtx.moveTo(xPos, margin.top + height);
+            cvCtx.lineTo(xPos, margin.top);
+            cvCtx.stroke();
+            cvCtx.setLineDash([]);
           
-          // Find the corresponding error
-          const index = lambdaValues.findIndex(lambda => lambda === optimalLambda);
-          const error = index >= 0 ? cvErrors[index] : 0;
-          const yPos = margin.top + height - (error * yScale);
-          
-          // Draw vertical line
-          cvCtx.strokeStyle = '#2ecc71';
-          cvCtx.lineWidth = 2;
-          cvCtx.setLineDash([5, 3]);
-          cvCtx.beginPath();
-          cvCtx.moveTo(xPos, margin.top + height);
-          cvCtx.lineTo(xPos, margin.top);
-          cvCtx.stroke();
-          cvCtx.setLineDash([]);
-          
-          // Draw point
-          cvCtx.fillStyle = '#2ecc71';
-          cvCtx.beginPath();
-          cvCtx.arc(xPos, yPos, 6, 0, 2 * Math.PI);
-          cvCtx.fill();
-          
-          cvCtx.fillStyle = '#fff';
-          cvCtx.beginPath();
-          cvCtx.arc(xPos, yPos, 4, 0, 2 * Math.PI);
-          cvCtx.fill();
-          
-          // Add label
-          cvCtx.fillStyle = '#2ecc71';
-          cvCtx.font = 'bold 10px Arial';
-          cvCtx.textAlign = 'center';
-          cvCtx.textBaseline = 'bottom';
-          cvCtx.fillText('Optimal λ', xPos, margin.top - 2);
+            // Draw point
+            cvCtx.fillStyle = '#2ecc71';
+            cvCtx.beginPath();
+            cvCtx.arc(xPos, yPos, 6, 0, 2 * Math.PI);
+            cvCtx.fill();
+            
+            cvCtx.fillStyle = '#fff';
+            cvCtx.beginPath();
+            cvCtx.arc(xPos, yPos, 4, 0, 2 * Math.PI);
+            cvCtx.fill();
+            
+            // Add label
+            cvCtx.fillStyle = '#2ecc71';
+            cvCtx.font = 'bold 12px Arial';
+            cvCtx.textAlign = 'center';
+            cvCtx.textBaseline = 'bottom';
+            cvCtx.fillText('Optimal λ', xPos, margin.top - 5);
         }
       }
     }
     
-    // Handle k-folds change
+    // Handle parameter changes
     function handleKFoldsChange() {
-      const kFoldsInput = document.getElementById('k-folds');
-      const kFoldsDisplay = document.getElementById('k-folds-display');
-      
       kFolds = parseInt(kFoldsInput.value);
       kFoldsDisplay.textContent = `${kFolds} folds`;
       createCvFolds();
       updateFoldVisualization();
     }
     
-    // Handle training size change
     function handleTrainSizeChange() {
-      const trainSizeInput = document.getElementById('train-size');
-      const trainSizeDisplay = document.getElementById('train-size-display');
-      
       totalSize = parseInt(trainSizeInput.value);
       trainSizeDisplay.textContent = `${totalSize} points`;
       generateData();
     }
     
-    // Handle test percentage change
     function handleTestPercentageChange() {
-      const testPercentageInput = document.getElementById('test-percentage');
-      const testPercentageDisplay = document.getElementById('test-percentage-display');
-      
       testPercentage = parseInt(testPercentageInput.value);
       testPercentageDisplay.textContent = `${testPercentage}%`;
       generateData();
     }
     
-    // Handle noise level change
     function handleNoiseLevelChange() {
-      const noiseLevelInput = document.getElementById('noise-level');
-      const noiseLevelDisplay = document.getElementById('noise-level-display');
-      
       noiseLevel = parseFloat(noiseLevelInput.value);
       noiseLevelDisplay.textContent = noiseLevel.toFixed(1);
       generateData();
     }
     
-    // Handle polynomial degree change
     function handlePolynomialDegreeChange() {
-      const polynomialDegreeInput = document.getElementById('polynomial-degree');
-      const polynomialDegreeDisplay = document.getElementById('polynomial-degree-display');
-      
       polynomialDegree = parseInt(polynomialDegreeInput.value);
       polynomialDegreeDisplay.textContent = polynomialDegree.toString();
       
@@ -1542,12 +1419,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // Handle lambda range change
     function handleLambdaRangeChange() {
-      const lambdaMinInput = document.getElementById('lambda-min');
-      const lambdaMaxInput = document.getElementById('lambda-max');
-      const lambdaStepsInput = document.getElementById('lambda-steps');
-      
       lambdaMin = parseFloat(lambdaMinInput.value);
       lambdaMax = parseFloat(lambdaMaxInput.value);
       lambdaSteps = parseInt(lambdaStepsInput.value);
