@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
           drawCvErrorPlot();
           
           // Add a small delay for visualization
-          await sleep(400);
+          await sleep(100);
           //await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
