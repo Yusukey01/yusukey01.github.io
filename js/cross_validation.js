@@ -1270,14 +1270,14 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw axis labels
       cvCtx.textAlign = 'center';
-      cvCtx.font = '14px Arial';
+      cvCtx.font = '12px Arial';
       cvCtx.fillText('Regularization Parameter (λ)', margin.left + width / 2, margin.top + height + 30);
       
       cvCtx.save();
       cvCtx.translate(15, margin.top + height / 2);
       cvCtx.rotate(-Math.PI / 2);
       cvCtx.textAlign = 'center';
-      cvCtx.fillText('Mean Squared Error', 0, 0);
+      cvCtx.fillText('MSE', 0, 0);
       cvCtx.restore();
       
       // Draw grid lines
