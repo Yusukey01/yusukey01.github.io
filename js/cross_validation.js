@@ -1270,11 +1270,11 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Draw axis labels
       cvCtx.textAlign = 'center';
-      cvCtx.font = '12px Arial';
-      cvCtx.fillText('Regularization Parameter (λ)', margin.left + width / 2, margin.top + height + 30);
+      cvCtx.font = '11px Arial';
+      cvCtx.fillText('Regularization Parameter (λ)', margin.left + width / 2, margin.top + height + 20);
       
       cvCtx.save();
-      cvCtx.translate(15, margin.top + height / 2);
+      cvCtx.translate(10, margin.top + height / 2);
       cvCtx.rotate(-Math.PI / 2);
       cvCtx.textAlign = 'center';
       cvCtx.fillText('MSE', 0, 0);
