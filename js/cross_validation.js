@@ -1241,8 +1241,8 @@ document.addEventListener('DOMContentLoaded', function() {
       cvCtx.textBaseline = 'top';
       
       // Use logarithmic scale for x-axis
-      const logMin = Math.log(lambdaMin);
-      const logMax = Math.log(lambdaMax);
+      const logMin = Math.log(0.001);
+      const logMax = Math.log(100);
       const logRange = logMax - logMin;
       
       const numXTicks = 5;
