@@ -526,6 +526,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     // Run cross-validation
     async function runCrossValidation() {
       if (isCvRunning) return;
@@ -590,7 +594,8 @@ document.addEventListener('DOMContentLoaded', function() {
           drawCvErrorPlot();
           
           // Add a small delay for visualization
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await sleep(400);
+          //await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
       
