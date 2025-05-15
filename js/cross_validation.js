@@ -473,6 +473,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate dataset
     function generateData() {
+        totalSize = parseInt(trainSizeInput.value);
+        noiseLevel = parseFloat(noiseLevelInput.value);
+        testPercentage = parseInt(testPercentageInput.value);
+        polynomialDegree = parseInt(polynomialDegreeInput.value);
+
       const testSize = Math.floor(totalSize * (testPercentage / 100));
       const trainSize = totalSize - testSize;
       
@@ -506,12 +511,15 @@ document.addEventListener('DOMContentLoaded', function() {
       createCvFolds();
       
       // Reset CV results
-      lambdaValues = [];
-      cvErrors = [];
-      optimalLambda = 1.0;
-      optimalWeights = [];
-      currentFold = -1;
-      
+
+        lambdaValues = [];
+        cvErrors = [];
+        optimalLambda = 1.0;
+        optimalWeights = [];
+        currentFold = -1;
+        currentFoldTraining = [];
+        currentFoldValidation = [];
+     
       // Update the fold visualization
       updateFoldVisualization();
       
