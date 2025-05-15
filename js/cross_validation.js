@@ -844,79 +844,62 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update fold visualization
     function updateFoldVisualization() {
-      foldContainer.innerHTML = '';
-      
-      // Add overall dataset row
-      const datasetRow = document.createElement('div');
-      datasetRow.className = 'fold-row';
-      
-      // Add label
-      const datasetLabel = document.createElement('div');
-      datasetLabel.className = 'fold-label';
-      datasetLabel.textContent = 'Dataset:';
-      datasetLabel.style.marginRight = '5px';
-      
-      // Add training segment
-      const trainSegment = document.createElement('div');
-      trainSegment.className = 'fold-segment train';
-      trainSegment.style.width = `${100 - testPercentage}%`;
-      trainSegment.textContent = 'Training';
-      
-      // Add test segment
-      const testSegment = document.createElement('div');
-      testSegment.className = 'fold-segment test';
-      testSegment.style.width = `${testPercentage}%`;
-      testSegment.textContent = 'Test';
-      
-      datasetRow.appendChild(datasetLabel);
-      datasetRow.appendChild(trainSegment);
-      datasetRow.appendChild(testSegment);
-      foldContainer.appendChild(datasetRow);
-      
-      // Add fold rows
-      for (let i = 0; i < kFolds; i++) {
-        const foldRow = document.createElement('div');
-        foldRow.className = 'fold-row';
-        if (i === currentFold) {
-          foldRow.classList.add('fold-active');
-        }
-        
-        // Add label
-        const foldLabel = document.createElement('div');
-        foldLabel.className = 'fold-label';
-        foldLabel.textContent = `Fold ${i + 1}:`;
-        foldLabel.style.marginRight = '5px';
-        
-        // Calculate segment sizes
-        const segmentWidth = (100 - testPercentage) / kFolds;
-        
-        for (let j = 0; j < kFolds; j++) {
+      const container = document.getElementById('fold-container');
+      container.innerHTML = ''; // Clear previous contents
+
+      if (currentFold >= 0 && currentFoldTraining.length > 0 && currentFoldValidation.length > 0) {
+        // Sort and round values for better readability
+        const sortedTrain = currentFoldTraining.slice().sort((a, b) => a.x - b.x);
+        const sortedVal = currentFoldValidation.slice().sort((a, b) => a.x - b.x);
+
+        const trainText = sortedTrain.map(pt => pt.x.toFixed(2)).join(', ');
+        const valText = sortedVal.map(pt => pt.x.toFixed(2)).join(', ');
+
+        // Fold label
+        const foldEl = document.createElement('div');
+        foldEl.innerHTML = `<strong>Fold:</strong> ${currentFold + 1} / ${kFolds}`;
+        container.appendChild(foldEl);
+
+        // Validation data
+        const valEl = document.createElement('div');
+        valEl.innerHTML = `<strong style="color:#3498db;">Validation X (blue):</strong> [${valText}]`;
+        container.appendChild(valEl);
+
+        // Training data
+        const trainEl = document.createElement('div');
+        trainEl.innerHTML = `<strong style="color:#888;">Training X (gray):</strong> [${trainText}]`;
+        container.appendChild(trainEl);
+
+        // Add visual fold bar
+        const barWrapper = document.createElement('div');
+        barWrapper.style.display = 'flex';
+        barWrapper.style.marginTop = '8px';
+        barWrapper.style.border = '1px solid #ccc';
+        barWrapper.style.height = '16px';
+        barWrapper.style.width = '100%';
+        barWrapper.style.maxWidth = '400px';
+
+        const totalPoints = currentFoldTraining.length + currentFoldValidation.length;
+        const totalSorted = [...currentFoldTraining.map(p => ({ ...p, type: 'train' })), ...currentFoldValidation.map(p => ({ ...p, type: 'val' }))]
+          .sort((a, b) => a.x - b.x);
+
+        totalSorted.forEach(pt => {
           const segment = document.createElement('div');
-          
-          if (i === currentFold && j === i) {
-            segment.className = 'fold-segment validate';
-            segment.textContent = 'Validate';
-          } else {
-            segment.className = 'fold-segment train';
-            segment.textContent = 'Train';
-          }
-          
-          segment.style.width = `${segmentWidth}%`;
-          foldRow.appendChild(segment);
-        }
-        
-        // Add test segment (not used in CV)
-        const unusedSegment = document.createElement('div');
-        unusedSegment.className = 'fold-segment test';
-        unusedSegment.style.width = `${testPercentage}%`;
-        unusedSegment.textContent = 'Not Used';
-        unusedSegment.style.opacity = '0.5';
-        
-        foldRow.appendChild(foldLabel);
-        foldRow.appendChild(unusedSegment);
-        foldContainer.appendChild(foldRow);
+          segment.style.flex = '1';
+          segment.style.height = '100%';
+          segment.style.backgroundColor = pt.type === 'val' ? '#3498db' : '#ccc';
+          barWrapper.appendChild(segment);
+        });
+
+        container.appendChild(barWrapper);
+
+        // Add divider line for clarity
+        const hr = document.createElement('hr');
+        hr.style.margin = '10px 0';
+        container.appendChild(hr);
       }
     }
+
     
     // Draw the canvas
     function drawCanvas() {
