@@ -1331,19 +1331,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Mark optimal lambda
-        if (optimalLambda > 0) {
-            
-            
-            // Find the corresponding error - FIXED
-            let minDiff = Infinity;
+        if (optimalLambda > 0 && lambdaValues.length > 0 && cvErrors.length > 0) {
+            // Find the closest lambda to the optimalLambda
             let closestIndex = 0;
+            let minDiff = Infinity;
 
             for (let i = 0; i < lambdaValues.length; i++) {
-            const diff = Math.abs(lambdaValues[i] - optimalLambda);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestIndex = i;
-            }
+                const diff = Math.abs(lambdaValues[i] - optimalLambda);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = i;
+                }
             }
 
             const logOptimal = Math.log(lambdaValues[closestIndex]);
@@ -1360,18 +1358,18 @@ document.addEventListener('DOMContentLoaded', function() {
             cvCtx.lineTo(xPos, margin.top);
             cvCtx.stroke();
             cvCtx.setLineDash([]);
-          
+
             // Draw point
             cvCtx.fillStyle = '#2ecc71';
             cvCtx.beginPath();
             cvCtx.arc(xPos, yPos, 6, 0, 2 * Math.PI);
             cvCtx.fill();
-            
+
             cvCtx.fillStyle = '#fff';
             cvCtx.beginPath();
             cvCtx.arc(xPos, yPos, 4, 0, 2 * Math.PI);
             cvCtx.fill();
-            
+
             // Add label
             cvCtx.fillStyle = '#2ecc71';
             cvCtx.font = 'bold 12px Arial';
@@ -1379,6 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cvCtx.textBaseline = 'bottom';
             cvCtx.fillText('Optimal λ', xPos, margin.top - 5);
         }
+
       }
     }
     
