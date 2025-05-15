@@ -41,27 +41,27 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <div class="control-group">
-              <label for="train-size">Total Dataset Size:</label>
-              <input type="range" id="train-size" min="20" max="100" step="5" value="50" class="full-width">
-              <span id="train-size-display">50 points</span>
+              <label for="cv-train-size">Total Dataset Size:</label>
+              <input type="range" id="cv-train-size" min="20" max="100" step="5" value="50" class="full-width">
+              <span id="cv-train-size-display">50 points</span>
             </div>
             
             <div class="control-group">
-              <label for="test-percentage">Test Set Percentage:</label>
-              <input type="range" id="test-percentage" min="10" max="40" step="5" value="20" class="full-width">
-              <span id="test-percentage-display">20%</span>
+              <label for="cv-test-percentage">Test Set Percentage:</label>
+              <input type="range" id="cv-test-percentage" min="10" max="40" step="5" value="20" class="full-width">
+              <span id="cv-test-percentage-display">20%</span>
             </div>
             
             <div class="control-group">
-              <label for="noise-level">Noise Level:</label>
-              <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
-              <span id="noise-level-display">0.8</span>
+              <label for="cv-noise-level">Noise Level:</label>
+              <input type="range" id="cv-noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
+              <span id="cv-noise-level-display">0.8</span>
             </div>
             
             <div class="control-group">
-              <label for="polynomial-degree">Polynomial Degree:</label>
-              <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
-              <span id="polynomial-degree-display">9</span>
+              <label for="cv-polynomial-degree">Polynomial Degree:</label>
+              <input type="range" id="cv-polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
+              <span id="cv-polynomial-degree-display">9</span>
             </div>
             
             <div class="results-box">
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
-            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
+            <button id="cv-generate-btn" class="secondary-btn">Generate New Data</button>
           </div>
         </div>
       </div>
@@ -403,16 +403,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Control elements
     const kFoldsInput = document.getElementById('k-folds');
     const kFoldsDisplay = document.getElementById('k-folds-display');
-    const trainSizeInput = document.getElementById('train-size');
-    const trainSizeDisplay = document.getElementById('train-size-display');
-    const testPercentageInput = document.getElementById('test-percentage');
-    const testPercentageDisplay = document.getElementById('test-percentage-display');
-    const noiseLevelInput = document.getElementById('noise-level');
-    const noiseLevelDisplay = document.getElementById('noise-level-display');
-    const polynomialDegreeInput = document.getElementById('polynomial-degree');
-    const polynomialDegreeDisplay = document.getElementById('polynomial-degree-display');
+    const trainSizeInput = document.getElementById('cv-train-size');
+    const trainSizeDisplay = document.getElementById('cv-train-size-display');
+    const testPercentageInput = document.getElementById('cv-test-percentage');
+    const testPercentageDisplay = document.getElementById('cv-test-percentage-display');
+    const noiseLevelInput = document.getElementById('cv-noise-level');
+    const noiseLevelDisplay = document.getElementById('cv-noise-level-display');
+    const polynomialDegreeInput = document.getElementById('cv-polynomial-degree');
+    const polynomialDegreeDisplay = document.getElementById('cv-polynomial-degree-display');
     const runCvBtn = document.getElementById('run-cv-btn');
-    const generateBtn = document.getElementById('generate-btn');
+    const generateBtn = document.getElementById('cv-generate-btn');
     
     // Result elements
     const optimalLambdaElement = document.getElementById('optimal-lambda');
