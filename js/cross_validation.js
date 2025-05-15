@@ -41,24 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <div class="control-group">
-              <label for="lambda-range">Regularization Parameter Search Space:</label>
-              <div class="lambda-range-controls">
-                <div>
-                  <label for="lambda-min">Min λ:</label>
-                  <input type="number" id="lambda-min" min="0.001" max="1" step="0.001" value="0.001" class="number-input">
-                </div>
-                <div>
-                  <label for="lambda-max">Max λ:</label>
-                  <input type="number" id="lambda-max" min="1" max="100" step="1" value="100" class="number-input">
-                </div>
-                <div>
-                  <label for="lambda-steps">Steps:</label>
-                  <input type="number" id="lambda-steps" min="5" max="50" step="1" value="20" class="number-input">
-                </div>
-              </div>
-            </div>
-            
-            <div class="control-group">
               <label for="train-size">Total Dataset Size:</label>
               <input type="range" id="train-size" min="20" max="100" step="5" value="50" class="full-width">
               <span id="train-size-display">50 points</span>
@@ -558,12 +540,14 @@ document.addEventListener('DOMContentLoaded', function() {
       runCvBtn.disabled = true;
       runCvBtn.textContent = 'Running...';
       
-      // Generate lambda values
       lambdaValues = [];
-      for (let i = 0; i < lambdaSteps; i++) {
-        const t = i / (lambdaSteps - 1);
-        // Use logarithmic scale for lambda values
-        const lambda = Math.exp(Math.log(lambdaMin) * (1 - t) + Math.log(lambdaMax) * t);
+      const minLambda = 0.001;
+      const maxLambda = 100;
+      const steps = 20;
+      
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        const lambda = Math.exp(Math.log(minLambda) * (1 - t) + Math.log(maxLambda) * t);
         lambdaValues.push(lambda);
       }
       
