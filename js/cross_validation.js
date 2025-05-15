@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="canvas-container">
             <div class="instruction">Ridge Regression with K-Fold Cross-Validation</div>
             <div id="canvas-wrapper">
-              <canvas id="ridge-regression-canvas" width="800" height="500"></canvas>
+              <canvas id="cv-regression-canvas" width="800" height="500"></canvas>
             </div>
             <div class="legend">
               <div class="legend-item"><span class="legend-color training"></span> Training Data</div>
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         width: 100%;
       }
       
-      #ridge-regression-canvas {
+      #cv-regression-canvas {
         border: 1px solid #ddd;
         border-radius: 4px;
         background-color: white;
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.head.appendChild(styleElement);
     
     // Get DOM elements
-    const canvas = document.getElementById('ridge-regression-canvas');
+    const canvas = document.getElementById('cv-regression-canvas');
     const ctx = canvas.getContext('2d');
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
