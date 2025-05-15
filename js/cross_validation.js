@@ -509,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
       lambdaValues = [];
       cvErrors = [];
       optimalLambda = 1.0;
+      optimalWeights = [];
       currentFold = -1;
       
       // Update the fold visualization
@@ -1409,14 +1410,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function handlePolynomialDegreeChange() {
-      polynomialDegree = parseInt(polynomialDegreeInput.value);
-      polynomialDegreeDisplay.textContent = polynomialDegree.toString();
+        polynomialDegree = parseInt(polynomialDegreeInput.value);
+        polynomialDegreeDisplay.textContent = polynomialDegree.toString();
       
-      // If we have an optimal lambda, refit the model
-      if (lambdaValues.length > 0 && optimalLambda > 0) {
-        optimalWeights = fitRidgeRegression(trainingData, optimalLambda);
+        if (lambdaValues.length > 0 && optimalLambda > 0) {
+          optimalWeights = fitRidgeRegression(trainingData, optimalLambda);
+        }
+      
         drawCanvas();
-      }
     }
     
     function handleLambdaRangeChange() {
