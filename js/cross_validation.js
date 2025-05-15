@@ -441,10 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let testPercentage = 20;
     let noiseLevel = 0.8;
     let polynomialDegree = 9;
-    let lambdaMin = 0.001;
-    let lambdaMax = 100;
-    let lambdaSteps = 20;
-    
+   
     // Drawing settings
     const plotMargin = 50;
     const plotWidth = canvasWidth - 2 * plotMargin;
@@ -1238,9 +1235,11 @@ document.addEventListener('DOMContentLoaded', function() {
       cvCtx.textBaseline = 'top';
       
       // Use logarithmic scale for x-axis
-      const logMin = Math.log(0.001);
-      const logMax = Math.log(100);
-      const logRange = logMax - logMin;
+        const minLambda = Math.min(...lambdaValues);
+        const maxLambda = Math.max(...lambdaValues);
+        const logMin = Math.log(minLambda);
+        const logMax = Math.log(maxLambda);
+        const logRange = logMax - logMin;       
       
       const numXTicks = 5;
       for (let i = 0; i <= numXTicks; i++) {
