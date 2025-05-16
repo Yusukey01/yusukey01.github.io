@@ -13,87 +13,94 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create HTML structure
     container.innerHTML = `
       <div class="visualizer-container">
-        <div class="visualizer-layout">
-          <div class="canvas-container">
-            <div class="instruction">Ridge Regression with K-Fold Cross-Validation</div>
-            <div id="canvas-wrapper">
-              <canvas id="cv-regression-canvas" width="800" height="500"></canvas>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="legend-color training"></span> Training Data</div>
-              <div class="legend-item"><span class="legend-color validation"></span> Validation Data</div>
-              <div class="legend-item"><span class="legend-color test"></span> Test Data (Held Out)</div>
-              <div class="legend-item"><span class="legend-color model"></span> Ridge Regression</div>
-              <div class="legend-item"><span class="legend-color true"></span> True Function</div>
-            </div>
-          </div>
-          
-          <div class="controls-panel">
-            <div class="cv-plot-container">
-              <h3>Cross-Validation Error</h3>
-              <canvas id="cv-error-plot" width="400" height="250"></canvas>
-            </div>
-            
-            <div class="control-group">
-              <label for="k-folds">Number of Folds (K):</label>
-              <input type="range" id="k-folds" min="2" max="10" step="1" value="5" class="full-width">
-              <span id="k-folds-display">5 folds</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="cv-train-size">Total Dataset Size:</label>
-              <input type="range" id="cv-train-size" min="20" max="100" step="5" value="50" class="full-width">
-              <span id="cv-train-size-display">50 points</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="cv-test-percentage">Test Set Percentage:</label>
-              <input type="range" id="cv-test-percentage" min="10" max="40" step="5" value="20" class="full-width">
-              <span id="cv-test-percentage-display">20%</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="cv-noise-level">Noise Level:</label>
-              <input type="range" id="cv-noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
-              <span id="cv-noise-level-display">0.8</span>
-            </div>
-            
-            <div class="control-group">
-              <label for="cv-polynomial-degree">Polynomial Degree:</label>
-              <input type="range" id="cv-polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
-              <span id="cv-polynomial-degree-display">9</span>
-            </div>
-            
-            <div class="results-box">
-              <h3>Cross-Validation Results:</h3>
-              <div class="result-row">
-                <div class="result-label">Optimal λ:</div>
-                <div class="result-value" id="optimal-lambda">λ = 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">CV Error:</div>
-                <div class="result-value" id="cv-error">MSE: 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">Test Error:</div>
-                <div class="result-value" id="test-error">MSE: 0.000</div>
-              </div>
-              <div class="result-row">
-                <div class="result-label">Model Complexity:</div>
-                <div class="result-value" id="model-complexity">L2 Norm: 0.000</div>
-              </div>
-            </div>
-            
-            <div class="fold-visualization">
-              <h3>Cross-Validation Folds:</h3>
-              <div id="fold-container"></div>
-            </div>
-            
-            <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
-            <button id="cv-generate-btn" class="secondary-btn">Generate New Data</button>
-          </div>
+      <div class="instruction">Ridge Regression with K-Fold Cross-Validation</div>
+
+      <!-- Regression Canvas -->
+      <div id="canvas-wrapper">
+        <canvas id="cv-regression-canvas" width="800" height="500"></canvas>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item"><span class="legend-color training"></span> Training Data</div>
+        <div class="legend-item"><span class="legend-color validation"></span> Validation Data</div>
+        <div class="legend-item"><span class="legend-color test"></span> Test Data (Held Out)</div>
+        <div class="legend-item"><span class="legend-color model"></span> Ridge Regression</div>
+        <div class="legend-item"><span class="legend-color true"></span> True Function</div>
+      </div>
+
+      <!-- CV Error Plot -->
+      <div class="cv-plot-container">
+        <h3>Cross-Validation Error</h3>
+        <canvas id="cv-error-plot" width="800" height="250"></canvas>
+      </div>
+
+      <!-- Buttons -->
+      <div class="button-group">
+        <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
+        <button id="cv-generate-btn" class="secondary-btn">Generate New Data</button>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="k-folds">Number of Folds (K):</label>
+          <input type="range" id="k-folds" min="2" max="10" step="1" value="5" class="full-width">
+          <span id="k-folds-display">5 folds</span>
+        </div>
+
+        <div class="control-group">
+          <label for="cv-train-size">Total Dataset Size:</label>
+          <input type="range" id="cv-train-size" min="20" max="100" step="5" value="50" class="full-width">
+          <span id="cv-train-size-display">50 points</span>
+        </div>
+
+        <div class="control-group">
+          <label for="cv-test-percentage">Test Set Percentage:</label>
+          <input type="range" id="cv-test-percentage" min="10" max="40" step="5" value="20" class="full-width">
+          <span id="cv-test-percentage-display">20%</span>
+        </div>
+
+        <div class="control-group">
+          <label for="cv-noise-level">Noise Level:</label>
+          <input type="range" id="cv-noise-level" min="0" max="2" step="0.1" value="0.8" class="full-width">
+          <span id="cv-noise-level-display">0.8</span>
+        </div>
+
+        <div class="control-group">
+          <label for="cv-polynomial-degree">Polynomial Degree:</label>
+          <input type="range" id="cv-polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
+          <span id="cv-polynomial-degree-display">9</span>
         </div>
       </div>
+
+      <!-- CV Results -->
+      <div class="results-box">
+        <h3>Cross-Validation Results:</h3>
+        <div class="result-row">
+          <div class="result-label">Optimal λ:</div>
+          <div class="result-value" id="optimal-lambda">λ = 0.000</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">CV Error:</div>
+          <div class="result-value" id="cv-error">MSE: 0.000</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Test Error:</div>
+          <div class="result-value" id="test-error">MSE: 0.000</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Model Complexity:</div>
+          <div class="result-value" id="model-complexity">L2 Norm: 0.000</div>
+        </div>
+      </div>
+
+      <!-- Fold Visualization -->
+      <div class="fold-visualization">
+        <h3>Cross-Validation Folds:</h3>
+        <div id="fold-container"></div>
+      </div>
+    </div>
     `;
     
     // Add styles
@@ -594,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
           drawCvErrorPlot();
           
           // Add a small delay for visualization
-          await sleep(100);
+          await sleep(80);
           //await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
