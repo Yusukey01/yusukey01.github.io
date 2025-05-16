@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Run cross-validation
     async function runCrossValidation() {
       isCvComplete = false;
-
+      optimalLambda = 0;
       if (isCvRunning) return;
       
       isCvRunning = true;
@@ -614,6 +614,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       optimalLambda = lambdaValues[minErrorIndex];
+      isCvComplete = true;
+      drawCvErrorPlot();
       
       // Fit the model with optimal lambda on all training data
       optimalWeights = fitRidgeRegression(trainingData, optimalLambda);
@@ -646,9 +648,6 @@ document.addEventListener('DOMContentLoaded', function() {
       isCvRunning = false;
       runCvBtn.disabled = false;
       runCvBtn.textContent = 'Run Cross-Validation';
-
-      isCvComplete = true;
-      drawCvErrorPlot();
     }
     
     // Fit ridge regression
