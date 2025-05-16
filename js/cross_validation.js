@@ -420,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cvErrorElement = document.getElementById('cv-error');
     const testErrorElement = document.getElementById('test-error');
     const modelComplexityElement = document.getElementById('model-complexity');
-    const foldContainer = document.getElementById('fold-container');
     
     // State variables
     let allData = [];
@@ -443,6 +442,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let noiseLevel = 0.8;
     let polynomialDegree = 9;
    
+    //to show the optimal lambda after K folds
+    let isCvComplete = false;
+
+
     // Drawing settings
     const plotMargin = 50;
     const plotWidth = canvasWidth - 2 * plotMargin;
@@ -533,6 +536,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Run cross-validation
     async function runCrossValidation() {
+      isCvComplete = false;
+
       if (isCvRunning) return;
       
       isCvRunning = true;
@@ -641,6 +646,9 @@ document.addEventListener('DOMContentLoaded', function() {
       isCvRunning = false;
       runCvBtn.disabled = false;
       runCvBtn.textContent = 'Run Cross-Validation';
+
+      isCvComplete = true;
+      drawCvErrorPlot();
     }
     
     // Fit ridge regression
@@ -868,12 +876,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validation data
         const valEl = document.createElement('div');
-        valEl.innerHTML = `<strong style="color:#3498db;">Validation X (blue):</strong> [${valText}]`;
+        valEl.innerHTML = `<strong style="color: #e74c3c;">Validation X:</strong> [${valText}]`;
         container.appendChild(valEl);
 
         // Training data
         const trainEl = document.createElement('div');
-        trainEl.innerHTML = `<strong style="color:#888;">Training X (gray):</strong> [${trainText}]`;
+        trainEl.innerHTML = `<strong style="color: #3498db;">Training X:</strong> [${trainText}]`;
         container.appendChild(trainEl);
 
         // Add visual fold bar
@@ -893,7 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const segment = document.createElement('div');
           segment.style.flex = '1';
           segment.style.height = '100%';
-          segment.style.backgroundColor = pt.type === 'val' ? '#3498db' : '#ccc';
+          segment.style.backgroundColor = pt.type === 'val' ? '#e74c3c' : '#3498db';
           barWrapper.appendChild(segment);
         });
 
