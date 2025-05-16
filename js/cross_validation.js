@@ -1327,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Mark optimal lambda
-        if (optimalLambda > 0 && lambdaValues.length > 0 && cvErrors.length > 0) {
+        if (isCvComplete && optimalLambda > 0 && lambdaValues.length > 0 && cvErrors.length > 0){
             // Find the closest lambda to the optimalLambda
             let closestIndex = 0;
             let minDiff = Infinity;
