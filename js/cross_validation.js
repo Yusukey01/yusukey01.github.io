@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
               <h3>Cross-Validation Error</h3>
               <canvas id="cv-error-plot" width="400" height="250"></canvas>
             </div>
+
+            <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
+            <button id="cv-generate-btn" class="secondary-btn">Generate New Data</button>
+
+             <div class="fold-visualization">
+              <h3>Cross-Validation Folds:</h3>
+              <div id="fold-container"></div>
+            </div>
             
             <div class="control-group">
               <label for="k-folds">Number of Folds (K):</label>
@@ -63,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <input type="range" id="cv-polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
               <span id="cv-polynomial-degree-display">9</span>
             </div>
-            
+
             <div class="results-box">
               <h3>Cross-Validation Results:</h3>
               <div class="result-row">
@@ -83,14 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="result-value" id="model-complexity">L2 Norm: 0.000</div>
               </div>
             </div>
-            
-            <div class="fold-visualization">
-              <h3>Cross-Validation Folds:</h3>
-              <div id="fold-container"></div>
-            </div>
-            
-            <button id="run-cv-btn" class="primary-btn">Run Cross-Validation</button>
-            <button id="cv-generate-btn" class="secondary-btn">Generate New Data</button>
+             
           </div>
         </div>
       </div>
