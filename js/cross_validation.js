@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .control-group {
-        margin-bottom: 20px;
+        margin-bottom: 10px;
       }
       
       .control-group label {
