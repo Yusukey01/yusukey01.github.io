@@ -600,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
           drawCvErrorPlot();
           
           // Add a small delay for visualization
-          await sleep(80);
+          await sleep(50);
           //await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
