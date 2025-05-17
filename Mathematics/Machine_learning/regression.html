@@ -158,82 +158,66 @@ uses_python: false
             <section id="b-v" class="section-content">
                 <h2>Bias-Variance Tradeoff in Ridge Regression</h2>
                 <p>
-                    Let's dive into a formal derivation of expected prediction error in the context of ridge regression. Remember we have 
-                    obtained: 
+                    Recall the ridge solution
                     \[
-                    \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
+                    \widehat w_{\rm ridge} = (X^\top X + \lambda I)^{-1}X^\top y,
+                    \quad
+                    y = Xw + \epsilon,\;\epsilon\sim\mathcal N(0,\sigma^2I).
                     \]
-                    Now, we assume probabilistic generative model:
+                    At a test point \(x\), the expected squared error decomposes as
                     \[
-                    x_i \sim P_X, \quad y = Xw + \epsilon, \text{ where } \epsilon \sim \mathcal{N}(0, \sigma^2 I).
+                    \label{eq:bv-split}
+                    \mathbb{E}_{y,D}\bigl[(y - x^\top\widehat w_{\rm ridge})^2\mid x\bigr]
+                    = \underbrace{\mathbb{E}_{y\mid x}\bigl[(y - \mathbb{E}[y\mid x])^2\bigr]}_{\displaystyle\sigma^2}
+                    + \underbrace{\mathbb{E}_D\Bigl[\bigl(\mathbb{E}[y\mid x]-x^\top\widehat w_{\rm ridge}\bigr)^2\Bigr]}_{\text{squared bias}}
+                    + \underbrace{\mathbb{E}_D\Bigl[\operatorname{Var}_{D}\bigl[x^\top\widehat w_{\rm ridge}\mid x\bigr]\Bigr]}_{\text{variance}}.
                     \]
-                    Then the true error at a sample with feature \(x\) is given by: 
-                    \[
-                    \begin{align*}
-                    &\mathbb{E}_{y, D  \mid x} \left[ \left(y - x^\top \widehat{w}{\text{ridge}} \right)^2 \mid x \right] \\\\
+                </p>
 
-                    &= \mathbb{E}_{y \mid x} \left[ \left(y - \mathbb{E}[y \mid x] \right)^2 \mid  x \right]
-                        + \mathbb{E}_D \left[ \left( \mathbb{E}[y \mid  x]  -x^\top \widehat{w}_{ridge} \right)^2  \mid x  \right] \\\\
-
-                    &= \mathbb{E}_{y \mid x} \left[ \left(y - x^\top w \right)^2 \mid x \right] 
-                        + \mathbb{E}_D \left[ \left(x^\top w - x^\top \widehat{w}_{ridge} \right)^2 \mid x \right] \\\\
-
-                    &= \sigma^2 
-                        + \left(x^\top w - \mathbb{E}_D \left[x^\top  \widehat{w}_{ridge} \mid x \right] \right)^2 
-                        + \mathbb{E}_D \left[ \left( x^\top \widehat{W}_{ridge} - \mathbb{E}_D \left[  x^\top \widehat{W}_{ridge} \mid x\right] \right)^2 \mid x \right] \\\\
-                    &= (\text{Irreducible error}) + (\text{Bisas})^2 + (\text{Variance})
-                      \end{align*}
-                    \]
-                    Here, we assume \(X^\top X = n I\), then 
+                <p><strong>Closed-form under the simplifying assumption \(X^\top X = nI\):</strong></p>
+                <ul>
+                    <li>
+                    **Bias.**  
+                    Since 
+                    \(\displaystyle x^\top\widehat w_{\rm ridge}
+                        = \tfrac{n}{n+\lambda}\,x^\top w + \tfrac{1}{n+\lambda}(Xx)^\top\epsilon,\)
+                    its mean over \(D\) is 
+                    \(\frac{n}{n+\lambda}\,x^\top w\).  Hence
                     \[
-                    \begin{align*}
-                     \widehat{w}_{ridge} &= (X^\top X + \lambda I)^{-1} X^\top (Xw + \epsilon) \\\\
-                                         &= (nI + \lambda I)^{-1}(nIw + X^\top \epsilon) \\\\
-                                         &= (n + \lambda)^{-1} I (nw + X^\top \epsilon) \\\\
-                                         &= \frac{n}{n + \lambda}w + \frac{1}{n + \lambda} X^\top \epsilon
-                    \end{align*}
+                        \text{Bias}^2
+                        = \bigl(x^\top w - \tfrac{n}{n+\lambda}x^\top w\bigr)^2
+                        = \frac{\lambda^2}{(n+\lambda)^2}(x^\top w)^2.
                     \]
-
-                    Then since \(\mathbb{E}[\epsilon] = 0\), the bias term is written as: 
+                    </li>
+                    <li>
+                    **Variance.**  
+                    Only the noise part \(\tfrac{1}{n+\lambda}(Xx)^\top\epsilon\) fluctuates, and
                     \[
-                    \begin{align*}
-                    &(\text{Bias})^2  \\\\
-                    &= \left( x^\top w -\mathbb{E}_D \left[x^\top \widehat{w}_{ridge}\right] \right)^2 \\\\
-                    &= \left( x^\top w -\mathbb{E}_D \left[\frac{n}{n + \lambda}x^\top w + \frac{1}{n + \lambda} (Xx)^\top \epsilon \right] \right)^2 \\\\
-                    &= \left( x^\top w - \frac{n}{n + \lambda}x^\top w  \right)^2 \\\\
-                    &= \frac{\lambda^2}{(n + \lambda)^2}(x^\top w)^2 
-                    \end{align*} 
+                        \operatorname{Var}\bigl[(Xx)^\top\epsilon\bigr]
+                        = \sigma^2\,x^\top(X^\top X)x
+                        = \sigma^2\,n\,\|x\|^2.
                     \]
-                    Next, for the variance term, we can only care about random part. Thus, we have:
+                    Thus
                     \[
-                    \begin{align*}
-                    &\text{Var}\left[ x^\top \widehat{w}_{ridge}\right] \\\\
-                    &= \text{Var}\left[ \frac{1}{n + \lambda} (Xx)^\top \epsilon \right] \\\\
-                    &= \frac{1}{(n + \lambda)^2}\text{Var}\left[(Xx)^\top \epsilon \right] \\\\
-                    &= \frac{1}{(n + \lambda)^2} \sigma^2 x^\top (X^\top X) x \\\\
-                    &= \frac{1}{(n + \lambda)^2} x^\top \sigma^2 n I x \\\\
-                     &= \frac{\sigma^2 n}{(n + \lambda)^2} \| x \|_2^2 \\\\
-                    \end{align*} 
+                        \operatorname{Var}\bigl[x^\top\widehat w_{\rm ridge}\mid x\bigr]
+                        = \frac{\sigma^2\,n}{(n+\lambda)^2}\,\|x\|^2.
                     \]
+                    </li>
+                    <li>
+                    **Irreducible noise.** Always \(\sigma^2\).
+                    </li>
+                </ul>
 
+                <p>
+                    Putting it all together,
                     \[
-                    \begin{align*}
-
-                    \end{align*} 
+                    \mathbb{E}_{y,D}\bigl[(y - x^\top\widehat w_{\rm ridge})^2\mid x\bigr]
+                    = 
+                    \sigma^2
+                    + \frac{\lambda^2}{(n+\lambda)^2}(x^\top w)^2
+                    + \frac{\sigma^2\,n}{(n+\lambda)^2}\,\|x\|^2.
                     \]
-
-                     &= \mathbb{E}_{y \mid x}\left[ (y -x^\top w)^2\right]
-                        + \left(x^\top w - \mathbb{E}_D \left[x^\top  \widehat{w}_{ridge} \right] \right)^2 
-                        + \mathbb{E}_D \left[ \left( x^\top \widehat{W}_{ridge} - \mathbb{E}_D \left[  x^\top \widehat{W}_{ridge} \right] \right)^2 \right]
-                    
-                    \]
-                    Therefore, 
-                    \[
-                    \begin{align*}
-                        &\mathbb{E}_{y, D  \mid x} \left[ \left(y - x^\top \widehat{w}_{\text{ridge}} \right)^2 \mid x \right] \\\\
-                        &= \sigma^2 + \frac{\lambda^2}{(n + \lambda)^2}(w^\top x)^2 + \frac{\sigma^2 n}{(n + \lambda)^2} \| x \|_2^2
-                    \end{align*}
-                    \]
+                    As \(\lambda\) grows, the bias term ↑ and the variance term ↓, illustrating the classic trade-off.
                 </p>
             </section>
 
