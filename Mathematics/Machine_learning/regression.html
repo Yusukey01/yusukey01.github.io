@@ -31,37 +31,37 @@ uses_python: false
                     feature vector, and \(y_i \in \mathbb{R}\) is the corresponding target value. The linear regression model assumes a 
                     linear relationship:
                     \[
-                    y = XW + \epsilon, 
+                    y = Xw + \epsilon, 
                     \]
-                    where \(X \in \mathbb{R}^{n \times d}\) is the design matrix, \(W \in \mathbb{R}^d\) is the weight vector to be estimated, 
+                    where \(X \in \mathbb{R}^{n \times d}\) is the design matrix, \(w \in \mathbb{R}^d\) is the weight vector to be estimated, 
                     and \(\epsilon \sim \mathcal{N}(0, \sigma^2 I)\) is a Gaussian noise vector.
                 </p>
                    
                 <p>
                     In linear regression, the <a href="../Probability/mle.html"><strong>maximum likelihood estimator (MLE)</strong></a> 
-                    of \(W\) coincides with the <a href="../Linear_algebra/leastsquares.html"><strong>least-squares solution</strong></a>: 
+                    of \(w\) coincides with the <a href="../Linear_algebra/leastsquares.html"><strong>least-squares solution</strong></a>: 
                     \[
                     \begin{align*}
-                    \widehat{W}_{LS}    &= \arg \min_W \sum_{i=1}^n (y_i - {x_i}^T W )^2 \\\\
-                                        &= \arg \min_W \|y - XW\|_2^2 \\\\
-                                        &= \arg \min_W (y - XW)^T (y - XW) \\\\
-                                        &= \arg \min_W y^T y -y^T XW - W^T X^T y + W^T X^T X W \\\\
-                                        &= \arg \min_W f(W) \\\\
+                    \widehat{w}_{LS}    &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 \\\\
+                                        &= \arg \min_w \|y - Xw\|_2^2 \\\\
+                                        &= \arg \min_w (y - Xw)^\top (y - Xw) \\\\
+                                        &= \arg \min_w y^\top y -y^\top Xw - w^T X^T y + w^\top X^\top X w\\\\
+                                        &= \arg \min_w f(w) \\\\
                     \end{align*}
                     \]
                     
-                    Differentiating with respect to \(W\) and setting the gradient to zero:
+                    Differentiating with respect to \(w\) and setting the gradient to zero:
                     \[
                     \begin{align*}
-                        \nabla f(W) &= -X^T y -X^T y + 2X^T XW \\\\
-                                    &= -2X^T y + 2 X^T X W  = 0 
+                        \nabla f(w) &= -X^\top y -X^\top y + 2X^\top Xw \\\\
+                                    &= -2X^\top y + 2 X^\top X w  = 0 
                     \end{align*}
                     \]
-                    Thus, if \((X^TX)^{-1}\) exists,
+                    Thus, if \((X^\top X)^{-1}\) exists,
                     \[
                     \begin{align*}
-                    \widehat{W}_{LS} &= (X^TX)^{-1}X^Ty \\\\
-                                     &= \widehat{W}_{MLE}.
+                    \widehat{w}_{LS} &= (X^\top X)^{-1}X^\top y \\\\
+                                     &= \widehat{w}_{MLE}.
                     \end{align*}
                     \]
                 </p>
@@ -77,29 +77,29 @@ uses_python: false
                     and the modified version of linear regression is known as <strong>ridge regression</strong>:
                     \[
                     \begin{align*}
-                    \widehat{W}_{ridge} &= \arg \min_W \sum_{i=1}^n (y_i - {x_i}^T W )^2 +  \lambda \|W\|_2^2.\\\\
-                                        &=  \arg \min_W \|y - XW\|_2^2 + \lambda W^T W \\\\
-                                        &= \arg \min_W (XW -y)^T (XW-y)+\lambda W^T W \\\\
-                                        &= \arg \min_W y^Ty -2W^T Xy +W^T X^T XW + W^T (\lambda I)W \\\\
-                                        &= \arg \min_W y^Ty -2W^T Xy +W^T  (X^T X + \lambda I)W \\\
-                                        &= \arg \min_W J(W)            
+                    \widehat{w}_{ridge} &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 +  \lambda \|w\|_2^2.\\\\
+                                        &=  \arg \min_w \|y - Xw\|_2^2 + \lambda w^\top w\\\\
+                                        &= \arg \min_w (Xw -y)^\top (Xw-y)+\lambda w^\top w \\\\
+                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top X^\top Xw + w^\top (\lambda I)w \\\\
+                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\
+                                        &= \arg \min_w J(W)            
                     \end{align*}
                     \]
                     Then
                     \[
-                    \nabla_W J(W) = -2X^T y +2(X^T X + \lambda I )W = 0
+                    \nabla_w J(w) = -2X^\top y +2(X^\top X + \lambda I )w = 0
                     \]
-                    Solve this equation for \(W\), we botain 
+                    Solve this equation for \(w\), we botain 
                     \[
-                    \widehat{W}_{ridge} = (X^T X + \lambda I)^{-1}X^T y.
+                    \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
                     \]
                 </p>
 
                 <p>
                     The hyperparameter \(\lambda \geq 0\) controls the strength of the regularization:
                     <ul style="padding-left: 40px;">
-                        <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{W}_{ridge} \to \widehat{W}_{LS}\).</li>
-                        <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{W}_{ridge} \to 0\), leading to high bias but low variance.</li>
+                        <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{w}_{ridge} \to \widehat{w}_{LS}\).</li>
+                        <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{w}_{ridge} \to 0\), leading to high bias but low variance.</li>
                     </ul>
                     <br>
                     This illustrates the classic <strong>bias-variance tradeoff</strong> in statistical learning. 
@@ -160,21 +160,37 @@ uses_python: false
                     Let's dive into a formal derivation of expected prediction error in the context of ridge regression. Remember we have 
                     obtained: 
                     \[
-                    \widehat{W}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
+                    \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
                     \]
-                    Now, we assume \(X^\top X = n I\) and \(y = XW + \epsilon\), where \(\epsilon \sim \mathcal{N}(0, \sigma^2 I)\). If 
-                    \(x \in \mathbb{R}^d\) and \(Y \sim \mathcal{N}(x^\top W, \sigma^2)\), then
+                    Now, we assume probabilistic generative model:
+                    \[
+                    x_i \sim P_X, \quad y = Xw + \epsilon, \text{ where } \epsilon \sim \mathcal{N}(0, \sigma^2 I).
+                    \]
+                    Then the true error at a sample with feature \(x\) is given by: 
                     \[
                     \begin{align*}
-                    &\mathbb{E}_{Y \mid X, D} \left[ \left(Y - x^\top \widehat{W}{\text{ridge}} \right)^2 \mid X = x \right] \\\\
-                    &= \mathbb{E}_{Y \mid X} \left[ \left(Y - \mathbb{E}_{Y \mid X}[Y \mid X = x] \right)^2 \mid X = x \right]
-                        + \mathbb{E}_D \left[ \left( \mathbb{E}_{Y \mid X}[Y \mid X = x] \right)^2  -x^\top \widehat{W}_{ridge} \right] \\\\
-                    &= \mathbb{E}_{Y \mid X} \left[ \left(Y - x^\top W \right)^2 \mid X = x \right] 
-                        + \mathbb{E}_D \left[ \left(x^\top W - x^\top \widehat{W}_{ridge} \right)^2 \right] \\\\
+                    &\mathbb{E}_{y, D  \mid x} \left[ \left(y - x^\top \widehat{w}{\text{ridge}} \right)^2 \mid x \right] \\\\
+
+                    &= \mathbb{E}_{y \mid x} \left[ \left(y - \mathbb{E}[y \mid x] \right)^2 \mid  x \right]
+                        + \mathbb{E}_D \left[ \left( \mathbb{E}[y \mid  x]  -x^\top \widehat{w}_{ridge} \right)^2  \mid x  \right] \\\\
+
+                    &= \mathbb{E}_{y \mid x} \left[ \left(y - x^\top w \right)^2 \mid x \right] 
+                        + \mathbb{E}_D \left[ \left(x^\top w - x^\top \widehat{w}_{ridge} \right)^2 \mid x \right] \\\\
+
                     &= \sigma^2 
-                        + \left(x^\top W - \mathbb{E}_D \left[x^\top  \widehat{W}_{ridge}\right] \right)^2 
-                        + \mathbb{E}_D \left[\mathbb{E}_D\left[ \left(x^\top \widehat{W}_{ridge} \right] - x^\top \widehat{W}_{ridge}\right)^2 \right]
-                     \end{align*}
+                        + \left(x^\top w - \mathbb{E}_D \left[x^\top  \widehat{w}_{ridge} \mid x \right] \right)^2 
+                        + \mathbb{E}_D \left[ \left( \mathbb{E}_D \left[  x^\top \widehat{W}_{ridge} \mid x\right] - x^\top \widehat{W}_{ridge} \right)^2 \mid x \right]
+                    &= \text{Irreducible error} + (\text{Bisas})^2 + \text{Variance}
+                      \end{align*}
+                    \]
+                    Here, we assume \(X^\top X = n I\), then 
+                    \[
+                    \begin{align*}
+                     \widehat{w}_{ridge} &= (X^\top X + \lambda I)^{-1} X^\top (Xw + \epsilon) \\\\
+                                         &= (nI + \lambda I)^{-1}(nIw + X^\top \epsilon) \\\\
+                                         &= (n + \lambda)^{-1} I (nw + X^\top \epsilon) \\\\
+                                         &= \frac{n}{n + \lambda}w + \frac{1}{n + \lambda} X^\top \epsilon
+                    \end{align*}
                     \]
                 </section>
 
