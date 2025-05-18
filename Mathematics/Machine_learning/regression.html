@@ -76,8 +76,8 @@ uses_python: false
                     and the modified version of linear regression is known as <strong>ridge regression</strong>:
                     \[
                     \begin{align*}
-                    \widehat{w}_{ridge} &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 +  \underbrace{\lambda \|w\|_2^2}_{\text{Squared \(l_2\)-norm regularizer} }.\\\\
-                                        &=  \arg \min_w \|y - Xw\|_2^2 + \lambda w^\top w\\\\
+                    \widehat{w}_{ridge} &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 +\underbrace{\lambda \|w\|_2^2}_{\text{Squared \(l_2\)-norm regularizer}}.\\\\
+                                        &=  \arg \min_w \|y - Xw\|_2^2 + \lambda w^\top w \\\\
                                         &= \arg \min_w (Xw -y)^\top (Xw-y)+\lambda w^\top w \\\\
                                         &= \arg \min_w y^\top y -2w^\top Xy +w^\top X^\top Xw + w^\top (\lambda I)w \\\\
                                         &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\
@@ -233,15 +233,30 @@ uses_python: false
                 <h2>Lasso Regression</h2>
                 <p>
                     In ridge regression objective, squared <strong>\(l_2\)-norm</strong>\( \| w \|_2^2 \) is introduced as a 
-                    regularizer, which shrinks weights continuously, and keeps all features in the model. Instead, we use 
-                    the \(l_1\) regularizer: 
+                    regularizer. Instead, here we use the \(l_1\) regularizer: 
                     \[
-                    \widehat{w}_{lasso}    &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 + \lambda \|w\|_1.
+                    \widehat{w}_{\text{lasso}} = \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 + \lambda \|w\|_1.
                     \]
-                    This method is known as the <strong>Least absolute shrinkage & selection operator (Lasso) regression</strong>.
+                    This formulation is known as the <strong>Least absolute shrinkage & selection operator (Lasso) regression</strong>.
                 </p>
                 <p>
-                    The \(l_1\) regularizer has “pointy” level sets, often drives some \(w_i\) exactly to zero for feature selection.
+                    The significance of Lasso is that it automatically performs <strong>feature selection</strong>. By penalizing the 
+                    \(l_1\)-norm of the weight vector, Lasso often drives many \(w_j\) to <strong>exactly zero</strong>, effectively 
+                    dropping those features from the model. Intuitively, this is because the \(l_1\) regularizer has “pointy” level sets, 
+                    while the \(l_2\) regularizer shrinks all coefficients "smoothly" toward zero but never exactly to zero.
+                </p>
+                <p>
+                    In Lasso regression, after feature selection, we have to "retrain" the objective with \(\lambda = 0\) 
+                    (i.e. solving ordinary least-squares) but only using selected features. For example, when we run Lasso, generate 
+                    an index set: 
+                    \[
+                    S = \{j : \widehat{w}_{\text{lasso}, j} \neq 0\}
+                    \]
+                    and then solve 
+                    \[
+                    \tilde{w} = \arg \min_{w_S} \sum_{i=1}^n (y_i - x_{i, S}^\top w_S)^2
+                    \]
+                    where \(x_{i, S}\) is the subvector of features in \(S\) and we set \(\tilde{w}_j = 0\) for \(j \notin S\).
                 </p>
                
             </section>
