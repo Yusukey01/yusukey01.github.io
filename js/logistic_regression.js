@@ -172,24 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateWeightDisplay();
   }
   
-  
-  // Add event listeners
-  datasetSelect.addEventListener('change', handleDatasetChange);
-  regInput.addEventListener('input', handleRegularizationChange);
-  learningRateInput.addEventListener('input', handleLearningRateChange);
-  iterationsInput.addEventListener('input', handleIterationsChange);
-  polyDegreeInput.addEventListener('input', handlePolyDegreeChange);
-  trainBtn.addEventListener('click', trainModel);
-  generateBtn.addEventListener('click', generateData);
-  toggleContoursBtn.addEventListener('click', toggleContours);
-  
-  window.addEventListener('resize', handleResize);
-  
-  // Initialize
-  generateData();
-  handleResize();
-
-  
   // Create HTML structure
   container.innerHTML = `
     <div class="visualizer-container">
@@ -520,12 +502,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const generateBtn = document.getElementById('generate-btn');
   const toggleContoursBtn = document.getElementById('toggle-contours-btn');
   
-  // Results elements
-  const accuracyElement = document.getElementById('accuracy');
-  const lossElement = document.getElementById('loss');
-  const iterationsUsedElement = document.getElementById('iterations-used');
-  const weightValuesContainer = document.getElementById('weight-values-container');
-  
   // State variables
   let data = []; // Array of objects {x1, x2, y}
   let weights = []; // Model coefficients [w0, w1, w2, ...]
@@ -551,6 +527,18 @@ document.addEventListener('DOMContentLoaded', function() {
   iterationsDisplay.textContent = maxIterations.toString();
   polyDegree = parseInt(polyDegreeInput.value);
   polyDegreeDisplay.textContent = `Degree ${polyDegree}${polyDegree === 1 ? ' (linear)' : ''}`;
+  
+  // Add event listeners - MOVED AFTER DOM ELEMENTS ARE CREATED
+  datasetSelect.addEventListener('change', handleDatasetChange);
+  regInput.addEventListener('input', handleRegularizationChange);
+  learningRateInput.addEventListener('input', handleLearningRateChange);
+  iterationsInput.addEventListener('input', handleIterationsChange);
+  polyDegreeInput.addEventListener('input', handlePolyDegreeChange);
+  trainBtn.addEventListener('click', trainModel);
+  generateBtn.addEventListener('click', generateData);
+  toggleContoursBtn.addEventListener('click', toggleContours);
+  
+  window.addEventListener('resize', handleResize);
   
   // Generate dataset
   function generateData() {
@@ -721,229 +709,4 @@ document.addEventListener('DOMContentLoaded', function() {
     loss = loss / data.length + (regularization / 2) * regularizationTerm;
     return loss;
   }
-  
-  // Calculate accuracy
-  function calculateAccuracy() {
-    let correct = 0;
-    
-    for (const point of data) {
-      const { x1, x2, y } = point;
-      const prediction = predict(x1, x2);
-      const predictedClass = prediction >= 0.5 ? 1 : 0;
-      
-      if (predictedClass === y) {
-        correct++;
-      }
-    }
-    
-    return correct / data.length;
-  }
-  
-  // Train the model using gradient descent
-  async function trainModel() {
-    if (isTraining) return;
-    isTraining = true;
-    trainBtn.textContent = 'Training...';
-    trainBtn.disabled = true;
-    
-    const numFeatures = getNumFeaturesWithIntercept();
-    let iterations = 0;
-    let previousLoss = Infinity;
-    let currentLoss = calculateLoss();
-    
-    // For early stopping
-    const tolerance = 1e-6;
-    const minLossChange = 1e-6;
-    
-    while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
-      previousLoss = currentLoss;
-      
-      // Calculate gradients
-      const gradients = Array(numFeatures).fill(0);
-      
-      for (const point of data) {
-        const { x1, x2, y } = point;
-        const features = generateFeatures(x1, x2);
-        const prediction = predict(x1, x2);
-        const error = prediction - y;
-        
-        // Update gradients
-        for (let i = 0; i < numFeatures; i++) {
-          gradients[i] += error * features[i];
-        }
-      }
-      
-      // Apply regularization to gradients (skip bias term)
-      for (let i = 1; i < numFeatures; i++) {
-        gradients[i] = gradients[i] / data.length + regularization * weights[i];
-      }
-      
-      // Update weights
-      for (let i = 0; i < numFeatures; i++) {
-        weights[i] -= learningRate * gradients[i];
-      }
-      
-      // Calculate new loss
-      currentLoss = calculateLoss();
-      
-      // Update display every 10 iterations
-      if (iterations % 10 === 0) {
-        lossElement.textContent = currentLoss.toFixed(4);
-        accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-        iterationsUsedElement.textContent = iterations.toString();
-        updateWeightDisplay();
-        drawCanvas();
-        
-        // Pause to allow UI to update
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      
-      iterations++;
-    }
-    
-    // Final update
-    lossElement.textContent = currentLoss.toFixed(4);
-    accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-    iterationsUsedElement.textContent = iterations.toString();
-    updateWeightDisplay();
-    drawCanvas();
-    
-    isTraining = false;
-    trainBtn.textContent = 'Train Model';
-    trainBtn.disabled = false;
-  }
-  
-  // Update weight display
-  function updateWeightDisplay() {
-    weightValuesContainer.innerHTML = '';
-    
-    // Add each weight to the display
-    const featureNames = ['Bias (w₀)'];
-    
-    // Linear terms
-    featureNames.push('x₁', 'x₂');
-    
-    // Quadratic terms if applicable
-    if (polyDegree >= 2) {
-      featureNames.push('x₁²', 'x₁x₂', 'x₂²');
-    }
-    
-    // Cubic terms if applicable
-    if (polyDegree >= 3) {
-      featureNames.push('x₁³', 'x₁²x₂', 'x₁x₂²', 'x₂³');
-    }
-    
-    for (let i = 0; i < weights.length; i++) {
-      const weightItem = document.createElement('div');
-      weightItem.className = 'weight-item';
-      
-      const label = document.createElement('span');
-      label.className = 'weight-label';
-      label.textContent = featureNames[i] || `w${i}`;
-      
-      const value = document.createElement('span');
-      value.className = 'weight-value';
-      value.textContent = weights[i].toFixed(4);
-      
-      weightItem.appendChild(label);
-      weightItem.appendChild(value);
-      weightValuesContainer.appendChild(weightItem);
-    }
-  }
-  
-  // Draw the canvas
-  function drawCanvas() {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Calculate the display range
-    const xRange = calculateXRange();
-    const yRange = calculateYRange();
-    
-    // Draw grid and axes
-    drawAxes(xRange, yRange);
-    
-    // Draw decision boundary and probability contours
-    if (weights.length > 0) {
-      if (showContours) {
-        drawProbabilityContours(xRange, yRange);
-      }
-      drawDecisionBoundary(xRange, yRange);
-    }
-    
-    // Draw data points
-    drawDataPoints(xRange, yRange);
-  }
-  
-  // Calculate X range for display
-  function calculateXRange() {
-    const xValues = data.map(point => point.x1);
-    const min = Math.min(...xValues);
-    const max = Math.max(...xValues);
-    
-    // Add padding
-    const padding = Math.max((max - min) * 0.1, 0.1);
-    return { min: min - padding, max: max + padding };
-  }
-  
-  // Calculate Y range for display
-  function calculateYRange() {
-    const yValues = data.map(point => point.x2);
-    const min = Math.min(...yValues);
-    const max = Math.max(...yValues);
-    
-    // Add padding
-    const padding = Math.max((max - min) * 0.1, 0.1);
-    return { min: min - padding, max: max + padding };
-  }
-  
-  // Draw coordinate axes
-  function drawAxes(xRange, yRange) {
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
-    
-    // Draw grid lines
-    ctx.strokeStyle = '#eee';
-    ctx.lineWidth = 1;
-    
-    // Horizontal grid lines
-    const yStep = (yRange.max - yRange.min) / 10;
-    for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
-      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      ctx.beginPath();
-      ctx.moveTo(plotMargin, canvasY);
-      ctx.lineTo(canvasWidth - plotMargin, canvasY);
-      ctx.stroke();
-    }
-    
-    // Vertical grid lines
-    const xStep = (xRange.max - xRange.min) / 10;
-    for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
-      const canvasX = plotMargin + (x - xRange.min) * xScale;
-      
-      ctx.beginPath();
-      ctx.moveTo(canvasX, plotMargin);
-      ctx.lineTo(canvasX, canvasHeight - plotMargin);
-      ctx.stroke();
-    }
-    
-    // Draw axes
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 1.5;
-    
-    // X-axis
-    const yZeroPos = canvasHeight - plotMargin - (-yRange.min) * yScale;
-    ctx.beginPath();
-    ctx.moveTo(plotMargin, yZeroPos);
-    ctx.lineTo(canvasWidth - plotMargin, yZeroPos);
-    ctx.stroke();
-    
-    // Y-axis
-    const xZeroPos = plotMargin + (-xRange.min) * xScale;
-    ctx.beginPath();
-    ctx.moveTo(xZeroPos, plotMargin);
-    ctx.lineTo(xZeroPos, canvasHeight - plotMargin);
-    ctx.stroke();
-  }
-}); 
+});
