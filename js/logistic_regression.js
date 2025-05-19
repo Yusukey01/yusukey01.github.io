@@ -469,16 +469,6 @@ function toggleContours() {
     iterationsDisplay.textContent = maxIterations.toString();
   }
   
-  // Handle polynomial degree change
-  function handlePolyDegreeChange() {
-    polyDegree = parseInt(polyDegreeInput.value);
-    polyDegreeDisplay.textContent = `Degree ${polyDegree}${polyDegree === 1 ? ' (linear)' : ''}`;
-    
-    // Re-initialize weights
-    initializeWeights();
-    updateWeightDisplay();
-  }
-  
   // Create HTML structure
   container.innerHTML = `
     <div class="visualizer-container">
@@ -523,12 +513,6 @@ function toggleContours() {
             <label for="iterations">Max Iterations:</label>
             <input type="range" id="iterations" min="10" max="1000" step="10" value="100" class="full-width">
             <span id="iterations-display">100</span>
-          </div>
-          
-          <div class="control-group">
-            <label for="poly-degree">Polynomial Features:</label>
-            <input type="range" id="poly-degree" min="1" max="3" step="1" value="1" class="full-width">
-            <span id="poly-degree-display">Degree 1 (linear)</span>
           </div>
           
           <div class="results-box">
@@ -809,8 +793,6 @@ function toggleContours() {
   const learningRateDisplay = document.getElementById('learning-rate-display');
   const iterationsInput = document.getElementById('iterations');
   const iterationsDisplay = document.getElementById('iterations-display');
-  const polyDegreeInput = document.getElementById('poly-degree');
-  const polyDegreeDisplay = document.getElementById('poly-degree-display');
   const trainBtn = document.getElementById('train-btn');
   const generateBtn = document.getElementById('generate-btn');
   const toggleContoursBtn = document.getElementById('toggle-contours-btn');
@@ -824,12 +806,10 @@ function toggleContours() {
   // State variables
   let data = []; // Array of objects {x1, x2, y}
   let weights = []; // Model coefficients [w0, w1, w2, ...]
-  let datasetType = 'linearly-separable';
   let testData = []; // Add this with your other state variables
   let regularization = 0.1;
   let learningRate = 0.1;
   let maxIterations = 100;
-  let polyDegree = 1;
   let showContours = true;
   let isTraining = false;
   
@@ -845,14 +825,11 @@ function toggleContours() {
   learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 1);
   maxIterations = parseInt(iterationsInput.value);
   iterationsDisplay.textContent = maxIterations.toString();
-  polyDegree = parseInt(polyDegreeInput.value);
-  polyDegreeDisplay.textContent = `Degree ${polyDegree}${polyDegree === 1 ? ' (linear)' : ''}`;
   
   // Add event listeners - MOVED AFTER DOM ELEMENTS ARE CREATED
   regInput.addEventListener('input', handleRegularizationChange);
   learningRateInput.addEventListener('input', handleLearningRateChange);
   iterationsInput.addEventListener('input', handleIterationsChange);
-  polyDegreeInput.addEventListener('input', handlePolyDegreeChange);
   trainBtn.addEventListener('click', trainModel);
   generateBtn.addEventListener('click', generateData);
   toggleContoursBtn.addEventListener('click', toggleContours);
