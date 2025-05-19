@@ -90,15 +90,19 @@ async function trainModel() {
     trainBtn.textContent = 'Train Model';
     trainBtn.disabled = false;
   }
+  if (testAccuracyElement) {
+  const testAcc = calculateTestAccuracy();
+  testAccuracyElement.textContent = (testAcc * 100).toFixed(1) + '%';
+  }
 }
 
 // You'll also need these related functions if they're not already defined:
 
 // Calculate accuracy
-function calculateAccuracy() {
+function calculateTestAccuracy() {
   let correct = 0;
   
-  for (const point of data) {
+  for (const point of testData) {
     const { x1, x2, y } = point;
     const prediction = predict(x1, x2);
     const predictedClass = prediction >= 0.5 ? 1 : 0;
@@ -108,7 +112,7 @@ function calculateAccuracy() {
     }
   }
   
-  return correct / data.length;
+  return testData.length > 0 ? correct / testData.length : 0;
 }
 
 // Calculate binary cross-entropy loss
@@ -261,52 +265,71 @@ function updateWeightDisplay() {
   
   // Draw data points
   function drawDataPoints(xRange, yRange) {
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
+  // Calculate scale
+  const xScale = plotWidth / (xRange.max - xRange.min);
+  const yScale = plotHeight / (yRange.max - yRange.min);
+  
+  // Draw training data points
+  for (const point of data) {
+    const { x1, x2, y } = point;
     
-    // Draw each data point
-    for (const point of data) {
-      const { x1, x2, y } = point;
-      
-      const canvasX = plotMargin + (x1 - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-      
-      // Color based on class
-      ctx.fillStyle = y === 1 ? '#e74c3c' : '#3498db';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1;
-      
-      // Draw point
-      ctx.beginPath();
-      ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.stroke();
-    }
+    const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+    const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+    
+    // Color based on class (for training data)
+    ctx.fillStyle = y === 1 ? '#e74c3c' : '#3498db';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    
+    // Draw point as circle
+    ctx.beginPath();
+    ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
   }
+  
+  // Draw test data points with different appearance
+  for (const point of testData) {
+    const { x1, x2, y } = point;
+    
+    const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+    const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+    
+    // Color based on class (for test data - lighter colors)
+    ctx.fillStyle = y === 1 ? 'rgba(231, 76, 60, 0.5)' : 'rgba(52, 152, 219, 0.5)';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    
+    // Draw point as square to distinguish from training data
+    ctx.beginPath();
+    ctx.rect(canvasX - 4, canvasY - 4, 8, 8);
+    ctx.fill();
+    ctx.stroke();
+  }
+}
 
   // Draw the canvas
-function drawCanvas() {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  
-  // Calculate the display range
-  const xRange = calculateXRange();
-  const yRange = calculateYRange();
-  
-  // Draw grid and axes
-  drawAxes(xRange, yRange);
-  
-  // Draw decision boundary and probability contours
-  if (weights.length > 0) {
-    if (showContours) {
-      drawProbabilityContours(xRange, yRange);
+    function drawCanvas() {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    
+    // Calculate the display range
+    const xRange = calculateXRange();
+    const yRange = calculateYRange();
+    
+    // Draw grid and axes
+    drawAxes(xRange, yRange);
+    
+    // Draw decision boundary and probability contours
+    if (weights.length > 0) {
+        if (showContours) {
+        drawProbabilityContours(xRange, yRange);
+        }
+        drawDecisionBoundary(xRange, yRange);
     }
-    drawDecisionBoundary(xRange, yRange);
-  }
-  
-  // Draw data points
-  drawDataPoints(xRange, yRange);
-}
+    
+    // Draw data points
+    drawDataPoints(xRange, yRange);
+    }
 
 // Calculate X range for display
 function calculateXRange() {
@@ -451,6 +474,10 @@ function toggleContours() {
             <canvas id="logistic-regression-canvas" width="800" height="500"></canvas>
           </div>
           <div class="legend">
+            <div class="legend-item"><span class="legend-color class0"></span> Train Class 0</div>
+            <div class="legend-item"><span class="legend-color class1"></span> Train Class 1</div>
+            <div class="legend-item"><span class="legend-color test-class0"></span> Test Class 0</div>
+            <div class="legend-item"><span class="legend-color test-class1"></span> Test Class 1</div>
             <div class="legend-item"><span class="legend-color class0"></span> Class 0</div>
             <div class="legend-item"><span class="legend-color class1"></span> Class 1</div>
             <div class="legend-item"><span class="legend-color boundary"></span> Decision Boundary</div>
@@ -502,6 +529,10 @@ function toggleContours() {
             <div class="result-row">
               <div class="result-label">Iterations:</div>
               <div class="result-value" id="iterations-used">0</div>
+            </div>
+            <div class="result-row">
+            <div class="result-label">Test Accuracy:</div>
+            <div class="result-value" id="test-accuracy">0.0%</div>
             </div>
           </div>
           
@@ -631,6 +662,14 @@ function toggleContours() {
       margin-right: 5px;
       border-radius: 2px;
     }
+
+    .legend-color.test-class0 {
+        background-color: rgba(52, 152, 219, 0.5);
+    }
+
+    .legend-color.test-class1 {
+        background-color: rgba(231, 76, 60, 0.5);
+     }
     
     .legend-color.class0 {
       background-color: #3498db;
@@ -762,6 +801,7 @@ function toggleContours() {
   const toggleContoursBtn = document.getElementById('toggle-contours-btn');
   // Results elements - add this after getting the control elements
     const accuracyElement = document.getElementById('accuracy');
+    const testAccuracyElement = document.getElementById('test-accuracy');
     const lossElement = document.getElementById('loss');
     const iterationsUsedElement = document.getElementById('iterations-used');
     const weightValuesContainer = document.getElementById('weight-values-container');
@@ -770,6 +810,7 @@ function toggleContours() {
   let data = []; // Array of objects {x1, x2, y}
   let weights = []; // Model coefficients [w0, w1, w2, ...]
   let datasetType = 'linearly-separable';
+  let testData = []; // Add this with your other state variables
   let regularization = 0.1;
   let learningRate = 0.1;
   let maxIterations = 100;
@@ -804,10 +845,10 @@ function toggleContours() {
   window.addEventListener('resize', handleResize);
   
   // Generate dataset
-  // Simplified generateData function
-function generateData() {
-  const numPoints = 100;
-  data = [];
+  function generateData() {
+  const numPoints = 100; // Total number of points
+  const trainSize = 70;  // Number of points for training (70%)
+  const allPoints = [];  
   
   // Create a linear separator with some margin
   const slope = Math.random() * 2 - 1; // Random slope between -1 and 1
@@ -826,8 +867,18 @@ function generateData() {
       continue; // Skip points too close to the boundary
     }
     
-    data.push({ x1, x2, y });
+    allPoints.push({ x1, x2, y });
   }
+  
+  // Shuffle the array for random train-test split
+  for (let i = allPoints.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
+  }
+  
+  // Split into training and test sets
+  data = allPoints.slice(0, trainSize); // Training data
+  testData = allPoints.slice(trainSize);  // Test data
   
   // Initialize weights with zeros
   initializeWeights();
@@ -842,6 +893,7 @@ function generateData() {
   drawSigmoid();
   updateWeightDisplay();
 }
+
 
 // Draw sigmoid function
 function drawSigmoid() {
