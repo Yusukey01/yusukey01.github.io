@@ -139,6 +139,46 @@ function calculateLoss() {
   loss = loss / data.length + (regularization / 2) * regularizationTerm;
   return loss;
 }
+
+// Update weight display
+function updateWeightDisplay() {
+  if (!weightValuesContainer) return; // Guard clause
+  
+  weightValuesContainer.innerHTML = '';
+  
+  // Add each weight to the display
+  const featureNames = ['Bias (w₀)'];
+  
+  // Linear terms
+  featureNames.push('x₁', 'x₂');
+  
+  // Quadratic terms if applicable
+  if (polyDegree >= 2) {
+    featureNames.push('x₁²', 'x₁x₂', 'x₂²');
+  }
+  
+  // Cubic terms if applicable
+  if (polyDegree >= 3) {
+    featureNames.push('x₁³', 'x₁²x₂', 'x₁x₂²', 'x₂³');
+  }
+  
+  for (let i = 0; i < weights.length; i++) {
+    const weightItem = document.createElement('div');
+    weightItem.className = 'weight-item';
+    
+    const label = document.createElement('span');
+    label.className = 'weight-label';
+    label.textContent = featureNames[i] || `w${i}`;
+    
+    const value = document.createElement('span');
+    value.className = 'weight-value';
+    value.textContent = weights[i].toFixed(4);
+    
+    weightItem.appendChild(label);
+    weightItem.appendChild(value);
+    weightValuesContainer.appendChild(weightItem);
+  }
+}
   
   // Draw decision boundary
   function drawDecisionBoundary(xRange, yRange) {
@@ -736,7 +776,12 @@ function toggleContours() {
   const trainBtn = document.getElementById('train-btn');
   const generateBtn = document.getElementById('generate-btn');
   const toggleContoursBtn = document.getElementById('toggle-contours-btn');
-  
+  // Results elements - add this after getting the control elements
+    const accuracyElement = document.getElementById('accuracy');
+    const lossElement = document.getElementById('loss');
+    const iterationsUsedElement = document.getElementById('iterations-used');
+    const weightValuesContainer = document.getElementById('weight-values-container');
+    
   // State variables
   let data = []; // Array of objects {x1, x2, y}
   let weights = []; // Model coefficients [w0, w1, w2, ...]
