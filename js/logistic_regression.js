@@ -65,7 +65,6 @@ async function trainModel() {
     if (iterations % 10 === 0) {
       if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
       if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-      if (iterationsUsedElement) iterationsUsedElement.textContent = iterations.toString();
       updateWeightDisplay();
       drawCanvas();
       
@@ -79,7 +78,6 @@ async function trainModel() {
   // Final update
   if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
   if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-  if (iterationsUsedElement) iterationsUsedElement.textContent = iterations.toString();
   updateWeightDisplay();
   drawCanvas();
   
@@ -478,12 +476,8 @@ function toggleContours() {
               <div class="result-value" id="loss">0.000</div>
             </div>
             <div class="result-row">
-              <div class="result-label">Iterations:</div>
-              <div class="result-value" id="iterations-used">0</div>
-            </div>
-            <div class="result-row">
-            <div class="result-label">Test Accuracy:</div>
-            <div class="result-value" id="test-accuracy">0.0%</div>
+                <div class="result-label">Test Accuracy:</div>
+                <div class="result-value" id="test-accuracy">0.0%</div>
             </div>
           </div>
           
@@ -748,12 +742,12 @@ function toggleContours() {
   const trainBtn = document.getElementById('train-btn');
   const generateBtn = document.getElementById('generate-btn');
   const toggleContoursBtn = document.getElementById('toggle-contours-btn');
-  // Results elements - add this after getting the control elements
-    const accuracyElement = document.getElementById('accuracy');
-    const testAccuracyElement = document.getElementById('test-accuracy');
-    const lossElement = document.getElementById('loss');
-    const iterationsUsedElement = document.getElementById('iterations-used');
-    const weightValuesContainer = document.getElementById('weight-values-container');
+
+  // Results elements 
+  const accuracyElement = document.getElementById('accuracy');
+  const testAccuracyElement = document.getElementById('test-accuracy');
+  const lossElement = document.getElementById('loss');
+  const weightValuesContainer = document.getElementById('weight-values-container');
     
   // State variables
   let data = []; // Array of objects {x1, x2, y}
@@ -830,7 +824,6 @@ function toggleContours() {
   // Make sure these elements exist before trying to update them
   if (accuracyElement) accuracyElement.textContent = '0.0%';
   if (lossElement) lossElement.textContent = '0.000';
-  if (iterationsUsedElement) iterationsUsedElement.textContent = '0';
   
   // Draw canvas
   drawCanvas();
@@ -1046,11 +1039,6 @@ function drawAxes(xRange, yRange) {
     loss = loss / data.length + (regularization / 2) * regularizationTerm;
     return loss;
   }
-
-     console.log("DOM elements loaded - initializing visualization");
-    console.log("Canvas elements:", {canvas, ctx, sigmoidCanvas, sigmoidCtx});
-    console.log("Result elements:", {accuracyElement, lossElement, iterationsUsedElement, weightValuesContainer});
-
     // Initialize the visualization explicitly
     generateData();
     handleResize();
