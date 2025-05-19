@@ -14,11 +14,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Place it just before the line where trainBtn.addEventListener is called
 
 // Train the model using gradient descent
+// Train the model using gradient descent
 async function trainModel() {
   if (isTraining) return;
   isTraining = true;
-  trainBtn.textContent = 'Training...';
-  trainBtn.disabled = true;
+  if (trainBtn) {
+    trainBtn.textContent = 'Training...';
+    trainBtn.disabled = true;
+  }
   
   const numFeatures = getNumFeaturesWithIntercept();
   let iterations = 0;
@@ -62,9 +65,9 @@ async function trainModel() {
     
     // Update display every 10 iterations
     if (iterations % 10 === 0) {
-      lossElement.textContent = currentLoss.toFixed(4);
-      accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-      iterationsUsedElement.textContent = iterations.toString();
+      if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
+      if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
+      if (iterationsUsedElement) iterationsUsedElement.textContent = iterations.toString();
       updateWeightDisplay();
       drawCanvas();
       
@@ -76,15 +79,17 @@ async function trainModel() {
   }
   
   // Final update
-  lossElement.textContent = currentLoss.toFixed(4);
-  accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-  iterationsUsedElement.textContent = iterations.toString();
+  if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
+  if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
+  if (iterationsUsedElement) iterationsUsedElement.textContent = iterations.toString();
   updateWeightDisplay();
   drawCanvas();
   
   isTraining = false;
-  trainBtn.textContent = 'Train Model';
-  trainBtn.disabled = false;
+  if (trainBtn) {
+    trainBtn.textContent = 'Train Model';
+    trainBtn.disabled = false;
+  }
 }
 
 // You'll also need these related functions if they're not already defined:
@@ -771,84 +776,224 @@ function toggleContours() {
   window.addEventListener('resize', handleResize);
   
   // Generate dataset
-  function generateData() {
-    const numPoints = 100;
-    data = [];
+function generateData() {
+  const numPoints = 100;
+  data = [];
+  
+  if (datasetType === 'linearly-separable') {
+    // Create a linear separator with some margin
+    const slope = Math.random() * 2 - 1; // Random slope between -1 and 1
+    const intercept = Math.random() * 0.5; // Small random intercept
     
-    if (datasetType === 'linearly-separable') {
-      // Create a linear separator with some margin
-      const slope = Math.random() * 2 - 1; // Random slope between -1 and 1
-      const intercept = Math.random() * 0.5; // Small random intercept
+    for (let i = 0; i < numPoints; i++) {
+      const x1 = Math.random() * 2 - 1; // Range: -1 to 1
+      const x2 = Math.random() * 2 - 1; // Range: -1 to 1
       
-      for (let i = 0; i < numPoints; i++) {
-        const x1 = Math.random() * 2 - 1; // Range: -1 to 1
-        const x2 = Math.random() * 2 - 1; // Range: -1 to 1
-        
-        // Determine class based on which side of the line the point falls
-        const lineValue = slope * x1 + intercept;
-        let y = x2 > lineValue ? 1 : 0;
-        
-        // Add small random margin to make it cleaner
-        if (Math.abs(x2 - lineValue) < 0.1) {
-          continue; // Skip points too close to the boundary
-        }
-        
-        data.push({ x1, x2, y });
-      }
-    } else if (datasetType === 'overlapping') {
-      // Create two overlapping Gaussian clusters
-      const center1 = { x1: -0.3, x2: -0.3 };
-      const center2 = { x1: 0.3, x2: 0.3 };
-      const stdDev = 0.3;
+      // Determine class based on which side of the line the point falls
+      const lineValue = slope * x1 + intercept;
+      let y = x2 > lineValue ? 1 : 0;
       
-      for (let i = 0; i < numPoints; i++) {
-        let x1, x2, y;
-        
-        if (i < numPoints / 2) {
-          // Class 0
-          x1 = center1.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-          x2 = center1.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-          y = 0;
-        } else {
-          // Class 1
-          x1 = center2.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-          x2 = center2.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-          y = 1;
-        }
-        
-        data.push({ x1, x2, y });
+      // Add small random margin to make it cleaner
+      if (Math.abs(x2 - lineValue) < 0.1) {
+        continue; // Skip points too close to the boundary
       }
-    } else if (datasetType === 'circular') {
-      // Create a circular pattern (non-linearly separable)
-      for (let i = 0; i < numPoints; i++) {
-        // Generate points in a square from -1 to 1
-        const x1 = Math.random() * 2 - 1;
-        const x2 = Math.random() * 2 - 1;
-        
-        // Calculate distance from origin
-        const distance = Math.sqrt(x1 * x1 + x2 * x2);
-        
-        // Class based on distance (inner circle vs outer ring)
-        const y = distance < 0.5 ? 0 : (distance > 0.8 ? 0 : 1);
-        
-        data.push({ x1, x2, y });
-      }
+      
+      data.push({ x1, x2, y });
     }
+  } else if (datasetType === 'overlapping') {
+    // Create two overlapping Gaussian clusters
+    const center1 = { x1: -0.3, x2: -0.3 };
+    const center2 = { x1: 0.3, x2: 0.3 };
+    const stdDev = 0.3;
     
-    // Initialize weights with zeros
-    initializeWeights();
-    
-    // Reset results
-    accuracyElement.textContent = '0.0%';
-    lossElement.textContent = '0.000';
-    iterationsUsedElement.textContent = '0';
-    
-    // Draw canvas
-    drawCanvas();
-    drawSigmoid();
-    updateWeightDisplay();
+    for (let i = 0; i < numPoints; i++) {
+      let x1, x2, y;
+      
+      if (i < numPoints / 2) {
+        // Class 0
+        x1 = center1.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
+        x2 = center1.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
+        y = 0;
+      } else {
+        // Class 1
+        x1 = center2.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
+        x2 = center2.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
+        y = 1;
+      }
+      
+      data.push({ x1, x2, y });
+    }
+  } else if (datasetType === 'circular') {
+    // Create a circular pattern (non-linearly separable)
+    for (let i = 0; i < numPoints; i++) {
+      // Generate points in a square from -1 to 1
+      const x1 = Math.random() * 2 - 1;
+      const x2 = Math.random() * 2 - 1;
+      
+      // Calculate distance from origin
+      const distance = Math.sqrt(x1 * x1 + x2 * x2);
+      
+      // Class based on distance (inner circle vs outer ring)
+      const y = distance < 0.5 ? 0 : (distance > 0.8 ? 0 : 1);
+      
+      data.push({ x1, x2, y });
+    }
   }
   
+  // Initialize weights with zeros
+  initializeWeights();
+  
+  // Make sure these elements exist before trying to update them
+  if (accuracyElement) accuracyElement.textContent = '0.0%';
+  if (lossElement) lossElement.textContent = '0.000';
+  if (iterationsUsedElement) iterationsUsedElement.textContent = '0';
+  
+  // Draw canvas
+  drawCanvas();
+  drawSigmoid();
+  updateWeightDisplay();
+}
+
+// Draw sigmoid function
+function drawSigmoid() {
+  if (!sigmoidCanvas || !sigmoidCtx) return; // Guard clause
+  
+  const width = sigmoidCanvas.width;
+  const height = sigmoidCanvas.height;
+  const margin = 20;
+  const plotW = width - 2 * margin;
+  const plotH = height - 2 * margin;
+  
+  // Clear canvas
+  sigmoidCtx.clearRect(0, 0, width, height);
+  
+  // Draw axes
+  sigmoidCtx.strokeStyle = '#888';
+  sigmoidCtx.lineWidth = 1;
+  
+  // X-axis
+  sigmoidCtx.beginPath();
+  sigmoidCtx.moveTo(margin, height - margin);
+  sigmoidCtx.lineTo(width - margin, height - margin);
+  sigmoidCtx.stroke();
+  
+  // Y-axis
+  sigmoidCtx.beginPath();
+  sigmoidCtx.moveTo(margin + plotW / 2, margin);
+  sigmoidCtx.lineTo(margin + plotW / 2, height - margin);
+  sigmoidCtx.stroke();
+  
+  // Draw sigmoid function
+  sigmoidCtx.strokeStyle = '#2ecc71';
+  sigmoidCtx.lineWidth = 2;
+  sigmoidCtx.beginPath();
+  
+  for (let i = 0; i < plotW; i++) {
+    // Map i to z-value between -6 and 6
+    const z = (i / plotW) * 12 - 6;
+    
+    // Calculate sigmoid value
+    const sigmoidValue = sigmoid(z);
+    
+    // Map to canvas coordinates
+    const x = margin + i;
+    const y = height - margin - sigmoidValue * plotH;
+    
+    if (i === 0) {
+      sigmoidCtx.moveTo(x, y);
+    } else {
+      sigmoidCtx.lineTo(x, y);
+    }
+  }
+  
+  sigmoidCtx.stroke();
+  
+  // Draw zero line
+  sigmoidCtx.strokeStyle = '#ccc';
+  sigmoidCtx.lineWidth = 1;
+  sigmoidCtx.setLineDash([4, 4]);
+  
+  sigmoidCtx.beginPath();
+  sigmoidCtx.moveTo(margin + plotW / 2, height - margin);
+  sigmoidCtx.lineTo(margin + plotW / 2, height - margin - plotH / 2);
+  sigmoidCtx.stroke();
+  
+  sigmoidCtx.beginPath();
+  sigmoidCtx.moveTo(margin, height - margin - plotH / 2);
+  sigmoidCtx.lineTo(margin + plotW, height - margin - plotH / 2);
+  sigmoidCtx.stroke();
+  
+  sigmoidCtx.setLineDash([]);
+  
+  // Draw labels
+  sigmoidCtx.fillStyle = '#666';
+  sigmoidCtx.font = '12px Arial';
+  sigmoidCtx.textAlign = 'center';
+  
+  // X-axis labels
+  sigmoidCtx.fillText('-6', margin, height - margin + 15);
+  sigmoidCtx.fillText('0', margin + plotW / 2, height - margin + 15);
+  sigmoidCtx.fillText('+6', width - margin, height - margin + 15);
+  
+  // Y-axis labels
+  sigmoidCtx.textAlign = 'right';
+  sigmoidCtx.fillText('0', margin - 5, height - margin + 5);
+  sigmoidCtx.fillText('0.5', margin - 5, height - margin - plotH / 2 + 5);
+  sigmoidCtx.fillText('1', margin - 5, margin + 5);
+}
+  
+  
+  // Draw coordinate axes
+function drawAxes(xRange, yRange) {
+  // Calculate scale
+  const xScale = plotWidth / (xRange.max - xRange.min);
+  const yScale = plotHeight / (yRange.max - yRange.min);
+  
+  // Draw grid lines
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 1;
+  
+  // Horizontal grid lines
+  const yStep = (yRange.max - yRange.min) / 10;
+  for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
+    const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
+    
+    ctx.beginPath();
+    ctx.moveTo(plotMargin, canvasY);
+    ctx.lineTo(canvasWidth - plotMargin, canvasY);
+    ctx.stroke();
+  }
+  
+  // Vertical grid lines
+  const xStep = (xRange.max - xRange.min) / 10;
+  for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
+    const canvasX = plotMargin + (x - xRange.min) * xScale;
+    
+    ctx.beginPath();
+    ctx.moveTo(canvasX, plotMargin);
+    ctx.lineTo(canvasX, canvasHeight - plotMargin);
+    ctx.stroke();
+  }
+  
+  // Draw axes
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 1.5;
+  
+  // X-axis
+  const yZeroPos = canvasHeight - plotMargin - (-yRange.min) * yScale;
+  ctx.beginPath();
+  ctx.moveTo(plotMargin, yZeroPos);
+  ctx.lineTo(canvasWidth - plotMargin, yZeroPos);
+  ctx.stroke();
+  
+  // Y-axis
+  const xZeroPos = plotMargin + (-xRange.min) * xScale;
+  ctx.beginPath();
+  ctx.moveTo(xZeroPos, plotMargin);
+  ctx.lineTo(xZeroPos, canvasHeight - plotMargin);
+  ctx.stroke();
+}
+
   // Initialize weights
   function initializeWeights() {
     const numFeatures = getNumFeaturesWithIntercept();
