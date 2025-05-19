@@ -413,12 +413,6 @@ function toggleContours() {
     drawSigmoid();
   }
   
-  // Handle dataset type change
-  function handleDatasetChange() {
-    datasetType = datasetSelect.value;
-    generateData();
-  }
-  
   // Handle regularization change
   function handleRegularizationChange() {
     regularization = Math.pow(10, parseFloat(regInput.value));
@@ -755,7 +749,6 @@ function toggleContours() {
   const sigmoidCtx = sigmoidCanvas.getContext('2d');
   
   // Control elements
-  const datasetSelect = document.getElementById('dataset-type');
   const regInput = document.getElementById('regularization');
   const regDisplay = document.getElementById('regularization-display');
   const learningRateInput = document.getElementById('learning-rate');
@@ -800,7 +793,6 @@ function toggleContours() {
   polyDegreeDisplay.textContent = `Degree ${polyDegree}${polyDegree === 1 ? ' (linear)' : ''}`;
   
   // Add event listeners - MOVED AFTER DOM ELEMENTS ARE CREATED
-  datasetSelect.addEventListener('change', handleDatasetChange);
   regInput.addEventListener('input', handleRegularizationChange);
   learningRateInput.addEventListener('input', handleLearningRateChange);
   iterationsInput.addEventListener('input', handleIterationsChange);
@@ -1081,4 +1073,12 @@ function drawAxes(xRange, yRange) {
     loss = loss / data.length + (regularization / 2) * regularizationTerm;
     return loss;
   }
+
+     console.log("DOM elements loaded - initializing visualization");
+    console.log("Canvas elements:", {canvas, ctx, sigmoidCanvas, sigmoidCtx});
+    console.log("Result elements:", {accuracyElement, lossElement, iterationsUsedElement, weightValuesContainer});
+
+    // Initialize the visualization explicitly
+    generateData();
+    handleResize();
 });
