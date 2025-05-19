@@ -28,8 +28,6 @@ async function trainModel() {
   let previousLoss = Infinity;
   let currentLoss = calculateLoss();
   
-  // For early stopping
-  const tolerance = 1e-6;
   const minLossChange = 1e-6;
   
   while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
@@ -199,39 +197,39 @@ function updateWeightDisplay() {
     ctx.lineWidth = 2;
     
     // For linear models, we can directly calculate the decision boundary line
-      // Decision boundary is where probability = 0.5, which means z = 0
-      // For linear model: w0 + w1*x1 + w2*x2 = 0
-      // Solve for x2: x2 = (-w0 - w1*x1) / w2
-      
-      if (Math.abs(weights[2]) < 1e-10) {
-        // Vertical line (or no boundary if w1 is also near zero)
-        if (Math.abs(weights[1]) > 1e-10) {
-          const x1 = -weights[0] / weights[1];
-          const canvasX = plotMargin + (x1 - xRange.min) * xScale;
-          
-          ctx.beginPath();
-          ctx.moveTo(canvasX, plotMargin);
-          ctx.lineTo(canvasX, canvasHeight - plotMargin);
-          ctx.stroke();
-        }
-      } else {
-        // Normal line
-        const x1Start = xRange.min;
-        const x1End = xRange.max;
-        
-        const x2Start = (-weights[0] - weights[1] * x1Start) / weights[2];
-        const x2End = (-weights[0] - weights[1] * x1End) / weights[2];
-        
-        const startX = plotMargin + (x1Start - xRange.min) * xScale;
-        const startY = canvasHeight - plotMargin - (x2Start - yRange.min) * yScale;
-        const endX = plotMargin + (x1End - xRange.min) * xScale;
-        const endY = canvasHeight - plotMargin - (x2End - yRange.min) * yScale;
+    // Decision boundary is where probability = 0.5, which means z = 0
+    // For linear model: w0 + w1*x1 + w2*x2 = 0
+    // Solve for x2: x2 = (-w0 - w1*x1) / w2
+    
+    if (Math.abs(weights[2]) < 1e-10) {
+    // Vertical line (or no boundary if w1 is also near zero)
+    if (Math.abs(weights[1]) > 1e-10) {
+        const x1 = -weights[0] / weights[1];
+        const canvasX = plotMargin + (x1 - xRange.min) * xScale;
         
         ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
+        ctx.moveTo(canvasX, plotMargin);
+        ctx.lineTo(canvasX, canvasHeight - plotMargin);
         ctx.stroke();
-      }
+    }
+    } else {
+    // Normal line
+    const x1Start = xRange.min;
+    const x1End = xRange.max;
+    
+    const x2Start = (-weights[0] - weights[1] * x1Start) / weights[2];
+    const x2End = (-weights[0] - weights[1] * x1End) / weights[2];
+    
+    const startX = plotMargin + (x1Start - xRange.min) * xScale;
+    const startY = canvasHeight - plotMargin - (x2Start - yRange.min) * yScale;
+    const endX = plotMargin + (x1End - xRange.min) * xScale;
+    const endY = canvasHeight - plotMargin - (x2End - yRange.min) * yScale;
+    
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    }
   }
   
   
@@ -327,9 +325,6 @@ function calculateYRange() {
 
 // Draw probability contours function
 function drawProbabilityContours(xRange, yRange) {
-  // Calculate scale
-  const xScale = plotWidth / (xRange.max - xRange.min);
-  const yScale = plotHeight / (yRange.max - yRange.min);
   
   // Create canvas for contour map
   const contourCanvas = document.createElement('canvas');
