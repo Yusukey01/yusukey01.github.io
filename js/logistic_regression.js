@@ -96,7 +96,22 @@ async function trainModel() {
   }
 }
 
-// You'll also need these related functions if they're not already defined:
+// Calculate accuracy on training data
+function calculateAccuracy() {
+  let correct = 0;
+  
+  for (const point of data) {
+    const { x1, x2, y } = point;
+    const prediction = predict(x1, x2);
+    const predictedClass = prediction >= 0.5 ? 1 : 0;
+    
+    if (predictedClass === y) {
+      correct++;
+    }
+  }
+  
+  return data.length > 0 ? correct / data.length : 0;
+}
 
 // Calculate accuracy
 function calculateTestAccuracy() {
