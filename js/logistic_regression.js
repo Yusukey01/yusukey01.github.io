@@ -9,6 +9,131 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Container element not found!');
     return;
   }
+
+  // Add this function definition before the event listeners are set up
+// Place it just before the line where trainBtn.addEventListener is called
+
+// Train the model using gradient descent
+async function trainModel() {
+  if (isTraining) return;
+  isTraining = true;
+  trainBtn.textContent = 'Training...';
+  trainBtn.disabled = true;
+  
+  const numFeatures = getNumFeaturesWithIntercept();
+  let iterations = 0;
+  let previousLoss = Infinity;
+  let currentLoss = calculateLoss();
+  
+  // For early stopping
+  const tolerance = 1e-6;
+  const minLossChange = 1e-6;
+  
+  while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
+    previousLoss = currentLoss;
+    
+    // Calculate gradients
+    const gradients = Array(numFeatures).fill(0);
+    
+    for (const point of data) {
+      const { x1, x2, y } = point;
+      const features = generateFeatures(x1, x2);
+      const prediction = predict(x1, x2);
+      const error = prediction - y;
+      
+      // Update gradients
+      for (let i = 0; i < numFeatures; i++) {
+        gradients[i] += error * features[i];
+      }
+    }
+    
+    // Apply regularization to gradients (skip bias term)
+    for (let i = 1; i < numFeatures; i++) {
+      gradients[i] = gradients[i] / data.length + regularization * weights[i];
+    }
+    
+    // Update weights
+    for (let i = 0; i < numFeatures; i++) {
+      weights[i] -= learningRate * gradients[i];
+    }
+    
+    // Calculate new loss
+    currentLoss = calculateLoss();
+    
+    // Update display every 10 iterations
+    if (iterations % 10 === 0) {
+      lossElement.textContent = currentLoss.toFixed(4);
+      accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
+      iterationsUsedElement.textContent = iterations.toString();
+      updateWeightDisplay();
+      drawCanvas();
+      
+      // Pause to allow UI to update
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    
+    iterations++;
+  }
+  
+  // Final update
+  lossElement.textContent = currentLoss.toFixed(4);
+  accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
+  iterationsUsedElement.textContent = iterations.toString();
+  updateWeightDisplay();
+  drawCanvas();
+  
+  isTraining = false;
+  trainBtn.textContent = 'Train Model';
+  trainBtn.disabled = false;
+}
+
+// You'll also need these related functions if they're not already defined:
+
+// Calculate accuracy
+function calculateAccuracy() {
+  let correct = 0;
+  
+  for (const point of data) {
+    const { x1, x2, y } = point;
+    const prediction = predict(x1, x2);
+    const predictedClass = prediction >= 0.5 ? 1 : 0;
+    
+    if (predictedClass === y) {
+      correct++;
+    }
+  }
+  
+  return correct / data.length;
+}
+
+// Calculate binary cross-entropy loss
+function calculateLoss() {
+  let loss = 0;
+  
+  for (const point of data) {
+    const { x1, x2, y } = point;
+    const prediction = predict(x1, x2);
+    
+    // Binary cross-entropy loss
+    if (prediction > 0 && prediction < 1) {
+      loss += -y * Math.log(prediction) - (1 - y) * Math.log(1 - prediction);
+    } else {
+      // Handle edge cases where prediction is 0 or 1
+      const eps = 1e-15;
+      const safeP = Math.min(Math.max(prediction, eps), 1 - eps);
+      loss += -y * Math.log(safeP) - (1 - y) * Math.log(1 - safeP);
+    }
+  }
+  
+  // Add L2 regularization term
+  let regularizationTerm = 0;
+  for (let i = 1; i < weights.length; i++) { // Skip bias term
+    regularizationTerm += weights[i] * weights[i];
+  }
+  
+  loss = loss / data.length + (regularization / 2) * regularizationTerm;
+  return loss;
+}
   
   // Draw decision boundary
   function drawDecisionBoundary(xRange, yRange) {
@@ -114,6 +239,111 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.stroke();
     }
   }
+
+  // Draw the canvas
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  
+  // Calculate the display range
+  const xRange = calculateXRange();
+  const yRange = calculateYRange();
+  
+  // Draw grid and axes
+  drawAxes(xRange, yRange);
+  
+  // Draw decision boundary and probability contours
+  if (weights.length > 0) {
+    if (showContours) {
+      drawProbabilityContours(xRange, yRange);
+    }
+    drawDecisionBoundary(xRange, yRange);
+  }
+  
+  // Draw data points
+  drawDataPoints(xRange, yRange);
+}
+
+// Calculate X range for display
+function calculateXRange() {
+  const xValues = data.map(point => point.x1);
+  const min = Math.min(...xValues);
+  const max = Math.max(...xValues);
+  
+  // Add padding
+  const padding = Math.max((max - min) * 0.1, 0.1);
+  return { min: min - padding, max: max + padding };
+}
+
+// Calculate Y range for display
+function calculateYRange() {
+  const yValues = data.map(point => point.x2);
+  const min = Math.min(...yValues);
+  const max = Math.max(...yValues);
+  
+  // Add padding
+  const padding = Math.max((max - min) * 0.1, 0.1);
+  return { min: min - padding, max: max + padding };
+}
+
+// Draw probability contours function
+function drawProbabilityContours(xRange, yRange) {
+  // Calculate scale
+  const xScale = plotWidth / (xRange.max - xRange.min);
+  const yScale = plotHeight / (yRange.max - yRange.min);
+  
+  // Create canvas for contour map
+  const contourCanvas = document.createElement('canvas');
+  contourCanvas.width = plotWidth;
+  contourCanvas.height = plotHeight;
+  const contourCtx = contourCanvas.getContext('2d');
+  
+  // Create image data for contour map
+  const imageData = contourCtx.createImageData(plotWidth, plotHeight);
+  
+  // Fill image data
+  for (let i = 0; i < plotWidth; i++) {
+    for (let j = 0; j < plotHeight; j++) {
+      const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
+      const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
+      
+      const probability = predict(x1, x2);
+      
+      // Calculate pixel index
+      const pixelIndex = (j * plotWidth + i) * 4;
+      
+      // Set pixel color based on probability
+      if (probability < 0.5) {
+        // Blue for class 0
+        imageData.data[pixelIndex] = 52;
+        imageData.data[pixelIndex + 1] = 152;
+        imageData.data[pixelIndex + 2] = 219;
+        imageData.data[pixelIndex + 3] = Math.round(255 * (0.5 - probability) * 0.5);
+      } else {
+        // Red for class 1
+        imageData.data[pixelIndex] = 231;
+        imageData.data[pixelIndex + 1] = 76;
+        imageData.data[pixelIndex + 2] = 60;
+        imageData.data[pixelIndex + 3] = Math.round(255 * (probability - 0.5) * 0.5);
+      }
+    }
+  }
+  
+  // Put image data on contour canvas
+  contourCtx.putImageData(imageData, 0, 0);
+  
+  // Draw contour canvas on main canvas
+  ctx.drawImage(
+    contourCanvas,
+    0, 0, plotWidth, plotHeight,
+    plotMargin, plotMargin, plotWidth, plotHeight
+  );
+}
+
+// Toggle contours visibility
+function toggleContours() {
+  showContours = !showContours;
+  drawCanvas();
+}
   
   
   // Handle window resize
