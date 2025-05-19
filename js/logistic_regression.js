@@ -452,15 +452,6 @@ function toggleContours() {
     <div class="visualizer-container">
       <div class="visualizer-layout">
         <div class="canvas-container">
-          <div class="visualization-mode-toggle">
-            <label class="toggle-control">
-              <select id="dataset-type" class="full-width">
-                <option value="linearly-separable">Linearly Separable</option>
-                <option value="overlapping">Overlapping Classes</option>
-                <option value="circular">Circular Pattern</option>
-              </select>
-            </label>
-          </div>
           <div class="instruction">Logistic Regression Classification</div>
           <div id="canvas-wrapper">
             <canvas id="logistic-regression-canvas" width="800" height="500"></canvas>
@@ -471,6 +462,12 @@ function toggleContours() {
             <div class="legend-item"><span class="legend-color boundary"></span> Decision Boundary</div>
             <div class="legend-item"><span class="legend-color probability"></span> Probability Contours</div>
           </div>
+        </div>
+
+        <div class="btn-container">
+            <button id="train-btn" class="primary-btn">Train Model</button>
+            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
+            <button id="toggle-contours-btn" class="secondary-btn">Toggle Probability Contours</button>
         </div>
         
         <div class="controls-panel">
@@ -517,12 +514,6 @@ function toggleContours() {
           <div class="weight-visualization">
             <h3>Model Coefficients:</h3>
             <div id="weight-values-container"></div>
-          </div>
-          
-          <div class="btn-container">
-            <button id="train-btn" class="primary-btn">Train Model</button>
-            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-            <button id="toggle-contours-btn" class="secondary-btn">Toggle Probability Contours</button>
           </div>
 
           <div class="logistic-function-plot">
@@ -821,68 +812,29 @@ function toggleContours() {
   window.addEventListener('resize', handleResize);
   
   // Generate dataset
+  // Simplified generateData function
 function generateData() {
   const numPoints = 100;
   data = [];
   
-  if (datasetType === 'linearly-separable') {
-    // Create a linear separator with some margin
-    const slope = Math.random() * 2 - 1; // Random slope between -1 and 1
-    const intercept = Math.random() * 0.5; // Small random intercept
+  // Create a linear separator with some margin
+  const slope = Math.random() * 2 - 1; // Random slope between -1 and 1
+  const intercept = Math.random() * 0.5; // Small random intercept
+  
+  for (let i = 0; i < numPoints; i++) {
+    const x1 = Math.random() * 2 - 1; // Range: -1 to 1
+    const x2 = Math.random() * 2 - 1; // Range: -1 to 1
     
-    for (let i = 0; i < numPoints; i++) {
-      const x1 = Math.random() * 2 - 1; // Range: -1 to 1
-      const x2 = Math.random() * 2 - 1; // Range: -1 to 1
-      
-      // Determine class based on which side of the line the point falls
-      const lineValue = slope * x1 + intercept;
-      let y = x2 > lineValue ? 1 : 0;
-      
-      // Add small random margin to make it cleaner
-      if (Math.abs(x2 - lineValue) < 0.1) {
-        continue; // Skip points too close to the boundary
-      }
-      
-      data.push({ x1, x2, y });
-    }
-  } else if (datasetType === 'overlapping') {
-    // Create two overlapping Gaussian clusters
-    const center1 = { x1: -0.3, x2: -0.3 };
-    const center2 = { x1: 0.3, x2: 0.3 };
-    const stdDev = 0.3;
+    // Determine class based on which side of the line the point falls
+    const lineValue = slope * x1 + intercept;
+    let y = x2 > lineValue ? 1 : 0;
     
-    for (let i = 0; i < numPoints; i++) {
-      let x1, x2, y;
-      
-      if (i < numPoints / 2) {
-        // Class 0
-        x1 = center1.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-        x2 = center1.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-        y = 0;
-      } else {
-        // Class 1
-        x1 = center2.x1 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-        x2 = center2.x2 + (Math.random() + Math.random() + Math.random() - 1.5) * stdDev;
-        y = 1;
-      }
-      
-      data.push({ x1, x2, y });
+    // Add small random margin to make it cleaner
+    if (Math.abs(x2 - lineValue) < 0.1) {
+      continue; // Skip points too close to the boundary
     }
-  } else if (datasetType === 'circular') {
-    // Create a circular pattern (non-linearly separable)
-    for (let i = 0; i < numPoints; i++) {
-      // Generate points in a square from -1 to 1
-      const x1 = Math.random() * 2 - 1;
-      const x2 = Math.random() * 2 - 1;
-      
-      // Calculate distance from origin
-      const distance = Math.sqrt(x1 * x1 + x2 * x2);
-      
-      // Class based on distance (inner circle vs outer ring)
-      const y = distance < 0.5 ? 0 : (distance > 0.8 ? 0 : 1);
-      
-      data.push({ x1, x2, y });
-    }
+    
+    data.push({ x1, x2, y });
   }
   
   // Initialize weights with zeros
