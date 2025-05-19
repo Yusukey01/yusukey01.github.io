@@ -23,7 +23,7 @@ async function trainModel() {
     trainBtn.disabled = true;
   }
   
-  const numFeatures = getNumFeaturesWithIntercept();
+  const numFeatures = 3
   let iterations = 0;
   let previousLoss = Infinity;
   let currentLoss = calculateLoss();
@@ -171,16 +171,6 @@ function updateWeightDisplay() {
   // Linear terms
   featureNames.push('x₁', 'x₂');
   
-  // Quadratic terms if applicable
-  if (polyDegree >= 2) {
-    featureNames.push('x₁²', 'x₁x₂', 'x₂²');
-  }
-  
-  // Cubic terms if applicable
-  if (polyDegree >= 3) {
-    featureNames.push('x₁³', 'x₁²x₂', 'x₁x₂²', 'x₂³');
-  }
-  
   for (let i = 0; i < weights.length; i++) {
     const weightItem = document.createElement('div');
     weightItem.className = 'weight-item';
@@ -209,7 +199,6 @@ function updateWeightDisplay() {
     ctx.lineWidth = 2;
     
     // For linear models, we can directly calculate the decision boundary line
-    if (polyDegree === 1) {
       // Decision boundary is where probability = 0.5, which means z = 0
       // For linear model: w0 + w1*x1 + w2*x2 = 0
       // Solve for x2: x2 = (-w0 - w1*x1) / w2
@@ -243,38 +232,6 @@ function updateWeightDisplay() {
         ctx.lineTo(endX, endY);
         ctx.stroke();
       }
-    } else {
-      // For non-linear models, we need to scan the grid and find the decision boundary
-      const resolution = 200;
-      const boundaryPoints = [];
-      
-      // Scan grid points
-      for (let i = 0; i < resolution; i++) {
-        const x1 = xRange.min + (i / (resolution - 1)) * (xRange.max - xRange.min);
-        
-        for (let j = 0; j < resolution; j++) {
-          const x2 = yRange.min + (j / (resolution - 1)) * (yRange.max - yRange.min);
-          
-          const prob = predict(x1, x2);
-          
-          // Check if this point is near the decision boundary
-          if (Math.abs(prob - 0.5) < 0.02) {
-            boundaryPoints.push({ x1, x2 });
-          }
-        }
-      }
-      
-      // Draw the decision boundary points
-      ctx.fillStyle = 'rgba(46, 204, 113, 0.8)';
-      for (const point of boundaryPoints) {
-        const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
-        const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
-        
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 1.5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
   }
   
   
@@ -1029,7 +986,7 @@ function drawAxes(xRange, yRange) {
 
   // Initialize weights
   function initializeWeights() {
-    const numFeatures = getNumFeaturesWithIntercept();
+    const numFeatures = 3
     weights = Array(numFeatures).fill(0);
     
     // Initialize with small random values for better convergence
@@ -1038,34 +995,11 @@ function drawAxes(xRange, yRange) {
     }
   }
   
-  // Calculate number of features after polynomial expansion
-  function getNumFeaturesWithIntercept() {
-    // For degree 1: [1, x1, x2] => 3 features
-    // For degree 2: [1, x1, x2, x1^2, x1*x2, x2^2] => 6 features
-    // For degree 3: [1, x1, x2, x1^2, x1*x2, x2^2, x1^3, x1^2*x2, x1*x2^2, x2^3] => 10 features
-    if (polyDegree === 1) return 3;
-    if (polyDegree === 2) return 6;
-    if (polyDegree === 3) return 10;
-    return 3; // Default to linear case
-  }
-  
   // Generate polynomial features for a single data point
   function generateFeatures(x1, x2) {
     const features = [1]; // Intercept term
-    
     // First degree
     features.push(x1, x2);
-    
-    if (polyDegree >= 2) {
-      // Second degree
-      features.push(x1 * x1, x1 * x2, x2 * x2);
-    }
-    
-    if (polyDegree >= 3) {
-      // Third degree
-      features.push(x1 * x1 * x1, x1 * x1 * x2, x1 * x2 * x2, x2 * x2 * x2);
-    }
-    
     return features;
   }
   
