@@ -416,75 +416,76 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create HTML structure
     container.innerHTML = `
         <div class="visualizer-container">
-        <div class="visualizer-layout">
-            <div class="canvas-container">
-            <div class="instruction">Logistic Regression Classification</div>
-            <div id="canvas-wrapper">
-                <canvas id="logistic-regression-canvas" width="800" height="500"></canvas>
-            </div>
-            <div class="legend">
-                <div class="legend-item"><span class="legend-color class0"></span> Train Class 0</div>
-                <div class="legend-item"><span class="legend-color class1"></span> Train Class 1</div>
-                <div class="legend-item"><span class="legend-color test-class0"></span> Test Class 0</div>
-                <div class="legend-item"><span class="legend-color test-class1"></span> Test Class 1</div>
-                <div class="legend-item"><span class="legend-color boundary"></span> Decision Boundary</div>
-                <div class="legend-item"><span class="legend-color probability"></span> Probability Contours</div>
-            </div>
-            
-            </div>
+            <div class="visualizer-layout">
+                <div class="canvas-container">
+                    <div class="instruction">Logistic Regression Classification</div>
+                        <div id="canvas-wrapper">
+                            <canvas id="logistic-regression-canvas" width="800" height="500"></canvas>
+                        </div>
+                        <div class="legend">
+                            <div class="legend-item"><span class="legend-color class0"></span> Train Class 0</div>
+                            <div class="legend-item"><span class="legend-color class1"></span> Train Class 1</div>
+                            <div class="legend-item"><span class="legend-color test-class0"></span> Test Class 0</div>
+                            <div class="legend-item"><span class="legend-color test-class1"></span> Test Class 1</div>
+                            <div class="legend-item"><span class="legend-color boundary"></span> Decision Boundary</div>
+                            <div class="legend-item"><span class="legend-color probability"></span> Probability Contours</div>
+                        </div>
 
-            <div class="btn-container">
-                <button id="train-btn" class="primary-btn">Train Model</button>
-                <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-                <button id="toggle-contours-btn" class="secondary-btn">Toggle Probability Contours</button>
-            </div>
-            
-            <div class="controls-panel">
-            <div class="control-group">
-                <label for="regularization">Regularization (λ):</label>
-                <input type="range" id="regularization" min="-3" max="2" step="0.1" value="-1" class="full-width">
-                <span id="regularization-display">λ = 0.1</span>
-            </div>
-            
-            <div class="control-group">
-                <label for="learning-rate">Learning Rate:</label>
-                <input type="range" id="learning-rate" min="-3" max="0" step="0.1" value="-1" class="full-width">
-                <span id="learning-rate-display">0.1</span>
-            </div>
-            
-            <div class="control-group">
-                <label for="iterations">Max Iterations:</label>
-                <input type="range" id="iterations" min="10" max="1000" step="10" value="100" class="full-width">
-                <span id="iterations-display">100</span>
-            </div>
-            
-            <div class="results-box">
-                <h3>Model Performance:</h3>
-                <div class="result-row">
-                <div class="result-label">Accuracy:</div>
-                <div class="result-value" id="accuracy">0.0%</div>
-                </div>
-                <div class="result-row">
-                <div class="result-label">Loss:</div>
-                <div class="result-value" id="loss">0.000</div>
-                </div>
-                <div class="result-row">
-                    <div class="result-label">Test Accuracy:</div>
-                    <div class="result-value" id="test-accuracy">0.0%</div>
-                </div>
-            </div>
-            
-            <div class="weight-visualization">
-                <h3>Model Coefficients:</h3>
-                <div id="weight-values-container"></div>
-            </div>
+                         <div class="btn-container">
+                            <button id="train-btn" class="primary-btn">Train Model</button>
+                            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
+                            <button id="toggle-contours-btn" class="secondary-btn">Toggle Probability Contours</button>
+                        </div>
+                    </div>
 
-            <div class="logistic-function-plot">
-                <h3>Logistic Function:</h3>
-                <canvas id="sigmoid-canvas" width="300" height="150"></canvas>
+                   
+                    
+                    <div class="controls-panel">
+                    <div class="control-group">
+                        <label for="regularization">Regularization (λ):</label>
+                        <input type="range" id="regularization" min="-3" max="2" step="0.1" value="-1" class="full-width">
+                        <span id="regularization-display">λ = 0.1</span>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="learning-rate">Learning Rate:</label>
+                        <input type="range" id="learning-rate" min="-3" max="0" step="0.1" value="-1" class="full-width">
+                        <span id="learning-rate-display">0.1</span>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="iterations">Max Iterations:</label>
+                        <input type="range" id="iterations" min="10" max="1000" step="10" value="100" class="full-width">
+                        <span id="iterations-display">100</span>
+                    </div>
+                    
+                    <div class="results-box">
+                        <h3>Model Performance:</h3>
+                        <div class="result-row">
+                        <div class="result-label">Accuracy:</div>
+                        <div class="result-value" id="accuracy">0.0%</div>
+                        </div>
+                        <div class="result-row">
+                        <div class="result-label">Loss:</div>
+                        <div class="result-value" id="loss">0.000</div>
+                        </div>
+                        <div class="result-row">
+                            <div class="result-label">Test Accuracy:</div>
+                            <div class="result-value" id="test-accuracy">0.0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="weight-visualization">
+                        <h3>Model Coefficients:</h3>
+                        <div id="weight-values-container"></div>
+                    </div>
+
+                    <div class="logistic-function-plot">
+                        <h3>Logistic Function:</h3>
+                        <canvas id="sigmoid-canvas" width="300" height="150"></canvas>
+                    </div>
+                </div>
             </div>
-            </div>
-        </div>
         </div>
     `;
   
@@ -1035,5 +1036,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the visualization explicitly
     generateData();
     handleResize();
-    
+
 });
