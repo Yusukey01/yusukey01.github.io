@@ -25,7 +25,7 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Binary Logistic Regression</h2>
                 <p>
-                    Consider discriminative <strong>classification</strong> model: 
+                    Consider discriminative classification model: 
                     \[
                     p(y \mid x, \theta)  
                     \]
@@ -34,13 +34,18 @@ uses_python: false
                 </p>
 
                 <p>
-                    When \(C = 2\), it is known as <strong>binary logistic regression</strong>. The mode can be represented by: 
+                    Let y \in \{0, 1\}. Then the model is known as <strong>binary logistic regression</strong>, which can be represented by: 
                     \[
                      p(y \mid x, \theta) = \text{Ber }(y \mid \sigma(w^\top x + b))
                     \]
-                    where \(\sigma\) is the <strong>sigmoid(logistic) function</strong>, \(w \in \mathbb{R}^D\) are the weights, 
-                    \(b \in mathbb{R}\) is a bias, and \(\theta = (w, b)\) are all the parameters. 
+                    where \(\sigma\) is the <strong>sigmoid(logistic) function</strong>, \(w \in \mathbb{R}^D\) is the weight vector, 
+                    \(b \in \mathbb{R}\) is a bias, and \(\theta = (w, b)\) are the model parameters. The notation \(\text{Ber}(y \mid p)\) denotes the 
+                    <strong>Bernoulli distribution</strong>, defined as:
+                    \[
+                    \text{Ber}(y \mid p) = p^y (1 - p)^{1 - y}, \quad y \in \{0, 1\},\; p \in [0, 1].
+                    \]
                 </p>
+
                 <p>
                     Thus, 
                     \[
@@ -48,13 +53,13 @@ uses_python: false
                     \]
                     where \(a\) is called the <strong>logit</strong>(or the <strong>pre-activation</strong>): 
                     \[
-                     a = w^\top x + b = \log (\frac{p}{1-p}), \quad p = p(y = 1 \mid x, \theta).
+                     a = w^\top x + b = \log (\frac{p}{1-p}), \quad  \text{with } p = p(y = 1 \mid x, \theta).
                     \]
                 </p>
 
-                <p>
-                    The sigmoid function measures the probability that the class label is \(y =1\). So, we want to set a decision rule such that 
-                    \(y =1\) if and only if the class 1 is more likely than class 0. In other worlds, 
+                <p> 
+                    The sigmoid function outputs the probability that the class label is \(y = 1\). Therefore, we define a decision rule 
+                    such that we predict \(y = 1\) if and only if class 1 is more likely than class 0. That is, 
                     \[
                     \begin{align*}
                     f(x) &= \mathbb{I}(p(y=1 \mid x) > p(y=0 \mid x)) \\\\
@@ -62,38 +67,46 @@ uses_python: false
                          &= \mathbb{I}(a).
                     \end{align*}
                     \]
-                    Therefore, the prediction function can be written as following: 
+                    Therefore, the prediction function can be written as: 
                     \[
                     f(x ; \theta) = b + w^\top x.
                     \]
-                    Since \(w^\top x\) is the <strong>inner product</strong> between the weight vector \(w\) and the feature vector \(x\), in the end 
-                    this function determines a <strong>linear hyperplane</strong> with normal vector \(w\) and an offset \(b\) from the origin. In other words, 
-                    intuitively, the weight vector \(w\) defines the "orientation" of the <strong>decision boundary</strong> and its norm \( \| w \| \) 
-                    represents the confidence of the model prediction because it affects the "steepness" of the sigmoid function. 
+                    Since \(w^\top x\) is the <strong>inner product</strong> between the weight vector \(w\) and the feature vector \(x\), 
+                    this function defines a <strong>linear hyperplane</strong> with normal vector \(w\) and an offset \(b\) from the origin. 
+                    In other words, the weight vector \(w\) determines the "orientation" of the <strong>decision boundary</strong>, 
+                    and the bias term \(b\) shifts the boundary. Moreover, the norm \(\|w\|\) controls the <strong>steepness</strong> of the 
+                    sigmoid function — a larger norm results in a sharper transition between predicted classes, which reflects greater 
+                    confidence in predictions.
                 </p>
 
                 <p>
-                    The negative log likelihood (NNL) of \(w\) is given by: 
+                    To estimate the parameters \(w\), we maximize the likelihood of the observed dataset \(\mathcal{D} = \{(x_n, y_n)\}_{n=1}^N\). 
+                    Equivalently, we minimize the <strong>negative log-likelihood</strong> (NLL):
                     \[
                     \begin{align*}
-                    \text{NLL }(w) &= - \frac{1}{N} \log p(\mathcal{D} \mid w) \\\\
-                                   &= - \frac{1}{N} \log \prod_{n =1}^N \text{Ber }(y_n \mid \mu_n) \\\\
-                                   &= - \frac{1}{N} \sum_{n=1}^N \log \left[ \mu_n^{y_n}  (1-\mu_n)^{1-y_n} \right] \\\\
-                                   &= - \frac{1}{N} \sum_{n=1}^N \left[ y_n \log  \mu_n  + (1-y_n) \log (1-\mu_n) \right] \\\\
-                                   &= - \frac{1}{N} \sum_{n=1}^N \mathbb{H}_{ce} (y_n , \mu_n) 
+                    \\mathrm{NLL }(w) 
+                    &= - \frac{1}{N} \log p(\mathcal{D} \mid w) \\\\
+                    &= - \frac{1}{N} \log \prod_{n =1}^N \text{Ber }(y_n \mid \mu_n) \\\\
+                    &= - \frac{1}{N} \sum_{n=1}^N \log \left[ \mu_n^{y_n}  (1-\mu_n)^{1-y_n} \right] \\\\
+                    &= - \frac{1}{N} \sum_{n=1}^N \left[ y_n \log  \mu_n  + (1-y_n) \log (1-\mu_n) \right] \\\\
+                    &= - \frac{1}{N} \sum_{n=1}^N \mathbb{H}_{ce} (y_n , \mu_n) 
                     \end{align*}
                     \]
-                    where \(\mu_n = \sigma(a_n) = \sigma(w^\top x_n)\) is the probability of class 1, and \(\mathbb{H}_{ce}(y_n, \mu_n)\) is 
-                    the binary  <a href="../Probability/entropy.html"><strong>cross entropy</strong></a> bethween \(y_n\) and \(\mu_n\).
+                    where \(\mu_n = \sigma(a_n) = \sigma(w^\top x_n)\) is the model's predicted probability of class 1, and 
+                     \(\mathbb{H}_{ce}(y_n, \mu_n)\) is 
+                    the <a href="../Probability/entropy.html"><strong>binary cross entropy</strong></a> bethween \(y_n\) and \(\mu_n\).
                 </p>
 
-                <p>
-                    By some gradient-based optimization (or in practice, <strong>automatic differentiation methods</strong>), 
-                    we solve:
+                <p> 
+                    We then find the maximum likelihood estimate (MLE) by solving:
                     \[
                     \nabla_w \text{NLL }(w) = 0
                     \]
-                    to obtain the MLE. 
+                    via gradient-based optimization (in practice, using <strong>automatic differentiation</strong>).
+                </p>
+
+                <p>
+                    The gradient of the NLL with respect to \(w\) is
                     \[
                     \begin{align*}
                       &\nabla_w \text{NLL }(w) \\\\
@@ -101,18 +114,17 @@ uses_python: false
                       &= \frac{1}{N} \sum_{n=1}^N (\mu_n - y_n) x_n, \\\\
                     \end{align*}
                     \]
-                    Equivalently, in matrix form: 
+                    Equivalently, in matrix form:
                     \[
                      \nabla_w \text{NLL }(w) = \frac{1}{N} \left( \mathbb{1}_N^\top (\text{diag }(\mu - y)X)\right)^\top.
                     \]
-                    where \(X \in \mathbb{R}^{N \times D}\) is the design matrix. 
+                    where \(X \in \mathbb{R}^{N \times D}\) is the design matrix whose \(n\)th row is \(x_n^\top\), and 
+                    \(\mu, y\in\mathbb{R}^N\) are the vectors of \(\mu_n\) and \(y_n\), respectively.
                 </p>
 
                 <p>
-                    It is important to check if the Hessian, \(H(w)\) is positive semi-definite or not. Remember, 
-                    it guarantees the <strong>convexity</strong> of the objective and thus the stationary point is the 
-                    global optimum. 
-                    \[
+                    To verify convexity, we examine the Hessian:
+                     \[
                     \begin{align*}
                     H(w) &=\nabla_w \nabla_w^\top \text{NLL }(w)  \\\\
                          &= \frac{1}{N} \sum_{n=1}^N (\mu_n( 1 - \mu_n)x_n) x_n^\top \\\\
@@ -120,18 +132,21 @@ uses_python: false
                     \end{align*}
                     \]
                     where \(S = \text{diag }(\mu_1(1-\mu_1), \cdots, \mu_N(1-\mu_N))\). 
-                </p>
 
-                <p>
-                    \(H(w)\) is positive semi-definite becuase for any nonzero vector \(v\),
-                    \[
+                </p>
+                    Since for any \(v \in \mathbb{R}^D\),
+                     \[
                     v^\top X^\top S X v = (v^\top X^\top S^{\frac{1}{2}})(S^{\frac{1}{2}} X v)
                     \]
                     and then 
                     \[
                     \| v^\top X^\top S^{\frac{1}{2}} \|_2^2 > 0.
                     \]
-                </p>        
+                    
+                    The Hessian \(H(w)\) is positive semi-definite, confirming that the NLL is a convex function 
+                    and any stationary point is the global minimum.
+                <p>
+                    
             </section>
 
              <section id="demo" class="section-content">
