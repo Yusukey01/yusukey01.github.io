@@ -281,9 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw decision boundary and probability contours
         if (weights.length > 0) {
-            if (showContours) {
-            drawProbabilityContours(xRange, yRange);
-            }
+            drawProbabilityContours(xRange, yRange); 
             drawDecisionBoundary(xRange, yRange);
         }
         
@@ -365,13 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
             plotMargin, plotMargin, plotWidth, plotHeight
         );
     }
-
-    // Toggle contours visibility
-    function toggleContours() {
-        showContours = !showContours;
-        drawCanvas();
-    }
-  
   
     // Handle window resize
     function handleResize() {
@@ -434,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
                          <div class="btn-container">
                             <button id="train-btn" class="primary-btn">Train Model</button>
                             <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-                            <button id="toggle-contours-btn" class="secondary-btn">Toggle Probability Contours</button>
                         </div>
                     </div>
 
@@ -734,7 +724,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const iterationsDisplay = document.getElementById('iterations-display');
     const trainBtn = document.getElementById('train-btn');
     const generateBtn = document.getElementById('generate-btn');
-    const toggleContoursBtn = document.getElementById('toggle-contours-btn');
 
     // Results elements 
     const accuracyElement = document.getElementById('accuracy');
@@ -749,7 +738,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let regularization = 0.1;
     let learningRate = 0.1;
     let maxIterations = 100;
-    let showContours = true;
     let isTraining = false;
     
     // Drawing settings
@@ -771,8 +759,6 @@ document.addEventListener('DOMContentLoaded', function() {
     iterationsInput.addEventListener('input', handleIterationsChange);
     trainBtn.addEventListener('click', trainModel);
     generateBtn.addEventListener('click', generateData);
-    toggleContoursBtn.addEventListener('click', toggleContours);
-    
     window.addEventListener('resize', handleResize);
   
     // Generate dataset
