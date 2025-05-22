@@ -133,6 +133,111 @@ uses_python: false
                     \]
                     where \(X \in \mathbb{R}^{N \times D}\) is the design matrix whose \(n\)th row is \(x_n^\top\), and 
                     \(\mu, y\in\mathbb{R}^N\) are the vectors of \(\mu_n\) and \(y_n\), respectively.
+
+                    <div class="theorem">
+                    <span class="theorem-title"></span> 
+                    <p>
+                    Recall the sigmoid function:
+                    \[
+                    \sigma(a) = \frac{1}{1 + e^{-a}}.
+                    \]
+                    We compute its derivative with respect to \(a\):
+                    </p>
+                    
+                    \[
+                    \begin{aligned}
+                    \frac{d\sigma}{da}
+                    &= \frac{d}{da}\,(1 + e^{-a})^{-1} \\[6pt]
+                    &= -1 \cdot (1 + e^{-a})^{-2} \;\bigl(-e^{-a}\bigr) 
+                    \quad\text{(by the chain rule)} \\[6pt]
+                    &= \frac{e^{-a}}{(1 + e^{-a})^2}.
+                    \end{aligned}
+                    \]
+
+                    <p>
+                    Now multiply numerator and denominator by \(e^{a}\):
+                    </p>
+
+                    \[
+                    \frac{e^{-a}}{(1 + e^{-a})^2}
+                    = \frac{1}{(e^{a} + 1)^2}
+                    = \bigl(\tfrac{1}{1 + e^{-a}}\bigr)\!\bigl(\tfrac{e^{-a}}{1 + e^{-a}}\bigr)
+                    = \sigma(a)\,\bigl(1 - \sigma(a)\bigr).
+                    \]
+
+                    <p>
+                    Since \(\mu_n = \sigma(a_n)\), we conclude:
+                    \[
+                    \frac{d\sigma}{da}\bigg|_{a=a_n}
+                    = \mu_n\,(1 - \mu_n).
+                    \]
+                    </p>
+                    <p>
+                        For a single data point \((x_n,y_n)\), define the per-example loss
+                        \(\ell_n = -\bigl[y_n\log\mu_n + (1-y_n)\log(1-\mu_n)\bigr]\).
+                        We compute:
+                        </p>
+
+                        <ol>
+                        <li>
+                            <strong>∂ℓ_n/∂μ_n:</strong>
+                            \[
+                            \frac{\partial \ell_n}{\partial \mu_n}
+                            = -\Bigl(\frac{y_n}{\mu_n} - \frac{1 - y_n}{1 - \mu_n}\Bigr)
+                            = \mu_n - y_n.
+                            \]
+                        </li>
+                        
+                        <li>
+                            <strong>∂μ_n/∂a_n:</strong>
+                            \[
+                            \frac{\partial \mu_n}{\partial a_n}
+                            = \frac{d\sigma}{da}\bigg|_{a=a_n}
+                            = \mu_n\,(1 - \mu_n).
+                            \]
+                        </li>
+                        
+                        <li>
+                            <strong>Chain rule to ∂ℓ_n/∂a_n:</strong>
+                            \[
+                            \frac{\partial \ell_n}{\partial a_n}
+                            = \frac{\partial \ell_n}{\partial \mu_n}
+                            \cdot \frac{\partial \mu_n}{\partial a_n}
+                            = (\mu_n - y_n)\,\mu_n\,(1 - \mu_n).
+                            \]
+                        </li>
+                        
+                        <li>
+                            <strong>∂a_n/∂w:</strong> since \(a_n = w^\top x_n + b\),
+                            \[
+                            \frac{\partial a_n}{\partial w}
+                            = x_n.
+                            \]
+                        </li>
+                        
+                        <li>
+                            <strong>Combine for ∂ℓ_n/∂w:</strong>
+                            \[
+                            \frac{\partial \ell_n}{\partial w}
+                            = \frac{\partial \ell_n}{\partial a_n}
+                            \cdot \frac{\partial a_n}{\partial w}
+                            = (\mu_n - y_n)\,\mu_n\,(1 - \mu_n)\;x_n.
+                            \]
+                        </li>
+                        </ol>
+
+                        <p>
+                        Finally, summing over all \(N\) examples and dividing by \(N\) gives
+                        \[
+                        \nabla_w \mathrm{NLL}(w)
+                        = \frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,\underbrace{\mu_n(1-\mu_n)}_{\text{cancels in practice}}\;x_n
+                        \;\longrightarrow\;
+                        \frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,x_n,
+                        \]
+                        because in most frameworks the extra factor \(\mu_n(1-\mu_n)\) is absorbed
+                        when you derive \(\partial \ell_n/\partial \mu_n\) directly as \(\mu_n - y_n\).
+                        </p>
+                    </div>
                 </p>
 
                 <p>
@@ -159,11 +264,6 @@ uses_python: false
                     The Hessian \(H(w)\) is <a href="../Linear_algebra/symmetry.html"><strong>positive semi-definite</strong></a>, 
                     confirming that the NLL is a convex function and any stationary point is the global optimum.
                 <p>
-
-                <div class="theorem">
-                <span class="theorem-title"></span> 
-                
-                </div>
 
             </section>
 
