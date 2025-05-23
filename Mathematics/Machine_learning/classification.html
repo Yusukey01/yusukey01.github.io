@@ -133,91 +133,76 @@ uses_python: false
                     \]
                     where \(X \in \mathbb{R}^{N \times D}\) is the design matrix whose \(n\)th row is \(x_n^\top\), and 
                     \(\mu, y\in\mathbb{R}^N\) are the vectors of \(\mu_n\) and \(y_n\), respectively.
+                </p>
 
-                    <div class="theorem">
+                <div class="theorem">
                     <span class="theorem-title">Derivation of the gradient of \(\nabla_w \text{NLL }(w)\) </span> 
                     <p>
-                    Recall the sigmoid function:
-                    \[
-                    \sigma(a) = \frac{1}{1 + e^{-a}}.
-                    \]
-                    We compute its derivative with respect to \(a\):
+                        Recall the sigmoid function:
+                        \[
+                        \sigma(a) = \frac{1}{1 + e^{-a}}.
+                        \]
+                        We compute its derivative with respect to \(a\):
+                        \[
+                        \begin{aligned}
+                        \frac{d\sigma}{da}
+                        &= \frac{d}{da}\,(1 + e^{-a})^{-1} \\\\\
+                        &= -1 \cdot (1 + e^{-a})^{-2} \;\bigl(-e^{-a}\bigr) \\\\ 
+                        &= \frac{e^{-a}}{(1 + e^{-a})^2} \\\\
+                        &= \left( \frac{1}{1 + e^{-a}}\right) \left(\frac{e^{-a}}{1 + e^{-a}}\right) \\\\
+                        &= \sigma(a)\,\bigl(1 - \sigma(a)\bigr).
+                        \end{aligned}
+                        \]
+                    </p>
+                
+                    <p>
+                        Since \(\mu_n = \sigma(a_n)\), we conclude:
+                        \[
+                            \frac{\partial \mu_n}{\partial a_n}
+                            = \mu_n\,(1 - \mu_n).
+                        \]
                     </p>
                     
-                    \[
-                    \begin{aligned}
-                    \frac{d\sigma}{da}
-                    &= \frac{d}{da}\,(1 + e^{-a})^{-1} \\\\\
-                    &= -1 \cdot (1 + e^{-a})^{-2} \;\bigl(-e^{-a}\bigr) \\\\ 
-                    &= \frac{e^{-a}}{(1 + e^{-a})^2} \\\\
-                    &= \left( \frac{1}{1 + e^{-a}}\right) \left(\frac{e^{-a}}{1 + e^{-a}}\right) \\\\
-                    &= \sigma(a)\,\bigl(1 - \sigma(a)\bigr).
-                    \end{aligned}
-                    \]
-
                     <p>
-                    Since \(\mu_n = \sigma(a_n)\), we conclude:
-                    \[
-                     \frac{\partial \mu_n}{\partial a_n}
-                    = \mu_n\,(1 - \mu_n).
-                    \]
-                    </p>
-                    <p>
-                        For a single data point \((x_n,y_n)\), define the per-example loss
-                        \(\ell_n = -\bigl[y_n\log\mu_n + (1-y_n)\log(1-\mu_n)\bigr]\).
-                        We compute:
-                        </p>
-
-                        <ol>
-                        <li>
-                            <strong>\(\frac{\partial \ell_n}{\partial \mu_n}\) :</strong>
-                            \[
+                        For a single data point \((x_n,y_n)\), let 
+                        \[
+                            \ell_n = -\bigl[y_n\log\mu_n + (1-y_n)\log(1-\mu_n)\bigr].
+                        \]
+                    
+                    We compute: 
+                        \[
                             \frac{\partial \ell_n}{\partial \mu_n}
                             = -\Bigl(\frac{y_n}{\mu_n} - \frac{1 - y_n}{1 - \mu_n}\Bigr)
                             = \frac{\mu_n - y_n}{\mu_n (1 -\mu_n)}.
-                            \]
-                        </li>   
-                        
-                        <li>
-                            <strong>Chain rule to \(\frac{\partial \ell_n}{\partial a_n}\):</strong>
-                            \[
+                        \]
+                    By chain rule, 
+                        \[
                             \begin{aligned}
                             \frac{\partial \ell_n}{\partial a_n}
                             &= \frac{\partial \ell_n}{\partial \mu_n} \cdot \frac{\partial \mu_n}{\partial a_n} \\\\
                             &= \frac{\mu_n - y_n}{\mu_n (1 -\mu_n)} \cdot \mu_n\,(1 - \mu_n) \\\\
                             &= \mu_n - y_n.
-                             \end{aligned}
-                            \]
-                        </li>
-                        
-                        <li>
-                            Since \(a_n = w^\top x_n + b\),
-                            \[
+                            \end{aligned}
+                        \]
+                    Also, since \(a_n = w^\top x_n + b\),
+                        \[
                             \frac{\partial a_n}{\partial w}
                             = x_n.
-                            \]
-                        </li>
-                        
-                        <li>
-                            <strong>Combine for \(\frac{\partial \ell_n}{\partial w}\):</strong>
-                            \[
+                        \]
+                    Now combine all of them: 
+                        \[
                             \frac{\partial \ell_n}{\partial w}
                             = \frac{\partial \ell_n}{\partial a_n}
                             \cdot \frac{\partial a_n}{\partial w}
                             = (\mu_n - y_n)x_n.
-                            \]
-                        </li>
-                        </ol>
-
-                        <p>
-                        Finally, summing over all \(N\) examples and dividing by \(N\) gives
-                        \[
-                        \nabla_w \mathrm{NLL}(w)
-                        \frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,x_n,
                         \]
-                        </p>
-                    </div>
-                </p>
+                    Finally, summing over all \(N\) examples and dividing by \(N\) gives
+                        \[
+                            \nabla_w \mathrm{NLL}(w)
+                            \frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,x_n.
+                        \]
+                    </p>
+                </div>
 
                 <p>
                     To verify <a href="../Calculus/gradient.html"><strong>convexity</strong></a>, we examine the Hessian:
