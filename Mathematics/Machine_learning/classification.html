@@ -144,8 +144,8 @@ uses_python: false
                      which is both more memory- and compute-efficient.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Derivation of the gradient of \(\text{NLL }(w)\) </span> 
+                <div class="proof">
+                    <span class="proof-title">Derivation of the gradient of \(\text{NLL }(w)\) </span> 
                     <p>
                         Recall the sigmoid function:
                         \[
@@ -219,19 +219,81 @@ uses_python: false
                     \begin{align*}
                     H(w) &=\nabla_w^2 \text{NLL }(w)  \\\\
                          &= \frac{1}{N} \sum_{n=1}^N (\mu_n( 1 - \mu_n)x_n) x_n^\top \\\\
-                         &=\frac{1}{N}
-                            \sum_{n=1}^N
-                            \mu_n(1-\mu_n)\;
-                            \begin{bmatrix}
-                            x_{n,1}\,x_{n,1} & x_{n,1}\,x_{n,2} & \cdots & x_{n,1}\,x_{n,D} \\
-                            x_{n,2}\,x_{n,1} & x_{n,2}\,x_{n,2} & \cdots & x_{n,2}\,x_{n,D} \\
-                            \vdots           & \vdots           & \ddots & \vdots           \\
-                            x_{n,D}\,x_{n,1} & x_{n,D}\,x_{n,2} & \cdots & x_{n,D}\,x_{n,D}
-                            \end{bmatrix} \\\\
                          &= \frac{1}{N} X^\top S X
                     \end{align*}
                     \]
                     where \(S = \text{diag }(\mu_1(1-\mu_1), \cdots, \mu_N(1-\mu_N))\). 
+
+                    
+                <div class="proof">
+                    <span class="proof-title">Derivation of the Hessian of \(\text{NLL }(w)\) </span> 
+                    <p>
+                        We start from the gradient, component-wise:
+                    
+                        \[
+                        \frac{\partial\,\mathrm{NLL}(w)}{\partial w_i}
+                        = \frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,x_{n,i},
+                        \]
+                        where \(x_{n,i}\) denotes the \(i\)th entry of the vector \(x_n\).
+                        </p>
+
+                        <p>
+                        To get the Hessian entry \(H_{ij}(w) = \frac{\partial^2\,\mathrm{NLL}}{\partial w_i\,\partial w_j}\), we differentiate again with respect to \(w_j\):
+                        </p>
+                        \[
+                        \begin{aligned}
+                        H_{ij}(w)
+                        &= \frac{\partial}{\partial w_j}\Biggl[\frac{1}{N}\sum_{n=1}^N (\mu_n - y_n)\,x_{n,i}\Biggr] \\[6pt]
+                        &= \frac{1}{N}\sum_{n=1}^N \frac{\partial\mu_n}{\partial w_j}\;x_{n,i}.
+                        \end{aligned}
+                        \]
+                        </p>
+
+                        <p>
+                        Next, recall \(\mu_n = \sigma(a_n)\) with \(a_n = w^\top x_n + b\), so
+                        \[
+                        \frac{\partial\mu_n}{\partial w_j}
+                        = \frac{d\sigma}{da_n}\;\frac{\partial a_n}{\partial w_j}
+                        = \bigl[\mu_n(1-\mu_n)\bigr]\;x_{n,j}.
+                        \]
+                        Substituting back:
+                        </p>
+                        \[
+                        \begin{aligned}
+                        H_{ij}(w)
+                        &= \frac{1}{N}\sum_{n=1}^N \bigl[\mu_n(1-\mu_n)\bigr]\;x_{n,j}\;x_{n,i} \\[4pt]
+                        &= \frac{1}{N}\sum_{n=1}^N \mu_n(1-\mu_n)\;x_{n,i}\,x_{n,j}.
+                        \end{aligned}
+                        \]
+                        </p>
+
+                        <p>
+                        Thus the full Hessian matrix is
+                        </p>
+                        \[
+                        H(w)
+                        =
+                        \frac{1}{N}
+                        \sum_{n=1}^N
+                        \mu_n(1-\mu_n)\;
+                        \begin{pmatrix}
+                        x_{n,1}\,x_{n,1} & x_{n,1}\,x_{n,2} & \cdots & x_{n,1}\,x_{n,D} \\
+                        x_{n,2}\,x_{n,1} & x_{n,2}\,x_{n,2} & \cdots & x_{n,2}\,x_{n,D} \\
+                        \vdots           & \vdots           & \ddots & \vdots           \\
+                        x_{n,D}\,x_{n,1} & x_{n,D}\,x_{n,2} & \cdots & x_{n,D}\,x_{n,D}
+                        \end{pmatrix}.
+                        \]
+                        </p>
+
+                        <p>
+                        Recognizing that \(\sum_{n=1}^N \mu_n(1-\mu_n)\,x_n\,x_n^\top\) is exactly \(X^\top S X\) with
+                        <code>S = diag(\mu_1(1-\mu_1), …, μ_N(1-μ_N))</code>, we obtain
+                        </p>
+                        \[
+                        H(w)
+                        = \frac{1}{N}\,X^\top\,S\,X.
+                        \]
+                </div>
 
                 </p>
                     For any \(v \in \mathbb{R}^D\),
