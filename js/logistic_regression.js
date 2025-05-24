@@ -374,16 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.style.height = (width * ratio) + 'px';
         
         drawCanvas();
-        
-        // Resize sigmoid canvas
-        const sigmoidParent = sigmoidCanvas.parentElement;
-        const sigmoidWidth = sigmoidParent.clientWidth;
-        const sigmoidRatio = sigmoidCanvas.height / sigmoidCanvas.width;
-        
-        sigmoidCanvas.style.width = sigmoidWidth + 'px';
-        sigmoidCanvas.style.height = (sigmoidWidth * sigmoidRatio) + 'px';
-        
-        drawSigmoid();
     }
     
     // Handle regularization change
@@ -469,11 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h3>Model Coefficients:</h3>
                         <div id="weight-values-container"></div>
                     </div>
-
-                    <div class="logistic-function-plot">
-                        <h3>Logistic Function:</h3>
-                        <canvas id="sigmoid-canvas" width="300" height="150"></canvas>
-                    </div>
                 </div>
             </div>
         </div>
@@ -526,16 +511,6 @@ document.addEventListener('DOMContentLoaded', function() {
         max-width: 100%;
         height: auto;
         display: block;
-        }
-        
-        #sigmoid-canvas {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background-color: white;
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin-top: 10px;
         }
         
         .controls-panel {
@@ -712,8 +687,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = canvas.getContext('2d');
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
-    const sigmoidCanvas = document.getElementById('sigmoid-canvas');
-    const sigmoidCtx = sigmoidCanvas.getContext('2d');
     
     // Control elements
     const regInput = document.getElementById('regularization');
@@ -806,99 +779,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw canvas
         drawCanvas();
-        drawSigmoid();
         updateWeightDisplay();
-    }
-
-
-    // Draw sigmoid function
-    function drawSigmoid() {
-        if (!sigmoidCanvas || !sigmoidCtx) return; // Guard clause
-        
-        const width = sigmoidCanvas.width;
-        const height = sigmoidCanvas.height;
-        const margin = 20;
-        const plotW = width - 2 * margin;
-        const plotH = height - 2 * margin;
-        
-        // Clear canvas
-        sigmoidCtx.clearRect(0, 0, width, height);
-        
-        // Draw axes
-        sigmoidCtx.strokeStyle = '#888';
-        sigmoidCtx.lineWidth = 1;
-        
-        // X-axis
-        sigmoidCtx.beginPath();
-        sigmoidCtx.moveTo(margin, height - margin);
-        sigmoidCtx.lineTo(width - margin, height - margin);
-        sigmoidCtx.stroke();
-        
-        // Y-axis
-        sigmoidCtx.beginPath();
-        sigmoidCtx.moveTo(margin + plotW / 2, margin);
-        sigmoidCtx.lineTo(margin + plotW / 2, height - margin);
-        sigmoidCtx.stroke();
-        
-        // Draw sigmoid function
-        sigmoidCtx.strokeStyle = '#2ecc71';
-        sigmoidCtx.lineWidth = 2;
-        sigmoidCtx.beginPath();
-        
-        for (let i = 0; i < plotW; i++) {
-            // Map i to z-value between -6 and 6
-            const z = (i / plotW) * 12 - 6;
-            
-            // Calculate sigmoid value
-            const sigmoidValue = sigmoid(z);
-            
-            // Map to canvas coordinates
-            const x = margin + i;
-            const y = height - margin - sigmoidValue * plotH;
-            
-            if (i === 0) {
-            sigmoidCtx.moveTo(x, y);
-            } else {
-            sigmoidCtx.lineTo(x, y);
-            }
-        }
-        
-        sigmoidCtx.stroke();
-        
-        // Draw zero line
-        sigmoidCtx.strokeStyle = '#ccc';
-        sigmoidCtx.lineWidth = 1;
-        sigmoidCtx.setLineDash([4, 4]);
-        
-        sigmoidCtx.beginPath();
-        sigmoidCtx.moveTo(margin + plotW / 2, height - margin);
-        sigmoidCtx.lineTo(margin + plotW / 2, height - margin - plotH / 2);
-        sigmoidCtx.stroke();
-        
-        sigmoidCtx.beginPath();
-        sigmoidCtx.moveTo(margin, height - margin - plotH / 2);
-        sigmoidCtx.lineTo(margin + plotW, height - margin - plotH / 2);
-        sigmoidCtx.stroke();
-        
-        sigmoidCtx.setLineDash([]);
-        
-        // Draw labels
-        sigmoidCtx.fillStyle = '#666';
-        sigmoidCtx.font = '12px Arial';
-        sigmoidCtx.textAlign = 'center';
-        
-        // X-axis labels
-        sigmoidCtx.fillText('-6', margin, height - margin + 15);
-        sigmoidCtx.fillText('0', margin + plotW / 2, height - margin + 15);
-        sigmoidCtx.fillText('+6', width - margin, height - margin + 15);
-        
-        // Y-axis labels
-        sigmoidCtx.textAlign = 'right';
-        sigmoidCtx.fillText('0', margin - 5, height - margin + 5);
-        sigmoidCtx.fillText('0.5', margin - 5, height - margin - plotH / 2 + 5);
-        sigmoidCtx.fillText('1', margin - 5, margin + 5);
-    }
-    
+    }  
   
     // Draw coordinate axes
     function drawAxes(xRange, yRange) {
