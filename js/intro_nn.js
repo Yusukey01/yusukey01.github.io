@@ -395,9 +395,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         
-        // Sample the decision boundary with moderate resolution
+        // Sample the decision boundary with higher resolution but very tight threshold
         const points = [];
-        const resolution = 80; // Reduced resolution to avoid too many points
+        const resolution = 100; // Higher resolution for precise detection
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -412,8 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         continue;
                     }
                     
-                    // Much tighter threshold for cleaner boundary
-                    if (Math.abs(prob - 0.5) < 0.01) { // Very tight threshold
+                    // Very tight threshold for exact decision boundary
+                    if (Math.abs(prob - 0.5) < 0.005) { // Super tight threshold
                         const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                         const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                         
@@ -430,18 +430,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Draw boundary points
-        ctx.fillStyle = '#2ecc71';
         console.log(`Found ${points.length} boundary points`); // Debug info
         
-        for (const point of points) {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-        
-        // If very few boundary points, use wider threshold
-        if (points.length < 50) {
+        // If we have a reasonable number of points (not too many, not too few)
+        if (points.length > 10 && points.length < 200) {
+            // Draw thin boundary
+            ctx.fillStyle = '#2ecc71';
+            for (const point of points) {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        } else if (points.length >= 200) {
+            // Too many points - sample every 3rd point for thinner boundary
+            ctx.fillStyle = '#2ecc71';
+            for (let i = 0; i < points.length; i += 3) {
+                const point = points[i];
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 0.8, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        } else {
+            // Too few points - use slightly wider threshold
             const widerPoints = [];
             for (let i = 0; i <= resolution; i++) {
                 for (let j = 0; j <= resolution; j++) {
@@ -450,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     try {
                         const prob = predict(x1, x2);
-                        if (!isNaN(prob) && prob >= 0 && prob <= 1 && Math.abs(prob - 0.5) < 0.03) {
+                        if (!isNaN(prob) && prob >= 0 && prob <= 1 && Math.abs(prob - 0.5) < 0.015) {
                             const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                             const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                             
@@ -465,11 +475,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Draw wider threshold points in lighter color
-            ctx.fillStyle = 'rgba(46, 204, 113, 0.5)';
+            // Draw with lighter color for wider threshold
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.7)';
             for (const point of widerPoints) {
                 ctx.beginPath();
-                ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+                ctx.arc(point.x, point.y, 1.2, 0, 2 * Math.PI);
                 ctx.fill();
             }
         }
@@ -1600,24 +1610,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputSize = 2;
         const outputSize = 1;
         
-        // Initialize W1 (input to hidden) with Xavier initialization
+        // Initialize W1 (input to hidden) with He initialization for ReLU
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
-        const w1Scale = Math.sqrt(2.0 / inputSize); // He initialization for ReLU
+        const w1Scale = Math.sqrt(2.0 / inputSize); // He initialization
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
                 weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
             }
         }
         
-        // Initialize b1 (hidden bias) to small positive values for ReLU
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.1);
+        // Initialize b1 (hidden bias) to small positive values to help ReLU activation
+        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.1 + 0.01);
         
-        // Initialize W2 (hidden to output) with Xavier initialization
-        const w2Scale = Math.sqrt(2.0 / hiddenUnits);
+        // Initialize W2 (hidden to output) with smaller scale for stability
+        const w2Scale = Math.sqrt(1.0 / hiddenUnits); // Smaller initialization for output layer
         weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
         
-        // Initialize b2 (output bias) to small random value
-        weights.b2 = (Math.random() - 0.5) * 0.1;
+        // Initialize b2 (output bias) to zero for binary classification
+        weights.b2 = 0;
+        
+        console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
     }
 
     // Draw coordinate axes
