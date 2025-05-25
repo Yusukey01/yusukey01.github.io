@@ -309,7 +309,57 @@ uses_python: false
                     \]
                     and carries out learning using \(\bigl[K_{ij}\bigr]\) instead of the explicit vectors \(\phi(x_i)\).
                 </p>
+
+                <p>
+                    Any algorithm whose training or decision rule can be written entirely in terms of inner products 
+                    \(\langle \phi(x_i), \phi(x_j)\rangle\) can be kernelized. However, if the \(N\) is very large(e.g. > 100k), 
+                    storing a kernel matrix \(K \in \mathbb{R}^{ N\times N}\) becomes impractical. A common solution is 
+                    <strong>representation Learning</strong> that we use a <strong>neural network</strong> to learn feature 
+                    mapping \(\phi\) directly. (We will dicuss it in the future page.) 
+                </p>
                 </section>
+
+                <section id="rbf-approx" class="section-content">
+                <h2>RBF Kernel & Random Fourier Features</h2>
+                <p>
+                    A particularly popular choice is the <strong>Radial Basis Function (RBF) kernel</strong>, also known as the Gaussian kernel:
+                    <[
+                    K_{\text{RBF}}(x, x') = \exp\!\bigl(-\tfrac{\|x - x'\|^2}{2\sigma^2}\bigr),
+                    ]>
+                    where \(\sigma\) controls the “width” of the Gaussian.  This kernel corresponds to an infinite-dimensional feature map.
+                </p>
+
+                <p>
+                    Although powerful, working directly with \(K_{\text{RBF}}\) suffers the usual \(O(N^2)\)‐storage bottleneck.  
+                    Instead, one can <strong>approximate</strong> the RBF kernel via <strong>Random Fourier Features</strong>:
+                </p>
+
+                <p>
+                    By Bochner’s theorem, for a shift‐invariant kernel \(K(x - x')\), we can write
+                    <[
+                    K_{\text{RBF}}(x, x') 
+                    = \mathbb{E}_{\omega \sim \mathcal{N}(0,\,\tfrac{1}{\sigma^2}I)}
+                    \Bigl[\cos\!\bigl(\omega^\top(x - x')\bigr)\Bigr].
+                    ]>
+                    Sampling \(D'\) frequencies \(\{\omega_k\}_{k=1}^{D'}\) and random phases \(\{b_k\}\)
+                    with \(b_k \sim \mathrm{Uniform}[0,2\pi]\), define the explicit map
+                    <[
+                    \phi_{\text{RFF}}(x)
+                    = \sqrt{\tfrac{2}{D'}}\,
+                        \bigl[\cos(\omega_1^\top x + b_1),\dots,\cos(\omega_{D'}^\top x + b_{D'})\bigr].
+                    ]>
+                </p>
+
+                <p>
+                    Then
+                    <[
+                    \phi_{\text{RFF}}(x)^\top \phi_{\text{RFF}}(x')
+                    \approx K_{\text{RBF}}(x, x'),
+                    ]>
+                    and you can train a regularized linear model on these \(D'\)-dimensional features in \(O(ND')\) time, bypassing the \(N\times N\) kernel matrix entirely.
+                </p>
+                </section>
+
 
 
              <section id="mlr" class="section-content">
