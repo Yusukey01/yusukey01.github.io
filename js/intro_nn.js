@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Forward pass
             const forward = forwardPass(inputs);
-            const { hiddenActivations, output } = forward;
+            const { hiddenPreActivations, hiddenActivations, output } = forward;
             
             // Backward pass
             const outputError = output - y;
@@ -96,7 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Hidden layer gradients
             for (let i = 0; i < numHidden; i++) {
-                const hiddenError = outputError * weights.W2[i] * reluDerivative(hiddenActivations[i]);
+                // Fixed: Use hiddenPreActivations for ReLU derivative, not hiddenActivations
+                const hiddenError = outputError * weights.W2[i] * reluDerivative(hiddenPreActivations[i]);
                 
                 for (let j = 0; j < 2; j++) {
                     gradients.W1[j][i] += hiddenError * inputs[j];
@@ -1425,16 +1426,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let y;
             if (pattern === 'xor') {
-                // XOR-like pattern
-                y = (x1 > 0) ^ (x2 > 0) ? 1 : 0;
-                // Add some noise to make it more realistic
-                if (Math.random() < 0.1) y = 1 - y;
+                // XOR-like pattern - cleaner separation
+                y = (x1 > 0) !== (x2 > 0) ? 1 : 0; // Use !== for clearer XOR
+                // Add less noise to make it more learnable
+                if (Math.random() < 0.05) y = 1 - y;
             } else {
-                // Circular pattern
+                // Circular pattern - cleaner separation
                 const radius = Math.sqrt(x1 * x1 + x2 * x2);
-                y = radius < 0.6 ? 1 : 0;
-                // Add some noise
-                if (Math.random() < 0.1) y = 1 - y;
+                y = radius < 0.7 ? 1 : 0; // Slightly larger radius for better separation
+                // Add less noise
+                if (Math.random() < 0.05) y = 1 - y;
             }
             
             allPoints.push({ x1, x2, y });
@@ -1476,22 +1477,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initialize W1 (input to hidden) with Xavier initialization
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
-        const w1Scale = Math.sqrt(2.0 / (inputSize + hiddenUnits));
+        const w1Scale = Math.sqrt(2.0 / inputSize); // He initialization for ReLU
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
                 weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
             }
         }
         
-        // Initialize b1 (hidden bias) to small random values
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 0.01);
+        // Initialize b1 (hidden bias) to small positive values for ReLU
+        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.1);
         
         // Initialize W2 (hidden to output) with Xavier initialization
-        const w2Scale = Math.sqrt(2.0 / (hiddenUnits + outputSize));
+        const w2Scale = Math.sqrt(2.0 / hiddenUnits);
         weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
         
         // Initialize b2 (output bias) to small random value
-        weights.b2 = (Math.random() - 0.5) * 0.01;
+        weights.b2 = (Math.random() - 0.5) * 0.1;
     }
 
     // Draw coordinate axes
