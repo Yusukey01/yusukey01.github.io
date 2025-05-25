@@ -38,10 +38,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update display every 10 iterations to avoid UI freezes
             if (iterations % 10 === 0) {
+                const accuracy = calculateAccuracy();
+                const testAcc = calculateTestAccuracy();
+                
                 if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
-                if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
+                if (accuracyElement) accuracyElement.textContent = (accuracy * 100).toFixed(1) + '%';
+                if (testAccuracyElement) testAccuracyElement.textContent = (testAcc * 100).toFixed(1) + '%';
+                
                 updateWeightDisplay();
                 drawCanvas();
+                
+                // Log progress for debugging
+                if (iterations % 50 === 0) {
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(accuracy*100).toFixed(1)}%`);
+                }
                 
                 // Pause to allow UI to update
                 await new Promise(resolve => setTimeout(resolve, 10));
@@ -51,20 +61,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Final update
+        const finalAccuracy = calculateAccuracy();
+        const finalTestAcc = calculateTestAccuracy();
+        
         if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
-        if (accuracyElement) accuracyElement.textContent = (calculateAccuracy() * 100).toFixed(1) + '%';
-        if (testAccuracyElement) {
-            const testAcc = calculateTestAccuracy();
-            testAccuracyElement.textContent = (testAcc * 100).toFixed(1) + '%';
-        }
+        if (accuracyElement) accuracyElement.textContent = (finalAccuracy * 100).toFixed(1) + '%';
+        if (testAccuracyElement) testAccuracyElement.textContent = (finalTestAcc * 100).toFixed(1) + '%';
+        
         updateWeightDisplay();
         drawCanvas();
+
+        console.log(`Training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%`);
 
         isTraining = false;
         if (trainBtn) {
             trainBtn.textContent = 'Train Model';
             trainBtn.disabled = false;
         }
+        
+        // Update network graph after training
+        setTimeout(() => {
+            drawNetworkGraph();
+            showForwardPassSteps();
+        }, 100);
     }
 
     // Compute gradients using backpropagation
@@ -200,9 +219,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Predict probability for a single data point
     function predict(x1, x2) {
-        const inputs = [x1, x2];
-        const forward = forwardPass(inputs);
-        return forward.output;
+        // Safety check for weights
+        if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
+            return 0.5; // Return neutral probability if weights not initialized
+        }
+        
+        try {
+            const inputs = [x1, x2];
+            const forward = forwardPass(inputs);
+            return forward.output;
+        } catch (e) {
+            console.warn('Error in predict function:', e);
+            return 0.5; // Return neutral probability on error
+        }
     }
 
     // Calculate accuracy on training data
@@ -332,37 +361,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw decision boundary
     function drawDecisionBoundary(xRange, yRange) {
+        // Skip if weights not properly initialized
+        if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
+            return;
+        }
+        
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         
-        // For neural networks, we need to sample the decision boundary more precisely
+        // Sample the decision boundary with moderate resolution
         const points = [];
-        const resolution = 120; // Higher resolution for more precise boundary
+        const resolution = 100;
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
                 const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
-                const prob = predict(x1, x2);
                 
-                // Much tighter threshold for actual decision boundary (probability = 0.5)
-                if (Math.abs(prob - 0.5) < 0.015) { // Tighter threshold for thin boundary
-                    const canvasX = plotMargin + (x1 - xRange.min) * xScale;
-                    const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                    points.push({ x: canvasX, y: canvasY });
+                try {
+                    const prob = predict(x1, x2);
+                    
+                    // Check if prediction is valid
+                    if (isNaN(prob) || prob < 0 || prob > 1) {
+                        continue;
+                    }
+                    
+                    // Decision boundary: where probability is close to 0.5
+                    if (Math.abs(prob - 0.5) < 0.02) {
+                        const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+                        const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+                        
+                        // Make sure point is within canvas bounds
+                        if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
+                            canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+                            points.push({ x: canvasX, y: canvasY, prob: prob });
+                        }
+                    }
+                } catch (e) {
+                    // Skip invalid predictions
+                    continue;
                 }
             }
         }
         
-        // Draw boundary points as smaller dots to create thin line appearance
+        // Draw boundary points
         ctx.fillStyle = '#2ecc71';
+        console.log(`Found ${points.length} boundary points`); // Debug info
+        
         for (const point of points) {
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI); // Smaller radius for thinner line
+            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
             ctx.fill();
+        }
+        
+        // If no boundary points found, draw a message
+        if (points.length === 0) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No decision boundary found - train the model first', canvasWidth / 2, canvasHeight - 20);
         }
     }
 
@@ -437,7 +497,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         drawAxes(xRange, yRange);
         
-        if (weights.W1.length > 0) {
+        // Only draw contours and boundary if weights are initialized
+        if (weights.W1 && weights.W1.length > 0 && weights.W2 && weights.W2.length > 0) {
             drawProbabilityContours(xRange, yRange);
             drawDecisionBoundary(xRange, yRange);
         }
@@ -609,8 +670,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="control-group">
                         <label for="learning-rate">Learning Rate:</label>
-                        <input type="range" id="learning-rate" min="-3" max="0" step="0.1" value="-1" class="full-width">
-                        <span id="learning-rate-display">0.1</span>
+                        <input type="range" id="learning-rate" min="-2" max="0" step="0.1" value="-0.5" class="full-width">
+                        <span id="learning-rate-display">0.3</span>
                     </div>
                     
                     <div class="control-group">
