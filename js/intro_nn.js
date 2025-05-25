@@ -329,142 +329,35 @@ document.addEventListener('DOMContentLoaded', function() {
         weightValuesContainer.appendChild(outputSection);
     }
 
-    // Draw decision boundary for neural network
+    // Draw decision boundary for neural network (efficient version)
     function drawDecisionBoundary(xRange, yRange) {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
         ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 3;
+        ctx.fillStyle = '#2ecc71';
+        ctx.lineWidth = 2;
         
-        // For neural networks, we need to find the decision boundary by sampling
-        // the probability space and finding points where p ≈ 0.5
-        const resolution = 200; // Higher resolution for smoother boundary
-        const boundaryPoints = [];
+        // Much simpler and faster approach: just sample key boundary points
+        const resolution = 50; // Reduced from 200 to 50
         
-        // Sample the space to find boundary points
-        for (let i = 0; i <= resolution; i++) {
-            for (let j = 0; j <= resolution; j++) {
+        for (let i = 0; i < resolution; i++) {
+            for (let j = 0; j < resolution; j++) {
                 const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
                 const prob = predict(x1, x2);
                 
-                // Check if this point is near the decision boundary (probability ≈ 0.5)
-                if (Math.abs(prob - 0.5) < 0.03) { // Threshold for boundary detection
+                // Simple boundary detection - just draw points near 0.5
+                if (Math.abs(prob - 0.5) < 0.05) {
                     const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                     const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                    boundaryPoints.push({ x: canvasX, y: canvasY, prob: prob });
-                }
-            }
-        }
-        
-        // Sort boundary points to create connected curves
-        if (boundaryPoints.length > 0) {
-            // Group nearby points into connected components
-            const connectedComponents = groupNearbyPoints(boundaryPoints, 15);
-            
-            // Draw each connected component as a curve
-            ctx.strokeStyle = '#2ecc71';
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            for (const component of connectedComponents) {
-                if (component.length < 3) continue; // Skip very small components
-                
-                // Sort points in the component to create a smooth curve
-                const sortedPoints = sortPointsForCurve(component);
-                
-                ctx.beginPath();
-                ctx.moveTo(sortedPoints[0].x, sortedPoints[0].y);
-                
-                // Draw smooth curve through points
-                for (let i = 1; i < sortedPoints.length; i++) {
-                    ctx.lineTo(sortedPoints[i].x, sortedPoints[i].y);
-                }
-                
-                ctx.stroke();
-            }
-        }
-        
-        // Alternative: Draw boundary points as individual dots if curves don't work well
-        ctx.fillStyle = '#2ecc71';
-        for (const point of boundaryPoints) {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    }
-
-    // Helper function to group nearby points into connected components
-    function groupNearbyPoints(points, maxDistance) {
-        const components = [];
-        const visited = new Array(points.length).fill(false);
-        
-        for (let i = 0; i < points.length; i++) {
-            if (visited[i]) continue;
-            
-            const component = [];
-            const queue = [i];
-            visited[i] = true;
-            
-            while (queue.length > 0) {
-                const currentIdx = queue.shift();
-                const currentPoint = points[currentIdx];
-                component.push(currentPoint);
-                
-                // Find nearby unvisited points
-                for (let j = 0; j < points.length; j++) {
-                    if (visited[j]) continue;
                     
-                    const distance = Math.sqrt(
-                        Math.pow(currentPoint.x - points[j].x, 2) + 
-                        Math.pow(currentPoint.y - points[j].y, 2)
-                    );
-                    
-                    if (distance <= maxDistance) {
-                        visited[j] = true;
-                        queue.push(j);
-                    }
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY, 1.5, 0, 2 * Math.PI);
+                    ctx.fill();
                 }
             }
-            
-            components.push(component);
         }
-        
-        return components;
-    }
-
-    // Helper function to sort points in a component for smooth curve drawing
-    function sortPointsForCurve(points) {
-        if (points.length <= 2) return points;
-        
-        const sorted = [points[0]];
-        const remaining = points.slice(1);
-        
-        while (remaining.length > 0) {
-            const lastPoint = sorted[sorted.length - 1];
-            let nearestIdx = 0;
-            let nearestDistance = Infinity;
-            
-            // Find the nearest remaining point
-            for (let i = 0; i < remaining.length; i++) {
-                const distance = Math.sqrt(
-                    Math.pow(lastPoint.x - remaining[i].x, 2) + 
-                    Math.pow(lastPoint.y - remaining[i].y, 2)
-                );
-                
-                if (distance < nearestDistance) {
-                    nearestDistance = distance;
-                    nearestIdx = i;
-                }
-            }
-            
-            sorted.push(remaining[nearestIdx]);
-            remaining.splice(nearestIdx, 1);
-        }
-        
-        return sorted;
     }
 
     // Draw data points
@@ -583,32 +476,36 @@ document.addEventListener('DOMContentLoaded', function() {
         return { min: min - padding, max: max + padding };
     }
 
-    // Draw probability contours
+    // Draw probability contours (optimized version)
     function drawProbabilityContours(xRange, yRange) {
+        // Reduced resolution for better performance
+        const contourWidth = Math.min(plotWidth, 150);
+        const contourHeight = Math.min(plotHeight, 150);
+        
         const contourCanvas = document.createElement('canvas');
-        contourCanvas.width = plotWidth;
-        contourCanvas.height = plotHeight;
+        contourCanvas.width = contourWidth;
+        contourCanvas.height = contourHeight;
         const contourCtx = contourCanvas.getContext('2d');
         
-        const imageData = contourCtx.createImageData(plotWidth, plotHeight);
+        const imageData = contourCtx.createImageData(contourWidth, contourHeight);
         
-        for (let i = 0; i < plotWidth; i++) {
-            for (let j = 0; j < plotHeight; j++) {
-                const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
-                const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
+        for (let i = 0; i < contourWidth; i++) {
+            for (let j = 0; j < contourHeight; j++) {
+                const x1 = xRange.min + (i / contourWidth) * (xRange.max - xRange.min);
+                const x2 = yRange.max - (j / contourHeight) * (yRange.max - yRange.min);
                 const probability = predict(x1, x2);
-                const pixelIndex = (j * plotWidth + i) * 4;
+                const pixelIndex = (j * contourWidth + i) * 4;
                 
                 if (probability < 0.5) {
                     imageData.data[pixelIndex] = 52;
                     imageData.data[pixelIndex + 1] = 152;
                     imageData.data[pixelIndex + 2] = 219;
-                    imageData.data[pixelIndex + 3] = Math.round(255 * (0.5 - probability) * 0.5);
+                    imageData.data[pixelIndex + 3] = Math.round(255 * (0.5 - probability) * 0.4);
                 } else {
                     imageData.data[pixelIndex] = 231;
                     imageData.data[pixelIndex + 1] = 76;
                     imageData.data[pixelIndex + 2] = 60;
-                    imageData.data[pixelIndex + 3] = Math.round(255 * (probability - 0.5) * 0.5);
+                    imageData.data[pixelIndex + 3] = Math.round(255 * (probability - 0.5) * 0.4);
                 }
             }
         }
@@ -616,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contourCtx.putImageData(imageData, 0, 0);
         ctx.drawImage(
             contourCanvas,
-            0, 0, plotWidth, plotHeight,
+            0, 0, contourWidth, contourHeight,
             plotMargin, plotMargin, plotWidth, plotHeight
         );
     }
@@ -1660,6 +1557,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 50);
 
     generateData();
-     handleResize();
+    handleResize();
 
 });
