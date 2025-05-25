@@ -1079,7 +1079,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawNetworkGraph() {
         networkCtx.clearRect(0, 0, networkCanvasWidth, networkCanvasHeight);
         
-        if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
+        // Check if weights are properly initialized
+        const weightsValid = weights.W1 && 
+                           Array.isArray(weights.W1) && 
+                           weights.W1.length > 0 && 
+                           Array.isArray(weights.W1[0]) &&
+                           weights.W2 && 
+                           Array.isArray(weights.W2) && 
+                           weights.W2.length > 0;
+        
+        if (!weightsValid) {
             // Draw placeholder message
             networkCtx.fillStyle = '#7f8c8d';
             networkCtx.font = '16px Arial';
@@ -1101,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const hiddenPositions = [];
         for (let i = 0; i < hiddenUnits; i++) {
-            const y = networkCanvasHeight * (0.1 + 0.8 * i / (hiddenUnits - 1));
+            const y = networkCanvasHeight * (0.1 + 0.8 * i / Math.max(hiddenUnits - 1, 1));
             hiddenPositions.push({ 
                 x: hiddenX, 
                 y: y, 
@@ -1118,13 +1127,18 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         // Calculate forward pass values for demo point
-        const forward = forwardPass([demoPoint.x1, demoPoint.x2]);
-        
-        // Update hidden layer values
-        for (let i = 0; i < hiddenUnits; i++) {
-            hiddenPositions[i].value = forward.hiddenActivations[i];
+        try {
+            const forward = forwardPass([demoPoint.x1, demoPoint.x2]);
+            
+            // Update hidden layer values
+            for (let i = 0; i < hiddenUnits && i < forward.hiddenActivations.length; i++) {
+                hiddenPositions[i].value = forward.hiddenActivations[i];
+            }
+            outputPosition.value = forward.output;
+        } catch (e) {
+            console.warn('Error in forward pass:', e);
+            // Use default values of 0
         }
-        outputPosition.value = forward.output;
         
         // Draw connections with weights
         drawConnections(inputPositions, hiddenPositions, weights.W1, 'input-hidden');
@@ -1141,32 +1155,57 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw connections between layers
     function drawConnections(fromLayer, toLayer, weightMatrix, connectionType) {
-        // Handle different weight matrix structures
-        let allWeights = [];
-        if (connectionType === 'input-hidden') {
-            // weightMatrix is 2D array: weights.W1[input][hidden]
-            allWeights = weightMatrix.flat();
-        } else {
-            // weightMatrix is 1D array: weights.W2[hidden]
-            allWeights = Array.isArray(weightMatrix[0]) ? weightMatrix.flat() : weightMatrix;
+        // Safety check for weight matrix
+        if (!weightMatrix || (Array.isArray(weightMatrix) && weightMatrix.length === 0)) {
+            return;
         }
         
-        const maxWeight = Math.max(...allWeights.map(w => Math.abs(w)));
+        // Handle different weight matrix structures
+        let allWeights = [];
+        try {
+            if (connectionType === 'input-hidden') {
+                // weightMatrix is 2D array: weights.W1[input][hidden]
+                if (!Array.isArray(weightMatrix) || !Array.isArray(weightMatrix[0])) {
+                    return;
+                }
+                allWeights = weightMatrix.flat();
+            } else {
+                // weightMatrix is 1D array: weights.W2[hidden]
+                if (!Array.isArray(weightMatrix)) {
+                    return;
+                }
+                allWeights = weightMatrix;
+            }
+        } catch (e) {
+            console.warn('Error processing weight matrix:', e);
+            return;
+        }
+        
+        const maxWeight = Math.max(...allWeights.map(w => Math.abs(w || 0)));
         
         for (let i = 0; i < fromLayer.length; i++) {
             for (let j = 0; j < toLayer.length; j++) {
                 let weight;
-                if (connectionType === 'input-hidden') {
-                    weight = weightMatrix[i][j];
-                } else {
-                    weight = weightMatrix[j];
+                try {
+                    if (connectionType === 'input-hidden') {
+                        weight = weightMatrix[i] && weightMatrix[i][j] !== undefined ? weightMatrix[i][j] : 0;
+                    } else {
+                        weight = weightMatrix[j] !== undefined ? weightMatrix[j] : 0;
+                    }
+                } catch (e) {
+                    weight = 0;
                 }
                 
-                const normalizedWeight = weight / (maxWeight || 1);
+                // Ensure weight is a number
+                if (typeof weight !== 'number' || isNaN(weight)) {
+                    weight = 0;
+                }
+                
+                const normalizedWeight = maxWeight > 0 ? weight / maxWeight : 0;
                 
                 // Color and thickness based on weight
                 const opacity = Math.min(Math.abs(normalizedWeight), 1);
-                const color = weight >= 0 ? `rgba(46, 204, 113, ${opacity})` : `rgba(231, 76, 60, ${opacity})`;
+                const color = weight >= 0 ? `rgba(46, 204, 113, ${opacity + 0.2})` : `rgba(231, 76, 60, ${opacity + 0.2})`;
                 const thickness = Math.max(1, Math.abs(normalizedWeight) * 3);
                 
                 networkCtx.strokeStyle = color;
@@ -1380,7 +1419,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
         
-        // Initialize weights
+        // Initialize weights BEFORE calling any drawing functions
         initializeWeights();
         
         // Update display
@@ -1388,10 +1427,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lossElement) lossElement.textContent = '0.000';
         if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
         
+        // Now safe to call drawing functions
         drawCanvas();
         updateWeightDisplay();
-        drawNetworkGraph();
-        showForwardPassSteps();
+        
+        // Small delay to ensure weights are fully initialized
+        setTimeout(() => {
+            drawNetworkGraph();
+            showForwardPassSteps();
+        }, 10);
     }
 
     // Initialize weights using Xavier/Glorot initialization
@@ -1474,6 +1518,7 @@ document.addEventListener('DOMContentLoaded', function() {
     handleResize();
     drawNetworkGraph();
     showForwardPassSteps();
+
     generateData();
     handleResize();
 
