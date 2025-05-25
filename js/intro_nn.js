@@ -23,44 +23,66 @@ document.addEventListener('DOMContentLoaded', function() {
         let currentLoss = calculateLoss();
         let bestAccuracy = 0;
         let stagnantIterations = 0;
+        let learningRateDecay = 1.0;
+        let restartCount = 0;
 
         const minLossChange = 1e-6;
-        const maxStagnantIterations = 50; // Stop if no improvement for 50 iterations
+        const maxStagnantIterations = 30; // Reduced for faster restarts
+        const maxRestarts = 2; // Allow restarts if stuck
 
-        while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
+        while (iterations < maxIterations && restartCount <= maxRestarts) {
             previousLoss = currentLoss;
             
             // Forward pass and backward pass for all training data
             const gradients = computeGradients();
             
-            // Update weights using gradients
-            updateWeights(gradients);
+            // Update weights using gradients with current learning rate
+            updateWeights(gradients, learningRate * learningRateDecay);
             
             // Calculate new loss
             currentLoss = calculateLoss();
             const currentAccuracy = calculateAccuracy();
             
             // Check for improvement
-            if (currentAccuracy > bestAccuracy) {
+            if (currentAccuracy > bestAccuracy + 0.01) { // Need significant improvement
                 bestAccuracy = currentAccuracy;
                 stagnantIterations = 0;
+                learningRateDecay = Math.min(learningRateDecay * 1.05, 1.2); // Slight increase
             } else {
                 stagnantIterations++;
+                if (stagnantIterations > 10) {
+                    learningRateDecay *= 0.95; // Gradual decay
+                }
             }
             
             // Early stopping if accuracy is very good
-            if (currentAccuracy > 0.95) {
+            if (currentAccuracy > 0.90) {
                 console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
                 break;
             }
             
-            // Early stopping if no improvement
-            if (stagnantIterations > maxStagnantIterations) {
-                console.log(`Early stopping: No improvement for ${maxStagnantIterations} iterations`);
+            // Restart if stuck in local minimum
+            if (stagnantIterations > maxStagnantIterations && restartCount < maxRestarts) {
+                console.log(`Restart ${restartCount + 1}: Stuck at ${(currentAccuracy*100).toFixed(1)}% accuracy`);
+                
+                // Reinitialize weights with different strategy
+                initializeWeights();
+                restartCount++;
+                stagnantIterations = 0;
+                learningRateDecay = 1.0;
+                bestAccuracy = 0;
+                currentLoss = calculateLoss();
+                iterations = 0; // Reset iteration count for fresh start
+                continue;
+            }
+            
+            // Final stop if no progress after restarts
+            if (stagnantIterations > maxStagnantIterations && restartCount >= maxRestarts) {
+                console.log(`Training stopped: Maximum restarts reached`);
                 break;
             }
             
-            // Update display every 10 iterations to avoid UI freezes
+            // Update display every 10 iterations
             if (iterations % 10 === 0) {
                 const testAcc = calculateTestAccuracy();
                 
@@ -71,12 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateWeightDisplay();
                 drawCanvas();
                 
-                // Log progress for debugging
+                // Log progress
                 if (iterations % 50 === 0) {
-                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%`);
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, LR=${(learningRate * learningRateDecay).toFixed(4)}`);
                 }
                 
-                // Pause to allow UI to update
                 await new Promise(resolve => setTimeout(resolve, 10));
             }
             
@@ -94,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateWeightDisplay();
         drawCanvas();
 
-        console.log(`Training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%`);
+        console.log(`Training completed: ${iterations} iterations, ${restartCount} restarts, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%`);
 
         isTraining = false;
         if (trainBtn) {
@@ -102,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
             trainBtn.disabled = false;
         }
         
-        // Update network graph after training
         setTimeout(() => {
             drawNetworkGraph();
             showForwardPassSteps();
@@ -166,28 +186,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update weights using computed gradients
-    function updateWeights(gradients) {
+    function updateWeights(gradients, currentLearningRate = learningRate) {
         const numHidden = hiddenUnits;
         
         // Update W1
         for (let i = 0; i < 2; i++) {
             for (let j = 0; j < numHidden; j++) {
-                weights.W1[i][j] -= learningRate * gradients.W1[i][j];
+                weights.W1[i][j] -= currentLearningRate * gradients.W1[i][j];
             }
         }
         
         // Update b1
         for (let i = 0; i < numHidden; i++) {
-            weights.b1[i] -= learningRate * gradients.b1[i];
+            weights.b1[i] -= currentLearningRate * gradients.b1[i];
         }
         
         // Update W2
         for (let i = 0; i < numHidden; i++) {
-            weights.W2[i] -= learningRate * gradients.W2[i];
+            weights.W2[i] -= currentLearningRate * gradients.W2[i];
         }
         
         // Update b2
-        weights.b2 -= learningRate * gradients.b2;
+        weights.b2 -= currentLearningRate * gradients.b2;
     }
 
     // Forward pass through the network
@@ -1605,31 +1625,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 10);
     }
 
-    // Initialize weights using Xavier/Glorot initialization
+    // Initialize weights using improved initialization
     function initializeWeights() {
         const inputSize = 2;
-        const outputSize = 1;
         
-        // Initialize W1 (input to hidden) with He initialization for ReLU
+        // Try different initialization strategies for better convergence
+        const initStrategy = Math.random() > 0.5 ? 'he' : 'xavier';
+        
+        // Initialize W1 (input to hidden)
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
-        const w1Scale = Math.sqrt(2.0 / inputSize); // He initialization
+        
+        let w1Scale;
+        if (initStrategy === 'he') {
+            w1Scale = Math.sqrt(2.0 / inputSize); // He for ReLU
+        } else {
+            w1Scale = Math.sqrt(6.0 / (inputSize + hiddenUnits)); // Xavier
+        }
+        
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
                 weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
             }
         }
         
-        // Initialize b1 (hidden bias) to small positive values to help ReLU activation
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.1 + 0.01);
+        // Initialize b1 (hidden bias) - crucial for breaking symmetry
+        weights.b1 = Array(hiddenUnits).fill(0).map(() => {
+            // Randomize bias initialization to help different neurons learn different things
+            return (Math.random() - 0.3) * 0.2; // Small random values, slightly negative bias
+        });
         
-        // Initialize W2 (hidden to output) with smaller scale for stability
-        const w2Scale = Math.sqrt(1.0 / hiddenUnits); // Smaller initialization for output layer
+        // Initialize W2 (hidden to output) 
+        const w2Scale = Math.sqrt(2.0 / hiddenUnits);
         weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
         
-        // Initialize b2 (output bias) to zero for binary classification
-        weights.b2 = 0;
+        // Initialize b2 (output bias) with slight preference
+        weights.b2 = (Math.random() - 0.5) * 0.2;
         
-        console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
+        console.log(`Initialized weights: Strategy=${initStrategy}, W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
     }
 
     // Draw coordinate axes
