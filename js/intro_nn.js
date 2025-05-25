@@ -329,34 +329,38 @@ document.addEventListener('DOMContentLoaded', function() {
         weightValuesContainer.appendChild(outputSection);
     }
 
-    // Draw decision boundary for neural network (efficient version)
+    // Draw decision boundary
     function drawDecisionBoundary(xRange, yRange) {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
         ctx.strokeStyle = '#2ecc71';
-        ctx.fillStyle = '#2ecc71';
         ctx.lineWidth = 2;
         
-        // Much simpler and faster approach: just sample key boundary points
-        const resolution = 50; // Reduced from 200 to 50
+        // For neural networks, we need to sample the decision boundary
+        const points = [];
+        const resolution = 80; // Moderate resolution
         
-        for (let i = 0; i < resolution; i++) {
-            for (let j = 0; j < resolution; j++) {
+        for (let i = 0; i <= resolution; i++) {
+            for (let j = 0; j <= resolution; j++) {
                 const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
                 const prob = predict(x1, x2);
                 
-                // Simple boundary detection - just draw points near 0.5
-                if (Math.abs(prob - 0.5) < 0.05) {
+                if (Math.abs(prob - 0.5) < 0.04) { // Near decision boundary
                     const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                     const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                    
-                    ctx.beginPath();
-                    ctx.arc(canvasX, canvasY, 1.5, 0, 2 * Math.PI);
-                    ctx.fill();
+                    points.push({ x: canvasX, y: canvasY });
                 }
             }
+        }
+        
+        // Draw boundary points
+        ctx.fillStyle = '#2ecc71';
+        for (const point of points) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
 
@@ -476,36 +480,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return { min: min - padding, max: max + padding };
     }
 
-    // Draw probability contours (optimized version)
+    // Draw probability contours
     function drawProbabilityContours(xRange, yRange) {
-        // Reduced resolution for better performance
-        const contourWidth = Math.min(plotWidth, 150);
-        const contourHeight = Math.min(plotHeight, 150);
-        
         const contourCanvas = document.createElement('canvas');
-        contourCanvas.width = contourWidth;
-        contourCanvas.height = contourHeight;
+        contourCanvas.width = plotWidth;
+        contourCanvas.height = plotHeight;
         const contourCtx = contourCanvas.getContext('2d');
         
-        const imageData = contourCtx.createImageData(contourWidth, contourHeight);
+        const imageData = contourCtx.createImageData(plotWidth, plotHeight);
         
-        for (let i = 0; i < contourWidth; i++) {
-            for (let j = 0; j < contourHeight; j++) {
-                const x1 = xRange.min + (i / contourWidth) * (xRange.max - xRange.min);
-                const x2 = yRange.max - (j / contourHeight) * (yRange.max - yRange.min);
+        for (let i = 0; i < plotWidth; i++) {
+            for (let j = 0; j < plotHeight; j++) {
+                const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
+                const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
                 const probability = predict(x1, x2);
-                const pixelIndex = (j * contourWidth + i) * 4;
+                const pixelIndex = (j * plotWidth + i) * 4;
                 
                 if (probability < 0.5) {
                     imageData.data[pixelIndex] = 52;
                     imageData.data[pixelIndex + 1] = 152;
                     imageData.data[pixelIndex + 2] = 219;
-                    imageData.data[pixelIndex + 3] = Math.round(255 * (0.5 - probability) * 0.4);
+                    imageData.data[pixelIndex + 3] = Math.round(255 * (0.5 - probability) * 0.5);
                 } else {
                     imageData.data[pixelIndex] = 231;
                     imageData.data[pixelIndex + 1] = 76;
                     imageData.data[pixelIndex + 2] = 60;
-                    imageData.data[pixelIndex + 3] = Math.round(255 * (probability - 0.5) * 0.4);
+                    imageData.data[pixelIndex + 3] = Math.round(255 * (probability - 0.5) * 0.5);
                 }
             }
         }
@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contourCtx.putImageData(imageData, 0, 0);
         ctx.drawImage(
             contourCanvas,
-            0, 0, contourWidth, contourHeight,
+            0, 0, plotWidth, plotHeight,
             plotMargin, plotMargin, plotWidth, plotHeight
         );
     }
