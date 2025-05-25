@@ -402,6 +402,28 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fill();
             ctx.stroke();
         }
+        
+        // Draw demo point if in demo mode
+        if (isDemoMode) {
+            const canvasX = plotMargin + (demoPoint.x1 - xRange.min) * xScale;
+            const canvasY = canvasHeight - plotMargin - (demoPoint.x2 - yRange.min) * yScale;
+            
+            // Draw larger, highlighted demo point
+            ctx.fillStyle = '#9b59b6';
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw coordinates label
+            ctx.fillStyle = '#9b59b6';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`(${demoPoint.x1.toFixed(2)}, ${demoPoint.x2.toFixed(2)})`, canvasX, canvasY - 15);
+        }
     }
 
     // Draw the canvas
@@ -515,6 +537,8 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeWeights(); // Reinitialize weights when architecture changes
         updateWeightDisplay();
         drawCanvas();
+        drawNetworkGraph();
+        showForwardPassSteps();
     }
 
     // Create HTML structure
@@ -539,6 +563,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button id="train-btn" class="primary-btn">Train Model</button>
                         <button id="generate-btn" class="secondary-btn">Generate New Data</button>
                     </div>
+                </div>
+
+                <div class="network-visualization">
+                    <h3>Network Architecture & Forward Pass</h3>
+                    <div class="demo-controls">
+                        <button id="demo-point-btn" class="demo-btn">Demo Point</button>
+                        <span id="demo-coordinates">Click to select a point</span>
+                    </div>
+                    <div id="network-graph-container">
+                        <canvas id="network-graph" width="600" height="300"></canvas>
+                    </div>
+                    <div id="computation-steps"></div>
                 </div>
 
                 <div class="controls-panel">
@@ -821,6 +857,107 @@ document.addEventListener('DOMContentLoaded', function() {
         .btn-container {
             margin-bottom: 20px;
         }
+        
+        .network-visualization {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .network-visualization h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .demo-controls {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .demo-btn {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .demo-btn:hover {
+            background-color: #8e44ad;
+        }
+        
+        #demo-coordinates {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        #network-graph-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        #network-graph {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        #computation-steps {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .step-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .step-computation {
+            color: #34495e;
+            margin: 4px 0;
+        }
+        
+        .step-result {
+            color: #27ae60;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+        
+        .neuron-active {
+            background-color: #e8f5e8 !important;
+            border-color: #27ae60 !important;
+        }
+        
+        .neuron-inactive {
+            background-color: #fdf2f2 !important;
+            border-color: #e74c3c !important;
+        }
     `;
 
     document.head.appendChild(styleElement);
@@ -830,6 +967,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = canvas.getContext('2d');
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
+    
+    // Network graph elements
+    const networkCanvas = document.getElementById('network-graph');
+    const networkCtx = networkCanvas.getContext('2d');
+    const networkCanvasWidth = networkCanvas.width;
+    const networkCanvasHeight = networkCanvas.height;
     
     // Control elements
     const hiddenUnitsInput = document.getElementById('hidden-units');
@@ -842,6 +985,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const iterationsDisplay = document.getElementById('iterations-display');
     const trainBtn = document.getElementById('train-btn');
     const generateBtn = document.getElementById('generate-btn');
+    const demoPointBtn = document.getElementById('demo-point-btn');
+    const demoCoordinates = document.getElementById('demo-coordinates');
+    const computationSteps = document.getElementById('computation-steps');
 
     // Results elements 
     const accuracyElement = document.getElementById('accuracy');
@@ -858,6 +1004,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let learningRate = 0.1;
     let maxIterations = 200;
     let isTraining = false;
+    let demoPoint = { x1: 0.5, x2: 0.3 }; // Demo point for forward pass visualization
+    let isDemoMode = false;
     
     // Drawing settings
     const plotMargin = 50;
@@ -881,7 +1029,293 @@ document.addEventListener('DOMContentLoaded', function() {
     iterationsInput.addEventListener('input', handleIterationsChange);
     trainBtn.addEventListener('click', trainModel);
     generateBtn.addEventListener('click', generateData);
+    demoPointBtn.addEventListener('click', handleDemoPoint);
+    canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', handleResize);
+
+    // Handle canvas click for demo point selection
+    function handleCanvasClick(event) {
+        if (!isDemoMode) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = (event.clientX - rect.left) * (canvasWidth / rect.width);
+        const canvasY = (event.clientY - rect.top) * (canvasHeight / rect.height);
+        
+        // Convert canvas coordinates to data coordinates
+        const xRange = calculateXRange();
+        const yRange = calculateYRange();
+        
+        const x1 = xRange.min + ((canvasX - plotMargin) / plotWidth) * (xRange.max - xRange.min);
+        const x2 = yRange.max - ((canvasY - plotMargin) / plotHeight) * (yRange.max - yRange.min);
+        
+        // Update demo point
+        demoPoint = { x1, x2 };
+        demoCoordinates.textContent = `Demo Point: (${x1.toFixed(2)}, ${x2.toFixed(2)})`;
+        
+        // Update visualizations
+        drawCanvas();
+        drawNetworkGraph();
+        showForwardPassSteps();
+    }
+
+    // Handle demo point button
+    function handleDemoPoint() {
+        isDemoMode = !isDemoMode;
+        if (isDemoMode) {
+            demoPointBtn.textContent = 'Exit Demo';
+            demoPointBtn.style.backgroundColor = '#e74c3c';
+            demoCoordinates.textContent = 'Click on the plot to select a demo point';
+            canvas.style.cursor = 'crosshair';
+        } else {
+            demoPointBtn.textContent = 'Demo Point';
+            demoPointBtn.style.backgroundColor = '#9b59b6';
+            demoCoordinates.textContent = 'Click to select a point';
+            canvas.style.cursor = 'default';
+        }
+        drawCanvas();
+    }
+
+    // Draw network graph visualization
+    function drawNetworkGraph() {
+        networkCtx.clearRect(0, 0, networkCanvasWidth, networkCanvasHeight);
+        
+        if (weights.W1.length === 0) return;
+        
+        const layerSpacing = networkCanvasWidth / 4;
+        const inputX = layerSpacing;
+        const hiddenX = layerSpacing * 2;
+        const outputX = layerSpacing * 3;
+        
+        // Calculate neuron positions
+        const inputPositions = [
+            { x: inputX, y: networkCanvasHeight * 0.3, label: 'x₁', value: demoPoint.x1 },
+            { x: inputX, y: networkCanvasHeight * 0.7, label: 'x₂', value: demoPoint.x2 }
+        ];
+        
+        const hiddenPositions = [];
+        for (let i = 0; i < hiddenUnits; i++) {
+            const y = networkCanvasHeight * (0.1 + 0.8 * i / (hiddenUnits - 1));
+            hiddenPositions.push({ 
+                x: hiddenX, 
+                y: y, 
+                label: `h${i+1}`,
+                value: 0 // Will be calculated during forward pass
+            });
+        }
+        
+        const outputPosition = { 
+            x: outputX, 
+            y: networkCanvasHeight * 0.5, 
+            label: 'y',
+            value: 0 // Will be calculated during forward pass
+        };
+        
+        // Calculate forward pass values for demo point
+        const forward = forwardPass([demoPoint.x1, demoPoint.x2]);
+        
+        // Update hidden layer values
+        for (let i = 0; i < hiddenUnits; i++) {
+            hiddenPositions[i].value = forward.hiddenActivations[i];
+        }
+        outputPosition.value = forward.output;
+        
+        // Draw connections with weights
+        drawConnections(inputPositions, hiddenPositions, weights.W1, 'input-hidden');
+        drawConnections(hiddenPositions, [outputPosition], [weights.W2], 'hidden-output');
+        
+        // Draw neurons
+        drawNeurons(inputPositions, 'input');
+        drawNeurons(hiddenPositions, 'hidden');
+        drawNeurons([outputPosition], 'output');
+        
+        // Draw layer labels
+        drawLayerLabels();
+    }
+
+    // Draw connections between layers
+    function drawConnections(fromLayer, toLayer, weightMatrix, connectionType) {
+        const maxWeight = Math.max(...weightMatrix.flat().map(Math.abs));
+        
+        for (let i = 0; i < fromLayer.length; i++) {
+            for (let j = 0; j < toLayer.length; j++) {
+                const weight = connectionType === 'input-hidden' ? weightMatrix[i][j] : weightMatrix[j];
+                const normalizedWeight = weight / (maxWeight || 1);
+                
+                // Color and thickness based on weight
+                const opacity = Math.min(Math.abs(normalizedWeight), 1);
+                const color = weight >= 0 ? `rgba(46, 204, 113, ${opacity})` : `rgba(231, 76, 60, ${opacity})`;
+                const thickness = Math.max(1, Math.abs(normalizedWeight) * 3);
+                
+                networkCtx.strokeStyle = color;
+                networkCtx.lineWidth = thickness;
+                
+                networkCtx.beginPath();
+                networkCtx.moveTo(fromLayer[i].x + 15, fromLayer[i].y);
+                networkCtx.lineTo(toLayer[j].x - 15, toLayer[j].y);
+                networkCtx.stroke();
+                
+                // Draw weight label
+                const midX = (fromLayer[i].x + toLayer[j].x) / 2;
+                const midY = (fromLayer[i].y + toLayer[j].y) / 2;
+                
+                networkCtx.fillStyle = '#333';
+                networkCtx.font = '10px monospace';
+                networkCtx.textAlign = 'center';
+                networkCtx.fillText(weight.toFixed(2), midX, midY - 2);
+            }
+        }
+    }
+
+    // Draw neurons
+    function drawNeurons(positions, layerType) {
+        for (const pos of positions) {
+            // Determine neuron color based on activation
+            let fillColor = '#ecf0f1';
+            let strokeColor = '#bdc3c7';
+            
+            if (layerType === 'hidden') {
+                const activation = pos.value;
+                if (activation > 0.1) {
+                    fillColor = '#e8f5e8';
+                    strokeColor = '#27ae60';
+                } else {
+                    fillColor = '#fdf2f2';
+                    strokeColor = '#e74c3c';
+                }
+            } else if (layerType === 'output') {
+                const prob = pos.value;
+                if (prob > 0.5) {
+                    fillColor = '#ffe8e8';
+                    strokeColor = '#e74c3c';
+                } else {
+                    fillColor = '#e8f4f8';
+                    strokeColor = '#3498db';
+                }
+            }
+            
+            // Draw neuron circle
+            networkCtx.fillStyle = fillColor;
+            networkCtx.strokeStyle = strokeColor;
+            networkCtx.lineWidth = 2;
+            
+            networkCtx.beginPath();
+            networkCtx.arc(pos.x, pos.y, 15, 0, 2 * Math.PI);
+            networkCtx.fill();
+            networkCtx.stroke();
+            
+            // Draw neuron label
+            networkCtx.fillStyle = '#2c3e50';
+            networkCtx.font = 'bold 12px Arial';
+            networkCtx.textAlign = 'center';
+            networkCtx.fillText(pos.label, pos.x, pos.y + 4);
+            
+            // Draw activation value below neuron
+            networkCtx.fillStyle = '#7f8c8d';
+            networkCtx.font = '10px monospace';
+            networkCtx.fillText(pos.value.toFixed(3), pos.x, pos.y + 30);
+        }
+    }
+
+    // Draw layer labels
+    function drawLayerLabels() {
+        networkCtx.fillStyle = '#34495e';
+        networkCtx.font = 'bold 14px Arial';
+        networkCtx.textAlign = 'center';
+        
+        const layerSpacing = networkCanvasWidth / 4;
+        
+        networkCtx.fillText('Input Layer', layerSpacing, 25);
+        networkCtx.fillText('Hidden Layer', layerSpacing * 2, 25);
+        networkCtx.fillText('(ReLU)', layerSpacing * 2, 40);
+        networkCtx.fillText('Output Layer', layerSpacing * 3, 25);
+        networkCtx.fillText('(Sigmoid)', layerSpacing * 3, 40);
+    }
+
+    // Show detailed forward pass computation steps
+    function showForwardPassSteps() {
+        if (weights.W1.length === 0) {
+            computationSteps.innerHTML = '<p>Train the model first to see forward pass steps.</p>';
+            return;
+        }
+        
+        const forward = forwardPass([demoPoint.x1, demoPoint.x2]);
+        let html = '';
+        
+        // Input layer
+        html += `
+            <div class="step-section">
+                <div class="step-title">1. Input Layer</div>
+                <div class="step-computation">x₁ = ${demoPoint.x1.toFixed(3)}</div>
+                <div class="step-computation">x₂ = ${demoPoint.x2.toFixed(3)}</div>
+            </div>
+        `;
+        
+        // Hidden layer computation
+        html += `
+            <div class="step-section">
+                <div class="step-title">2. Hidden Layer (Linear Transformation)</div>
+        `;
+        
+        for (let i = 0; i < hiddenUnits; i++) {
+            const z = weights.b1[i] + weights.W1[0][i] * demoPoint.x1 + weights.W1[1][i] * demoPoint.x2;
+            html += `
+                <div class="step-computation">
+                    z${i+1} = b${i+1} + w₁₍${i+1}₎×x₁ + w₂₍${i+1}₎×x₂
+                </div>
+                <div class="step-computation">
+                    z${i+1} = ${weights.b1[i].toFixed(3)} + ${weights.W1[0][i].toFixed(3)}×${demoPoint.x1.toFixed(3)} + ${weights.W1[1][i].toFixed(3)}×${demoPoint.x2.toFixed(3)}
+                </div>
+                <div class="step-result">z${i+1} = ${z.toFixed(3)}</div>
+            `;
+        }
+        
+        html += '</div>';
+        
+        // ReLU activation
+        html += `
+            <div class="step-section">
+                <div class="step-title">3. Hidden Layer (ReLU Activation)</div>
+        `;
+        
+        for (let i = 0; i < hiddenUnits; i++) {
+            const z = forward.hiddenPreActivations[i];
+            const a = forward.hiddenActivations[i];
+            html += `
+                <div class="step-computation">h${i+1} = ReLU(z${i+1}) = max(0, ${z.toFixed(3)})</div>
+                <div class="step-result">h${i+1} = ${a.toFixed(3)}</div>
+            `;
+        }
+        
+        html += '</div>';
+        
+        // Output layer
+        html += `
+            <div class="step-section">
+                <div class="step-title">4. Output Layer (Linear Transformation)</div>
+                <div class="step-computation">z_out = b_out + Σ(w_out[i] × h[i])</div>
+                <div class="step-computation">z_out = ${weights.b2.toFixed(3)} + `;
+        
+        for (let i = 0; i < hiddenUnits; i++) {
+            if (i > 0) html += ' + ';
+            html += `${weights.W2[i].toFixed(3)}×${forward.hiddenActivations[i].toFixed(3)}`;
+        }
+        
+        html += `</div><div class="step-result">z_out = ${forward.outputPreActivation.toFixed(3)}</div>`;
+        html += '</div>';
+        
+        // Sigmoid activation
+        html += `
+            <div class="step-section">
+                <div class="step-title">5. Output Layer (Sigmoid Activation)</div>
+                <div class="step-computation">y = σ(z_out) = 1 / (1 + e^(-z_out))</div>
+                <div class="step-computation">y = 1 / (1 + e^(-${forward.outputPreActivation.toFixed(3)}))</div>
+                <div class="step-result">y = ${forward.output.toFixed(3)}</div>
+                <div class="step-result">Predicted Class: ${forward.output >= 0.5 ? '1' : '0'} (${(forward.output * 100).toFixed(1)}% confidence)</div>
+            </div>
+        `;
+        
+        computationSteps.innerHTML = html;
+    }
 
     // Generate dataset
     function generateData() {
@@ -933,6 +1367,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         drawCanvas();
         updateWeightDisplay();
+        drawNetworkGraph();
+        showForwardPassSteps();
     }
 
     // Initialize weights using Xavier/Glorot initialization
@@ -1011,6 +1447,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize the visualization
+    generateData();
+    handleResize();
+    drawNetworkGraph();
+    showForwardPassSteps();
+
     generateData();
     handleResize();
 
