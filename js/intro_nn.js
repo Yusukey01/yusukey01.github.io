@@ -441,6 +441,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         drawDataPoints(xRange, yRange);
+        
+        // Draw demo mode overlay if active
+        if (isDemoMode) {
+            ctx.strokeStyle = '#9b59b6';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(plotMargin - 2, plotMargin - 2, plotWidth + 4, plotHeight + 4);
+            ctx.setLineDash([]);
+            
+            // Add instruction text
+            ctx.fillStyle = '#9b59b6';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('DEMO MODE - Click to select a point', canvasWidth / 2, 30);
+        }
     }
 
     // Calculate X range for display
@@ -1038,8 +1053,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isDemoMode) return;
         
         const rect = canvas.getBoundingClientRect();
-        const canvasX = (event.clientX - rect.left) * (canvasWidth / rect.width);
-        const canvasY = (event.clientY - rect.top) * (canvasHeight / rect.height);
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const canvasX = (event.clientX - rect.left) * scaleX;
+        const canvasY = (event.clientY - rect.top) * scaleY;
+        
+        // Check if click is within the plot area
+        if (canvasX < plotMargin || canvasX > canvasWidth - plotMargin || 
+            canvasY < plotMargin || canvasY > canvasHeight - plotMargin) {
+            return; // Click outside plot area
+        }
         
         // Convert canvas coordinates to data coordinates
         const xRange = calculateXRange();
@@ -1054,8 +1078,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update visualizations
         drawCanvas();
-        drawNetworkGraph();
-        showForwardPassSteps();
+        
+        // Small delay to ensure canvas is updated before network graph
+        setTimeout(() => {
+            drawNetworkGraph();
+            showForwardPassSteps();
+        }, 10);
     }
 
     // Handle demo point button
@@ -1073,6 +1101,8 @@ document.addEventListener('DOMContentLoaded', function() {
             canvas.style.cursor = 'default';
         }
         drawCanvas();
+        drawNetworkGraph();
+        showForwardPassSteps();
     }
 
     // Draw network graph visualization
@@ -1516,8 +1546,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the visualization
     generateData();
     handleResize();
-    drawNetworkGraph();
-    showForwardPassSteps();
+    
+    // Set initial demo coordinates display
+    demoCoordinates.textContent = `Demo Point: (${demoPoint.x1.toFixed(2)}, ${demoPoint.x2.toFixed(2)})`;
+    
+    // Initialize network visualization
+    setTimeout(() => {
+        drawNetworkGraph();
+        showForwardPassSteps();
+    }, 50);
 
     generateData();
     handleResize();
