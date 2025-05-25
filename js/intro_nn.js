@@ -1079,7 +1079,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawNetworkGraph() {
         networkCtx.clearRect(0, 0, networkCanvasWidth, networkCanvasHeight);
         
-        if (weights.W1.length === 0) return;
+        if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
+            // Draw placeholder message
+            networkCtx.fillStyle = '#7f8c8d';
+            networkCtx.font = '16px Arial';
+            networkCtx.textAlign = 'center';
+            networkCtx.fillText('Generate data to see network architecture', networkCanvasWidth / 2, networkCanvasHeight / 2);
+            return;
+        }
         
         const layerSpacing = networkCanvasWidth / 4;
         const inputX = layerSpacing;
@@ -1121,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw connections with weights
         drawConnections(inputPositions, hiddenPositions, weights.W1, 'input-hidden');
-        drawConnections(hiddenPositions, [outputPosition], [weights.W2], 'hidden-output');
+        drawConnections(hiddenPositions, [outputPosition], weights.W2, 'hidden-output');
         
         // Draw neurons
         drawNeurons(inputPositions, 'input');
@@ -1134,11 +1141,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw connections between layers
     function drawConnections(fromLayer, toLayer, weightMatrix, connectionType) {
-        const maxWeight = Math.max(...weightMatrix.flat().map(Math.abs));
+        // Handle different weight matrix structures
+        let allWeights = [];
+        if (connectionType === 'input-hidden') {
+            // weightMatrix is 2D array: weights.W1[input][hidden]
+            allWeights = weightMatrix.flat();
+        } else {
+            // weightMatrix is 1D array: weights.W2[hidden]
+            allWeights = Array.isArray(weightMatrix[0]) ? weightMatrix.flat() : weightMatrix;
+        }
+        
+        const maxWeight = Math.max(...allWeights.map(w => Math.abs(w)));
         
         for (let i = 0; i < fromLayer.length; i++) {
             for (let j = 0; j < toLayer.length; j++) {
-                const weight = connectionType === 'input-hidden' ? weightMatrix[i][j] : weightMatrix[j];
+                let weight;
+                if (connectionType === 'input-hidden') {
+                    weight = weightMatrix[i][j];
+                } else {
+                    weight = weightMatrix[j];
+                }
+                
                 const normalizedWeight = weight / (maxWeight || 1);
                 
                 // Color and thickness based on weight
@@ -1233,8 +1256,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show detailed forward pass computation steps
     function showForwardPassSteps() {
-        if (weights.W1.length === 0) {
-            computationSteps.innerHTML = '<p>Train the model first to see forward pass steps.</p>';
+        if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
+            computationSteps.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">Generate data and train the model to see forward pass steps.</p>';
             return;
         }
         
@@ -1451,7 +1474,6 @@ document.addEventListener('DOMContentLoaded', function() {
     handleResize();
     drawNetworkGraph();
     showForwardPassSteps();
-
     generateData();
     handleResize();
 
