@@ -329,39 +329,142 @@ document.addEventListener('DOMContentLoaded', function() {
         weightValuesContainer.appendChild(outputSection);
     }
 
-    // Draw decision boundary
+    // Draw decision boundary for neural network
     function drawDecisionBoundary(xRange, yRange) {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
         ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         
-        // For neural networks, we need to sample the decision boundary
-        const points = [];
-        const resolution = 100;
+        // For neural networks, we need to find the decision boundary by sampling
+        // the probability space and finding points where p ≈ 0.5
+        const resolution = 200; // Higher resolution for smoother boundary
+        const boundaryPoints = [];
         
+        // Sample the space to find boundary points
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
                 const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
                 const prob = predict(x1, x2);
                 
-                if (Math.abs(prob - 0.5) < 0.02) { // Near decision boundary
+                // Check if this point is near the decision boundary (probability ≈ 0.5)
+                if (Math.abs(prob - 0.5) < 0.03) { // Threshold for boundary detection
                     const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                     const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                    points.push({ x: canvasX, y: canvasY });
+                    boundaryPoints.push({ x: canvasX, y: canvasY, prob: prob });
                 }
             }
         }
         
-        // Draw boundary points
+        // Sort boundary points to create connected curves
+        if (boundaryPoints.length > 0) {
+            // Group nearby points into connected components
+            const connectedComponents = groupNearbyPoints(boundaryPoints, 15);
+            
+            // Draw each connected component as a curve
+            ctx.strokeStyle = '#2ecc71';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            for (const component of connectedComponents) {
+                if (component.length < 3) continue; // Skip very small components
+                
+                // Sort points in the component to create a smooth curve
+                const sortedPoints = sortPointsForCurve(component);
+                
+                ctx.beginPath();
+                ctx.moveTo(sortedPoints[0].x, sortedPoints[0].y);
+                
+                // Draw smooth curve through points
+                for (let i = 1; i < sortedPoints.length; i++) {
+                    ctx.lineTo(sortedPoints[i].x, sortedPoints[i].y);
+                }
+                
+                ctx.stroke();
+            }
+        }
+        
+        // Alternative: Draw boundary points as individual dots if curves don't work well
         ctx.fillStyle = '#2ecc71';
-        for (const point of points) {
+        for (const point of boundaryPoints) {
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
             ctx.fill();
         }
+    }
+
+    // Helper function to group nearby points into connected components
+    function groupNearbyPoints(points, maxDistance) {
+        const components = [];
+        const visited = new Array(points.length).fill(false);
+        
+        for (let i = 0; i < points.length; i++) {
+            if (visited[i]) continue;
+            
+            const component = [];
+            const queue = [i];
+            visited[i] = true;
+            
+            while (queue.length > 0) {
+                const currentIdx = queue.shift();
+                const currentPoint = points[currentIdx];
+                component.push(currentPoint);
+                
+                // Find nearby unvisited points
+                for (let j = 0; j < points.length; j++) {
+                    if (visited[j]) continue;
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(currentPoint.x - points[j].x, 2) + 
+                        Math.pow(currentPoint.y - points[j].y, 2)
+                    );
+                    
+                    if (distance <= maxDistance) {
+                        visited[j] = true;
+                        queue.push(j);
+                    }
+                }
+            }
+            
+            components.push(component);
+        }
+        
+        return components;
+    }
+
+    // Helper function to sort points in a component for smooth curve drawing
+    function sortPointsForCurve(points) {
+        if (points.length <= 2) return points;
+        
+        const sorted = [points[0]];
+        const remaining = points.slice(1);
+        
+        while (remaining.length > 0) {
+            const lastPoint = sorted[sorted.length - 1];
+            let nearestIdx = 0;
+            let nearestDistance = Infinity;
+            
+            // Find the nearest remaining point
+            for (let i = 0; i < remaining.length; i++) {
+                const distance = Math.sqrt(
+                    Math.pow(lastPoint.x - remaining[i].x, 2) + 
+                    Math.pow(lastPoint.y - remaining[i].y, 2)
+                );
+                
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestIdx = i;
+                }
+            }
+            
+            sorted.push(remaining[nearestIdx]);
+            remaining.splice(nearestIdx, 1);
+        }
+        
+        return sorted;
     }
 
     // Draw data points
@@ -561,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="visualizer-container">
             <div class="visualizer-layout">
                 <div class="canvas-container">
-                    <div class="instruction">Neural Network Classification (Input → Hidden → Output)</div>
+                    <div class="instruction">Neural Network Classification - Non-linear Decision Boundaries</div>
                     <div id="canvas-wrapper">
                         <canvas id="neural-network-canvas" width="800" height="500"></canvas>
                     </div>
@@ -1557,6 +1660,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 50);
 
     generateData();
-    handleResize();
+     handleResize();
 
 });
