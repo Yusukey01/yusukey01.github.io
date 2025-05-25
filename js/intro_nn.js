@@ -337,9 +337,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         
-        // For neural networks, we need to sample the decision boundary
+        // For neural networks, we need to sample the decision boundary more precisely
         const points = [];
-        const resolution = 80; // Moderate resolution
+        const resolution = 120; // Higher resolution for more precise boundary
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -347,7 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
                 const prob = predict(x1, x2);
                 
-                if (Math.abs(prob - 0.5) < 0.04) { // Near decision boundary
+                // Much tighter threshold for actual decision boundary (probability = 0.5)
+                if (Math.abs(prob - 0.5) < 0.015) { // Tighter threshold for thin boundary
                     const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                     const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                     points.push({ x: canvasX, y: canvasY });
@@ -355,11 +356,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Draw boundary points
+        // Draw boundary points as smaller dots to create thin line appearance
         ctx.fillStyle = '#2ecc71';
         for (const point of points) {
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+            ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI); // Smaller radius for thinner line
             ctx.fill();
         }
     }
