@@ -21,8 +21,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let iterations = 0;
         let previousLoss = Infinity;
         let currentLoss = calculateLoss();
+        let bestAccuracy = 0;
+        let stagnantIterations = 0;
 
         const minLossChange = 1e-6;
+        const maxStagnantIterations = 50; // Stop if no improvement for 50 iterations
 
         while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
             previousLoss = currentLoss;
@@ -35,14 +38,34 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Calculate new loss
             currentLoss = calculateLoss();
+            const currentAccuracy = calculateAccuracy();
+            
+            // Check for improvement
+            if (currentAccuracy > bestAccuracy) {
+                bestAccuracy = currentAccuracy;
+                stagnantIterations = 0;
+            } else {
+                stagnantIterations++;
+            }
+            
+            // Early stopping if accuracy is very good
+            if (currentAccuracy > 0.95) {
+                console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
+                break;
+            }
+            
+            // Early stopping if no improvement
+            if (stagnantIterations > maxStagnantIterations) {
+                console.log(`Early stopping: No improvement for ${maxStagnantIterations} iterations`);
+                break;
+            }
             
             // Update display every 10 iterations to avoid UI freezes
             if (iterations % 10 === 0) {
-                const accuracy = calculateAccuracy();
                 const testAcc = calculateTestAccuracy();
                 
                 if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
-                if (accuracyElement) accuracyElement.textContent = (accuracy * 100).toFixed(1) + '%';
+                if (accuracyElement) accuracyElement.textContent = (currentAccuracy * 100).toFixed(1) + '%';
                 if (testAccuracyElement) testAccuracyElement.textContent = (testAcc * 100).toFixed(1) + '%';
                 
                 updateWeightDisplay();
@@ -50,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Log progress for debugging
                 if (iterations % 50 === 0) {
-                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(accuracy*100).toFixed(1)}%`);
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%`);
                 }
                 
                 // Pause to allow UI to update
@@ -374,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Sample the decision boundary with moderate resolution
         const points = [];
-        const resolution = 100;
+        const resolution = 80; // Reduced resolution to avoid too many points
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -389,8 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         continue;
                     }
                     
-                    // Decision boundary: where probability is close to 0.5
-                    if (Math.abs(prob - 0.5) < 0.02) {
+                    // Much tighter threshold for cleaner boundary
+                    if (Math.abs(prob - 0.5) < 0.01) { // Very tight threshold
                         const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                         const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                         
@@ -417,12 +440,38 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fill();
         }
         
-        // If no boundary points found, draw a message
-        if (points.length === 0) {
-            ctx.fillStyle = '#e74c3c';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('No decision boundary found - train the model first', canvasWidth / 2, canvasHeight - 20);
+        // If very few boundary points, use wider threshold
+        if (points.length < 50) {
+            const widerPoints = [];
+            for (let i = 0; i <= resolution; i++) {
+                for (let j = 0; j <= resolution; j++) {
+                    const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
+                    const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
+                    
+                    try {
+                        const prob = predict(x1, x2);
+                        if (!isNaN(prob) && prob >= 0 && prob <= 1 && Math.abs(prob - 0.5) < 0.03) {
+                            const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+                            const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+                            
+                            if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
+                                canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+                                widerPoints.push({ x: canvasX, y: canvasY });
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+            }
+            
+            // Draw wider threshold points in lighter color
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.5)';
+            for (const point of widerPoints) {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+                ctx.fill();
+            }
         }
     }
 
@@ -1474,32 +1523,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate dataset
     function generateData() {
-        const numPoints = 100;
-        const trainSize = 70;
+        const numPoints = 120; // Slightly more data
+        const trainSize = 80;  // More training data
         const allPoints = [];
         
         // Generate data with non-linear separation (XOR-like or circular pattern)
         const pattern = Math.random() > 0.5 ? 'xor' : 'circle';
         
-        for (let i = 0; i < numPoints; i++) {
-            const x1 = Math.random() * 2 - 1; // Range: -1 to 1
-            const x2 = Math.random() * 2 - 1; // Range: -1 to 1
-            
-            let y;
-            if (pattern === 'xor') {
-                // XOR-like pattern - cleaner separation
-                y = (x1 > 0) !== (x2 > 0) ? 1 : 0; // Use !== for clearer XOR
-                // Add less noise to make it more learnable
-                if (Math.random() < 0.05) y = 1 - y;
-            } else {
-                // Circular pattern - cleaner separation
-                const radius = Math.sqrt(x1 * x1 + x2 * x2);
-                y = radius < 0.7 ? 1 : 0; // Slightly larger radius for better separation
-                // Add less noise
-                if (Math.random() < 0.05) y = 1 - y;
+        if (pattern === 'xor') {
+            // Generate clean XOR pattern
+            for (let i = 0; i < numPoints; i++) {
+                const x1 = Math.random() * 1.8 - 0.9; // Slightly smaller range for better separation
+                const x2 = Math.random() * 1.8 - 0.9;
+                
+                // Clean XOR pattern with clear margins
+                let y = (x1 > 0) !== (x2 > 0) ? 1 : 0;
+                
+                // Add minimal noise only far from boundaries
+                if (Math.abs(x1) > 0.2 && Math.abs(x2) > 0.2 && Math.random() < 0.03) {
+                    y = 1 - y;
+                }
+                
+                allPoints.push({ x1, x2, y });
             }
-            
-            allPoints.push({ x1, x2, y });
+        } else {
+            // Generate clean circular pattern
+            for (let i = 0; i < numPoints; i++) {
+                const x1 = Math.random() * 2 - 1;
+                const x2 = Math.random() * 2 - 1;
+                
+                const radius = Math.sqrt(x1 * x1 + x2 * x2);
+                let y = radius < 0.65 ? 1 : 0; // Clear separation at radius 0.65
+                
+                // Add minimal noise only in clear regions
+                if ((radius < 0.4 || radius > 0.8) && Math.random() < 0.03) {
+                    y = 1 - y;
+                }
+                
+                allPoints.push({ x1, x2, y });
+            }
         }
         
         // Shuffle for random train-test split
@@ -1511,6 +1573,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Split into training and test sets
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
+        
+        console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test points`);
         
         // Initialize weights BEFORE calling any drawing functions
         initializeWeights();
