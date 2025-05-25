@@ -271,7 +271,6 @@ uses_python: false
            <section id="kernel" class="section-content">
                 <h2>Kernel Methods</h2>
 
-                <!-- 1. Motivation -->
                 <p>
                     In many problems the original feature vectors \(x\in\mathbb{R}^D\) are not <strong>linearly separable</strong>.  
                     One fix is to apply a nonlinear <strong>feature mapping</strong>
@@ -281,7 +280,6 @@ uses_python: false
                     hoping that \(\{\phi(x_n)\}\) become separable.  But explicit mappings can blow up model complexity and lead to overfitting, even with regularization.
                 </p>
 
-                <!-- 2. Kernel Trick -->
                 <p>
                     Alternatively, if a learning algorithm depends <em>only</em> on inner products
                     \(\langle \phi(x),\phi(x')\rangle\), we can invoke the <strong>kernel trick</strong>:
@@ -289,7 +287,6 @@ uses_python: false
                     \(K(x,x')\) that computes \(\langle\phi(x),\phi(x')\rangle\) implicitly—no \(\phi\) ever constructed.
                 </p>
 
-                <!-- 3. Formal Definition -->
                 <div class="theorem">
                     <span class="theorem-title">Kernel</span>  
                     A function
@@ -300,10 +297,9 @@ uses_python: false
                     \[
                     \forall\,x,x',\quad K(x,x') = \langle \phi(x),\,\phi(x')\rangle.
                     \]
-                    In practice \(K\) must also be symmetric and positive semi-definite (Mercer’s condition).
+                    In practice \(K\) must also be symmetric and positive semi-definite (Mercer's condition).
                 </div>
 
-                <!-- 4. Kernel Matrix -->
                 <p>
                     Concretely, we build the <strong>kernel matrix</strong>
                     \[
@@ -312,17 +308,16 @@ uses_python: false
                     and run our algorithm using \(\{K_{ij}\}\) instead of \(\{\phi(x_i)\}\).
                 </p>
 
-                <!-- 5. Scalability & Alternatives -->
                 <p>
                     For large \(N\) (e.g. \(>10^5\)), storing \(N\times N\) kernels is infeasible.  
                     Two common remedies are:
                 </p>
-                <ul>
+                <ul style="padding-left: 40px;">
                     <li>
                     <strong>Random Fourier Features</strong> (next section): approximate RBF kernels with \(O(ND')\) cost.
                     </li>
                     <li>
-                    <strong>Representation learning</strong>: learn \(\phi(x;\theta)\) via neural networks and optimize by mini-batch SGD.
+                    <strong>Representation learning</strong>: learn \(\phi(x;\theta)\) via <strong>neural networks</strong> and optimize by mini-batch SGD.
                     </li>
                 </ul>
                 </section>
@@ -330,25 +325,24 @@ uses_python: false
                 <section id="rbf-approx" class="section-content">
                 <h2>RBF Kernel &amp; Random Fourier Features</h2>
 
-                <!-- 1. RBF Kernel Definition -->
                 <p>
-                    A popular choice is the <strong>RBF (Gaussian) kernel</strong>:
+                     Among the many valid kernel functions, one of the most widely used is the <strong>RBF (Gaussian) kernel</strong>:
                     \[
                     K_{\mathrm{RBF}}(x,x') = \exp\Bigl(-\tfrac{\|x-x'\|^2}{2\sigma^2}\Bigr),
                     \]
                     which corresponds to an infinite-dimensional feature map.
+                    <br>
+                    Note: RBF stands for "Radical Basis Function."
                 </p>
 
-                <!-- 2. Bochner’s Theorem -->
                 <p>
-                    By Bochner’s theorem, any shift-invariant kernel admits the representation
+                    By Bochner's theorem, any shift-invariant kernel admits the representation
                     \[
                     K_{\mathrm{RBF}}(x,x') 
                     = \mathbb{E}_{\omega\sim\mathcal{N}(0,\sigma^{-2}I)}\bigl[\cos(\omega^\top(x-x'))\bigr].
                     \]
                 </p>
 
-                <!-- 3. Random Fourier Features -->
                 <p>
                     To approximate, sample \(D'\) frequencies \(\{\omega_k\}\) and phases \(\{b_k\}\sim\mathrm{Uniform}[0,2\pi]\),
                     then define
@@ -359,29 +353,60 @@ uses_python: false
                     \]
                 </p>
 
-                <!-- 4. Approximation Guarantee -->
                 <p>
                     One shows
                     \[
                     \phi_{\mathrm{RFF}}(x)^\top \phi_{\mathrm{RFF}}(x') 
                     \;\approx\; K_{\mathrm{RBF}}(x,x'),
                     \]
-                    so you can train a regularized <strong>linear</strong> model on these \(D'\)-dim features in \(O(ND')\) time, avoiding the \(O(N^2)\) kernel matrix.
+                    so we can train a regularized <strong>linear</strong> model on these \(D'\)-dim features in \(O(ND')\) time, 
+                    avoiding the \(O(N^2)\) kernel matrix.
                 </p>
                 </section>
 
+                <section id="mlr" class="section-content">
+                    <h2>Multinomial Logistic Regression</h2>
 
+                    <p>
+                        When there are more than two classes (\(C>2\)), we generalize the sigmoid to the
+                        <strong>softmax</strong> function.  For inputs \(x\in\mathbb{R}^D\) and class weights
+                        \(\{w_c,b_c\}_{c=1}^C\), the model defines
+                        \[
+                        p(y=c\,|\,x,\theta)
+                        = \frac{\exp\!\bigl(w_c^\top x + b_c\bigr)}
+                                {\sum_{c'=1}^C \exp\!\bigl(w_{c'}^\top x + b_{c'}\bigr)},
+                        \quad c=1,\dots,C.
+                        \]
+                    </p>
 
+                    <p>
+                        We fit \(\theta=\{w_c,b_c\}\) by minimizing the average <strong>cross-entropy</strong> loss
+                        \[
+                        \mathrm{NLL}(\theta)
+                        = -\frac{1}{N}\sum_{n=1}^N
+                            \sum_{c=1}^C
+                            \mathbb{I}\{y_n=c\}\,\log p(y_n=c\,|\,x_n,\theta).
+                        \]
+                    </p>
 
-             <section id="mlr" class="section-content">
-                <h2>Multinomial logistic regression</h2>
+                    <p>
+                        The gradient has a similarly clean form:
+                        \[
+                        \frac{\partial\mathrm{NLL}}{\partial w_c}
+                        = \frac{1}{N}\sum_{n=1}^N
+                            \Bigl[p(y_n=c\,|\,x_n)-\mathbb{I}\{y_n=c\}\Bigr]\,x_n,
+                        \]
+                        and you can optimize it via batch or (mini-batch) gradient descent.
+                    </p>
 
-            </section>
+                    <p>
+                        The Hessian is block-structured but remains positive semi-definite, ensuring convexity.
+                    </p>
+                    </section>
 
-            <section id="" class="section-content">
-                <h2></h2>
+                
 
-            </section>
+          
             
         </div>
         <script src="/js/main.js"></script> 
