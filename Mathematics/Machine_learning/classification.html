@@ -268,97 +268,108 @@ uses_python: false
                 <div id="logistic_regression_visualizer"></div>
             </section>
 
-            <section id="kernel" class="section-content">
+           <section id="kernel" class="section-content">
                 <h2>Kernel Methods</h2>
+
+                <!-- 1. Motivation -->
                 <p>
                     In many problems the original feature vectors \(x\in\mathbb{R}^D\) are not <strong>linearly separable</strong>.  
-                    One approach is to apply a nonlinear <strong>feature mapping</strong>
+                    One fix is to apply a nonlinear <strong>feature mapping</strong>
                     \[
                     \phi(x)\colon\mathbb{R}^D\to\mathbb{R}^P,\quad P\gg D,
                     \]
-                    hoping that \(\{\phi(x_n)\}\) become separable in the higher-dimensional space. However, such mappings increase 
-                    model capacity and can lead to <strong>overfitting</strong>, so we often combine them with regularization.
+                    hoping that \(\{\phi(x_n)\}\) become separable.  But explicit mappings can blow up model complexity and lead to overfitting, even with regularization.
                 </p>
 
+                <!-- 2. Kernel Trick -->
                 <p>
-                    Alternatively, if a learning algorithm can be expressed solely in terms of inner products
-                    \(\langle \phi(x),\phi(x')\rangle\), we can invoke the <strong>kernel trick</strong> to work implicitly in 
-                    the high-dimensional feature space without ever computing \(\phi(x)\) directly.
+                    Alternatively, if a learning algorithm depends <em>only</em> on inner products
+                    \(\langle \phi(x),\phi(x')\rangle\), we can invoke the <strong>kernel trick</strong>:
+                    replace each dot-product with a <strong>kernel function</strong> 
+                    \(K(x,x')\) that computes \(\langle\phi(x),\phi(x')\rangle\) implicitly—no \(\phi\) ever constructed.
                 </p>
-                
+
+                <!-- 3. Formal Definition -->
                 <div class="theorem">
-                    <span class="theorem-title">Kernel:</span>  
+                    <span class="theorem-title">Kernel</span>  
                     A function
                     \[
                     K : \mathbb{R}^D \times \mathbb{R}^D \;\to\; \mathbb{R}
                     \]
-                    is called a <strong>kernel</strong> for a feature map 
-                    \(\phi : \mathbb{R}^D \to \mathbb{R}^P\) if
+                    is a <strong>kernel</strong> for some feature map \(\phi\) if
                     \[
-                    \forall\,x,x',\quad
-                    K(x, x') = \bigl\langle \phi(x),\,\phi(x')\bigr\rangle.
+                    \forall\,x,x',\quad K(x,x') = \langle \phi(x),\,\phi(x')\rangle.
                     \]
-                    In practice, \(K\) must also be symmetric and positive semi-definite.
+                    In practice \(K\) must also be symmetric and positive semi-definite (Mercer’s condition).
                 </div>
 
+                <!-- 4. Kernel Matrix -->
                 <p>
-                    Concretely, if the algorithm and its decision rule depend only on inner products
-                    \(\langle \phi(x_i), \phi(x_j)\rangle\), one forms the <strong>kernel matrix</strong>
+                    Concretely, we build the <strong>kernel matrix</strong>
                     \[
-                    K_{ij} = K(x_i, x_j),\qquad i,j=1,\dots,N,
+                    K_{ij} = K(x_i,x_j),\quad i,j=1,\dots,N,
                     \]
-                    and carries out learning using \(\bigl[K_{ij}\bigr]\) instead of the explicit vectors \(\phi(x_i)\).
+                    and run our algorithm using \(\{K_{ij}\}\) instead of \(\{\phi(x_i)\}\).
                 </p>
 
+                <!-- 5. Scalability & Alternatives -->
                 <p>
-                    Any algorithm whose training or decision rule can be written entirely in terms of inner products 
-                    \(\langle \phi(x_i), \phi(x_j)\rangle\) can be kernelized. However, if the \(N\) is very large(e.g. > 100k), 
-                    storing a kernel matrix \(K \in \mathbb{R}^{ N\times N}\) becomes impractical. One common solution is 
-                    <strong>representation Learning</strong> that we use a <strong>neural network</strong> to learn feature 
-                    mapping \(\phi\) directly. (We will dicuss it in the future page.)
+                    For large \(N\) (e.g. \(>10^5\)), storing \(N\times N\) kernels is infeasible.  
+                    Two common remedies are:
                 </p>
+                <ul>
+                    <li>
+                    <strong>Random Fourier Features</strong> (next section): approximate RBF kernels with \(O(ND')\) cost.
+                    </li>
+                    <li>
+                    <strong>Representation learning</strong>: learn \(\phi(x;\theta)\) via neural networks and optimize by mini-batch SGD.
+                    </li>
+                </ul>
                 </section>
 
                 <section id="rbf-approx" class="section-content">
-                <h2>RBF Kernel & Random Fourier Features</h2>
+                <h2>RBF Kernel &amp; Random Fourier Features</h2>
+
+                <!-- 1. RBF Kernel Definition -->
                 <p>
-                    A particularly popular choice is the <strong>Radial Basis Function (RBF) kernel</strong>, also known as the Gaussian kernel:
+                    A popular choice is the <strong>RBF (Gaussian) kernel</strong>:
                     \[
-                    K_{\text{RBF}}(x, x') = \exp\!\bigl(-\tfrac{\|x - x'\|^2}{2\sigma^2}\bigr),
+                    K_{\mathrm{RBF}}(x,x') = \exp\Bigl(-\tfrac{\|x-x'\|^2}{2\sigma^2}\Bigr),
                     \]
-                    where \(\sigma\) controls the “width” of the Gaussian.  This kernel corresponds to an infinite-dimensional feature map.
+                    which corresponds to an infinite-dimensional feature map.
                 </p>
 
+                <!-- 2. Bochner’s Theorem -->
                 <p>
-                    Although powerful, working directly with \(K_{\text{RBF}}\) suffers the usual \(O(N^2)\)-storage bottleneck.  
-                    Instead, one can <strong>approximate</strong> the RBF kernel via <strong>Random Fourier Features</strong>:
-                </p>
-
-                <p>
-                    By Bochner's theorem, for a shift-invariant kernel \(K(x - x')\), we can write
+                    By Bochner’s theorem, any shift-invariant kernel admits the representation
                     \[
-                    K_{\text{RBF}}(x, x') 
-                    = \mathbb{E}_{\omega \sim \mathcal{N}(0,\,\tfrac{1}{\sigma^2}I)}
-                    \Bigl[\cos\!\bigl(\omega^\top(x - x')\bigr)\Bigr].
-                    \]
-                    Sampling \(D'\) frequencies \(\{\omega_k\}_{k=1}^{D'}\) and random phases \(\{b_k\}\)
-                    with \(b_k \sim \mathrm{Uniform}[0,2\pi]\), define the explicit map
-                    \[
-                    \phi_{\text{RFF}}(x)
-                    = \sqrt{\tfrac{2}{D'}}\,
-                        \bigl[\cos(\omega_1^\top x + b_1),\dots,\cos(\omega_{D'}^\top x + b_{D'})\bigr].
+                    K_{\mathrm{RBF}}(x,x') 
+                    = \mathbb{E}_{\omega\sim\mathcal{N}(0,\sigma^{-2}I)}\bigl[\cos(\omega^\top(x-x'))\bigr].
                     \]
                 </p>
 
+                <!-- 3. Random Fourier Features -->
                 <p>
-                    Then
+                    To approximate, sample \(D'\) frequencies \(\{\omega_k\}\) and phases \(\{b_k\}\sim\mathrm{Uniform}[0,2\pi]\),
+                    then define
                     \[
-                    \phi_{\text{RFF}}(x)^\top \phi_{\text{RFF}}(x')
-                    \approx K_{\text{RBF}}(x, x'),
+                    \phi_{\mathrm{RFF}}(x)
+                    = \sqrt{\frac{2}{D'}}\,
+                        \bigl[\cos(\omega_1^\top x + b_1),\,\dots,\,\cos(\omega_{D'}^\top x + b_{D'})\bigr]\in\mathbb{R}^{D'}.
                     \]
-                    and you can train a regularized linear model on these \(D'\)-dimensional features in \(O(ND')\) time, bypassing the \(N\times N\) kernel matrix entirely.
+                </p>
+
+                <!-- 4. Approximation Guarantee -->
+                <p>
+                    One shows
+                    \[
+                    \phi_{\mathrm{RFF}}(x)^\top \phi_{\mathrm{RFF}}(x') 
+                    \;\approx\; K_{\mathrm{RBF}}(x,x'),
+                    \]
+                    so you can train a regularized <strong>linear</strong> model on these \(D'\)-dim features in \(O(ND')\) time, avoiding the \(O(N^2)\) kernel matrix.
                 </p>
                 </section>
+
 
 
 
