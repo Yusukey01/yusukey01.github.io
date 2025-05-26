@@ -1640,30 +1640,103 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize weights using Xavier/Glorot initialization
     function initializeWeights() {
+        console.log('Initializing weights for first training...');
+        
         const inputSize = 2;
         
-        // Use proper Xavier/Glorot initialization for sigmoid output
+        // Strategy: Use smaller, more carefully chosen weights
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
         
-        // For ReLU hidden layer, use He initialization but scale it down
-        const w1Scale = Math.sqrt(2.0 / inputSize) * 0.5; // Reduce scale for stability
+        // For ReLU networks, use a more conservative approach
+        const w1Scale = Math.sqrt(2.0 / (inputSize + hiddenUnits)) * 0.8; // Smaller scale
+        
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
-                weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
+                // Use normal distribution instead of uniform
+                weights.W1[i][j] = randomNormal(0, w1Scale);
             }
         }
         
-        // Initialize hidden biases to small positive values to help ReLU
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.02 + 0.01);
+        // Initialize biases to encourage activation diversity
+        weights.b1 = Array(hiddenUnits).fill(0).map((_, i) => {
+            // Stagger the biases to encourage different neurons to activate
+            return (i / hiddenUnits - 0.5) * 0.2; // Range from -0.1 to 0.1
+        });
         
-        // For output layer (going to sigmoid), use Xavier initialization
-        const w2Scale = Math.sqrt(6.0 / (hiddenUnits + 1)) * 0.7; // Xavier with scaling
-        weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
+        // Output layer: very conservative initialization
+        const w2Scale = Math.sqrt(1.0 / hiddenUnits) * 0.5; // Smaller for stability
+        weights.W2 = Array(hiddenUnits).fill(0).map(() => randomNormal(0, w2Scale));
         
-        // Output bias to small negative value to start conservative
-        weights.b2 = -0.01;
+        // Output bias: start slightly negative to be conservative
+        weights.b2 = -0.1;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
+        
+        // Verify initialization quality
+        verifyInitialization();
+    }
+
+    // Helper function for normal distribution random numbers
+    function randomNormal(mean = 0, std = 1) {
+        // Box-Muller transform for normal distribution
+        if (randomNormal.hasSpare) {
+            randomNormal.hasSpare = false;
+            return randomNormal.spare * std + mean;
+        } else {
+            randomNormal.hasSpare = true;
+            const u = Math.random();
+            const v = Math.random();
+            const mag = std * Math.sqrt(-2 * Math.log(u));
+            randomNormal.spare = mag * Math.cos(2 * Math.PI * v);
+            return mag * Math.sin(2 * Math.PI * v) + mean;
+        }
+    }
+
+    // Verify that initialization produces reasonable activations
+    function verifyInitialization() {
+        if (data.length === 0) return;
+        
+        const sampleInputs = [
+            [0.5, 0.5],
+            [-0.5, 0.5], 
+            [0.5, -0.5],
+            [-0.5, -0.5]
+        ];
+        
+        let totalActiveNeurons = 0;
+        let totalPredictions = 0;
+        
+        for (const inputs of sampleInputs) {
+            try {
+                const forward = forwardPass(inputs);
+                const activeNeurons = forward.hiddenActivations.filter(a => a > 0.01).length;
+                totalActiveNeurons += activeNeurons;
+                totalPredictions += forward.output;
+            } catch (e) {
+                console.warn('Error in initialization verification:', e);
+                return;
+            }
+        }
+        
+        const avgActiveNeurons = totalActiveNeurons / sampleInputs.length;
+        const avgPrediction = totalPredictions / sampleInputs.length;
+        
+        console.log(`Initialization check: Avg active neurons: ${avgActiveNeurons.toFixed(1)}/${hiddenUnits}, Avg prediction: ${avgPrediction.toFixed(3)}`);
+        
+        // If initialization is bad, try again
+        if (avgActiveNeurons < hiddenUnits * 0.3 || avgActiveNeurons > hiddenUnits * 0.8) {
+            console.log('Poor initialization detected, reinitializing...');
+            initializeWeights(); // Recursive call to try again
+            return;
+        }
+        
+        if (avgPrediction < 0.1 || avgPrediction > 0.9) {
+            console.log('Prediction too extreme, reinitializing...');
+            initializeWeights(); // Recursive call to try again
+            return;
+        }
+        
+        console.log('Initialization looks good!');
     }
 
     // Draw coordinate axes
