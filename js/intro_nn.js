@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="canvas-container">
                     <div class="instruction">Neural Network Classification - Non-linear Decision Boundaries</div>
                     <div id="canvas-wrapper">
-                        <canvas id="neural-network-canvas" width="800" height="500"></canvas>
+                        <canvas id="neural-network-canvas" width="700" height="400"></canvas>
                     </div>
                     <div class="legend">
                         <div class="legend-item"><span class="legend-color class0"></span> Train Class 0</div>
