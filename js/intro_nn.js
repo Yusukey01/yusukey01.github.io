@@ -718,17 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="visualizer-container">
             <div class="visualizer-layout">
                 
-
                 <div class="network-visualization">
-                    <h3>Network Architecture & Forward Pass</h3>
-                    <div class="demo-controls">
-                        <button id="demo-point-btn" class="demo-btn">Demo Point</button>
-                        <span id="demo-coordinates">Click to select a point</span>
-                    </div>
-                    <div id="network-graph-container">
-                        <canvas id="network-graph" width="600" height="300"></canvas>
-                    </div>
-                    <div id="computation-steps"></div>
                     <div class="canvas-container">
                     <div class="instruction">Neural Network Classification - Non-linear Decision Boundaries</div>
                     <div id="canvas-wrapper">
@@ -748,6 +738,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button id="generate-btn" class="secondary-btn">Generate New Data</button>
                     </div>
                 </div>
+                    <h3>Network Architecture & Forward Pass</h3>
+                    <div class="demo-controls">
+                        <button id="demo-point-btn" class="demo-btn">Demo Point</button>
+                        <span id="demo-coordinates">Click to select a point</span>
+                    </div>
+                    <div id="network-graph-container">
+                        <canvas id="network-graph" width="600" height="300"></canvas>
+                    </div>
+                    <div id="computation-steps"></div>
+                    
                 </div>
 
                 <div class="controls-panel">
