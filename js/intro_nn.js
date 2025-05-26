@@ -1814,15 +1814,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
     }
 
-    //restart approach
-    function setupImprovedTraining() {
-        // Replace the existing train button event listener
-        if (trainBtn) {
-            trainBtn.removeEventListener('click', trainModel);
-            trainBtn.addEventListener('click', trainModelWithRestarts);
-        }
-    }
-
     // Initialize the visualization
     generateData();
     handleResize();
