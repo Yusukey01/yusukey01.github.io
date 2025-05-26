@@ -307,11 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.max(0, x);
     }
 
-    // ReLU derivative
-    function reluDerivative(x) {
-        return x > 0 ? 1 : 0;
-    }
-
     // Sigmoid function
     function sigmoid(z) {
         if (z < -20) return 0;
@@ -1373,14 +1368,11 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < fromLayer.length; i++) {
             for (let j = 0; j < toLayer.length; j++) {
                 let weight;
-                try {
-                    if (connectionType === 'input-hidden') {
-                        weight = weightMatrix[i] && weightMatrix[i][j] !== undefined ? weightMatrix[i][j] : 0;
-                    } else {
-                        weight = weightMatrix[j] !== undefined ? weightMatrix[j] : 0;
-                    }
-                } catch (e) {
-                    weight = 0;
+            
+                if (connectionType === 'input-hidden') {
+                    weight = weightMatrix[i] && weightMatrix[i][j] !== undefined ? weightMatrix[i][j] : 0;
+                } else {
+                    weight = weightMatrix[j] !== undefined ? weightMatrix[j] : 0;
                 }
                 
                 // Ensure weight is a number
@@ -1699,69 +1691,6 @@ document.addEventListener('DOMContentLoaded', function() {
         weights.b2 = -0.1;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
-    }
-
-    // Helper function for normal distribution random numbers
-    function randomNormal(mean = 0, std = 1) {
-        // Box-Muller transform for normal distribution
-        if (randomNormal.hasSpare) {
-            randomNormal.hasSpare = false;
-            return randomNormal.spare * std + mean;
-        } else {
-            randomNormal.hasSpare = true;
-            const u = Math.random();
-            const v = Math.random();
-            const mag = std * Math.sqrt(-2 * Math.log(u));
-            randomNormal.spare = mag * Math.cos(2 * Math.PI * v);
-            return mag * Math.sin(2 * Math.PI * v) + mean;
-        }
-    }
-
-    // Verify that initialization produces reasonable activations
-    function verifyInitialization() {
-        if (data.length === 0) return;
-        
-        const sampleInputs = [
-            [0.5, 0.5],
-            [-0.5, 0.5], 
-            [0.5, -0.5],
-            [-0.5, -0.5]
-        ];
-        
-        let totalActiveNeurons = 0;
-        let totalPredictions = 0;
-        
-        for (const inputs of sampleInputs) {
-            try {
-                const forward = forwardPass(inputs);
-                const activeNeurons = forward.hiddenActivations.filter(a => a > 0.01).length;
-                totalActiveNeurons += activeNeurons;
-                totalPredictions += forward.output;
-            } catch (e) {
-                console.warn('Error in initialization verification:', e);
-                return;
-            }
-        }
-        
-        const avgActiveNeurons = totalActiveNeurons / sampleInputs.length;
-        const avgPrediction = totalPredictions / sampleInputs.length;
-        
-        console.log(`Initialization check: Avg active neurons: ${avgActiveNeurons.toFixed(1)}/${hiddenUnits}, Avg prediction: ${avgPrediction.toFixed(3)}`);
-        
-        // If initialization is bad, try again
-        if (avgActiveNeurons < hiddenUnits * 0.3 || avgActiveNeurons > hiddenUnits * 0.8) {
-            console.log('Poor initialization detected, reinitializing...');
-            initializeWeights(); // Recursive call to try again
-            return;
-        }
-        
-        if (avgPrediction < 0.1 || avgPrediction > 0.9) {
-            console.log('Prediction too extreme, reinitializing...');
-            initializeWeights(); // Recursive call to try again
-            return;
-        }
-        
-        console.log('Initialization looks good!');
     }
 
     // Draw coordinate axes
