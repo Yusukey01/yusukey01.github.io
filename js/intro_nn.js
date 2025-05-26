@@ -1572,49 +1572,75 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateData() {
         const numPoints = 120;
         const trainSize = 80;
-        const allPoints = [];
+        let allPoints = [];
         
         const pattern = Math.random() > 0.5 ? 'xor' : 'circle';
         
         if (pattern === 'xor') {
-            // Generate very clean XOR pattern
-            for (let i = 0; i < numPoints; i++) {
-                const x1 = (Math.random() - 0.5) * 1.6; // Range [-0.8, 0.8]
+            // Generate exactly balanced XOR data
+            const pointsPerQuadrant = Math.floor(numPoints / 4);
+            
+            // Quadrant 1: (+,+) -> class 0
+            for (let i = 0; i < pointsPerQuadrant; i++) {
+                const x1 = Math.random() * 0.7 + 0.2; // [0.2, 0.9]
+                const x2 = Math.random() * 0.7 + 0.2;
+                allPoints.push({ x1, x2, y: 0 });
+            }
+            
+            // Quadrant 2: (-,+) -> class 1  
+            for (let i = 0; i < pointsPerQuadrant; i++) {
+                const x1 = -(Math.random() * 0.7 + 0.2); // [-0.9, -0.2]
+                const x2 = Math.random() * 0.7 + 0.2;
+                allPoints.push({ x1, x2, y: 1 });
+            }
+            
+            // Quadrant 3: (-,-) -> class 0
+            for (let i = 0; i < pointsPerQuadrant; i++) {
+                const x1 = -(Math.random() * 0.7 + 0.2);
+                const x2 = -(Math.random() * 0.7 + 0.2);
+                allPoints.push({ x1, x2, y: 0 });
+            }
+            
+            // Quadrant 4: (+,-) -> class 1
+            for (let i = 0; i < pointsPerQuadrant; i++) {
+                const x1 = Math.random() * 0.7 + 0.2;
+                const x2 = -(Math.random() * 0.7 + 0.2);
+                allPoints.push({ x1, x2, y: 1 });
+            }
+            
+            // Fill remaining points
+            while (allPoints.length < numPoints) {
+                const x1 = (Math.random() - 0.5) * 1.6;
                 const x2 = (Math.random() - 0.5) * 1.6;
-                
-                // Perfect XOR with clear margins
-                let y = (x1 > 0.1) !== (x2 > 0.1) ? 1 : 0;
-                if (x1 < -0.1 && x2 < -0.1) y = 0;
-                if (x1 > 0.1 && x2 > 0.1) y = 0;
-                if (x1 < -0.1 && x2 > 0.1) y = 1;
-                if (x1 > 0.1 && x2 < -0.1) y = 1;
-                
-                // Add very minimal noise only in safe regions
-                if (Math.abs(x1) > 0.3 && Math.abs(x2) > 0.3 && Math.random() < 0.02) {
-                    y = 1 - y;
-                }
-                
+                const y = (x1 > 0) !== (x2 > 0) ? 1 : 0;
                 allPoints.push({ x1, x2, y });
             }
+            
         } else {
-            // Generate very clean circular pattern
-            for (let i = 0; i < numPoints; i++) {
-                const x1 = (Math.random() - 0.5) * 1.8;
-                const x2 = (Math.random() - 0.5) * 1.8;
-                
-                const radius = Math.sqrt(x1 * x1 + x2 * x2);
-                let y = radius < 0.6 ? 1 : 0; // Clear separation
-                
-                // Add minimal noise only in very clear regions
-                if ((radius < 0.35 || radius > 0.75) && Math.random() < 0.02) {
-                    y = 1 - y;
-                }
-                
-                allPoints.push({ x1, x2, y });
+            // Generate balanced circular data
+            const innerPoints = Math.floor(numPoints / 2);
+            const outerPoints = numPoints - innerPoints;
+            
+            // Inner circle (class 1)
+            for (let i = 0; i < innerPoints; i++) {
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = Math.random() * 0.5; // Inner radius
+                const x1 = radius * Math.cos(angle);
+                const x2 = radius * Math.sin(angle);
+                allPoints.push({ x1, x2, y: 1 });
+            }
+            
+            // Outer ring (class 0)
+            for (let i = 0; i < outerPoints; i++) {
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = 0.65 + Math.random() * 0.25; // Outer radius [0.65, 0.9]
+                const x1 = radius * Math.cos(angle);
+                const x2 = radius * Math.sin(angle);
+                allPoints.push({ x1, x2, y: 0 });
             }
         }
         
-        // Shuffle and split
+        // Shuffle for random train-test split
         for (let i = allPoints.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
@@ -1623,7 +1649,11 @@ document.addEventListener('DOMContentLoaded', function() {
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
         
-        console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test points`);
+        // Verify class balance
+        const trainClass1 = data.filter(p => p.y === 1).length;
+        const testClass1 = testData.filter(p => p.y === 1).length;
+        
+        console.log(`Generated ${pattern} pattern: ${data.length} training (${trainClass1} class 1), ${testData.length} test (${testClass1} class 1)`);
         
         initializeWeights();
         
