@@ -1268,12 +1268,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if weights are properly initialized
         const weightsValid = weights.W1 && 
-                           Array.isArray(weights.W1) && 
-                           weights.W1.length > 0 && 
-                           Array.isArray(weights.W1[0]) &&
-                           weights.W2 && 
-                           Array.isArray(weights.W2) && 
-                           weights.W2.length > 0;
+                        Array.isArray(weights.W1) && 
+                        weights.W1.length > 0 && 
+                        Array.isArray(weights.W1[0]) &&
+                        weights.W2 && 
+                        Array.isArray(weights.W2) && 
+                        weights.W2.length > 0;
         
         if (!weightsValid) {
             // Draw placeholder message
@@ -1289,28 +1289,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const hiddenX = layerSpacing * 2;
         const outputX = layerSpacing * 3;
         
-        // Calculate neuron positions
+        // Leave more room at top for labels (start neurons lower)
+        const topMargin = 60; // Increased from default
+        const bottomMargin = 60;
+        const usableHeight = networkCanvasHeight - topMargin - bottomMargin;
+        
+        // Calculate neuron positions with more top margin
         const inputPositions = [
-            { x: inputX, y: networkCanvasHeight * 0.3, label: 'x₁', value: demoPoint.x1 },
-            { x: inputX, y: networkCanvasHeight * 0.7, label: 'x₂', value: demoPoint.x2 }
+            { x: inputX, y: topMargin + usableHeight * 0.3, label: 'x₁', value: demoPoint.x1 },
+            { x: inputX, y: topMargin + usableHeight * 0.7, label: 'x₂', value: demoPoint.x2 }
         ];
         
         const hiddenPositions = [];
         for (let i = 0; i < hiddenUnits; i++) {
-            const y = networkCanvasHeight * (0.1 + 0.8 * i / Math.max(hiddenUnits - 1, 1));
+            const y = topMargin + usableHeight * (0.1 + 0.8 * i / Math.max(hiddenUnits - 1, 1));
             hiddenPositions.push({ 
                 x: hiddenX, 
                 y: y, 
                 label: `h${i+1}`,
-                value: 0 // Will be calculated during forward pass
+                value: 0
             });
         }
         
         const outputPosition = { 
             x: outputX, 
-            y: networkCanvasHeight * 0.5, 
+            y: topMargin + usableHeight * 0.5, 
             label: 'y',
-            value: 0 // Will be calculated during forward pass
+            value: 0
         };
         
         // Calculate forward pass values for demo point
@@ -1324,7 +1329,6 @@ document.addEventListener('DOMContentLoaded', function() {
             outputPosition.value = forward.output;
         } catch (e) {
             console.warn('Error in forward pass:', e);
-            // Use default values of 0
         }
         
         // Draw connections with weights
@@ -1336,8 +1340,31 @@ document.addEventListener('DOMContentLoaded', function() {
         drawNeurons(hiddenPositions, 'hidden');
         drawNeurons([outputPosition], 'output');
         
-        // Draw layer labels
-        drawLayerLabels();
+        // Draw layer labels - now with proper spacing
+        drawLayerLabelsWithSpacing();
+    }
+
+    function drawLayerLabelsWithSpacing() {
+        networkCtx.fillStyle = '#34495e';
+        networkCtx.font = 'bold 14px Arial';
+        networkCtx.textAlign = 'center';
+        
+        const layerSpacing = networkCanvasWidth / 4;
+        
+        // Position labels at the very top with adequate spacing
+        const labelY = 20;
+        const sublabelY = 35;
+        
+        networkCtx.fillText('Input Layer', layerSpacing, labelY);
+        
+        networkCtx.fillText('Hidden Layer', layerSpacing * 2, labelY);
+        networkCtx.font = 'normal 12px Arial';
+        networkCtx.fillText('(ReLU)', layerSpacing * 2, sublabelY);
+        
+        networkCtx.font = 'bold 14px Arial';
+        networkCtx.fillText('Output Layer', layerSpacing * 3, labelY);
+        networkCtx.font = 'normal 12px Arial';
+        networkCtx.fillText('(Sigmoid)', layerSpacing * 3, sublabelY);
     }
 
     // Draw connections between layers
@@ -1460,21 +1487,6 @@ document.addEventListener('DOMContentLoaded', function() {
             networkCtx.font = '10px monospace';
             networkCtx.fillText(pos.value.toFixed(3), pos.x, pos.y + 30);
         }
-    }
-
-    // Draw layer labels
-    function drawLayerLabels() {
-        networkCtx.fillStyle = '#34495e';
-        networkCtx.font = 'bold 14px Arial';
-        networkCtx.textAlign = 'center';
-        
-        const layerSpacing = networkCanvasWidth / 4;
-        
-        networkCtx.fillText('Input Layer', layerSpacing, 25);
-        networkCtx.fillText('Hidden Layer', layerSpacing * 2, 25);
-        networkCtx.fillText('(ReLU)', layerSpacing * 2, 40);
-        networkCtx.fillText('Output Layer', layerSpacing * 3, 25);
-        networkCtx.fillText('(Sigmoid)', layerSpacing * 3, 40);
     }
 
     // Show detailed forward pass computation steps
