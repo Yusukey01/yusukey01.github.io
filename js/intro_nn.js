@@ -19,29 +19,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         let iterations = 0;
-        let previousLoss = Infinity;
         let currentLoss = calculateLoss();
         let bestAccuracy = 0;
         let bestLoss = Infinity;
         let stagnantIterations = 0;
-        let lossStagnantIterations = 0;
-
-        const minLossChange = 1e-6;
-        const maxStagnantIterations = 80;
         
-        // Start with a reasonable learning rate
-        let currentLearningRate = Math.min(learningRate, 0.1); // Cap at 0.1
+        // Much more relaxed convergence criteria
+        const minLossChange = 1e-4; // Relaxed from 1e-6
+        const maxStagnantIterations = 150; // More patience
+        
+        // Start with higher learning rate if current rate is too low
+        let currentLearningRate = Math.max(learningRate, 0.05);
+        console.log(`Starting training with learning rate: ${currentLearningRate.toFixed(4)}`);
         
         while (iterations < maxIterations) {
-            previousLoss = currentLoss;
+            const previousLoss = currentLoss;
             
             // Compute gradients
             const gradients = computeGradients();
             
-            // Gradient clipping to prevent explosion
+            // Check gradient magnitude to detect vanishing gradients
             const gradientNorm = computeGradientNorm(gradients);
-            if (gradientNorm > 5.0) {
-                scaleGradients(gradients, 5.0 / gradientNorm);
+            
+            // More aggressive gradient clipping threshold
+            if (gradientNorm > 10.0) {
+                scaleGradients(gradients, 10.0 / gradientNorm);
+                console.log(`Clipped gradients: norm was ${gradientNorm.toFixed(3)}`);
+            }
+            
+            // If gradients are too small, increase learning rate
+            if (gradientNorm < 0.001 && currentLearningRate < 0.5) {
+                currentLearningRate *= 1.5;
+                console.log(`Boosting learning rate to ${currentLearningRate.toFixed(4)} due to small gradients`);
             }
             
             // Update weights
@@ -51,28 +60,30 @@ document.addEventListener('DOMContentLoaded', function() {
             currentLoss = calculateLoss();
             const currentAccuracy = calculateAccuracy();
             
-            // Track best performance
-            if (currentAccuracy > bestAccuracy + 0.005) {
+            // Track improvements
+            let improved = false;
+            if (currentAccuracy > bestAccuracy + 0.01) { // Larger threshold for improvement
                 bestAccuracy = currentAccuracy;
                 stagnantIterations = 0;
-            } else {
+                improved = true;
+                console.log(`New best accuracy: ${(bestAccuracy * 100).toFixed(1)}%`);
+            }
+            
+            if (currentLoss < bestLoss - 0.01) { // Larger threshold for loss improvement
+                bestLoss = currentLoss;
+                if (!improved) stagnantIterations = 0;
+                improved = true;
+            }
+            
+            if (!improved) {
                 stagnantIterations++;
             }
             
-            if (currentLoss < bestLoss - 0.001) {
-                bestLoss = currentLoss;
-                lossStagnantIterations = 0;
-            } else {
-                lossStagnantIterations++;
-            }
-            
-            // Adaptive learning rate - more conservative
-            if (stagnantIterations > 25 && lossStagnantIterations > 15) {
+            // More conservative learning rate reduction
+            if (stagnantIterations > 50 && stagnantIterations % 25 === 0) {
                 if (currentLearningRate > 0.001) {
-                    currentLearningRate *= 0.9; // Gentler reduction
-                    console.log(`Reducing learning rate to ${currentLearningRate.toFixed(4)}`);
-                    stagnantIterations = 0;
-                    lossStagnantIterations = 0;
+                    currentLearningRate *= 0.95; // Very gentle reduction
+                    console.log(`Gently reducing learning rate to ${currentLearningRate.toFixed(4)}`);
                 }
             }
             
@@ -82,18 +93,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             }
             
-            if (stagnantIterations > maxStagnantIterations && currentLearningRate < 0.002) {
+            if (stagnantIterations > maxStagnantIterations) {
                 console.log(`Early stopping: No improvement for ${maxStagnantIterations} iterations`);
                 break;
             }
             
-            // Check for loss convergence
-            if (Math.abs(previousLoss - currentLoss) < minLossChange && iterations > 50) {
+            // More relaxed loss convergence check
+            if (iterations > 100 && Math.abs(previousLoss - currentLoss) < minLossChange) {
                 console.log(`Early stopping: Loss converged (change < ${minLossChange})`);
                 break;
             }
             
-            // Update display
+            // Update display every 10 iterations
             if (iterations % 10 === 0) {
                 const testAcc = calculateTestAccuracy();
                 
@@ -104,11 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateWeightDisplay();
                 drawCanvas();
                 
-                if (iterations % 50 === 0) {
-                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, LR=${currentLearningRate.toFixed(4)}`);
+                // More frequent logging to track progress
+                if (iterations % 25 === 0) {
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, LR=${currentLearningRate.toFixed(4)}, GradNorm=${gradientNorm.toFixed(4)}`);
                 }
                 
-                await new Promise(resolve => setTimeout(resolve, 10));
+                await new Promise(resolve => setTimeout(resolve, 5));
             }
             
             iterations++;
@@ -138,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showForwardPassSteps();
         }, 100);
     }
+
 
     function computeGradientNorm(gradients) {
         let norm = 0;
@@ -685,12 +698,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleLearningRateChange() {
         const sliderValue = parseFloat(learningRateInput.value);
-        if (sliderValue >= -1) {
-            learningRate = Math.pow(10, sliderValue); // 0.1 to 1.0
-        } else {
-            learningRate = Math.pow(10, sliderValue + 1) * 0.1; // 0.01 to 0.1
-        }
-        learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 2);
+        // Ensure minimum learning rate is not too small
+        learningRate = Math.max(Math.pow(10, sliderValue), 0.01);
+        learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.1 ? 3 : 2);
     }
 
     function handleIterationsChange() {
@@ -1560,42 +1570,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate dataset
     function generateData() {
-        const numPoints = 120;
-        const trainSize = 80;
+        const numPoints = 100; // Slightly fewer points for cleaner training
+        const trainSize = 70;  // More reasonable split
         let allPoints = [];
         
+        // Always generate clean, separable patterns
         const pattern = Math.random() > 0.5 ? 'xor' : 'circle';
         
         if (pattern === 'xor') {
-            // Generate exactly balanced XOR data
+            // Very clean XOR with no noise
             const pointsPerQuadrant = Math.floor(numPoints / 4);
             
-            // Quadrant 1: (+,+) -> class 0
-            for (let i = 0; i < pointsPerQuadrant; i++) {
-                const x1 = Math.random() * 0.7 + 0.2; // [0.2, 0.9]
-                const x2 = Math.random() * 0.7 + 0.2;
-                allPoints.push({ x1, x2, y: 0 });
-            }
-            
-            // Quadrant 2: (-,+) -> class 1  
-            for (let i = 0; i < pointsPerQuadrant; i++) {
-                const x1 = -(Math.random() * 0.7 + 0.2); // [-0.9, -0.2]
-                const x2 = Math.random() * 0.7 + 0.2;
-                allPoints.push({ x1, x2, y: 1 });
-            }
-            
-            // Quadrant 3: (-,-) -> class 0
-            for (let i = 0; i < pointsPerQuadrant; i++) {
-                const x1 = -(Math.random() * 0.7 + 0.2);
-                const x2 = -(Math.random() * 0.7 + 0.2);
-                allPoints.push({ x1, x2, y: 0 });
-            }
-            
-            // Quadrant 4: (+,-) -> class 1
-            for (let i = 0; i < pointsPerQuadrant; i++) {
-                const x1 = Math.random() * 0.7 + 0.2;
-                const x2 = -(Math.random() * 0.7 + 0.2);
-                allPoints.push({ x1, x2, y: 1 });
+            // Generate points in each quadrant with clear margins
+            for (let quad = 0; quad < 4; quad++) {
+                const isPositiveX = quad === 0 || quad === 3;
+                const isPositiveY = quad === 0 || quad === 1;
+                const label = (isPositiveX !== isPositiveY) ? 1 : 0;
+                
+                for (let i = 0; i < pointsPerQuadrant; i++) {
+                    const x1 = (isPositiveX ? 1 : -1) * (Math.random() * 0.6 + 0.3); // [0.3, 0.9] or [-0.9, -0.3]
+                    const x2 = (isPositiveY ? 1 : -1) * (Math.random() * 0.6 + 0.3);
+                    allPoints.push({ x1, x2, y: label });
+                }
             }
             
             // Fill remaining points
@@ -1607,30 +1603,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
         } else {
-            // Generate balanced circular data
+            // Very clean circular pattern
             const innerPoints = Math.floor(numPoints / 2);
-            const outerPoints = numPoints - innerPoints;
             
-            // Inner circle (class 1)
+            // Inner circle - class 1
             for (let i = 0; i < innerPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
-                const radius = Math.random() * 0.5; // Inner radius
+                const radius = Math.random() * 0.5; // Clear inner boundary
                 const x1 = radius * Math.cos(angle);
                 const x2 = radius * Math.sin(angle);
                 allPoints.push({ x1, x2, y: 1 });
             }
             
-            // Outer ring (class 0)
-            for (let i = 0; i < outerPoints; i++) {
+            // Outer ring - class 0
+            for (let i = innerPoints; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
-                const radius = 0.65 + Math.random() * 0.25; // Outer radius [0.65, 0.9]
+                const radius = 0.7 + Math.random() * 0.3; // Clear outer boundary [0.7, 1.0]
                 const x1 = radius * Math.cos(angle);
                 const x2 = radius * Math.sin(angle);
                 allPoints.push({ x1, x2, y: 0 });
             }
         }
         
-        // Shuffle for random train-test split
+        // Shuffle and split
         for (let i = allPoints.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
@@ -1639,12 +1634,12 @@ document.addEventListener('DOMContentLoaded', function() {
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
         
-        // Verify class balance
         const trainClass1 = data.filter(p => p.y === 1).length;
         const testClass1 = testData.filter(p => p.y === 1).length;
         
-        console.log(`Generated ${pattern} pattern: ${data.length} training (${trainClass1} class 1), ${testData.length} test (${testClass1} class 1)`);
+        console.log(`Generated clean ${pattern} pattern: ${data.length} training (${trainClass1} class 1), ${testData.length} test (${testClass1} class 1)`);
         
+        // Initialize with better weights
         initializeWeights();
         
         if (accuracyElement) accuracyElement.textContent = '0.0%';
@@ -1660,37 +1655,85 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 10);
     }
 
+
     // Initialize weights using Xavier/Glorot initialization
     function initializeWeights() {
-        console.log('Initializing weights for first training...');
+        console.log('Initializing weights for robust training...');
         
         const inputSize = 2;
         
-        // Use smaller, more conservative weights
+        // Use proper Xavier/Glorot initialization with good scaling
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
         
-        // Much smaller initialization scale
-        const w1Scale = 0.3;
+        // Xavier initialization scale - much larger than 0.3
+        const w1Scale = Math.sqrt(6.0 / (inputSize + hiddenUnits)); // Typically around 0.7-1.0
         
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
-                weights.W1[i][j] = (Math.random() - 0.5) * w1Scale;
+                // Use normal distribution for better initialization
+                weights.W1[i][j] = randomNormal(0, w1Scale);
             }
         }
         
-        // Stagger biases to encourage different neurons to activate
+        // Initialize biases to small positive values to help ReLU
         weights.b1 = Array(hiddenUnits).fill(0).map((_, i) => {
-            return (i / hiddenUnits - 0.5) * 0.2; // Range from -0.1 to 0.1
+            // Small positive values to avoid dead neurons
+            return Math.random() * 0.1 + 0.05; // Range [0.05, 0.15]
         });
         
-        // Output layer: conservative initialization
-        const w2Scale = 0.3;
-        weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * w2Scale);
+        // Output layer: Xavier initialization
+        const w2Scale = Math.sqrt(6.0 / (hiddenUnits + 1));
+        weights.W2 = Array(hiddenUnits).fill(0).map(() => randomNormal(0, w2Scale));
         
-        // Output bias: start slightly negative
-        weights.b2 = -0.1;
+        // Output bias: neutral initialization
+        weights.b2 = 0;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
+        
+        // Verify that we have reasonable gradient flow
+        verifyInitialization();
+    }
+
+    // Verify initialization produces good gradient flow
+    function verifyInitialization() {
+        if (data.length === 0) return;
+        
+        // Test with a few sample points
+        const testPoints = [
+            [0.5, 0.5], [-0.5, 0.5], [0.5, -0.5], [-0.5, -0.5]
+        ];
+        
+        let avgActiveNeurons = 0;
+        let predictions = [];
+        
+        for (const inputs of testPoints) {
+            try {
+                const forward = forwardPass(inputs);
+                const activeNeurons = forward.hiddenActivations.filter(a => a > 0.01).length;
+                avgActiveNeurons += activeNeurons;
+                predictions.push(forward.output);
+            } catch (e) {
+                console.warn('Error in initialization verification:', e);
+                // If we can't verify, just proceed
+                return;
+            }
+        }
+        
+        avgActiveNeurons /= testPoints.length;
+        const predictionVariance = calculateVariance(predictions);
+        
+        console.log(`Init check: ${avgActiveNeurons.toFixed(1)}/${hiddenUnits} neurons active, prediction variance: ${predictionVariance.toFixed(4)}`);
+        
+        // If too many dead neurons or no prediction variance, try again
+        if (avgActiveNeurons < hiddenUnits * 0.3 || predictionVariance < 0.01) {
+            console.log('Poor initialization detected, retrying...');
+            initializeWeights(); // Recursive retry
+        }
+    }
+
+    function calculateVariance(arr) {
+        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+        return arr.reduce((a, b) => a + (b - mean) ** 2, 0) / arr.length;
     }
 
     // Draw coordinate axes
