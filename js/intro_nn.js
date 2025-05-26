@@ -1694,6 +1694,21 @@ document.addEventListener('DOMContentLoaded', function() {
         verifyInitialization();
     }
 
+    // Normal distribution random number generator
+    function randomNormal(mean = 0, std = 1) {
+        if (randomNormal.hasSpare) {
+            randomNormal.hasSpare = false;
+            return randomNormal.spare * std + mean;
+        } else {
+            randomNormal.hasSpare = true;
+            const u = Math.random();
+            const v = Math.random();
+            const mag = std * Math.sqrt(-2 * Math.log(u));
+            randomNormal.spare = mag * Math.cos(2 * Math.PI * v);
+            return mag * Math.sin(2 * Math.PI * v) + mean;
+        }
+    }
+
     // Verify initialization produces good gradient flow
     function verifyInitialization() {
         if (data.length === 0) return;
