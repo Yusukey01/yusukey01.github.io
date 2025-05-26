@@ -1205,8 +1205,6 @@ document.addEventListener('DOMContentLoaded', function() {
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', handleResize);
 
-    setupImprovedTraining();
-
     // Handle canvas click for demo point selection
     function handleCanvasClick(event) {
         if (!isDemoMode) return;
@@ -1676,36 +1674,31 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const inputSize = 2;
         
-        // Strategy: Use smaller, more carefully chosen weights
+        // Use smaller, more conservative weights
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
         
-        // For ReLU networks, use a more conservative approach
-        const w1Scale = Math.sqrt(2.0 / (inputSize + hiddenUnits)) * 0.8; // Smaller scale
+        // Much smaller initialization scale
+        const w1Scale = 0.3;
         
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
-                // Use normal distribution instead of uniform
-                weights.W1[i][j] = randomNormal(0, w1Scale);
+                weights.W1[i][j] = (Math.random() - 0.5) * w1Scale;
             }
         }
         
-        // Initialize biases to encourage activation diversity
+        // Stagger biases to encourage different neurons to activate
         weights.b1 = Array(hiddenUnits).fill(0).map((_, i) => {
-            // Stagger the biases to encourage different neurons to activate
             return (i / hiddenUnits - 0.5) * 0.2; // Range from -0.1 to 0.1
         });
         
-        // Output layer: very conservative initialization
-        const w2Scale = Math.sqrt(1.0 / hiddenUnits) * 0.5; // Smaller for stability
-        weights.W2 = Array(hiddenUnits).fill(0).map(() => randomNormal(0, w2Scale));
+        // Output layer: conservative initialization
+        const w2Scale = 0.3;
+        weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * w2Scale);
         
-        // Output bias: start slightly negative to be conservative
+        // Output bias: start slightly negative
         weights.b2 = -0.1;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
-        
-        // Verify initialization quality
-        verifyInitialization();
     }
 
     // Helper function for normal distribution random numbers
