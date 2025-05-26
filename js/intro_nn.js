@@ -24,8 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
         let bestAccuracy = 0;
         let stagnantIterations = 0;
 
-        const minLossChange = 1e-6;
-        const maxStagnantIterations = 50; // Stop if no improvement for 50 iterations
+        const minLossChange = 1e-7; // Tighter convergence
+        const maxStagnantIterations = 100; // More patience
+        
+        // Adaptive learning rate
+        let currentLearningRate = learningRate;
+        let lastImprovement = 0;
 
         while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
             previousLoss = currentLoss;
@@ -33,34 +37,41 @@ document.addEventListener('DOMContentLoaded', function() {
             // Forward pass and backward pass for all training data
             const gradients = computeGradients();
             
-            // Update weights using gradients
-            updateWeights(gradients);
+            // Update weights using current learning rate
+            updateWeights(gradients, currentLearningRate);
             
             // Calculate new loss
             currentLoss = calculateLoss();
             const currentAccuracy = calculateAccuracy();
             
             // Check for improvement
-            if (currentAccuracy > bestAccuracy) {
+            if (currentAccuracy > bestAccuracy + 0.001) { // Small threshold for improvement
                 bestAccuracy = currentAccuracy;
                 stagnantIterations = 0;
+                lastImprovement = iterations;
             } else {
                 stagnantIterations++;
             }
             
-            // Early stopping if accuracy is very good
-            if (currentAccuracy > 0.95) {
+            // Adaptive learning rate - reduce if no improvement
+            if (stagnantIterations > 30 && currentLearningRate > learningRate * 0.1) {
+                currentLearningRate *= 0.8;
+                console.log(`Reducing learning rate to ${currentLearningRate.toFixed(4)}`);
+                stagnantIterations = 0; // Reset counter after rate change
+            }
+            
+            // Early stopping conditions
+            if (currentAccuracy > 0.98) {
                 console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
                 break;
             }
             
-            // Early stopping if no improvement
             if (stagnantIterations > maxStagnantIterations) {
                 console.log(`Early stopping: No improvement for ${maxStagnantIterations} iterations`);
                 break;
             }
             
-            // Update display every 10 iterations to avoid UI freezes
+            // Update display every 10 iterations
             if (iterations % 10 === 0) {
                 const testAcc = calculateTestAccuracy();
                 
@@ -71,18 +82,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateWeightDisplay();
                 drawCanvas();
                 
-                // Log progress for debugging
+                // Log progress
                 if (iterations % 50 === 0) {
-                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%`);
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, LR=${currentLearningRate.toFixed(4)}`);
                 }
                 
-                // Pause to allow UI to update
                 await new Promise(resolve => setTimeout(resolve, 10));
             }
             
             iterations++;
         }
-
         // Final update
         const finalAccuracy = calculateAccuracy();
         const finalTestAcc = calculateTestAccuracy();
@@ -136,10 +145,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             gradients.b2 += outputError;
             
-            // Hidden layer gradients
+            // Hidden layer gradients - FIXED ReLU derivative
             for (let i = 0; i < numHidden; i++) {
-                // Fixed: Use hiddenPreActivations for ReLU derivative, not hiddenActivations
-                const hiddenError = outputError * weights.W2[i] * reluDerivative(hiddenPreActivations[i]);
+                // Use pre-activation to determine ReLU derivative
+                const reluDerivativeValue = hiddenPreActivations[i] > 0 ? 1 : 0;
+                const hiddenError = outputError * weights.W2[i] * reluDerivativeValue;
                 
                 for (let j = 0; j < 2; j++) {
                     gradients.W1[j][i] += hiddenError * inputs[j];
@@ -166,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update weights using computed gradients
-    function updateWeights(gradients) {
+    function updateWeights(gradients, learningRate = this.learningRate) {
         const numHidden = hiddenUnits;
         
         // Update W1
@@ -384,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw decision boundary
     function drawDecisionBoundary(xRange, yRange) {
-        // Skip if weights not properly initialized
         if (!weights.W1 || weights.W1.length === 0 || !weights.W2 || weights.W2.length === 0) {
             return;
         }
@@ -395,9 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.strokeStyle = '#2ecc71';
         ctx.lineWidth = 2;
         
-        // Sample the decision boundary with higher resolution but very tight threshold
         const points = [];
-        const resolution = 100; // Higher resolution for precise detection
+        const resolution = 80; // Slightly lower resolution for better performance
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -407,81 +415,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     const prob = predict(x1, x2);
                     
-                    // Check if prediction is valid
                     if (isNaN(prob) || prob < 0 || prob > 1) {
                         continue;
                     }
                     
-                    // Very tight threshold for exact decision boundary
-                    if (Math.abs(prob - 0.5) < 0.005) { // Super tight threshold
+                    // More reasonable threshold for decision boundary
+                    if (Math.abs(prob - 0.5) < 0.02) {
                         const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                         const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                         
-                        // Make sure point is within canvas bounds
                         if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
                             canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-                            points.push({ x: canvasX, y: canvasY, prob: prob });
+                            points.push({ x: canvasX, y: canvasY });
                         }
                     }
                 } catch (e) {
-                    // Skip invalid predictions
                     continue;
                 }
             }
         }
         
-        console.log(`Found ${points.length} boundary points`); // Debug info
+        console.log(`Found ${points.length} boundary points`);
         
-        // If we have a reasonable number of points (not too many, not too few)
-        if (points.length > 10 && points.length < 200) {
-            // Draw thin boundary
-            ctx.fillStyle = '#2ecc71';
-            for (const point of points) {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        } else if (points.length >= 200) {
-            // Too many points - sample every 3rd point for thinner boundary
-            ctx.fillStyle = '#2ecc71';
-            for (let i = 0; i < points.length; i += 3) {
-                const point = points[i];
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 0.8, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        } else {
-            // Too few points - use slightly wider threshold
-            const widerPoints = [];
-            for (let i = 0; i <= resolution; i++) {
-                for (let j = 0; j <= resolution; j++) {
-                    const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
-                    const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
-                    
-                    try {
-                        const prob = predict(x1, x2);
-                        if (!isNaN(prob) && prob >= 0 && prob <= 1 && Math.abs(prob - 0.5) < 0.015) {
-                            const canvasX = plotMargin + (x1 - xRange.min) * xScale;
-                            const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                            
-                            if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
-                                canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-                                widerPoints.push({ x: canvasX, y: canvasY });
-                            }
-                        }
-                    } catch (e) {
-                        continue;
-                    }
-                }
-            }
-            
-            // Draw with lighter color for wider threshold
-            ctx.fillStyle = 'rgba(46, 204, 113, 0.7)';
-            for (const point of widerPoints) {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 1.2, 0, 2 * Math.PI);
-                ctx.fill();
-            }
+        // Draw boundary points
+        ctx.fillStyle = '#2ecc71';
+        for (const point of points) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
 
@@ -1608,25 +1569,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize weights using Xavier/Glorot initialization
     function initializeWeights() {
         const inputSize = 2;
-        const outputSize = 1;
         
-        // Initialize W1 (input to hidden) with He initialization for ReLU
+        // Initialize W1 with scaled He initialization
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
-        const w1Scale = Math.sqrt(2.0 / inputSize); // He initialization
+        const w1Scale = Math.sqrt(2.0 / inputSize) * 0.7; // Scaled down for stability
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
                 weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
             }
         }
         
-        // Initialize b1 (hidden bias) to small positive values to help ReLU activation
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.1 + 0.01);
+        // Initialize b1 to small positive values
+        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.05);
         
-        // Initialize W2 (hidden to output) with smaller scale for stability
-        const w2Scale = Math.sqrt(1.0 / hiddenUnits); // Smaller initialization for output layer
+        // Initialize W2 with Xavier initialization
+        const w2Scale = Math.sqrt(1.0 / hiddenUnits);
         weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
         
-        // Initialize b2 (output bias) to zero for binary classification
+        // Initialize b2 to zero
         weights.b2 = 0;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
