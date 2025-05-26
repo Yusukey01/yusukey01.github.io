@@ -1205,6 +1205,8 @@ document.addEventListener('DOMContentLoaded', function() {
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', handleResize);
 
+    setupImprovedTraining();
+
     // Handle canvas click for demo point selection
     function handleCanvasClick(event) {
         if (!isDemoMode) return;
@@ -1787,6 +1789,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.moveTo(xZeroPos, plotMargin);
         ctx.lineTo(xZeroPos, canvasHeight - plotMargin);
         ctx.stroke();
+    }
+
+    //restart approach
+    function setupImprovedTraining() {
+        // Replace the existing train button event listener
+        if (trainBtn) {
+            trainBtn.removeEventListener('click', trainModel);
+            trainBtn.addEventListener('click', trainModelWithRestarts);
+        }
     }
 
     // Initialize the visualization
