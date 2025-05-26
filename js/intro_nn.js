@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             iterations++;
+
         }
 
         // Final update
@@ -140,10 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%`);
 
         isTraining = false;
+        hasTrainedOnce = true;
+
         if (trainBtn) {
-            trainBtn.textContent = 'Train Model';
+            trainBtn.textContent = hasTrainedOnce ? 'Train Model (Continue)' : 'Train Model';
             trainBtn.disabled = false;
-        }
+        
         
         setTimeout(() => {
             drawNetworkGraph();
@@ -1189,6 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isTraining = false;
     let demoPoint = { x1: 0.5, x2: 0.3 }; // Demo point for forward pass visualization
     let isDemoMode = false;
+    let hasTrainedOnce = false;
     
     // Drawing settings
     const plotMargin = 50;
@@ -1594,6 +1598,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Always generate clean, separable patterns
         const pattern = Math.random() > 0.5 ? 'xor' : 'circle';
+
+        hasTrainedOnce = false;
+        if (trainBtn) trainBtn.textContent = 'Train Model';
         
         if (pattern === 'xor') {
             // Very clean XOR with no noise
