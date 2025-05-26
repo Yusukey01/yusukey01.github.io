@@ -141,17 +141,18 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%`);
 
         isTraining = false;
-        hasTrainedOnce = true;
+        hasTrainedOnce = true; // <-- mark that training has occurred
 
         if (trainBtn) {
             trainBtn.textContent = hasTrainedOnce ? 'Train Model (Continue)' : 'Train Model';
             trainBtn.disabled = false;
         
-        
+        }
         setTimeout(() => {
             drawNetworkGraph();
             showForwardPassSteps();
         }, 100);
+
     }
 
 
