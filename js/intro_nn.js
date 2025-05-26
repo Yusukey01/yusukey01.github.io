@@ -22,56 +22,78 @@ document.addEventListener('DOMContentLoaded', function() {
         let previousLoss = Infinity;
         let currentLoss = calculateLoss();
         let bestAccuracy = 0;
+        let bestLoss = Infinity;
         let stagnantIterations = 0;
+        let lossStagnantIterations = 0;
 
-        const minLossChange = 1e-7; // Tighter convergence
-        const maxStagnantIterations = 100; // More patience
+        const minLossChange = 1e-6;
+        const maxStagnantIterations = 80;
         
-        // Adaptive learning rate
-        let currentLearningRate = learningRate;
-        let lastImprovement = 0;
-
-        while (iterations < maxIterations && Math.abs(previousLoss - currentLoss) > minLossChange) {
+        // Start with a reasonable learning rate
+        let currentLearningRate = Math.min(learningRate, 0.1); // Cap at 0.1
+        
+        while (iterations < maxIterations) {
             previousLoss = currentLoss;
             
-            // Forward pass and backward pass for all training data
+            // Compute gradients
             const gradients = computeGradients();
             
-            // Update weights using current learning rate
+            // Gradient clipping to prevent explosion
+            const gradientNorm = computeGradientNorm(gradients);
+            if (gradientNorm > 5.0) {
+                scaleGradients(gradients, 5.0 / gradientNorm);
+            }
+            
+            // Update weights
             updateWeights(gradients, currentLearningRate);
             
-            // Calculate new loss
+            // Calculate metrics
             currentLoss = calculateLoss();
             const currentAccuracy = calculateAccuracy();
             
-            // Check for improvement
-            if (currentAccuracy > bestAccuracy + 0.001) { // Small threshold for improvement
+            // Track best performance
+            if (currentAccuracy > bestAccuracy + 0.005) {
                 bestAccuracy = currentAccuracy;
                 stagnantIterations = 0;
-                lastImprovement = iterations;
             } else {
                 stagnantIterations++;
             }
             
-            // Adaptive learning rate - reduce if no improvement
-            if (stagnantIterations > 30 && currentLearningRate > learningRate * 0.1) {
-                currentLearningRate *= 0.8;
-                console.log(`Reducing learning rate to ${currentLearningRate.toFixed(4)}`);
-                stagnantIterations = 0; // Reset counter after rate change
+            if (currentLoss < bestLoss - 0.001) {
+                bestLoss = currentLoss;
+                lossStagnantIterations = 0;
+            } else {
+                lossStagnantIterations++;
+            }
+            
+            // Adaptive learning rate - more conservative
+            if (stagnantIterations > 25 && lossStagnantIterations > 15) {
+                if (currentLearningRate > 0.001) {
+                    currentLearningRate *= 0.9; // Gentler reduction
+                    console.log(`Reducing learning rate to ${currentLearningRate.toFixed(4)}`);
+                    stagnantIterations = 0;
+                    lossStagnantIterations = 0;
+                }
             }
             
             // Early stopping conditions
-            if (currentAccuracy > 0.98) {
+            if (currentAccuracy > 0.95) {
                 console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
                 break;
             }
             
-            if (stagnantIterations > maxStagnantIterations) {
+            if (stagnantIterations > maxStagnantIterations && currentLearningRate < 0.002) {
                 console.log(`Early stopping: No improvement for ${maxStagnantIterations} iterations`);
                 break;
             }
             
-            // Update display every 10 iterations
+            // Check for loss convergence
+            if (Math.abs(previousLoss - currentLoss) < minLossChange && iterations > 50) {
+                console.log(`Early stopping: Loss converged (change < ${minLossChange})`);
+                break;
+            }
+            
+            // Update display
             if (iterations % 10 === 0) {
                 const testAcc = calculateTestAccuracy();
                 
@@ -82,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateWeightDisplay();
                 drawCanvas();
                 
-                // Log progress
                 if (iterations % 50 === 0) {
                     console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, LR=${currentLearningRate.toFixed(4)}`);
                 }
@@ -92,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             iterations++;
         }
+
         // Final update
         const finalAccuracy = calculateAccuracy();
         const finalTestAcc = calculateTestAccuracy();
@@ -111,11 +133,58 @@ document.addEventListener('DOMContentLoaded', function() {
             trainBtn.disabled = false;
         }
         
-        // Update network graph after training
         setTimeout(() => {
             drawNetworkGraph();
             showForwardPassSteps();
         }, 100);
+    }
+
+    function computeGradientNorm(gradients) {
+        let norm = 0;
+        
+        // W1 gradients
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < hiddenUnits; j++) {
+                norm += gradients.W1[i][j] * gradients.W1[i][j];
+            }
+        }
+        
+        // b1 gradients
+        for (let i = 0; i < hiddenUnits; i++) {
+            norm += gradients.b1[i] * gradients.b1[i];
+        }
+        
+        // W2 gradients
+        for (let i = 0; i < hiddenUnits; i++) {
+            norm += gradients.W2[i] * gradients.W2[i];
+        }
+        
+        // b2 gradient
+        norm += gradients.b2 * gradients.b2;
+        
+        return Math.sqrt(norm);
+    }
+
+    function scaleGradients(gradients, scale) {
+        // Scale W1 gradients
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < hiddenUnits; j++) {
+                gradients.W1[i][j] *= scale;
+            }
+        }
+        
+        // Scale b1 gradients
+        for (let i = 0; i < hiddenUnits; i++) {
+            gradients.b1[i] *= scale;
+        }
+        
+        // Scale W2 gradients
+        for (let i = 0; i < hiddenUnits; i++) {
+            gradients.W2[i] *= scale;
+        }
+        
+        // Scale b2 gradient
+        gradients.b2 *= scale;
     }
 
     // Compute gradients using backpropagation
@@ -145,9 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             gradients.b2 += outputError;
             
-            // Hidden layer gradients - FIXED ReLU derivative
+            // Hidden layer gradients
             for (let i = 0; i < numHidden; i++) {
-                // Use pre-activation to determine ReLU derivative
+                // Correct ReLU derivative: 1 if pre-activation > 0, else 0
                 const reluDerivativeValue = hiddenPreActivations[i] > 0 ? 1 : 0;
                 const hiddenError = outputError * weights.W2[i] * reluDerivativeValue;
                 
@@ -158,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Average gradients and add regularization
+        // Average gradients and add L2 regularization
         const n = data.length;
         for (let i = 0; i < 2; i++) {
             for (let j = 0; j < numHidden; j++) {
@@ -176,28 +245,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update weights using computed gradients
-    function updateWeights(gradients, learningRate = this.learningRate) {
+    function updateWeights(gradients, currentLearningRate = learningRate) {
         const numHidden = hiddenUnits;
         
         // Update W1
         for (let i = 0; i < 2; i++) {
             for (let j = 0; j < numHidden; j++) {
-                weights.W1[i][j] -= learningRate * gradients.W1[i][j];
+                weights.W1[i][j] -= currentLearningRate * gradients.W1[i][j];
             }
         }
         
         // Update b1
         for (let i = 0; i < numHidden; i++) {
-            weights.b1[i] -= learningRate * gradients.b1[i];
+            weights.b1[i] -= currentLearningRate * gradients.b1[i];
         }
         
         // Update W2
         for (let i = 0; i < numHidden; i++) {
-            weights.W2[i] -= learningRate * gradients.W2[i];
+            weights.W2[i] -= currentLearningRate * gradients.W2[i];
         }
         
         // Update b2
-        weights.b2 -= learningRate * gradients.b2;
+        weights.b2 -= currentLearningRate * gradients.b2;
     }
 
     // Forward pass through the network
@@ -405,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineWidth = 2;
         
         const points = [];
-        const resolution = 80; // Slightly lower resolution for better performance
+        const resolution = 60; // Reasonable resolution
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -419,8 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         continue;
                     }
                     
-                    // More reasonable threshold for decision boundary
-                    if (Math.abs(prob - 0.5) < 0.02) {
+                    // Reasonable threshold for decision boundary
+                    if (Math.abs(prob - 0.5) < 0.025) {
                         const canvasX = plotMargin + (x1 - xRange.min) * xScale;
                         const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
                         
@@ -441,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = '#2ecc71';
         for (const point of points) {
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+            ctx.arc(point.x, point.y, 1.2, 0, 2 * Math.PI);
             ctx.fill();
         }
     }
@@ -620,8 +689,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleLearningRateChange() {
-        learningRate = Math.pow(10, parseFloat(learningRateInput.value));
-        learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 1);
+        const sliderValue = parseFloat(learningRateInput.value);
+        if (sliderValue >= -1) {
+            learningRate = Math.pow(10, sliderValue); // 0.1 to 1.0
+        } else {
+            learningRate = Math.pow(10, sliderValue + 1) * 0.1; // 0.01 to 0.1
+        }
+        learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 2);
     }
 
     function handleIterationsChange() {
@@ -1494,40 +1568,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate dataset
     function generateData() {
-        const numPoints = 120; // Slightly more data
-        const trainSize = 80;  // More training data
+        const numPoints = 120;
+        const trainSize = 80;
         const allPoints = [];
         
-        // Generate data with non-linear separation (XOR-like or circular pattern)
         const pattern = Math.random() > 0.5 ? 'xor' : 'circle';
         
         if (pattern === 'xor') {
-            // Generate clean XOR pattern
+            // Generate very clean XOR pattern
             for (let i = 0; i < numPoints; i++) {
-                const x1 = Math.random() * 1.8 - 0.9; // Slightly smaller range for better separation
-                const x2 = Math.random() * 1.8 - 0.9;
+                const x1 = (Math.random() - 0.5) * 1.6; // Range [-0.8, 0.8]
+                const x2 = (Math.random() - 0.5) * 1.6;
                 
-                // Clean XOR pattern with clear margins
-                let y = (x1 > 0) !== (x2 > 0) ? 1 : 0;
+                // Perfect XOR with clear margins
+                let y = (x1 > 0.1) !== (x2 > 0.1) ? 1 : 0;
+                if (x1 < -0.1 && x2 < -0.1) y = 0;
+                if (x1 > 0.1 && x2 > 0.1) y = 0;
+                if (x1 < -0.1 && x2 > 0.1) y = 1;
+                if (x1 > 0.1 && x2 < -0.1) y = 1;
                 
-                // Add minimal noise only far from boundaries
-                if (Math.abs(x1) > 0.2 && Math.abs(x2) > 0.2 && Math.random() < 0.03) {
+                // Add very minimal noise only in safe regions
+                if (Math.abs(x1) > 0.3 && Math.abs(x2) > 0.3 && Math.random() < 0.02) {
                     y = 1 - y;
                 }
                 
                 allPoints.push({ x1, x2, y });
             }
         } else {
-            // Generate clean circular pattern
+            // Generate very clean circular pattern
             for (let i = 0; i < numPoints; i++) {
-                const x1 = Math.random() * 2 - 1;
-                const x2 = Math.random() * 2 - 1;
+                const x1 = (Math.random() - 0.5) * 1.8;
+                const x2 = (Math.random() - 0.5) * 1.8;
                 
                 const radius = Math.sqrt(x1 * x1 + x2 * x2);
-                let y = radius < 0.65 ? 1 : 0; // Clear separation at radius 0.65
+                let y = radius < 0.6 ? 1 : 0; // Clear separation
                 
-                // Add minimal noise only in clear regions
-                if ((radius < 0.4 || radius > 0.8) && Math.random() < 0.03) {
+                // Add minimal noise only in very clear regions
+                if ((radius < 0.35 || radius > 0.75) && Math.random() < 0.02) {
                     y = 1 - y;
                 }
                 
@@ -1535,31 +1612,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Shuffle for random train-test split
+        // Shuffle and split
         for (let i = allPoints.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
         }
         
-        // Split into training and test sets
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
         
         console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test points`);
         
-        // Initialize weights BEFORE calling any drawing functions
         initializeWeights();
         
-        // Update display
         if (accuracyElement) accuracyElement.textContent = '0.0%';
         if (lossElement) lossElement.textContent = '0.000';
         if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
         
-        // Now safe to call drawing functions
         drawCanvas();
         updateWeightDisplay();
         
-        // Small delay to ensure weights are fully initialized
         setTimeout(() => {
             drawNetworkGraph();
             showForwardPassSteps();
@@ -1570,24 +1642,26 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeWeights() {
         const inputSize = 2;
         
-        // Initialize W1 with scaled He initialization
+        // Use proper Xavier/Glorot initialization for sigmoid output
         weights.W1 = Array(inputSize).fill(0).map(() => Array(hiddenUnits).fill(0));
-        const w1Scale = Math.sqrt(2.0 / inputSize) * 0.7; // Scaled down for stability
+        
+        // For ReLU hidden layer, use He initialization but scale it down
+        const w1Scale = Math.sqrt(2.0 / inputSize) * 0.5; // Reduce scale for stability
         for (let i = 0; i < inputSize; i++) {
             for (let j = 0; j < hiddenUnits; j++) {
                 weights.W1[i][j] = (Math.random() - 0.5) * 2 * w1Scale;
             }
         }
         
-        // Initialize b1 to small positive values
-        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.05);
+        // Initialize hidden biases to small positive values to help ReLU
+        weights.b1 = Array(hiddenUnits).fill(0).map(() => Math.random() * 0.02 + 0.01);
         
-        // Initialize W2 with Xavier initialization
-        const w2Scale = Math.sqrt(1.0 / hiddenUnits);
+        // For output layer (going to sigmoid), use Xavier initialization
+        const w2Scale = Math.sqrt(6.0 / (hiddenUnits + 1)) * 0.7; // Xavier with scaling
         weights.W2 = Array(hiddenUnits).fill(0).map(() => (Math.random() - 0.5) * 2 * w2Scale);
         
-        // Initialize b2 to zero
-        weights.b2 = 0;
+        // Output bias to small negative value to start conservative
+        weights.b2 = -0.01;
         
         console.log(`Initialized weights: W1 scale=${w1Scale.toFixed(3)}, W2 scale=${w2Scale.toFixed(3)}`);
     }
