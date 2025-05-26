@@ -35,8 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
         while (iterations < maxIterations) {
             const previousLoss = currentLoss;
             
+            // Shuffle and sample mini-batch
+            const batchData = [];
+            for (let i = 0; i < batchSize; i++) {
+                const idx = Math.floor(Math.random() * data.length);
+                batchData.push(data[idx]);
+            }
             // Compute gradients
-            const gradients = computeGradients();
+            const gradients = computeGradients(batchData);
             
             // Check gradient magnitude to detect vanishing gradients
             const gradientNorm = computeGradientNorm(gradients);
@@ -205,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Compute gradients using backpropagation
-    function computeGradients() {
+    function computeGradients(batchData) {
         const numHidden = hiddenUnits;
         const gradients = {
             W1: Array(2).fill(0).map(() => Array(numHidden).fill(0)),
@@ -214,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
             b2: 0
         };
 
-        for (const point of data) {
+        for (const point of batchData) {
             const { x1, x2, y } = point;
             const inputs = [x1, x2];
             
@@ -245,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Average gradients and add L2 regularization
-        const n = data.length;
+        const n = batchData.length;
         for (let i = 0; i < 2; i++) {
             for (let j = 0; j < numHidden; j++) {
                 gradients.W1[i][j] = gradients.W1[i][j] / n + regularization * weights.W1[i][j];
@@ -1194,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let demoPoint = { x1: 0.5, x2: 0.3 }; // Demo point for forward pass visualization
     let isDemoMode = false;
     let hasTrainedOnce = false;
+    let batchSize = 16; // Default mini-batch size
     
     // Drawing settings
     const plotMargin = 50;
