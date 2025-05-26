@@ -828,6 +828,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2;
             }
         }
+
+        @media (min-width: 1024px) and (max-width: 1440px) {
+            .canvas-container {
+                flex: 4; /* Even more space on laptops */
+            }
+            
+            .controls-panel {
+                flex: 1;
+            }
+        }
         
         .canvas-container {
             display: flex;
