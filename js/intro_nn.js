@@ -488,27 +488,22 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let j = 0; j <= resolution; j++) {
                 const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
                 const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
+                const prob = predict(x1, x2);
                 
-                try {
-                    const prob = predict(x1, x2);
-                    
-                    if (isNaN(prob) || prob < 0 || prob > 1) {
-                        continue;
-                    }
-                    
-                    // Reasonable threshold for decision boundary
-                    if (Math.abs(prob - 0.5) < 0.025) {
-                        const canvasX = plotMargin + (x1 - xRange.min) * xScale;
-                        const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
-                        
-                        if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
-                            canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-                            points.push({ x: canvasX, y: canvasY });
-                        }
-                    }
-                } catch (e) {
+                if (isNaN(prob) || prob < 0 || prob > 1) {
                     continue;
                 }
+                
+                // Reasonable threshold for decision boundary
+                if (Math.abs(prob - 0.5) < 0.025) {
+                    const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+                    const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+                    
+                    if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
+                        canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+                        points.push({ x: canvasX, y: canvasY });
+                    }
+                }         
             }
         }
         
