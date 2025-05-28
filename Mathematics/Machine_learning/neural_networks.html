@@ -126,10 +126,44 @@ uses_python: false
 
                 <p>
                     But how do we compute the gradients\(\frac{\partial J}{\partial W^{(\ell)}}\) and \(\frac{\partial J}{\partial b^{(\ell)}}\)?  
-                    That's where the <a href="../Calculus/jacobian.html"><strong>backpropagation</strong></a> algorithm comes in: it uses the chain rule to 
-                    propagate error signals backward — from the output layer all the way to layer \( \ell \) — efficiently computing every partial derivative 
-                    in one pass.
+                    That's where the <a href="../Calculus/jacobian.html"><strong>backpropagation</strong></a> algorithm comes in: it applies the chain 
+                    rule in reverse — starting from the output layer (\(\ell = L\)) and moving backward through layers \(L-1, L-2,\dots,1\) — to propagate 
+                    error signals and compute every gradient: 
                 </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                    <strong>Output error:</strong> Compute the error at the final layer \(L\):
+                    <br>
+                    <script type="math/tex">
+                        \delta^{(L)} = \frac{\partial \ell\bigl(z_L, y\bigr)}{\partial a_L}\,,
+                    </script>
+                    where \(a_L\) is the pre-activation and \(z_L=g_L(a_L)\) the activation.
+                    </li>
+                    <li>
+                    <strong>Backward pass:</strong> For each layer \(\ell = L-1, L-2, \dots, 1\), propagate the error signal:
+                    <br>
+                    <script type="math/tex">
+                        \delta^{(\ell)}
+                        = \bigl(W^{(\ell+1)}\bigr)^{\!\top}
+                        \delta^{(\ell+1)}
+                        \;\circ\; g'_\ell\bigl(a_\ell\bigr),
+                    </script>
+                    where “\(\circ\)” denotes elementwise multiplication by the derivative of the activation \(g_\ell\).
+                    </li>
+                    <li>
+                    <strong>Gradient computation:</strong> Once \(\delta^{(\ell)}\) is known, the gradients for layer \(\ell\) are
+                    <br>
+                    <script type="math/tex">
+                        \frac{\partial J}{\partial W^{(\ell)}}
+                        = \delta^{(\ell)} \bigl(z^{(\ell-1)}\bigr)^{\!\top},
+                        \quad
+                        \frac{\partial J}{\partial b^{(\ell)}}
+                        = \delta^{(\ell)}.
+                    </script>
+                    </li>
+                </ol>
+
 
                 <p>
                     Our demo employs <strong>mini-batch gradient descent</strong>, which computes these gradients on a small random subset of the data at 
