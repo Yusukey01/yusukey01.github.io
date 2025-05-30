@@ -110,7 +110,7 @@ uses_python: false
                 <h2>Learning in Neural Networks</h2>
 
                 <p> 
-                    Training the network means finding parameters \( \theta = \{ \theta_\ell \}_{\ell=1}^L \), where 
+                    Training the network is finding parameters \( \theta = \{ \theta_\ell \}_{\ell=1}^L \), where 
                     \( \theta_\ell = \{ W^{(\ell)}, b^{(\ell)} \} \), that minimize a loss function \( \mathcal{L}(\theta) \) over 
                     the training data. This is done by performing iterative <strong>gradient descent</strong> updates on 
                     each layer's weights and biases:
@@ -132,6 +132,150 @@ uses_python: false
                     Our demo employs <strong>mini-batch gradient descent</strong>, which computes these gradients on a small random subset of the data at 
                     each iteration. This often leads to faster convergence and better generalization compared to using the entire dataset at once.
                 </p>
+
+
+
+                <p> 
+                    Training a neural network <strong>is</strong> finding parameters \( \theta = \{ W^{(\ell)}, b^{(\ell)} \}_{\ell=1}^L \) that minimize 
+                    the expected risk over the data distribution. For a neural network, the learnable parameters of the network are 
+                    $\mathcal{W} = \{W_i, b_i\}_{i=1}^n$. Since we only have access to training data, we minimize the <strong>empirical risk</strong> 
+                    (average loss) plus optional regularization:
+                    \[
+                    J(\theta) = \frac{1}{N} \sum_{i=1}^{N} \mathcal{L}(y_i, \hat{y}_i) + \lambda R(\theta)
+                    \]
+                    where \( \hat{y}_i = h_\theta(x_i) \) is the network's prediction for input \( x_i \).
+                </p>
+
+                <h3>Loss Functions</h3>
+                <p>
+                    The <strong>loss function</strong> \( \mathcal{L}(y, \hat{y}) \) measures the discrepancy between a prediction and the true label. 
+                    Cross-entropy is a widely used loss function in applications. It coincides with the logistic loss applied to 
+                    the outputs of a neural network, when the softmax is used. Common choices include:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Binary cross-entropy</strong> (for binary classification): \( \mathcal{L}(y, \hat{y}) = -y \log(\hat{y}) - (1-y) \log(1-\hat{y}) \)</li>
+                    <li><strong>Categorical cross-entropy</strong> (for multi-class): \( \mathcal{L}(y, \hat{y}) = -\sum_c y_c \log(\hat{y}_c) \)</li>
+                    <li><strong>Mean squared error</strong> (for regression): \( \mathcal{L}(y, \hat{y}) = \|y - \hat{y}\|^2 \)</li>
+                </ul>
+
+                <h3>Gradient-Based Optimization</h3>
+                <p>
+                    For gradient-based optimization, also called first-order optimization, the update function takes as input the gradient of 
+                    the cost with respect to the parameters at the current operating point, $\nabla_{\theta}J(\theta)$. This reveals hugely useful 
+                    information about the loss that directly tells us how to minimize it: just move in the direction of steepest descent. 
+                    The basic update rule is:
+                    \[
+                    \theta_{t+1} = \theta_t - \alpha \nabla_\theta J(\theta_t)
+                    \]
+                    where \( \alpha > 0 \) is the <strong>learning rate</strong> that controls the step size. Too small and training is slow; 
+                    too large and training may diverge.
+                </p>
+
+                <h3>Stochastic Gradient Descent (SGD)</h3>
+                <p>
+                    Computing gradients over all \( N \) training examples is expensive. SGD modifies the batch gradient descent 
+                    algorithm by calculating the gradient for only one training example at every iteration. In practice, we use 
+                    <strong>mini-batch SGD</strong>:
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li>Randomly sample a mini-batch \( B \subset \{1,...,N\} \) of size \( |B| \) (typically 16-256)</li>
+                    <li>Compute gradient estimate: \( \nabla_\theta J_B(\theta) = \frac{1}{|B|} \sum_{i \in B} \nabla_\theta \mathcal{L}(y_i, h_\theta(x_i)) \)</li>
+                    <li>Update parameters: \( \theta \leftarrow \theta - \alpha \nabla_\theta J_B(\theta) \)</li>
+                </ol>
+                <p>
+                    Due to SGD's efficiency in dealing with large scale datasets, it is the most common method for training deep neural networks. 
+                    A good starting point for the learning rate is 0.1 and adjust as necessary.
+                </p>
+
+                <h3>Backpropagation Algorithm</h3>
+                <p>
+                    But how do we compute the gradients efficiently? That's where the <a href="../Calculus/jacobian.html"><strong>backpropagation</strong></a> 
+                    algorithm comes in. Backprop is an efficient application of the chain rule starting from the gradient of the loss w.r.t the 
+                    output and working backwards. The algorithm computes all gradients in just two passes through the network:
+                </p>
+                
+                <div class="algorithm" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <strong>Backpropagation:</strong>
+                    <ol>
+                        <li><strong>Forward pass:</strong> Compute and store all intermediate values
+                            <ul>
+                                <li>Set \(a^{(0)} = x\) (input)</li>
+                                <li>For \(\ell = 1, ..., L\): 
+                                    <ul>
+                                        <li>Linear: \(z^{(\ell)} = W^{(\ell)} a^{(\ell-1)} + b^{(\ell)}\)</li>
+                                        <li>Activation: \(a^{(\ell)} = g_\ell(z^{(\ell)})\)</li>
+                                    </ul>
+                                </li>
+                                <li>Output: \(\hat{y} = a^{(L)}\)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Backward pass:</strong> Propagate error signals backward
+                            <ul>
+                                <li>Output layer gradient: \( \delta^{(L)} = \nabla_{a^{(L)}} \mathcal{L} \odot g'_L(z^{(L)}) \)
+                                    <br>For binary cross-entropy with sigmoid: \( \delta^{(L)} = \hat{y} - y \)</li>
+                                <li>For \( \ell = L-1, ..., 1 \): 
+                                    <ul>
+                                        <li>\( \delta^{(\ell)} = (W^{(\ell+1)})^T \delta^{(\ell+1)} \odot g'_\ell(z^{(\ell)}) \)</li>
+                                    </ul>
+                                </li>
+                                <li>Parameter gradients: 
+                                    <ul>
+                                        <li>\( \frac{\partial J}{\partial W^{(\ell)}} = \frac{1}{|B|} \sum_{i \in B} \delta^{(\ell)}_i (a^{(\ell-1)}_i)^T + \lambda W^{(\ell)} \)</li>
+                                        <li>\( \frac{\partial J}{\partial b^{(\ell)}} = \frac{1}{|B|} \sum_{i \in B} \delta^{(\ell)}_i \)</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    Here, \( \odot \) denotes element-wise multiplication, and \( g'_\ell \) is the derivative of the activation function. 
+                    For ReLU: \( g'(z) = \mathbb{I}(z > 0) \), and for sigmoid: \( g'(z) = \sigma(z)(1-\sigma(z)) \).
+                </p>
+
+                <p>
+                    Our demo employs <strong>mini-batch gradient descent</strong>, which computes these gradients on a small random subset 
+                    of the data at each iteration. This provides a good balance between computational efficiency and gradient quality, 
+                    often leading to faster convergence and better generalization compared to using the entire dataset at once.
+                </p>
+
+                <h3>Momentum and Advanced Optimizers</h3>
+                <p>
+                    Momentum is an extension to the gradient descent optimization algorithm that builds inertia in a search direction 
+                    to overcome local minima and oscillation of noisy gradients. It's based on the same concept of momentum in physics. 
+                    The update rule with momentum is:
+                    \[
+                    \begin{align}
+                    v_{t+1} &= \beta v_t + (1-\beta) \nabla_\theta J(\theta_t) \\
+                    \theta_{t+1} &= \theta_t - \alpha v_{t+1}
+                    \end{align}
+                    \]
+                    where \( \beta \in [0,1) \) is the momentum coefficient (typically 0.9). By taking past gradients into account, 
+                    the steps become smoothed out, reducing oscillations.
+                </p>
+
+                <p>
+                    Modern optimizers like <strong>Adam</strong> combine momentum with adaptive learning rates for each parameter, 
+                    often leading to faster convergence. These methods are particularly effective for training deep neural networks.
+                </p>
+
+                <h3>Regularization Techniques</h3>
+                <p>
+                    To prevent overfitting and ensure good generalization, we employ various regularization techniques:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>L2 regularization</strong> (weight decay): Adds penalty \( R(\theta) = \frac{1}{2} \sum_{\ell,i,j} (W^{(\ell)}_{ij})^2 \) to the loss</li>
+                    <li><strong>Dropout</strong>: Randomly zeros out neurons during training with probability \( p \), forcing the network to learn redundant representations</li>
+                    <li><strong>Early stopping</strong>: Stops training when validation loss plateaus or starts increasing</li>
+                    <li><strong>Gradient clipping</strong>: Prevents exploding gradients by scaling them when their norm exceeds a threshold</li>
+                </ul>
+
+                <p>
+                    These techniques, combined with proper initialization (like Xavier/Glorot initialization), help ensure stable training 
+                    and good performance on unseen data.
+                </p>
+                
             </section>
 
             <section id="demo" class="section-content">
