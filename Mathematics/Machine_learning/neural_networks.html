@@ -147,52 +147,27 @@ uses_python: false
                     and better generalization compared to using the entire dataset at once.
                 </p>
 
-                <h3>Backpropagation Algorithm</h3>
                 <p>
-                    But how do we compute the gradients efficiently? That's where the <a href="../Calculus/jacobian.html"><strong>backpropagation</strong></a> 
-                    algorithm comes in. Backprop is an efficient application of the chain rule starting from the gradient of the loss w.r.t the 
+                    The gradients are computed efficiently by the <a href="../Calculus/jacobian.html"><strong>backpropagation</strong></a> 
+                    algorithm. Backprop is an efficient application of the chain rule starting from the gradient of the loss w.r.t the 
                     output and working backwards. The algorithm computes all gradients in just two passes through the network:
                 </p>
                 
-                <div class="algorithm" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                    <strong>Backpropagation:</strong>
-                    <ol  style="padding-left: 40px;">
-                        <li><strong>Forward pass:</strong> Compute and store all intermediate values
-                            <ul  style="padding-left: 40px;">
-                                <li>Set \(a^{(0)} = x\) (input)</li>
-                                <li>For \(\ell = 1, ..., L\): 
-                                    <ul  style="padding-left: 40px;">
-                                        <li>Linear: \(z^{(\ell)} = W^{(\ell)} a^{(\ell-1)} + b^{(\ell)}\)</li>
-                                        <li>Activation: \(a^{(\ell)} = g_\ell(z^{(\ell)})\)</li>
-                                    </ul>
-                                </li>
-                                <li>Output: \(\hat{y} = a^{(L)}\)</li>
-                            </ul>
-                        </li>
-                        <li><strong>Backward pass:</strong> Propagate error signals backward
-                            <ul  style="padding-left: 40px;">
-                                <li>Output layer gradient: \( \delta^{(L)} = \nabla_{a^{(L)}} \mathcal{L} \odot g'_L(z^{(L)}) \)
-                                    <br>For binary cross-entropy with sigmoid: \( \delta^{(L)} = \hat{y} - y \)</li>
-                                <li>For \( \ell = L-1, ..., 1 \): 
-                                    <ul  style="padding-left: 40px;">
-                                        <li>\( \delta^{(\ell)} = (W^{(\ell+1)})^T \delta^{(\ell+1)} \odot g'_\ell(z^{(\ell)}) \)</li>
-                                    </ul>
-                                </li>
-                                <li>Parameter gradients: 
-                                    <ul  style="padding-left: 40px;">
-                                        <li>\( \frac{\partial J}{\partial W^{(\ell)}} = \frac{1}{|B|} \sum_{i \in B} \delta^{(\ell)}_i (a^{(\ell-1)}_i)^T + \lambda W^{(\ell)} \)</li>
-                                        <li>\( \frac{\partial J}{\partial b^{(\ell)}} = \frac{1}{|B|} \sum_{i \in B} \delta^{(\ell)}_i \)</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                    </ol>
-                </div>
-
-                <p>
-                    Here, \( \odot \) denotes element-wise multiplication, and \( g'_\ell \) is the derivative of the activation function. 
-                    For ReLU: \( g'(z) = \mathbb{I}(z > 0) \), and for sigmoid: \( g'(z) = \sigma(z)(1-\sigma(z)) \).
-                </p>    
+                <div class="pseudocode">
+                    <span class="pseudocode-title">Algorithm: BACKPROPAGATION</span>
+                    <strong>Consider K-layer MLP</strong>
+                    <strong>//Forward Pass</strong>
+                    &emsp;\(x_1 \leftarrow x\);
+                    &emsp;<strong>for \(k = 1 : K\) do</strong>
+                    &emsp;&emsp;&emsp; \(x_{k+1} \leftarrow f_k(x_k, \theta_k)\)
+                    <strong>//Backward Pass</strong>
+                    &emsp;\(u_{k+1} \leftarrow 1\);
+                    &emsp;<strong>for \(k = K : 1\) do</strong>
+                    &emsp;&emsp;&emsp; g_k = u_{k+1}^\top \frac{\partial f_k (x_k, \theta_k)}{\partial \theta_k}
+                    &emsp;&emsp;&emsp; u_k^\top = u_{k+1}^\top \frac{\partial f_k (x_k, \theta_k)}{\partial x_k}
+                    &emsp;Output \(\mathcal{L} = x_{k+1}, \, \nabla_x \mathcal{L} = u_1, \, 
+                                 \{\nabla_{\theta} \mathcal{L} = g_k \, (k = 1 : K)\}\);
+                </div>    
               
             </section>
 
