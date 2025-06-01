@@ -58,7 +58,146 @@ uses_python: false
                     \]
                 </p>
 
-                <h3>Backward Pass (Reverse Mode AD)</h3>
+                <div style="max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <!-- Arrow marker -->
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#333" />
+                        </marker>
+                        
+                        <!-- Gradient for nodes -->
+                        <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
+                        </linearGradient>
+                        
+                        <linearGradient id="inputGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#5cb85c;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#449d44;stop-opacity:1" />
+                        </linearGradient>
+                        
+                        <linearGradient id="outputGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#d9534f;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#c9302c;stop-opacity:1" />
+                        </linearGradient>
+                      </defs>
+                      
+                      <!-- Title -->
+                      <text x="400" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">
+                        Computational Graph for f(x₁, x₂) = log((x₁ + x₂)² + sin(x₁x₂))
+                      </text>
+                      
+                      <!-- Input nodes -->
+                      <g id="input-nodes">
+                        <circle cx="200" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="200" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₁</text>
+                        
+                        <circle cx="600" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="600" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₂</text>
+                      </g>
+                      
+                      <!-- Intermediate nodes -->
+                      <g id="intermediate-nodes">
+                        <!-- x3 = x1 + x2 -->
+                        <circle cx="400" cy="200" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="207" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₃</text>
+                        <text x="400" y="240" text-anchor="middle" font-size="14" fill="#333">x₁ + x₂</text>
+                        
+                        <!-- x5 = x1 * x2 -->
+                        <circle cx="400" cy="300" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="307" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₅</text>
+                        <text x="400" y="340" text-anchor="middle" font-size="14" fill="#333">x₁ × x₂</text>
+                        
+                        <!-- x4 = x3^2 -->
+                        <circle cx="300" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="300" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₄</text>
+                        <text x="300" y="440" text-anchor="middle" font-size="14" fill="#333">x₃²</text>
+                        
+                        <!-- x6 = sin(x5) -->
+                        <circle cx="500" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="500" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₆</text>
+                        <text x="500" y="440" text-anchor="middle" font-size="14" fill="#333">sin(x₅)</text>
+                        
+                        <!-- x7 = x4 + x6 -->
+                        <circle cx="400" cy="480" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="487" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₇</text>
+                        <text x="400" y="520" text-anchor="middle" font-size="14" fill="#333">x₄ + x₆</text>
+                      </g>
+                      
+                      <!-- Output node -->
+                      <g id="output-node">
+                        <circle cx="400" cy="560" r="30" fill="url(#outputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="567" text-anchor="middle" font-size="18" font-weight="bold" fill="white">f</text>
+                        <text x="400" y="600" text-anchor="middle" font-size="14" fill="#333">log(x₇)</text>
+                      </g>
+                      
+                      <!-- Edges -->
+                      <g id="edges" fill="none" stroke="#333" stroke-width="2">
+                        <!-- x1 to x3 -->
+                        <path d="M 220 120 Q 300 150 380 180" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x2 to x3 -->
+                        <path d="M 580 120 Q 500 150 420 180" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x1 to x5 -->
+                        <path d="M 200 130 Q 200 250 370 285" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x2 to x5 -->
+                        <path d="M 600 130 Q 600 250 430 285" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x3 to x4 -->
+                        <path d="M 380 220 Q 340 300 315 375" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x5 to x6 -->
+                        <path d="M 420 320 Q 460 350 485 375" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x4 to x7 -->
+                        <path d="M 320 420 Q 360 440 380 460" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x6 to x7 -->
+                        <path d="M 480 420 Q 440 440 420 460" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x7 to f -->
+                        <path d="M 400 510 L 400 530" marker-end="url(#arrowhead)"/>
+                      </g>
+                      
+                      <!-- Legend -->
+                      <g id="legend" transform="translate(20, 480)">
+                        <rect x="0" y="0" width="180" height="100" fill="#f8f8f8" stroke="#ddd" stroke-width="1" rx="5"/>
+                        <text x="90" y="20" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Legend</text>
+                        
+                        <circle cx="20" cy="40" r="10" fill="url(#inputGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="45" font-size="14" fill="#333">Input variables</text>
+                        
+                        <circle cx="20" cy="65" r="10" fill="url(#nodeGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="70" font-size="14" fill="#333">Intermediate values</text>
+                        
+                        <circle cx="20" cy="90" r="10" fill="url(#outputGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="95" font-size="14" fill="#333">Output</text>
+                      </g>
+                      
+                      <!-- Gradient flow annotation -->
+                      <g id="gradient-flow" transform="translate(650, 480)">
+                        <rect x="0" y="0" width="130" height="100" fill="#fff8dc" stroke="#daa520" stroke-width="1" rx="5"/>
+                        <text x="65" y="20" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">Gradient Flow</text>
+                        <text x="65" y="40" text-anchor="middle" font-size="12" fill="#666">(Reverse Mode)</text>
+                        
+                        <path d="M 20 60 L 110 60" stroke="#d9534f" stroke-width="3" marker-end="url(#arrowhead)"/>
+                        <text x="65" y="85" text-anchor="middle" font-size="12" fill="#666">Backward pass</text>
+                      </g>
+                    </svg>
+                </div>
+
+                <p style="margin-top: 20px;">
+                    This computational graph clearly shows the DAG (Directed Acyclic Graph) structure. Notice how:
+                    <ul>
+                        <li>Each input variable (x₁ and x₂) has <strong>multiple outgoing edges</strong>, contributing to different intermediate computations</li>
+                        <li>The graph flows from inputs at the top to the output at the bottom</li>
+                        <li>During backpropagation, gradients flow in the <strong>reverse direction</strong> (from f back to x₁ and x₂)</li>
+                    </ul>
+                </p>
+
                 <p>
                     Starting from the output and working backwards:
                     \[
@@ -83,10 +222,7 @@ uses_python: false
                     \end{align*}
                     \]
                 </p>
-            </section>
 
-            <section id="comp-graph" class="section-content">
-                <h2>Computational Graph Structure</h2>
                 <p>
                     Notice that the input variables \(x_1\) and \(x_2\) each contribute to multiple intermediate nodes:
                     <ul>
@@ -95,10 +231,7 @@ uses_python: false
                     </ul>
                     This means we need to <strong>sum the gradients</strong> from all paths when computing the final derivatives.
                 </p>
-            </section>
 
-            <section id="final" class="section-content">
-                <h2>Final Gradients</h2>
                 <p>
                     To find the gradients with respect to the input variables, we sum contributions from all paths:
                 </p>
@@ -125,8 +258,7 @@ uses_python: false
                     \]
                 </p>
 
-                <h3>Substituting Back:</h3>
-                <p>
+                 <p>
                     Replacing the intermediate variables with their expressions in terms of \(x_1\) and \(x_2\):
                     <ul>
                         <li>\(x_3 = x_1 + x_2\)</li>
@@ -145,8 +277,7 @@ uses_python: false
                     \]
                 </p>
 
-                <h3>Key Insight:</h3>
-                <p>
+                 <p>
                     The power of automatic differentiation lies in its systematic approach:
                     <ol>
                         <li>Decompose complex functions into simple primitive operations</li>
@@ -155,10 +286,9 @@ uses_python: false
                     </ol>
                     This process can be fully automated, making it the backbone of modern deep learning frameworks.
                 </p>
-
-                
-
             </section>
+
+              
 
             <section id="" class="section-content">
                 <h2></h2>
