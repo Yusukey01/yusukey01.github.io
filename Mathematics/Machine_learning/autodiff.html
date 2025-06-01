@@ -59,11 +59,16 @@ uses_python: false
                 </p>
 
                 <div style="max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 800 650" xmlns="http://www.w3.org/2000/svg">
                       <defs>
-                        <!-- Arrow marker -->
+                        <!-- Arrow marker for forward pass -->
                         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
                           <polygon points="0 0, 10 3, 0 6" fill="#333" />
+                        </marker>
+                        
+                        <!-- Arrow marker for backward pass -->
+                        <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#e74c3c" />
                         </marker>
                         
                         <!-- Gradient for nodes -->
@@ -122,18 +127,18 @@ uses_python: false
                         <!-- x7 = x4 + x6 -->
                         <circle cx="400" cy="480" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
                         <text x="400" y="487" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₇</text>
-                        <text x="400" y="520" text-anchor="middle" font-size="14" fill="#333">x₄ + x₆</text>
+                        <text x="435" y="487" text-anchor="start" font-size="14" fill="#333">x₄ + x₆</text>
                       </g>
                       
                       <!-- Output node -->
                       <g id="output-node">
-                        <circle cx="400" cy="560" r="30" fill="url(#outputGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="400" y="567" text-anchor="middle" font-size="18" font-weight="bold" fill="white">f</text>
-                        <text x="400" y="600" text-anchor="middle" font-size="14" fill="#333">log(x₇)</text>
+                        <circle cx="400" cy="580" r="30" fill="url(#outputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="587" text-anchor="middle" font-size="16" font-weight="bold" fill="white">x₈ = f</text>
+                        <text x="400" y="620" text-anchor="middle" font-size="14" fill="#333">log(x₇)</text>
                       </g>
                       
-                      <!-- Edges -->
-                      <g id="edges" fill="none" stroke="#333" stroke-width="2">
+                      <!-- Forward edges (black) -->
+                      <g id="forward-edges" fill="none" stroke="#333" stroke-width="2">
                         <!-- x1 to x3 -->
                         <path d="M 220 120 Q 300 150 380 180" marker-end="url(#arrowhead)"/>
                         
@@ -159,13 +164,43 @@ uses_python: false
                         <path d="M 480 420 Q 440 440 420 460" marker-end="url(#arrowhead)"/>
                         
                         <!-- x7 to f -->
-                        <path d="M 400 510 L 400 530" marker-end="url(#arrowhead)"/>
+                        <path d="M 400 510 L 400 550" marker-end="url(#arrowhead)"/>
+                      </g>
+                      
+                      <!-- Backward edges (red) - gradient flow -->
+                      <g id="backward-edges" fill="none" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" opacity="0.8">
+                        <!-- f to x7 -->
+                        <path d="M 415 555 L 415 515" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x7 to x4 -->
+                        <path d="M 385 465 Q 345 445 325 425" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x7 to x6 -->
+                        <path d="M 415 465 Q 455 445 475 425" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x4 to x3 -->
+                        <path d="M 285 375 Q 325 295 385 225" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x6 to x5 -->
+                        <path d="M 485 380 Q 445 350 415 325" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x3 to x1 -->
+                        <path d="M 385 185 Q 305 155 225 125" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x3 to x2 -->
+                        <path d="M 415 185 Q 495 155 575 125" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x5 to x1 -->
+                        <path d="M 385 280 Q 230 200 215 135" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x5 to x2 -->
+                        <path d="M 415 280 Q 570 200 585 135" marker-end="url(#arrowhead-red)"/>
                       </g>
                       
                       <!-- Legend -->
                       <g id="legend" transform="translate(20, 480)">
-                        <rect x="0" y="0" width="180" height="100" fill="#f8f8f8" stroke="#ddd" stroke-width="1" rx="5"/>
-                        <text x="90" y="20" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Legend</text>
+                        <rect x="0" y="0" width="250" height="140" fill="#f8f8f8" stroke="#ddd" stroke-width="1" rx="5"/>
+                        <text x="100" y="20" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Legend</text>
                         
                         <circle cx="20" cy="40" r="10" fill="url(#inputGradient)" stroke="#333" stroke-width="1"/>
                         <text x="40" y="45" font-size="14" fill="#333">Input variables</text>
@@ -175,19 +210,17 @@ uses_python: false
                         
                         <circle cx="20" cy="90" r="10" fill="url(#outputGradient)" stroke="#333" stroke-width="1"/>
                         <text x="40" y="95" font-size="14" fill="#333">Output</text>
+                        
+                        <path d="M 10 115 L 30 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <text x="40" y="120" font-size="14" fill="#333">Forward pass</text>
+                        
+                        <path d="M 130 115 L 150 115" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead-red)"/>
+                        <text x="160" y="120" font-size="14" fill="#333">Gradient flow</text>
                       </g>
                       
-                      <!-- Gradient flow annotation -->
-                      <g id="gradient-flow" transform="translate(650, 480)">
-                        <rect x="0" y="0" width="130" height="100" fill="#fff8dc" stroke="#daa520" stroke-width="1" rx="5"/>
-                        <text x="65" y="20" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">Gradient Flow</text>
-                        <text x="65" y="40" text-anchor="middle" font-size="12" fill="#666">(Reverse Mode)</text>
-                        
-                        <path d="M 20 60 L 110 60" stroke="#d9534f" stroke-width="3" marker-end="url(#arrowhead)"/>
-                        <text x="65" y="85" text-anchor="middle" font-size="12" fill="#666">Backward pass</text>
-                      </g>
                     </svg>
                 </div>
+
 
                 <p style="margin-top: 20px;">
                     This computational graph clearly shows the DAG (Directed Acyclic Graph) structure. Notice how:
