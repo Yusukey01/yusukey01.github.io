@@ -24,11 +24,18 @@ uses_python: false
         <div class="container">  
 
             <section id="AD" class="section-content">
-                <h2>Automatic Differentiation</h2>
+              <h2>Automatic Differentiation</h2>
+              <p>
                 In multilayer perceptrons (MLPs), <strong>backpropagation</strong> is just an application of the chain rule to compute 
                 gradients efficiently. More generally, this technique is known as <strong>automatic differentiation (AD)</strong>. 
                 Not just sequential layers, AD applies to arbitrary <strong>computational graphs</strong>, which is a directed acyclic graph (DAG) 
                 representing how variables are computed from input to output.
+              </p>
+                <p>
+                    AD systematically applies the chain rule to compute derivatives through a computational graph. 
+                    In <strong>reverse mode AD</strong> (backpropagation), we start from the output and work backwards, 
+                    accumulating gradients along the way.
+                </p>
             </section>
 
             <section id="eg" class="section-content">
@@ -38,7 +45,7 @@ uses_python: false
                     \[
                     f(x_1, x_2) = \log \left((x_1 + x_2)^2 + \sin(x_1 x_2) \right).
                     \]
-                    we can decompose this into primitives:
+                    We decompose this into primitive operations:
                     \[
                     \begin{align*}
                     &x_3 = x_1 + x_2 \\\\
@@ -49,24 +56,24 @@ uses_python: false
                     &x_8 = \log(x_7) = f \\\\
                     \end{align*}
                     \]
-                    Then
-                    \[
-                    
-                    \]
+                </p>
 
+                <h3>Backward Pass (Reverse Mode AD)</h3>
+                <p>
+                    Starting from the output and working backwards:
                     \[
                     \begin{align*}
-                    \frac{\partial f}{\partial x_8} &= 1  \\\\
+                    \frac{\partial f}{\partial x_8} &= 1 \quad \text{(seed)}  \\\\
 
                     \frac{\partial f}{\partial x_7} &= \frac{\partial f}{\partial x_8} \cdot \frac{\partial x_8}{\partial x_7} \\\\
                                                     &= \frac{\partial f}{\partial x_8} \cdot \frac{\partial}{\partial x_7}\log (x_7) \\\\
-                                                    &= \frac{1}{x_7} \\\\
+                                                    &= 1 \cdot \frac{1}{x_7} = \frac{1}{x_7} \\\\
 
                     \frac{\partial f}{\partial x_4} &=  \frac{\partial f}{\partial x_7} \cdot \frac{\partial x_7}{\partial x_4} \\\\
-                                                    &=  \frac{1}{x_7} \\\\
+                                                    &=  \frac{1}{x_7} \cdot 1 = \frac{1}{x_7} \\\\
 
                     \frac{\partial f}{\partial x_6} &=  \frac{\partial f}{\partial x_7} \cdot \frac{\partial x_7}{\partial x_6} \\\\
-                                                    &=  \frac{1}{x_7} \\\\
+                                                    &=  \frac{1}{x_7} \cdot 1 = \frac{1}{x_7} \\\\
 
                     \frac{\partial f}{\partial x_3} &=  \frac{\partial f}{\partial x_4} \cdot \frac{\partial x_4}{\partial x_3} \\\\
                                                     &=  \frac{1}{x_7}  \cdot 2 x_3\\\\
@@ -75,6 +82,78 @@ uses_python: false
                                                     &=  \frac{1}{x_7} \cdot \cos(x_5)\\\\                               
                     \end{align*}
                     \]
+                </p>
+            </section>
+
+            <section id="comp-graph" class="section-content">
+                <h2>Computational Graph Structure</h2>
+                <p>
+                    Notice that the input variables \(x_1\) and \(x_2\) each contribute to multiple intermediate nodes:
+                    <ul>
+                        <li>\(x_1\) influences both \(x_3\) (via addition) and \(x_5\) (via multiplication)</li>
+                        <li>\(x_2\) influences both \(x_3\) (via addition) and \(x_5\) (via multiplication)</li>
+                    </ul>
+                    This means we need to <strong>sum the gradients</strong> from all paths when computing the final derivatives.
+                </p>
+            </section>
+
+            <section id="final" class="section-content">
+                <h2>Final Gradients</h2>
+                <p>
+                    To find the gradients with respect to the input variables, we sum contributions from all paths:
+                </p>
+                
+                <h3>For \(\frac{\partial f}{\partial x_1}\):</h3>
+                <p>
+                    \[
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_1} &= \frac{\partial f}{\partial x_3} \cdot \frac{\partial x_3}{\partial x_1} + \frac{\partial f}{\partial x_5} \cdot \frac{\partial x_5}{\partial x_1} \\\\
+                                                    &= \frac{2x_3}{x_7} \cdot 1 + \frac{\cos(x_5)}{x_7} \cdot x_2 \\\\
+                                                    &= \frac{1}{x_7} \left[2x_3 + x_2 \cos(x_5)\right]
+                    \end{align*}
+                    \]
+                </p>
+
+                <h3>For \(\frac{\partial f}{\partial x_2}\):</h3>
+                <p>
+                    \[
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_2} &= \frac{\partial f}{\partial x_3} \cdot \frac{\partial x_3}{\partial x_2} + \frac{\partial f}{\partial x_5} \cdot \frac{\partial x_5}{\partial x_2} \\\\
+                                                    &= \frac{2x_3}{x_7} \cdot 1 + \frac{\cos(x_5)}{x_7} \cdot x_1 \\\\
+                                                    &= \frac{1}{x_7} \left[2x_3 + x_1 \cos(x_5)\right]
+                    \end{align*}
+                    \]
+                </p>
+
+                <h3>Substituting Back:</h3>
+                <p>
+                    Replacing the intermediate variables with their expressions in terms of \(x_1\) and \(x_2\):
+                    <ul>
+                        <li>\(x_3 = x_1 + x_2\)</li>
+                        <li>\(x_5 = x_1 x_2\)</li>
+                        <li>\(x_7 = (x_1 + x_2)^2 + \sin(x_1 x_2)\)</li>
+                    </ul>
+                    
+                    We get the final derivatives:
+                    \[
+                    \boxed{
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_1} &= \frac{2(x_1 + x_2) + x_2 \cos(x_1 x_2)}{(x_1 + x_2)^2 + \sin(x_1 x_2)} \\\\
+                    \frac{\partial f}{\partial x_2} &= \frac{2(x_1 + x_2) + x_1 \cos(x_1 x_2)}{(x_1 + x_2)^2 + \sin(x_1 x_2)}
+                    \end{align*}
+                    }
+                    \]
+                </p>
+
+                <h3>Key Insight:</h3>
+                <p>
+                    The power of automatic differentiation lies in its systematic approach:
+                    <ol>
+                        <li>Decompose complex functions into simple primitive operations</li>
+                        <li>Apply the chain rule mechanically through the computational graph</li>
+                        <li>Sum gradients when variables contribute through multiple paths</li>
+                    </ol>
+                    This process can be fully automated, making it the backbone of modern deep learning frameworks.
                 </p>
 
                 
