@@ -214,16 +214,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort by margin to find the points closest to the decision boundary
         allDecisions.sort((a, b) => a.margin - b.margin);
         
+        // More restrictive support vector identification
         for (const item of allDecisions) {
             const { point, decision, margin } = item;
             
             // A point is a support vector if:
             // 1. It's misclassified (margin < 0)
-            // 2. It's exactly on the margin boundary (margin ≈ 1)
-            // 3. It's within the margin (0 < margin < 1)
-            // But NOT if it's well beyond the margin (margin > 1.1)
+            // 2. It's within the margin (0 ≤ margin ≤ 1)
+            // Points well beyond the margin (margin > 1.02) should NOT be support vectors
             
-            const isSupporVector = margin < 1.05; // Stricter threshold
+            const tolerance = 0.02; // Small numerical tolerance
+            const isSupporVector = margin < (1.0 + tolerance);
             
             if (isSupporVector) {
                 const alpha = Math.max(0, C * Math.max(0, 1 - margin)); // More realistic alpha
@@ -240,7 +241,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        console.log(`Updated support vectors: ${supportVectors.length}/${data.length} points (${(supportVectors.length/data.length*100).toFixed(1)}%)`);
+        // Log detailed statistics
+        const totalPoints = data.length;
+        const svCount = supportVectors.length;
+        const svPercentage = (svCount / totalPoints * 100).toFixed(1);
+        const marginPoints = supportVectors.filter(sv => Math.abs(sv.margin - 1) < 0.1).length;
+        const misclassified = supportVectors.filter(sv => sv.margin < 0).length;
+        
+        console.log(`Support Vector Analysis:`);
+        console.log(`  Total training points: ${totalPoints}`);
+        console.log(`  Support vectors: ${svCount} (${svPercentage}%)`);
+        console.log(`  On margin boundary: ${marginPoints}`);
+        console.log(`  Misclassified: ${misclassified}`);
+        console.log(`  Within margin: ${svCount - marginPoints - misclassified}`);
     }
 
     // Check KKT conditions
@@ -638,8 +651,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate dataset
     function generateData() {
-        const numPoints = 80;
-        const trainSize = 60;
+        const numPoints = 120; // More points for better demonstration
+        const trainSize = 80;  // More training data
         let allPoints = [];
         
         const pattern = Math.random() > 0.5 ? 'linear' : 'circular';
@@ -648,27 +661,46 @@ document.addEventListener('DOMContentLoaded', function() {
         if (trainBtn) trainBtn.textContent = 'Train SVM';
         
         if (pattern === 'linear') {
-            // Linearly separable data with some noise
+            // Linearly separable data with controlled margin
             for (let i = 0; i < numPoints; i++) {
                 const x1 = (Math.random() - 0.5) * 4;
                 const x2 = (Math.random() - 0.5) * 4;
                 
-                // Simple linear separation with some noise
-                const boundary = 0.5 * x1 + 0.3 * x2 + Math.random() * 0.3 - 0.15;
-                const y = boundary > 0 ? 1 : -1;
+                // Create a clear linear separation with some margin
+                const boundary = 0.7 * x1 + 0.4 * x2;
+                
+                // Add some controlled noise near the boundary to create interesting support vectors
+                let y;
+                if (Math.abs(boundary) < 0.3) {
+                    // Near boundary - add some randomness to create margin violations
+                    y = boundary + (Math.random() - 0.5) * 0.6 > 0 ? 1 : -1;
+                } else {
+                    // Far from boundary - clean classification
+                    y = boundary > 0 ? 1 : -1;
+                }
                 
                 allPoints.push({ x1, x2, y });
             }
         } else {
-            // Circular pattern - better for RBF kernel
+            // Circular pattern with some overlap for interesting support vectors
             for (let i = 0; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
-                const radius = Math.random() * 2;
+                const radius = Math.random() * 2.5;
                 const x1 = radius * Math.cos(angle);
                 const x2 = radius * Math.sin(angle);
                 
-                // Circular boundary
-                const y = (x1 * x1 + x2 * x2) < 1.5 ? 1 : -1;
+                // Circular boundary with some noise near the boundary
+                const distFromCenter = Math.sqrt(x1 * x1 + x2 * x2);
+                const boundaryRadius = 1.3;
+                
+                let y;
+                if (Math.abs(distFromCenter - boundaryRadius) < 0.3) {
+                    // Near boundary - add some randomness
+                    y = (distFromCenter + (Math.random() - 0.5) * 0.4) < boundaryRadius ? 1 : -1;
+                } else {
+                    // Far from boundary - clean classification
+                    y = distFromCenter < boundaryRadius ? 1 : -1;
+                }
                 
                 allPoints.push({ x1, x2, y });
             }
@@ -809,6 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="result-label">Support Vectors:</div>
                             <div class="result-value" id="support-vector-count">0</div>
                         </div>
+                        <div class="result-hint">Support vectors are the critical points that define the decision boundary</div>
                     </div>
                     
                     <div class="kkt-conditions" id="kkt-conditions">
@@ -1015,6 +1048,14 @@ document.addEventListener('DOMContentLoaded', function() {
             font-family: monospace;
             flex-basis: 40%;
             text-align: right;
+        }
+        
+        .result-hint {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 8px;
+            text-align: center;
         }
         
         .kkt-conditions {
