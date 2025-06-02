@@ -200,28 +200,57 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSupportVectors() {
         supportVectors = [];
         
-        for (const point of data) {
+        // Don't identify support vectors if model hasn't been trained
+        if (!hasTrainedOnce) {
+            return;
+        }
+        
+        // Calculate decision values for all points to get proper scaling
+        const allDecisions = data.map(point => {
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const margin = point.y * decision;
+            return { point, decision, margin: point.y * decision };
+        });
+        
+        // Sort by margin to find the points closest to the decision boundary
+        allDecisions.sort((a, b) => a.margin - b.margin);
+        
+        for (const item of allDecisions) {
+            const { point, decision, margin } = item;
             
-            // Points on or within the margin are potential support vectors
-            if (margin <= 1.001) { // Small tolerance for numerical precision
+            // A point is a support vector if:
+            // 1. It's misclassified (margin < 0)
+            // 2. It's exactly on the margin boundary (margin ≈ 1)
+            // 3. It's within the margin (0 < margin < 1)
+            // But NOT if it's well beyond the margin (margin > 1.1)
+            
+            const isSupporVector = margin < 1.05; // Stricter threshold
+            
+            if (isSupporVector) {
+                const alpha = Math.max(0, C * Math.max(0, 1 - margin)); // More realistic alpha
+                const slackVar = Math.max(0, 1 - margin);
+                
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
-                    alpha: Math.max(0, 1 - margin), // Simplified alpha estimation
-                    slackVariable: Math.max(0, 1 - margin)
+                    alpha: alpha,
+                    slackVariable: slackVar,
+                    margin: margin
                 });
             }
         }
         
-        console.log(`Updated support vectors: ${supportVectors.length}/${data.length} points`);
+        console.log(`Updated support vectors: ${supportVectors.length}/${data.length} points (${(supportVectors.length/data.length*100).toFixed(1)}%)`);
     }
 
     // Check KKT conditions
     function updateKKTConditions() {
-        if (!kktConditionsElement) return;
+        if (!kktConditionsElement || !hasTrainedOnce) {
+            if (kktConditionsElement) {
+                kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+            }
+            return;
+        }
         
         let html = '<h4>KKT Conditions Check:</h4>';
         
@@ -231,7 +260,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
             const margin = point.y * decision;
-            const alpha = supportVectors.find(sv => sv.x1 === point.x1 && sv.x2 === point.x2)?.alpha || 0;
+            const sv = supportVectors.find(sv => sv.x1 === point.x1 && sv.x2 === point.x2);
+            const alpha = sv ? sv.alpha : 0;
             
             total++;
             
@@ -241,12 +271,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // 1. α ≥ 0
             if (alpha < -1e-6) conditionsMet = false;
             
-            // 2. yi(w·xi + b) - 1 + ξi ≥ 0
-            const slackConstraint = margin + Math.max(0, 1 - margin) - 1;
-            if (slackConstraint < -1e-6) conditionsMet = false;
+            // 2. yi(w·xi + b) ≥ 1 - ξi (feasibility)
+            const slackVar = Math.max(0, 1 - margin);
+            if (margin < 1 - slackVar - 1e-6) conditionsMet = false;
             
-            // 3. α(yi(w·xi + b) - 1 + ξi) = 0 (complementary slackness)
-            if (alpha > 1e-6 && Math.abs(margin - 1) > 1e-3) conditionsMet = false;
+            // 3. Complementary slackness: α(yi(w·xi + b) - 1 + ξi) = 0
+            if (alpha > 1e-6 && Math.abs(margin - 1 + slackVar) > 1e-3) conditionsMet = false;
             
             if (conditionsMet) satisfied++;
         }
@@ -259,12 +289,14 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<div class="sv-details"><h5>Support Vectors:</h5>';
             for (let i = 0; i < Math.min(supportVectors.length, 5); i++) {
                 const sv = supportVectors[i];
-                html += `<div class="sv-item">α=${sv.alpha.toFixed(3)}, ξ=${sv.slackVariable.toFixed(3)}</div>`;
+                html += `<div class="sv-item">α=${sv.alpha.toFixed(3)}, ξ=${sv.slackVariable.toFixed(3)}, margin=${sv.margin.toFixed(3)}</div>`;
             }
             if (supportVectors.length > 5) {
                 html += `<div class="sv-item">... and ${supportVectors.length - 5} more</div>`;
             }
             html += '</div>';
+        } else {
+            html += '<div class="sv-details">No support vectors found yet.</div>';
         }
         
         kktConditionsElement.innerHTML = html;
@@ -272,6 +304,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw decision boundary and margin
     function drawDecisionBoundary(xRange, yRange) {
+        // Only draw decision boundary if model has been trained
+        if (!hasTrainedOnce) {
+            return;
+        }
+        
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
@@ -428,8 +465,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
             const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
             
-            // Check if this point is a support vector
-            const isSupportVector = supportVectors.some(sv => 
+            // Check if this point is a support vector (only if model has been trained)
+            const isSupportVector = hasTrainedOnce && supportVectors.some(sv => 
                 Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
             
             // Color based on class
@@ -458,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ctx.lineWidth = 2;
                     ctx.setLineDash([3, 3]);
                     ctx.beginPath();
-                    ctx.arc(canvasX, canvasY, 10 + sv.slackVariable * 10, 0, 2 * Math.PI);
+                    ctx.arc(canvasX, canvasY, 10 + sv.slackVariable * 5, 0, 2 * Math.PI);
                     ctx.stroke();
                     ctx.setLineDash([]);
                 }
@@ -651,6 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize weights
         initializeWeights();
         supportVectors = [];
+        hasTrainedOnce = false; // Reset training state
         
         // Reset metrics
         if (accuracyElement) accuracyElement.textContent = '0.0%';
@@ -658,6 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
         if (supportVectorCountElement) supportVectorCountElement.textContent = '0';
         if (kktConditionsElement) kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+        if (trainBtn) trainBtn.textContent = 'Train SVM';
         
         drawCanvas();
     }
