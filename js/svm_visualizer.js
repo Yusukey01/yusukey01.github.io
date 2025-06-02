@@ -205,55 +205,62 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Calculate decision values for all points to get proper scaling
-        const allDecisions = data.map(point => {
+        for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
-            return { point, decision, margin: point.y * decision };
-        });
-        
-        // Sort by margin to find the points closest to the decision boundary
-        allDecisions.sort((a, b) => a.margin - b.margin);
-        
-        // More restrictive support vector identification
-        for (const item of allDecisions) {
-            const { point, decision, margin } = item;
+            const functionalMargin = point.y * decision; // y_i * (w·x_i + b)
             
-            // A point is a support vector if:
-            // 1. It's misclassified (margin < 0)
-            // 2. It's within the margin (0 ≤ margin ≤ 1)
-            // Points well beyond the margin (margin > 1.02) should NOT be support vectors
+            // For SVM, a point is a support vector ONLY if:
+            // 1. It's misclassified (functional margin < 0) OR
+            // 2. It's correctly classified but within the margin (0 ≤ functional margin ≤ 1)
+            // Points with functional margin > 1 should have α = 0 (non-support vectors)
             
-            const tolerance = 0.02; // Small numerical tolerance
-            const isSupporVector = margin < (1.0 + tolerance);
+            const tolerance = 0.05; // Small numerical tolerance
             
-            if (isSupporVector) {
-                const alpha = Math.max(0, C * Math.max(0, 1 - margin)); // More realistic alpha
-                const slackVar = Math.max(0, 1 - margin);
+            if (functionalMargin <= 1.0 + tolerance) {
+                // This point violates the margin or is on the margin boundary
+                let alpha;
                 
-                supportVectors.push({
-                    x1: point.x1,
-                    x2: point.x2,
-                    y: point.y,
-                    alpha: alpha,
-                    slackVariable: slackVar,
-                    margin: margin
-                });
+                if (functionalMargin < 1.0) {
+                    // Point is within margin or misclassified - has non-zero alpha
+                    alpha = C * Math.max(0, 1 - functionalMargin);
+                } else {
+                    // Point is very close to margin boundary - small alpha
+                    alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
+                    alpha = Math.max(0, alpha);
+                }
+                
+                if (alpha > 1e-6) { // Only include if alpha is significantly > 0
+                    const slackVar = Math.max(0, 1 - functionalMargin);
+                    
+                    supportVectors.push({
+                        x1: point.x1,
+                        x2: point.x2,
+                        y: point.y,
+                        alpha: alpha,
+                        slackVariable: slackVar,
+                        margin: functionalMargin
+                    });
+                }
             }
+            // Points with functionalMargin > 1 + tolerance are correctly classified 
+            // with good margin and should have α = 0 (non-support vectors)
         }
         
         // Log detailed statistics
         const totalPoints = data.length;
         const svCount = supportVectors.length;
         const svPercentage = (svCount / totalPoints * 100).toFixed(1);
-        const marginPoints = supportVectors.filter(sv => Math.abs(sv.margin - 1) < 0.1).length;
+        const onMargin = supportVectors.filter(sv => Math.abs(sv.margin - 1) < 0.1).length;
         const misclassified = supportVectors.filter(sv => sv.margin < 0).length;
+        const withinMargin = supportVectors.filter(sv => sv.margin >= 0 && sv.margin < 0.9).length;
         
         console.log(`Support Vector Analysis:`);
         console.log(`  Total training points: ${totalPoints}`);
-        console.log(`  Support vectors: ${svCount} (${svPercentage}%)`);
-        console.log(`  On margin boundary: ${marginPoints}`);
+        console.log(`  Support vectors: ${svCount} (${svPercentage}%) - Only these have α > 0`);
+        console.log(`  Non-support vectors: ${totalPoints - svCount} (${(100 - parseFloat(svPercentage)).toFixed(1)}%) - These have α = 0`);
+        console.log(`  On margin boundary: ${onMargin}`);
+        console.log(`  Within margin: ${withinMargin}`);
         console.log(`  Misclassified: ${misclassified}`);
-        console.log(`  Within margin: ${svCount - marginPoints - misclassified}`);
     }
 
     // Check KKT conditions
@@ -269,37 +276,73 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let satisfied = 0;
         let total = 0;
+        let nonSupportVectors = 0;
+        let supportVectorViolations = 0;
         
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const margin = point.y * decision;
-            const sv = supportVectors.find(sv => sv.x1 === point.x1 && sv.x2 === point.x2);
+            const functionalMargin = point.y * decision; // y_i * (w·x_i + b)
+            
+            // Check if this point is a support vector
+            const sv = supportVectors.find(sv => 
+                Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
             const alpha = sv ? sv.alpha : 0;
+            const isSupporVector = alpha > 1e-6;
             
             total++;
-            
-            // KKT conditions for SVM
             let conditionsMet = true;
             
-            // 1. α ≥ 0
-            if (alpha < -1e-6) conditionsMet = false;
-            
-            // 2. yi(w·xi + b) ≥ 1 - ξi (feasibility)
-            const slackVar = Math.max(0, 1 - margin);
-            if (margin < 1 - slackVar - 1e-6) conditionsMet = false;
-            
-            // 3. Complementary slackness: α(yi(w·xi + b) - 1 + ξi) = 0
-            if (alpha > 1e-6 && Math.abs(margin - 1 + slackVar) > 1e-3) conditionsMet = false;
+            if (!isSupporVector) {
+                // For NON-SUPPORT VECTORS: Should have α = 0 and functional margin > 1
+                nonSupportVectors++;
+                
+                // KKT conditions for non-support vectors:
+                // 1. α = 0 (automatically satisfied since we set it to 0)
+                // 2. y_i(w·x_i + b) ≥ 1 (should have good margin)
+                if (functionalMargin < 1.0 - 1e-3) {
+                    conditionsMet = false; // Point should have good margin but doesn't
+                }
+            } else {
+                // For SUPPORT VECTORS: Should have α > 0 and be on/within margin
+                // KKT conditions for support vectors:
+                // 1. 0 < α ≤ C
+                if (alpha <= 0 || alpha > C + 1e-6) {
+                    conditionsMet = false;
+                }
+                
+                // 2. Complementary slackness: α(y_i(w·x_i + b) - 1 + ξ_i) = 0
+                // Since α > 0, we need: y_i(w·x_i + b) - 1 + ξ_i = 0
+                // Which means: ξ_i = 1 - y_i(w·x_i + b) = 1 - functionalMargin
+                const expectedSlack = Math.max(0, 1 - functionalMargin);
+                const actualSlack = sv.slackVariable;
+                
+                if (Math.abs(expectedSlack - actualSlack) > 1e-3) {
+                    conditionsMet = false;
+                    supportVectorViolations++;
+                }
+                
+                // 3. ξ_i ≥ 0 (slack variables must be non-negative)
+                if (actualSlack < -1e-6) {
+                    conditionsMet = false;
+                }
+            }
             
             if (conditionsMet) satisfied++;
         }
         
         const percentage = total > 0 ? (satisfied / total * 100).toFixed(1) : '0.0';
-        html += `<div class="kkt-summary">Satisfied: ${satisfied}/${total} points (${percentage}%)</div>`;
+        html += `<div class="kkt-summary">KKT Satisfied: ${satisfied}/${total} points (${percentage}%)</div>`;
+        html += `<div class="kkt-breakdown">`;
+        html += `<div>• Non-support vectors: ${nonSupportVectors} (should have α=0, margin>1)</div>`;
+        html += `<div>• Support vectors: ${supportVectors.length} (should have α>0, on/within margin)</div>`;
+        if (supportVectorViolations > 0) {
+            html += `<div style="color: #e74c3c;">• SV violations: ${supportVectorViolations}</div>`;
+        }
+        html += `</div>`;
         
         // Show support vector details
         if (supportVectors.length > 0) {
-            html += '<div class="sv-details"><h5>Support Vectors:</h5>';
+            html += '<div class="sv-details"><h5>Support Vectors (α > 0):</h5>';
             for (let i = 0; i < Math.min(supportVectors.length, 5); i++) {
                 const sv = supportVectors[i];
                 html += `<div class="sv-item">α=${sv.alpha.toFixed(3)}, ξ=${sv.slackVariable.toFixed(3)}, margin=${sv.margin.toFixed(3)}</div>`;
@@ -309,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             html += '</div>';
         } else {
-            html += '<div class="sv-details">No support vectors found yet.</div>';
+            html += '<div class="sv-details">No support vectors found (all α = 0).</div>';
         }
         
         kktConditionsElement.innerHTML = html;
@@ -661,47 +704,59 @@ document.addEventListener('DOMContentLoaded', function() {
         if (trainBtn) trainBtn.textContent = 'Train SVM';
         
         if (pattern === 'linear') {
-            // Linearly separable data with controlled margin
+            // Generate more clearly separated data with only some points near boundary
             for (let i = 0; i < numPoints; i++) {
                 const x1 = (Math.random() - 0.5) * 4;
                 const x2 = (Math.random() - 0.5) * 4;
                 
-                // Create a clear linear separation with some margin
-                const boundary = 0.7 * x1 + 0.4 * x2;
+                // Create a clear linear separation
+                const boundary = 0.8 * x1 + 0.5 * x2;
                 
-                // Add some controlled noise near the boundary to create interesting support vectors
-                let y;
-                if (Math.abs(boundary) < 0.3) {
-                    // Near boundary - add some randomness to create margin violations
-                    y = boundary + (Math.random() - 0.5) * 0.6 > 0 ? 1 : -1;
+                // Most points should be clearly separated (not support vectors)
+                if (Math.random() < 0.85) {
+                    // 85% of points are clearly separated (will not be support vectors)
+                    const y = boundary > 0 ? 1 : -1;
+                    allPoints.push({ x1, x2, y });
                 } else {
-                    // Far from boundary - clean classification
-                    y = boundary > 0 ? 1 : -1;
+                    // 15% of points are near the boundary (potential support vectors)
+                    const noise = (Math.random() - 0.5) * 1.0; // Add noise
+                    const noisyBoundary = boundary + noise;
+                    const y = noisyBoundary > 0 ? 1 : -1;
+                    allPoints.push({ x1, x2, y });
                 }
-                
-                allPoints.push({ x1, x2, y });
             }
         } else {
-            // Circular pattern with some overlap for interesting support vectors
+            // Circular pattern with clear separation
             for (let i = 0; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
-                const radius = Math.random() * 2.5;
-                const x1 = radius * Math.cos(angle);
-                const x2 = radius * Math.sin(angle);
+                let radius, y;
                 
-                // Circular boundary with some noise near the boundary
-                const distFromCenter = Math.sqrt(x1 * x1 + x2 * x2);
-                const boundaryRadius = 1.3;
-                
-                let y;
-                if (Math.abs(distFromCenter - boundaryRadius) < 0.3) {
-                    // Near boundary - add some randomness
-                    y = (distFromCenter + (Math.random() - 0.5) * 0.4) < boundaryRadius ? 1 : -1;
+                // Most points should be clearly separated (not support vectors)
+                if (Math.random() < 0.8) {
+                    // 80% clearly separated
+                    if (Math.random() < 0.5) {
+                        // Inner class: well inside the circle
+                        radius = Math.random() * 0.8; // Well inside boundary at 1.3
+                        y = 1;
+                    } else {
+                        // Outer class: well outside the circle  
+                        radius = 1.8 + Math.random() * 0.7; // Well outside boundary
+                        y = -1;
+                    }
                 } else {
-                    // Far from boundary - clean classification
-                    y = distFromCenter < boundaryRadius ? 1 : -1;
+                    // 20% near the boundary (potential support vectors)
+                    radius = 1.0 + (Math.random() - 0.5) * 0.8; // Near boundary at 1.3
+                    const boundaryRadius = 1.3;
+                    y = radius < boundaryRadius ? 1 : -1;
+                    
+                    // Add some noise to create margin violations
+                    if (Math.random() < 0.3) {
+                        y = -y; // Flip label for some noise
+                    }
                 }
                 
+                const x1 = radius * Math.cos(angle);
+                const x2 = radius * Math.sin(angle);
                 allPoints.push({ x1, x2, y });
             }
         }
@@ -1075,6 +1130,19 @@ document.addEventListener('DOMContentLoaded', function() {
             font-weight: bold;
             margin-bottom: 10px;
             color: #27ae60;
+        }
+        
+        .kkt-breakdown {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 3px solid #9b59b6;
+        }
+        
+        .kkt-breakdown div {
+            margin: 3px 0;
         }
         
         .sv-details {
