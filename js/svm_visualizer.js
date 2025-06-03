@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Starting SVM training with C=${C}, kernel=${kernelType}, lr=${learningRate}`);
         
+        // Main training loop
         while (iterations < maxIter) {
             // SGD: sample a random point
             const idx = Math.floor(Math.random() * data.length);
@@ -75,38 +76,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Calculate current metrics
-            const currentAccuracy = calculateAccuracy();
-            const currentLoss = calculateSVMLoss();
-            
-            // Track improvements
-            if (currentAccuracy > bestAccuracy + 0.005) {
-                bestAccuracy = currentAccuracy;
-                stagnantIterations = 0;
-            } else {
-                stagnantIterations++;
-            }
-            
-            // Adaptive learning rate (less aggressive decay)
-            if (stagnantIterations > 100 && stagnantIterations % 50 === 0) {
-                currentLearningRate *= 0.9;
-                console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
-            }
-            
-            // Early stopping conditions
-            if (currentAccuracy > 0.98) {
-                console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
-                break;
-            }
-            
-            if (stagnantIterations > 200) {
-                console.log(`Early stopping: No improvement for 200 iterations`);
-                break;
-            }
-            
-            // Update display every 10 iterations
+            // Calculate current metrics every 10 iterations
             if (iterations % 10 === 0) {
-                updateSupportVectors();
+                const currentAccuracy = calculateAccuracy();
+                const currentLoss = calculateSVMLoss();
+                
+                // Track improvements
+                if (currentAccuracy > bestAccuracy + 0.005) {
+                    bestAccuracy = currentAccuracy;
+                    stagnantIterations = 0;
+                } else {
+                    stagnantIterations++;
+                }
+                
+                // Adaptive learning rate (less aggressive decay)
+                if (stagnantIterations > 100 && stagnantIterations % 50 === 0) {
+                    currentLearningRate *= 0.9;
+                    console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
+                }
+                
+                // Early stopping conditions
+                if (currentAccuracy > 0.98 && iterations > 50) { // Prevent premature stopping
+                    console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
+                    break;
+                }
+                
+                if (stagnantIterations > 200 && iterations > 100) {
+                    console.log(`Early stopping: No improvement for 200 iterations`);
+                    break;
+                }
+                
+                // Update display
+                if (iterations > 0) { // Only update support vectors after first iteration
+                    updateSupportVectors(iterations);
+                }
                 const testAcc = calculateTestAccuracy();
                 
                 if (accuracyElement) accuracyElement.textContent = (currentAccuracy * 100).toFixed(1) + '%';
@@ -126,8 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
             iterations++;
         }
 
+        // Mark that training has occurred
+        hasTrainedOnce = true;
+
         // Final update
-        updateSupportVectors();
+        updateSupportVectors(iterations);
         const finalAccuracy = calculateAccuracy();
         const finalTestAcc = calculateTestAccuracy();
         const finalLoss = calculateSVMLoss();
@@ -143,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`SVM training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%, Support vectors: ${supportVectors.length}`);
 
         isTraining = false;
-        hasTrainedOnce = true;
 
         if (trainBtn) {
             trainBtn.textContent = hasTrainedOnce ? 'Train SVM (Continue)' : 'Train SVM';
@@ -161,10 +166,13 @@ document.addEventListener('DOMContentLoaded', function() {
         randomWeights = [];
         randomBiases = [];
         
+        // Ensure gamma is reasonable
+        const effectiveGamma = Math.min(gamma, 1.0); // Cap gamma to prevent instability
+        
         for (let i = 0; i < numRandomFeatures; i++) {
             // Sample from Gaussian distribution scaled by gamma
-            const w1 = gaussianRandom() * Math.sqrt(2 * gamma);
-            const w2 = gaussianRandom() * Math.sqrt(2 * gamma);
+            const w1 = gaussianRandom() * Math.sqrt(2 * effectiveGamma);
+            const w2 = gaussianRandom() * Math.sqrt(2 * effectiveGamma);
             randomWeights.push([w1, w2]);
             
             // Random bias from uniform distribution
@@ -176,10 +184,10 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < numRandomFeatures; i++) {
             approximateWeights.push((Math.random() - 0.5) * 0.01);
         }
-        approximateBias = 0;
+        approximateBias = (Math.random() - 0.5) * 0.01;
         
         kernelApproximation = true;
-        console.log(`Initialized RBF kernel approximation with ${numRandomFeatures} random features`);
+        console.log(`Initialized RBF kernel approximation with ${numRandomFeatures} random features, gamma=${effectiveGamma.toFixed(3)}`);
     }
 
     // Compute approximate features using Random Fourier Features
@@ -287,10 +295,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update support vectors based on current model
-    function updateSupportVectors() {
+    function updateSupportVectors(currentIteration) {
         supportVectors = [];
         
-        if (!hasTrainedOnce) {
+        // Only identify support vectors after first training iteration
+        if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) {
             return;
         }
         
@@ -300,18 +309,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // identify points that are close to the decision boundary
             for (const point of data) {
                 const decision = computeDecisionFunction(point.x1, point.x2);
-                const absDecision = Math.abs(decision);
+                const functionalMargin = point.y * decision;
                 
-                // Points close to decision boundary (within margin)
-                if (absDecision <= 1.5) {
-                    const functionalMargin = point.y * decision;
+                // Points within or near the margin
+                if (functionalMargin <= 1.2) {
                     const slackVar = Math.max(0, 1 - functionalMargin);
                     
                     supportVectors.push({
                         x1: point.x1,
                         x2: point.x2,
                         y: point.y,
-                        alpha: 1.0 / (1.0 + absDecision), // Simplified alpha for visualization
+                        alpha: Math.exp(-Math.abs(functionalMargin - 1)), // Exponential decay from margin
                         slackVariable: slackVar,
                         margin: functionalMargin
                     });
@@ -356,7 +364,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const svCount = supportVectors.length;
         const svPercentage = (svCount / totalPoints * 100).toFixed(1);
         
-        console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
+        if (svCount > 0) {
+            console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
+        }
     }
 
     // Check KKT conditions
@@ -778,28 +788,45 @@ document.addEventListener('DOMContentLoaded', function() {
         if (trainBtn) trainBtn.textContent = 'Train SVM';
         
         if (pattern === 'linear') {
-            // Linear pattern with clear separation
+            // Linear pattern with some overlap to make it more challenging
+            const w_true = [0.8, 0.5]; // True separating hyperplane
+            const b_true = 0;
+            
             for (let i = 0; i < numPoints; i++) {
                 const x1 = (Math.random() - 0.5) * 4;
                 const x2 = (Math.random() - 0.5) * 4;
                 
-                const boundary = 0.8 * x1 + 0.5 * x2;
+                const decision = w_true[0] * x1 + w_true[1] * x2 + b_true;
                 
-                if (Math.random() < 0.85) {
-                    // Clearly separated points
-                    const margin = (Math.random() + 0.5) * 0.8; // Add margin
-                    const y = boundary > 0 ? 1 : -1;
-                    const offset = y * margin;
-                    allPoints.push({ 
-                        x1: x1 + offset * 0.8 / Math.sqrt(0.64 + 0.25), 
-                        x2: x2 + offset * 0.5 / Math.sqrt(0.64 + 0.25), 
-                        y: y 
-                    });
+                let y;
+                if (Math.random() < 0.9) {
+                    // 90% of points are correctly labeled with margin
+                    const margin = 0.5 + Math.random() * 0.5;
+                    if (decision > 0) {
+                        y = 1;
+                        // Push point away from boundary
+                        const norm = Math.sqrt(w_true[0]**2 + w_true[1]**2);
+                        allPoints.push({
+                            x1: x1 + margin * w_true[0] / norm,
+                            x2: x2 + margin * w_true[1] / norm,
+                            y: y
+                        });
+                    } else {
+                        y = -1;
+                        // Push point away from boundary
+                        const norm = Math.sqrt(w_true[0]**2 + w_true[1]**2);
+                        allPoints.push({
+                            x1: x1 - margin * w_true[0] / norm,
+                            x2: x2 - margin * w_true[1] / norm,
+                            y: y
+                        });
+                    }
                 } else {
-                    // Near boundary (potential support vectors)
-                    const noise = (Math.random() - 0.5) * 0.5;
-                    const noisyBoundary = boundary + noise;
-                    const y = noisyBoundary > 0 ? 1 : -1;
+                    // 10% near boundary or misclassified
+                    y = decision > 0 ? 1 : -1;
+                    if (Math.random() < 0.3) {
+                        y = -y; // Flip label for some noise
+                    }
                     allPoints.push({ x1, x2, y });
                 }
             }
@@ -848,11 +875,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test`);
         
-        // Initialize
+        // Initialize with random weights (not aligned with true boundary)
         initializeWeights();
         supportVectors = [];
         hasTrainedOnce = false;
         kernelApproximation = false;
+        
+        // Update support vectors
+        updateSupportVectors();
         
         // Reset metrics
         if (accuracyElement) accuracyElement.textContent = '0.0%';
