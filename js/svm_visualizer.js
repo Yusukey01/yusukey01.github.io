@@ -1,4 +1,5 @@
 // An interactive demo for Support Vector Machines (SVM)
+// Corrected version with proper RBF kernel support
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -9,13 +10,18 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // SVM training using Stochastic Gradient Descent
+    // SVM training with kernel approximation for RBF
     async function trainSVM() {
         if (isTraining) return;
         isTraining = true;
         if (trainBtn) {
             trainBtn.textContent = 'Training...';
             trainBtn.disabled = true;
+        }
+
+        // Initialize kernel-specific parameters
+        if (kernelType === 'rbf' && !kernelApproximation) {
+            initializeKernelApproximation();
         }
 
         let iterations = 0;
@@ -26,29 +32,47 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Starting SVM training with C=${C}, kernel=${kernelType}, lr=${learningRate}`);
         
         while (iterations < maxIter) {
-            const previousW = [...weights.w];
-            const previousB = weights.b;
-            
             // SGD: sample a random point
             const idx = Math.floor(Math.random() * data.length);
             const point = data[idx];
             
-            // Compute functional margin
-            const decision = computeDecisionFunction(point.x1, point.x2);
-            const margin = point.y * decision;
-            
-            // SGD update rules for SVM
-            if (margin < 1) {
-                // Point is within margin or misclassified: update both w and b
-                for (let i = 0; i < 2; i++) {
-                    const feature = i === 0 ? point.x1 : point.x2;
-                    weights.w[i] = weights.w[i] - learningRate * (regularizationTerm * weights.w[i] - point.y * feature);
+            if (kernelType === 'linear') {
+                // Linear kernel: standard SGD update
+                const decision = computeDecisionFunction(point.x1, point.x2);
+                const margin = point.y * decision;
+                
+                if (margin < 1) {
+                    // Point is within margin or misclassified
+                    for (let i = 0; i < 2; i++) {
+                        const feature = i === 0 ? point.x1 : point.x2;
+                        weights.w[i] = weights.w[i] - learningRate * (regularizationTerm * weights.w[i] - point.y * feature);
+                    }
+                    weights.b = weights.b - learningRate * (-point.y);
+                } else {
+                    // Only regularization
+                    for (let i = 0; i < 2; i++) {
+                        weights.w[i] = weights.w[i] - learningRate * regularizationTerm * weights.w[i];
+                    }
                 }
-                weights.b = weights.b - learningRate * (-point.y);
-            } else {
-                // Point is correctly classified with good margin: only regularization
-                for (let i = 0; i < 2; i++) {
-                    weights.w[i] = weights.w[i] - learningRate * regularizationTerm * weights.w[i];
+            } else if (kernelType === 'rbf') {
+                // RBF kernel: use approximated features
+                const phi = computeApproximateFeatures(point.x1, point.x2);
+                const decision = computeApproximateDecision(phi);
+                const margin = point.y * decision;
+                
+                if (margin < 1) {
+                    // Update approximated weights
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] = approximateWeights[i] - 
+                            learningRate * (regularizationTerm * approximateWeights[i] - point.y * phi[i]);
+                    }
+                    approximateBias = approximateBias - learningRate * (-point.y);
+                } else {
+                    // Only regularization
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] = approximateWeights[i] - 
+                            learningRate * regularizationTerm * approximateWeights[i];
+                    }
                 }
             }
             
@@ -69,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 learningRate *= 0.95;
             }
             
-            // Early stopping
+            // Early stopping conditions
             if (currentAccuracy > 0.98) {
                 console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
                 break;
@@ -127,18 +151,98 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Initialize kernel approximation for RBF
+    function initializeKernelApproximation() {
+        // Use Random Fourier Features approximation
+        // Number of random features (higher = better approximation but slower)
+        numRandomFeatures = 50;
+        
+        // Initialize random weights for Fourier features
+        randomWeights = [];
+        randomBiases = [];
+        
+        for (let i = 0; i < numRandomFeatures; i++) {
+            // Sample from Gaussian distribution scaled by gamma
+            const w1 = gaussianRandom() * Math.sqrt(2 * gamma);
+            const w2 = gaussianRandom() * Math.sqrt(2 * gamma);
+            randomWeights.push([w1, w2]);
+            
+            // Random bias from uniform distribution
+            randomBiases.push(Math.random() * 2 * Math.PI);
+        }
+        
+        // Initialize approximate weights
+        approximateWeights = new Array(numRandomFeatures).fill(0);
+        approximateBias = 0;
+        
+        kernelApproximation = true;
+        console.log(`Initialized RBF kernel approximation with ${numRandomFeatures} random features`);
+    }
+
+    // Compute approximate features using Random Fourier Features
+    function computeApproximateFeatures(x1, x2) {
+        const features = [];
+        const scale = Math.sqrt(2.0 / numRandomFeatures);
+        
+        for (let i = 0; i < numRandomFeatures; i++) {
+            const projection = randomWeights[i][0] * x1 + randomWeights[i][1] * x2 + randomBiases[i];
+            features.push(scale * Math.cos(projection));
+        }
+        
+        return features;
+    }
+
+    // Compute decision using approximate features
+    function computeApproximateDecision(features) {
+        let decision = approximateBias;
+        for (let i = 0; i < features.length; i++) {
+            decision += approximateWeights[i] * features[i];
+        }
+        return decision;
+    }
+
+    // Gaussian random number generator (Box-Muller transform)
+    function gaussianRandom() {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
     // Compute decision function value
     function computeDecisionFunction(x1, x2) {
         if (kernelType === 'linear') {
             return weights.w[0] * x1 + weights.w[1] * x2 + weights.b;
         } else if (kernelType === 'rbf') {
-            // For RBF kernel, use support vector representation
-            let result = 0;
-            for (const sv of supportVectors) {
-                const k = rbfKernel(x1, x2, sv.x1, sv.x2);
-                result += sv.alpha * sv.y * k;
+            if (kernelApproximation) {
+                // Use approximate features
+                const phi = computeApproximateFeatures(x1, x2);
+                return computeApproximateDecision(phi);
+            } else {
+                // Fallback: use nearest support vectors (simplified)
+                let result = 0;
+                const k = 5; // Use k nearest support vectors
+                
+                if (supportVectors.length > 0) {
+                    // Sort support vectors by distance
+                    const distances = supportVectors.map(sv => ({
+                        sv: sv,
+                        dist: (sv.x1 - x1) ** 2 + (sv.x2 - x2) ** 2
+                    }));
+                    distances.sort((a, b) => a.dist - b.dist);
+                    
+                    // Use k nearest
+                    for (let i = 0; i < Math.min(k, distances.length); i++) {
+                        const sv = distances[i].sv;
+                        const kern = rbfKernel(x1, x2, sv.x1, sv.x2);
+                        result += sv.y * kern * (sv.alpha || 1.0);
+                    }
+                    
+                    result += weights.b;
+                }
+                
+                return result;
             }
-            return result + weights.b;
         }
         return 0;
     }
@@ -180,6 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate SVM loss (hinge loss + regularization)
     function calculateSVMLoss() {
         let hingeLoss = 0;
+        
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
             const margin = point.y * decision;
@@ -189,9 +294,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Regularization term
-        const regTerm = kernelType === 'linear' ? 
-            0.5 * (weights.w[0] * weights.w[0] + weights.w[1] * weights.w[1]) :
-            0.5 * supportVectors.reduce((sum, sv) => sum + sv.alpha * sv.alpha, 0);
+        let regTerm = 0;
+        if (kernelType === 'linear') {
+            regTerm = 0.5 * (weights.w[0] * weights.w[0] + weights.w[1] * weights.w[1]);
+        } else if (kernelType === 'rbf' && kernelApproximation) {
+            // Regularization for approximate weights
+            for (let i = 0; i < approximateWeights.length; i++) {
+                regTerm += approximateWeights[i] * approximateWeights[i];
+            }
+            regTerm *= 0.5;
+        }
         
         return C * hingeLoss / data.length + regTerm;
     }
@@ -200,36 +312,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSupportVectors() {
         supportVectors = [];
         
-        // Don't identify support vectors if model hasn't been trained
         if (!hasTrainedOnce) {
             return;
         }
         
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision; // y_i * (w·x_i + b)
+            const functionalMargin = point.y * decision;
             
-            // For SVM, a point is a support vector ONLY if:
-            // 1. It's misclassified (functional margin < 0) OR
-            // 2. It's correctly classified but within the margin (0 ≤ functional margin ≤ 1)
-            // Points with functional margin > 1 should have α = 0 (non-support vectors)
-            
-            const tolerance = 0.05; // Small numerical tolerance
+            const tolerance = 0.05;
             
             if (functionalMargin <= 1.0 + tolerance) {
-                // This point violates the margin or is on the margin boundary
                 let alpha;
                 
                 if (functionalMargin < 1.0) {
-                    // Point is within margin or misclassified - has non-zero alpha
                     alpha = C * Math.max(0, 1 - functionalMargin);
                 } else {
-                    // Point is very close to margin boundary - small alpha
                     alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
                     alpha = Math.max(0, alpha);
                 }
                 
-                if (alpha > 1e-6) { // Only include if alpha is significantly > 0
+                if (alpha > 1e-6) {
                     const slackVar = Math.max(0, 1 - functionalMargin);
                     
                     supportVectors.push({
@@ -242,25 +345,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             }
-            // Points with functionalMargin > 1 + tolerance are correctly classified 
-            // with good margin and should have α = 0 (non-support vectors)
         }
         
-        // Log detailed statistics
+        // Log statistics
         const totalPoints = data.length;
         const svCount = supportVectors.length;
         const svPercentage = (svCount / totalPoints * 100).toFixed(1);
-        const onMargin = supportVectors.filter(sv => Math.abs(sv.margin - 1) < 0.1).length;
-        const misclassified = supportVectors.filter(sv => sv.margin < 0).length;
-        const withinMargin = supportVectors.filter(sv => sv.margin >= 0 && sv.margin < 0.9).length;
         
-        console.log(`Support Vector Analysis:`);
-        console.log(`  Total training points: ${totalPoints}`);
-        console.log(`  Support vectors: ${svCount} (${svPercentage}%) - Only these have α > 0`);
-        console.log(`  Non-support vectors: ${totalPoints - svCount} (${(100 - parseFloat(svPercentage)).toFixed(1)}%) - These have α = 0`);
-        console.log(`  On margin boundary: ${onMargin}`);
-        console.log(`  Within margin: ${withinMargin}`);
-        console.log(`  Misclassified: ${misclassified}`);
+        console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
     }
 
     // Check KKT conditions
@@ -276,14 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let satisfied = 0;
         let total = 0;
-        let nonSupportVectors = 0;
-        let supportVectorViolations = 0;
         
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision; // y_i * (w·x_i + b)
+            const functionalMargin = point.y * decision;
             
-            // Check if this point is a support vector
             const sv = supportVectors.find(sv => 
                 Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
             const alpha = sv ? sv.alpha : 0;
@@ -293,36 +382,20 @@ document.addEventListener('DOMContentLoaded', function() {
             let conditionsMet = true;
             
             if (!isSupporVector) {
-                // For NON-SUPPORT VECTORS: Should have α = 0 and functional margin > 1
-                nonSupportVectors++;
-                
-                // KKT conditions for non-support vectors:
-                // 1. α = 0 (automatically satisfied since we set it to 0)
-                // 2. y_i(w·x_i + b) ≥ 1 (should have good margin)
+                // Non-support vectors: should have good margin
                 if (functionalMargin < 1.0 - 1e-3) {
-                    conditionsMet = false; // Point should have good margin but doesn't
+                    conditionsMet = false;
                 }
             } else {
-                // For SUPPORT VECTORS: Should have α > 0 and be on/within margin
-                // KKT conditions for support vectors:
-                // 1. 0 < α ≤ C
+                // Support vectors: check complementary slackness
                 if (alpha <= 0 || alpha > C + 1e-6) {
                     conditionsMet = false;
                 }
                 
-                // 2. Complementary slackness: α(y_i(w·x_i + b) - 1 + ξ_i) = 0
-                // Since α > 0, we need: y_i(w·x_i + b) - 1 + ξ_i = 0
-                // Which means: ξ_i = 1 - y_i(w·x_i + b) = 1 - functionalMargin
                 const expectedSlack = Math.max(0, 1 - functionalMargin);
                 const actualSlack = sv.slackVariable;
                 
                 if (Math.abs(expectedSlack - actualSlack) > 1e-3) {
-                    conditionsMet = false;
-                    supportVectorViolations++;
-                }
-                
-                // 3. ξ_i ≥ 0 (slack variables must be non-negative)
-                if (actualSlack < -1e-6) {
                     conditionsMet = false;
                 }
             }
@@ -332,27 +405,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const percentage = total > 0 ? (satisfied / total * 100).toFixed(1) : '0.0';
         html += `<div class="kkt-summary">KKT Satisfied: ${satisfied}/${total} points (${percentage}%)</div>`;
-        html += `<div class="kkt-breakdown">`;
-        html += `<div>• Non-support vectors: ${nonSupportVectors} (should have α=0, margin>1)</div>`;
-        html += `<div>• Support vectors: ${supportVectors.length} (should have α>0, on/within margin)</div>`;
-        if (supportVectorViolations > 0) {
-            html += `<div style="color: #e74c3c;">• SV violations: ${supportVectorViolations}</div>`;
-        }
-        html += `</div>`;
         
-        // Show support vector details
-        if (supportVectors.length > 0) {
-            html += '<div class="sv-details"><h5>Support Vectors (α > 0):</h5>';
-            for (let i = 0; i < Math.min(supportVectors.length, 5); i++) {
-                const sv = supportVectors[i];
-                html += `<div class="sv-item">α=${sv.alpha.toFixed(3)}, ξ=${sv.slackVariable.toFixed(3)}, margin=${sv.margin.toFixed(3)}</div>`;
-            }
-            if (supportVectors.length > 5) {
-                html += `<div class="sv-item">... and ${supportVectors.length - 5} more</div>`;
-            }
-            html += '</div>';
-        } else {
-            html += '<div class="sv-details">No support vectors found (all α = 0).</div>';
+        if (kernelType === 'rbf' && kernelApproximation) {
+            html += `<div class="kkt-note">Note: Using ${numRandomFeatures} random features for RBF approximation</div>`;
         }
         
         kktConditionsElement.innerHTML = html;
@@ -360,7 +415,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw decision boundary and margin
     function drawDecisionBoundary(xRange, yRange) {
-        // Only draw decision boundary if model has been trained
         if (!hasTrainedOnce) {
             return;
         }
@@ -368,20 +422,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
-        // For linear SVM, draw analytical solution
         if (kernelType === 'linear' && weights.w[0] !== 0 && weights.w[1] !== 0) {
             drawLinearBoundary(xRange, yRange, xScale, yScale);
         } else {
-            // For RBF or when linear solution is degenerate, draw contour
             drawContourBoundary(xRange, yRange);
         }
     }
 
     // Draw linear decision boundary
     function drawLinearBoundary(xRange, yRange, xScale, yScale) {
-        // Decision boundary: w0*x1 + w1*x2 + b = 0
-        // x2 = -(w0*x1 + b) / w1
-        
         const points = [];
         for (let x1 = xRange.min; x1 <= xRange.max; x1 += (xRange.max - xRange.min) / 100) {
             const x2 = -(weights.w[0] * x1 + weights.b) / weights.w[1];
@@ -413,7 +462,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawMarginBoundaries(xRange, yRange, xScale, yScale, offset) {
         const points = [];
         for (let x1 = xRange.min; x1 <= xRange.max; x1 += (xRange.max - xRange.min) / 100) {
-            // Margin boundary: w0*x1 + w1*x2 + b = ±1
             const x2 = -(weights.w[0] * x1 + weights.b - offset) / weights.w[1];
             if (x2 >= yRange.min && x2 <= yRange.max) {
                 const canvasX = plotMargin + (x1 - xRange.min) * xScale;
@@ -436,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Draw contour-based decision boundary (for RBF kernel)
+    // Draw contour-based decision boundary
     function drawContourBoundary(xRange, yRange) {
         const contourCanvas = document.createElement('canvas');
         contourCanvas.width = plotWidth;
@@ -445,23 +493,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const imageData = contourCtx.createImageData(plotWidth, plotHeight);
         
-        for (let i = 0; i < plotWidth; i++) {
-            for (let j = 0; j < plotHeight; j++) {
+        // Use lower resolution for performance
+        const step = 2;
+        
+        for (let i = 0; i < plotWidth; i += step) {
+            for (let j = 0; j < plotHeight; j += step) {
                 const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
                 const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
                 const decision = computeDecisionFunction(x1, x2);
-                const pixelIndex = (j * plotWidth + i) * 4;
                 
-                if (decision < 0) {
-                    imageData.data[pixelIndex] = 52; // Blue for class -1
-                    imageData.data[pixelIndex + 1] = 152;
-                    imageData.data[pixelIndex + 2] = 219;
-                    imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
-                } else {
-                    imageData.data[pixelIndex] = 231; // Red for class +1
-                    imageData.data[pixelIndex + 1] = 76;
-                    imageData.data[pixelIndex + 2] = 60;
-                    imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
+                // Fill a square of pixels
+                for (let di = 0; di < step && i + di < plotWidth; di++) {
+                    for (let dj = 0; dj < step && j + dj < plotHeight; dj++) {
+                        const pixelIndex = ((j + dj) * plotWidth + (i + di)) * 4;
+                        
+                        if (decision < 0) {
+                            imageData.data[pixelIndex] = 52;
+                            imageData.data[pixelIndex + 1] = 152;
+                            imageData.data[pixelIndex + 2] = 219;
+                            imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
+                        } else {
+                            imageData.data[pixelIndex] = 231;
+                            imageData.data[pixelIndex + 1] = 76;
+                            imageData.data[pixelIndex + 2] = 60;
+                            imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
+                        }
+                    }
                 }
             }
         }
@@ -469,7 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
         contourCtx.putImageData(imageData, 0, 0);
         ctx.drawImage(contourCanvas, 0, 0, plotWidth, plotHeight, plotMargin, plotMargin, plotWidth, plotHeight);
         
-        // Draw decision boundary contour
         drawBoundaryContour(xRange, yRange);
     }
 
@@ -482,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineWidth = 3;
         
         const points = [];
-        const resolution = 80;
+        const resolution = 60; // Reduced for performance
         
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
@@ -502,7 +558,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Draw boundary points
         ctx.fillStyle = '#2c3e50';
         for (const point of points) {
             ctx.beginPath();
@@ -521,14 +576,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
             const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
             
-            // Check if this point is a support vector (only if model has been trained)
             const isSupportVector = hasTrainedOnce && supportVectors.some(sv => 
                 Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
             
-            // Color based on class
             ctx.fillStyle = point.y === 1 ? '#e74c3c' : '#3498db';
             
-            // Different styling for support vectors
             if (isSupportVector) {
                 ctx.strokeStyle = '#f39c12';
                 ctx.lineWidth = 3;
@@ -542,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fill();
             ctx.stroke();
             
-            // Draw slack variable visualization for misclassified support vectors
+            // Draw slack variable visualization
             if (isSupportVector) {
                 const sv = supportVectors.find(s => 
                     Math.abs(s.x1 - point.x1) < 1e-6 && Math.abs(s.x2 - point.x2) < 1e-6);
@@ -662,7 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleCParameterChange() {
         C = Math.pow(10, parseFloat(cInput.value));
         cDisplay.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
-        regularizationTerm = 1.0 / C; // For SGD formulation
+        regularizationTerm = 1.0 / C;
     }
 
     function handleLearningRateChange() {
@@ -684,18 +736,23 @@ document.addEventListener('DOMContentLoaded', function() {
             gammaContainer.style.display = 'none';
         }
         initializeWeights();
+        kernelApproximation = false;
         drawCanvas();
     }
 
     function handleGammaChange() {
         gamma = Math.pow(10, parseFloat(gammaInput.value));
         gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : gamma < 1 ? 2 : 1)}`;
+        // Re-initialize kernel approximation if using RBF
+        if (kernelType === 'rbf' && hasTrainedOnce) {
+            kernelApproximation = false;
+        }
     }
 
     // Generate dataset
     function generateData() {
-        const numPoints = 120; // More points for better demonstration
-        const trainSize = 80;  // More training data
+        const numPoints = 120;
+        const trainSize = 80;
         let allPoints = [];
         
         const pattern = Math.random() > 0.5 ? 'linear' : 'circular';
@@ -704,54 +761,48 @@ document.addEventListener('DOMContentLoaded', function() {
         if (trainBtn) trainBtn.textContent = 'Train SVM';
         
         if (pattern === 'linear') {
-            // Generate more clearly separated data with only some points near boundary
+            // Linear pattern with clear separation
             for (let i = 0; i < numPoints; i++) {
                 const x1 = (Math.random() - 0.5) * 4;
                 const x2 = (Math.random() - 0.5) * 4;
                 
-                // Create a clear linear separation
                 const boundary = 0.8 * x1 + 0.5 * x2;
                 
-                // Most points should be clearly separated (not support vectors)
                 if (Math.random() < 0.85) {
-                    // 85% of points are clearly separated (will not be support vectors)
+                    // Clearly separated points
                     const y = boundary > 0 ? 1 : -1;
                     allPoints.push({ x1, x2, y });
                 } else {
-                    // 15% of points are near the boundary (potential support vectors)
-                    const noise = (Math.random() - 0.5) * 1.0; // Add noise
+                    // Near boundary (potential support vectors)
+                    const noise = (Math.random() - 0.5) * 1.0;
                     const noisyBoundary = boundary + noise;
                     const y = noisyBoundary > 0 ? 1 : -1;
                     allPoints.push({ x1, x2, y });
                 }
             }
         } else {
-            // Circular pattern with clear separation
+            // Circular pattern
             for (let i = 0; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
                 let radius, y;
                 
-                // Most points should be clearly separated (not support vectors)
                 if (Math.random() < 0.8) {
-                    // 80% clearly separated
+                    // Clearly separated
                     if (Math.random() < 0.5) {
-                        // Inner class: well inside the circle
-                        radius = Math.random() * 0.8; // Well inside boundary at 1.3
+                        radius = Math.random() * 0.8;
                         y = 1;
                     } else {
-                        // Outer class: well outside the circle  
-                        radius = 1.8 + Math.random() * 0.7; // Well outside boundary
+                        radius = 1.8 + Math.random() * 0.7;
                         y = -1;
                     }
                 } else {
-                    // 20% near the boundary (potential support vectors)
-                    radius = 1.0 + (Math.random() - 0.5) * 0.8; // Near boundary at 1.3
+                    // Near boundary
+                    radius = 1.0 + (Math.random() - 0.5) * 0.8;
                     const boundaryRadius = 1.3;
                     y = radius < boundaryRadius ? 1 : -1;
                     
-                    // Add some noise to create margin violations
                     if (Math.random() < 0.3) {
-                        y = -y; // Flip label for some noise
+                        y = -y; // Add noise
                     }
                 }
                 
@@ -772,10 +823,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test`);
         
-        // Initialize weights
+        // Initialize
         initializeWeights();
         supportVectors = [];
-        hasTrainedOnce = false; // Reset training state
+        hasTrainedOnce = false;
+        kernelApproximation = false;
         
         // Reset metrics
         if (accuracyElement) accuracyElement.textContent = '0.0%';
@@ -790,15 +842,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize SVM weights
     function initializeWeights() {
-        if (kernelType === 'linear') {
-            // Initialize linear SVM weights
-            weights.w = [Math.random() * 0.2 - 0.1, Math.random() * 0.2 - 0.1];
-            weights.b = Math.random() * 0.2 - 0.1;
-        } else {
-            // For RBF kernel, we'll use support vector representation
-            weights.w = [0, 0]; // Not used for RBF
-            weights.b = 0;
-        }
+        weights.w = [Math.random() * 0.2 - 0.1, Math.random() * 0.2 - 0.1];
+        weights.b = Math.random() * 0.2 - 0.1;
+        
+        // Reset kernel approximation
+        randomWeights = [];
+        randomBiases = [];
+        approximateWeights = [];
+        approximateBias = 0;
         
         console.log('Initialized SVM weights:', weights);
     }
@@ -815,7 +866,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCanvas();
     }
 
-    // Create HTML structure
+    // Create HTML structure (same as original)
     container.innerHTML = `
         <div class="svm-container">
             <div class="svm-layout">
@@ -908,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
 
-    // Add styles
+    // Add styles (same as original)
     const styleElement = document.createElement('style');
     styleElement.textContent = `
         .svm-container {
@@ -1132,6 +1183,13 @@ document.addEventListener('DOMContentLoaded', function() {
             color: #27ae60;
         }
         
+        .kkt-note {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 8px;
+        }
+        
         .kkt-breakdown {
             font-size: 0.9rem;
             margin-bottom: 10px;
@@ -1210,18 +1268,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const kktConditionsElement = document.getElementById('kkt-conditions');
         
     // State variables
-    let data = []; // Training data
-    let testData = []; // Test data
-    let weights = { w: [0, 0], b: 0 }; // SVM weights
-    let supportVectors = []; // Support vectors
-    let C = 1.0; // Regularization parameter
-    let gamma = 0.32; // RBF kernel parameter
-    let regularizationTerm = 1.0; // 1/C for SGD
+    let data = [];
+    let testData = [];
+    let weights = { w: [0, 0], b: 0 };
+    let supportVectors = [];
+    let C = 1.0;
+    let gamma = 0.32;
+    let regularizationTerm = 1.0;
     let learningRate = 0.01;
     let maxIterations = 300;
     let kernelType = 'linear';
     let isTraining = false;
     let hasTrainedOnce = false;
+    
+    // Kernel approximation variables
+    let kernelApproximation = false;
+    let numRandomFeatures = 50;
+    let randomWeights = [];
+    let randomBiases = [];
+    let approximateWeights = [];
+    let approximateBias = 0;
     
     // Drawing settings
     const plotMargin = 50;
