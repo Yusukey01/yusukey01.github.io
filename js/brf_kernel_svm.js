@@ -22,30 +22,43 @@ document.addEventListener('DOMContentLoaded', function() {
             this.alphas = [];
             this.kernelCache = new Map();
             this.errorCache = new Map();
+            this.maxCacheSize = 10000; // Limit cache size
         }
 
         // RBF kernel function K(x1, x2) = exp(-gamma * ||x1 - x2||^2)
-        kernel(x1, x2) {
-            const key = `${x1.x1},${x1.x2}-${x2.x1},${x2.x2}`;
-            if (this.kernelCache.has(key)) {
-                return this.kernelCache.get(key);
-            }
-            
+        kernel(x1, x2, useCache = true) {
             const diff1 = x1.x1 - x2.x1;
             const diff2 = x1.x2 - x2.x2;
             const distSq = diff1 * diff1 + diff2 * diff2;
             const result = Math.exp(-this.gamma * distSq);
             
-            this.kernelCache.set(key, result);
+            // Only cache for training data points, not for visualization
+            if (useCache && x1.index !== undefined && x2.index !== undefined) {
+                const key = `${x1.index}-${x2.index}`;
+                
+                if (this.kernelCache.has(key)) {
+                    return this.kernelCache.get(key);
+                }
+                
+                // Implement cache size limit
+                if (this.kernelCache.size >= this.maxCacheSize) {
+                    // Clear oldest entries (simple FIFO)
+                    const keysToDelete = Array.from(this.kernelCache.keys()).slice(0, 1000);
+                    keysToDelete.forEach(k => this.kernelCache.delete(k));
+                }
+                
+                this.kernelCache.set(key, result);
+            }
+            
             return result;
         }
 
         // Compute decision function f(x) = Σ αᵢyᵢK(xᵢ,x) + b
-        decisionFunction(x) {
+        decisionFunction(x, useCache = true) {
             let result = 0;
             for (let i = 0; i < this.X.length; i++) {
                 if (this.alphas[i] > 0) {
-                    result += this.alphas[i] * this.y[i] * this.kernel(this.X[i], x);
+                    result += this.alphas[i] * this.y[i] * this.kernel(this.X[i], x, useCache);
                 }
             }
             return result + this.b;
@@ -57,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return this.errorCache.get(i);
             }
             
-            const error = this.decisionFunction(this.X[i]) - this.y[i];
+            const error = this.decisionFunction(this.X[i], true) - this.y[i];
             this.errorCache.set(i, error);
             return error;
         }
@@ -119,9 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (L === H) return false;
 
             // Compute eta (second derivative)
-            const k11 = this.kernel(this.X[i1], this.X[i1]);
-            const k12 = this.kernel(this.X[i1], this.X[i2]);
-            const k22 = this.kernel(this.X[i2], this.X[i2]);
+            const k11 = this.kernel(this.X[i1], this.X[i1], true);
+            const k12 = this.kernel(this.X[i1], this.X[i2], true);
+            const k22 = this.kernel(this.X[i2], this.X[i2], true);
             const eta = k11 + k22 - 2 * k12;
 
             let alpha2New;
@@ -224,8 +237,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Main SMO training loop
         train(data) {
-            // Initialize
-            this.X = data.map(point => ({ x1: point.x1, x2: point.x2 }));
+            // Initialize with indices for caching
+            this.X = data.map((point, idx) => ({ x1: point.x1, x2: point.x2, index: idx }));
             this.y = data.map(point => point.y);
             this.alphas = new Array(data.length).fill(0);
             this.b = 0;
@@ -279,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             for (let i = 0; i < this.X.length; i++) {
                 if (this.alphas[i] > 1e-8) {
-                    const functionalMargin = this.y[i] * this.decisionFunction(this.X[i]);
+                    const functionalMargin = this.y[i] * this.decisionFunction(this.X[i], true);
                     const slackVariable = Math.max(0, 1 - functionalMargin);
                     
                     supportVectors.push({
@@ -304,10 +317,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const results = [];
 
             for (let i = 0; i < data.length; i++) {
-                const point = { x1: data[i].x1, x2: data[i].x2 };
+                const point = { x1: data[i].x1, x2: data[i].x2, index: i };
                 const y = data[i].y;
                 const alpha = this.alphas[i] || 0;
-                const functionalMargin = y * this.decisionFunction(point);
+                const functionalMargin = y * this.decisionFunction(point, true);
                 
                 let violated = false;
                 let violation = "";
@@ -353,17 +366,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate accuracy
         calculateAccuracy(data) {
             let correct = 0;
-            for (const point of data) {
+            for (let i = 0; i < data.length; i++) {
+                const point = { x1: data[i].x1, x2: data[i].x2, index: i < this.X.length ? i : undefined };
                 const prediction = this.predict(point);
-                if (prediction === point.y) correct++;
+                if (prediction === data[i].y) correct++;
             }
             return data.length > 0 ? correct / data.length : 0;
         }
 
         // Predict class for a point
         predict(point) {
-            const decision = this.decisionFunction(point);
+            // Use caching for predictions on training/test data
+            const decision = this.decisionFunction(point, true);
             return decision >= 0 ? 1 : -1;
+        }
+        
+        // Clear cache to free memory
+        clearCache() {
+            this.kernelCache.clear();
+            this.errorCache.clear();
         }
     }
 
@@ -410,6 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         drawCanvas();
         
+        // Clear cache after visualization to free memory
+        svmModel.clearCache();
+        
         console.log(`Training completed: ${supportVectors.length} support vectors, Train accuracy: ${(trainAccuracy*100).toFixed(1)}%`);
 
         isTraining = false;
@@ -454,25 +478,31 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawDecisionBoundary(xRange, yRange) {
         if (!svmModel) return;
         
-        const resolution = 50;
+        // Reduce resolution for faster rendering
+        const resolution = 30; // Reduced from 50
         const xStep = (xRange.max - xRange.min) / resolution;
         const yStep = (yRange.max - yRange.min) / resolution;
         
-        // Create a canvas for the background
+        // Create a canvas for the background with lower resolution
+        const bgResolution = 100; // Lower resolution for background
         const bgCanvas = document.createElement('canvas');
-        bgCanvas.width = plotWidth;
-        bgCanvas.height = plotHeight;
+        bgCanvas.width = bgResolution;
+        bgCanvas.height = bgResolution;
         const bgCtx = bgCanvas.getContext('2d');
-        const imageData = bgCtx.createImageData(plotWidth, plotHeight);
+        const imageData = bgCtx.createImageData(bgResolution, bgResolution);
         
-        // Compute decision values for background
-        for (let i = 0; i < plotWidth; i++) {
-            for (let j = 0; j < plotHeight; j++) {
-                const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
-                const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
-                const decision = svmModel.decisionFunction({ x1, x2 });
+        // Clear kernel cache before visualization to prevent memory issues
+        svmModel.kernelCache.clear();
+        
+        // Compute decision values for background with lower resolution
+        for (let i = 0; i < bgResolution; i++) {
+            for (let j = 0; j < bgResolution; j++) {
+                const x1 = xRange.min + (i / bgResolution) * (xRange.max - xRange.min);
+                const x2 = yRange.max - (j / bgResolution) * (yRange.max - yRange.min);
+                // Don't use cache for visualization points
+                const decision = svmModel.decisionFunction({ x1, x2 }, false);
                 
-                const pixelIndex = (j * plotWidth + i) * 4;
+                const pixelIndex = (j * bgResolution + i) * 4;
                 
                 // Color based on decision value
                 const intensity = Math.min(Math.abs(decision) * 0.1, 1);
@@ -491,7 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         bgCtx.putImageData(imageData, 0, 0);
-        ctx.drawImage(bgCanvas, 0, 0, plotWidth, plotHeight, plotMargin, plotMargin, plotWidth, plotHeight);
+        // Scale up the background image
+        ctx.drawImage(bgCanvas, 0, 0, bgResolution, bgResolution, plotMargin, plotMargin, plotWidth, plotHeight);
         
         // Draw decision boundary contour
         ctx.strokeStyle = '#2c3e50';
@@ -503,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let j = 0; j <= resolution; j++) {
                 const x1 = xRange.min + i * xStep;
                 const x2 = yRange.min + j * yStep;
-                const decision = svmModel.decisionFunction({ x1, x2 });
+                const decision = svmModel.decisionFunction({ x1, x2 }, false);
                 
                 if (Math.abs(decision) < 0.1) {
                     const canvasX = plotMargin + (x1 - xRange.min) * plotWidth / (xRange.max - xRange.min);
