@@ -15,8 +15,8 @@ uses_python: false
 
         <div class="topic-nav">
             <a href="#svm">Support Vector Machine</a>
+            <a href="#smc">Soft Margin Constraints</a>
             <a href="#demo">SVM Demo</a>
-            <a href="#"></a>
             <a href="#"></a>
         </div> 
 
@@ -25,20 +25,178 @@ uses_python: false
             <section id="svm" class="section-content">
                 <h2>Support Vector Machine</h2>
                 <p>
-                    So far in both regression and classification problems, we have used probabilistic predictors. Here, we learn 
-                    a non-probalistic method. Support Vector Machines (SVMs) are supervised learning models that find an optimal 
-                    hyperplane separating classes by maximizing the margin between data points and the decision boundary; this 
-                    margin-based approach often leads to strong generalization, especially in high dimensional spaces with limited 
-                    samples. By employing the “kernel trick” (e.g., Gaussian RBF or polynomial kernels), SVMs can implicitly map inputs 
+                    So far in both regression and classification problems, we have used <strong>probabilistic predictors</strong>. Here, 
+                    we learn a non-probalistic method, which is known as <strong>Support Vector Machines (SVMs)</strong>.
+                </p>
+                <p>
+                    This margin-based approach often leads to strong generalization, especially in high dimensional spaces with limited 
+                    samples. By employing the <strong>kernel trick</strong>(e.g., Gaussian RBF), SVMs can implicitly map inputs 
                     into higher dimensional feature spaces, enabling the classification of nonlinearly separable data without explicitly 
-                    computing those transformations . Despite the rise of deep learning, SVMs remain valuable for small- to medium-sized 
+                    computing those transformations. Despite the rise of deep learning, SVMs remain valuable for small- to medium-sized 
                     datasets, offering robustness and interpretability through a sparse set of support vectors.
+                </p>
+                <p>
+                    In binary classification \(h(x) = \text{sign }(f(x))\), the decision boundary (hyperplane) is given by:
+                    \[
+                    f(x) = w^\top x + w_0 \tag{1}
+                    \]
+                    To obtain robust solution, we would like to <strong>maximize the margin between data points and the decision boundary</strong>.
+
+                    <div style="text-align: center;">
+                    <img src="images/svm.png" alt="complexity"  class="responsive-image">
+                    </div>
+                    To express the distance of the closest point to the decision boundary, 
+                    we introduce the orthogonal projection of \(x\) onto the boundary \(f(x)\):
+                    \[
+                    x = \text{proj}_{f(x)}x  + r \frac{w}{\| w \|} \tag{2}
+                    \]
+                    where \(r\) is the distance of \(x\) from the decision boundary whose normal vector is \(w\).
+                </p>
+                <p>
+                    Substitute Expression 2 for the decision boundary 1:
+                    \[
+                    \begin{align*}
+                    f(x) &= w^\top \left(\text{proj}_{f(x)}x  + r \frac{w}{\| w \|} + w_0 \right) \\\\
+                         &= w^\top \text{proj}_{f(x)}x + w_0 + r \| w \|.
+                    \end{align*}
+                    \]
+                    Since \(f(\text{proj}_{f(x)}x ) = 0\), 
+                    \[
+                    r = \frac{f(x)}{\| w \|}
+                    \]
+                    and each point must be on the crrect side of the decision boundary:
+                    \[
+                    f(x_n)\tilde{y}_n > 0.
+                    \]
+                    Therefore, our objective is represented by:
+                    \[
+                    \max_{w, w_0} \frac{1}{\| w \|} \min_{n = 1}^N \left[\tilde{y}_n \left(w^\top x_n + w_0 \right)\right].
+                    \]
+                    Moreover, define a scal factor \(k\) subject to \(\tilde{y}_n f_n =1\), but the scaling does not change the 
+                    distance of points to the decision boundary (it will be canceled out by \(\frac{1}{\| w \|}\) ).
+                </p>
+                <p>
+                    Note that \(\max \frac{1}{\| w \|}\) is the same as \(\min \| w \|^2\). Thus our objective becomes:
+                    \[
+                    \min_{w, w_0} \frac{1}{2}\| w \|^2 
+                    \]
+                    subjec to 
+                    \[
+                    \tilde{y}_n (w^\top x_n + w_0) \geq 1, \quad n = 1 : N.
+                    \]
+                    (Factor of \(\frac{1}{2} is for just convenience.\))
+                </p>
+                <p>
+                    Since this is the convex optimization problem, there exists its <strong>dual problem</strong>.  Let 
+                    \(alpha \in \mathbb{R}^N\) be the dual variables corresponding to Lagrange multipliers:
+                    \[
+                    \mathcal{L}(w, w_0, \alpha) = \frac{1}{2}w^\top w - \sum_{n =1}^N \alpha_n (\tilde{y}_n (w^\top x_n + w_0) -1) \tag{3}
+                    \]
+                    To optimize this, we need a stationary point that satisfies:
+                    \[
+                    (\hat{w}, \hat{w_0}, \hat{\alpha}) = \min_{w, w_0} \max_{\alpha} \mathcal{L}(w, w_0, \alpha).
+                    \]
+                    Taking derivatives wrt \(w\) and \(w_0\) and seting to zeoro:
+                    \[
+                    \begin{align*}
+                    \nabla_w \mathcal{L}(w, w_0, \alpha)  &= w - \sum_{n =1}^N \alpha_n \tilde{y}_n x_n  \\\\
+                    \frac{\partia  \mathcal{L}(w, w_0, \alpha)}{\partia w_0} = - \sum_{n =1}^N \alpha_n \tilde{y}_n.
+                     \end{align*}
+                    \]
+                    Then we have:
+                    \[
+                    \begin{align*}
+                    \hat{w} &= \sum_{n =1}^N \hat{\alpha_n} \tilde{y}_n x_n  \\\\
+                    0 &= \sum_{n =1}^N \hat{\alpha_n} \tilde{y}_n.
+                    \end{align*}
+                    \]
+                    Substitute these for the Lagrangian {3}, we obtain
+                    \[
+                    \begin{align*}
+                     \mathcal{L}(\hat{w}, \hat{w_0}, \alpha) &= \frac{1}{2}\hat{w}^\top \hat{w} - \sum_{n =1}^N \alpha_n \tilde{y}_n \hat{w}^\top x_n
+                                                               - \sum_{n =1}^N \alpha_n \tilde{y}_n w_0 + \sum_{n =1}^N  \alpha_n  \\\\
+                                                             &= \frac{1}{2}\hat{w}^\top \hat{w} - \hat{w}^\top \hat{w} - 0 + \sum_{n =1}^N  \alpha_n \\\\
+                                                             &= - \frac{1}{2} \sum_{i =1}^N \sum_{j = 1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j x_i^\top x_j 
+                                                                + \sum_{n =1}^N \alpha_n.
+                    \end{align*}
+                    \]
+                    Therefore the dual problem is:
+                    \[
+                    \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w_0}, \alpha) 
+                    \]
+                    subject to 
+                    \[
+                    \sum_{n =1}^N \alpha_n \tilde{y}_n = 0 \text{ and }  \alpha \geq 0, \quad n = 1 : N. 
+                    \]
+                    Also, the solution must satisfy the <strong>KKT conditions</strong>:
+                    \[
+                    \begin{align*}
+                    \alpha_n &\geq 0
+                    \tilde{y}_n f(x_n) -1 &\geq 0
+                    \alpha_n (\tilde{y}_n f(x_n) -1 ) &= 0
+                    \end{align*}
+                    \]
+                    Thus only either 
+                    \[
+                    \alpha_n = 0 \text{ or } \tilde{y}_n (\hat{w}^\top x_n + \hat{w}_0) = 1
+                    \]
+                    is active. The points meet the second condition are called <strong>support vectors</strong>.
+                </p>
+                <p>
+                    Let the set of support vectors  be \(\mathcal{S}\). To perform prediction, we use: 
+                    \[
+                    \begin{align*}
+                    f(x ; \hat{w}, \hat{w}_0) &= \hat{w}^\top x + \hat{w}_0 \\\\
+                                              &= \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n x_n^\top x + \hat{w}_0.
+                    \end{align*}
+                    \]
+                    By the <strong>kernel trick</strong>, 
+                    \[
+                    f(x) = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n \mathcal{K}(x_n, x) + \hat{w}_0
+                    \]
+                    Also, 
+                    \[
+                    \begin{align*}
+                    \hat{w}_0 &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \hat{w}^\top x_n \right) \\\\
+                              &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \alpha_m \tilde{y}_m x_m^\top x_n \right).
+                    \end{align*}
+                    \]
+                    By the <strong>kernel trick</strong>, 
+                    \[
+                    \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \alpha_m \tilde{y}_m \mathcal{K}(x_m, x_n) \right).
+                    \]
                 </p>
             </section>
             
-             <section id="" class="section-content">
-                <h2></h2>
-            
+             <section id="smc" class="section-content">
+                <h2>Soft Margin Constraints</h2>
+                <p>
+                    Consider the case where the data is NOT linearly separable. In this case there is not feasible solution in which 
+                    \(\forall n, \, \tilde{y}_n f_n \geq 1\). By introducing <strong>slack variables</strong> \(\xi_n \geq 0\), we replace 
+                    the constraints \(\tilde{y}_n f_n \geq 0\) with <strong>soft margin constraints</strong>:
+                    \[
+                    \tilde{y}_n f_n \geq 1 - \xi_n
+                    \]
+                    Thus our objective becomes: 
+                    \[
+                    \min_{w, w_0, \xi} \fra{1}{2} \| w \|^2 + C \sum_{n =1}^N \xi_n 
+                    \]
+                    subject to 
+                    \[
+                    \xi_n \geq o, \quad \tilde{y}_n (x_n^\top w + w_0) \geq 1 - \xi_n
+                    \]
+                    where \(C \geq 0\) is a hyper parameter that controls how many data points is allowed to violate the margin.
+                </p>
+                <p>
+                    The Lagrangian becomes:
+                    \[
+                    \mathcal{L}(w, w_0, \alpha, \xi, \mu) = \frac{1}{2} w^top w + C \sum_{n =1}^N \xi_n 
+                                                            - \sum_{n = 1}^N \alpha (\tilde{y}(w^\top x_n + w_0) -1 + \xi_n)
+                                                            - \sum_{n = 1}^N \mu_n \xi_n
+                    \]
+                    where \(\alpha \geq 0, \text{ and } \mu_n \geq 0\) are lagrange multipliers.
+                </p>
+                
             </section>
 
             <section id="demo" class="section-content">
@@ -48,7 +206,6 @@ uses_python: false
 
         </div>
         <script src="/js/main.js"></script> 
-
-        <script src="/js/brf_kernel_svm.js"></script> 
+        <script src="/js/svm_visualizer.js"></script> 
     </body>
 </html>
