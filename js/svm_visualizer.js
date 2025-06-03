@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const maxIter = maxIterations;
         let bestAccuracy = 0;
         let stagnantIterations = 0;
+        let currentLearningRate = learningRate; // Use local variable for adaptive learning
         
         console.log(`Starting SVM training with C=${C}, kernel=${kernelType}, lr=${learningRate}`);
         
@@ -43,16 +44,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (margin < 1) {
                     // Point is within margin or misclassified
-                    for (let i = 0; i < 2; i++) {
-                        const feature = i === 0 ? point.x1 : point.x2;
-                        weights.w[i] = weights.w[i] - learningRate * (regularizationTerm * weights.w[i] - point.y * feature);
-                    }
-                    weights.b = weights.b - learningRate * (-point.y);
+                    // Update: w = w - lr * (lambda * w - C * y * x)
+                    weights.w[0] = weights.w[0] - currentLearningRate * (weights.w[0] / (C * data.length) - point.y * point.x1);
+                    weights.w[1] = weights.w[1] - currentLearningRate * (weights.w[1] / (C * data.length) - point.y * point.x2);
+                    weights.b = weights.b + currentLearningRate * point.y;
                 } else {
                     // Only regularization
-                    for (let i = 0; i < 2; i++) {
-                        weights.w[i] = weights.w[i] - learningRate * regularizationTerm * weights.w[i];
-                    }
+                    weights.w[0] = weights.w[0] - currentLearningRate * weights.w[0] / (C * data.length);
+                    weights.w[1] = weights.w[1] - currentLearningRate * weights.w[1] / (C * data.length);
                 }
             } else if (kernelType === 'rbf') {
                 // RBF kernel: use approximated features
@@ -64,14 +63,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update approximated weights
                     for (let i = 0; i < approximateWeights.length; i++) {
                         approximateWeights[i] = approximateWeights[i] - 
-                            learningRate * (regularizationTerm * approximateWeights[i] - point.y * phi[i]);
+                            currentLearningRate * (approximateWeights[i] / (C * data.length) - point.y * phi[i]);
                     }
-                    approximateBias = approximateBias - learningRate * (-point.y);
+                    approximateBias = approximateBias + currentLearningRate * point.y;
                 } else {
                     // Only regularization
                     for (let i = 0; i < approximateWeights.length; i++) {
                         approximateWeights[i] = approximateWeights[i] - 
-                            learningRate * regularizationTerm * approximateWeights[i];
+                            currentLearningRate * approximateWeights[i] / (C * data.length);
                     }
                 }
             }
@@ -88,9 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 stagnantIterations++;
             }
             
-            // Adaptive learning rate
-            if (stagnantIterations > 50 && stagnantIterations % 25 === 0) {
-                learningRate *= 0.95;
+            // Adaptive learning rate (less aggressive decay)
+            if (stagnantIterations > 100 && stagnantIterations % 50 === 0) {
+                currentLearningRate *= 0.9;
+                console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
             }
             
             // Early stopping conditions
@@ -99,8 +99,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             }
             
-            if (stagnantIterations > 100) {
-                console.log(`Early stopping: No improvement for 100 iterations`);
+            if (stagnantIterations > 200) {
+                console.log(`Early stopping: No improvement for 200 iterations`);
                 break;
             }
             
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 drawCanvas();
                 
-                if (iterations % 25 === 0) {
+                if (iterations % 50 === 0) {
                     console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, Support Vectors=${supportVectors.length}`);
                 }
                 
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeKernelApproximation() {
         // Use Random Fourier Features approximation
         // Number of random features (higher = better approximation but slower)
-        numRandomFeatures = 50;
+        numRandomFeatures = 100; // Increased for better approximation
         
         // Initialize random weights for Fourier features
         randomWeights = [];
@@ -171,8 +171,11 @@ document.addEventListener('DOMContentLoaded', function() {
             randomBiases.push(Math.random() * 2 * Math.PI);
         }
         
-        // Initialize approximate weights
-        approximateWeights = new Array(numRandomFeatures).fill(0);
+        // Initialize approximate weights with small random values
+        approximateWeights = [];
+        for (let i = 0; i < numRandomFeatures; i++) {
+            approximateWeights.push((Math.random() - 0.5) * 0.01);
+        }
         approximateBias = 0;
         
         kernelApproximation = true;
@@ -214,35 +217,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kernelType === 'linear') {
             return weights.w[0] * x1 + weights.w[1] * x2 + weights.b;
         } else if (kernelType === 'rbf') {
-            if (kernelApproximation) {
-                // Use approximate features
-                const phi = computeApproximateFeatures(x1, x2);
-                return computeApproximateDecision(phi);
-            } else {
-                // Fallback: use nearest support vectors (simplified)
-                let result = 0;
-                const k = 5; // Use k nearest support vectors
-                
-                if (supportVectors.length > 0) {
-                    // Sort support vectors by distance
-                    const distances = supportVectors.map(sv => ({
-                        sv: sv,
-                        dist: (sv.x1 - x1) ** 2 + (sv.x2 - x2) ** 2
-                    }));
-                    distances.sort((a, b) => a.dist - b.dist);
-                    
-                    // Use k nearest
-                    for (let i = 0; i < Math.min(k, distances.length); i++) {
-                        const sv = distances[i].sv;
-                        const kern = rbfKernel(x1, x2, sv.x1, sv.x2);
-                        result += sv.y * kern * (sv.alpha || 1.0);
-                    }
-                    
-                    result += weights.b;
-                }
-                
-                return result;
-            }
+            // Always use approximate features for RBF
+            const phi = computeApproximateFeatures(x1, x2);
+            return computeApproximateDecision(phi);
         }
         return 0;
     }
@@ -305,6 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
             regTerm *= 0.5;
         }
         
+        // SVM loss = C * average_hinge_loss + regularization
         return C * hingeLoss / data.length + regTerm;
     }
 
@@ -316,33 +294,59 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        for (const point of data) {
-            const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision;
-            
-            const tolerance = 0.05;
-            
-            if (functionalMargin <= 1.0 + tolerance) {
-                let alpha;
+        // For RBF kernel, we need a different approach
+        if (kernelType === 'rbf') {
+            // For educational purposes with RBF approximation,
+            // identify points that are close to the decision boundary
+            for (const point of data) {
+                const decision = computeDecisionFunction(point.x1, point.x2);
+                const absDecision = Math.abs(decision);
                 
-                if (functionalMargin < 1.0) {
-                    alpha = C * Math.max(0, 1 - functionalMargin);
-                } else {
-                    alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
-                    alpha = Math.max(0, alpha);
-                }
-                
-                if (alpha > 1e-6) {
+                // Points close to decision boundary (within margin)
+                if (absDecision <= 1.5) {
+                    const functionalMargin = point.y * decision;
                     const slackVar = Math.max(0, 1 - functionalMargin);
                     
                     supportVectors.push({
                         x1: point.x1,
                         x2: point.x2,
                         y: point.y,
-                        alpha: alpha,
+                        alpha: 1.0 / (1.0 + absDecision), // Simplified alpha for visualization
                         slackVariable: slackVar,
                         margin: functionalMargin
                     });
+                }
+            }
+        } else {
+            // Linear kernel: original logic
+            for (const point of data) {
+                const decision = computeDecisionFunction(point.x1, point.x2);
+                const functionalMargin = point.y * decision;
+                
+                const tolerance = 0.05;
+                
+                if (functionalMargin <= 1.0 + tolerance) {
+                    let alpha;
+                    
+                    if (functionalMargin < 1.0) {
+                        alpha = C * Math.max(0, 1 - functionalMargin);
+                    } else {
+                        alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
+                        alpha = Math.max(0, alpha);
+                    }
+                    
+                    if (alpha > 1e-6) {
+                        const slackVar = Math.max(0, 1 - functionalMargin);
+                        
+                        supportVectors.push({
+                            x1: point.x1,
+                            x2: point.x2,
+                            y: point.y,
+                            alpha: alpha,
+                            slackVariable: slackVar,
+                            margin: functionalMargin
+                        });
+                    }
                 }
             }
         }
@@ -714,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleCParameterChange() {
         C = Math.pow(10, parseFloat(cInput.value));
         cDisplay.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
-        regularizationTerm = 1.0 / C;
+        regularizationTerm = 1.0 / C; // Update regularization term
     }
 
     function handleLearningRateChange() {
@@ -735,8 +739,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             gammaContainer.style.display = 'none';
         }
+        
+        // Reset everything when kernel changes
         initializeWeights();
         kernelApproximation = false;
+        supportVectors = [];
+        hasTrainedOnce = false;
+        
+        // Reset display
+        if (accuracyElement) accuracyElement.textContent = '0.0%';
+        if (lossElement) lossElement.textContent = '0.000';
+        if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
+        if (supportVectorCountElement) supportVectorCountElement.textContent = '0';
+        if (kktConditionsElement) kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+        if (trainBtn) trainBtn.textContent = 'Train SVM';
+        
         drawCanvas();
     }
 
@@ -770,39 +787,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (Math.random() < 0.85) {
                     // Clearly separated points
+                    const margin = (Math.random() + 0.5) * 0.8; // Add margin
                     const y = boundary > 0 ? 1 : -1;
-                    allPoints.push({ x1, x2, y });
+                    const offset = y * margin;
+                    allPoints.push({ 
+                        x1: x1 + offset * 0.8 / Math.sqrt(0.64 + 0.25), 
+                        x2: x2 + offset * 0.5 / Math.sqrt(0.64 + 0.25), 
+                        y: y 
+                    });
                 } else {
                     // Near boundary (potential support vectors)
-                    const noise = (Math.random() - 0.5) * 1.0;
+                    const noise = (Math.random() - 0.5) * 0.5;
                     const noisyBoundary = boundary + noise;
                     const y = noisyBoundary > 0 ? 1 : -1;
                     allPoints.push({ x1, x2, y });
                 }
             }
         } else {
-            // Circular pattern
+            // Circular pattern - better separated for RBF demo
             for (let i = 0; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
                 let radius, y;
                 
-                if (Math.random() < 0.8) {
+                if (Math.random() < 0.85) {
                     // Clearly separated
                     if (Math.random() < 0.5) {
-                        radius = Math.random() * 0.8;
+                        // Inner class - well inside
+                        radius = Math.random() * 0.7; // Reduced from 0.8
                         y = 1;
                     } else {
-                        radius = 1.8 + Math.random() * 0.7;
+                        // Outer class - well outside
+                        radius = 1.5 + Math.random() * 0.8; // Adjusted for better separation
                         y = -1;
                     }
                 } else {
-                    // Near boundary
-                    radius = 1.0 + (Math.random() - 0.5) * 0.8;
-                    const boundaryRadius = 1.3;
-                    y = radius < boundaryRadius ? 1 : -1;
+                    // Near boundary (around radius 1.0)
+                    radius = 0.9 + Math.random() * 0.3;
+                    y = radius < 1.05 ? 1 : -1;
                     
-                    if (Math.random() < 0.3) {
-                        y = -y; // Add noise
+                    // Add some misclassified points
+                    if (Math.random() < 0.2) {
+                        y = -y;
                     }
                 }
                 
@@ -842,8 +867,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize SVM weights
     function initializeWeights() {
-        weights.w = [Math.random() * 0.2 - 0.1, Math.random() * 0.2 - 0.1];
-        weights.b = Math.random() * 0.2 - 0.1;
+        // Initialize linear weights with small random values
+        weights.w = [
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1
+        ];
+        weights.b = (Math.random() - 0.5) * 0.1;
         
         // Reset kernel approximation
         randomWeights = [];
@@ -1283,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Kernel approximation variables
     let kernelApproximation = false;
-    let numRandomFeatures = 50;
+    let numRandomFeatures = 100;
     let randomWeights = [];
     let randomBiases = [];
     let approximateWeights = [];
