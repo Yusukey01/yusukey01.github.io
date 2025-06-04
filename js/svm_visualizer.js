@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeKernelApproximation();
         }
 
+        // Initialize alphas for all data points
+        alphas = new Array(data.length).fill(0);
+        
         let iterations = 0;
         const maxIter = maxIterations;
         let bestAccuracy = 0;
@@ -38,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const idx = Math.floor(Math.random() * data.length);
             const point = data[idx];
             
-            if (kernelType === 'linear') {
+           if (kernelType === 'linear') {
                 // Linear kernel: standard SGD update
                 const decision = computeDecisionFunction(point.x1, point.x2);
                 const margin = point.y * decision;
@@ -49,10 +52,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     weights.w[0] = weights.w[0] - currentLearningRate * (weights.w[0] / (C * data.length) - point.y * point.x1);
                     weights.w[1] = weights.w[1] - currentLearningRate * (weights.w[1] / (C * data.length) - point.y * point.x2);
                     weights.b = weights.b + currentLearningRate * point.y;
+                    
+                    // Update alpha estimate
+                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * C * (1 - margin));
                 } else {
                     // Only regularization
                     weights.w[0] = weights.w[0] - currentLearningRate * weights.w[0] / (C * data.length);
                     weights.w[1] = weights.w[1] - currentLearningRate * weights.w[1] / (C * data.length);
+                    
+                    // Decay alpha
+                    alphas[idx] = Math.max(0, alphas[idx] * (1 - currentLearningRate * 0.1));
                 }
             } else if (kernelType === 'rbf') {
                 // RBF kernel: use approximated features
@@ -67,12 +76,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             currentLearningRate * (approximateWeights[i] / (C * data.length) - point.y * phi[i]);
                     }
                     approximateBias = approximateBias + currentLearningRate * point.y;
+                    
+                    // Update alpha estimate
+                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * C * (1 - margin));
                 } else {
                     // Only regularization
                     for (let i = 0; i < approximateWeights.length; i++) {
                         approximateWeights[i] = approximateWeights[i] - 
                             currentLearningRate * approximateWeights[i] / (C * data.length);
                     }
+                    
+                    // Decay alpha
+                    alphas[idx] = Math.max(0, alphas[idx] * (1 - currentLearningRate * 0.1));
                 }
             }
             
@@ -95,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentLearningRate *= decayFactor;
                     console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
                 }
-                
+
                 // Early stopping conditions
                 if (currentAccuracy > 0.98 && iterations > 100) { // Changed from 50 to 100
                     console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
@@ -304,39 +319,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Use same logic for both kernels with appropriate thresholds
-        const tolerance = kernelType === 'rbf' ? 0.02 : 0.05; // Tighter tolerance for RBF
+        // Identify support vectors based on alpha values
+        const alphaThreshold = 1e-4; // Threshold for considering alpha > 0
         
-        for (const point of data) {
-            const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision;
+        for (let i = 0; i < data.length; i++) {
+            const point = data[i];
+            const alpha = alphas[i];
             
-            // Support vectors are points at or near the margin (functional margin ≈ 1)
-            if (functionalMargin <= 1.0 + tolerance) {
-                let alpha;
+            // Support vectors are points with non-zero alpha
+            if (alpha > alphaThreshold) {
+                const decision = computeDecisionFunction(point.x1, point.x2);
+                const functionalMargin = point.y * decision;
+                const slackVar = Math.max(0, 1 - functionalMargin);
                 
-                if (functionalMargin < 1.0) {
-                    // Violates margin: alpha proportional to violation
-                    alpha = C * Math.max(0, 1 - functionalMargin);
-                } else {
-                    // Within tolerance of margin
-                    alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
-                    alpha = Math.max(0, alpha);
-                }
-                
-                // Only include if alpha is significant
-                if (alpha > 1e-6) {
-                    const slackVar = Math.max(0, 1 - functionalMargin);
-                    
-                    supportVectors.push({
-                        x1: point.x1,
-                        x2: point.x2,
-                        y: point.y,
-                        alpha: alpha,
-                        slackVariable: slackVar,
-                        margin: functionalMargin
-                    });
-                }
+                supportVectors.push({
+                    x1: point.x1,
+                    x2: point.x2,
+                    y: point.y,
+                    alpha: alpha,
+                    slackVariable: slackVar,
+                    margin: functionalMargin
+                });
             }
         }
         
@@ -347,8 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (svCount > 0) {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
+            
+            // Log alpha distribution for debugging
+            const nonZeroAlphas = alphas.filter(a => a > alphaThreshold);
+            const avgAlpha = nonZeroAlphas.reduce((sum, a) => sum + a, 0) / nonZeroAlphas.length;
+            console.log(`Alpha stats: ${nonZeroAlphas.length} non-zero, avg=${avgAlpha.toFixed(4)}, max=${Math.max(...alphas).toFixed(4)}`);
         }
-    }    
+    }      
 
     // Check KKT conditions
     function updateKKTConditions() {
@@ -736,6 +744,7 @@ document.addEventListener('DOMContentLoaded', function() {
         kernelApproximation = false;
         supportVectors = [];
         hasTrainedOnce = false;
+        alphas = new Array(data.length).fill(0); // Reset alphas
         
         // Reset display
         if (accuracyElement) accuracyElement.textContent = '0.0%';
@@ -861,6 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
         supportVectors = [];
         hasTrainedOnce = false;
         kernelApproximation = false;
+        alphas = new Array(data.length).fill(0); // Reset alphas
         
         // Update support vectors
         updateSupportVectors();
@@ -1328,6 +1338,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let randomBiases = [];
     let approximateWeights = [];
     let approximateBias = 0;
+
+    let alphas = [];
     
     // Drawing settings
     const plotMargin = 50;
