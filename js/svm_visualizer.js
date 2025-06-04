@@ -89,20 +89,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     stagnantIterations++;
                 }
                 
-                // Adaptive learning rate (less aggressive decay)
-                if (stagnantIterations > 100 && stagnantIterations % 50 === 0) {
-                    currentLearningRate *= 0.9;
+               // Adaptive learning rate with kernel-specific decay
+                if (stagnantIterations > 50 && stagnantIterations % 50 === 0) {
+                    const decayFactor = kernelType === 'rbf' ? 0.95 : 0.9;
+                    currentLearningRate *= decayFactor;
                     console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
                 }
                 
                 // Early stopping conditions
-                if (currentAccuracy > 0.98 && iterations > 50) { // Prevent premature stopping
+                if (currentAccuracy > 0.98 && iterations > 100) { // Changed from 50 to 100
                     console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
                     break;
                 }
                 
-                if (stagnantIterations > 200 && iterations > 100) {
-                    console.log(`Early stopping: No improvement for 200 iterations`);
+                if (stagnantIterations > 300 && iterations > 200) { // Increased from 200 to 300
+                    console.log(`Early stopping: No improvement for 300 iterations`);
                     break;
                 }
                 
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeKernelApproximation() {
         // Use Random Fourier Features approximation
         // Number of random features (higher = better approximation but slower)
-        numRandomFeatures = 100; // Increased for better approximation
+        numRandomFeatures = 200; // Increased from 100 for better approximation
         
         // Initialize random weights for Fourier features
         randomWeights = [];
@@ -303,58 +304,38 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // For RBF kernel, we need a different approach
-        if (kernelType === 'rbf') {
-            // For educational purposes with RBF approximation,
-            // identify points that are close to the decision boundary
-            for (const point of data) {
-                const decision = computeDecisionFunction(point.x1, point.x2);
-                const functionalMargin = point.y * decision;
+        // Use same logic for both kernels with appropriate thresholds
+        const tolerance = kernelType === 'rbf' ? 0.02 : 0.05; // Tighter tolerance for RBF
+        
+        for (const point of data) {
+            const decision = computeDecisionFunction(point.x1, point.x2);
+            const functionalMargin = point.y * decision;
+            
+            // Support vectors are points at or near the margin (functional margin ≈ 1)
+            if (functionalMargin <= 1.0 + tolerance) {
+                let alpha;
                 
-                // Points within or near the margin
-                if (functionalMargin <= 1.2) {
+                if (functionalMargin < 1.0) {
+                    // Violates margin: alpha proportional to violation
+                    alpha = C * Math.max(0, 1 - functionalMargin);
+                } else {
+                    // Within tolerance of margin
+                    alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
+                    alpha = Math.max(0, alpha);
+                }
+                
+                // Only include if alpha is significant
+                if (alpha > 1e-6) {
                     const slackVar = Math.max(0, 1 - functionalMargin);
                     
                     supportVectors.push({
                         x1: point.x1,
                         x2: point.x2,
                         y: point.y,
-                        alpha: Math.exp(-Math.abs(functionalMargin - 1)), // Exponential decay from margin
+                        alpha: alpha,
                         slackVariable: slackVar,
                         margin: functionalMargin
                     });
-                }
-            }
-        } else {
-            // Linear kernel: original logic
-            for (const point of data) {
-                const decision = computeDecisionFunction(point.x1, point.x2);
-                const functionalMargin = point.y * decision;
-                
-                const tolerance = 0.05;
-                
-                if (functionalMargin <= 1.0 + tolerance) {
-                    let alpha;
-                    
-                    if (functionalMargin < 1.0) {
-                        alpha = C * Math.max(0, 1 - functionalMargin);
-                    } else {
-                        alpha = C * (1.0 + tolerance - functionalMargin) / tolerance;
-                        alpha = Math.max(0, alpha);
-                    }
-                    
-                    if (alpha > 1e-6) {
-                        const slackVar = Math.max(0, 1 - functionalMargin);
-                        
-                        supportVectors.push({
-                            x1: point.x1,
-                            x2: point.x2,
-                            y: point.y,
-                            alpha: alpha,
-                            slackVariable: slackVar,
-                            margin: functionalMargin
-                        });
-                    }
                 }
             }
         }
@@ -367,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (svCount > 0) {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
         }
-    }
+    }    
 
     // Check KKT conditions
     function updateKKTConditions() {
