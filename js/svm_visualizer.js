@@ -53,16 +53,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     weights.w[1] = weights.w[1] - currentLearningRate * (weights.w[1] / (C * data.length) - point.y * point.x2);
                     weights.b = weights.b + currentLearningRate * point.y;
                     
-                    // Update alpha - increase based on margin violation
-                    const violation = Math.max(0, 1 - margin);
-                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * violation);
+                    // Update alpha for this point
+                    alphas[idx] = 1; // Mark as potential support vector
                 } else {
-                    // Only regularization
+                    // Point is correctly classified with good margin
                     weights.w[0] = weights.w[0] - currentLearningRate * weights.w[0] / (C * data.length);
                     weights.w[1] = weights.w[1] - currentLearningRate * weights.w[1] / (C * data.length);
                     
-                    // Strong decay for points with good margin
-                    alphas[idx] = alphas[idx] * Math.exp(-currentLearningRate * (margin - 1));
+                    // Decay alpha - points with good margin should not be support vectors
+                    alphas[idx] = alphas[idx] * 0.95;
                 }
             } else if (kernelType === 'rbf') {
                 // RBF kernel: use approximated features
@@ -78,9 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     approximateBias = approximateBias + currentLearningRate * point.y;
                     
-                    // Update alpha - increase based on margin violation
-                    const violation = Math.max(0, 1 - margin);
-                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * violation);
+                    // Update alpha for this point
+                    alphas[idx] = 1; // Mark as potential support vector
                 } else {
                     // Only regularization
                     for (let i = 0; i < approximateWeights.length; i++) {
@@ -88,15 +86,38 @@ document.addEventListener('DOMContentLoaded', function() {
                             currentLearningRate * approximateWeights[i] / (C * data.length);
                     }
                     
-                    // Strong decay for points with good margin
-                    alphas[idx] = alphas[idx] * Math.exp(-currentLearningRate * (margin - 1));
+                    // Decay alpha - points with good margin should not be support vectors
+                    alphas[idx] = alphas[idx] * 0.95;
                 }
             }
-
+        
             // Calculate current metrics every 10 iterations
             if (iterations % 10 === 0) {
                 const currentAccuracy = calculateAccuracy();
                 const currentLoss = calculateSVMLoss();
+                
+                // Periodic cleanup of alpha values (every 100 iterations)
+                if (iterations % 100 === 0 && iterations > 0) {
+                    // Check each point and decay alpha if it has good margin
+                    for (let i = 0; i < data.length; i++) {
+                        const point = data[i];
+                        const decision = computeDecisionFunction(point.x1, point.x2);
+                        const margin = point.y * decision;
+                        
+                        if (margin > 1.2) {
+                            // Point has very good margin, strongly decay alpha
+                            alphas[i] = alphas[i] * 0.5;
+                        } else if (margin > 1.05) {
+                            // Point has good margin, moderate decay
+                            alphas[i] = alphas[i] * 0.8;
+                        }
+                        
+                        // Clean up very small alpha values
+                        if (alphas[i] < 0.1) {
+                            alphas[i] = 0;
+                        }
+                    }
+                }
                 
                 // Track improvements
                 if (currentAccuracy > bestAccuracy + 0.005) {
@@ -178,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeKernelApproximation() {
         // Use Random Fourier Features approximation
         // Number of random features (higher = better approximation but slower)
-        numRandomFeatures = 200; // Increased from 100 for better approximation
+        numRandomFeatures = 300; // Increased from 200 for better approximation
         
         // Initialize random weights for Fourier features
         randomWeights = [];
@@ -321,24 +342,25 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Identify support vectors based on alpha values
-        const alphaThreshold = 0.01 * C; // Threshold for considering alpha > 0 
-        
+        // For each training point, check if it's a support vector
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
-            const alpha = alphas[i];
+            const decision = computeDecisionFunction(point.x1, point.x2);
+            const functionalMargin = point.y * decision;
             
-            // Support vectors are points with non-zero alpha
-            if (alpha > alphaThreshold) {
-                const decision = computeDecisionFunction(point.x1, point.x2);
-                const functionalMargin = point.y * decision;
+            // A point is a support vector if:
+            // 1. It has been marked as potential SV (alpha > 0.5) AND
+            // 2. It's currently within or near the margin
+            const marginThreshold = kernelType === 'rbf' ? 1.1 : 1.05; // Slightly more lenient for RBF
+            
+            if (alphas[i] > 0.5 && functionalMargin <= marginThreshold) {
                 const slackVar = Math.max(0, 1 - functionalMargin);
                 
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
-                    alpha: alpha,
+                    alpha: alphas[i] * C * Math.min(1, 2 - functionalMargin), // Scale alpha based on margin violation
                     slackVariable: slackVar,
                     margin: functionalMargin
                 });
@@ -350,15 +372,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const svCount = supportVectors.length;
         const svPercentage = (svCount / totalPoints * 100).toFixed(1);
         
-        if (svCount > 0) {
+        if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
             
-            // Log alpha distribution for debugging
-            const nonZeroAlphas = alphas.filter(a => a > alphaThreshold);
-            const avgAlpha = nonZeroAlphas.reduce((sum, a) => sum + a, 0) / nonZeroAlphas.length;
-            console.log(`Alpha stats: ${nonZeroAlphas.length} non-zero, avg=${avgAlpha.toFixed(4)}, max=${Math.max(...alphas).toFixed(4)}`);
+            // Additional debugging info
+            const marginViolators = data.filter((p, i) => {
+                const d = computeDecisionFunction(p.x1, p.x2);
+                return p.y * d < 1;
+            }).length;
+            console.log(`Points violating margin: ${marginViolators}, Alpha > 0.5: ${alphas.filter(a => a > 0.5).length}`);
         }
-    }      
+    }    
 
     // Check KKT conditions
     function updateKKTConditions() {
