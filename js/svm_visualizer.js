@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const idx = Math.floor(Math.random() * data.length);
             const point = data[idx];
             
-           if (kernelType === 'linear') {
+            if (kernelType === 'linear') {
                 // Linear kernel: standard SGD update
                 const decision = computeDecisionFunction(point.x1, point.x2);
                 const margin = point.y * decision;
@@ -53,15 +53,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     weights.w[1] = weights.w[1] - currentLearningRate * (weights.w[1] / (C * data.length) - point.y * point.x2);
                     weights.b = weights.b + currentLearningRate * point.y;
                     
-                    // Update alpha estimate
-                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * C * (1 - margin));
+                    // Update alpha - increase based on margin violation
+                    const violation = Math.max(0, 1 - margin);
+                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * violation);
                 } else {
                     // Only regularization
                     weights.w[0] = weights.w[0] - currentLearningRate * weights.w[0] / (C * data.length);
                     weights.w[1] = weights.w[1] - currentLearningRate * weights.w[1] / (C * data.length);
                     
-                    // Decay alpha
-                    alphas[idx] = Math.max(0, alphas[idx] * (1 - currentLearningRate * 0.1));
+                    // Strong decay for points with good margin
+                    alphas[idx] = alphas[idx] * Math.exp(-currentLearningRate * (margin - 1));
                 }
             } else if (kernelType === 'rbf') {
                 // RBF kernel: use approximated features
@@ -77,8 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     approximateBias = approximateBias + currentLearningRate * point.y;
                     
-                    // Update alpha estimate
-                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * C * (1 - margin));
+                    // Update alpha - increase based on margin violation
+                    const violation = Math.max(0, 1 - margin);
+                    alphas[idx] = Math.min(C, alphas[idx] + currentLearningRate * violation);
                 } else {
                     // Only regularization
                     for (let i = 0; i < approximateWeights.length; i++) {
@@ -86,11 +88,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             currentLearningRate * approximateWeights[i] / (C * data.length);
                     }
                     
-                    // Decay alpha
-                    alphas[idx] = Math.max(0, alphas[idx] * (1 - currentLearningRate * 0.1));
+                    // Strong decay for points with good margin
+                    alphas[idx] = alphas[idx] * Math.exp(-currentLearningRate * (margin - 1));
                 }
             }
-            
+
             // Calculate current metrics every 10 iterations
             if (iterations % 10 === 0) {
                 const currentAccuracy = calculateAccuracy();
@@ -320,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Identify support vectors based on alpha values
-        const alphaThreshold = 1e-4; // Threshold for considering alpha > 0
+        const alphaThreshold = 0.01 * C; // Threshold for considering alpha > 0 
         
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
