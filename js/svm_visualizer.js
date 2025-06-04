@@ -1,153 +1,148 @@
 // svm_visualizer.js
 //
-// Fixed logic and implementation for both Linear and RBF (via Random Fourier Features) branches.
-// Retains fundamental structure of the original code, but corrects Pegasos updates, RFF scaling,
-// learning‐rate schedule, and support‐vector identification.
+// Interactive SVM demo (linear Pegasos vs. RBF via Random Fourier Features).
 //
-// References:
-// [1] Shalev‐Shwartz, S., Singer, Y., & Srebro, N. (2007). Pegasos: Primal Estimated Sub‐Gradient Solver for SVM. ICML.
-// [2] Rahimi, A., & Recht, B. (2007). Random Features for Large‐Scale Kernel Machines. NIPS.
-//
-// Note: This version does NOT use SMO or libsvm.js. Instead, it trains an RBF‐kernel SVM via
-//       a primal Pegasos update on Random Fourier Features (RFF), with correct normalization
-//       and learning‐rate schedule.
+// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+// Key Fixes / Improvements (all academic‐sourced):
+// [1] Pegasos schedule ηₜ = 1/(λ·t) with λ = 1/C (Shalev‐Shwartz et al., 2007) 
+// [2] RBF via Random Fourier Features (RFF): φᵢ(x) = √(2/D)·cos(ωᵢ·x + bᵢ), ωᵢ∼N(0,2γI), bᵢ∼Uniform(0,2π) (Rahimi & Recht, 2007) 
+// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
 document.addEventListener('DOMContentLoaded', function() {
   // ——————————————————————————————————————————————————————————
-  // State + DOM Elements
+  // 1) STATE VARIABLES & DOM REFERENCES
   // ——————————————————————————————————————————————————————————
-  let data         = [];    // [{x1, x2, y}, …]
-  let testData     = [];    // held‐out test points
-  let weights      = {     // for linear SVM
-    w: [0, 0],
-    b: 0
-  };
-  let C            = 1.0;   // regularization parameter (user sets)
-  let lambda       = 1.0 / C; // λ = 1/C
-  let maxIterations = 300;  // number of SGD steps
-  let learningRate  = 0.1;  // initial learning rate (will be overridden by Pegasos schedule)
-  let iterationCount = 0;   // global counter for Pegasos schedule
 
-  // RFF (RBF‐kernel) state
-  let kernelType           = 'linear'; // 'linear' or 'rbf'
-  let gamma                = 0.5;      // RBF width (user sets, log‐scale)
-  let numRandomFeatures    = 200;      // D (can increase for better approximation)
-  let randomWeights        = [];       // [ [ω1_1, ω1_2], [ω2_1, ω2_2], … ]
-  let randomBiases         = [];       // [b1, b2, …]
-  let approxWeights        = [];       // weights in RFF space (length = D)
-  let approxBias           = 0;        // bias term for RFF‐SVM
+  // (1) Grab the container div
+  let container = document.getElementById('svm_visualizer');
+  if (!container) {
+    console.error('Container element not found!');
+    return;
+  }
 
-  let isTraining    = false; // prevents concurrent training
-  let hasTrainedOnce = false;
+  // (2) SVM state
+  let data               = [];    // training points: [{x1,x2,y},…]
+  let testData           = [];    // test points
+  let C                  = 1.0;   // SVM C parameter
+  let lambda             = 1.0 / C;
+  let kernelType         = 'linear'; // 'linear' or 'rbf'
+  let isTraining         = false;
+  let hasTrainedOnce     = false;
+  let maxIterations      = 300;   // Pegasos steps
+  let iterationCount     = 0;     // global counter for Pegasos
 
-  // DOM references
-  const container      = document.getElementById('svm_visualizer');
-  const kernelSelect   = document.createElement('select');
-  const cInput         = document.createElement('input');
-  const cDisplay       = document.createElement('span');
-  const gammaInput     = document.createElement('input');
-  const gammaDisplay   = document.createElement('span');
-  const iterInput      = document.createElement('input');
-  const iterDisplay    = document.createElement('span');
-  const trainBtn       = document.createElement('button');
-  const genBtn         = document.createElement('button');
-  const accElem        = document.createElement('div');
-  const lossElem       = document.createElement('div');
-  const testAccElem    = document.createElement('div');
-  const svCountElem    = document.createElement('div');
-  const kktElem        = document.createElement('div');
-  const canvas         = document.createElement('canvas');
-  const ctx            = canvas.getContext('2d');
-  let canvasW, canvasH;
+  // (3) Linear sub‐state (weights and support vectors)
+  let linearW            = [0, 0];
+  let linearB            = 0;
+  let supportVectorsLinear = [];
 
-  // Initialize DOM + HTML structure
+  // (4) RBF (Random Fourier Features) sub‐state
+  let gamma              = 0.5;   // RBF width (will be 10^slider)
+  let numRandomFeatures  = 200;   // D
+  let randomWeights      = [];    // [ [ω1,ω2], … ]
+  let randomBiases       = [];    // [b₁, b₂, … ]
+  let approxWeights      = [];    // length D
+  let approxBias         = 0;
+  let supportVectorsRBF  = [];
+
+  // ——————————————————————————————————————————————————————————
+  // 2) BUILD THE HTML INSIDE #svm_visualizer
+  // ——————————————————————————————————————————————————————————
+
   container.innerHTML = `
-    <div class="svm-container">
-      <div class="svm-layout">
-        <div class="svm-visualization">
-          <div class="canvas-container">
-            <div class="instruction">Support Vector Machine Visualizer</div>
-            <div id="canvas-wrapper">
-              <canvas id="svm-canvas" width="800" height="500"></canvas>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="legend-color class-pos"></span> Train +1</div>
-              <div class="legend-item"><span class="legend-color class-neg"></span> Train −1</div>
-              <div class="legend-item"><span class="legend-color test-pos"></span> Test +1</div>
-              <div class="legend-item"><span class="legend-color test-neg"></span> Test −1</div>
-              <div class="legend-item"><span class="legend-color support-vector"></span> Support Vector</div>
-              <div class="legend-item"><span class="legend-color decision-boundary"></span> Decision Boundary</div>
-              <div class="legend-item"><span class="legend-color margin"></span> Margin / Decision Region</div>
-            </div>
-            <div class="btn-container">
-              <button id="train-btn" class="primary-btn">Train SVM</button>
-              <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-            </div>
+  <div class="svm-container">
+    <div class="svm-layout">
+      <div class="svm-visualization">
+        <div class="canvas-container">
+          <div class="instruction">Support Vector Machine Visualizer</div>
+          <div id="canvas-wrapper">
+            <canvas id="svm-canvas" width="800" height="500"></canvas>
           </div>
-        </div>
-        <div class="controls-panel">
-          <div class="control-group">
-            <label for="kernel-select">Kernel:</label>
-            <select id="kernel-select" class="full-width">
-              <option value="linear" selected>Linear (Pegasos)</option>
-              <option value="rbf">RBF (Gaussian via RFF)</option>
-            </select>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-color class-pos"></span> Train +1</div>
+            <div class="legend-item"><span class="legend-color class-neg"></span> Train −1</div>
+            <div class="legend-item"><span class="legend-color test-pos"></span> Test +1</div>
+            <div class="legend-item"><span class="legend-color test-neg"></span> Test −1</div>
+            <div class="legend-item"><span class="legend-color support-vector"></span> Support Vector</div>
+            <div class="legend-item"><span class="legend-color decision-boundary"></span> Decision Boundary</div>
+            <div class="legend-item"><span class="legend-color margin"></span> Margin / Decision Region</div>
           </div>
-          <div class="control-group">
-            <label for="c-parameter">Regularization (C):</label>
-            <input type="range" id="c-parameter" min="-2" max="3" step="0.1" value="0" class="full-width">
-            <span id="c-display">C = 1.0</span>
-            <div class="param-hint">Higher C → narrower margin (less regularization)</div>
-          </div>
-          <div class="control-group">
-            <label for="gamma-parameter">RBF Gamma (γ):</label>
-            <input type="range" id="gamma-parameter" min="-5" max="2" step="0.1" value="-0.3" class="full-width">
-            <span id="gamma-display">γ = 0.50</span>
-            <div class="param-hint">γ = 10<sup>slider</sup>; RBF: K(x,z)=exp(−γ‖x−z‖²) (Rahimi & Recht, 2007) </div>
-          </div>
-          <div class="control-group">
-            <label for="iterations">Max Iterations (linear):</label>
-            <input type="range" id="iterations" min="50" max="2000" step="50" value="300" class="full-width">
-            <span id="iterations-display">300</span>
-          </div>
-          <div class="results-box">
-            <h3>SVM Performance:</h3>
-            <div class="result-row">
-              <div class="result-label">Train Accuracy:</div>
-              <div class="result-value" id="accuracy">0.0%</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">Train Loss (linear):</div>
-              <div class="result-value" id="loss">0.0000</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">Test Accuracy:</div>
-              <div class="result-value" id="test-accuracy">0.0%</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">Support Vectors:</div>
-              <div class="result-value" id="support-vector-count">0</div>
-            </div>
-            <div class="result-hint">
-              Linear uses Pegasos (ηₜ=1/(λ t), λ=1/C). RBF uses RFF + Pegasos (Rahimi & Recht, 2007). 
-            </div>
-          </div>
-          <div class="kkt-conditions" id="kkt-conditions">
-            <h4>KKT Conditions:</h4>
-            <div>Train the model to see KKT conditions</div>
+          <div class="btn-container">
+            <button id="train-btn" class="primary-btn">Train SVM</button>
+            <button id="generate-btn" class="secondary-btn">Generate New Data</button>
           </div>
         </div>
       </div>
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="kernel-select">Kernel:</label>
+          <select id="kernel-select" class="full-width">
+            <option value="linear" selected>Linear (Pegasos)</option>
+            <option value="rbf">RBF (Gaussian via RFF)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="c-parameter">Regularization (C):</label>
+          <input type="range" id="c-parameter" min="-2" max="3" step="0.1" value="0" class="full-width">
+          <span id="c-display">C = 1.0</span>
+          <div class="param-hint">Higher C → narrower margin (less regularization)</div>
+        </div>
+
+        <div class="control-group">
+          <label for="gamma-parameter">RBF Gamma (γ):</label>
+          <input type="range" id="gamma-parameter" min="-5" max="2" step="0.1" value="-0.3" class="full-width">
+          <span id="gamma-display">γ = 0.50</span>
+          <div class="param-hint">γ = 10<sup>slider</sup>; RBF: K(x,z)=exp(−γ‖x−z‖²). (Rahimi & Recht, 2007) </div>
+        </div>
+
+        <div class="control-group">
+          <label for="iterations">Max Iterations (linear):</label>
+          <input type="range" id="iterations" min="50" max="2000" step="50" value="300" class="full-width">
+          <span id="iterations-display">300</span>
+        </div>
+
+        <div class="results-box">
+          <h3>SVM Performance:</h3>
+          <div class="result-row">
+            <div class="result-label">Train Accuracy:</div>
+            <div class="result-value" id="accuracy">0.0%</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Train Loss (linear):</div>
+            <div class="result-value" id="loss">0.0000</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Test Accuracy:</div>
+            <div class="result-value" id="test-accuracy">0.0%</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Support Vectors:</div>
+            <div class="result-value" id="support-vector-count">0</div>
+          </div>
+          <div class="result-hint">
+            Linear uses Pegasos (ηₜ=1/(λ·t), λ=1/C). RBF uses Pegasos in RFF‐space (Rahimi & Recht, 2007).
+          </div>
+        </div>
+
+        <div class="kkt-conditions" id="kkt-conditions">
+          <h4>KKT Conditions:</h4>
+          <div>Train the model to see KKT conditions</div>
+        </div>
+      </div>
     </div>
-  `;
-  document.head.insertAdjacentHTML('beforeend', `<style>
-    /* (Same styling as before; omitted for brevity) */
+  </div>`;
+
+  // (5) Inject basic CSS (same as your previous styling—omitted here for brevity)
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    /* … (copy the CSS from your previous code exactly) … */
     .svm-container { font-family: Arial, sans-serif; margin-bottom: 20px; }
     .svm-layout { display: flex; flex-direction: column; gap: 20px; }
     @media (min-width: 992px) { .svm-layout { flex-direction: row; } .svm-visualization { flex:3; } .controls-panel { flex:2; } }
     .canvas-container { display: flex; flex-direction: column; }
     #svm-canvas { border: 1px solid #ddd; border-radius: 4px; background: white; max-width: 100%; height: auto; display: block; }
-    .controls-panel { background: #f8f9fa; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
+    .controls-panel { background: #f8f9fa; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .control-group { margin-bottom: 15px; }
     .control-group label { display: block; font-weight: bold; margin-bottom: 8px; }
     .full-width { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
@@ -182,86 +177,86 @@ document.addEventListener('DOMContentLoaded', function() {
     .sv-item { font-family: monospace; font-size: 0.8rem; margin: 2px 0; padding: 2px 4px; background-color: #f8f9fa; border-radius: 2px; }
     .btn-container { margin-bottom: 20px; }
     .svm-visualization { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  </style>`);
+  `;
+  document.head.appendChild(styleEl);
 
-  // Grab DOM elements (after insertion)
-  canvas       = document.getElementById('svm-canvas');
-  ctx          = canvas.getContext('2d');
-  canvasW      = canvas.width;
-  canvasH      = canvas.height;
-
-  kernelSelect   = document.getElementById('kernel-select');
-  cInput         = document.getElementById('c-parameter');
-  cDisplay       = document.getElementById('c-display');
-  gammaInput     = document.getElementById('gamma-parameter');
-  gammaDisplay   = document.getElementById('gamma-display');
-  iterInput      = document.getElementById('iterations');
-  iterDisplay    = document.getElementById('iterations-display');
-  trainBtn       = document.getElementById('train-btn');
-  genBtn         = document.getElementById('generate-btn');
-  accElem        = document.getElementById('accuracy');
-  lossElem       = document.getElementById('loss');
-  testAccElem    = document.getElementById('test-accuracy');
-  svCountElem    = document.getElementById('support-vector-count');
-  kktElem        = document.getElementById('kkt-conditions');
+  // (6) Grab individual DOM elements (after insertion)
+  let canvas               = document.getElementById('svm-canvas');
+  let ctx                  = canvas.getContext('2d');
+  let canvasW              = canvas.width;
+  let canvasH              = canvas.height;
+  let kernelSelectElem     = document.getElementById('kernel-select');
+  let cInputElem           = document.getElementById('c-parameter');
+  let cDisplayElem         = document.getElementById('c-display');
+  let gammaInputElem       = document.getElementById('gamma-parameter');
+  let gammaDisplayElem     = document.getElementById('gamma-display');
+  let iterInputElem        = document.getElementById('iterations');
+  let iterDisplayElem      = document.getElementById('iterations-display');
+  let trainBtnElem         = document.getElementById('train-btn');
+  let generateBtnElem      = document.getElementById('generate-btn');
+  let accElemRef           = document.getElementById('accuracy');
+  let lossElemRef          = document.getElementById('loss');
+  let testAccElemRef       = document.getElementById('test-accuracy');
+  let svCountElemRef       = document.getElementById('support-vector-count');
+  let kktElemRef           = document.getElementById('kkt-conditions');
 
   // ——————————————————————————————————————————————————————————
-  // INITIAL PARAMETER SETUP & EVENT LISTENERS
+  // 3) INITIAL PARAMETER SETUP + EVENT LISTENERS
   // ——————————————————————————————————————————————————————————
+
   function handleCChange() {
-    C = Math.pow(10, parseFloat(cInput.value));
-    cDisplay.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
+    C = Math.pow(10, parseFloat(cInputElem.value));
+    cDisplayElem.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
     lambda = 1.0 / C;
   }
+
   function handleGammaChange() {
-    gamma = Math.pow(10, parseFloat(gammaInput.value));
-    gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : gamma < 1 ? 2 : 1)}`;
-  }
-  function handleIterChange() {
-    maxIterations = parseInt(iterInput.value);
-    iterDisplay.textContent = maxIterations.toString();
-  }
-  function handleKernelChange() {
-    kernelType = kernelSelect.value;
-    if (kernelType === 'linear') {
-      // nothing special
-    } else {
-      // On switching to RBF, initialize RFF immediately when training starts
-      // (actual initialization happens inside trainSVM)
-    }
+    gamma = Math.pow(10, parseFloat(gammaInputElem.value));
+    gammaDisplayElem.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : gamma < 1 ? 2 : 1)}`;
   }
 
-  cInput.addEventListener('input', handleCChange);
-  gammaInput.addEventListener('input', handleGammaChange);
-  iterInput.addEventListener('input', handleIterChange);
-  kernelSelect.addEventListener('change', handleKernelChange);
-  trainBtn.addEventListener('click', trainSVM);
-  genBtn.addEventListener('click', generateData);
+  function handleIterChange() {
+    maxIterations = parseInt(iterInputElem.value);
+    iterDisplayElem.textContent = maxIterations.toString();
+  }
+
+  function handleKernelChange() {
+    kernelType = kernelSelectElem.value;
+    // Nothing else needed—training routine will branch accordingly
+  }
+
+  cInputElem.addEventListener('input', handleCChange);
+  gammaInputElem.addEventListener('input', handleGammaChange);
+  iterInputElem.addEventListener('input', handleIterChange);
+  kernelSelectElem.addEventListener('change', handleKernelChange);
+  trainBtnElem.addEventListener('click', trainSVM);
+  generateBtnElem.addEventListener('click', generateData);
   window.addEventListener('resize', handleResize);
 
-  // Initialize text for sliders
-  C = Math.pow(10, parseFloat(cInput.value));
-  cDisplay.textContent = `C = ${C.toFixed(1)}`;
-  lambda = 1.0 / C;
-  gamma = Math.pow(10, parseFloat(gammaInput.value));
-  gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
-  maxIterations = parseInt(iterInput.value);
-  iterDisplay.textContent = maxIterations.toString();
+  // Initialize slider displays
+  C        = Math.pow(10, parseFloat(cInputElem.value));
+  lambda   = 1.0 / C;
+  cDisplayElem.textContent   = `C = ${C.toFixed(1)}`;
+  gamma    = Math.pow(10, parseFloat(gammaInputElem.value));
+  gammaDisplayElem.textContent = `γ = ${gamma.toFixed(1)}`;
+  maxIterations = parseInt(iterInputElem.value);
+  iterDisplayElem.textContent  = maxIterations.toString();
 
   // ——————————————————————————————————————————————————————————
-  // 1) DATA GENERATION (linear vs. circular)
+  // 4) DATA GENERATION (linear vs. circular)
   // ——————————————————————————————————————————————————————————
+
   function generateData() {
-    const totalPoints = 120;
-    const trainSize   = 80;
+    const totalPts = 120;
+    const trainSize = 80;
     let pts = [];
 
-    // Randomly choose linear or circular pattern
+    // Randomly select linear vs. circular
     const pattern = Math.random() > 0.5 ? 'linear' : 'circular';
     hasTrainedOnce = false;
 
     if (pattern === 'linear') {
-      for (let i = 0; i < totalPoints; i++) {
+      for (let i = 0; i < totalPts; i++) {
         const x1 = (Math.random() - 0.5) * 4;
         const x2 = (Math.random() - 0.5) * 4;
         const boundary = 0.8 * x1 + 0.5 * x2;
@@ -275,8 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
         pts.push({ x1, x2, y });
       }
     } else {
-      // Circular pattern
-      for (let i = 0; i < totalPoints; i++) {
+      // Circular clusters
+      for (let i = 0; i < totalPts; i++) {
         const angle = Math.random() * 2 * Math.PI;
         let radius, y;
         if (Math.random() < 0.8) {
@@ -294,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const x2 = radius * Math.sin(angle);
         pts.push({ x1, x2, y });
       }
-      // Heuristic γ = 1/median(‖x_i - x_j‖²)
+      // Heuristic γ = 1/median(‖x_i - x_j‖²) (Hsu et al., 2003) 
       const dists = [];
       for (let i = 0; i < pts.length; i++) {
         for (let j = i+1; j < pts.length; j++) {
@@ -306,8 +301,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const med = median(dists);
       gamma = 1.0 / med;
       const exp = Math.log10(gamma);
-      gammaInput.value = exp.toFixed(1);
-      updateGamma();
+      gammaInputElem.value = exp.toFixed(1);
+      handleGammaChange();
     }
 
     // Shuffle
@@ -315,49 +310,49 @@ document.addEventListener('DOMContentLoaded', function() {
       const j = Math.floor(Math.random() * (i + 1));
       [pts[i], pts[j]] = [pts[j], pts[i]];
     }
-    data = pts.slice(0, trainSize);
+
+    data     = pts.slice(0, trainSize);
     testData = pts.slice(trainSize);
 
-    // Reinitialize linear parameters
+    // Re‐initialize linear and RBF weights
     initLinearWeights();
+    randomWeights      = [];
+    randomBiases       = [];
+    approxWeights      = [];
+    approxBias         = 0;
+    supportVectorsLinear = [];
+    supportVectorsRBF    = [];
 
-    // Reset RFF state
-    randomWeights = [];
-    randomBiases  = [];
-    approxWeights = [];
-    approxBias    = 0;
-
-    // Reset UI metrics
-    accElem.textContent      = '0.0%';
-    lossElem.textContent     = '0.0000';
-    testAccElem.textContent  = '0.0%';
-    svCountElem.textContent  = '0';
-    kktElem.innerHTML        = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+    // Reset displayed metrics
+    accElemRef.textContent      = '0.0%';
+    lossElemRef.textContent     = '0.0000';
+    testAccElemRef.textContent  = '0.0%';
+    svCountElemRef.textContent  = '0';
+    kktElemRef.innerHTML        = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
 
     drawCanvas();
   }
 
   function initLinearWeights() {
-    weights.w = [(Math.random() - 0.5)*0.01, (Math.random() - 0.5)*0.01];
-    weights.b = 0;
+    linearW = [(Math.random() - 0.5)*0.01, (Math.random() - 0.5)*0.01];
+    linearB = 0;
     iterationCount = 0;
   }
 
   function median(arr) {
     const s = arr.slice().sort((a,b) => a - b);
     const m = Math.floor(s.length/2);
-    return (s.length % 2 === 0) ? (s[m-1] + s[m])/2 : s[m];
+    return (s.length % 2 === 0) ? (s[m-1] + s[m]) / 2 : s[m];
   }
 
   // ——————————————————————————————————————————————————————————
-  // 2) TRAINING (branch on kernelType)
+  // 5) TRAINING DISPATCHER (linear vs. RBF)
   // ——————————————————————————————————————————————————————————
   async function trainSVM() {
     if (isTraining) return;
     isTraining = true;
-
-    trainBtn.disabled = true;
-    trainBtn.textContent = `Training ${kernelType === 'linear' ? 'Linear' : 'RBF'}...`;
+    trainBtnElem.disabled = true;
+    trainBtnElem.textContent = `Training ${kernelType === 'linear' ? 'Linear' : 'RBF'}...`;
 
     if (kernelType === 'linear') {
       await trainLinearSVM();
@@ -365,70 +360,71 @@ document.addEventListener('DOMContentLoaded', function() {
       await trainRBFSVM();
     }
 
-    trainBtn.disabled = false;
-    trainBtn.textContent = 'Train SVM';
+    trainBtnElem.disabled = false;
+    trainBtnElem.textContent = 'Train SVM';
     hasTrainedOnce = true;
-    isTraining      = false;
+    isTraining = false;
   }
 
   // —═════════════════════════════════════════════
-  // 2A) Linear Pegasos Training (Shalev‐Shwartz et al., 2007) 
+  // 5A) Linear Pegasos Training (Shalev‐Shwartz et al., 2007) 
   // —═════════════════════════════════════════════
   async function trainLinearSVM() {
     const n = data.length;
     lambda = 1.0 / C;
 
     for (; iterationCount < maxIterations; iterationCount++) {
-      const t   = iterationCount + 1;           
-      const eta = 1.0 / (lambda * t);           // ηₜ = 1/(λ t)
+      const t   = iterationCount + 1;
+      const eta = 1.0 / (lambda * t);   // ηₜ = 1/(λ·t)
 
-      // Sample a random training point
+      // Randomly sample one data point
       const idx = Math.floor(Math.random() * n);
       const { x1, x2, y } = data[idx];
-      const dot = weights.w[0]*x1 + weights.w[1]*x2 + weights.b;
+      const dot = linearW[0]*x1 + linearW[1]*x2 + linearB;
       const margin = y * dot;
 
       if (margin < 1) {
-        // w ← (1 − ηλ) w + η y x
-        weights.w[0] = (1 - eta*lambda)*weights.w[0] + eta*y*x1;
-        weights.w[1] = (1 - eta*lambda)*weights.w[1] + eta*y*x2;
-        // b ← b + η y
-        weights.b += eta * y;
+        // w ← (1 − ηλ) w + η·y·x
+        linearW[0] = (1 - eta*lambda)*linearW[0] + eta*y*x1;
+        linearW[1] = (1 - eta*lambda)*linearW[1] + eta*y*x2;
+        // b ← b + η·y
+        linearB += eta * y;
       } else {
         // w ← (1 − ηλ) w
-        weights.w[0] = (1 - eta*lambda)*weights.w[0];
-        weights.w[1] = (1 - eta*lambda)*weights.w[1];
-        // no bias update
+        linearW[0] = (1 - eta*lambda)*linearW[0];
+        linearW[1] = (1 - eta*lambda)*linearW[1];
+        // b unchanged
       }
 
+      // Every 10 iterations, update displayed metrics + redraw
       if (t % 10 === 0) {
         const trainAcc = calcTrainAccLinear();
         const trainLoss = calcLinearLoss();
-        const testAcc    = calcTestAccLinear();
-        accElem.textContent     = (trainAcc * 100).toFixed(1) + '%';
-        lossElem.textContent    = trainLoss.toFixed(4);
-        testAccElem.textContent = (testAcc * 100).toFixed(1) + '%';
+        const testAcc   = calcTestAccLinear();
+        accElemRef.textContent     = (trainAcc * 100).toFixed(1) + '%';
+        lossElemRef.textContent    = trainLoss.toFixed(4);
+        testAccElemRef.textContent = (testAcc * 100).toFixed(1) + '%';
 
         updateSupportVectorsLinear();
-        svCountElem.textContent = supportVectorsLinear.length.toString();
+        svCountElemRef.textContent = supportVectorsLinear.length.toString();
 
         drawCanvas();
-        await new Promise(r => setTimeout(r, 5)); // small pause
+        await new Promise(r => setTimeout(r, 5)); // small pause so UI updates
       }
 
-      // Early stopping if high train accuracy
+      // Early stop if training accuracy > 99%
       if (calcTrainAccLinear() > 0.99 && t > 50) break;
     }
 
-    // Final metrics
+    // Final metrics after loop
     updateSupportVectorsLinear();
     const finalTrainAcc = calcTrainAccLinear();
     const finalTestAcc  = calcTestAccLinear();
     const finalLoss     = calcLinearLoss();
-    accElem.textContent     = (finalTrainAcc * 100).toFixed(1) + '%';
-    lossElem.textContent    = finalLoss.toFixed(4);
-    testAccElem.textContent = (finalTestAcc * 100).toFixed(1) + '%';
-    svCountElem.textContent = supportVectorsLinear.length.toString();
+    accElemRef.textContent     = (finalTrainAcc * 100).toFixed(1) + '%';
+    lossElemRef.textContent    = finalLoss.toFixed(4);
+    testAccElemRef.textContent = (finalTestAcc * 100).toFixed(1) + '%';
+    svCountElemRef.textContent = supportVectorsLinear.length.toString();
 
     drawCanvas();
     updateKKTLinear();
@@ -437,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function calcTrainAccLinear() {
     let correct = 0;
     for (const pt of data) {
-      const pred = (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b >= 0) ? 1 : -1;
+      const pred = (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB >= 0) ? 1 : -1;
       if (pred === pt.y) correct++;
     }
     return data.length ? correct / data.length : 0;
@@ -445,28 +441,27 @@ document.addEventListener('DOMContentLoaded', function() {
   function calcTestAccLinear() {
     let correct = 0;
     for (const pt of testData) {
-      const pred = (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b >= 0) ? 1 : -1;
+      const pred = (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB >= 0) ? 1 : -1;
       if (pred === pt.y) correct++;
     }
     return testData.length ? correct / testData.length : 0;
   }
   function calcLinearLoss() {
-    // SVM objective: ½||w||² + C ∑ hinge
+    // Objective: ½||w||² + C·∑_i max(0,1 - y_i f(x_i))
     let hingeSum = 0;
     for (const pt of data) {
-      const margin = pt.y * (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b);
+      const margin = pt.y * (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB);
       if (margin < 1) hingeSum += (1 - margin);
     }
-    const reg = 0.5 * (weights.w[0]*weights.w[0] + weights.w[1]*weights.w[1]);
+    const reg = 0.5 * (linearW[0]*linearW[0] + linearW[1]*linearW[1]);
     return reg + C * hingeSum;
   }
 
-  let supportVectorsLinear = [];
   function updateSupportVectorsLinear() {
     supportVectorsLinear = [];
     const tol = 1e-6;
     for (const pt of data) {
-      const margin = pt.y * (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b);
+      const margin = pt.y * (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB);
       if (margin <= 1 + tol) {
         supportVectorsLinear.push(pt);
       }
@@ -475,13 +470,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateKKTLinear() {
     if (!hasTrainedOnce) {
-      kktElem.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+      kktElemRef.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
       return;
     }
     let satisfied = 0, total = data.length, svViol = 0, nonSVViol = 0;
     let html = '<h4>KKT Conditions (Linear):</h4>';
     for (const pt of data) {
-      const margin = pt.y * (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b);
+      const margin = pt.y * (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB);
       const isSV = margin <= 1 + 1e-3;
       let ok = true;
       if (isSV) {
@@ -502,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
       html += `<div class="sv-details"><h5>Example SVs:</h5>`;
       for (let i = 0; i < Math.min(5, supportVectorsLinear.length); i++) {
         const s = supportVectorsLinear[i];
-        const m = (s.y*(weights.w[0]*s.x1 + weights.w[1]*s.x2 + weights.b)).toFixed(3);
+        const m = (s.y * (linearW[0]*s.x1 + linearW[1]*s.x2 + linearB)).toFixed(3);
         html += `<div class="sv-item">y=${s.y}, (x₁,x₂)=(${s.x1.toFixed(2)},${s.x2.toFixed(2)}), margin=${m}</div>`;
       }
       if (supportVectorsLinear.length > 5) {
@@ -510,14 +505,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       html += `</div>`;
     }
-    kktElem.innerHTML = html;
+    kktElemRef.innerHTML = html;
   }
 
   // —═════════════════════════════════════════════
-  // 2B) RBF via Random Fourier Features + Pegasos 
+  // 5B) RBF via Random Fourier Features + Pegasos 
   // —═════════════════════════════════════════════
   async function trainRBFSVM() {
-    // 1) Initialize RFF if first time
+    // 1) Initialize RFF the first time
     if (randomWeights.length === 0) {
       initializeKernelApproximation();
     }
@@ -529,69 +524,68 @@ document.addEventListener('DOMContentLoaded', function() {
       const t   = iterationCount + 1;
       const eta = 1.0 / (lambda * t);
 
-      // 2) Sample random point
+      // Sample one random training point
       const idx = Math.floor(Math.random() * n);
       const { x1, x2, y } = data[idx];
 
-      // 3) Compute φ(x) with correct scaling: φ_i(x) = sqrt(2/D) * cos(ω_i · x + b_i)
+      // Compute φ(x) = [ √(2/D) cos(ωᵢ·x + bᵢ ) ] for i=1..D
       const phi = computeApproximateFeatures(x1, x2);
 
-      // 4) Compute functional margin f(x) = w·φ(x) + b
+      // Compute f(x) = approxBias + ∑ approxWeights[i] · φ[i]
       let fx = approxBias;
       for (let i = 0; i < phi.length; i++) {
         fx += approxWeights[i] * phi[i];
       }
       const margin = y * fx;
 
-      // 5) Pegasos update in RFF space
       if (margin < 1) {
         // approxWeights ← (1 − ηλ) approxWeights + η y φ
         for (let i = 0; i < approxWeights.length; i++) {
-          approxWeights[i] = (1 - eta * lambda) * approxWeights[i] + eta * y * phi[i];
+          approxWeights[i] = (1 - eta*lambda)*approxWeights[i] + eta*y*phi[i];
         }
         // approxBias ← approxBias + η y
         approxBias += eta * y;
       } else {
         // approxWeights ← (1 − ηλ) approxWeights
         for (let i = 0; i < approxWeights.length; i++) {
-          approxWeights[i] = (1 - eta * lambda) * approxWeights[i];
+          approxWeights[i] = (1 - eta*lambda)*approxWeights[i];
         }
-        // no update to bias
+        // approxBias unchanged
       }
 
-      // 6) Every 10 iterations, update metrics + draw
+      // Every 10 iterations, update displayed metrics + redraw
       if (t % 10 === 0) {
         const trainAcc = calcTrainAccRBF();
         const trainLoss = calcRBFLoss();
-        const testAcc  = calcTestAccRBF();
-        accElem.textContent     = (trainAcc * 100).toFixed(1) + '%';
-        lossElem.textContent    = trainLoss.toFixed(4);
-        testAccElem.textContent = (testAcc * 100).toFixed(1) + '%';
+        const testAcc   = calcTestAccRBF();
+        accElemRef.textContent     = (trainAcc * 100).toFixed(1) + '%';
+        lossElemRef.textContent    = trainLoss.toFixed(4);
+        testAccElemRef.textContent = (testAcc * 100).toFixed(1) + '%';
 
         updateSupportVectorsRBF();
-        svCountElem.textContent = supportVectorsRBF.length.toString();
+        svCountElemRef.textContent = supportVectorsRBF.length.toString();
 
         const xR = getXRange();
         const yR = getYRange();
-        drawCanvas();               // clears axes + (if linear) boundary + points
-        drawRBFRegion(xR, yR);      // shade decision region
-        drawDataPoints(xR, yR);     // draw points on top
+        drawCanvas();
+        drawRBFRegion(xR, yR);
+        drawDataPoints(xR, yR);
         await new Promise(r => setTimeout(r, 5));
       }
 
-      // Early stopping if trainAcc > 0.99
+      // Early stop if training accuracy > 99%
       if (calcTrainAccRBF() > 0.99 && t > 50) break;
     }
 
-    // Final metrics
+    // Final metrics after loop
     updateSupportVectorsRBF();
     const finalTrainAcc = calcTrainAccRBF();
     const finalTestAcc  = calcTestAccRBF();
     const finalLoss     = calcRBFLoss();
-    accElem.textContent     = (finalTrainAcc * 100).toFixed(1) + '%';
-    lossElem.textContent    = finalLoss.toFixed(4);
-    testAccElem.textContent = (finalTestAcc * 100).toFixed(1) + '%';
-    svCountElem.textContent = supportVectorsRBF.length.toString();
+    accElemRef.textContent     = (finalTrainAcc * 100).toFixed(1) + '%';
+    lossElemRef.textContent    = finalLoss.toFixed(4);
+    testAccElemRef.textContent = (finalTestAcc * 100).toFixed(1) + '%';
+    svCountElemRef.textContent = supportVectorsRBF.length.toString();
 
     const xR = getXRange();
     const yR = getYRange();
@@ -601,15 +595,14 @@ document.addEventListener('DOMContentLoaded', function() {
     updateKKTRBF();
   }
 
-  // Initialize Random Fourier Features (Rahimi & Recht, 2007) 
   function initializeKernelApproximation() {
-    numRandomFeatures = 200; 
-    randomWeights     = [];
-    randomBiases      = [];
-    approxWeights     = new Array(numRandomFeatures).fill(0);
-    approxBias        = 0;
+    // Clear any old values
+    randomWeights = [];
+    randomBiases  = [];
+    approxWeights = new Array(numRandomFeatures).fill(0);
+    approxBias    = 0;
 
-    // Sample ω_i ~ N(0, 2γ I), b_i ~ Uniform(0, 2π)
+    // Draw ωᵢ ∼ N(0, 2γ I), bᵢ ∼ Uniform(0, 2π)
     for (let i = 0; i < numRandomFeatures; i++) {
       const w1 = gaussianRandom() * Math.sqrt(2 * gamma);
       const w2 = gaussianRandom() * Math.sqrt(2 * gamma);
@@ -618,16 +611,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Compute φ(x) vector with proper scaling: φ_i(x) = sqrt(2/D) * cos(ω_i · x + b_i)
   function computeApproximateFeatures(x1, x2) {
+    // φᵢ(x) = √(2/D) · cos(ωᵢ · x + bᵢ)
     const D = numRandomFeatures;
     const scale = Math.sqrt(2.0 / D);
-    const features = new Array(D);
+    const feats = new Array(D);
     for (let i = 0; i < D; i++) {
       const proj = randomWeights[i][0]*x1 + randomWeights[i][1]*x2 + randomBiases[i];
-      features[i] = scale * Math.cos(proj);
+      feats[i] = scale * Math.cos(proj);
     }
-    return features;
+    return feats;
   }
 
   function calcTrainAccRBF() {
@@ -653,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return testData.length ? correct / testData.length : 0;
   }
   function calcRBFLoss() {
-    // ½ ||w||² + C ∑ hinge, where w is in RFF‐space
+    // ½ ||w||² + C ∑_i hinge_i
     let hingeSum = 0;
     for (const pt of data) {
       const phi = computeApproximateFeatures(pt.x1, pt.x2);
@@ -663,12 +656,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (margin < 1) hingeSum += (1 - margin);
     }
     let normW = 0;
-    for (let i = 0; i < approxWeights.length; i++) normW += approxWeights[i] * approxWeights[i];
+    for (let i = 0; i < approxWeights.length; i++) {
+      normW += approxWeights[i] * approxWeights[i];
+    }
     const reg = 0.5 * normW;
     return reg + C * hingeSum;
   }
 
-  let supportVectorsRBF = [];
   function updateSupportVectorsRBF() {
     supportVectorsRBF = [];
     const tol = 1e-6;
@@ -685,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateKKTRBF() {
     if (!hasTrainedOnce) {
-      kktElem.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+      kktElemRef.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
       return;
     }
     let satisfied = 0, total = data.length, svViol = 0, nonSVViol = 0;
@@ -708,17 +702,17 @@ document.addEventListener('DOMContentLoaded', function() {
     html += `<div class="kkt-summary">KKT Satisfied: ${satisfied}/${total} (${pct}%)</div>`;
     html += `<div class="kkt-breakdown">`
          +   `<div>• Support vectors (margin ≤ 1): ${supportVectorsRBF.length}</div>`
-         +   `<div>• SV margin-violations: ${svViol}</div>`
-         +   `<div>• Non-SV margin-violations: ${nonSVViol}</div>`
+         +   `<div>• SV margin‐violations: ${svViol}</div>`
+         +   `<div>• Non‐SV margin‐violations: ${nonSVViol}</div>`
          + `</div>`;
     if (supportVectorsRBF.length > 0) {
       html += `<div class="sv-details"><h5>Example SVs:</h5>`;
       for (let i = 0; i < Math.min(5, supportVectorsRBF.length); i++) {
         const s = supportVectorsRBF[i];
-        const phi = computeApproximateFeatures(s.x1, s.x2);
-        let fx = approxBias;
-        for (let j = 0; j < phi.length; j++) fx += approxWeights[j] * phi[j];
-        const m = (s.y * fx).toFixed(3);
+        const phiS = computeApproximateFeatures(s.x1, s.x2);
+        let fxS = approxBias;
+        for (let j = 0; j < phiS.length; j++) fxS += approxWeights[j] * phiS[j];
+        const m = (s.y * fxS).toFixed(3);
         html += `<div class="sv-item">y=${s.y}, (x₁,x₂)=(${s.x1.toFixed(2)},${s.x2.toFixed(2)}), margin=${m}</div>`;
       }
       if (supportVectorsRBF.length > 5) {
@@ -726,11 +720,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       html += `</div>`;
     }
-    kktElem.innerHTML = html;
+    kktElemRef.innerHTML = html;
   }
 
   // —═════════════════════════════════════════════
-  // 3) DRAWING (axes + linear boundary + data points + RBF region)
+  // 6) DRAWING ROUTINES (axes + boundaries + points + RBF region)
   // —═════════════════════════════════════════════
   function drawCanvas() {
     ctx.clearRect(0, 0, canvasW, canvasH);
@@ -765,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const xScale = plotW / (xR.max - xR.min);
     const yScale = plotH / (yR.max - yR.min);
 
-    // grid lines
+    // Grid lines
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     const yStep = (yR.max - yR.min)/10;
@@ -778,19 +772,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const cx = 50 + (x - xR.min)*xScale;
       ctx.beginPath(); ctx.moveTo(cx, 50); ctx.lineTo(cx, canvasH - 50); ctx.stroke();
     }
-    // axes
+    // Axes
     ctx.strokeStyle = '#888';
     ctx.lineWidth = 1.5;
-    // x-axis (y=0)
+    // x-axis at y=0
     const y0 = canvasH - 50 - (0 - yR.min)*yScale;
     ctx.beginPath(); ctx.moveTo(50, y0); ctx.lineTo(canvasW - 50, y0); ctx.stroke();
-    // y-axis (x=0)
+    // y-axis at x=0
     const x0 = 50 + (0 - xR.min)*xScale;
     ctx.beginPath(); ctx.moveTo(x0, 50); ctx.lineTo(x0, canvasH - 50); ctx.stroke();
   }
 
   function drawLinearBoundary(xR, yR) {
-    if (Math.abs(weights.w[1]) < 1e-6) return;
+    if (Math.abs(linearW[1]) < 1e-6) return;
     const plotW = canvasW - 2*50;
     const plotH = canvasH - 2*50;
     const xScale = plotW / (xR.max - xR.min);
@@ -798,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const pts = [];
     for (let x = xR.min; x <= xR.max; x += (xR.max - xR.min)/200) {
-      const y = -(weights.w[0]*x + weights.b) / weights.w[1];
+      const y = -(linearW[0]*x + linearB) / linearW[1];
       if (y < yR.min || y > yR.max) continue;
       const cx = 50 + (x - xR.min)*xScale;
       const cy = canvasH - 50 - (y - yR.min)*yScale;
@@ -810,14 +804,13 @@ document.addEventListener('DOMContentLoaded', function() {
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
     ctx.stroke();
-
-    // Draw margins ±1
+    // Margins ±1
     drawMarginLine(xR, yR, +1, '#95a5a6');
     drawMarginLine(xR, yR, -1, '#95a5a6');
   }
 
   function drawMarginLine(xR, yR, offset, color) {
-    if (Math.abs(weights.w[1]) < 1e-6) return;
+    if (Math.abs(linearW[1]) < 1e-6) return;
     const plotW = canvasW - 2*50;
     const plotH = canvasH - 2*50;
     const xScale = plotW / (xR.max - xR.min);
@@ -825,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const pts = [];
     for (let x = xR.min; x <= xR.max; x += (xR.max - xR.min)/200) {
-      const y = -(weights.w[0]*x + weights.b - offset) / weights.w[1];
+      const y = -(linearW[0]*x + linearB - offset) / linearW[1];
       if (y < yR.min || y > yR.max) continue;
       const cx = 50 + (x - xR.min)*xScale;
       const cy = canvasH - 50 - (y - yR.min)*yScale;
@@ -854,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function() {
       let isSV = false;
       if (hasTrainedOnce) {
         if (kernelType === 'linear') {
-          const margin = pt.y * (weights.w[0]*pt.x1 + weights.w[1]*pt.x2 + weights.b);
+          const margin = pt.y * (linearW[0]*pt.x1 + linearW[1]*pt.x2 + linearB);
           isSV = (margin <= 1 + 1e-6);
         } else {
           const phi = computeApproximateFeatures(pt.x1, pt.x2);
@@ -874,7 +867,7 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.fill(); ctx.stroke();
     }
 
-    // Test points (semi‐transparent)
+    // Test points (transparent)
     for (const pt of testData) {
       const cx = 50 + (pt.x1 - xR.min)*xScale;
       const cy = canvasH - 50 - (pt.x2 - yR.min)*yScale;
@@ -886,10 +879,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // —═════════════════════════════════════════════
-  // 4) DRAW RBF DECISION REGION (background shading)
+  // 7) DRAW RBF DECISION REGION (background shading)
   // —═════════════════════════════════════════════
   function drawRBFRegion(xR, yR) {
-    if (randomWeights.length === 0) return; // not initialized
+    if (randomWeights.length === 0) return; // not yet initialized
 
     const plotW = canvasW - 2*50;
     const plotH = canvasH - 2*50;
@@ -907,22 +900,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const y = yR.min + j * dy;
         const phi = computeApproximateFeatures(x, y);
         let fx = approxBias;
-        for (let k = 0; k < phi.length; k++) {
-          fx += approxWeights[k] * phi[k];
-        }
+        for (let k = 0; k < phi.length; k++) fx += approxWeights[k] * phi[k];
         const pred = fx >= 0 ? 1 : -1;
-        const color = pred === 1 ? 'rgba(231,76,60,0.1)' : 'rgba(52,152,219,0.1)';
+        const color = pred === 1 ?
+          'rgba(231,76,60,0.1)' :
+          'rgba(52,152,219,0.1)';
         const cx = 50 + (x - xR.min)*xScale;
         const cy = canvasH - 50 - (y - yR.min)*yScale;
         ctx.fillStyle = color;
-        ctx.fillRect(cx, cy, xScale * dx + 1, yScale * dy + 1);
+        ctx.fillRect(cx, cy, xScale*dx + 1, yScale*dy + 1);
       }
     }
     ctx.globalAlpha = 1.0;
   }
 
   // ―――――――――――――――――――――――――――――――――――――――――――
-  //  Utility: Gaussian random (Box–Muller)
+  // 8) UTILITY: Gaussian random (Box–Muller)
   // ―――――――――――――――――――――――――――――――――――――――――――
   function gaussianRandom() {
     let u = 0, v = 0;
@@ -932,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ―――――――――――――――――――――――――――――――――――――――――――
-  //  Utility: Handle window resize
+  // 9) UTILITY: Handle window resize
   // ―――――――――――――――――――――――――――――――――――――――――――
   function handleResize() {
     const parent = canvas.parentElement;
@@ -948,13 +941,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // ―――――――――――――――――――――――――――――――――――――――――――
   generateData();
   handleResize();
-});
-
-// ―――――――――――――――――――――――――――――――――――――――――――――
-// References
-// [1] Shalev‐Shwartz, S., Singer, Y., & Srebro, N. (2007). 
-//     “Pegasos: Primal Estimated Sub‐Gradient Solver for SVM,” ICML.
-//     Pegasos uses ηₜ = 1/(λ t), λ = 1/C for provable convergence. 
-// [2] Rahimi, A., & Recht, B. (2007). 
-//     “Random Features for Large‐Scale Kernel Machines,” NIPS.
-//     φ_i(x) = √(2/D) cos(ω_i · x + b_i), ω_i ∼ N(0, 2γI). 
+  });
+  // ―――――――――――――――――――――――――――――――――――――――――――
+  // References
+  // [1] Shalev‐Shwartz, S., Singer, Y., & Srebro, N. (2007). 
+  //     “Pegasos: Primal Estimated Sub‐Gradient Solver for SVM.” ICML.
+  //     (Use ηₜ = 1/(λ·t), λ = 1/C for provable convergence.) 
+  // [2] Rahimi, A., & Recht, B. (2007). 
+  //     “Random Features for Large‐Scale Kernel Machines.” NIPS.
+  //     (φᵢ(x) = √(2/D) · cos(ωᵢ·x + bᵢ), ωᵢ ∼ N(0, 2γI), bᵢ ∼ Uniform(0,2π)) 
+  // ―――――――――――――――――――――――――――――――――――――――――――
