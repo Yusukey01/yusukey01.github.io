@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) return;
 
-        const epsilon = 0.05;
+        const epsilon = 0.1;
 
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
@@ -314,30 +314,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const margin = point.y * decision;
 
-            if (margin > 1 - epsilon && margin < 1 + epsilon) {
+            if (margin < 1 + epsilon) {
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
                     margin: margin,
-                    alpha: C,
-                    slackVariable: Math.max(0, 1 - margin)
+                    slackVariable: Math.max(0, 1 - margin),
+                    alpha: C
                 });
             }
         }
 
-        const totalPoints = data.length;
         const svCount = supportVectors.length;
-        const svPercentage = (svCount / totalPoints * 100).toFixed(1);
-
+        const svPercentage = (svCount / data.length * 100).toFixed(1);
         if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
-            console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
-        }
-
-        if (currentIteration === maxIterations) {
-            console.log(`Final margin: ${margin.toFixed(3)}`);
+            console.log(`Support Vector Analysis: ${svCount}/${data.length} (${svPercentage}%)`);
         }
     }
+
 
 
 
