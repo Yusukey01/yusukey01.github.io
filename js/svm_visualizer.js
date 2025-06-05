@@ -26,9 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize alphas for all data points
         alphas = new Array(data.length).fill(0);
-        
+
+        const lambda = 1.0 / (C * data.length);
+
         let iterations = 0;
         const maxIter = maxIterations;
+
         let bestAccuracy = 0;
         let stagnantIterations = 0;
         let currentLearningRate = learningRate; // Use local variable for adaptive learning
@@ -67,18 +70,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const decision = computeApproximateDecision(phi);
                 const margin = point.y * decision;
 
-                const lambda = 1.0 / (C * data.length);
-
+               for (let i = 0; i < approximateWeights.length; i++) {
+                approximateWeights[i] *= (1 - currentLearningRate * lambda);
+                }
                 if (margin < 1) {
                 for (let i = 0; i < approximateWeights.length; i++) {
-                    approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) +
-                                            currentLearningRate * point.y * phi[i];
+                    approximateWeights[i] += currentLearningRate * point.y * phi[i];
                 }
                 approximateBias += currentLearningRate * point.y;
-                } else {
-                    for (let i = 0; i < approximateWeights.length; i++) {
-                        approximateWeights[i] *= (1 - currentLearningRate * lambda);
-                    }
                 }
             }
         
@@ -200,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute approximate features using Random Fourier Features
     function computeApproximateFeatures(x1, x2) {
         const features = [];
-        const scale = Math.sqrt(2 / (2 * numRandomFeatures));  // since you double features (cos + sin)
+        const scale = Math.sqrt(1 / numRandomFeatures);  // since you double features (cos + sin)
         for (let i = 0; i < numRandomFeatures; i++) {
             const dot = randomWeights[i][0] * x1 + randomWeights[i][1] * x2;
             const cosVal = Math.cos(dot + randomBiases[i]);
