@@ -237,13 +237,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return 0;
     }
 
-    // RBF kernel function
-    function rbfKernel(x1, x2, xi1, xi2) {
-        const diff1 = x1 - xi1;
-        const diff2 = x2 - xi2;
-        const distSq = diff1 * diff1 + diff2 * diff2;
-        return Math.exp(-gamma * distSq);
+    // Calculate SVM loss (hinge loss + regularization)
+    function calculateSVMLoss() {
+        let hingeLoss = 0;
+        let totalSlack = 0;
+        
+        for (const point of data) {
+            const decision = computeDecisionFunction(point.x1, point.x2);
+            const margin = point.y * decision;
+            if (margin < 1) {
+                const slack = 1 - margin;
+                hingeLoss += slack;
+                totalSlack += slack;
+            }
+        }
+        
+        // Regularization term
+        let regTerm = 0;
+        if (kernelType === 'linear') {
+            regTerm = 0.5 * (weights.w[0] * weights.w[0] + weights.w[1] * weights.w[1]);
+        } else if (kernelType === 'rbf' && kernelApproximation) {
+            // Regularization for approximate weights
+            for (let i = 0; i < approximateWeights.length; i++) {
+                regTerm += approximateWeights[i] * approximateWeights[i];
+            }
+            regTerm *= 0.5;
+        }
+        
+        // SVM loss = regularization + C * sum_of_slack_variables
+        return regTerm + C * totalSlack;
     }
+
 
     // Predict class for a point
     function predict(x1, x2) {
