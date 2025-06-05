@@ -62,19 +62,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 const phi = computeApproximateFeatures(point.x1, point.x2);
                 const decision = computeApproximateDecision(phi);
                 const margin = point.y * decision;
-                
+
+                const lambda = 1.0 / (C * data.length);
+
                 if (margin < 1) {
                     // Update approximated weights
                     for (let i = 0; i < approximateWeights.length; i++) {
-                        approximateWeights[i] = approximateWeights[i] - 
-                            currentLearningRate * (approximateWeights[i] / (C * data.length) - point.y * phi[i]);
+                        approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) + 
+                        currentLearningRate * point.y * phi[i];
                     }
                     approximateBias = approximateBias + currentLearningRate * point.y;
                 } else {
                     // Only regularization
                     for (let i = 0; i < approximateWeights.length; i++) {
-                        approximateWeights[i] = approximateWeights[i] - 
-                            currentLearningRate * approximateWeights[i] / (C * data.length);
+                       approximateWeights[i] *= (1 - currentLearningRate * lambda);
                     }
                 }
             }
@@ -304,23 +305,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const tolerance = 1e-2;
 
         // Recompute margins and identify only violators
+       supportVectors = [];
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
             const decision = computeDecisionFunction(point.x1, point.x2);
             const margin = point.y * decision;
 
-            // Only count as support vector if inside margin or misclassified
-            if (margin < 1 - tolerance) {
+            const slack = Math.max(0, 1 - margin);
+
+            if (slack > 1e-3) {  // Only add support vectors if true margin violation
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
-                    alpha: C,  // approximate
-                    slackVariable: 1 - margin,
-                    margin: margin
+                    slackVariable: slack,
+                    margin: margin,
+                    alpha: C // Approximate alpha
                 });
             }
         }
+
 
         const totalPoints = data.length;
         const svCount = supportVectors.length;
