@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize alphas for all data points
         alphas = new Array(data.length).fill(0);
 
-        const lambda = 1.0 / (C * data.length);
+        const lambda = 1.0 / data.length;
 
         let iterations = 0;
         const maxIter = maxIterations;
@@ -332,6 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
+        }
+
+        if (currentIteration === maxIterations) {
+            console.log(`Final margin: ${margin.toFixed(3)}`);
         }
     }
 
