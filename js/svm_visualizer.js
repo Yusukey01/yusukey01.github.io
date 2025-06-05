@@ -303,20 +303,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) return;
 
+        const epsilon = 0.05;
+
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
-            const decision = computeDecisionFunction(point.x1, point.x2);
+
+            const decision = kernelType === 'linear'
+                ? computeDecisionFunction(point.x1, point.x2)
+                : computeApproximateDecision(computeApproximateFeatures(point.x1, point.x2));
+
             const margin = point.y * decision;
 
-            // Mark point as support vector if it's very close to the margin
-            const epsilon = 0.05;
             if (margin > 1 - epsilon && margin < 1 + epsilon) {
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
                     margin: margin,
-                    alpha: C, // still fixed for now
+                    alpha: C,
                     slackVariable: Math.max(0, 1 - margin)
                 });
             }
@@ -330,6 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
         }
     }
+
 
 
 
