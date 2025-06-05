@@ -66,11 +66,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const lambda = 1.0 / (C * data.length);
 
                 if (margin < 1) {
-                    for (let i = 0; i < approximateWeights.length; i++) {
-                        approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) +
-                                                currentLearningRate * point.y * phi[i];
-                    }
-                    approximateBias += currentLearningRate * point.y;
+                for (let i = 0; i < approximateWeights.length; i++) {
+                    approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) +
+                                            currentLearningRate * point.y * phi[i];
+                }
+                approximateBias += currentLearningRate * point.y;
                 } else {
                     for (let i = 0; i < approximateWeights.length; i++) {
                         approximateWeights[i] *= (1 - currentLearningRate * lambda);
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         
             // Calculate current metrics every 10 iterations
-            if (iterations % 10 === 0) {
+            if (iterations % 5 === 0 && iterations > 10) {
                 const currentAccuracy = calculateAccuracy();
                 const currentLoss = calculateSVMLoss();
                 
