@@ -587,15 +587,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        // Draw training data points
+        for (const point of data) {
+            const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
+            const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
+
+            const isSupportVector = supportVectors.some(sv =>
+                Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6
+            );
+
+            ctx.fillStyle = point.y === 1 ? '#e74c3c' : '#3498db';
+
+            if (isSupportVector) {
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 3;
+            } else {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+            }
+
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, isSupportVector ? 7 : 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
         // Draw test data points
         for (const point of testData) {
             const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
             const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
-            
+
             ctx.fillStyle = point.y === 1 ? 'rgba(231, 76, 60, 0.5)' : 'rgba(52, 152, 219, 0.5)';
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1;
-            
+
             ctx.beginPath();
             ctx.rect(canvasX - 4, canvasY - 4, 8, 8);
             ctx.fill();
