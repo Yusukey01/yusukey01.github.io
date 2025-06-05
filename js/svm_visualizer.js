@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Update display
-                if (iterations > 0) { // Only update support vectors after first iteration
+                if (iterations == 1) { // Only update support vectors after first iteration?????????????????
                     updateSupportVectors(iterations);
                 }
                 const testAcc = calculateTestAccuracy();
