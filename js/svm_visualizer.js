@@ -298,59 +298,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update support vectors based on current model
     function updateSupportVectors(currentIteration) {
         supportVectors = [];
-        
-        // Only identify support vectors after first training iteration
-        if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) {
-            return;
-        }
-        
-        // Check each point against KKT conditions
+
+        if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) return;
+
+        const tolerance = 1e-2;
+
+        // Recompute margins and identify only violators
         for (let i = 0; i < data.length; i++) {
             const point = data[i];
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision;
-            
-            // KKT conditions for support vectors:
-            // If margin < 1: point should be support vector (alpha > 0)
-            // If margin = 1: point is on the margin (0 < alpha < C)
-            // If margin > 1: point should not be support vector (alpha = 0)
-            
-            const tolerance = 0.01; // Numerical tolerance
-            
-            if (functionalMargin < 1 + tolerance) {
-                // This point violates or is on the margin - it's a support vector
-                const slackVar = Math.max(0, 1 - functionalMargin);
-                
-                // Estimate alpha based on KKT conditions
-                let alpha;
-                if (functionalMargin < 1 - tolerance) {
-                    // Margin violation: alpha should be C
-                    alpha = C;
-                } else {
-                    // On the margin: 0 < alpha < C
-                    alpha = C * 0.5;
-                }
-                
+            const margin = point.y * decision;
+
+            // Only count as support vector if inside margin or misclassified
+            if (margin < 1 - tolerance) {
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
-                    alpha: alpha,
-                    slackVariable: slackVar,
-                    margin: functionalMargin
+                    alpha: C,  // approximate
+                    slackVariable: 1 - margin,
+                    margin: margin
                 });
             }
         }
-        
-        // Log statistics
+
         const totalPoints = data.length;
         const svCount = supportVectors.length;
         const svPercentage = (svCount / totalPoints * 100).toFixed(1);
-        
+
         if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
             console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
         }
     }
+
 
     // Check KKT conditions
     function updateKKTConditions() {
