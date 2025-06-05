@@ -35,12 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Starting SVM training with C=${C}, kernel=${kernelType}, lr=${learningRate}`);
         
+        let phiCache = null;
+        if (kernelType === 'rbf') {
+            phiCache = data.map(p => computeApproximateFeatures(p.x1, p.x2));
+        }
         // Main training loop
         while (iterations < maxIter) {
             // SGD: sample a random point
             const idx = Math.floor(Math.random() * data.length);
             const point = data[idx];
-            
+
             if (kernelType === 'linear') {
                 // Linear kernel: standard SGD update
                 const decision = computeDecisionFunction(point.x1, point.x2);
@@ -59,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (kernelType === 'rbf') {
                 // RBF kernel: use approximated features
-                const phi = computeApproximateFeatures(point.x1, point.x2);
+                const phi = phiCache[idx];
                 const decision = computeApproximateDecision(phi);
                 const margin = point.y * decision;
 
@@ -196,14 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute approximate features using Random Fourier Features
     function computeApproximateFeatures(x1, x2) {
         const features = [];
-        const scale = Math.sqrt(1.0 / numRandomFeatures); // Changed from 2.0/numRandomFeatures
-        
+        const scale = Math.sqrt(2 / (2 * numRandomFeatures));  // since you double features (cos + sin)
         for (let i = 0; i < numRandomFeatures; i++) {
-            const projection = randomWeights[i][0] * x1 + randomWeights[i][1] * x2 + randomBiases[i];
-            features.push(scale * Math.cos(projection));
-            features.push(scale * Math.sin(projection)); // ADD sine component
+            const dot = randomWeights[i][0] * x1 + randomWeights[i][1] * x2;
+            const cosVal = Math.cos(dot + randomBiases[i]);
+            const sinVal = Math.sin(dot + randomBiases[i]);
+            features.push(scale * cosVal);
+            features.push(scale * sinVal);
         }
-        
         return features;
     }
 
