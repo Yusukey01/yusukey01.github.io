@@ -1,5 +1,5 @@
 // An interactive demo for Support Vector Machines (SVM)
-// Fixed version with proper RBF kernel support
+// Corrected version with proper RBF kernel support
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -23,68 +23,65 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kernelType === 'rbf' && !kernelApproximation) {
             initializeKernelApproximation();
         }
+
+        // Initialize alphas for all data points
+        alphas = new Array(data.length).fill(0);
         
         let iterations = 0;
         const maxIter = maxIterations;
         let bestAccuracy = 0;
         let stagnantIterations = 0;
-        let currentLearningRate = learningRate;
+        let currentLearningRate = learningRate; // Use local variable for adaptive learning
         
         console.log(`Starting SVM training with C=${C}, kernel=${kernelType}, lr=${learningRate}`);
         
         // Main training loop
         while (iterations < maxIter) {
-            // Mini-batch SGD for better convergence
-            const batchSize = kernelType === 'rbf' ? 5 : 1;
+            // SGD: sample a random point
+            const idx = Math.floor(Math.random() * data.length);
+            const point = data[idx];
             
-            for (let b = 0; b < batchSize; b++) {
-                const idx = Math.floor(Math.random() * data.length);
-                const point = data[idx];
+            if (kernelType === 'linear') {
+                // Linear kernel: standard SGD update
+                const decision = computeDecisionFunction(point.x1, point.x2);
+                const margin = point.y * decision;
                 
-                if (kernelType === 'linear') {
-                    // Linear kernel: standard primal SGD
-                    const decision = computeDecisionFunction(point.x1, point.x2);
-                    const margin = point.y * decision;
-                    
-                    if (margin < 1) {
-                        // Subgradient of hinge loss
-                        weights.w[0] += currentLearningRate * (C * point.y * point.x1 - weights.w[0]);
-                        weights.w[1] += currentLearningRate * (C * point.y * point.x2 - weights.w[1]);
-                        weights.b += currentLearningRate * C * point.y;
-                    } else {
-                        // Only regularization
-                        weights.w[0] *= (1 - currentLearningRate);
-                        weights.w[1] *= (1 - currentLearningRate);
+                if (margin < 1) {
+                    // Point is within margin or misclassified
+                    // Update: w = w - lr * (lambda * w - C * y * x)
+                    weights.w[0] = weights.w[0] - currentLearningRate * (weights.w[0] / (C * data.length) - point.y * point.x1);
+                    weights.w[1] = weights.w[1] - currentLearningRate * (weights.w[1] / (C * data.length) - point.y * point.x2);
+                    weights.b = weights.b + currentLearningRate * point.y;
+                } else {
+                    // Point is correctly classified with good margin
+                    weights.w[0] = weights.w[0] - currentLearningRate * weights.w[0] / (C * data.length);
+                    weights.w[1] = weights.w[1] - currentLearningRate * weights.w[1] / (C * data.length);
+                }
+            } else if (kernelType === 'rbf') {
+                // RBF kernel: use approximated features
+                const phi = computeApproximateFeatures(point.x1, point.x2);
+                const decision = computeApproximateDecision(phi);
+                const margin = point.y * decision;
+
+                const lambda = 1.0 / (C * data.length);
+
+                if (margin < 1) {
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) +
+                                                currentLearningRate * point.y * phi[i];
                     }
-                } else if (kernelType === 'rbf') {
-                    // RBF kernel with Random Fourier Features
-                    const phi = computeApproximateFeatures(point.x1, point.x2);
-                    const decision = computeApproximateDecision(phi);
-                    const margin = point.y * decision;
-                    
-                    // Reduced learning rate for RBF
-                    const rbfLr = currentLearningRate * 0.1;
-                    
-                    if (margin < 1) {
-                        // Update with hinge loss gradient
-                        for (let i = 0; i < approximateWeights.length; i++) {
-                            approximateWeights[i] += rbfLr * (C * point.y * phi[i] - approximateWeights[i]);
-                        }
-                        approximateBias += rbfLr * C * point.y;
-                    } else {
-                        // Only regularization
-                        for (let i = 0; i < approximateWeights.length; i++) {
-                            approximateWeights[i] *= (1 - rbfLr);
-                        }
+                    approximateBias += currentLearningRate * point.y;
+                } else {
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] *= (1 - currentLearningRate * lambda);
                     }
                 }
             }
-            
-            // Update metrics every 10 iterations
+        
+            // Calculate current metrics every 10 iterations
             if (iterations % 10 === 0) {
                 const currentAccuracy = calculateAccuracy();
                 const currentLoss = calculateSVMLoss();
-                const testAcc = calculateTestAccuracy();
                 
                 // Track improvements
                 if (currentAccuracy > bestAccuracy + 0.005) {
@@ -94,14 +91,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     stagnantIterations++;
                 }
                 
-                // Adaptive learning rate decay
-                if (stagnantIterations > 100 && stagnantIterations % 50 === 0) {
-                    currentLearningRate *= 0.9;
+               // Adaptive learning rate with kernel-specific decay
+                if (stagnantIterations > 50 && stagnantIterations % 50 === 0) {
+                    const decayFactor = kernelType === 'rbf' ? 0.95 : 0.9;
+                    currentLearningRate *= decayFactor;
                     console.log(`Reduced learning rate to ${currentLearningRate.toFixed(6)}`);
+                }
+
+                // Early stopping conditions
+                if (currentAccuracy > 0.98 && iterations > 100) { // Changed from 50 to 100
+                    console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
+                    break;
+                }
+                
+                if (stagnantIterations > 300 && iterations > 200) { // Increased from 200 to 300
+                    console.log(`Early stopping: No improvement for 300 iterations`);
+                    break;
                 }
                 
                 // Update display
-                updateSupportVectors();
+                if (iterations == 1) { // Only update support vectors after first iteration?????????????????
+                    updateSupportVectors(iterations);
+                }
+                const testAcc = calculateTestAccuracy();
                 
                 if (accuracyElement) accuracyElement.textContent = (currentAccuracy * 100).toFixed(1) + '%';
                 if (lossElement) lossElement.textContent = currentLoss.toFixed(4);
@@ -111,18 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 drawCanvas();
                 
                 if (iterations % 50 === 0) {
-                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, Test=${(testAcc*100).toFixed(1)}%, SVs=${supportVectors.length}`);
-                }
-                
-                // Early stopping
-                if (currentAccuracy > 0.98 && iterations > 100) {
-                    console.log(`Early stopping: High accuracy reached (${(currentAccuracy*100).toFixed(1)}%)`);
-                    break;
-                }
-                
-                if (stagnantIterations > 300 && iterations > 200) {
-                    console.log(`Early stopping: No improvement for 300 iterations`);
-                    break;
+                    console.log(`Iteration ${iterations}: Loss=${currentLoss.toFixed(4)}, Accuracy=${(currentAccuracy*100).toFixed(1)}%, Support Vectors=${supportVectors.length}`);
                 }
                 
                 await new Promise(resolve => setTimeout(resolve, 5));
@@ -131,11 +132,11 @@ document.addEventListener('DOMContentLoaded', function() {
             iterations++;
         }
 
-        // Mark training complete
+        // Mark that training has occurred
         hasTrainedOnce = true;
 
         // Final update
-        updateSupportVectors();
+        updateSupportVectors(iterations);
         const finalAccuracy = calculateAccuracy();
         const finalTestAcc = calculateTestAccuracy();
         const finalLoss = calculateSVMLoss();
@@ -148,12 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCanvas();
         updateKKTConditions();
 
-        console.log(`SVM training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%, Test accuracy: ${(finalTestAcc*100).toFixed(1)}%, Support vectors: ${supportVectors.length}`);
+        console.log(`SVM training completed: ${iterations} iterations, Final accuracy: ${(finalAccuracy*100).toFixed(1)}%, Support vectors: ${supportVectors.length}`);
 
         isTraining = false;
 
         if (trainBtn) {
-            trainBtn.textContent = 'Train SVM (Continue)';
+            trainBtn.textContent = hasTrainedOnce ? 'Train SVM (Continue)' : 'Train SVM';
             trainBtn.disabled = false;
         }
     }
@@ -161,17 +162,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize kernel approximation for RBF
     function initializeKernelApproximation() {
         // Use Random Fourier Features approximation
-        numRandomFeatures = 200; // Good balance between accuracy and speed
+        // Number of random features (higher = better approximation but slower)
+        numRandomFeatures = 300; // Increased from 200 for better approximation
         
         // Initialize random weights for Fourier features
         randomWeights = [];
         randomBiases = [];
         
-        // Scale gamma based on data distribution
-        const effectiveGamma = gamma * 0.5; // Adjust for typical data scale
+        // Ensure gamma is reasonable
+        const effectiveGamma = Math.min(gamma, 1.0); // Cap gamma to prevent instability
         
         for (let i = 0; i < numRandomFeatures; i++) {
-            // Sample from Gaussian distribution
+            // Sample from Gaussian distribution scaled by gamma
             const w1 = gaussianRandom() * Math.sqrt(2 * effectiveGamma);
             const w2 = gaussianRandom() * Math.sqrt(2 * effectiveGamma);
             randomWeights.push([w1, w2]);
@@ -180,24 +182,26 @@ document.addEventListener('DOMContentLoaded', function() {
             randomBiases.push(Math.random() * 2 * Math.PI);
         }
         
-        // Initialize weights for cosine AND sine features
-        const totalFeatures = numRandomFeatures * 2;
-        approximateWeights = new Array(totalFeatures).fill(0).map(() => gaussianRandom() * 0.01);
-        approximateBias = gaussianRandom() * 0.01;
+        // Initialize approximate weights with small random values
+        approximateWeights = [];
+        for (let i = 0; i < numRandomFeatures * 2; i++) {
+            approximateWeights.push((Math.random() - 0.5) * 0.01);
+        }
+        approximateBias = (Math.random() - 0.5) * 0.01;
         
         kernelApproximation = true;
-        console.log(`Initialized RBF kernel approximation with ${numRandomFeatures} random features (${totalFeatures} total), effective gamma=${effectiveGamma.toFixed(3)}`);
+        console.log(`Initialized RBF kernel approximation with ${numRandomFeatures} random features, gamma=${effectiveGamma.toFixed(3)}`);
     }
 
     // Compute approximate features using Random Fourier Features
     function computeApproximateFeatures(x1, x2) {
         const features = [];
-        const scale = Math.sqrt(2.0 / numRandomFeatures);
+        const scale = Math.sqrt(1.0 / numRandomFeatures); // Changed from 2.0/numRandomFeatures
         
         for (let i = 0; i < numRandomFeatures; i++) {
             const projection = randomWeights[i][0] * x1 + randomWeights[i][1] * x2 + randomBiases[i];
             features.push(scale * Math.cos(projection));
-            features.push(scale * Math.sin(projection));
+            features.push(scale * Math.sin(projection)); // ADD sine component
         }
         
         return features;
@@ -225,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kernelType === 'linear') {
             return weights.w[0] * x1 + weights.w[1] * x2 + weights.b;
         } else if (kernelType === 'rbf') {
+            // Always use approximate features for RBF
             const phi = computeApproximateFeatures(x1, x2);
             return computeApproximateDecision(phi);
         }
@@ -234,27 +239,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate SVM loss (hinge loss + regularization)
     function calculateSVMLoss() {
         let hingeLoss = 0;
+        let totalSlack = 0;
         
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
             const margin = point.y * decision;
-            hingeLoss += Math.max(0, 1 - margin);
+            if (margin < 1) {
+                const slack = 1 - margin;
+                hingeLoss += slack;
+                totalSlack += slack;
+            }
         }
         
         // Regularization term
         let regTerm = 0;
         if (kernelType === 'linear') {
-            regTerm = 0.5 * (weights.w[0]**2 + weights.w[1]**2);
-        } else if (kernelType === 'rbf') {
-            for (const w of approximateWeights) {
-                regTerm += w * w;
+            regTerm = 0.5 * (weights.w[0] * weights.w[0] + weights.w[1] * weights.w[1]);
+        } else if (kernelType === 'rbf' && kernelApproximation) {
+            // Regularization for approximate weights
+            for (let i = 0; i < approximateWeights.length; i++) {
+                regTerm += approximateWeights[i] * approximateWeights[i];
             }
             regTerm *= 0.5;
         }
         
-        // Standard SVM loss formulation
-        return regTerm + C * hingeLoss / data.length;
+        // SVM loss = regularization + C * sum_of_slack_variables
+        return regTerm + C * totalSlack;
     }
+
 
     // Predict class for a point
     function predict(x1, x2) {
@@ -283,37 +295,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update support vectors based on current model
-    function updateSupportVectors() {
+    function updateSupportVectors(currentIteration) {
         supportVectors = [];
-        
-        if (!hasTrainedOnce && iterations < 10) return;
-        
-        for (const point of data) {
+
+        if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) return;
+
+        // Recompute margins and identify only violators
+       supportVectors = [];
+        for (let i = 0; i < data.length; i++) {
+            const point = data[i];
             const decision = computeDecisionFunction(point.x1, point.x2);
-            const functionalMargin = point.y * decision;
-            
-            // A point is a support vector if it's within or violating the margin
-            if (functionalMargin <= 1.01) { // Small tolerance
-                const slack = Math.max(0, 1 - functionalMargin);
-                
+            const margin = point.y * decision;
+            const slack = Math.max(0, 1 - margin);
+
+            if (slack > 1e-3) {
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
                     y: point.y,
-                    margin: functionalMargin,
                     slackVariable: slack,
-                    alpha: slack > 0 ? C : C * (1.01 - functionalMargin) / 0.01
+                    margin: margin,
+                    alpha: C
                 });
             }
         }
-        
-        // Log only occasionally to avoid spam
-        if (iterations % 50 === 0 || !isTraining) {
-            const svCount = supportVectors.length;
-            const svPercentage = (svCount / data.length * 100).toFixed(1);
-            console.log(`Support vectors: ${svCount}/${data.length} (${svPercentage}%)`);
+
+        const totalPoints = data.length;
+        const svCount = supportVectors.length;
+        const svPercentage = (svCount / totalPoints * 100).toFixed(1);
+
+        if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
+            console.log(`Support Vector Analysis: ${svCount}/${totalPoints} (${svPercentage}%)`);
         }
     }
+
 
     // Check KKT conditions
     function updateKKTConditions() {
@@ -327,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '<h4>KKT Conditions Check:</h4>';
         
         let satisfied = 0;
-        let total = data.length;
+        let total = 0;
         
         for (const point of data) {
             const decision = computeDecisionFunction(point.x1, point.x2);
@@ -335,17 +350,27 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const sv = supportVectors.find(sv => 
                 Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
+            const alpha = sv ? sv.alpha : 0;
+            const isSupporVector = alpha > 1e-6;
             
+            total++;
             let conditionsMet = true;
             
-            if (!sv) {
-                // Non-support vector: should have margin >= 1
-                if (functionalMargin < 0.99) {
+            if (!isSupporVector) {
+                // Non-support vectors: should have good margin
+                if (functionalMargin < 1.0 - 1e-3) {
                     conditionsMet = false;
                 }
             } else {
-                // Support vector: should be on or within margin
-                if (functionalMargin > 1.01 && sv.slackVariable < 1e-6) {
+                // Support vectors: check complementary slackness
+                if (alpha <= 0 || alpha > C + 1e-6) {
+                    conditionsMet = false;
+                }
+                
+                const expectedSlack = Math.max(0, 1 - functionalMargin);
+                const actualSlack = sv.slackVariable;
+                
+                if (Math.abs(expectedSlack - actualSlack) > 1e-3) {
                     conditionsMet = false;
                 }
             }
@@ -353,42 +378,34 @@ document.addEventListener('DOMContentLoaded', function() {
             if (conditionsMet) satisfied++;
         }
         
-        const percentage = (satisfied / total * 100).toFixed(1);
+        const percentage = total > 0 ? (satisfied / total * 100).toFixed(1) : '0.0';
         html += `<div class="kkt-summary">KKT Satisfied: ${satisfied}/${total} points (${percentage}%)</div>`;
         
-        if (kernelType === 'rbf') {
-            html += `<div class="kkt-note">Note: Using ${numRandomFeatures * 2} features (Random Fourier approximation)</div>`;
+        if (kernelType === 'rbf' && kernelApproximation) {
+            html += `<div class="kkt-note">Note: Using ${numRandomFeatures} random features for RBF approximation</div>`;
         }
         
         kktConditionsElement.innerHTML = html;
     }
 
-    // RBF kernel function (for visualization purposes)
-    function rbfKernel(x1, x2, y1, y2) {
-        const diff1 = x1 - y1;
-        const diff2 = x2 - y2;
-        return Math.exp(-gamma * (diff1 * diff1 + diff2 * diff2));
-    }
-
     // Draw decision boundary and margin
     function drawDecisionBoundary(xRange, yRange) {
-        if (!hasTrainedOnce) return;
+        if (!hasTrainedOnce) {
+            return;
+        }
         
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
-        if (kernelType === 'linear') {
+        if (kernelType === 'linear' && weights.w[0] !== 0 && weights.w[1] !== 0) {
             drawLinearBoundary(xRange, yRange, xScale, yScale);
         } else {
-            drawRBFBoundary(xRange, yRange);
+            drawContourBoundary(xRange, yRange);
         }
     }
 
     // Draw linear decision boundary
     function drawLinearBoundary(xRange, yRange, xScale, yScale) {
-        if (Math.abs(weights.w[1]) < 1e-6) return; // Avoid division by zero
-        
-        // Decision boundary: w0*x1 + w1*x2 + b = 0
         const points = [];
         for (let x1 = xRange.min; x1 <= xRange.max; x1 += (xRange.max - xRange.min) / 100) {
             const x2 = -(weights.w[0] * x1 + weights.b) / weights.w[1];
@@ -410,16 +427,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             ctx.stroke();
             
-            // Draw margins
-            drawMarginLine(xRange, yRange, xScale, yScale, 1);
-            drawMarginLine(xRange, yRange, xScale, yScale, -1);
+            // Draw margin boundaries
+            drawMarginBoundaries(xRange, yRange, xScale, yScale, 1);
+            drawMarginBoundaries(xRange, yRange, xScale, yScale, -1);
         }
     }
 
-    // Draw margin lines for linear SVM
-    function drawMarginLine(xRange, yRange, xScale, yScale, offset) {
-        if (Math.abs(weights.w[1]) < 1e-6) return;
-        
+    // Draw margin boundaries
+    function drawMarginBoundaries(xRange, yRange, xScale, yScale, offset) {
         const points = [];
         for (let x1 = xRange.min; x1 <= xRange.max; x1 += (xRange.max - xRange.min) / 100) {
             const x2 = -(weights.w[0] * x1 + weights.b - offset) / weights.w[1];
@@ -436,93 +451,93 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
-            for (const point of points) {
-                ctx.lineTo(point.x, point.y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
             }
             ctx.stroke();
             ctx.setLineDash([]);
         }
     }
 
-    // Draw RBF decision boundary using contours
-    function drawRBFBoundary(xRange, yRange) {
-        const resolution = 50; // Balance between quality and performance
-        const xStep = (xRange.max - xRange.min) / resolution;
-        const yStep = (yRange.max - yRange.min) / resolution;
+    // Draw contour-based decision boundary
+    function drawContourBoundary(xRange, yRange) {
+        const contourCanvas = document.createElement('canvas');
+        contourCanvas.width = plotWidth;
+        contourCanvas.height = plotHeight;
+        const contourCtx = contourCanvas.getContext('2d');
         
-        // Create decision value grid
-        const grid = [];
-        for (let i = 0; i <= resolution; i++) {
-            grid[i] = [];
-            for (let j = 0; j <= resolution; j++) {
-                const x1 = xRange.min + i * xStep;
-                const x2 = yRange.min + j * yStep;
-                grid[i][j] = computeDecisionFunction(x1, x2);
-            }
-        }
+        const imageData = contourCtx.createImageData(plotWidth, plotHeight);
         
-        // Draw background regions
-        const imageData = ctx.createImageData(plotWidth, plotHeight);
-        for (let px = 0; px < plotWidth; px++) {
-            for (let py = 0; py < plotHeight; py++) {
-                const x1 = xRange.min + (px / plotWidth) * (xRange.max - xRange.min);
-                const x2 = yRange.max - (py / plotHeight) * (yRange.max - yRange.min);
+        // Use lower resolution for performance
+        const step = 2;
+        
+        for (let i = 0; i < plotWidth; i += step) {
+            for (let j = 0; j < plotHeight; j += step) {
+                const x1 = xRange.min + (i / plotWidth) * (xRange.max - xRange.min);
+                const x2 = yRange.max - (j / plotHeight) * (yRange.max - yRange.min);
                 const decision = computeDecisionFunction(x1, x2);
                 
-                const idx = (py * plotWidth + px) * 4;
-                if (decision < 0) {
-                    // Class -1 region (blue)
-                    imageData.data[idx] = 52;
-                    imageData.data[idx + 1] = 152;
-                    imageData.data[idx + 2] = 219;
-                    imageData.data[idx + 3] = Math.min(50, Math.abs(decision) * 25);
-                } else {
-                    // Class +1 region (red)
-                    imageData.data[idx] = 231;
-                    imageData.data[idx + 1] = 76;
-                    imageData.data[idx + 2] = 60;
-                    imageData.data[idx + 3] = Math.min(50, Math.abs(decision) * 25);
-                }
-            }
-        }
-        
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = plotWidth;
-        tempCanvas.height = plotHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.putImageData(imageData, 0, 0);
-        ctx.drawImage(tempCanvas, plotMargin, plotMargin);
-        
-        // Draw decision boundary contour
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 3;
-        
-        // Find and draw contour lines
-        for (let level of [0]) { // Decision boundary at f(x) = 0
-            ctx.beginPath();
-            let started = false;
-            
-            for (let i = 0; i < resolution; i++) {
-                for (let j = 0; j < resolution; j++) {
-                    const val = grid[i][j];
-                    const nextI = grid[i + 1] ? grid[i + 1][j] : val;
-                    const nextJ = grid[i][j + 1];
-                    
-                    if ((val < level && nextI >= level) || (val >= level && nextI < level) ||
-                        (val < level && nextJ >= level) || (val >= level && nextJ < level)) {
-                        const x = plotMargin + (i + 0.5) * xStep * plotWidth / (xRange.max - xRange.min);
-                        const y = plotMargin + plotHeight - (j + 0.5) * yStep * plotHeight / (yRange.max - yRange.min);
+                // Fill a square of pixels
+                for (let di = 0; di < step && i + di < plotWidth; di++) {
+                    for (let dj = 0; dj < step && j + dj < plotHeight; dj++) {
+                        const pixelIndex = ((j + dj) * plotWidth + (i + di)) * 4;
                         
-                        if (!started) {
-                            ctx.moveTo(x, y);
-                            started = true;
+                        if (decision < 0) {
+                            imageData.data[pixelIndex] = 52;
+                            imageData.data[pixelIndex + 1] = 152;
+                            imageData.data[pixelIndex + 2] = 219;
+                            imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
                         } else {
-                            ctx.lineTo(x, y);
+                            imageData.data[pixelIndex] = 231;
+                            imageData.data[pixelIndex + 1] = 76;
+                            imageData.data[pixelIndex + 2] = 60;
+                            imageData.data[pixelIndex + 3] = Math.round(Math.min(255 * Math.abs(decision) * 0.1, 127));
                         }
                     }
                 }
             }
-            ctx.stroke();
+        }
+        
+        contourCtx.putImageData(imageData, 0, 0);
+        ctx.drawImage(contourCanvas, 0, 0, plotWidth, plotHeight, plotMargin, plotMargin, plotWidth, plotHeight);
+        
+        drawBoundaryContour(xRange, yRange);
+    }
+
+    // Draw the decision boundary as a contour line
+    function drawBoundaryContour(xRange, yRange) {
+        const xScale = plotWidth / (xRange.max - xRange.min);
+        const yScale = plotHeight / (yRange.max - yRange.min);
+        
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 3;
+        
+        const points = [];
+        const resolution = 60; // Reduced for performance
+        
+        for (let i = 0; i <= resolution; i++) {
+            for (let j = 0; j <= resolution; j++) {
+                const x1 = xRange.min + (i / resolution) * (xRange.max - xRange.min);
+                const x2 = yRange.min + (j / resolution) * (yRange.max - yRange.min);
+                const decision = computeDecisionFunction(x1, x2);
+                
+                if (Math.abs(decision) < 0.05) {
+                    const canvasX = plotMargin + (x1 - xRange.min) * xScale;
+                    const canvasY = canvasHeight - plotMargin - (x2 - yRange.min) * yScale;
+                    
+                    if (canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin &&
+                        canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
+                        points.push({ x: canvasX, y: canvasY });
+                    }
+                }
+            }
+        }
+        
+        ctx.fillStyle = '#2c3e50';
+        for (const point of points) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
 
@@ -531,35 +546,79 @@ document.addEventListener('DOMContentLoaded', function() {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
-        // Draw training points
+        // Draw training data points
         for (const point of data) {
             const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
             const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
             
-            const isSV = supportVectors.some(sv => 
+            const isSupportVector = hasTrainedOnce && supportVectors.some(sv => 
                 Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6);
             
-            // Set colors
             ctx.fillStyle = point.y === 1 ? '#e74c3c' : '#3498db';
-            ctx.strokeStyle = isSV ? '#f39c12' : '#fff';
-            ctx.lineWidth = isSV ? 3 : 1;
             
-            // Draw point
+            if (isSupportVector) {
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 3;
+            } else {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+            }
+            
             ctx.beginPath();
-            ctx.arc(canvasX, canvasY, isSV ? 7 : 5, 0, 2 * Math.PI);
+            ctx.arc(canvasX, canvasY, isSupportVector ? 7 : 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw slack variable visualization
+            if (isSupportVector) {
+                const sv = supportVectors.find(s => 
+                    Math.abs(s.x1 - point.x1) < 1e-6 && Math.abs(s.x2 - point.x2) < 1e-6);
+                if (sv && sv.slackVariable > 0.1) {
+                    ctx.strokeStyle = '#e67e22';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY, 10 + sv.slackVariable * 5, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+        
+        // Draw training data points
+        for (const point of data) {
+            const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
+            const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
+
+            const isSupportVector = supportVectors.some(sv =>
+                Math.abs(sv.x1 - point.x1) < 1e-6 && Math.abs(sv.x2 - point.x2) < 1e-6
+            );
+
+            ctx.fillStyle = point.y === 1 ? '#e74c3c' : '#3498db';
+
+            if (isSupportVector) {
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 3;
+            } else {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+            }
+
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, isSupportVector ? 7 : 5, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         }
-        
-        // Draw test points
+
+        // Draw test data points
         for (const point of testData) {
             const canvasX = plotMargin + (point.x1 - xRange.min) * xScale;
             const canvasY = canvasHeight - plotMargin - (point.x2 - yRange.min) * yScale;
-            
+
             ctx.fillStyle = point.y === 1 ? 'rgba(231, 76, 60, 0.5)' : 'rgba(52, 152, 219, 0.5)';
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1;
-            
+
             ctx.beginPath();
             ctx.rect(canvasX - 4, canvasY - 4, 8, 8);
             ctx.fill();
@@ -571,19 +630,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawCanvas() {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
-        const xRange = calculateRange(data.concat(testData).map(p => p.x1));
-        const yRange = calculateRange(data.concat(testData).map(p => p.x2));
+        const xRange = calculateXRange();
+        const yRange = calculateYRange();
         
         drawAxes(xRange, yRange);
         drawDecisionBoundary(xRange, yRange);
         drawDataPoints(xRange, yRange);
     }
 
-    // Calculate range with padding
-    function calculateRange(values) {
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const padding = (max - min) * 0.15;
+    // Calculate X range for display
+    function calculateXRange() {
+        const allPoints = [...data, ...testData];
+        const xValues = allPoints.map(point => point.x1);
+        const min = Math.min(...xValues);
+        const max = Math.max(...xValues);
+        
+        const padding = Math.max((max - min) * 0.15, 0.1);
+        return { min: min - padding, max: max + padding };
+    }
+
+    // Calculate Y range for display
+    function calculateYRange() {
+        const allPoints = [...data, ...testData];
+        const yValues = allPoints.map(point => point.x2);
+        const min = Math.min(...yValues);
+        const max = Math.max(...yValues);
+        
+        const padding = Math.max((max - min) * 0.15, 0.1);
         return { min: min - padding, max: max + padding };
     }
 
@@ -592,46 +665,61 @@ document.addEventListener('DOMContentLoaded', function() {
         const xScale = plotWidth / (xRange.max - xRange.min);
         const yScale = plotHeight / (yRange.max - yRange.min);
         
-        // Grid lines
+        // Draw grid lines
         ctx.strokeStyle = '#eee';
         ctx.lineWidth = 1;
         
-        // Draw grid
-        for (let i = 0; i <= 10; i++) {
-            const x = plotMargin + (i / 10) * plotWidth;
-            const y = plotMargin + (i / 10) * plotHeight;
+        // Horizontal grid lines
+        const yStep = (yRange.max - yRange.min) / 10;
+        for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
+            const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
             
             ctx.beginPath();
-            ctx.moveTo(x, plotMargin);
-            ctx.lineTo(x, canvasHeight - plotMargin);
-            ctx.moveTo(plotMargin, y);
-            ctx.lineTo(canvasWidth - plotMargin, y);
+            ctx.moveTo(plotMargin, canvasY);
+            ctx.lineTo(canvasWidth - plotMargin, canvasY);
+            ctx.stroke();
+        }
+        
+        // Vertical grid lines
+        const xStep = (xRange.max - xRange.min) / 10;
+        for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
+            const canvasX = plotMargin + (x - xRange.min) * xScale;
+            
+            ctx.beginPath();
+            ctx.moveTo(canvasX, plotMargin);
+            ctx.lineTo(canvasX, canvasHeight - plotMargin);
             ctx.stroke();
         }
         
         // Draw axes
-        ctx.strokeStyle = '#666';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1.5;
         
-        const xZero = plotMargin + (-xRange.min) * xScale;
-        const yZero = canvasHeight - plotMargin - (-yRange.min) * yScale;
-        
+        // X-axis
+        const yZeroPos = canvasHeight - plotMargin - (-yRange.min) * yScale;
         ctx.beginPath();
-        ctx.moveTo(plotMargin, yZero);
-        ctx.lineTo(canvasWidth - plotMargin, yZero);
-        ctx.moveTo(xZero, plotMargin);
-        ctx.lineTo(xZero, canvasHeight - plotMargin);
+        ctx.moveTo(plotMargin, yZeroPos);
+        ctx.lineTo(canvasWidth - plotMargin, yZeroPos);
+        ctx.stroke();
+        
+        // Y-axis
+        const xZeroPos = plotMargin + (-xRange.min) * xScale;
+        ctx.beginPath();
+        ctx.moveTo(xZeroPos, plotMargin);
+        ctx.lineTo(xZeroPos, canvasHeight - plotMargin);
         ctx.stroke();
     }
 
-    // Parameter change handlers
+    // Handle parameter changes
     function handleCParameterChange() {
         C = Math.pow(10, parseFloat(cInput.value));
         cDisplay.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
+        regularizationTerm = 1.0 / C; // Update regularization term
     }
 
     function handleLearningRateChange() {
-        learningRate = Math.pow(10, parseFloat(learningRateInput.value));
+        const sliderValue = parseFloat(learningRateInput.value);
+        learningRate = Math.pow(10, sliderValue);
         learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 2);
     }
 
@@ -642,37 +730,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleKernelChange() {
         kernelType = kernelSelect.value;
-        gammaContainer.style.display = kernelType === 'rbf' ? 'block' : 'none';
+        if (kernelType === 'rbf') {
+            gammaContainer.style.display = 'block';
+        } else {
+            gammaContainer.style.display = 'none';
+        }
         
-        // Reset model
+        // Reset everything when kernel changes
         initializeWeights();
         kernelApproximation = false;
         supportVectors = [];
         hasTrainedOnce = false;
+        alphas = new Array(data.length).fill(0); // Reset alphas
         
         // Reset display
-        resetDisplay();
+        if (accuracyElement) accuracyElement.textContent = '0.0%';
+        if (lossElement) lossElement.textContent = '0.000';
+        if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
+        if (supportVectorCountElement) supportVectorCountElement.textContent = '0';
+        if (kktConditionsElement) kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+        if (trainBtn) trainBtn.textContent = 'Train SVM';
+        
         drawCanvas();
     }
 
     function handleGammaChange() {
         gamma = Math.pow(10, parseFloat(gammaInput.value));
-        gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : 2)}`;
+        gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : gamma < 1 ? 2 : 1)}`;
+        // Re-initialize kernel approximation if using RBF
         if (kernelType === 'rbf' && hasTrainedOnce) {
             kernelApproximation = false;
         }
-    }
-
-    // Reset display metrics
-    function resetDisplay() {
-        if (accuracyElement) accuracyElement.textContent = '0.0%';
-        if (lossElement) lossElement.textContent = '0.000';
-        if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
-        if (supportVectorCountElement) supportVectorCountElement.textContent = '0';
-        if (kktConditionsElement) {
-            kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
-        }
-        if (trainBtn) trainBtn.textContent = 'Train SVM';
     }
 
     // Generate dataset
@@ -683,59 +771,78 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const pattern = Math.random() > 0.5 ? 'linear' : 'circular';
         
+        hasTrainedOnce = false;
+        if (trainBtn) trainBtn.textContent = 'Train SVM';
+        
         if (pattern === 'linear') {
-            // Generate linearly separable data with some overlap
-            const w_true = [0.8, 0.5];
-            const margin = 0.8;
+            // Linear pattern with some overlap to make it more challenging
+            const w_true = [0.8, 0.5]; // True separating hyperplane
+            const b_true = 0;
             
             for (let i = 0; i < numPoints; i++) {
                 const x1 = (Math.random() - 0.5) * 4;
                 const x2 = (Math.random() - 0.5) * 4;
                 
-                const decision = w_true[0] * x1 + w_true[1] * x2;
-                let y;
+                const decision = w_true[0] * x1 + w_true[1] * x2 + b_true;
                 
+                let y;
                 if (Math.random() < 0.9) {
-                    // 90% clearly separated
-                    y = decision > 0 ? 1 : -1;
-                    const offset = (Math.random() * 0.5 + 0.5) * margin;
-                    const norm = Math.sqrt(w_true[0]**2 + w_true[1]**2);
-                    
-                    allPoints.push({
-                        x1: x1 + y * offset * w_true[0] / norm,
-                        x2: x2 + y * offset * w_true[1] / norm,
-                        y: y
-                    });
+                    // 90% of points are correctly labeled with margin
+                    const margin = 0.5 + Math.random() * 0.5;
+                    if (decision > 0) {
+                        y = 1;
+                        // Push point away from boundary
+                        const norm = Math.sqrt(w_true[0]**2 + w_true[1]**2);
+                        allPoints.push({
+                            x1: x1 + margin * w_true[0] / norm,
+                            x2: x2 + margin * w_true[1] / norm,
+                            y: y
+                        });
+                    } else {
+                        y = -1;
+                        // Push point away from boundary
+                        const norm = Math.sqrt(w_true[0]**2 + w_true[1]**2);
+                        allPoints.push({
+                            x1: x1 - margin * w_true[0] / norm,
+                            x2: x2 - margin * w_true[1] / norm,
+                            y: y
+                        });
+                    }
                 } else {
-                    // 10% near boundary
+                    // 10% near boundary or misclassified
                     y = decision > 0 ? 1 : -1;
-                    if (Math.random() < 0.3) y = -y; // Some misclassified
+                    if (Math.random() < 0.3) {
+                        y = -y; // Flip label for some noise
+                    }
                     allPoints.push({ x1, x2, y });
                 }
             }
         } else {
-            // Generate circular pattern
-            const innerRadius = 0.8;
-            const outerRadius = 1.6;
-            
+            // Circular pattern - better separated for RBF demo
             for (let i = 0; i < numPoints; i++) {
                 const angle = Math.random() * 2 * Math.PI;
                 let radius, y;
                 
                 if (Math.random() < 0.85) {
-                    // 85% clearly separated
+                    // Clearly separated
                     if (Math.random() < 0.5) {
-                        radius = Math.random() * innerRadius * 0.8;
+                        // Inner class - well inside
+                        radius = Math.random() * 0.7; // Reduced from 0.8
                         y = 1;
                     } else {
-                        radius = outerRadius + Math.random() * 0.8;
+                        // Outer class - well outside
+                        radius = 1.5 + Math.random() * 0.8; // Adjusted for better separation
                         y = -1;
                     }
                 } else {
-                    // 15% in boundary region
-                    radius = innerRadius + Math.random() * (outerRadius - innerRadius);
-                    y = radius < (innerRadius + outerRadius) / 2 ? 1 : -1;
-                    if (Math.random() < 0.2) y = -y;
+                    // Near boundary (around radius 1.0)
+                    radius = 0.9 + Math.random() * 0.3;
+                    y = radius < 1.05 ? 1 : -1;
+                    
+                    // Add some misclassified points
+                    if (Math.random() < 0.2) {
+                        y = -y;
+                    }
                 }
                 
                 const x1 = radius * Math.cos(angle);
@@ -744,34 +851,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Shuffle data
+        // Shuffle and split
         for (let i = allPoints.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
         }
         
-        // Split into train/test
         data = allPoints.slice(0, trainSize);
         testData = allPoints.slice(trainSize);
         
         console.log(`Generated ${pattern} pattern: ${data.length} training, ${testData.length} test`);
         
-        // Reset model
+        // Initialize with random weights (not aligned with true boundary)
         initializeWeights();
         supportVectors = [];
         hasTrainedOnce = false;
         kernelApproximation = false;
-        iterations = 0;
+        alphas = new Array(data.length).fill(0); // Reset alphas
         
-        // Reset display
-        resetDisplay();
+        // Update support vectors
+        updateSupportVectors();
+        
+        // Reset metrics
+        if (accuracyElement) accuracyElement.textContent = '0.0%';
+        if (lossElement) lossElement.textContent = '0.000';
+        if (testAccuracyElement) testAccuracyElement.textContent = '0.0%';
+        if (supportVectorCountElement) supportVectorCountElement.textContent = '0';
+        if (kktConditionsElement) kktConditionsElement.innerHTML = '<h4>KKT Conditions:</h4><div>Train the model to see KKT conditions</div>';
+        if (trainBtn) trainBtn.textContent = 'Train SVM';
+        
         drawCanvas();
     }
 
     // Initialize SVM weights
     function initializeWeights() {
-        weights.w = [gaussianRandom() * 0.1, gaussianRandom() * 0.1];
-        weights.b = gaussianRandom() * 0.1;
+        // Initialize linear weights with small random values
+        weights.w = [
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1
+        ];
+        weights.b = (Math.random() - 0.5) * 0.1;
         
         // Reset kernel approximation
         randomWeights = [];
@@ -794,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCanvas();
     }
 
-    // Create HTML structure
+    // Create HTML structure (same as original)
     container.innerHTML = `
         <div class="svm-container">
             <div class="svm-layout">
@@ -853,23 +972,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="control-group">
                         <label for="iterations">Max Iterations:</label>
-                        <input type="range" id="iterations" min="100" max="1000" step="50" value="500" class="full-width">
-                        <span id="iterations-display">500</span>
+                        <input type="range" id="iterations" min="50" max="1000" step="50" value="300" class="full-width">
+                        <span id="iterations-display">300</span>
                     </div>
                     
                     <div class="results-box">
                         <h3>SVM Performance:</h3>
                         <div class="result-row">
-                            <div class="result-label">Training Accuracy:</div>
+                            <div class="result-label">Accuracy:</div>
                             <div class="result-value" id="accuracy">0.0%</div>
-                        </div>
-                        <div class="result-row">
-                            <div class="result-label">Test Accuracy:</div>
-                            <div class="result-value" id="test-accuracy">0.0%</div>
                         </div>
                         <div class="result-row">
                             <div class="result-label">Loss:</div>
                             <div class="result-value" id="loss">0.000</div>
+                        </div>
+                        <div class="result-row">
+                            <div class="result-label">Test Accuracy:</div>
+                            <div class="result-value" id="test-accuracy">0.0%</div>
                         </div>
                         <div class="result-row">
                             <div class="result-label">Support Vectors:</div>
@@ -887,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
 
-    // Add styles
+    // Add styles (same as original)
     const styleElement = document.createElement('style');
     styleElement.textContent = `
         .svm-container {
@@ -1046,11 +1165,6 @@ document.addEventListener('DOMContentLoaded', function() {
             background-color: #2980b9;
         }
         
-        .primary-btn:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-        
         .secondary-btn {
             background-color: #95a5a6;
         }
@@ -1123,6 +1237,41 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 8px;
         }
         
+        .kkt-breakdown {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 3px solid #9b59b6;
+        }
+        
+        .kkt-breakdown div {
+            margin: 3px 0;
+        }
+        
+        .sv-details {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        
+        .sv-details h5 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        .sv-item {
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin: 2px 0;
+            padding: 2px 4px;
+            background-color: #f8f9fa;
+            border-radius: 2px;
+        }
+        
         .btn-container {
             margin-bottom: 20px;
         }
@@ -1172,20 +1321,22 @@ document.addEventListener('DOMContentLoaded', function() {
     let supportVectors = [];
     let C = 1.0;
     let gamma = 0.32;
+    let regularizationTerm = 1.0;
     let learningRate = 0.01;
-    let maxIterations = 500;
+    let maxIterations = 300;
     let kernelType = 'linear';
     let isTraining = false;
     let hasTrainedOnce = false;
-    let iterations = 0;
     
     // Kernel approximation variables
     let kernelApproximation = false;
-    let numRandomFeatures = 200;
+    let numRandomFeatures = 100;
     let randomWeights = [];
     let randomBiases = [];
     let approximateWeights = [];
     let approximateBias = 0;
+
+    let alphas = [];
     
     // Drawing settings
     const plotMargin = 50;
@@ -1195,8 +1346,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize values from inputs
     C = Math.pow(10, parseFloat(cInput.value));
     cDisplay.textContent = `C = ${C.toFixed(C < 0.01 ? 4 : C < 0.1 ? 3 : C < 1 ? 2 : 1)}`;
+    regularizationTerm = 1.0 / C;
     gamma = Math.pow(10, parseFloat(gammaInput.value));
-    gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : 2)}`;
+    gammaDisplay.textContent = `γ = ${gamma.toFixed(gamma < 0.01 ? 4 : gamma < 0.1 ? 3 : gamma < 1 ? 2 : 1)}`;
     learningRate = Math.pow(10, parseFloat(learningRateInput.value));
     learningRateDisplay.textContent = learningRate.toFixed(learningRate < 0.01 ? 4 : learningRate < 0.1 ? 3 : 2);
     maxIterations = parseInt(iterationsInput.value);
