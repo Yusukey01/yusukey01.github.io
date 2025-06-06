@@ -70,14 +70,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const decision = computeApproximateDecision(phi);
                 const margin = point.y * decision;
 
-               for (let i = 0; i < approximateWeights.length; i++) {
-                approximateWeights[i] *= (1 - currentLearningRate * lambda);
-                }
                 if (margin < 1) {
-                for (let i = 0; i < approximateWeights.length; i++) {
-                    approximateWeights[i] += currentLearningRate * point.y * phi[i];
-                }
-                approximateBias += currentLearningRate * point.y;
+                    // Point is within margin or misclassified
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] = approximateWeights[i] * (1 - currentLearningRate * lambda) 
+                                            + currentLearningRate * point.y * phi[i];
+                    }
+                    approximateBias += currentLearningRate * point.y;
+                } else {
+                    // Point is correctly classified with good margin
+                    for (let i = 0; i < approximateWeights.length; i++) {
+                        approximateWeights[i] *= (1 - currentLearningRate * lambda);
+                    }
                 }
             }
         
@@ -199,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute approximate features using Random Fourier Features
     function computeApproximateFeatures(x1, x2) {
         const features = [];
-        const scale = Math.sqrt(1 / numRandomFeatures);  // since you double features (cos + sin)
+        const scale = Math.sqrt(2 / numRandomFeatures);
         for (let i = 0; i < numRandomFeatures; i++) {
             const dot = randomWeights[i][0] * x1 + randomWeights[i][1] * x2;
             const cosVal = Math.cos(dot + randomBiases[i]);
