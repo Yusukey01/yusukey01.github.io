@@ -117,9 +117,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Update display
-                if (iterations % 10 === 0 && iterations > 10) {
+                if (iterations % 10 === 0 && iterations > 50) {  // Changed from > 10 to > 50
                     updateSupportVectors(iterations);
                 }
+
                 const testAcc = calculateTestAccuracy();
                 
                 if (accuracyElement) accuracyElement.textContent = (currentAccuracy * 100).toFixed(1) + '%';
@@ -307,18 +308,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!hasTrainedOnce && (!currentIteration || currentIteration === 0)) return;
 
-        const epsilon = 0.1;
+        const epsilon = kernelType === 'rbf' ? 0.01 : 0.05;
 
-        for (let i = 0; i < data.length; i++) {
-            const point = data[i];
-
+        for (const point of data) {
             const decision = kernelType === 'linear'
                 ? computeDecisionFunction(point.x1, point.x2)
                 : computeApproximateDecision(computeApproximateFeatures(point.x1, point.x2));
-
+            
             const margin = point.y * decision;
-
-            if (margin < 1 + epsilon) {
+            const marginThreshold = kernelType === 'rbf' ? 0.5 : 1.0;
+            if (margin < marginThreshold + epsilon) {
                 supportVectors.push({
                     x1: point.x1,
                     x2: point.x2,
@@ -329,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
-
         const svCount = supportVectors.length;
         const svPercentage = (svCount / data.length * 100).toFixed(1);
         if (currentIteration % 50 === 0 || currentIteration === maxIterations) {
