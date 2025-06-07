@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="linear">Linear</option>
                             <option value="rbf" selected>RBF (Gaussian)</option>
                             <option value="poly">Polynomial</option>
+                            <option value="sigmoid">Sigmoid</option>
                         </select>
                     </div>
 
@@ -543,21 +544,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const pointsPerCluster = Math.floor(n / 2);
         
         for (let c = 0; c < 2; c++) {
-            for (let i = 0; i < pointsPerCluster; i++) {
+            const numPoints = (c === 0) ? pointsPerCluster : (n - pointsPerCluster);
+            for (let i = 0; i < numPoints; i++) {
                 const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
                 const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
                 data.push([x, y]);
                 labels.push(c);
             }
-        }
-        
-        // Add remaining points if n is odd
-        for (let i = data.length; i < n; i++) {
-            const c = Math.floor(Math.random() * 2);
-            const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
-            const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
-            data.push([x, y]);
-            labels.push(c);
         }
     }
     
@@ -632,13 +625,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.pow(coef * dot + 1, degree);
     }
     
+    function sigmoidKernel(x1, x2, gamma, coef) {
+        let dot = 0;
+        for (let i = 0; i < x1.length; i++) {
+            dot += x1[i] * x2[i];
+        }
+        return Math.tanh(gamma * dot + coef);
+    }
     
     // Compute kernel matrix
     function computeKernelMatrix(data, kernelType) {
         const n = data.length;
-        const K = Array(n).fill().map(() => Array(n).fill(0));
+        const K = [];
         
         for (let i = 0; i < n; i++) {
+            K[i] = [];
             for (let j = 0; j < n; j++) {
                 switch (kernelType) {
                     case 'linear':
@@ -650,6 +651,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     case 'poly':
                         K[i][j] = polyKernel(data[i], data[j], degree, coef);
                         break;
+                    case 'sigmoid':
+                        K[i][j] = sigmoidKernel(data[i], data[j], gamma, coef);
+                        break;
                 }
             }
         }
@@ -660,12 +664,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Center kernel matrix
     function centerKernelMatrix(K) {
         const n = K.length;
-        const K_centered = Array(n).fill().map(() => Array(n).fill(0));
+        const K_centered = [];
         
         // Compute mean of each row and column
-        const rowMeans = Array(n).fill(0);
-        const colMeans = Array(n).fill(0);
+        const rowMeans = [];
+        const colMeans = [];
         let totalMean = 0;
+        
+        for (let i = 0; i < n; i++) {
+            rowMeans[i] = 0;
+            colMeans[i] = 0;
+        }
         
         for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
@@ -683,6 +692,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Center the kernel matrix
         for (let i = 0; i < n; i++) {
+            K_centered[i] = [];
             for (let j = 0; j < n; j++) {
                 K_centered[i][j] = K[i][j] - rowMeans[i] - colMeans[j] + totalMean;
             }
@@ -694,6 +704,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Jacobi eigendecomposition for symmetric matrices
     function jacobiEigendecomposition(matrix, numComponents = null) {
         const n = matrix.length;
+        if (n === 0) {
+            return { eigenvalues: [], eigenvectors: [] };
+        }
+        
+        // Handle 1x1 matrix special case
+        if (n === 1) {
+            const eigenvalues = [matrix[0][0]];
+            const eigenvectors = [[1]];
+            
+            if (numComponents !== null && numComponents < 1) {
+                return { eigenvalues: [], eigenvectors: [] };
+            }
+            
+            return { eigenvalues, eigenvectors };
+        }
+        
         const maxIterations = 100;
         const tolerance = 1e-10;
         
@@ -705,6 +731,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Find largest off-diagonal element
             let maxVal = 0;
             let p = 0, q = 1;
+            
+            // Ensure we have at least a 2x2 matrix
+            if (n < 2) break;
             
             for (let i = 0; i < n; i++) {
                 for (let j = i + 1; j < n; j++) {
@@ -778,17 +807,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Standard PCA
     function computePCA(data, numComponents) {
+        if (!data || data.length === 0) {
+            return {
+                projection: [],
+                eigenvalues: [],
+                eigenvectors: [],
+                mean: [],
+                centered: []
+            };
+        }
+        
+        if (!data[0] || data[0].length === 0) {
+            return {
+                projection: [],
+                eigenvalues: [],
+                eigenvectors: [],
+                mean: [],
+                centered: []
+            };
+        }
+        
         const n = data.length;
         const d = data[0].length;
         
+        // Can't extract more components than data dimensions
+        const actualComponents = Math.min(Math.max(numComponents, 0), d);
+        
         // Compute mean
-        const mean = Array(d).fill(0);
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j < d; j++) {
+        const mean = [];
+        for (let j = 0; j < d; j++) {
+            mean[j] = 0;
+            for (let i = 0; i < n; i++) {
                 mean[j] += data[i][j];
             }
-        }
-        for (let j = 0; j < d; j++) {
             mean[j] /= n;
         }
         
@@ -796,9 +847,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const centered = data.map(point => point.map((val, idx) => val - mean[idx]));
         
         // Compute covariance matrix
-        const cov = Array(d).fill().map(() => Array(d).fill(0));
+        const cov = [];
         for (let i = 0; i < d; i++) {
+            cov[i] = [];
             for (let j = 0; j < d; j++) {
+                cov[i][j] = 0;
                 for (let k = 0; k < n; k++) {
                     cov[i][j] += centered[k][i] * centered[k][j];
                 }
@@ -807,26 +860,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Eigendecomposition
-        const eigen = jacobiEigendecomposition(cov, numComponents);
+        const eigen = jacobiEigendecomposition(cov, actualComponents);
+        
+        // Ensure we have valid eigenvectors
+        if (!eigen.eigenvectors || eigen.eigenvectors.length === 0) {
+            return {
+                projection: Array(n).fill().map(() => Array(numComponents).fill(0)),
+                eigenvalues: Array(numComponents).fill(0),
+                eigenvectors: Array(numComponents).fill().map(() => Array(d).fill(0)),
+                mean,
+                centered
+            };
+        }
         
         // Project data
         const projection = [];
         for (let i = 0; i < n; i++) {
             const proj = [];
-            for (let j = 0; j < numComponents; j++) {
+            for (let j = 0; j < actualComponents; j++) {
                 let sum = 0;
                 for (let k = 0; k < d; k++) {
                     sum += centered[i][k] * eigen.eigenvectors[j][k];
                 }
                 proj.push(sum);
             }
+            // Pad with zeros if requested more components than available
+            for (let j = actualComponents; j < numComponents; j++) {
+                proj.push(0);
+            }
             projection.push(proj);
+        }
+        
+        // Pad eigenvalues and eigenvectors with zeros if needed
+        const paddedEigenvalues = eigen.eigenvalues.slice(); // Create copy
+        const paddedEigenvectors = eigen.eigenvectors.slice(); // Create copy
+        
+        for (let i = actualComponents; i < numComponents; i++) {
+            paddedEigenvalues.push(0);
+            paddedEigenvectors.push(Array(d).fill(0));
         }
         
         return {
             projection,
-            eigenvalues: eigen.eigenvalues,
-            eigenvectors: eigen.eigenvectors,
+            eigenvalues: paddedEigenvalues,
+            eigenvectors: paddedEigenvectors,
             mean,
             centered
         };
@@ -834,6 +911,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Kernel PCA
     function computeKernelPCA(data, kernelType, numComponents) {
+        if (!data || data.length === 0) {
+            return {
+                projection: [],
+                eigenvalues: [],
+                eigenvectors: [],
+                kernelMatrix: [],
+                centeredKernelMatrix: []
+            };
+        }
+        
         const startTime = performance.now();
         
         // Compute kernel matrix
@@ -861,7 +948,11 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < n; i++) {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                proj.push(eigen.eigenvalues[j] * normalizedEigenvectors[j][i]);
+                if (j < eigen.eigenvalues.length && j < normalizedEigenvectors.length) {
+                    proj.push(eigen.eigenvalues[j] * normalizedEigenvectors[j][i]);
+                } else {
+                    proj.push(0);
+                }
             }
             projection.push(proj);
         }
@@ -1009,9 +1100,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
+        // Check if we have data
+        if (!data || data.length === 0) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data available', width / 2, height / 2);
+            return;
+        }
+        
         // Use projection if available, otherwise use original data
         // For projections with more than 2 components, use only first 2 for visualization
-        const drawData = projection ? projection.map(p => [p[0], p[1]]) : data;
+        const drawData = projection && projection.length > 0 ? projection.map(p => [p[0] || 0, p[1] || 0]) : data;
         
         // Find data bounds
         let minX = Infinity, maxX = -Infinity;
@@ -1025,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Add padding
-        const padding = 0.1 * Math.max(maxX - minX, maxY - minY);
+        const padding = 0.1 * Math.max(maxX - minX, maxY - minY, 0.1);
         minX -= padding;
         maxX += padding;
         minY -= padding;
@@ -1070,19 +1170,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
-        if (!pcaEigenvalues || !kpcaEigenvalues) return;
+        if (!pcaEigenvalues || !kpcaEigenvalues || pcaEigenvalues.length === 0 || kpcaEigenvalues.length === 0) return;
+        
+        // Filter out zero eigenvalues for display
+        const pcaNonZero = pcaEigenvalues.filter(v => v > 1e-10);
+        const kpcaNonZero = kpcaEigenvalues.filter(v => v > 1e-10);
         
         // Calculate explained variance ratios
-        const pcaTotal = pcaEigenvalues.reduce((a, b) => a + b, 0);
-        const kpcaTotal = kpcaEigenvalues.reduce((a, b) => a + b, 0);
+        const pcaTotal = pcaNonZero.reduce((a, b) => a + b, 0) || 1;
+        const kpcaTotal = kpcaNonZero.reduce((a, b) => a + b, 0) || 1;
         
-        const pcaRatios = pcaEigenvalues.map(v => (v / pcaTotal) * 100);
-        const kpcaRatios = kpcaEigenvalues.map(v => (v / kpcaTotal) * 100);
+        const pcaRatios = pcaEigenvalues.map(v => v > 1e-10 ? (v / pcaTotal) * 100 : 0);
+        const kpcaRatios = kpcaEigenvalues.map(v => v > 1e-10 ? (v / kpcaTotal) * 100 : 0);
         
         const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 4);
         const barWidth = width / (numComponents * 2 + 1) * 0.7;
         const maxHeight = height * 0.7;
-        const maxRatio = Math.max(...pcaRatios.slice(0, numComponents), ...kpcaRatios.slice(0, numComponents));
+        const maxRatio = Math.max(...pcaRatios.slice(0, numComponents), ...kpcaRatios.slice(0, numComponents), 1);
         
         // Draw title
         ctx.font = '14px Arial';
@@ -1158,8 +1262,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 2: Compute Kernel Matrix',
                 description: 'Calculate pairwise similarities using the kernel function K(xi, xj).',
                 draw: () => {
-                    if (kpcaResult && kpcaResult.kernelMatrix) {
+                    if (kpcaResult && kpcaResult.kernelMatrix && kpcaResult.kernelMatrix.length > 0) {
                         drawKernelMatrix(algorithmCanvas, kpcaResult.kernelMatrix, 'Kernel Matrix K');
+                    } else {
+                        const ctx = algorithmCanvas.getContext('2d');
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#666';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Run Kernel PCA to see kernel matrix', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1167,8 +1277,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 3: Center Kernel Matrix',
                 description: 'Center the kernel matrix in feature space: K̃ = K - 1K - K1 + 1K1',
                 draw: () => {
-                    if (kpcaResult && kpcaResult.centeredKernelMatrix) {
+                    if (kpcaResult && kpcaResult.centeredKernelMatrix && kpcaResult.centeredKernelMatrix.length > 0) {
                         drawKernelMatrix(algorithmCanvas, kpcaResult.centeredKernelMatrix, 'Centered Kernel Matrix K̃');
+                    } else {
+                        const ctx = algorithmCanvas.getContext('2d');
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#666';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Run Kernel PCA to see centered kernel matrix', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1176,8 +1292,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 4: Eigendecomposition',
                 description: 'Find eigenvalues and eigenvectors of the centered kernel matrix.',
                 draw: () => {
-                    if (kpcaResult) {
+                    if (kpcaResult && kpcaResult.eigenvalues && kpcaResult.eigenvalues.length > 0) {
                         drawEigenvalues(algorithmCanvas, kpcaResult.eigenvalues);
+                    } else {
+                        const ctx = algorithmCanvas.getContext('2d');
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#666';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Run Kernel PCA to see eigenvalues', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1185,12 +1307,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 5: Project Data',
                 description: 'Project data onto principal components in feature space.',
                 draw: () => {
-                    if (kpcaResult) {
+                    if (kpcaResult && kpcaResult.projection && kpcaResult.projection.length > 0) {
                         const tempCanvas = document.createElement('canvas');
                         tempCanvas.width = width;
                         tempCanvas.height = height;
                         drawData(tempCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
                         ctx.drawImage(tempCanvas, 0, 0);
+                    } else {
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#666';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Run Kernel PCA to see projection', width / 2, height / 2);
                     }
                 }
             }
@@ -1210,6 +1337,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!matrix || matrix.length === 0) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('No matrix data available', width / 2, height / 2);
+            return;
+        }
+        
         const n = Math.min(matrix.length, 50); // Limit size for visualization
         const availableHeight = height - 40;
         const cellSize = Math.min(availableHeight / n, width * 0.8 / n);
@@ -1279,7 +1417,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
-        if (!eigenvalues || eigenvalues.length === 0) return;
+        if (!eigenvalues || eigenvalues.length === 0) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('No eigenvalues available', width / 2, height / 2);
+            return;
+        }
         
         const n = Math.min(eigenvalues.length, 10);
         const barWidth = width * 0.6 / n;
@@ -1489,8 +1633,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const numComponents = parseInt(componentsInput.value);
         
         // Calculate cumulative variance for all components
-        const pcaTotal = pcaResult.eigenvalues.reduce((a, b) => a + b, 0);
-        const kpcaTotal = kpcaResult.eigenvalues.reduce((a, b) => a + b, 0);
+        const pcaNonZero = pcaResult.eigenvalues.filter(v => v > 1e-10);
+        const kpcaNonZero = kpcaResult.eigenvalues.filter(v => v > 1e-10);
+        
+        const pcaTotal = pcaNonZero.reduce((a, b) => a + b, 0) || 1;
+        const kpcaTotal = kpcaNonZero.reduce((a, b) => a + b, 0) || 1;
         
         const pcaCumulative = [];
         const kpcaCumulative = [];
@@ -1499,34 +1646,40 @@ document.addEventListener('DOMContentLoaded', function() {
         let kpcaSum = 0;
         
         for (let i = 0; i < numComponents && i < 4; i++) {
-            if (i < pcaResult.eigenvalues.length) {
+            if (i < pcaResult.eigenvalues.length && pcaResult.eigenvalues[i] > 1e-10) {
                 pcaSum += pcaResult.eigenvalues[i];
                 pcaCumulative.push((pcaSum / pcaTotal * 100).toFixed(1));
+            } else if (i < 2) {
+                // For 2D data, only first 2 components have variance
+                pcaCumulative.push('N/A');
             }
-            if (i < kpcaResult.eigenvalues.length) {
+            
+            if (i < kpcaResult.eigenvalues.length && kpcaResult.eigenvalues[i] > 1e-10) {
                 kpcaSum += kpcaResult.eigenvalues[i];
                 kpcaCumulative.push((kpcaSum / kpcaTotal * 100).toFixed(1));
             }
         }
         
         // Display cumulative variance for selected components
-        pcaVarianceInfo.textContent = pcaCumulative.join('%, ') + '%';
-        kpcaVarianceInfo.textContent = kpcaCumulative.join('%, ') + '%';
+        pcaVarianceInfo.textContent = pcaCumulative.length > 0 ? pcaCumulative.join('%, ') + '%' : 'N/A';
+        kpcaVarianceInfo.textContent = kpcaCumulative.length > 0 ? kpcaCumulative.join('%, ') + '%' : 'N/A';
     }
     
     // Event handlers
     function handleDatasetChange() {
         generateData();
-        computeProjections();
+        setTimeout(() => {
+            computeProjections();
+        }, 50);
     }
     
     function handleKernelChange() {
         const kernel = kernelSelect.value;
         
         // Show/hide relevant parameter controls
-        gammaContainer.style.display = (kernel === 'rbf') ? 'block' : 'none';
+        gammaContainer.style.display = (kernel === 'rbf' || kernel === 'sigmoid') ? 'block' : 'none';
         degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
-        coefContainer.style.display = (kernel === 'poly') ? 'block' : 'none';
+        coefContainer.style.display = (kernel === 'poly' || kernel === 'sigmoid') ? 'block' : 'none';
     }
     
     function handleParameterChange() {
@@ -1569,9 +1722,19 @@ document.addEventListener('DOMContentLoaded', function() {
         aeModel = null;
         aeProjection = null;
         aeProgressElement.textContent = '';
+        
+        // Ensure data is available
+        if (data && data.length > 0) {
+            drawData(originalCanvas, data, null, 'Original Data');
+        }
     }
     
     function computeProjections() {
+        if (!data || data.length === 0) {
+            console.warn('No data available for projection');
+            return;
+        }
+        
         const numComponents = parseInt(componentsInput.value);
         
         // Compute standard PCA
@@ -1672,7 +1835,9 @@ document.addEventListener('DOMContentLoaded', function() {
     computeBtn.addEventListener('click', computeProjections);
     generateBtn.addEventListener('click', () => {
         generateData();
-        computeProjections();
+        setTimeout(() => {
+            computeProjections();
+        }, 50);
     });
     trainAeBtn.addEventListener('click', trainAutoencoder);
     
@@ -1685,6 +1850,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     handleParameterChange();
     handleKernelChange();
+    
+    // Generate initial data and compute projections
     generateData();
-    computeProjections();
+    
+    // Wait for DOM to be fully ready before computing projections
+    requestAnimationFrame(() => {
+        computeProjections();
+    });
 });
