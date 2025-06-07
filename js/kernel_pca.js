@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="linear">Linear</option>
                             <option value="rbf" selected>RBF (Gaussian)</option>
                             <option value="poly">Polynomial</option>
-                            <option value="sigmoid">Sigmoid</option>
                         </select>
                     </div>
 
@@ -633,13 +632,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.pow(coef * dot + 1, degree);
     }
     
-    function sigmoidKernel(x1, x2, gamma, coef) {
-        let dot = 0;
-        for (let i = 0; i < x1.length; i++) {
-            dot += x1[i] * x2[i];
-        }
-        return Math.tanh(gamma * dot + coef);
-    }
     
     // Compute kernel matrix
     function computeKernelMatrix(data, kernelType) {
@@ -657,9 +649,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         break;
                     case 'poly':
                         K[i][j] = polyKernel(data[i], data[j], degree, coef);
-                        break;
-                    case 'sigmoid':
-                        K[i][j] = sigmoidKernel(data[i], data[j], gamma, coef);
                         break;
                 }
             }
@@ -1535,9 +1524,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const kernel = kernelSelect.value;
         
         // Show/hide relevant parameter controls
-        gammaContainer.style.display = (kernel === 'rbf' || kernel === 'sigmoid') ? 'block' : 'none';
+        gammaContainer.style.display = (kernel === 'rbf') ? 'block' : 'none';
         degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
-        coefContainer.style.display = (kernel === 'poly' || kernel === 'sigmoid') ? 'block' : 'none';
+        coefContainer.style.display = (kernel === 'poly') ? 'block' : 'none';
     }
     
     function handleParameterChange() {
