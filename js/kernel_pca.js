@@ -937,10 +937,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const normalizedEigenvectors = eigen.eigenvectors.map((vec, idx) => {
             const lambda = eigen.eigenvalues[idx];
             if (lambda > 1e-10) {
-                const factor = 1 / Math.sqrt(lambda);
-                return vec.map(v => v * factor);
+                const scaled = vec.map(v => v / Math.sqrt(lambda));
+                const norm = Math.sqrt(scaled.reduce((sum, v) => sum + v * v, 0)) || 1e-10;
+                return scaled.map(v => v / norm);
             }
-            return vec;
+            return vec.map(() => 0);
         });
         
         // Project data
@@ -949,7 +950,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
                 if (j < eigen.eigenvalues.length && j < normalizedEigenvectors.length) {
-                    proj.push(eigen.eigenvalues[j] * normalizedEigenvectors[j][i]);
+                    proj.push(normalizedEigenvectors[j][i]);
+
                 } else {
                     proj.push(0);
                 }
