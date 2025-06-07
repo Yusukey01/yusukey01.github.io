@@ -616,12 +616,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.exp(-gamma * sum);
     }
     
-    function polyKernel(x1, x2, degree, coef) {
+    // FIXED: Polynomial kernel formula according to standard implementation
+    function polyKernel(x1, x2, degree, gamma, coef) {
         let dot = 0;
         for (let i = 0; i < x1.length; i++) {
             dot += x1[i] * x2[i];
         }
-        return Math.pow(coef * dot + 1, degree);
+        return Math.pow(gamma * dot + coef, degree);
     }
     
     // Compute kernel matrix
@@ -640,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         K[i][j] = rbfKernel(data[i], data[j], gamma);
                         break;
                     case 'poly':
-                        K[i][j] = polyKernel(data[i], data[j], degree, coef);
+                        K[i][j] = polyKernel(data[i], data[j], degree, gamma, coef);
                         break;
                 }
             }
@@ -897,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA
+    // FIXED: Kernel PCA with correct eigenvector normalization
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -920,26 +921,34 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // Normalize eigenvectors
+        // FIXED: Normalize eigenvectors properly according to academic sources
+        // The eigenvectors should be normalized by dividing by sqrt(lambda)
         const n = data.length;
-        const normalizedEigenvectors = eigen.eigenvectors.map((vec, idx) => {
-            const lambda = eigen.eigenvalues[idx];
-            if (lambda > 1e-10) {
-                const scaled = vec.map(v => v / Math.sqrt(lambda));
-                const norm = Math.sqrt(scaled.reduce((sum, v) => sum + v * v, 0)) || 1e-10;
-                return scaled.map(v => v / norm);
-            }
-            return vec.map(() => 0);
-        });
+        const normalizedEigenvectors = [];
         
-        // Project data
+        for (let idx = 0; idx < eigen.eigenvectors.length; idx++) {
+            const vec = eigen.eigenvectors[idx];
+            const lambda = eigen.eigenvalues[idx];
+            
+            if (lambda > 1e-10) {
+                // Normalize by sqrt(lambda) to ensure unit norm in feature space
+                const normalizedVec = vec.map(v => v / Math.sqrt(lambda));
+                normalizedEigenvectors.push(normalizedVec);
+            } else {
+                // For zero eigenvalues, keep the vector as zeros
+                normalizedEigenvectors.push(vec.map(() => 0));
+            }
+        }
+        
+        // Project data - the projection is simply the normalized eigenvectors
         const projection = [];
         for (let i = 0; i < n; i++) {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                if (j < eigen.eigenvalues.length && j < normalizedEigenvectors.length) {
-                    proj.push(normalizedEigenvectors[j][i]);
-
+                if (j < normalizedEigenvectors.length) {
+                    // The projection is the normalized eigenvector scaled by sqrt(lambda)
+                    // This gives us the actual projection in the feature space
+                    proj.push(normalizedEigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
                 } else {
                     proj.push(0);
                 }
@@ -959,7 +968,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Simple autoencoder implementation
+    // FIXED: Proper autoencoder implementation with full backpropagation
     class SimpleAutoencoder {
         constructor(inputDim, hiddenDim, latentDim) {
             this.inputDim = inputDim;
@@ -1011,8 +1020,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return {
                     output: Array(this.inputDim).fill(0),
                     latent: Array(this.latentDim).fill(0),
+                    z1: Array(this.hiddenDim).fill(0),
                     a1: Array(this.hiddenDim).fill(0),
-                    a3: Array(this.hiddenDim).fill(0)
+                    z2: Array(this.latentDim).fill(0),
+                    z3: Array(this.hiddenDim).fill(0),
+                    a3: Array(this.hiddenDim).fill(0),
+                    z4: Array(this.inputDim).fill(0)
                 };
             }
             
@@ -1030,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
             const output = z4; // Linear activation in output
             
-            return { output, latent, a1, a3 };
+            return { output, latent, z1, a1, z2, z3, a3, z4 };
         }
         
         matrixVectorMultiply(matrix, vector) {
@@ -1060,6 +1073,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return result;
         }
         
+        // FIXED: Proper backpropagation implementation
         train(data, epochs = 100, learningRate = 0.01) {
             const n = data.length;
             if (n === 0) return;
@@ -1074,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const input = data[i];
                     
                     // Forward pass
-                    const { output, latent, a1, a3 } = this.forward(input);
+                    const { output, latent, z1, a1, z2, z3, a3, z4 } = this.forward(input);
                     
                     // Calculate loss (MSE)
                     let loss = 0;
@@ -1084,18 +1098,64 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     totalLoss += loss;
                     
-                    // Backward pass (simplified - only update output layer)
-                    // This is a very basic gradient descent for demonstration
+                    // Backward pass
                     const lr = learningRate * (1.0 / (1.0 + epoch * 0.01)); // Learning rate decay
                     
+                    // Output layer gradients
+                    const dL_dz4 = [];
                     for (let j = 0; j < this.inputDim; j++) {
-                        const outputError = (output[j] - input[j]) * 2.0 / n;
-                        
-                        // Update W4 and b4
+                        dL_dz4[j] = 2.0 * (output[j] - input[j]) / n;
+                    }
+                    
+                    // Hidden layer 2 gradients
+                    const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
+                    const dL_dz3 = [];
+                    for (let j = 0; j < this.hiddenDim; j++) {
+                        dL_dz3[j] = dL_da3[j] * this.reluDerivative(z3[j]);
+                    }
+                    
+                    // Latent layer gradients
+                    const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
+                    const dL_dz2 = dL_dlatent; // Linear activation
+                    
+                    // Hidden layer 1 gradients
+                    const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
+                    const dL_dz1 = [];
+                    for (let j = 0; j < this.hiddenDim; j++) {
+                        dL_dz1[j] = dL_da1[j] * this.reluDerivative(z1[j]);
+                    }
+                    
+                    // Update weights and biases
+                    // W4 and b4
+                    for (let j = 0; j < this.inputDim; j++) {
                         for (let k = 0; k < this.hiddenDim; k++) {
-                            this.W4[j][k] -= lr * outputError * a3[k];
+                            this.W4[j][k] -= lr * dL_dz4[j] * a3[k];
                         }
-                        this.b4[j] -= lr * outputError;
+                        this.b4[j] -= lr * dL_dz4[j];
+                    }
+                    
+                    // W3 and b3
+                    for (let j = 0; j < this.hiddenDim; j++) {
+                        for (let k = 0; k < this.latentDim; k++) {
+                            this.W3[j][k] -= lr * dL_dz3[j] * latent[k];
+                        }
+                        this.b3[j] -= lr * dL_dz3[j];
+                    }
+                    
+                    // W2 and b2
+                    for (let j = 0; j < this.latentDim; j++) {
+                        for (let k = 0; k < this.hiddenDim; k++) {
+                            this.W2[j][k] -= lr * dL_dz2[j] * a1[k];
+                        }
+                        this.b2[j] -= lr * dL_dz2[j];
+                    }
+                    
+                    // W1 and b1
+                    for (let j = 0; j < this.hiddenDim; j++) {
+                        for (let k = 0; k < this.inputDim; k++) {
+                            this.W1[j][k] -= lr * dL_dz1[j] * input[k];
+                        }
+                        this.b1[j] -= lr * dL_dz1[j];
                     }
                 }
                 
@@ -1111,6 +1171,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const avgLoss = totalLoss / n;
                 aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
             }
+        }
+        
+        vectorMatrixMultiply(vector, matrix) {
+            const result = [];
+            for (let j = 0; j < matrix[0].length; j++) {
+                let sum = 0;
+                for (let i = 0; i < vector.length; i++) {
+                    sum += vector[i] * matrix[i][j];
+                }
+                result.push(sum);
+            }
+            return result;
         }
         
         encode(data) {
