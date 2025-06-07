@@ -976,15 +976,23 @@ document.addEventListener('DOMContentLoaded', function() {
             this.hiddenDim = hiddenDim;
             this.latentDim = latentDim;
             
-            // Initialize weights with small random values
-            this.W1 = this.randomMatrix(inputDim, hiddenDim, 0.5);
-            this.b1 = this.randomVector(hiddenDim, 0.1);
-            this.W2 = this.randomMatrix(hiddenDim, latentDim, 0.5);
-            this.b2 = this.randomVector(latentDim, 0.1);
-            this.W3 = this.randomMatrix(latentDim, hiddenDim, 0.5);
-            this.b3 = this.randomVector(hiddenDim, 0.1);
-            this.W4 = this.randomMatrix(hiddenDim, inputDim, 0.5);
-            this.b4 = this.randomVector(inputDim, 0.1);
+            // Initialize weights with Xavier initialization
+            const scale1 = Math.sqrt(2.0 / inputDim);
+            const scale2 = Math.sqrt(2.0 / hiddenDim);
+            const scale3 = Math.sqrt(2.0 / latentDim);
+            const scale4 = Math.sqrt(2.0 / hiddenDim);
+            
+            // Encoder weights
+            this.W1 = this.randomMatrix(hiddenDim, inputDim, scale1);
+            this.b1 = Array(hiddenDim).fill(0);
+            this.W2 = this.randomMatrix(latentDim, hiddenDim, scale2);
+            this.b2 = Array(latentDim).fill(0);
+            
+            // Decoder weights
+            this.W3 = this.randomMatrix(hiddenDim, latentDim, scale3);
+            this.b3 = Array(hiddenDim).fill(0);
+            this.W4 = this.randomMatrix(inputDim, hiddenDim, scale4);
+            this.b4 = Array(inputDim).fill(0);
         }
         
         randomMatrix(rows, cols, scale) {
@@ -992,14 +1000,10 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < rows; i++) {
                 matrix[i] = [];
                 for (let j = 0; j < cols; j++) {
-                    matrix[i][j] = (Math.random() - 0.5) * scale;
+                    matrix[i][j] = (Math.random() - 0.5) * 2 * scale;
                 }
             }
             return matrix;
-        }
-        
-        randomVector(size, scale) {
-            return Array(size).fill().map(() => (Math.random() - 0.5) * scale);
         }
         
         relu(x) {
@@ -1011,6 +1015,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         forward(input) {
+            // Validate input
+            if (!input || input.length !== this.inputDim) {
+                console.error('Invalid input to autoencoder:', input);
+                return {
+                    output: Array(this.inputDim).fill(0),
+                    latent: Array(this.latentDim).fill(0),
+                    a1: Array(this.hiddenDim).fill(0),
+                    a3: Array(this.hiddenDim).fill(0)
+                };
+            }
+            
             // Encoder
             const z1 = this.addBias(this.matrixVectorMultiply(this.W1, input), this.b1);
             const a1 = z1.map(x => this.relu(x));
@@ -1025,14 +1040,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
             const output = z4; // Linear activation in output
             
-            return { output, latent, a1, a3, z1, z3 };
+            return { output, latent, a1, a3 };
         }
         
         matrixVectorMultiply(matrix, vector) {
+            if (!matrix || !vector || matrix.length === 0 || vector.length === 0) {
+                console.error('Invalid matrix or vector for multiplication');
+                return [];
+            }
+            
             const result = [];
             for (let i = 0; i < matrix.length; i++) {
                 let sum = 0;
-                for (let j = 0; j < vector.length; j++) {
+                for (let j = 0; j < Math.min(matrix[i].length, vector.length); j++) {
                     sum += matrix[i][j] * vector[j];
                 }
                 result.push(sum);
@@ -1041,52 +1061,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         addBias(vector, bias) {
-            return vector.map((v, i) => v + bias[i]);
+            if (!vector || !bias) return vector || [];
+            
+            const result = [];
+            for (let i = 0; i < vector.length; i++) {
+                result[i] = vector[i] + (bias[i] || 0);
+            }
+            return result;
         }
         
         train(data, epochs = 100, learningRate = 0.01) {
             const n = data.length;
+            if (n === 0) return;
+            
+            let totalLoss = 0;
             
             for (let epoch = 0; epoch < epochs; epoch++) {
-                let totalLoss = 0;
+                totalLoss = 0;
                 
+                // Mini-batch gradient descent
                 for (let i = 0; i < n; i++) {
                     const input = data[i];
-                    const { output, latent, a1, a3, z1, z3 } = this.forward(input);
+                    
+                    // Forward pass
+                    const { output, latent, a1, a3 } = this.forward(input);
                     
                     // Calculate loss (MSE)
                     let loss = 0;
                     for (let j = 0; j < this.inputDim; j++) {
-                        loss += (output[j] - input[j]) ** 2;
+                        const diff = output[j] - input[j];
+                        loss += diff * diff;
                     }
                     totalLoss += loss;
                     
-                    // Backpropagation (simplified)
-                    const outputError = output.map((o, j) => 2 * (o - input[j]));
+                    // Backward pass (simplified - only update output layer)
+                    // This is a very basic gradient descent for demonstration
+                    const lr = learningRate * (1.0 / (1.0 + epoch * 0.01)); // Learning rate decay
                     
-                    // Update weights using gradient descent (simplified)
-                    // This is a very basic implementation for demonstration
-                    for (let j = 0; j < this.W4.length; j++) {
-                        for (let k = 0; k < this.W4[0].length; k++) {
-                            this.W4[j][k] -= learningRate * outputError[j] * a3[k];
+                    for (let j = 0; j < this.inputDim; j++) {
+                        const outputError = (output[j] - input[j]) * 2.0 / n;
+                        
+                        // Update W4 and b4
+                        for (let k = 0; k < this.hiddenDim; k++) {
+                            this.W4[j][k] -= lr * outputError * a3[k];
                         }
-                        this.b4[j] -= learningRate * outputError[j];
+                        this.b4[j] -= lr * outputError;
                     }
                 }
                 
-                if (epoch % 10 === 0) {
-                    aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${(totalLoss/n).toFixed(4)}`;
+                // Update progress
+                if (epoch % 20 === 0 && aeProgressElement) {
+                    const avgLoss = totalLoss / n;
+                    aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
                 }
             }
             
-            aeProgressElement.textContent = `Training complete! Final loss: ${(totalLoss/n).toFixed(4)}`;
+            // Final update
+            if (aeProgressElement) {
+                const avgLoss = totalLoss / n;
+                aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
+            }
         }
         
         encode(data) {
+            if (!data || data.length === 0) return [];
+            
             const encoded = [];
-            for (const point of data) {
-                const { latent } = this.forward(point);
-                encoded.push(latent);
+            for (let i = 0; i < data.length; i++) {
+                try {
+                    const { latent } = this.forward(data[i]);
+                    // Ensure we always return 2D points
+                    encoded.push([
+                        latent[0] || 0,
+                        latent[1] || 0
+                    ]);
+                } catch (error) {
+                    console.error('Encoding error for point', i, error);
+                    encoded.push([0, 0]);
+                }
             }
             return encoded;
         }
@@ -1573,7 +1625,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
-        if (!aeProjection || !kpcaResult) {
+        if (!aeProjection || !kpcaResult || !aeProjection.length || !kpcaResult.projection) {
             ctx.font = '14px Arial';
             ctx.fillStyle = '#666';
             ctx.textAlign = 'center';
@@ -1759,18 +1811,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function trainAutoencoder() {
+        if (!data || data.length === 0) {
+            aeProgressElement.textContent = 'No data available. Generate data first!';
+            return;
+        }
+        
         trainAeBtn.disabled = true;
         aeProgressElement.textContent = 'Initializing autoencoder...';
         
-        // Create and train autoencoder
+        // Create and train autoencoder with 2D input, 4 hidden units, 2D latent space
         aeModel = new SimpleAutoencoder(2, 4, 2);
         
         setTimeout(() => {
-            aeModel.train(data, 200, 0.01);
-            aeProjection = aeModel.encode(data);
-            
-            drawAutoencoderComparison();
-            trainAeBtn.disabled = false;
+            try {
+                // Train with smaller learning rate for stability
+                aeModel.train(data, 100, 0.1);
+                aeProjection = aeModel.encode(data);
+                
+                drawAutoencoderComparison();
+                trainAeBtn.disabled = false;
+            } catch (error) {
+                console.error('Autoencoder training error:', error);
+                aeProgressElement.textContent = 'Training failed: ' + error.message;
+                trainAeBtn.disabled = false;
+            }
         }, 100);
     }
     
