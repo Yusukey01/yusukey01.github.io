@@ -131,8 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="control-group">
                         <label for="components">Components:</label>
-                        <input type="range" id="components" min="1" max="2" step="1" value="2" class="full-width">
+                        <input type="range" id="components" min="1" max="4" step="1" value="2" class="full-width">
                         <span id="components-display">2</span>
+                        <div class="param-hint">Number of principal components to extract</div>
                     </div>
                     
                     <div class="control-group">
@@ -147,35 +148,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span id="sample-size-display">150</span>
                     </div>
                     
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="show-math"> Show Mathematical Details
-                        </label>
-                    </div>
-                    
-                    <div class="results-box">
-                        <h3>Performance Metrics:</h3>
-                        <div class="result-row">
-                            <div class="result-label">PCA Variance:</div>
-                            <div class="result-value" id="pca-variance">0.0%</div>
+                    <div class="info-box">
+                        <h3>Variance Explained:</h3>
+                        <div class="variance-info">
+                            <div class="variance-row">
+                                <span class="variance-label">PCA:</span>
+                                <span class="variance-value" id="pca-variance-info">-</span>
+                            </div>
+                            <div class="variance-row">
+                                <span class="variance-label">KPCA:</span>
+                                <span class="variance-value" id="kpca-variance-info">-</span>
+                            </div>
                         </div>
-                        <div class="result-row">
-                            <div class="result-label">KPCA Variance:</div>
-                            <div class="result-value" id="kpca-variance">0.0%</div>
+                        <div class="computation-time">
+                            Computation time: <span id="comp-time">0 ms</span>
                         </div>
-                        <div class="result-row">
-                            <div class="result-label">Reconstruction Error:</div>
-                            <div class="result-value" id="recon-error">-</div>
-                        </div>
-                        <div class="result-row">
-                            <div class="result-label">Computation Time:</div>
-                            <div class="result-value" id="comp-time">0 ms</div>
-                        </div>
-                    </div>
-                    
-                    <div class="math-details" id="math-details" style="display: none;">
-                        <h4>Mathematical Details:</h4>
-                        <div id="math-content"></div>
                     </div>
                 </div>
             </div>
@@ -348,31 +335,45 @@ document.addEventListener('DOMContentLoaded', function() {
             background-color: #7f8c8d;
         }
         
-        .results-box {
+        .info-box {
             background-color: #f0f7ff;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         
-        .results-box h3 {
+        .info-box h3 {
             margin-top: 0;
             margin-bottom: 10px;
             font-size: 1rem;
         }
         
-        .result-row {
+        .variance-info {
+            margin-bottom: 10px;
+        }
+        
+        .variance-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
         }
         
-        .result-label {
+        .variance-label {
             font-weight: bold;
         }
         
-        .result-value {
+        .variance-value {
             font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .computation-time {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
         }
         
         .btn-container {
@@ -445,38 +446,6 @@ document.addEventListener('DOMContentLoaded', function() {
             font-size: 0.9rem;
             color: #666;
         }
-        
-        .math-details {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
-        
-        .math-details h4 {
-            margin-top: 0;
-        }
-        
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 10px;
-            font-size: 0.8rem;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
     `;
     
     document.head.appendChild(styleElement);
@@ -499,8 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const noiseDisplay = document.getElementById('noise-display');
     const sampleSizeInput = document.getElementById('sample-size');
     const sampleSizeDisplay = document.getElementById('sample-size-display');
-    const showMathCheckbox = document.getElementById('show-math');
-    const mathDetails = document.getElementById('math-details');
     const computeBtn = document.getElementById('compute-btn');
     const generateBtn = document.getElementById('generate-btn');
     const trainAeBtn = document.getElementById('train-ae');
@@ -518,10 +485,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     
-    // Result elements
-    const pcaVarianceElement = document.getElementById('pca-variance');
-    const kpcaVarianceElement = document.getElementById('kpca-variance');
-    const reconErrorElement = document.getElementById('recon-error');
+    // Info elements
+    const pcaVarianceInfo = document.getElementById('pca-variance-info');
+    const kpcaVarianceInfo = document.getElementById('kpca-variance-info');
     const compTimeElement = document.getElementById('comp-time');
     const aeProgressElement = document.getElementById('ae-progress');
     
@@ -923,37 +889,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Calculate reconstruction error for PCA
-    function calculatePCAReconstructionError(pcaResult) {
-        const { projection, eigenvectors, mean, centered } = pcaResult;
-        const n = centered.length;
-        const d = centered[0].length;
-        let totalError = 0;
-        
-        for (let i = 0; i < n; i++) {
-            // Reconstruct
-            const reconstructed = Array(d).fill(0);
-            for (let j = 0; j < projection[0].length; j++) {
-                for (let k = 0; k < d; k++) {
-                    reconstructed[k] += projection[i][j] * eigenvectors[j][k];
-                }
-            }
-            
-            // Add mean back
-            for (let k = 0; k < d; k++) {
-                reconstructed[k] += mean[k];
-            }
-            
-            // Calculate error
-            for (let k = 0; k < d; k++) {
-                const diff = data[i][k] - reconstructed[k];
-                totalError += diff * diff;
-            }
-        }
-        
-        return Math.sqrt(totalError / n);
-    }
-    
     // Simple autoencoder implementation
     class SimpleAutoencoder {
         constructor(inputDim, hiddenDim, latentDim) {
@@ -1086,7 +1021,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.clearRect(0, 0, width, height);
         
         // Use projection if available, otherwise use original data
-        const drawData = projection || data;
+        // For projections with more than 2 components, use only first 2 for visualization
+        const drawData = projection ? projection.map(p => [p[0], p[1]]) : data;
         
         // Find data bounds
         let minX = Infinity, maxX = -Infinity;
@@ -1154,10 +1090,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const pcaRatios = pcaEigenvalues.map(v => (v / pcaTotal) * 100);
         const kpcaRatios = kpcaEigenvalues.map(v => (v / kpcaTotal) * 100);
         
-        const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 5);
+        const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 4);
         const barWidth = width / (numComponents * 2 + 1) * 0.7;
         const maxHeight = height * 0.7;
-        const maxRatio = Math.max(...pcaRatios, ...kpcaRatios);
+        const maxRatio = Math.max(...pcaRatios.slice(0, numComponents), ...kpcaRatios.slice(0, numComponents));
         
         // Draw title
         ctx.font = '14px Arial';
@@ -1557,6 +1493,38 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
     }
     
+    // Update variance info display
+    function updateVarianceInfo() {
+        if (!pcaResult || !kpcaResult) return;
+        
+        const numComponents = parseInt(componentsInput.value);
+        
+        // Calculate cumulative variance for all components
+        const pcaTotal = pcaResult.eigenvalues.reduce((a, b) => a + b, 0);
+        const kpcaTotal = kpcaResult.eigenvalues.reduce((a, b) => a + b, 0);
+        
+        const pcaCumulative = [];
+        const kpcaCumulative = [];
+        
+        let pcaSum = 0;
+        let kpcaSum = 0;
+        
+        for (let i = 0; i < numComponents && i < 4; i++) {
+            if (i < pcaResult.eigenvalues.length) {
+                pcaSum += pcaResult.eigenvalues[i];
+                pcaCumulative.push((pcaSum / pcaTotal * 100).toFixed(1));
+            }
+            if (i < kpcaResult.eigenvalues.length) {
+                kpcaSum += kpcaResult.eigenvalues[i];
+                kpcaCumulative.push((kpcaSum / kpcaTotal * 100).toFixed(1));
+            }
+        }
+        
+        // Display cumulative variance for selected components
+        pcaVarianceInfo.textContent = pcaCumulative.join('%, ') + '%';
+        kpcaVarianceInfo.textContent = kpcaCumulative.join('%, ') + '%';
+    }
+    
     // Event handlers
     function handleDatasetChange() {
         generateData();
@@ -1570,8 +1538,6 @@ document.addEventListener('DOMContentLoaded', function() {
         gammaContainer.style.display = (kernel === 'rbf' || kernel === 'sigmoid') ? 'block' : 'none';
         degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
         coefContainer.style.display = (kernel === 'poly' || kernel === 'sigmoid') ? 'block' : 'none';
-        
-        updateMathDetails();
     }
     
     function handleParameterChange() {
@@ -1631,18 +1597,8 @@ document.addEventListener('DOMContentLoaded', function() {
         drawData(kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
         drawVariance(varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
-        // Update metrics
-        const pcaTotalVar = pcaResult.eigenvalues.reduce((a, b) => a + b, 0);
-        const pcaExplained = pcaResult.eigenvalues.slice(0, numComponents).reduce((a, b) => a + b, 0);
-        pcaVarianceElement.textContent = `${(pcaExplained / pcaTotalVar * 100).toFixed(1)}%`;
-        
-        const kpcaTotalVar = kpcaResult.eigenvalues.reduce((a, b) => a + b, 0);
-        const kpcaExplained = kpcaResult.eigenvalues.slice(0, numComponents).reduce((a, b) => a + b, 0);
-        kpcaVarianceElement.textContent = `${(kpcaExplained / kpcaTotalVar * 100).toFixed(1)}%`;
-        
-        // Calculate reconstruction error
-        const reconError = calculatePCAReconstructionError(pcaResult);
-        reconErrorElement.textContent = reconError.toFixed(4);
+        // Update variance info
+        updateVarianceInfo();
         
         // Update other tabs
         drawAlgorithmStep(currentStep);
@@ -1664,66 +1620,6 @@ document.addEventListener('DOMContentLoaded', function() {
             drawAutoencoderComparison();
             trainAeBtn.disabled = false;
         }, 100);
-    }
-    
-    function updateMathDetails() {
-        if (!showMathCheckbox.checked) return;
-        
-        const kernel = kernelSelect.value;
-        let mathContent = '';
-        
-        switch (kernel) {
-            case 'linear':
-                mathContent = `
-                    <p><strong>Linear Kernel:</strong></p>
-                    <p>\\(k(x, y) = x^T y\\)</p>
-                    <p>Equivalent to standard PCA</p>
-                `;
-                break;
-            case 'rbf':
-                mathContent = `
-                    <p><strong>RBF (Gaussian) Kernel:</strong></p>
-                    <p>\\(k(x, y) = \\exp(-\\gamma \\|x - y\\|^2)\\)</p>
-                    <p>Maps to infinite-dimensional space</p>
-                    <p>Current \\(\\gamma = ${gamma.toFixed(2)}\\)</p>
-                `;
-                break;
-            case 'poly':
-                mathContent = `
-                    <p><strong>Polynomial Kernel:</strong></p>
-                    <p>\\(k(x, y) = (c \\cdot x^T y + 1)^d\\)</p>
-                    <p>Captures polynomial relationships</p>
-                    <p>Current \\(d = ${degree}\\), \\(c = ${coef.toFixed(1)}\\)</p>
-                `;
-                break;
-            case 'sigmoid':
-                mathContent = `
-                    <p><strong>Sigmoid Kernel:</strong></p>
-                    <p>\\(k(x, y) = \\tanh(\\gamma x^T y + c)\\)</p>
-                    <p>Similar to neural network activation</p>
-                    <p>Current \\(\\gamma = ${gamma.toFixed(2)}\\), \\(c = ${coef.toFixed(1)}\\)</p>
-                `;
-                break;
-        }
-        
-        mathContent += `
-            <hr>
-            <p><strong>Kernel PCA Algorithm:</strong></p>
-            <ol>
-                <li>Compute kernel matrix: \\(K_{ij} = k(x_i, x_j)\\)</li>
-                <li>Center: \\(\\tilde{K} = K - \\mathbf{1}_m K - K \\mathbf{1}_m + \\mathbf{1}_m K \\mathbf{1}_m\\)</li>
-                <li>Eigendecomposition: \\(\\tilde{K} = V \\Lambda V^T\\)</li>
-                <li>Normalize: \\(\\tilde{v}_i = v_i / \\sqrt{\\lambda_i}\\)</li>
-                <li>Project: \\(z_i = \\sum_{j=1}^m \\tilde{v}_{ij} \\lambda_j\\)</li>
-            </ol>
-        `;
-        
-        document.getElementById('math-content').innerHTML = mathContent;
-        
-        // Re-render math if MathJax is available
-        if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('math-content')]).catch(() => {});
-        }
     }
     
     // Tab handling
@@ -1777,13 +1673,12 @@ document.addEventListener('DOMContentLoaded', function() {
     gammaInput.addEventListener('input', handleParameterChange);
     degreeInput.addEventListener('input', handleParameterChange);
     coefInput.addEventListener('input', handleParameterChange);
-    componentsInput.addEventListener('input', handleParameterChange);
+    componentsInput.addEventListener('input', () => {
+        handleParameterChange();
+        updateVarianceInfo();
+    });
     noiseInput.addEventListener('input', handleParameterChange);
     sampleSizeInput.addEventListener('input', handleParameterChange);
-    showMathCheckbox.addEventListener('change', () => {
-        mathDetails.style.display = showMathCheckbox.checked ? 'block' : 'none';
-        updateMathDetails();
-    });
     
     computeBtn.addEventListener('click', computeProjections);
     generateBtn.addEventListener('click', () => {

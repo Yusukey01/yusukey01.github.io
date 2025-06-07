@@ -23,11 +23,120 @@ uses_python: false
 
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
-                So far our data is "labeled" but here, we learn <strong>unsupervised learning</strong> methods. We already learn 
-                <a href="../Probability/covariance.html"><strong>Principal Cpmponent Analysis</strong></a> basics.
-                <div id="kernel_pca_visualizer"></div>
+                <p>
+                    <strong>Principal Component Analysis (PCA)</strong> is one of the most fundamental techniques in machine learning for 
+                    <strong>dimensionality reduction</strong> and data analysis. While the basic mathematical foundations are covered in the 
+                    <a href="../Probability/covariance.html"><strong>covariance analysis</strong></a> section, here we focus on its 
+                    machine learning applications and extensions.
+                </p>
+                <p>
+                    PCA transforms high-dimensional data into a lower-dimensional representation by finding orthogonal directions 
+                    (principal components) that capture the maximum variance in the data. Mathematically, given data matrix 
+                    \(X \in \mathbb{R}^{m \times n}\) with \(m\) samples and \(n\) features, PCA finds:
+                    \[
+                    Z = XW
+                    \]
+                    where \(W \in \mathbb{R}^{n \times k}\) contains the top \(k\) eigenvectors of the covariance matrix 
+                    \(C = \frac{1}{m-1}X^TX\), and \(Z\) represents the transformed data in the principal component space.
+                </p>
+                <p>
+                    However, standard PCA has a critical limitation: it can only capture <strong>linear relationships</strong> 
+                    in the data. For many real-world datasets with complex, non-linear structures, this linear assumption 
+                    severely limits PCA's effectiveness. This limitation motivated the development of <strong>Kernel PCA</strong>.
+                </p>
             </section>
 
+            <section id="" class="section-content">
+                <h2>Kernel PCA</h2>
+                <p>
+                    <strong>Kernel PCA</strong> extends classical PCA to capture non-linear relationships by implicitly mapping 
+                    data to a higher-dimensional feature space using the <strong>kernel trick</strong>. This technique, also used 
+                    in <a href="svm.html"><strong>Support Vector Machines</strong></a>, allows us to perform PCA in feature spaces 
+                    where linear separation becomes possible.
+                </p>
+                
+                <h3>Mathematical Formulation</h3>
+                <p>
+                    Instead of working directly with data points \(x_i \in \mathbb{R}^n\), Kernel PCA maps them to a 
+                    higher-dimensional space via a (typically unknown) mapping \(\phi: \mathbb{R}^n \to \mathcal{F}\):
+                    \[
+                    x_i \mapsto \phi(x_i)
+                    \]
+                    The key insight is that we never need to compute \(\phi(x_i)\) explicitly. Instead, we only need 
+                    inner products in the feature space, which can be computed using a kernel function:
+                    \[
+                    k(x_i, x_j) = \langle \phi(x_i), \phi(x_j) \rangle
+                    \]
+                </p>
+                
+                <h3>Common Kernel Functions</h3>
+                <p>
+                    The choice of kernel function determines the implicit feature space and the types of non-linear 
+                    relationships that can be captured:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Linear Kernel</strong>: \(k(x, y) = x^T y\)
+                        <br>Equivalent to standard PCA</li>
+                    <li><strong>RBF (Gaussian) Kernel</strong>: \(k(x, y) = \exp(-\gamma \|x - y\|^2)\)
+                        <br>Maps to infinite-dimensional space, captures local similarities</li>
+                    <li><strong>Polynomial Kernel</strong>: \(k(x, y) = (\alpha x^T y + c)^d\)
+                        <br>Captures polynomial relationships up to degree \(d\)</li>
+                </ul>
+                
+                <h3>Kernel PCA Algorithm</h3>
+                <p>
+                    The Kernel PCA algorithm involves the following steps:
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li>Compute the kernel matrix \(K_{ij} = k(x_i, x_j)\) for all data points</li>
+                    <li>Center the kernel matrix: \(\tilde{K} = K - \mathbf{1}_m K - K \mathbf{1}_m + \mathbf{1}_m K \mathbf{1}_m\)
+                        <br>where \(\mathbf{1}_m\) is an \(m \times m\) matrix with all entries equal to \(1/m\)</li>
+                    <li>Compute eigenvalues \(\lambda_i\) and eigenvectors \(\alpha_i\) of \(\tilde{K}\)</li>
+                    <li>Normalize eigenvectors: \(\tilde{\alpha}_i = \alpha_i / \sqrt{\lambda_i}\)</li>
+                    <li>Project new data point \(x\) onto the \(i\)-th principal component:
+                        \[
+                        z_i = \sum_{j=1}^m \tilde{\alpha}_{ij} k(x_j, x)
+                        \]</li>
+                </ol>
+                
+                <h3>Advantages and Challenges</h3>
+                <p>
+                    <strong>Advantages:</strong>
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Captures non-linear relationships in data</li>
+                    <li>No need to explicitly compute high-dimensional mappings</li>
+                    <li>Can work with any positive semi-definite kernel</li>
+                    <li>Particularly effective for clustering and visualization of complex data</li>
+                </ul>
+                <p>
+                    <strong>Challenges:</strong>
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Kernel selection and parameter tuning can be difficult</li>
+                    <li>Computational complexity: \(O(m^3)\) for eigendecomposition</li>
+                    <li>Memory requirements: \(O(m^2)\) for kernel matrix storage</li>
+                    <li>Pre-image problem: difficult to reconstruct original data from kernel space</li>
+                </ul> 
+                
+            </section>
+
+              <section id="" class="section-content">
+                <h2></h2>  
+                
+            </section>
+
+              <section id="demo" class="section-content">
+                <h2>Demo</h2>  
+                <div id="kernel_pca_visualizer"></div>
+                
+            </section>
+
+
+              <section id="" class="section-content">
+                <h2></h2>  
+                
+            </section>
 
         </div>
         <script src="/js/main.js"></script>  
