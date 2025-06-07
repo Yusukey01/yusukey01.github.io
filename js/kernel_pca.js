@@ -1,5 +1,5 @@
 // Kernel PCA Interactive Demo
-// Comprehensive visualization of PCA, Kernel PCA, Lipschitz continuity, and Autoencoders
+// Comprehensive visualization of PCA, Kernel PCA, and Autoencoders
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="tab-nav">
                             <button class="tab-btn active" data-tab="comparison">PCA Comparison</button>
                             <button class="tab-btn" data-tab="algorithm">Algorithm Steps</button>
-                            <button class="tab-btn" data-tab="lipschitz">Lipschitz Analysis</button>
                             <button class="tab-btn" data-tab="autoencoder">Autoencoder</button>
                         </div>
                         
@@ -65,21 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             
-                            <!-- Lipschitz Tab -->
-                            <div id="lipschitz-tab" class="tab-pane">
-                                <div class="lipschitz-grid">
-                                    <div class="viz-panel">
-                                        <h4>Lipschitz Constant Estimation</h4>
-                                        <canvas id="lipschitz-canvas" width="400" height="300"></canvas>
-                                    </div>
-                                    <div class="viz-panel">
-                                        <h4>Stability Analysis</h4>
-                                        <canvas id="stability-canvas" width="400" height="300"></canvas>
-                                    </div>
-                                </div>
-                                <div id="lipschitz-info" class="info-panel"></div>
-                            </div>
-                            
                             <!-- Autoencoder Tab -->
                             <div id="autoencoder-tab" class="tab-pane">
                                 <div class="autoencoder-grid">
@@ -88,13 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <canvas id="ae-architecture-canvas" width="400" height="300"></canvas>
                                     </div>
                                     <div class="viz-panel">
-                                        <h4>Autoencoder Projection</h4>
+                                        <h4>Autoencoder vs KPCA</h4>
                                         <canvas id="ae-projection-canvas" width="400" height="300"></canvas>
                                     </div>
                                 </div>
                                 <div class="ae-controls">
                                     <button id="train-ae" class="primary-btn">Train Autoencoder</button>
-                                    <div id="ae-progress" class="progress-bar"></div>
+                                    <div id="ae-progress" class="progress-info"></div>
                                 </div>
                             </div>
                         </div>
@@ -110,11 +94,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="control-group">
                         <label for="dataset-select">Dataset:</label>
                         <select id="dataset-select" class="full-width">
-                            <option value="linear">Linear</option>
+                            <option value="linear">Linear (Gaussian Blobs)</option>
                             <option value="circles" selected>Concentric Circles</option>
                             <option value="moons">Two Moons</option>
-                            <option value="swiss">Swiss Roll (3D)</option>
-                            <option value="spiral">Spiral</option>
                         </select>
                     </div>
 
@@ -149,20 +131,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="control-group">
                         <label for="components">Components:</label>
-                        <input type="range" id="components" min="1" max="3" step="1" value="2" class="full-width">
+                        <input type="range" id="components" min="1" max="2" step="1" value="2" class="full-width">
                         <span id="components-display">2</span>
                     </div>
                     
                     <div class="control-group">
                         <label for="noise-level">Noise Level:</label>
-                        <input type="range" id="noise-level" min="0" max="0.5" step="0.05" value="0.1" class="full-width">
-                        <span id="noise-display">0.10</span>
+                        <input type="range" id="noise-level" min="0" max="0.3" step="0.05" value="0.05" class="full-width">
+                        <span id="noise-display">0.05</span>
                     </div>
                     
                     <div class="control-group">
                         <label for="sample-size">Sample Size:</label>
-                        <input type="range" id="sample-size" min="50" max="500" step="50" value="200" class="full-width">
-                        <span id="sample-size-display">200</span>
+                        <input type="range" id="sample-size" min="50" max="300" step="50" value="150" class="full-width">
+                        <span id="sample-size-display">150</span>
                     </div>
                     
                     <div class="control-group">
@@ -182,8 +164,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="result-value" id="kpca-variance">0.0%</div>
                         </div>
                         <div class="result-row">
-                            <div class="result-label">Lipschitz Constant:</div>
-                            <div class="result-value" id="lipschitz-constant">-</div>
+                            <div class="result-label">Reconstruction Error:</div>
+                            <div class="result-value" id="recon-error">-</div>
                         </div>
                         <div class="result-row">
                             <div class="result-label">Computation Time:</div>
@@ -271,6 +253,12 @@ document.addEventListener('DOMContentLoaded', function() {
             gap: 15px;
         }
         
+        @media (max-width: 768px) {
+            .visualization-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .viz-panel {
             background: #f8f9fa;
             padding: 15px;
@@ -345,6 +333,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .primary-btn:hover {
             background-color: #2980b9;
+        }
+        
+        .primary-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
         
         .secondary-btn {
@@ -430,18 +423,16 @@ document.addEventListener('DOMContentLoaded', function() {
             text-align: center;
         }
         
-        .lipschitz-grid, .autoencoder-grid {
+        .autoencoder-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
         
-        .info-panel {
-            margin-top: 15px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+        @media (max-width: 768px) {
+            .autoencoder-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         .ae-controls {
@@ -449,18 +440,10 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 20px;
         }
         
-        .progress-bar {
+        .progress-info {
             margin-top: 10px;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #3498db;
-            transition: width 0.3s;
+            font-size: 0.9rem;
+            color: #666;
         }
         
         .math-details {
@@ -473,6 +456,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .math-details h4 {
             margin-top: 0;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
         }
     `;
     
@@ -500,6 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mathDetails = document.getElementById('math-details');
     const computeBtn = document.getElementById('compute-btn');
     const generateBtn = document.getElementById('generate-btn');
+    const trainAeBtn = document.getElementById('train-ae');
     
     // Canvas elements
     const originalCanvas = document.getElementById('original-canvas');
@@ -507,8 +511,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const kpcaCanvas = document.getElementById('kpca-canvas');
     const varianceCanvas = document.getElementById('variance-canvas');
     const algorithmCanvas = document.getElementById('algorithm-canvas');
-    const lipschitzCanvas = document.getElementById('lipschitz-canvas');
-    const stabilityCanvas = document.getElementById('stability-canvas');
     const aeArchCanvas = document.getElementById('ae-architecture-canvas');
     const aeProjCanvas = document.getElementById('ae-projection-canvas');
     
@@ -519,26 +521,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Result elements
     const pcaVarianceElement = document.getElementById('pca-variance');
     const kpcaVarianceElement = document.getElementById('kpca-variance');
-    const lipschitzConstantElement = document.getElementById('lipschitz-constant');
+    const reconErrorElement = document.getElementById('recon-error');
     const compTimeElement = document.getElementById('comp-time');
+    const aeProgressElement = document.getElementById('ae-progress');
     
     // State variables
     let data = [];
     let labels = [];
-    let pcaProjection = null;
-    let kpcaProjection = null;
-    let kernelMatrix = null;
-    let eigenvectors = null;
-    let eigenvalues = null;
+    let pcaResult = null;
+    let kpcaResult = null;
     let currentStep = 0;
     let autoplayInterval = null;
+    let aeModel = null;
+    let aeProjection = null;
     
     // Kernel parameters
     let gamma = 1.0;
     let degree = 3;
     let coef = 1.0;
     
-    // Helper functions
+    // Matrix operations
+    function matrixMultiply(A, B) {
+        const m = A.length;
+        const n = A[0].length;
+        const p = B[0].length;
+        const C = Array(m).fill().map(() => Array(p).fill(0));
+        
+        for (let i = 0; i < m; i++) {
+            for (let j = 0; j < p; j++) {
+                for (let k = 0; k < n; k++) {
+                    C[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+        return C;
+    }
+    
+    function transpose(matrix) {
+        return matrix[0].map((_, i) => matrix.map(row => row[i]));
+    }
+    
     function gaussianRandom() {
         let u = 0, v = 0;
         while(u === 0) u = Math.random();
@@ -550,11 +572,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateLinearData(n, noise) {
         data = [];
         labels = [];
-        for (let i = 0; i < n; i++) {
-            const x = (Math.random() - 0.5) * 4;
-            const y = 0.5 * x + (Math.random() - 0.5) * 2 + gaussianRandom() * noise;
+        
+        // Two Gaussian blobs
+        const centers = [[-1, -1], [1, 1]];
+        const pointsPerCluster = Math.floor(n / 2);
+        
+        for (let c = 0; c < 2; c++) {
+            for (let i = 0; i < pointsPerCluster; i++) {
+                const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
+                const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
+                data.push([x, y]);
+                labels.push(c);
+            }
+        }
+        
+        // Add remaining points if n is odd
+        for (let i = data.length; i < n; i++) {
+            const c = Math.floor(Math.random() * 2);
+            const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
+            const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
             data.push([x, y]);
-            labels.push(x > 0 ? 1 : 0);
+            labels.push(c);
         }
     }
     
@@ -604,46 +642,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function generateSwissRollData(n, noise) {
-        data = [];
-        labels = [];
-        
-        for (let i = 0; i < n; i++) {
-            const t = 1.5 * Math.PI * (1 + 2 * Math.random());
-            const x = t * Math.cos(t) + gaussianRandom() * noise;
-            const y = (Math.random() - 0.5) * 4;
-            const z = t * Math.sin(t) + gaussianRandom() * noise;
-            data.push([x, y, z]);
-            labels.push(Math.floor(t / (3 * Math.PI) * 3));
-        }
-    }
-    
-    function generateSpiralData(n, noise) {
-        data = [];
-        labels = [];
-        const n_half = Math.floor(n / 2);
-        
-        // First spiral
-        for (let i = 0; i < n_half; i++) {
-            const t = i / n_half * 4 * Math.PI;
-            const r = t / (4 * Math.PI);
-            const x = r * Math.cos(t) + gaussianRandom() * noise;
-            const y = r * Math.sin(t) + gaussianRandom() * noise;
-            data.push([x, y]);
-            labels.push(0);
-        }
-        
-        // Second spiral
-        for (let i = 0; i < n - n_half; i++) {
-            const t = i / (n - n_half) * 4 * Math.PI;
-            const r = t / (4 * Math.PI);
-            const x = r * Math.cos(t + Math.PI) + gaussianRandom() * noise;
-            const y = r * Math.sin(t + Math.PI) + gaussianRandom() * noise;
-            data.push([x, y]);
-            labels.push(1);
-        }
-    }
-    
     // Kernel functions
     function linearKernel(x1, x2) {
         let sum = 0;
@@ -680,10 +678,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute kernel matrix
     function computeKernelMatrix(data, kernelType) {
         const n = data.length;
-        const K = [];
+        const K = Array(n).fill().map(() => Array(n).fill(0));
         
         for (let i = 0; i < n; i++) {
-            K[i] = [];
             for (let j = 0; j < n; j++) {
                 switch (kernelType) {
                     case 'linear':
@@ -708,29 +705,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Center kernel matrix
     function centerKernelMatrix(K) {
         const n = K.length;
-        const K_centered = [];
+        const K_centered = Array(n).fill().map(() => Array(n).fill(0));
         
-        // Compute row and column means
-        const rowMeans = [];
-        const colMeans = [];
+        // Compute mean of each row and column
+        const rowMeans = Array(n).fill(0);
+        const colMeans = Array(n).fill(0);
         let totalMean = 0;
         
         for (let i = 0; i < n; i++) {
-            let rowSum = 0;
-            let colSum = 0;
             for (let j = 0; j < n; j++) {
-                rowSum += K[i][j];
-                colSum += K[j][i];
+                rowMeans[i] += K[i][j];
+                colMeans[j] += K[i][j];
+                totalMean += K[i][j];
             }
-            rowMeans[i] = rowSum / n;
-            colMeans[i] = colSum / n;
-            totalMean += rowSum;
+        }
+        
+        for (let i = 0; i < n; i++) {
+            rowMeans[i] /= n;
+            colMeans[i] /= n;
         }
         totalMean /= (n * n);
         
         // Center the kernel matrix
         for (let i = 0; i < n; i++) {
-            K_centered[i] = [];
             for (let j = 0; j < n; j++) {
                 K_centered[i][j] = K[i][j] - rowMeans[i] - colMeans[j] + totalMean;
             }
@@ -739,80 +736,89 @@ document.addEventListener('DOMContentLoaded', function() {
         return K_centered;
     }
     
-    // Simple eigendecomposition using power iteration (for demo purposes)
-    function eigenDecomposition(matrix, numComponents) {
+    // Jacobi eigendecomposition for symmetric matrices
+    function jacobiEigendecomposition(matrix, numComponents = null) {
         const n = matrix.length;
-        const eigenvectors = [];
-        const eigenvalues = [];
+        const maxIterations = 100;
+        const tolerance = 1e-10;
         
-        // Create a copy of the matrix
+        // Initialize
         let A = matrix.map(row => [...row]);
+        let V = Array(n).fill().map((_, i) => Array(n).fill(0).map((_, j) => i === j ? 1 : 0));
         
-        for (let comp = 0; comp < numComponents && comp < n; comp++) {
-            // Initialize random vector
-            let v = [];
-            let norm = 0;
-            for (let i = 0; i < n; i++) {
-                v[i] = Math.random() - 0.5;
-                norm += v[i] * v[i];
-            }
-            norm = Math.sqrt(norm);
-            for (let i = 0; i < n; i++) {
-                v[i] /= norm;
-            }
+        for (let iter = 0; iter < maxIterations; iter++) {
+            // Find largest off-diagonal element
+            let maxVal = 0;
+            let p = 0, q = 1;
             
-            // Power iteration
-            for (let iter = 0; iter < 100; iter++) {
-                // Multiply A by v
-                const Av = [];
-                for (let i = 0; i < n; i++) {
-                    Av[i] = 0;
-                    for (let j = 0; j < n; j++) {
-                        Av[i] += A[i][j] * v[j];
-                    }
-                }
-                
-                // Compute eigenvalue
-                let lambda = 0;
-                for (let i = 0; i < n; i++) {
-                    lambda += v[i] * Av[i];
-                }
-                
-                // Normalize
-                norm = 0;
-                for (let i = 0; i < n; i++) {
-                    norm += Av[i] * Av[i];
-                }
-                norm = Math.sqrt(norm);
-                
-                if (norm > 1e-10) {
-                    for (let i = 0; i < n; i++) {
-                        v[i] = Av[i] / norm;
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(A[i][j]) > maxVal) {
+                        maxVal = Math.abs(A[i][j]);
+                        p = i;
+                        q = j;
                     }
                 }
             }
             
-            // Store eigenvector and eigenvalue
-            eigenvectors.push([...v]);
+            if (maxVal < tolerance) break;
             
-            // Compute final eigenvalue
-            let lambda = 0;
+            // Calculate rotation angle
+            const theta = 0.5 * Math.atan2(2 * A[p][q], A[q][q] - A[p][p]);
+            const c = Math.cos(theta);
+            const s = Math.sin(theta);
+            
+            // Update A
+            const App = c * c * A[p][p] + s * s * A[q][q] - 2 * c * s * A[p][q];
+            const Aqq = s * s * A[p][p] + c * c * A[q][q] + 2 * c * s * A[p][q];
+            
+            A[p][p] = App;
+            A[q][q] = Aqq;
+            A[p][q] = 0;
+            A[q][p] = 0;
+            
             for (let i = 0; i < n; i++) {
-                for (let j = 0; j < n; j++) {
-                    lambda += v[i] * A[i][j] * v[j];
+                if (i !== p && i !== q) {
+                    const Aip = c * A[i][p] - s * A[i][q];
+                    const Aiq = s * A[i][p] + c * A[i][q];
+                    A[i][p] = A[p][i] = Aip;
+                    A[i][q] = A[q][i] = Aiq;
                 }
             }
-            eigenvalues.push(lambda);
             
-            // Deflate matrix
+            // Update V
             for (let i = 0; i < n; i++) {
-                for (let j = 0; j < n; j++) {
-                    A[i][j] -= lambda * v[i] * v[j];
-                }
+                const Vip = c * V[i][p] - s * V[i][q];
+                const Viq = s * V[i][p] + c * V[i][q];
+                V[i][p] = Vip;
+                V[i][q] = Viq;
             }
         }
         
-        return { eigenvectors, eigenvalues };
+        // Extract eigenvalues and eigenvectors
+        const eigenvalues = [];
+        const eigenvectors = [];
+        
+        for (let i = 0; i < n; i++) {
+            eigenvalues.push(A[i][i]);
+            eigenvectors.push(V.map(row => row[i]));
+        }
+        
+        // Sort by eigenvalue (descending)
+        const sorted = eigenvalues.map((val, idx) => ({ val, vec: eigenvectors[idx] }))
+            .sort((a, b) => b.val - a.val);
+        
+        const sortedEigenvalues = sorted.map(item => item.val);
+        const sortedEigenvectors = sorted.map(item => item.vec);
+        
+        if (numComponents !== null && numComponents < n) {
+            return {
+                eigenvalues: sortedEigenvalues.slice(0, numComponents),
+                eigenvectors: sortedEigenvectors.slice(0, numComponents)
+            };
+        }
+        
+        return { eigenvalues: sortedEigenvalues, eigenvectors: sortedEigenvectors };
     }
     
     // Standard PCA
@@ -821,54 +827,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const d = data[0].length;
         
         // Compute mean
-        const mean = [];
-        for (let j = 0; j < d; j++) {
-            let sum = 0;
-            for (let i = 0; i < n; i++) {
-                sum += data[i][j];
+        const mean = Array(d).fill(0);
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < d; j++) {
+                mean[j] += data[i][j];
             }
-            mean[j] = sum / n;
+        }
+        for (let j = 0; j < d; j++) {
+            mean[j] /= n;
         }
         
         // Center data
-        const centered = [];
-        for (let i = 0; i < n; i++) {
-            centered[i] = [];
-            for (let j = 0; j < d; j++) {
-                centered[i][j] = data[i][j] - mean[j];
-            }
-        }
+        const centered = data.map(point => point.map((val, idx) => val - mean[idx]));
         
         // Compute covariance matrix
-        const cov = [];
+        const cov = Array(d).fill().map(() => Array(d).fill(0));
         for (let i = 0; i < d; i++) {
-            cov[i] = [];
             for (let j = 0; j < d; j++) {
-                let sum = 0;
                 for (let k = 0; k < n; k++) {
-                    sum += centered[k][i] * centered[k][j];
+                    cov[i][j] += centered[k][i] * centered[k][j];
                 }
-                cov[i][j] = sum / (n - 1);
+                cov[i][j] /= (n - 1);
             }
         }
         
         // Eigendecomposition
-        const { eigenvectors, eigenvalues } = eigenDecomposition(cov, numComponents);
+        const eigen = jacobiEigendecomposition(cov, numComponents);
         
         // Project data
         const projection = [];
         for (let i = 0; i < n; i++) {
-            projection[i] = [];
+            const proj = [];
             for (let j = 0; j < numComponents; j++) {
                 let sum = 0;
                 for (let k = 0; k < d; k++) {
-                    sum += centered[i][k] * eigenvectors[j][k];
+                    sum += centered[i][k] * eigen.eigenvectors[j][k];
                 }
-                projection[i][j] = sum;
+                proj.push(sum);
             }
+            projection.push(proj);
         }
         
-        return { projection, eigenvalues, eigenvectors, mean };
+        return {
+            projection,
+            eigenvalues: eigen.eigenvalues,
+            eigenvectors: eigen.eigenvectors,
+            mean,
+            centered
+        };
     }
     
     // Kernel PCA
@@ -876,93 +882,199 @@ document.addEventListener('DOMContentLoaded', function() {
         const startTime = performance.now();
         
         // Compute kernel matrix
-        kernelMatrix = computeKernelMatrix(data, kernelType);
+        const K = computeKernelMatrix(data, kernelType);
         
         // Center kernel matrix
-        const K_centered = centerKernelMatrix(kernelMatrix);
+        const K_centered = centerKernelMatrix(K);
         
         // Eigendecomposition
-        const eigen = eigenDecomposition(K_centered, numComponents);
-        eigenvectors = eigen.eigenvectors;
-        eigenvalues = eigen.eigenvalues;
+        const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
         // Normalize eigenvectors
         const n = data.length;
-        for (let i = 0; i < numComponents; i++) {
-            const lambda = eigenvalues[i];
+        const normalizedEigenvectors = eigen.eigenvectors.map((vec, idx) => {
+            const lambda = eigen.eigenvalues[idx];
             if (lambda > 1e-10) {
                 const factor = 1 / Math.sqrt(lambda);
-                for (let j = 0; j < n; j++) {
-                    eigenvectors[i][j] *= factor;
-                }
+                return vec.map(v => v * factor);
             }
-        }
+            return vec;
+        });
         
         // Project data
         const projection = [];
         for (let i = 0; i < n; i++) {
-            projection[i] = [];
+            const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                projection[i][j] = eigenvalues[j] * eigenvectors[j][i];
+                proj.push(eigen.eigenvalues[j] * normalizedEigenvectors[j][i]);
             }
+            projection.push(proj);
         }
         
         const endTime = performance.now();
         compTimeElement.textContent = `${(endTime - startTime).toFixed(1)} ms`;
         
-        return { projection, eigenvalues, eigenvectors };
+        return {
+            projection,
+            eigenvalues: eigen.eigenvalues,
+            eigenvectors: normalizedEigenvectors,
+            kernelMatrix: K,
+            centeredKernelMatrix: K_centered
+        };
     }
     
-    // Estimate Lipschitz constant
-    function estimateLipschitzConstant(data, kernelType) {
-        const n = Math.min(data.length, 50); // Sample for efficiency
-        let maxRatio = 0;
+    // Calculate reconstruction error for PCA
+    function calculatePCAReconstructionError(pcaResult) {
+        const { projection, eigenvectors, mean, centered } = pcaResult;
+        const n = centered.length;
+        const d = centered[0].length;
+        let totalError = 0;
         
         for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                const x1 = data[i];
-                const x2 = data[j];
-                
-                // Compute input distance
-                let inputDist = 0;
-                for (let k = 0; k < x1.length; k++) {
-                    inputDist += (x1[k] - x2[k]) * (x1[k] - x2[k]);
+            // Reconstruct
+            const reconstructed = Array(d).fill(0);
+            for (let j = 0; j < projection[0].length; j++) {
+                for (let k = 0; k < d; k++) {
+                    reconstructed[k] += projection[i][j] * eigenvectors[j][k];
                 }
-                inputDist = Math.sqrt(inputDist);
-                
-                if (inputDist < 1e-10) continue;
-                
-                // Compute kernel difference
-                let k1, k2;
-                switch (kernelType) {
-                    case 'linear':
-                        k1 = linearKernel(x1, x1);
-                        k2 = linearKernel(x1, x2);
-                        break;
-                    case 'rbf':
-                        k1 = rbfKernel(x1, x1, gamma);
-                        k2 = rbfKernel(x1, x2, gamma);
-                        break;
-                    case 'poly':
-                        k1 = polyKernel(x1, x1, degree, coef);
-                        k2 = polyKernel(x1, x2, degree, coef);
-                        break;
-                    case 'sigmoid':
-                        k1 = sigmoidKernel(x1, x1, gamma, coef);
-                        k2 = sigmoidKernel(x1, x2, gamma, coef);
-                        break;
-                }
-                
-                const kernelDiff = Math.abs(k1 - k2);
-                const ratio = kernelDiff / inputDist;
-                
-                if (ratio > maxRatio) {
-                    maxRatio = ratio;
-                }
+            }
+            
+            // Add mean back
+            for (let k = 0; k < d; k++) {
+                reconstructed[k] += mean[k];
+            }
+            
+            // Calculate error
+            for (let k = 0; k < d; k++) {
+                const diff = data[i][k] - reconstructed[k];
+                totalError += diff * diff;
             }
         }
         
-        return maxRatio;
+        return Math.sqrt(totalError / n);
+    }
+    
+    // Simple autoencoder implementation
+    class SimpleAutoencoder {
+        constructor(inputDim, hiddenDim, latentDim) {
+            this.inputDim = inputDim;
+            this.hiddenDim = hiddenDim;
+            this.latentDim = latentDim;
+            
+            // Initialize weights with small random values
+            this.W1 = this.randomMatrix(inputDim, hiddenDim, 0.5);
+            this.b1 = this.randomVector(hiddenDim, 0.1);
+            this.W2 = this.randomMatrix(hiddenDim, latentDim, 0.5);
+            this.b2 = this.randomVector(latentDim, 0.1);
+            this.W3 = this.randomMatrix(latentDim, hiddenDim, 0.5);
+            this.b3 = this.randomVector(hiddenDim, 0.1);
+            this.W4 = this.randomMatrix(hiddenDim, inputDim, 0.5);
+            this.b4 = this.randomVector(inputDim, 0.1);
+        }
+        
+        randomMatrix(rows, cols, scale) {
+            const matrix = [];
+            for (let i = 0; i < rows; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    matrix[i][j] = (Math.random() - 0.5) * scale;
+                }
+            }
+            return matrix;
+        }
+        
+        randomVector(size, scale) {
+            return Array(size).fill().map(() => (Math.random() - 0.5) * scale);
+        }
+        
+        relu(x) {
+            return x > 0 ? x : 0;
+        }
+        
+        reluDerivative(x) {
+            return x > 0 ? 1 : 0;
+        }
+        
+        forward(input) {
+            // Encoder
+            const z1 = this.addBias(this.matrixVectorMultiply(this.W1, input), this.b1);
+            const a1 = z1.map(x => this.relu(x));
+            
+            const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
+            const latent = z2; // Linear activation in latent layer
+            
+            // Decoder
+            const z3 = this.addBias(this.matrixVectorMultiply(this.W3, latent), this.b3);
+            const a3 = z3.map(x => this.relu(x));
+            
+            const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
+            const output = z4; // Linear activation in output
+            
+            return { output, latent, a1, a3, z1, z3 };
+        }
+        
+        matrixVectorMultiply(matrix, vector) {
+            const result = [];
+            for (let i = 0; i < matrix.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < vector.length; j++) {
+                    sum += matrix[i][j] * vector[j];
+                }
+                result.push(sum);
+            }
+            return result;
+        }
+        
+        addBias(vector, bias) {
+            return vector.map((v, i) => v + bias[i]);
+        }
+        
+        train(data, epochs = 100, learningRate = 0.01) {
+            const n = data.length;
+            
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                let totalLoss = 0;
+                
+                for (let i = 0; i < n; i++) {
+                    const input = data[i];
+                    const { output, latent, a1, a3, z1, z3 } = this.forward(input);
+                    
+                    // Calculate loss (MSE)
+                    let loss = 0;
+                    for (let j = 0; j < this.inputDim; j++) {
+                        loss += (output[j] - input[j]) ** 2;
+                    }
+                    totalLoss += loss;
+                    
+                    // Backpropagation (simplified)
+                    const outputError = output.map((o, j) => 2 * (o - input[j]));
+                    
+                    // Update weights using gradient descent (simplified)
+                    // This is a very basic implementation for demonstration
+                    for (let j = 0; j < this.W4.length; j++) {
+                        for (let k = 0; k < this.W4[0].length; k++) {
+                            this.W4[j][k] -= learningRate * outputError[j] * a3[k];
+                        }
+                        this.b4[j] -= learningRate * outputError[j];
+                    }
+                }
+                
+                if (epoch % 10 === 0) {
+                    aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${(totalLoss/n).toFixed(4)}`;
+                }
+            }
+            
+            aeProgressElement.textContent = `Training complete! Final loss: ${(totalLoss/n).toFixed(4)}`;
+        }
+        
+        encode(data) {
+            const encoded = [];
+            for (const point of data) {
+                const { latent } = this.forward(point);
+                encoded.push(latent);
+            }
+            return encoded;
+        }
     }
     
     // Drawing functions
@@ -973,11 +1085,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
+        // Use projection if available, otherwise use original data
+        const drawData = projection || data;
+        
         // Find data bounds
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
-        
-        const drawData = projection || data;
         
         for (const point of drawData) {
             minX = Math.min(minX, point[0]);
@@ -996,23 +1109,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw axes
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 1;
+        
+        // X-axis
+        const yZero = height - ((0 - minY) / (maxY - minY)) * height;
         ctx.beginPath();
-        ctx.moveTo(width / 2, 0);
-        ctx.lineTo(width / 2, height);
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
+        ctx.moveTo(0, yZero);
+        ctx.lineTo(width, yZero);
+        ctx.stroke();
+        
+        // Y-axis
+        const xZero = ((0 - minX) / (maxX - minX)) * width;
+        ctx.beginPath();
+        ctx.moveTo(xZero, 0);
+        ctx.lineTo(xZero, height);
         ctx.stroke();
         
         // Draw data points
-        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'];
+        const colors = ['#3498db', '#e74c3c'];
         
         for (let i = 0; i < drawData.length; i++) {
-            const x = (drawData[i][0] - minX) / (maxX - minX) * width;
-            const y = height - (drawData[i][1] - minY) / (maxY - minY) * height;
+            const x = ((drawData[i][0] - minX) / (maxX - minX)) * width;
+            const y = height - ((drawData[i][1] - minY) / (maxY - minY)) * height;
             
             ctx.fillStyle = colors[labels[i] % colors.length];
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fill();
         }
     }
@@ -1024,49 +1145,68 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
-        // Normalize eigenvalues
+        if (!pcaEigenvalues || !kpcaEigenvalues) return;
+        
+        // Calculate explained variance ratios
         const pcaTotal = pcaEigenvalues.reduce((a, b) => a + b, 0);
         const kpcaTotal = kpcaEigenvalues.reduce((a, b) => a + b, 0);
         
-        const pcaNorm = pcaEigenvalues.map(v => v / pcaTotal);
-        const kpcaNorm = kpcaEigenvalues.map(v => v / kpcaTotal);
+        const pcaRatios = pcaEigenvalues.map(v => (v / pcaTotal) * 100);
+        const kpcaRatios = kpcaEigenvalues.map(v => (v / kpcaTotal) * 100);
         
-        const numComponents = Math.min(pcaNorm.length, kpcaNorm.length);
-        const barWidth = width / (numComponents * 2 + 1) * 0.8;
-        const maxHeight = height * 0.8;
+        const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 5);
+        const barWidth = width / (numComponents * 2 + 1) * 0.7;
+        const maxHeight = height * 0.7;
+        const maxRatio = Math.max(...pcaRatios, ...kpcaRatios);
+        
+        // Draw title
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('Explained Variance Ratio (%)', width / 2, 20);
         
         // Draw bars
         for (let i = 0; i < numComponents; i++) {
             // PCA bar
-            const pcaHeight = pcaNorm[i] * maxHeight;
-            const pcaX = (i * 2 + 0.5) * width / (numComponents * 2 + 1);
+            const pcaHeight = (pcaRatios[i] / maxRatio) * maxHeight;
+            const pcaX = (i * 2 + 0.5) * width / (numComponents * 2 + 1) + barWidth / 2;
+            
             ctx.fillStyle = '#3498db';
-            ctx.fillRect(pcaX - barWidth / 2, height - pcaHeight - 10, barWidth, pcaHeight);
+            ctx.fillRect(pcaX - barWidth / 2, height - pcaHeight - 30, barWidth, pcaHeight);
             
-            // KPCA bar
-            const kpcaHeight = kpcaNorm[i] * maxHeight;
-            const kpcaX = (i * 2 + 1.5) * width / (numComponents * 2 + 1);
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(kpcaX - barWidth / 2, height - kpcaHeight - 10, barWidth, kpcaHeight);
-            
-            // Labels
+            // Value label
             ctx.fillStyle = '#333';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`PC${i + 1}`, (pcaX + kpcaX) / 2, height - 2);
+            ctx.fillText(pcaRatios[i].toFixed(1) + '%', pcaX, height - pcaHeight - 35);
+            
+            // KPCA bar
+            const kpcaHeight = (kpcaRatios[i] / maxRatio) * maxHeight;
+            const kpcaX = (i * 2 + 1.5) * width / (numComponents * 2 + 1) + barWidth / 2;
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(kpcaX - barWidth / 2, height - kpcaHeight - 30, barWidth, kpcaHeight);
+            
+            // Value label
+            ctx.fillStyle = '#333';
+            ctx.fillText(kpcaRatios[i].toFixed(1) + '%', kpcaX, height - kpcaHeight - 35);
+            
+            // Component label
+            ctx.fillText(`PC${i + 1}`, (pcaX + kpcaX) / 2, height - 10);
         }
         
         // Legend
         ctx.font = '12px Arial';
         ctx.fillStyle = '#3498db';
-        ctx.fillRect(10, 10, 15, 15);
+        ctx.fillRect(10, 35, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('PCA', 30, 22);
+        ctx.textAlign = 'left';
+        ctx.fillText('PCA', 30, 47);
         
         ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(80, 10, 15, 15);
+        ctx.fillRect(80, 35, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('KPCA', 100, 22);
+        ctx.fillText('KPCA', 100, 47);
     }
     
     // Algorithm visualization
@@ -1082,15 +1222,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 1: Original Data',
                 description: 'Start with the original data points in their native space.',
                 draw: () => {
-                    drawData(algorithmCanvas, data, null, 'Original Data');
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    drawData(tempCanvas, data, null, 'Original Data');
+                    ctx.drawImage(tempCanvas, 0, 0);
                 }
             },
             {
                 title: 'Step 2: Compute Kernel Matrix',
                 description: 'Calculate pairwise similarities using the kernel function K(xi, xj).',
                 draw: () => {
-                    if (kernelMatrix) {
-                        drawKernelMatrix(algorithmCanvas, kernelMatrix);
+                    if (kpcaResult && kpcaResult.kernelMatrix) {
+                        drawKernelMatrix(algorithmCanvas, kpcaResult.kernelMatrix, 'Kernel Matrix K');
                     }
                 }
             },
@@ -1098,9 +1242,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 3: Center Kernel Matrix',
                 description: 'Center the kernel matrix in feature space: K̃ = K - 1K - K1 + 1K1',
                 draw: () => {
-                    if (kernelMatrix) {
-                        const centered = centerKernelMatrix(kernelMatrix);
-                        drawKernelMatrix(algorithmCanvas, centered);
+                    if (kpcaResult && kpcaResult.centeredKernelMatrix) {
+                        drawKernelMatrix(algorithmCanvas, kpcaResult.centeredKernelMatrix, 'Centered Kernel Matrix K̃');
                     }
                 }
             },
@@ -1108,15 +1251,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Step 4: Eigendecomposition',
                 description: 'Find eigenvalues and eigenvectors of the centered kernel matrix.',
                 draw: () => {
-                    drawEigenvalues(algorithmCanvas);
+                    if (kpcaResult) {
+                        drawEigenvalues(algorithmCanvas, kpcaResult.eigenvalues);
+                    }
                 }
             },
             {
                 title: 'Step 5: Project Data',
                 description: 'Project data onto principal components in feature space.',
                 draw: () => {
-                    if (kpcaProjection) {
-                        drawData(algorithmCanvas, data, kpcaProjection, 'Kernel PCA Projection');
+                    if (kpcaResult) {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = width;
+                        tempCanvas.height = height;
+                        drawData(tempCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
+                        ctx.drawImage(tempCanvas, 0, 0);
                     }
                 }
             }
@@ -1132,16 +1281,26 @@ document.addEventListener('DOMContentLoaded', function() {
         currentStepData.draw();
     }
     
-    function drawKernelMatrix(canvas, matrix) {
+    function drawKernelMatrix(canvas, matrix, title = '') {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
-        const n = matrix.length;
-        const cellSize = Math.min(width, height) * 0.8 / n;
-        const offsetX = (width - cellSize * n) / 2;
-        const offsetY = (height - cellSize * n) / 2;
+        const n = Math.min(matrix.length, 50); // Limit size for visualization
+        const availableHeight = height - 40;
+        const cellSize = Math.min(availableHeight / n, width * 0.8 / n);
+        const matrixSize = cellSize * n;
+        const offsetX = (width - matrixSize) / 2;
+        const offsetY = 30;
         
-        // Find min and max values
+        // Title
+        if (title) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, width / 2, 20);
+        }
+        
+        // Find min and max values for color scaling
         let minVal = Infinity, maxVal = -Infinity;
         for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
@@ -1154,125 +1313,116 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
                 const val = (matrix[i][j] - minVal) / (maxVal - minVal);
-                const color = Math.floor(val * 255);
-                ctx.fillStyle = `rgb(${color}, ${color}, ${255 - color})`;
+                const intensity = Math.floor(val * 255);
+                
+                // Blue to red gradient
+                const r = intensity;
+                const g = 0;
+                const b = 255 - intensity;
+                
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                 ctx.fillRect(offsetX + j * cellSize, offsetY + i * cellSize, cellSize - 1, cellSize - 1);
             }
         }
+        
+        // Color bar
+        const barWidth = 20;
+        const barHeight = matrixSize;
+        const barX = offsetX + matrixSize + 20;
+        const barY = offsetY;
+        
+        // Gradient
+        for (let i = 0; i < barHeight; i++) {
+            const val = 1 - i / barHeight;
+            const intensity = Math.floor(val * 255);
+            ctx.fillStyle = `rgb(${intensity}, 0, ${255 - intensity})`;
+            ctx.fillRect(barX, barY + i, barWidth, 1);
+        }
+        
+        // Labels
+        ctx.fillStyle = '#333';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(maxVal.toFixed(2), barX + barWidth + 5, barY + 10);
+        ctx.fillText(minVal.toFixed(2), barX + barWidth + 5, barY + barHeight);
     }
     
-    function drawEigenvalues(canvas) {
-        if (!eigenvalues) return;
-        
+    function drawEigenvalues(canvas, eigenvalues) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
+        if (!eigenvalues || eigenvalues.length === 0) return;
+        
         const n = Math.min(eigenvalues.length, 10);
-        const barWidth = width * 0.8 / n;
-        const offsetX = width * 0.1;
-        const maxHeight = height * 0.7;
+        const barWidth = width * 0.6 / n;
+        const offsetX = width * 0.2;
+        const maxHeight = height * 0.6;
         const maxVal = Math.max(...eigenvalues.slice(0, n));
         
+        // Title
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('Eigenvalues (sorted)', width / 2, 30);
+        
+        // Draw bars
         for (let i = 0; i < n; i++) {
             const barHeight = (eigenvalues[i] / maxVal) * maxHeight;
             const x = offsetX + i * barWidth;
+            const y = height - barHeight - 50;
             
             ctx.fillStyle = '#3498db';
-            ctx.fillRect(x + barWidth * 0.1, height - barHeight - 30, barWidth * 0.8, barHeight);
+            ctx.fillRect(x + barWidth * 0.1, y, barWidth * 0.8, barHeight);
             
+            // Value label
             ctx.fillStyle = '#333';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`λ${i + 1}`, x + barWidth / 2, height - 10);
+            ctx.fillText(eigenvalues[i].toFixed(2), x + barWidth / 2, y - 5);
+            
+            // Index label
+            ctx.fillText(`λ${i + 1}`, x + barWidth / 2, height - 35);
         }
         
-        ctx.font = '14px Arial';
-        ctx.fillText('Eigenvalues', width / 2, 20);
-    }
-    
-    // Lipschitz analysis
-    function drawLipschitzAnalysis() {
-        const ctx = lipschitzCanvas.getContext('2d');
-        const width = lipschitzCanvas.width;
-        const height = lipschitzCanvas.height;
+        // Cumulative variance
+        const total = eigenvalues.reduce((a, b) => a + b, 0);
+        let cumulative = 0;
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
         
-        ctx.clearRect(0, 0, width, height);
-        
-        const kernels = ['linear', 'rbf', 'poly', 'sigmoid'];
-        const lipschitzConstants = [];
-        
-        // Compute Lipschitz constants for each kernel
-        for (const kernel of kernels) {
-            const L = estimateLipschitzConstant(data, kernel);
-            lipschitzConstants.push(L);
-        }
-        
-        // Draw bar chart
-        const barWidth = width * 0.8 / kernels.length;
-        const offsetX = width * 0.1;
-        const maxHeight = height * 0.7;
-        const maxL = Math.max(...lipschitzConstants);
-        
-        for (let i = 0; i < kernels.length; i++) {
-            const barHeight = (lipschitzConstants[i] / maxL) * maxHeight;
-            const x = offsetX + i * barWidth;
+        for (let i = 0; i < n; i++) {
+            cumulative += eigenvalues[i] / total;
+            const x = offsetX + (i + 0.5) * barWidth;
+            const y = height - 50 - cumulative * maxHeight;
             
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(x + barWidth * 0.1, height - barHeight - 40, barWidth * 0.8, barHeight);
-            
-            ctx.fillStyle = '#333';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(kernels[i], x + barWidth / 2, height - 20);
-            ctx.fillText(lipschitzConstants[i].toFixed(2), x + barWidth / 2, height - barHeight - 45);
-        }
-        
-        ctx.font = '14px Arial';
-        ctx.fillText('Lipschitz Constants by Kernel', width / 2, 20);
-    }
-    
-    function drawStabilityAnalysis() {
-        const ctx = stabilityCanvas.getContext('2d');
-        const width = stabilityCanvas.width;
-        const height = stabilityCanvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        // Show how projection changes with perturbation
-        const perturbationLevels = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
-        const colors = ['#3498db', '#2980b9', '#1abc9c', '#16a085', '#e74c3c', '#c0392b'];
-        
-        for (let p = 0; p < perturbationLevels.length; p++) {
-            const perturbation = perturbationLevels[p];
-            
-            // Add perturbation to data
-            const perturbedData = data.map(point => 
-                point.map(x => x + gaussianRandom() * perturbation)
-            );
-            
-            // Compute kernel PCA on perturbed data
-            const result = computeKernelPCA(perturbedData, kernelSelect.value, 2);
-            
-            // Draw projection
-            ctx.globalAlpha = 1 - p * 0.15;
-            for (let i = 0; i < result.projection.length; i++) {
-                const x = (result.projection[i][0] + 3) / 6 * width;
-                const y = height - (result.projection[i][1] + 3) / 6 * height;
-                
-                ctx.fillStyle = colors[p];
-                ctx.beginPath();
-                ctx.arc(x, y, 2, 0, 2 * Math.PI);
-                ctx.fill();
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
             }
         }
+        ctx.stroke();
         
-        ctx.globalAlpha = 1;
-        ctx.font = '14px Arial';
+        // Legend
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(width - 150, 40, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('Stability under Perturbation', width / 2, 20);
+        ctx.textAlign = 'left';
+        ctx.fillText('Eigenvalues', width - 130, 52);
+        
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(width - 150, 65);
+        ctx.lineTo(width - 135, 65);
+        ctx.stroke();
+        ctx.fillStyle = '#333';
+        ctx.fillText('Cumulative %', width - 130, 69);
     }
     
     // Autoencoder visualization
@@ -1293,11 +1443,11 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         const layerSpacing = width / (layers.length + 1);
-        const nodeRadius = 10;
+        const nodeRadius = 8;
         
         // Draw connections
         ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 0.5;
         
         for (let l = 0; l < layers.length - 1; l++) {
             const x1 = (l + 1) * layerSpacing;
@@ -1310,8 +1460,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const y2 = height / 2 + (j - layers[l + 1].size / 2 + 0.5) * 30;
                     
                     ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
+                    ctx.moveTo(x1 + nodeRadius, y1);
+                    ctx.lineTo(x2 - nodeRadius, y2);
                     ctx.stroke();
                 }
             }
@@ -1324,6 +1474,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < layers[l].size; i++) {
                 const y = height / 2 + (i - layers[l].size / 2 + 0.5) * 30;
                 
+                // Node
                 ctx.fillStyle = l === 2 ? '#e74c3c' : '#3498db';
                 ctx.beginPath();
                 ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
@@ -1340,12 +1491,76 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.textAlign = 'center';
             ctx.fillText(layers[l].name, x, height - 20);
         }
+        
+        // Title
+        ctx.font = '14px Arial';
+        ctx.fillText('Autoencoder Architecture', width / 2, 20);
+    }
+    
+    function drawAutoencoderComparison() {
+        const ctx = aeProjCanvas.getContext('2d');
+        const width = aeProjCanvas.width;
+        const height = aeProjCanvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!aeProjection || !kpcaResult) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('Train autoencoder to see comparison', width / 2, height / 2);
+            return;
+        }
+        
+        // Split canvas
+        const halfWidth = width / 2;
+        
+        // Draw KPCA on left
+        ctx.save();
+        ctx.translate(0, 0);
+        ctx.scale(0.5, 1);
+        
+        const tempCanvas1 = document.createElement('canvas');
+        tempCanvas1.width = width;
+        tempCanvas1.height = height;
+        drawData(tempCanvas1, data, kpcaResult.projection, 'KPCA');
+        ctx.drawImage(tempCanvas1, 0, 0);
+        
+        ctx.restore();
+        
+        // Draw AE on right
+        ctx.save();
+        ctx.translate(halfWidth, 0);
+        ctx.scale(0.5, 1);
+        
+        const tempCanvas2 = document.createElement('canvas');
+        tempCanvas2.width = width;
+        tempCanvas2.height = height;
+        drawData(tempCanvas2, data, aeProjection, 'Autoencoder');
+        ctx.drawImage(tempCanvas2, 0, 0);
+        
+        ctx.restore();
+        
+        // Labels
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('Kernel PCA', halfWidth / 2, 20);
+        ctx.fillText('Autoencoder', halfWidth + halfWidth / 2, 20);
+        
+        // Divider
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(halfWidth, 30);
+        ctx.lineTo(halfWidth, height);
+        ctx.stroke();
     }
     
     // Event handlers
     function handleDatasetChange() {
         generateData();
-        drawData(originalCanvas, data, null, 'Original Data');
+        computeProjections();
     }
     
     function handleKernelChange() {
@@ -1393,31 +1608,27 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'moons':
                 generateMoonsData(n, noise);
                 break;
-            case 'swiss':
-                generateSwissRollData(n, noise);
-                break;
-            case 'spiral':
-                generateSpiralData(n, noise);
-                break;
         }
         
-        drawData(originalCanvas, data, null, 'Original Data');
+        // Reset AE
+        aeModel = null;
+        aeProjection = null;
+        aeProgressElement.textContent = '';
     }
     
     function computeProjections() {
         const numComponents = parseInt(componentsInput.value);
         
         // Compute standard PCA
-        const pcaResult = computePCA(data, numComponents);
-        pcaProjection = pcaResult.projection;
+        pcaResult = computePCA(data, numComponents);
         
         // Compute Kernel PCA
-        const kpcaResult = computeKernelPCA(data, kernelSelect.value, numComponents);
-        kpcaProjection = kpcaResult.projection;
+        kpcaResult = computeKernelPCA(data, kernelSelect.value, numComponents);
         
         // Update visualizations
-        drawData(pcaCanvas, data, pcaProjection, 'PCA Projection');
-        drawData(kpcaCanvas, data, kpcaProjection, 'Kernel PCA Projection');
+        drawData(originalCanvas, data, null, 'Original Data');
+        drawData(pcaCanvas, data, pcaResult.projection, 'PCA Projection');
+        drawData(kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
         drawVariance(varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
         // Update metrics
@@ -1429,15 +1640,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const kpcaExplained = kpcaResult.eigenvalues.slice(0, numComponents).reduce((a, b) => a + b, 0);
         kpcaVarianceElement.textContent = `${(kpcaExplained / kpcaTotalVar * 100).toFixed(1)}%`;
         
-        // Estimate Lipschitz constant
-        const L = estimateLipschitzConstant(data, kernelSelect.value);
-        lipschitzConstantElement.textContent = L.toFixed(3);
+        // Calculate reconstruction error
+        const reconError = calculatePCAReconstructionError(pcaResult);
+        reconErrorElement.textContent = reconError.toFixed(4);
         
         // Update other tabs
         drawAlgorithmStep(currentStep);
-        drawLipschitzAnalysis();
-        drawStabilityAnalysis();
         drawAutoencoderArchitecture();
+        drawAutoencoderComparison();
+    }
+    
+    function trainAutoencoder() {
+        trainAeBtn.disabled = true;
+        aeProgressElement.textContent = 'Initializing autoencoder...';
+        
+        // Create and train autoencoder
+        aeModel = new SimpleAutoencoder(2, 4, 2);
+        
+        setTimeout(() => {
+            aeModel.train(data, 200, 0.01);
+            aeProjection = aeModel.encode(data);
+            
+            drawAutoencoderComparison();
+            trainAeBtn.disabled = false;
+        }, 100);
     }
     
     function updateMathDetails() {
@@ -1487,15 +1713,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li>Compute kernel matrix: \\(K_{ij} = k(x_i, x_j)\\)</li>
                 <li>Center: \\(\\tilde{K} = K - \\mathbf{1}_m K - K \\mathbf{1}_m + \\mathbf{1}_m K \\mathbf{1}_m\\)</li>
                 <li>Eigendecomposition: \\(\\tilde{K} = V \\Lambda V^T\\)</li>
-                <li>Project: \\(z_i = \\sum_{j=1}^m \\alpha_{ij} k(x_j, x)\\)</li>
+                <li>Normalize: \\(\\tilde{v}_i = v_i / \\sqrt{\\lambda_i}\\)</li>
+                <li>Project: \\(z_i = \\sum_{j=1}^m \\tilde{v}_{ij} \\lambda_j\\)</li>
             </ol>
         `;
         
         document.getElementById('math-content').innerHTML = mathContent;
         
-        // Re-render math
+        // Re-render math if MathJax is available
         if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('math-content')]);
+            MathJax.typesetPromise([document.getElementById('math-content')]).catch(() => {});
         }
     }
     
@@ -1559,7 +1786,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     computeBtn.addEventListener('click', computeProjections);
-    generateBtn.addEventListener('click', generateData);
+    generateBtn.addEventListener('click', () => {
+        generateData();
+        computeProjections();
+    });
+    trainAeBtn.addEventListener('click', trainAutoencoder);
     
     tabBtns.forEach(btn => btn.addEventListener('click', handleTabClick));
     
