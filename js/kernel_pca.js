@@ -94,13 +94,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="control-group">
                         <label for="dataset-select">Dataset:</label>
                         <select id="dataset-select" class="full-width">
-                            <option value="circles">Concentric Circles</option>
+                            <option value="circles" selected>Concentric Circles</option>
                             <option value="moons">Two Moons</option>
                             <option value="blobs">Gaussian Blobs</option>
-                            <option value="swissRoll">Swiss Roll</option>
-                            <option value="iris">Iris (4D)</option>
-                           <option value="mnist">MNIST subset</option>
-                       </select>
+                            <option value="spiral">Spiral</option>
+                        </select>
                     </div>
 
                     <div class="control-group">
@@ -143,7 +141,29 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="range" id="noise-level" min="0" max="0.3" step="0.05" value="0.05" class="full-width">
                         <span id="noise-display">0.05</span>
                     </div>
-                
+                    
+                    <div class="control-group">
+                        <label for="sample-size">Sample Size:</label>
+                        <input type="range" id="sample-size" min="50" max="300" step="50" value="150" class="full-width">
+                        <span id="sample-size-display">150</span>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>Variance Explained:</h3>
+                        <div class="variance-info">
+                            <div class="variance-row">
+                                <span class="variance-label">PCA:</span>
+                                <span class="variance-value" id="pca-variance-info">-</span>
+                            </div>
+                            <div class="variance-row">
+                                <span class="variance-label">KPCA:</span>
+                                <span class="variance-value" id="kpca-variance-info">-</span>
+                            </div>
+                        </div>
+                        <div class="computation-time">
+                            Computation time: <span id="comp-time">0 ms</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -328,6 +348,9 @@ document.addEventListener('DOMContentLoaded', function() {
             font-size: 1rem;
         }
         
+        .variance-info {
+            margin-bottom: 10px;
+        }
         
         .variance-row {
             display: flex;
@@ -343,7 +366,16 @@ document.addEventListener('DOMContentLoaded', function() {
             font-family: monospace;
             font-size: 0.9rem;
         }
-           
+        
+        .computation-time {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
         .btn-container {
             margin-top: 20px;
         }
@@ -434,6 +466,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const componentsDisplay = document.getElementById('components-display');
     const noiseInput = document.getElementById('noise-level');
     const noiseDisplay = document.getElementById('noise-display');
+    const sampleSizeInput = document.getElementById('sample-size');
+    const sampleSizeDisplay = document.getElementById('sample-size-display');
     const computeBtn = document.getElementById('compute-btn');
     const generateBtn = document.getElementById('generate-btn');
     const trainAeBtn = document.getElementById('train-ae');
@@ -452,6 +486,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabPanes = document.querySelectorAll('.tab-pane');
     
     // Info elements
+    const pcaVarianceInfo = document.getElementById('pca-variance-info');
+    const kpcaVarianceInfo = document.getElementById('kpca-variance-info');
+    const compTimeElement = document.getElementById('comp-time');
     const aeProgressElement = document.getElementById('ae-progress');
     
     // State variables
@@ -498,16 +535,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Dataset generation functions
-    function generateLinearData(n, noise) {
+    function generateBlobsData(n, noise) {
         data = [];
         labels = [];
         
-        // Two Gaussian blobs
-        const centers = [[-1, -1], [1, 1]];
-        const pointsPerCluster = Math.floor(n / 2);
+        // Three Gaussian blobs
+        const centers = [[-2, -2], [2, 2], [0, 2]];
+        const pointsPerCluster = Math.floor(n / centers.length);
         
-        for (let c = 0; c < 2; c++) {
-            const numPoints = (c === 0) ? pointsPerCluster : (n - pointsPerCluster);
+        for (let c = 0; c < centers.length; c++) {
+            const numPoints = (c === centers.length - 1) ? n - pointsPerCluster * (centers.length - 1) : pointsPerCluster;
             for (let i = 0; i < numPoints; i++) {
                 const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
                 const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
@@ -563,6 +600,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    function generateSpiralData(n, noise) {
+        data = [];
+        labels = [];
+        const n_half = Math.floor(n / 2);
+        
+        // First spiral
+        for (let i = 0; i < n_half; i++) {
+            const t = i / n_half * 3 * Math.PI;
+            const x = t * Math.cos(t) / 10 + gaussianRandom() * noise;
+            const y = t * Math.sin(t) / 10 + gaussianRandom() * noise;
+            data.push([x, y]);
+            labels.push(0);
+        }
+        
+        // Second spiral (rotated by 180 degrees)
+        for (let i = 0; i < n - n_half; i++) {
+            const t = i / (n - n_half) * 3 * Math.PI;
+            const x = -t * Math.cos(t) / 10 + gaussianRandom() * noise;
+            const y = -t * Math.sin(t) / 10 + gaussianRandom() * noise;
+            data.push([x, y]);
+            labels.push(1);
+        }
+    }
+    
     // Kernel functions
     function linearKernel(x1, x2) {
         let sum = 0;
@@ -580,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.exp(-gamma * sum);
     }
     
-    // FIXED: Polynomial kernel formula according to standard implementation
     function polyKernel(x1, x2, degree, gamma, coef) {
         let dot = 0;
         for (let i = 0; i < x1.length; i++) {
@@ -862,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // FIXED: Kernel PCA with correct eigenvector normalization
+    // Kernel PCA with correct eigenvector normalization
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -874,6 +934,8 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
+        const startTime = performance.now();
+        
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
@@ -883,7 +945,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // FIXED: Normalize eigenvectors properly according to academic sources
+        // Normalize eigenvectors properly according to academic sources
         // The eigenvectors should be normalized by dividing by sqrt(lambda)
         const n = data.length;
         const normalizedEigenvectors = [];
@@ -918,6 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
             projection.push(proj);
         }
         
+        const endTime = performance.now();
+        compTimeElement.textContent = `${(endTime - startTime).toFixed(1)} ms`;
+        
         return {
             projection,
             eigenvalues: eigen.eigenvalues,
@@ -927,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // FIXED: Proper autoencoder implementation with full backpropagation
+    // Autoencoder implementation with full backpropagation
     class SimpleAutoencoder {
         constructor(inputDim, hiddenDim, latentDim) {
             this.inputDim = inputDim;
@@ -1032,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return result;
         }
         
-        // FIXED: Proper backpropagation implementation
+        // Proper backpropagation implementation
         train(data, epochs = 100, learningRate = 0.01) {
             const n = data.length;
             if (n === 0) return;
@@ -1223,7 +1288,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
         
         // Draw data points
-        const colors = ['#3498db', '#e74c3c'];
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
         
         for (let i = 0; i < drawData.length; i++) {
             const x = ((drawData[i][0] - minX) / (maxX - minX)) * width;
@@ -1732,6 +1797,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 kpcaCumulative.push((kpcaSum / kpcaTotal * 100).toFixed(1));
             }
         }
+        
+        // Display cumulative variance for selected components
+        pcaVarianceInfo.textContent = pcaCumulative.length > 0 ? pcaCumulative.join('%, ') + '%' : 'N/A';
+        kpcaVarianceInfo.textContent = kpcaCumulative.length > 0 ? kpcaCumulative.join('%, ') + '%' : 'N/A';
     }
     
     // Event handlers
@@ -1746,9 +1815,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const kernel = kernelSelect.value;
         
         // Show/hide relevant parameter controls
-        gammaContainer.style.display = kernel === 'rbf' ? 'block' : 'none';
+        gammaContainer.style.display = kernel === 'rbf' || kernel === 'poly' ? 'block' : 'none';
         degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
         coefContainer.style.display = kernel === 'poly' ? 'block' : 'none';
+        
+        // Update gamma label for polynomial kernel
+        if (kernel === 'poly') {
+            document.querySelector('#gamma-container label').textContent = 'Polynomial γ (scaling):';
+        } else {
+            document.querySelector('#gamma-container label').textContent = 'RBF γ (gamma):';
+        }
     }
     
     function handleParameterChange() {
@@ -1765,22 +1841,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const noise = parseFloat(noiseInput.value);
         noiseDisplay.textContent = noise.toFixed(2);
+        
+        const sampleSize = parseInt(sampleSizeInput.value);
+        sampleSizeDisplay.textContent = sampleSize;
     }
     
     function generateData() {
         const dataset = datasetSelect.value;
-        const n = 300;
+        const n = parseInt(sampleSizeInput.value);
         const noise = parseFloat(noiseInput.value);
         
         switch (dataset) {
-            case 'linear':
-                generateLinearData(n, noise);
+            case 'blobs':
+                generateBlobsData(n, noise);
                 break;
             case 'circles':
                 generateCirclesData(n, noise);
                 break;
             case 'moons':
                 generateMoonsData(n, noise);
+                break;
+            case 'spiral':
+                generateSpiralData(n, noise);
                 break;
         }
         
@@ -1908,6 +1990,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateVarianceInfo();
     });
     noiseInput.addEventListener('input', handleParameterChange);
+    sampleSizeInput.addEventListener('input', handleParameterChange);
     
     computeBtn.addEventListener('click', computeProjections);
     generateBtn.addEventListener('click', () => {
