@@ -159,9 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="variance-value" id="kpca-variance-info">-</span>
                             </div>
                         </div>
-                        <div class="computation-time">
-                            Computation time: <span id="comp-time">0 ms</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -365,16 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
             font-family: monospace;
             font-size: 0.9rem;
         }
-        
-        .computation-time {
-            font-size: 0.85rem;
-            color: #666;
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-        
+           
         .btn-container {
             margin-top: 20px;
         }
@@ -487,7 +475,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Info elements
     const pcaVarianceInfo = document.getElementById('pca-variance-info');
     const kpcaVarianceInfo = document.getElementById('kpca-variance-info');
-    const compTimeElement = document.getElementById('comp-time');
     const aeProgressElement = document.getElementById('ae-progress');
     
     // State variables
@@ -910,8 +897,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
-        const startTime = performance.now();
-        
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
@@ -955,9 +940,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             projection.push(proj);
         }
-        
-        const endTime = performance.now();
-        compTimeElement.textContent = `${(endTime - startTime).toFixed(1)} ms`;
         
         return {
             projection,
