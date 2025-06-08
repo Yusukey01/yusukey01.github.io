@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Eigenvalue Comparison</h4>
                                         <canvas id="variance-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. Higher values indicate more important components.</p>
+                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. For PCA: eigenvalues represent variance. For Kernel PCA: eigenvalues represent component importance in feature space.</p>
                                     </div>
                                 </div>
                             </div>
@@ -92,6 +92,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="btn-container">
                             <button id="compute-btn" class="primary-btn">Compute Kernel PCA</button>
                             <button id="generate-btn" class="secondary-btn">Generate New Data</button>
+                        </div>
+                        
+                        <div class="expected-behavior">
+                            <h3>Expected Behavior by Dataset:</h3>
+                            <div class="behavior-grid">
+                                <div class="behavior-item">
+                                    <strong>Concentric Circles:</strong> Kernel PCA should separate inner/outer circles into distinct clusters. Linear PCA cannot achieve this separation.
+                                </div>
+                                <div class="behavior-item">
+                                    <strong>Two Moons:</strong> Kernel PCA should separate the two crescent shapes. Linear PCA will show overlapping clusters.
+                                </div>
+                                <div class="behavior-item">
+                                    <strong>Gaussian Blobs:</strong> Both methods should work similarly since the structure is already linear.
+                                </div>
+                                <div class="behavior-item">
+                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -401,6 +419,44 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 10px;
             font-size: 0.9rem;
             color: #666;
+        }
+        
+        .expected-behavior {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .expected-behavior h3 {
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+        
+        .behavior-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .behavior-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .behavior-item {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .behavior-item strong {
+            color: #2c3e50;
         }
     `;
     
@@ -896,8 +952,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // The projection for Kernel PCA is simply the eigenvectors scaled by sqrt(eigenvalues)
-        // This gives us the coordinates in the principal component space
+        // For Kernel PCA, the projection is the eigenvectors scaled by sqrt(eigenvalues)
+        // This is because eigenvectors of the kernel matrix ARE the projections in feature space
         const projection = [];
         const n = data.length;
         
@@ -905,8 +961,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
                 if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
-                    // Scale by sqrt(eigenvalue) to get proper projection
-                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
+                    // The projection coordinate is eigenvector[j][i] * sqrt(eigenvalue[j])
+                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(Math.abs(eigen.eigenvalues[j])));
                 } else {
                     proj.push(0);
                 }
@@ -1288,12 +1344,12 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(10, 35, 15, 15);
         ctx.fillStyle = '#333';
         ctx.textAlign = 'left';
-        ctx.fillText('PCA', 30, 47);
+        ctx.fillText('PCA (variance)', 30, 47);
         
         ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(80, 35, 15, 15);
+        ctx.fillRect(10, 55, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('KPCA', 100, 47);
+        ctx.fillText('KPCA (importance)', 30, 67);
     }
     
     // Algorithm visualization
