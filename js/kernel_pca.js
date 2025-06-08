@@ -34,18 +34,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Original Data</h4>
                                         <canvas id="original-canvas" width="300" height="300"></canvas>
+                                        <p class="graph-explanation">Input data points in their native 2D space. Different colors represent different classes/clusters.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Standard PCA</h4>
                                         <canvas id="pca-canvas" width="300" height="300"></canvas>
+                                        <p class="graph-explanation">Linear PCA projection. Finds directions of maximum variance using linear combinations of original features.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Kernel PCA</h4>
                                         <canvas id="kpca-canvas" width="300" height="300"></canvas>
+                                        <p class="graph-explanation">Non-linear projection via kernel trick. Can reveal curved or complex structures that linear PCA cannot capture.</p>
                                     </div>
                                     <div class="viz-panel">
-                                        <h4>Explained Variance</h4>
+                                        <h4>Eigenvalue Comparison</h4>
                                         <canvas id="variance-canvas" width="300" height="300"></canvas>
+                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. Higher values indicate more important components.</p>
                                     </div>
                                 </div>
                             </div>
@@ -70,10 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Autoencoder Architecture</h4>
                                         <canvas id="ae-architecture-canvas" width="400" height="300"></canvas>
+                                        <p class="graph-explanation">Neural network that learns to compress and reconstruct data through a bottleneck layer.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Autoencoder vs KPCA</h4>
                                         <canvas id="ae-projection-canvas" width="400" height="300"></canvas>
+                                        <p class="graph-explanation">Side-by-side comparison of dimensionality reduction methods on the same dataset.</p>
                                     </div>
                                 </div>
                                 <div class="ae-controls">
@@ -146,23 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label for="sample-size">Sample Size:</label>
                         <input type="range" id="sample-size" min="50" max="300" step="50" value="150" class="full-width">
                         <span id="sample-size-display">150</span>
-                    </div>
-                    
-                    <div class="info-box">
-                        <h3>Variance Explained:</h3>
-                        <div class="variance-info">
-                            <div class="variance-row">
-                                <span class="variance-label">PCA:</span>
-                                <span class="variance-value" id="pca-variance-info">-</span>
-                            </div>
-                            <div class="variance-row">
-                                <span class="variance-label">KPCA:</span>
-                                <span class="variance-value" id="kpca-variance-info">-</span>
-                            </div>
-                        </div>
-                        <div class="computation-time">
-                            Computation time: <span id="comp-time">0 ms</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -265,6 +254,14 @@ document.addEventListener('DOMContentLoaded', function() {
             height: auto;
         }
         
+        .graph-explanation {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 10px 0 0 0;
+            text-align: left;
+            line-height: 1.4;
+        }
+        
         .controls-panel {
             background-color: #f8f9fa;
             padding: 15px;
@@ -333,47 +330,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .secondary-btn:hover {
             background-color: #7f8c8d;
-        }
-        
-        .info-box {
-            background-color: #f0f7ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        
-        .info-box h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        
-        .variance-info {
-            margin-bottom: 10px;
-        }
-        
-        .variance-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .variance-label {
-            font-weight: bold;
-        }
-        
-        .variance-value {
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-        
-        .computation-time {
-            font-size: 0.85rem;
-            color: #666;
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
         }
         
         .btn-container {
@@ -486,9 +442,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabPanes = document.querySelectorAll('.tab-pane');
     
     // Info elements
-    const pcaVarianceInfo = document.getElementById('pca-variance-info');
-    const kpcaVarianceInfo = document.getElementById('kpca-variance-info');
-    const compTimeElement = document.getElementById('comp-time');
     const aeProgressElement = document.getElementById('ae-progress');
     
     // State variables
@@ -922,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA with correct eigenvector normalization
+    // Kernel PCA implementation
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -934,8 +887,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
-        const startTime = performance.now();
-        
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
@@ -945,34 +896,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // Normalize eigenvectors properly according to academic sources
-        // The eigenvectors should be normalized by dividing by sqrt(lambda)
-        const n = data.length;
-        const normalizedEigenvectors = [];
-        
-        for (let idx = 0; idx < eigen.eigenvectors.length; idx++) {
-            const vec = eigen.eigenvectors[idx];
-            const lambda = eigen.eigenvalues[idx];
-            
-            if (lambda > 1e-10) {
-                // Normalize by sqrt(lambda) to ensure unit norm in feature space
-                const normalizedVec = vec.map(v => v / Math.sqrt(lambda));
-                normalizedEigenvectors.push(normalizedVec);
-            } else {
-                // For zero eigenvalues, keep the vector as zeros
-                normalizedEigenvectors.push(vec.map(() => 0));
-            }
-        }
-        
-        // Project data - the projection is simply the normalized eigenvectors
+        // The projection for Kernel PCA is simply the eigenvectors scaled by sqrt(eigenvalues)
+        // This gives us the coordinates in the principal component space
         const projection = [];
+        const n = data.length;
+        
         for (let i = 0; i < n; i++) {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                if (j < normalizedEigenvectors.length) {
-                    // The projection is the normalized eigenvector scaled by sqrt(lambda)
-                    // This gives us the actual projection in the feature space
-                    proj.push(normalizedEigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
+                if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
+                    // Scale by sqrt(eigenvalue) to get proper projection
+                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
                 } else {
                     proj.push(0);
                 }
@@ -980,13 +914,10 @@ document.addEventListener('DOMContentLoaded', function() {
             projection.push(proj);
         }
         
-        const endTime = performance.now();
-        compTimeElement.textContent = `${(endTime - startTime).toFixed(1)} ms`;
-        
         return {
             projection,
             eigenvalues: eigen.eigenvalues,
-            eigenvectors: normalizedEigenvectors,
+            eigenvectors: eigen.eigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
@@ -1310,32 +1241,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!pcaEigenvalues || !kpcaEigenvalues || pcaEigenvalues.length === 0 || kpcaEigenvalues.length === 0) return;
         
-        // Filter out zero eigenvalues for display
-        const pcaNonZero = pcaEigenvalues.filter(v => v > 1e-10);
-        const kpcaNonZero = kpcaEigenvalues.filter(v => v > 1e-10);
-        
-        // Calculate explained variance ratios
-        const pcaTotal = pcaNonZero.reduce((a, b) => a + b, 0) || 1;
-        const kpcaTotal = kpcaNonZero.reduce((a, b) => a + b, 0) || 1;
-        
-        const pcaRatios = pcaEigenvalues.map(v => v > 1e-10 ? (v / pcaTotal) * 100 : 0);
-        const kpcaRatios = kpcaEigenvalues.map(v => v > 1e-10 ? (v / kpcaTotal) * 100 : 0);
-        
-        const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 4);
+        const numComponents = Math.min(pcaEigenvalues.length, kpcaEigenvalues.length, 4);
         const barWidth = width / (numComponents * 2 + 1) * 0.7;
         const maxHeight = height * 0.7;
-        const maxRatio = Math.max(...pcaRatios.slice(0, numComponents), ...kpcaRatios.slice(0, numComponents), 1);
+        const maxVal = Math.max(...pcaEigenvalues.slice(0, numComponents), ...kpcaEigenvalues.slice(0, numComponents), 1);
         
         // Draw title
         ctx.font = '14px Arial';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
-        ctx.fillText('Explained Variance Ratio (%)', width / 2, 20);
+        ctx.fillText('Eigenvalue Comparison', width / 2, 20);
         
         // Draw bars
         for (let i = 0; i < numComponents; i++) {
             // PCA bar
-            const pcaHeight = (pcaRatios[i] / maxRatio) * maxHeight;
+            const pcaHeight = (pcaEigenvalues[i] / maxVal) * maxHeight;
             const pcaX = (i * 2 + 0.5) * width / (numComponents * 2 + 1) + barWidth / 2;
             
             ctx.fillStyle = '#3498db';
@@ -1345,10 +1265,10 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = '#333';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(pcaRatios[i].toFixed(1) + '%', pcaX, height - pcaHeight - 35);
+            ctx.fillText(pcaEigenvalues[i].toFixed(2), pcaX, height - pcaHeight - 35);
             
             // KPCA bar
-            const kpcaHeight = (kpcaRatios[i] / maxRatio) * maxHeight;
+            const kpcaHeight = (kpcaEigenvalues[i] / maxVal) * maxHeight;
             const kpcaX = (i * 2 + 1.5) * width / (numComponents * 2 + 1) + barWidth / 2;
             
             ctx.fillStyle = '#e74c3c';
@@ -1356,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Value label
             ctx.fillStyle = '#333';
-            ctx.fillText(kpcaRatios[i].toFixed(1) + '%', kpcaX, height - kpcaHeight - 35);
+            ctx.fillText(kpcaEigenvalues[i].toFixed(2), kpcaX, height - kpcaHeight - 35);
             
             // Component label
             ctx.fillText(`PC${i + 1}`, (pcaX + kpcaX) / 2, height - 10);
@@ -1764,45 +1684,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
     }
     
-    // Update variance info display
-    function updateVarianceInfo() {
-        if (!pcaResult || !kpcaResult) return;
-        
-        const numComponents = parseInt(componentsInput.value);
-        
-        // Calculate cumulative variance for all components
-        const pcaNonZero = pcaResult.eigenvalues.filter(v => v > 1e-10);
-        const kpcaNonZero = kpcaResult.eigenvalues.filter(v => v > 1e-10);
-        
-        const pcaTotal = pcaNonZero.reduce((a, b) => a + b, 0) || 1;
-        const kpcaTotal = kpcaNonZero.reduce((a, b) => a + b, 0) || 1;
-        
-        const pcaCumulative = [];
-        const kpcaCumulative = [];
-        
-        let pcaSum = 0;
-        let kpcaSum = 0;
-        
-        for (let i = 0; i < numComponents && i < 4; i++) {
-            if (i < pcaResult.eigenvalues.length && pcaResult.eigenvalues[i] > 1e-10) {
-                pcaSum += pcaResult.eigenvalues[i];
-                pcaCumulative.push((pcaSum / pcaTotal * 100).toFixed(1));
-            } else if (i < 2) {
-                // For 2D data, only first 2 components have variance
-                pcaCumulative.push('N/A');
-            }
-            
-            if (i < kpcaResult.eigenvalues.length && kpcaResult.eigenvalues[i] > 1e-10) {
-                kpcaSum += kpcaResult.eigenvalues[i];
-                kpcaCumulative.push((kpcaSum / kpcaTotal * 100).toFixed(1));
-            }
-        }
-        
-        // Display cumulative variance for selected components
-        pcaVarianceInfo.textContent = pcaCumulative.length > 0 ? pcaCumulative.join('%, ') + '%' : 'N/A';
-        kpcaVarianceInfo.textContent = kpcaCumulative.length > 0 ? kpcaCumulative.join('%, ') + '%' : 'N/A';
-    }
-    
     // Event handlers
     function handleDatasetChange() {
         generateData();
@@ -1897,9 +1778,6 @@ document.addEventListener('DOMContentLoaded', function() {
         drawData(kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
         drawVariance(varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
-        // Update variance info
-        updateVarianceInfo();
-        
         // Update other tabs
         drawAlgorithmStep(currentStep);
         drawAutoencoderArchitecture();
@@ -1985,10 +1863,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gammaInput.addEventListener('input', handleParameterChange);
     degreeInput.addEventListener('input', handleParameterChange);
     coefInput.addEventListener('input', handleParameterChange);
-    componentsInput.addEventListener('input', () => {
-        handleParameterChange();
-        updateVarianceInfo();
-    });
+    componentsInput.addEventListener('input', handleParameterChange);
     noiseInput.addEventListener('input', handleParameterChange);
     sampleSizeInput.addEventListener('input', handleParameterChange);
     
