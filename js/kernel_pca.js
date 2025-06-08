@@ -140,26 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="range" id="noise-level" min="0" max="0.3" step="0.05" value="0.05" class="full-width">
                         <span id="noise-display">0.05</span>
                     </div>
-                    
-                    <div class="control-group">
-                        <label for="sample-size">Sample Size:</label>
-                        <input type="range" id="sample-size" min="50" max="300" step="50" value="150" class="full-width">
-                        <span id="sample-size-display">150</span>
-                    </div>
-                    
-                    <div class="info-box">
-                        <h3>Variance Explained:</h3>
-                        <div class="variance-info">
-                            <div class="variance-row">
-                                <span class="variance-label">PCA:</span>
-                                <span class="variance-value" id="pca-variance-info">-</span>
-                            </div>
-                            <div class="variance-row">
-                                <span class="variance-label">KPCA:</span>
-                                <span class="variance-value" id="kpca-variance-info">-</span>
-                            </div>
-                        </div>
-                    </div>
+                
                 </div>
             </div>
         </div>
@@ -344,9 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
             font-size: 1rem;
         }
         
-        .variance-info {
-            margin-bottom: 10px;
-        }
         
         .variance-row {
             display: flex;
@@ -453,8 +431,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const componentsDisplay = document.getElementById('components-display');
     const noiseInput = document.getElementById('noise-level');
     const noiseDisplay = document.getElementById('noise-display');
-    const sampleSizeInput = document.getElementById('sample-size');
-    const sampleSizeDisplay = document.getElementById('sample-size-display');
     const computeBtn = document.getElementById('compute-btn');
     const generateBtn = document.getElementById('generate-btn');
     const trainAeBtn = document.getElementById('train-ae');
@@ -473,8 +449,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabPanes = document.querySelectorAll('.tab-pane');
     
     // Info elements
-    const pcaVarianceInfo = document.getElementById('pca-variance-info');
-    const kpcaVarianceInfo = document.getElementById('kpca-variance-info');
     const aeProgressElement = document.getElementById('ae-progress');
     
     // State variables
@@ -1755,10 +1729,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 kpcaCumulative.push((kpcaSum / kpcaTotal * 100).toFixed(1));
             }
         }
-        
-        // Display cumulative variance for selected components
-        pcaVarianceInfo.textContent = pcaCumulative.length > 0 ? pcaCumulative.join('%, ') + '%' : 'N/A';
-        kpcaVarianceInfo.textContent = kpcaCumulative.length > 0 ? kpcaCumulative.join('%, ') + '%' : 'N/A';
     }
     
     // Event handlers
@@ -1792,14 +1762,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const noise = parseFloat(noiseInput.value);
         noiseDisplay.textContent = noise.toFixed(2);
-        
-        const sampleSize = parseInt(sampleSizeInput.value);
-        sampleSizeDisplay.textContent = sampleSize;
     }
     
     function generateData() {
         const dataset = datasetSelect.value;
-        const n = parseInt(sampleSizeInput.value);
+        const n = 300;
         const noise = parseFloat(noiseInput.value);
         
         switch (dataset) {
@@ -1938,7 +1905,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateVarianceInfo();
     });
     noiseInput.addEventListener('input', handleParameterChange);
-    sampleSizeInput.addEventListener('input', handleParameterChange);
     
     computeBtn.addEventListener('click', computeProjections);
     generateBtn.addEventListener('click', () => {
