@@ -94,10 +94,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="control-group">
                         <label for="dataset-select">Dataset:</label>
                         <select id="dataset-select" class="full-width">
-                            <option value="linear">Linear (Gaussian Blobs)</option>
-                            <option value="circles" selected>Concentric Circles</option>
+                            <option value="circles">Concentric Circles</option>
                             <option value="moons">Two Moons</option>
-                        </select>
+                            <option value="blobs">Gaussian Blobs</option>
+                            <option value="swissRoll">Swiss Roll</option>
+                            <option value="iris">Iris (4D)</option>
+                           <option value="mnist">MNIST subset</option>
+                       </select>
                     </div>
 
                     <div class="control-group">
