@@ -113,9 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             <div class="implementation-note">
                                 <h4>Implementation Notes:</h4>
-                                <p><strong>Academic Source:</strong> Based on Schölkopf et al. (1998) "Nonlinear Component Analysis as a Kernel Eigenvalue Problem"</p>
-                                <p><strong>Key Formula:</strong> Eigenvectors are normalized as α = β/√λ where β is the raw eigenvector and λ is the eigenvalue</p>
-                                <p><strong>Eigenvalues:</strong> In Kernel PCA, eigenvalues indicate component importance in feature space, not variance as in linear PCA</p>
+                                <p><strong>Academic Source:</strong> Based on Cross Validated and multiple academic sources</p>
+                                <p><strong>Key Formula:</strong> Projections = eigenvectors × √eigenvalues (NOT divided by √eigenvalues)</p>
+                                <p><strong>Expected Result:</strong> For concentric circles, inner/outer circles should form separate clusters</p>
                             </div>
                         </div>
                     </div>
@@ -958,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA implementation - Following Schölkopf et al. (1998)
+    // Kernel PCA implementation - Corrected based on academic sources
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -981,43 +981,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // Normalize eigenvectors according to Schölkopf et al. (1998)
-        // The eigenvectors α must satisfy: α^T K_centered α = 1
-        // This means α_k = β_k / √λ_k where β_k is the raw eigenvector
-        const normalizedEigenvectors = [];
-        const validEigenvalues = [];
-        
-        for (let j = 0; j < Math.min(numComponents, eigen.eigenvectors.length); j++) {
-            if (eigen.eigenvalues[j] > 1e-10) {
-                const rawEigenvector = eigen.eigenvectors[j];
-                const eigenvalue = eigen.eigenvalues[j];
-                
-                // Normalize: α = β / √λ
-                const normalizedVector = rawEigenvector.map(v => v / Math.sqrt(eigenvalue));
-                normalizedEigenvectors.push(normalizedVector);
-                validEigenvalues.push(eigenvalue);
-            } else {
-                // For zero eigenvalues, just normalize by magnitude
-                const rawEigenvector = eigen.eigenvectors[j];
-                const magnitude = Math.sqrt(rawEigenvector.reduce((sum, v) => sum + v * v, 0));
-                const normalizedVector = magnitude > 1e-10 ? 
-                    rawEigenvector.map(v => v / magnitude) : 
-                    rawEigenvector.map(() => 0);
-                normalizedEigenvectors.push(normalizedVector);
-                validEigenvalues.push(0);
-            }
-        }
-        
-        // For training data projection, the coordinates are simply the normalized eigenvectors
-        // This gives us the projection of each data point onto the principal components
+        // For Kernel PCA, the projections are eigenvectors scaled by sqrt(eigenvalues)
+        // This is the correct academic formulation
         const projection = [];
         
         for (let i = 0; i < n; i++) {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                if (j < normalizedEigenvectors.length) {
-                    // The projection coordinate is simply the normalized eigenvector value
-                    proj.push(normalizedEigenvectors[j][i]);
+                if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
+                    // Correct projection: eigenvector * sqrt(eigenvalue)
+                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
                 } else {
                     proj.push(0);
                 }
@@ -1027,8 +1000,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return {
             projection,
-            eigenvalues: validEigenvalues,
-            eigenvectors: normalizedEigenvectors,
+            eigenvalues: eigen.eigenvalues,
+            eigenvectors: eigen.eigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
