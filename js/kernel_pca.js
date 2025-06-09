@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Kernel PCA</h4>
                                         <canvas id="kpca-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">2D projection showing PC1 vs PC2. Transforms non-linear patterns into linearly separable representations in the new feature space.</p>
+                                        <p class="graph-explanation">Non-linear projection via kernel trick. Can reveal curved or complex structures that linear PCA cannot capture.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Eigenvalue Comparison</h4>
                                         <canvas id="variance-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. Both represent variance along principal components, but in different spaces: PCA in original space, Kernel PCA in feature space.</p>
+                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. For PCA: eigenvalues represent variance. For Kernel PCA: eigenvalues represent component importance in feature space.</p>
                                     </div>
                                 </div>
                             </div>
@@ -98,16 +98,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h3>Expected Behavior by Dataset:</h3>
                             <div class="behavior-grid">
                                 <div class="behavior-item">
-                                    <strong>Concentric Circles:</strong> Kernel PCA (PC1 vs PC2) should show inner/outer circles linearly separated. Linear PCA shows rotated circles.
+                                    <strong>Concentric Circles:</strong> Kernel PCA should separate inner/outer circles into distinct clusters. Linear PCA cannot achieve this separation.
                                 </div>
                                 <div class="behavior-item">
-                                    <strong>Two Moons:</strong> Kernel PCA should show clear separation between crescents in PC1-PC2 space. Linear PCA shows overlapping patterns.
+                                    <strong>Two Moons:</strong> Kernel PCA should separate the two crescent shapes. Linear PCA will show overlapping clusters.
                                 </div>
                                 <div class="behavior-item">
                                     <strong>Gaussian Blobs:</strong> Both methods should work similarly since the structure is already linear.
                                 </div>
                                 <div class="behavior-item">
-                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern in PC1-PC2 space.
+                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern.
                                 </div>
                             </div>
                             
@@ -115,8 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h4>Implementation Notes:</h4>
                                 <p><strong>Academic Source:</strong> Based on Cross Validated and multiple academic sources</p>
                                 <p><strong>Key Formula:</strong> Projections = eigenvectors × √eigenvalues (NOT divided by √eigenvalues)</p>
-                                <p><strong>Eigenvalues:</strong> Both PCA and Kernel PCA eigenvalues represent variance - just in different spaces</p>
-                                <p><strong>Expected Result:</strong> Linear separation, not preservation of curved structures</p>
+                                <p><strong>Expected Result:</strong> For concentric circles, inner/outer circles should form separate clusters</p>
                             </div>
                         </div>
                     </div>
@@ -144,9 +143,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="1.2" class="full-width">
-                        <span id="gamma-display">γ = 15.0</span>
-                        <div class="param-hint">Higher γ = More localized influence. Academic examples use γ=15</div>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0" class="full-width">
+                        <span id="gamma-display">γ = 1.0</span>
+                        <div class="param-hint">Higher γ = More localized influence</div>
                     </div>
                     
                     <div class="control-group" id="degree-container" style="display: none;">
@@ -539,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeProjection = null;
     
     // Kernel parameters
-    let gamma = 15.0;  // Use academic standard value
+    let gamma = 1.0;
     let degree = 3;
     let coef = 1.0;
     
@@ -959,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA implementation 
+    // Kernel PCA implementation - Corrected based on academic sources
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -980,49 +979,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const K_centered = centerKernelMatrix(K);
         
         // Eigendecomposition
-        const eigen = jacobiEigendecomposition(K_centered, n);
+        const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // Normalize eigenvectors to unit length
-        const normalizedEigenvectors = [];
-        for (let j = 0; j < eigen.eigenvectors.length; j++) {
-            const eigvec = eigen.eigenvectors[j];
-            let norm = 0;
-            for (let i = 0; i < n; i++) {
-                norm += eigvec[i] * eigvec[i];
-            }
-            norm = Math.sqrt(norm);
-            
-            const normalized = [];
-            for (let i = 0; i < n; i++) {
-                normalized[i] = norm > 1e-10 ? eigvec[i] / norm : 0;
-            }
-            normalizedEigenvectors.push(normalized);
-        }
-        
-        // For Kernel PCA, the projections are normalized eigenvectors scaled by sqrt(eigenvalues)
+        // For Kernel PCA, the projections are eigenvectors scaled by sqrt(eigenvalues)
+        // This is the correct academic formulation
         const projection = [];
         
         for (let i = 0; i < n; i++) {
             const proj = [];
-            for (let j = 0; j < Math.min(numComponents, normalizedEigenvectors.length); j++) {
-                if (eigen.eigenvalues[j] > 1e-10) {
-                    // Scale normalized eigenvector by sqrt(eigenvalue)
-                    proj.push(normalizedEigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
+            for (let j = 0; j < numComponents; j++) {
+                if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
+                    // Correct projection: eigenvector * sqrt(eigenvalue)
+                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
                 } else {
                     proj.push(0);
                 }
-            }
-            // Pad with zeros if requested more components than available
-            for (let j = normalizedEigenvectors.length; j < numComponents; j++) {
-                proj.push(0);
             }
             projection.push(proj);
         }
         
         return {
             projection,
-            eigenvalues: eigen.eigenvalues.slice(0, numComponents),
-            eigenvectors: normalizedEigenvectors.slice(0, numComponents),
+            eigenvalues: eigen.eigenvalues,
+            eigenvectors: eigen.eigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
@@ -1287,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // For projections with more than 2 components, use only first 2 for visualization
         const drawData = projection && projection.length > 0 ? projection.map(p => [p[0] || 0, p[1] || 0]) : data;
         
-        // Find data bounds with better padding for projected data
+        // Find data bounds
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
         
@@ -1298,120 +1277,44 @@ document.addEventListener('DOMContentLoaded', function() {
             maxY = Math.max(maxY, point[1]);
         }
         
-        // Add more padding for better visualization
-        const rangeX = maxX - minX || 1;
-        const rangeY = maxY - minY || 1;
-        const padding = 0.15 * Math.max(rangeX, rangeY);
+        // Add padding
+        const padding = 0.1 * Math.max(maxX - minX, maxY - minY, 0.1);
         minX -= padding;
         maxX += padding;
         minY -= padding;
         maxY += padding;
         
-        // Ensure aspect ratio is preserved
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const maxRange = Math.max(maxX - minX, maxY - minY);
-        minX = centerX - maxRange / 2;
-        maxX = centerX + maxRange / 2;
-        minY = centerY - maxRange / 2;
-        maxY = centerY + maxRange / 2;
-        
-        // Draw grid lines for better reference
-        ctx.strokeStyle = '#f0f0f0';
-        ctx.lineWidth = 0.5;
-        const gridLines = 5;
-        for (let i = 0; i <= gridLines; i++) {
-            const x = (i / gridLines) * width;
-            const y = (i / gridLines) * height;
-            
-            // Vertical lines
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-            
-            // Horizontal lines
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-        
         // Draw axes
-        ctx.strokeStyle = '#999';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
         
         // X-axis
         const yZero = height - ((0 - minY) / (maxY - minY)) * height;
-        if (yZero >= 0 && yZero <= height) {
-            ctx.beginPath();
-            ctx.moveTo(0, yZero);
-            ctx.lineTo(width, yZero);
-            ctx.stroke();
-        }
+        ctx.beginPath();
+        ctx.moveTo(0, yZero);
+        ctx.lineTo(width, yZero);
+        ctx.stroke();
         
         // Y-axis
         const xZero = ((0 - minX) / (maxX - minX)) * width;
-        if (xZero >= 0 && xZero <= width) {
-            ctx.beginPath();
-            ctx.moveTo(xZero, 0);
-            ctx.lineTo(xZero, height);
-            ctx.stroke();
-        }
+        ctx.beginPath();
+        ctx.moveTo(xZero, 0);
+        ctx.lineTo(xZero, height);
+        ctx.stroke();
         
-        // Draw data points with better visibility
-        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
-        const pointSize = 5;
+        // Draw data points
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
         
-        // Draw points with border for better visibility
         for (let i = 0; i < drawData.length; i++) {
             const x = ((drawData[i][0] - minX) / (maxX - minX)) * width;
             const y = height - ((drawData[i][1] - minY) / (maxY - minY)) * height;
             
-            // White border
-            ctx.fillStyle = 'white';
-            ctx.beginPath();
-            ctx.arc(x, y, pointSize + 1, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Colored point
             ctx.fillStyle = colors[labels[i] % colors.length];
             ctx.beginPath();
-            ctx.arc(x, y, pointSize, 0, 2 * Math.PI);
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fill();
         }
-        
-        // Add axis labels for projections
-        if (projection && projection.length > 0) {
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 11px Arial';
-            ctx.textAlign = 'center';
-            
-            // X-axis label
-            ctx.fillText('PC1', width - 20, height - 5);
-            
-            // Y-axis label
-            ctx.save();
-            ctx.translate(15, 20);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText('PC2', 0, 0);
-            ctx.restore();
-            
-            // Add value labels at corners
-            ctx.font = '9px Arial';
-            ctx.fillStyle = '#666';
-            ctx.textAlign = 'left';
-            ctx.fillText(minX.toFixed(2), 5, height - 5);
-            ctx.textAlign = 'right';
-            ctx.fillText(maxX.toFixed(2), width - 5, height - 5);
-            
-            // Y-axis values
-            ctx.textAlign = 'right';
-            ctx.fillText(maxY.toFixed(2), xZero > 30 ? xZero - 5 : 30, 10);
-            ctx.fillText(minY.toFixed(2), xZero > 30 ? xZero - 5 : 30, height - 10);
-        }
     }
-    
     
     function drawVariance(canvas, pcaEigenvalues, kpcaEigenvalues) {
         const ctx = canvas.getContext('2d');
@@ -1469,12 +1372,12 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(10, 35, 15, 15);
         ctx.fillStyle = '#333';
         ctx.textAlign = 'left';
-        ctx.fillText('PCA (original space)', 30, 47);
+        ctx.fillText('PCA (variance)', 30, 47);
         
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(10, 55, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('KPCA (feature space)', 30, 67);
+        ctx.fillText('KPCA (importance)', 30, 67);
     }
     
     // Algorithm visualization
@@ -1891,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleParameterChange() {
         gamma = Math.pow(10, parseFloat(gammaInput.value));
-        gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
+        gammaDisplay.textContent = `γ = ${gamma.toFixed(2)}`;
         
         degree = parseInt(degreeInput.value);
         degreeDisplay.textContent = `d = ${degree}`;
@@ -1939,7 +1842,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-   function computeProjections() {
+    function computeProjections() {
         if (!data || data.length === 0) {
             console.warn('No data available for projection');
             return;
@@ -1952,47 +1855,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Compute Kernel PCA
         kpcaResult = computeKernelPCA(data, kernelSelect.value, numComponents);
-        
-        // Diagnostic information
-        console.log('=== Kernel PCA Diagnostics ===');
-        console.log('Dataset:', datasetSelect.value);
-        console.log('Kernel:', kernelSelect.value);
-        console.log('Gamma:', gamma);
-        console.log('Number of samples:', data.length);
-        console.log('Number of components:', numComponents);
-        
-        if (kpcaResult.eigenvalues && kpcaResult.eigenvalues.length > 0) {
-            console.log('Top 5 eigenvalues:', kpcaResult.eigenvalues.slice(0, 5));
-            console.log('Eigenvalue ratio (λ1/λ2):', kpcaResult.eigenvalues[0] / kpcaResult.eigenvalues[1]);
-            
-            // Check separation quality
-            if (kpcaResult.projection && kpcaResult.projection.length > 0) {
-                const class0 = kpcaResult.projection.filter((_, i) => labels[i] === 0);
-                const class1 = kpcaResult.projection.filter((_, i) => labels[i] === 1);
-                
-                if (class0.length > 0 && class1.length > 0) {
-                    // Calculate centroids
-                    const centroid0 = [
-                        class0.reduce((sum, p) => sum + p[0], 0) / class0.length,
-                        class0.reduce((sum, p) => sum + p[1], 0) / class0.length
-                    ];
-                    const centroid1 = [
-                        class1.reduce((sum, p) => sum + p[0], 0) / class1.length,
-                        class1.reduce((sum, p) => sum + p[1], 0) / class1.length
-                    ];
-                    
-                    const distance = Math.sqrt(
-                        Math.pow(centroid0[0] - centroid1[0], 2) + 
-                        Math.pow(centroid0[1] - centroid1[1], 2)
-                    );
-                    
-                    console.log('Class 0 centroid:', centroid0);
-                    console.log('Class 1 centroid:', centroid1);
-                    console.log('Distance between centroids:', distance);
-                }
-            }
-        }
-        console.log('==================');
         
         // Update visualizations
         drawData(originalCanvas, data, null, 'Original Data');
