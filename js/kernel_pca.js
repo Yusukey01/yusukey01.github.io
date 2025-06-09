@@ -110,6 +110,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern.
                                 </div>
                             </div>
+                            
+                            <div class="implementation-note">
+                                <h4>Implementation Notes:</h4>
+                                <p><strong>Academic Source:</strong> Based on Schölkopf et al. (1998) "Nonlinear Component Analysis as a Kernel Eigenvalue Problem"</p>
+                                <p><strong>Key Formula:</strong> Eigenvectors are normalized as α = β/√λ where β is the raw eigenvector and λ is the eigenvalue</p>
+                                <p><strong>Eigenvalues:</strong> In Kernel PCA, eigenvalues indicate component importance in feature space, not variance as in linear PCA</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -458,6 +465,26 @@ document.addEventListener('DOMContentLoaded', function() {
         .behavior-item strong {
             color: #2c3e50;
         }
+        
+        .implementation-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+        }
+        
+        .implementation-note h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+        
+        .implementation-note p {
+            margin: 4px 0;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
     `;
     
     document.head.appendChild(styleElement);
@@ -683,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return K;
     }
     
-    // Center kernel matrix
+    // Center kernel matrix - Following Schölkopf et al. (1998) formula
     function centerKernelMatrix(K) {
         const n = K.length;
         const K_centered = [];
@@ -712,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         totalMean /= (n * n);
         
-        // Center the kernel matrix
+        // Center the kernel matrix: K̃ = K - (1/n)1K - (1/n)K1 + (1/n²)1K1
         for (let i = 0; i < n; i++) {
             K_centered[i] = [];
             for (let j = 0; j < n; j++) {
@@ -931,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA implementation
+    // Kernel PCA implementation - Following Schölkopf et al. (1998)
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -943,6 +970,8 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
+        const n = data.length;
+        
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
@@ -952,17 +981,43 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition
         const eigen = jacobiEigendecomposition(K_centered, numComponents);
         
-        // For Kernel PCA, the projection is the eigenvectors scaled by sqrt(eigenvalues)
-        // This is because eigenvectors of the kernel matrix ARE the projections in feature space
+        // Normalize eigenvectors according to Schölkopf et al. (1998)
+        // The eigenvectors α must satisfy: α^T K_centered α = 1
+        // This means α_k = β_k / √λ_k where β_k is the raw eigenvector
+        const normalizedEigenvectors = [];
+        const validEigenvalues = [];
+        
+        for (let j = 0; j < Math.min(numComponents, eigen.eigenvectors.length); j++) {
+            if (eigen.eigenvalues[j] > 1e-10) {
+                const rawEigenvector = eigen.eigenvectors[j];
+                const eigenvalue = eigen.eigenvalues[j];
+                
+                // Normalize: α = β / √λ
+                const normalizedVector = rawEigenvector.map(v => v / Math.sqrt(eigenvalue));
+                normalizedEigenvectors.push(normalizedVector);
+                validEigenvalues.push(eigenvalue);
+            } else {
+                // For zero eigenvalues, just normalize by magnitude
+                const rawEigenvector = eigen.eigenvectors[j];
+                const magnitude = Math.sqrt(rawEigenvector.reduce((sum, v) => sum + v * v, 0));
+                const normalizedVector = magnitude > 1e-10 ? 
+                    rawEigenvector.map(v => v / magnitude) : 
+                    rawEigenvector.map(() => 0);
+                normalizedEigenvectors.push(normalizedVector);
+                validEigenvalues.push(0);
+            }
+        }
+        
+        // For training data projection, the coordinates are simply the normalized eigenvectors
+        // This gives us the projection of each data point onto the principal components
         const projection = [];
-        const n = data.length;
         
         for (let i = 0; i < n; i++) {
             const proj = [];
             for (let j = 0; j < numComponents; j++) {
-                if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
-                    // The projection coordinate is eigenvector[j][i] * sqrt(eigenvalue[j])
-                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(Math.abs(eigen.eigenvalues[j])));
+                if (j < normalizedEigenvectors.length) {
+                    // The projection coordinate is simply the normalized eigenvector value
+                    proj.push(normalizedEigenvectors[j][i]);
                 } else {
                     proj.push(0);
                 }
@@ -972,8 +1027,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return {
             projection,
-            eigenvalues: eigen.eigenvalues,
-            eigenvectors: eigen.eigenvectors,
+            eigenvalues: validEigenvalues,
+            eigenvectors: normalizedEigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
