@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Kernel PCA</h4>
                                         <canvas id="kpca-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Non-linear projection via kernel trick. Can reveal curved or complex structures that linear PCA cannot capture.</p>
+                                        <p class="graph-explanation">Non-linear projection that transforms curved/complex structures into linearly separable representations. "Unfolds" non-linear patterns.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Eigenvalue Comparison</h4>
                                         <canvas id="variance-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. For PCA: eigenvalues represent variance. For Kernel PCA: eigenvalues represent component importance in feature space.</p>
+                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. Both represent variance along principal components, but in different spaces: PCA in original space, Kernel PCA in feature space.</p>
                                     </div>
                                 </div>
                             </div>
@@ -115,7 +115,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h4>Implementation Notes:</h4>
                                 <p><strong>Academic Source:</strong> Based on Cross Validated and multiple academic sources</p>
                                 <p><strong>Key Formula:</strong> Projections = eigenvectors × √eigenvalues (NOT divided by √eigenvalues)</p>
-                                <p><strong>Expected Result:</strong> For concentric circles, inner/outer circles should form separate clusters</p>
+                                <p><strong>Eigenvalues:</strong> Both PCA and Kernel PCA eigenvalues represent variance - just in different spaces</p>
+                                <p><strong>Expected Result:</strong> Linear separation, not preservation of curved structures</p>
                             </div>
                         </div>
                     </div>
@@ -1372,12 +1373,12 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(10, 35, 15, 15);
         ctx.fillStyle = '#333';
         ctx.textAlign = 'left';
-        ctx.fillText('PCA (variance)', 30, 47);
+        ctx.fillText('PCA (original space)', 30, 47);
         
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(10, 55, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('KPCA (importance)', 30, 67);
+        ctx.fillText('KPCA (feature space)', 30, 67);
     }
     
     // Algorithm visualization
