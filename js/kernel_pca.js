@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Kernel PCA</h4>
                                         <canvas id="kpca-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Non-linear projection that transforms curved/complex structures into linearly separable representations. "Unfolds" non-linear patterns.</p>
+                                        <p class="graph-explanation">2D projection showing PC1 vs PC2. Transforms non-linear patterns into linearly separable representations in the new feature space.</p>
                                     </div>
                                     <div class="viz-panel">
                                         <h4>Eigenvalue Comparison</h4>
@@ -98,16 +98,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h3>Expected Behavior by Dataset:</h3>
                             <div class="behavior-grid">
                                 <div class="behavior-item">
-                                    <strong>Concentric Circles:</strong> Kernel PCA should separate inner/outer circles into distinct clusters. Linear PCA cannot achieve this separation.
+                                    <strong>Concentric Circles:</strong> Kernel PCA (PC1 vs PC2) should show inner/outer circles linearly separated. Linear PCA shows rotated circles.
                                 </div>
                                 <div class="behavior-item">
-                                    <strong>Two Moons:</strong> Kernel PCA should separate the two crescent shapes. Linear PCA will show overlapping clusters.
+                                    <strong>Two Moons:</strong> Kernel PCA should show clear separation between crescents in PC1-PC2 space. Linear PCA shows overlapping patterns.
                                 </div>
                                 <div class="behavior-item">
                                     <strong>Gaussian Blobs:</strong> Both methods should work similarly since the structure is already linear.
                                 </div>
                                 <div class="behavior-item">
-                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern.
+                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern in PC1-PC2 space.
                                 </div>
                             </div>
                             
@@ -144,9 +144,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0" class="full-width">
-                        <span id="gamma-display">γ = 1.0</span>
-                        <div class="param-hint">Higher γ = More localized influence</div>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="1.2" class="full-width">
+                        <span id="gamma-display">γ = 15.0</span>
+                        <div class="param-hint">Higher γ = More localized influence. Academic examples use γ=15</div>
                     </div>
                     
                     <div class="control-group" id="degree-container" style="display: none;">
@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeProjection = null;
     
     // Kernel parameters
-    let gamma = 1.0;
+    let gamma = 15.0;  // Use academic standard value
     let degree = 3;
     let coef = 1.0;
     
@@ -1291,17 +1291,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // X-axis
         const yZero = height - ((0 - minY) / (maxY - minY)) * height;
-        ctx.beginPath();
-        ctx.moveTo(0, yZero);
-        ctx.lineTo(width, yZero);
-        ctx.stroke();
+        if (yZero >= 0 && yZero <= height) {
+            ctx.beginPath();
+            ctx.moveTo(0, yZero);
+            ctx.lineTo(width, yZero);
+            ctx.stroke();
+        }
         
         // Y-axis
         const xZero = ((0 - minX) / (maxX - minX)) * width;
-        ctx.beginPath();
-        ctx.moveTo(xZero, 0);
-        ctx.lineTo(xZero, height);
-        ctx.stroke();
+        if (xZero >= 0 && xZero <= width) {
+            ctx.beginPath();
+            ctx.moveTo(xZero, 0);
+            ctx.lineTo(xZero, height);
+            ctx.stroke();
+        }
         
         // Draw data points
         const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
@@ -1314,6 +1318,23 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.beginPath();
             ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fill();
+        }
+        
+        // Add axis labels for projections
+        if (projection && projection.length > 0) {
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            
+            // X-axis label
+            ctx.fillText('PC1', width - 20, height - 5);
+            
+            // Y-axis label
+            ctx.save();
+            ctx.translate(10, 20);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('PC2', 0, 0);
+            ctx.restore();
         }
     }
     
@@ -1795,7 +1816,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleParameterChange() {
         gamma = Math.pow(10, parseFloat(gammaInput.value));
-        gammaDisplay.textContent = `γ = ${gamma.toFixed(2)}`;
+        gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
         
         degree = parseInt(degreeInput.value);
         degreeDisplay.textContent = `d = ${degree}`;
