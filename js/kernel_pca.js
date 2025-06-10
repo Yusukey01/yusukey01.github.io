@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0.5" class="full-width">
-                        <span id="gamma-display">γ = 3.2</span>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0" class="full-width">
+                        <span id="gamma-display">γ = 1.0</span>
                         <div class="param-hint">Higher γ = More localized influence</div>
                     </div>
                     
@@ -541,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeProjection = null;
     
     // Initial gamma to proper range for circles/moons
-    let gamma = 3.2;  // Better default for demonstration datasets
+    let gamma = 1.0;  // Standard default for RBF kernel
     let degree = 3;
     let coef = 1.0;
     
@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // CORRECTED: Kernel PCA implementation based on academic sources
+    // CORRECTED: Kernel PCA implementation based on mlxtend and academic sources
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -1037,46 +1037,63 @@ document.addEventListener('DOMContentLoaded', function() {
         const K_centered = centerKernelMatrix(K);
         
         // Eigendecomposition of centered kernel matrix
-        const eigen = jacobiEigendecomposition(K_centered, Math.min(numComponents, n));
+        // NOTE: We need ALL eigenvalues/vectors first, then select top ones
+        const eigen = jacobiEigendecomposition(K_centered);
         
-        // Filter out negative/zero eigenvalues
-        const validEigenData = [];
+        // Sort and filter valid eigenvalues/eigenvectors
+        const eigenPairs = [];
         for (let i = 0; i < eigen.eigenvalues.length; i++) {
-            if (eigen.eigenvalues[i] > 1e-10) {  // Only keep positive eigenvalues
-                validEigenData.push({
-                    eigenvalue: eigen.eigenvalues[i],
-                    eigenvector: eigen.eigenvectors[i]
+            if (eigen.eigenvalues[i] > 1e-10) {  // Only positive eigenvalues
+                eigenPairs.push({
+                    value: eigen.eigenvalues[i],
+                    vector: eigen.eigenvectors[i]
                 });
             }
         }
         
-        // CORRECTED: Proper normalization according to Schölkopf et al.
-        // The projection onto the k-th principal component is given by:
-        // y_k(x) = sqrt(lambda_k) * alpha_k
-        // where alpha_k is the k-th eigenvector of K_centered
+        // Sort by eigenvalue descending
+        eigenPairs.sort((a, b) => b.value - a.value);
         
+        // Select top numComponents
+        const selectedPairs = eigenPairs.slice(0, Math.min(numComponents, eigenPairs.length));
+        
+        // CRITICAL FIX: According to mlxtend and proper Kernel PCA:
+        // Each eigenvector needs to be divided by sqrt(eigenvalue)
+        // The projection is then simply the dot product with centered kernel
         const projection = new Array(n);
         const validEigenvalues = [];
-        const validEigenvectors = [];
+        const normalizedEigenvectors = [];
         
-        // First, collect valid eigenvalues and eigenvectors
-        for (let i = 0; i < Math.min(validEigenData.length, numComponents); i++) {
-            validEigenvalues.push(validEigenData[i].eigenvalue);
-            validEigenvectors.push(validEigenData[i].eigenvector);
+        for (let i = 0; i < selectedPairs.length; i++) {
+            const lambda = selectedPairs[i].value;
+            const alpha = selectedPairs[i].vector;
+            
+            // Normalize eigenvector by dividing by sqrt(lambda)
+            const normalizedAlpha = new Array(n);
+            const sqrtLambda = Math.sqrt(lambda);
+            for (let j = 0; j < n; j++) {
+                normalizedAlpha[j] = alpha[j] / sqrtLambda;
+            }
+            
+            validEigenvalues.push(lambda);
+            normalizedEigenvectors.push(normalizedAlpha);
         }
         
-        // Then compute projections
+        // Project data: for each point, compute projection onto each component
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
             
-            for (let j = 0; j < Math.min(validEigenvectors.length, numComponents); j++) {
-                // CORRECTED: The projection is sqrt(lambda) * alpha[i]
-                // This gives the coordinate of the i-th point along the j-th principal component
-                projection[i][j] = Math.sqrt(validEigenvalues[j]) * validEigenvectors[j][i];
+            for (let j = 0; j < normalizedEigenvectors.length; j++) {
+                // Projection is the centered kernel matrix row dotted with normalized eigenvector
+                let proj = 0;
+                for (let k = 0; k < n; k++) {
+                    proj += K_centered[i][k] * normalizedEigenvectors[j][k];
+                }
+                projection[i][j] = proj;
             }
         }
         
-        // Pad eigenvalues with zeros if needed
+        // Pad eigenvalues if needed
         const paddedEigenvalues = [...validEigenvalues];
         for (let i = validEigenvalues.length; i < numComponents; i++) {
             paddedEigenvalues.push(0);
@@ -1085,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             projection,
             eigenvalues: paddedEigenvalues,
-            eigenvectors: validEigenvectors,
+            eigenvectors: normalizedEigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
@@ -2064,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', function() {
     handleKernelChange();
     
     // Better default gamma for demonstration
-    elements.gammaInput.value = "0.5";  // Sets gamma = 3.2, good for circles/moons
+    elements.gammaInput.value = "0";  // Sets gamma = 1.0, standard for RBF kernel
     handleParameterChange();
     
     // Generate initial data and compute projections
