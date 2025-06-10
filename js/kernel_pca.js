@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="implementation-note">
                                 <h4>Implementation Notes:</h4>
                                 <p><strong>Academic Source:</strong> Based on Schölkopf, Smola & Müller (1998)</p>
-                                <p><strong>Key Formula:</strong> Projections = eigenvectors / √eigenvalues (corrected normalization)</p>
+                                <p><strong>Key Formula:</strong> Projections = √λ × α (standard Kernel PCA projection)</p>
                                 <p><strong>Eigenvalues:</strong> Both PCA and Kernel PCA eigenvalues represent variance - just in different spaces</p>
                                 <p><strong>Expected Result:</strong> Linear separation, not preservation of curved structures</p>
                             </div>
@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="1" class="full-width">
-                        <span id="gamma-display">γ = 10.0</span>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0.5" class="full-width">
+                        <span id="gamma-display">γ = 3.2</span>
                         <div class="param-hint">Higher γ = More localized influence</div>
                     </div>
                     
@@ -490,43 +490,45 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.head.appendChild(styleElement);
 
-    // Get DOM elements
-    const datasetSelect = document.getElementById('dataset-select');
-    const kernelSelect = document.getElementById('kernel-select');
-    const gammaContainer = document.getElementById('gamma-container');
-    const gammaInput = document.getElementById('gamma-parameter');
-    const gammaDisplay = document.getElementById('gamma-display');
-    const degreeContainer = document.getElementById('degree-container');
-    const degreeInput = document.getElementById('degree-parameter');
-    const degreeDisplay = document.getElementById('degree-display');
-    const coefContainer = document.getElementById('coef-container');
-    const coefInput = document.getElementById('coef-parameter');
-    const coefDisplay = document.getElementById('coef-display');
-    const componentsInput = document.getElementById('components');
-    const componentsDisplay = document.getElementById('components-display');
-    const noiseInput = document.getElementById('noise-level');
-    const noiseDisplay = document.getElementById('noise-display');
-    const sampleSizeInput = document.getElementById('sample-size');
-    const sampleSizeDisplay = document.getElementById('sample-size-display');
-    const computeBtn = document.getElementById('compute-btn');
-    const generateBtn = document.getElementById('generate-btn');
-    const trainAeBtn = document.getElementById('train-ae');
-    
-    // Canvas elements
-    const originalCanvas = document.getElementById('original-canvas');
-    const pcaCanvas = document.getElementById('pca-canvas');
-    const kpcaCanvas = document.getElementById('kpca-canvas');
-    const varianceCanvas = document.getElementById('variance-canvas');
-    const algorithmCanvas = document.getElementById('algorithm-canvas');
-    const aeArchCanvas = document.getElementById('ae-architecture-canvas');
-    const aeProjCanvas = document.getElementById('ae-projection-canvas');
-    
-    // Tab elements
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    
-    // Info elements
-    const aeProgressElement = document.getElementById('ae-progress');
+    // Get DOM elements - cache all references at once
+    const elements = {
+        datasetSelect: document.getElementById('dataset-select'),
+        kernelSelect: document.getElementById('kernel-select'),
+        gammaContainer: document.getElementById('gamma-container'),
+        gammaInput: document.getElementById('gamma-parameter'),
+        gammaDisplay: document.getElementById('gamma-display'),
+        degreeContainer: document.getElementById('degree-container'),
+        degreeInput: document.getElementById('degree-parameter'),
+        degreeDisplay: document.getElementById('degree-display'),
+        coefContainer: document.getElementById('coef-container'),
+        coefInput: document.getElementById('coef-parameter'),
+        coefDisplay: document.getElementById('coef-display'),
+        componentsInput: document.getElementById('components'),
+        componentsDisplay: document.getElementById('components-display'),
+        noiseInput: document.getElementById('noise-level'),
+        noiseDisplay: document.getElementById('noise-display'),
+        sampleSizeInput: document.getElementById('sample-size'),
+        sampleSizeDisplay: document.getElementById('sample-size-display'),
+        computeBtn: document.getElementById('compute-btn'),
+        generateBtn: document.getElementById('generate-btn'),
+        trainAeBtn: document.getElementById('train-ae'),
+        
+        // Canvas elements
+        originalCanvas: document.getElementById('original-canvas'),
+        pcaCanvas: document.getElementById('pca-canvas'),
+        kpcaCanvas: document.getElementById('kpca-canvas'),
+        varianceCanvas: document.getElementById('variance-canvas'),
+        algorithmCanvas: document.getElementById('algorithm-canvas'),
+        aeArchCanvas: document.getElementById('ae-architecture-canvas'),
+        aeProjCanvas: document.getElementById('ae-projection-canvas'),
+        
+        // Tab elements
+        tabBtns: document.querySelectorAll('.tab-btn'),
+        tabPanes: document.querySelectorAll('.tab-pane'),
+        
+        // Info elements
+        aeProgressElement: document.getElementById('ae-progress')
+    };
     
     // State variables
     let data = [];
@@ -538,22 +540,34 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeModel = null;
     let aeProjection = null;
     
-    // CORRECTED: Initial gamma to proper range for circles/moons
-    let gamma = 10.0;  // Better default for demonstration datasets
+    // Initial gamma to proper range for circles/moons
+    let gamma = 3.2;  // Better default for demonstration datasets
     let degree = 3;
     let coef = 1.0;
     
-    // Matrix operations
+    // Optimized matrix operations with cached arrays
+    const matrixCache = new Map();
+    
     function matrixMultiply(A, B) {
         const m = A.length;
         const n = A[0].length;
         const p = B[0].length;
-        const C = Array(m).fill().map(() => Array(p).fill(0));
         
+        // Use pre-allocated array for better performance
+        const C = new Array(m);
         for (let i = 0; i < m; i++) {
-            for (let j = 0; j < p; j++) {
-                for (let k = 0; k < n; k++) {
-                    C[i][j] += A[i][k] * B[k][j];
+            C[i] = new Array(p).fill(0);
+        }
+        
+        // Cache-friendly loop ordering
+        for (let i = 0; i < m; i++) {
+            const Ai = A[i];
+            const Ci = C[i];
+            for (let k = 0; k < n; k++) {
+                const Aik = Ai[k];
+                const Bk = B[k];
+                for (let j = 0; j < p; j++) {
+                    Ci[j] += Aik * Bk[j];
                 }
             }
         }
@@ -561,14 +575,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function transpose(matrix) {
-        return matrix[0].map((_, i) => matrix.map(row => row[i]));
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const result = new Array(cols);
+        
+        for (let i = 0; i < cols; i++) {
+            result[i] = new Array(rows);
+            for (let j = 0; j < rows; j++) {
+                result[i][j] = matrix[j][i];
+            }
+        }
+        return result;
     }
     
+    // Box-Muller transform for Gaussian random numbers
+    let spareRandom = null;
     function gaussianRandom() {
+        if (spareRandom !== null) {
+            const val = spareRandom;
+            spareRandom = null;
+            return val;
+        }
+        
         let u = 0, v = 0;
         while(u === 0) u = Math.random();
         while(v === 0) v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        
+        const mag = Math.sqrt(-2.0 * Math.log(u));
+        spareRandom = mag * Math.cos(2.0 * Math.PI * v);
+        return mag * Math.sin(2.0 * Math.PI * v);
     }
     
     // Dataset generation functions
@@ -582,9 +617,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         for (let c = 0; c < centers.length; c++) {
             const numPoints = (c === centers.length - 1) ? n - pointsPerCluster * (centers.length - 1) : pointsPerCluster;
+            const [cx, cy] = centers[c];
+            
             for (let i = 0; i < numPoints; i++) {
-                const x = centers[c][0] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
-                const y = centers[c][1] + gaussianRandom() * 0.5 + gaussianRandom() * noise;
+                const x = cx + gaussianRandom() * 0.5 + gaussianRandom() * noise;
+                const y = cy + gaussianRandom() * 0.5 + gaussianRandom() * noise;
                 data.push([x, y]);
                 labels.push(c);
             }
@@ -673,7 +710,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function rbfKernel(x1, x2, gamma) {
         let sum = 0;
         for (let i = 0; i < x1.length; i++) {
-            sum += (x1[i] - x2[i]) * (x1[i] - x2[i]);
+            const diff = x1[i] - x2[i];
+            sum += diff * diff;
         }
         return Math.exp(-gamma * sum);
     }
@@ -689,59 +727,61 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute kernel matrix
     function computeKernelMatrix(data, kernelType) {
         const n = data.length;
-        const K = [];
+        const K = new Array(n);
         
         for (let i = 0; i < n; i++) {
-            K[i] = [];
-            for (let j = 0; j < n; j++) {
+            K[i] = new Array(n);
+            const dataI = data[i];
+            
+            for (let j = 0; j <= i; j++) {
+                let val;
                 switch (kernelType) {
                     case 'linear':
-                        K[i][j] = linearKernel(data[i], data[j]);
+                        val = linearKernel(dataI, data[j]);
                         break;
                     case 'rbf':
-                        K[i][j] = rbfKernel(data[i], data[j], gamma);
+                        val = rbfKernel(dataI, data[j], gamma);
                         break;
                     case 'poly':
-                        K[i][j] = polyKernel(data[i], data[j], degree, gamma, coef);
+                        val = polyKernel(dataI, data[j], degree, gamma, coef);
                         break;
                 }
+                K[i][j] = K[j][i] = val; // Exploit symmetry
             }
         }
         
         return K;
     }
     
-    // CORRECTED: Proper kernel matrix centering according to Schölkopf et al.
+    // Proper kernel matrix centering according to Schölkopf et al.
     function centerKernelMatrix(K) {
         const n = K.length;
         if (n === 0) return K;
         
-        // Create the centering matrix H = I - (1/n)11^T
-        // K_centered = HKH = K - (1/n)1K - (1/n)K1 + (1/n²)1K1
-        
         // Compute row means
-        const rowMeans = [];
+        const rowMeans = new Array(n);
+        let totalMean = 0;
+        
         for (let i = 0; i < n; i++) {
             let sum = 0;
+            const Ki = K[i];
             for (let j = 0; j < n; j++) {
-                sum += K[i][j];
+                sum += Ki[j];
             }
             rowMeans[i] = sum / n;
-        }
-        
-        // Compute overall mean
-        let totalMean = 0;
-        for (let i = 0; i < n; i++) {
             totalMean += rowMeans[i];
         }
         totalMean /= n;
         
         // Apply centering formula: K̃_ij = K_ij - rowMean_i - rowMean_j + totalMean
-        const K_centered = [];
+        const K_centered = new Array(n);
         for (let i = 0; i < n; i++) {
-            K_centered[i] = [];
+            K_centered[i] = new Array(n);
+            const Ki = K[i];
+            const rowMeanI = rowMeans[i];
+            
             for (let j = 0; j < n; j++) {
-                K_centered[i][j] = K[i][j] - rowMeans[i] - rowMeans[j] + totalMean;
+                K_centered[i][j] = Ki[j] - rowMeanI - rowMeans[j] + totalMean;
             }
         }
         
@@ -766,32 +806,41 @@ document.addEventListener('DOMContentLoaded', function() {
             return { eigenvalues, eigenvectors };
         }
         
-        const maxIterations = 200;  // Increased iterations
-        const tolerance = 1e-12;    // Tighter tolerance
+        const maxIterations = 500;  // Increased iterations for better convergence
+        const tolerance = 1e-14;    // Tighter tolerance
         
         // Initialize
         let A = matrix.map(row => [...row]);
         let V = Array(n).fill().map((_, i) => Array(n).fill(0).map((_, j) => i === j ? 1 : 0));
         
+        // Keep track of off-diagonal sum for convergence check
+        let prevOffDiagSum = Infinity;
+        
         for (let iter = 0; iter < maxIterations; iter++) {
             // Find largest off-diagonal element
             let maxVal = 0;
             let p = 0, q = 1;
+            let offDiagSum = 0;
             
             for (let i = 0; i < n; i++) {
                 for (let j = i + 1; j < n; j++) {
-                    if (Math.abs(A[i][j]) > maxVal) {
-                        maxVal = Math.abs(A[i][j]);
+                    const absVal = Math.abs(A[i][j]);
+                    offDiagSum += absVal;
+                    if (absVal > maxVal) {
+                        maxVal = absVal;
                         p = i;
                         q = j;
                     }
                 }
             }
             
-            if (maxVal < tolerance) break;
+            // Check convergence
+            if (maxVal < tolerance || Math.abs(offDiagSum - prevOffDiagSum) < tolerance) break;
+            prevOffDiagSum = offDiagSum;
             
             // Calculate rotation angle
-            const theta = 0.5 * Math.atan2(2 * A[p][q], A[q][q] - A[p][p]);
+            const diff = A[q][q] - A[p][p];
+            const theta = Math.abs(diff) < 1e-10 ? Math.PI / 4 : 0.5 * Math.atan2(2 * A[p][q], diff);
             const c = Math.cos(theta);
             const s = Math.sin(theta);
             
@@ -823,20 +872,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Extract eigenvalues and eigenvectors
-        const eigenvalues = [];
-        const eigenvectors = [];
+        const eigenPairs = [];
         
         for (let i = 0; i < n; i++) {
-            eigenvalues.push(A[i][i]);
-            eigenvectors.push(V.map(row => row[i]));
+            const eigenvector = V.map(row => row[i]);
+            // Normalize eigenvector to unit length
+            const norm = Math.sqrt(eigenvector.reduce((sum, val) => sum + val * val, 0));
+            const normalizedEigenvector = norm > 0 ? eigenvector.map(val => val / norm) : eigenvector;
+            
+            eigenPairs.push({
+                value: A[i][i],
+                vector: normalizedEigenvector
+            });
         }
         
         // Sort by eigenvalue (descending)
-        const sorted = eigenvalues.map((val, idx) => ({ val, vec: eigenvectors[idx] }))
-            .sort((a, b) => b.val - a.val);
+        eigenPairs.sort((a, b) => b.value - a.value);
         
-        const sortedEigenvalues = sorted.map(item => item.val);
-        const sortedEigenvectors = sorted.map(item => item.vec);
+        const sortedEigenvalues = eigenPairs.map(pair => pair.value);
+        const sortedEigenvectors = eigenPairs.map(pair => pair.vector);
         
         if (numComponents !== null && numComponents < n) {
             return {
@@ -877,28 +931,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const actualComponents = Math.min(Math.max(numComponents, 0), d);
         
         // Compute mean
-        const mean = [];
-        for (let j = 0; j < d; j++) {
-            mean[j] = 0;
-            for (let i = 0; i < n; i++) {
-                mean[j] += data[i][j];
+        const mean = new Array(d).fill(0);
+        for (let i = 0; i < n; i++) {
+            const point = data[i];
+            for (let j = 0; j < d; j++) {
+                mean[j] += point[j];
             }
+        }
+        for (let j = 0; j < d; j++) {
             mean[j] /= n;
         }
         
         // Center data
-        const centered = data.map(point => point.map((val, idx) => val - mean[idx]));
+        const centered = new Array(n);
+        for (let i = 0; i < n; i++) {
+            centered[i] = new Array(d);
+            const point = data[i];
+            for (let j = 0; j < d; j++) {
+                centered[i][j] = point[j] - mean[j];
+            }
+        }
         
         // Compute covariance matrix
-        const cov = [];
+        const cov = new Array(d);
         for (let i = 0; i < d; i++) {
-            cov[i] = [];
-            for (let j = 0; j < d; j++) {
-                cov[i][j] = 0;
+            cov[i] = new Array(d).fill(0);
+        }
+        
+        for (let i = 0; i < d; i++) {
+            for (let j = i; j < d; j++) {
+                let sum = 0;
                 for (let k = 0; k < n; k++) {
-                    cov[i][j] += centered[k][i] * centered[k][j];
+                    sum += centered[k][i] * centered[k][j];
                 }
-                cov[i][j] /= (n - 1);
+                cov[i][j] = cov[j][i] = sum / (n - 1);
             }
         }
         
@@ -917,26 +983,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Project data
-        const projection = [];
+        const projection = new Array(n);
         for (let i = 0; i < n; i++) {
-            const proj = [];
+            projection[i] = new Array(numComponents).fill(0);
+            const centeredPoint = centered[i];
+            
             for (let j = 0; j < actualComponents; j++) {
                 let sum = 0;
+                const eigenvector = eigen.eigenvectors[j];
                 for (let k = 0; k < d; k++) {
-                    sum += centered[i][k] * eigen.eigenvectors[j][k];
+                    sum += centeredPoint[k] * eigenvector[k];
                 }
-                proj.push(sum);
+                projection[i][j] = sum;
             }
-            // Pad with zeros if requested more components than available
-            for (let j = actualComponents; j < numComponents; j++) {
-                proj.push(0);
-            }
-            projection.push(proj);
         }
         
         // Pad eigenvalues and eigenvectors with zeros if needed
-        const paddedEigenvalues = eigen.eigenvalues.slice();
-        const paddedEigenvectors = eigen.eigenvectors.slice();
+        const paddedEigenvalues = [...eigen.eigenvalues];
+        const paddedEigenvectors = [...eigen.eigenvectors];
         
         for (let i = actualComponents; i < numComponents; i++) {
             paddedEigenvalues.push(0);
@@ -952,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // CORRECTED: Kernel PCA implementation with correct normalization and projection
+    // CORRECTED: Kernel PCA implementation based on academic sources
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -969,13 +1033,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
-        // CORRECTED: Proper kernel matrix centering
+        // Center kernel matrix
         const K_centered = centerKernelMatrix(K);
         
         // Eigendecomposition of centered kernel matrix
         const eigen = jacobiEigendecomposition(K_centered, Math.min(numComponents, n));
         
-        // CORRECTED: Filter out negative/zero eigenvalues and normalize properly
+        // Filter out negative/zero eigenvalues
         const validEigenData = [];
         for (let i = 0; i < eigen.eigenvalues.length; i++) {
             if (eigen.eigenvalues[i] > 1e-10) {  // Only keep positive eigenvalues
@@ -986,42 +1050,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // CORRECTED: According to Schölkopf et al. and multiple sources:
-        // The eigenvectors α must satisfy: α^T * α = 1/λ
-        // This means each eigenvector should be normalized by √λ
-        const normalizedEigenvectors = [];
-        const validEigenvalues = [];
+        // CORRECTED: Proper normalization according to Schölkopf et al.
+        // The projection onto the k-th principal component is given by:
+        // y_k(x) = sqrt(lambda_k) * alpha_k
+        // where alpha_k is the k-th eigenvector of K_centered
         
+        const projection = new Array(n);
+        const validEigenvalues = [];
+        const validEigenvectors = [];
+        
+        // First, collect valid eigenvalues and eigenvectors
         for (let i = 0; i < Math.min(validEigenData.length, numComponents); i++) {
-            const lambda = validEigenData[i].eigenvalue;
-            const alpha = validEigenData[i].eigenvector;
-            
-            // CORRECTED: Normalize by √λ so that α^T α = 1/λ
-            const normalizationFactor = Math.sqrt(lambda);
-            const normalizedAlpha = alpha.map(val => val / normalizationFactor);
-            
-            normalizedEigenvectors.push(normalizedAlpha);
-            validEigenvalues.push(lambda);
+            validEigenvalues.push(validEigenData[i].eigenvalue);
+            validEigenvectors.push(validEigenData[i].eigenvector);
         }
         
-        // CORRECTED: The KEY insight - eigenvectors ARE the projections!
-        // Each eigenvector α^k gives the projection of ALL data points onto component k
-        // α^k[i] is the projection of data point i onto component k
-        const projection = [];
-        
+        // Then compute projections
         for (let i = 0; i < n; i++) {
-            const proj = [];
-            // For each requested component
-            for (let j = 0; j < Math.min(normalizedEigenvectors.length, numComponents); j++) {
-                // The j-th normalized eigenvector's i-th element is the projection of point i 
-                // onto component j, scaled by √λ to get the correct projection magnitude
-                proj.push(normalizedEigenvectors[j][i] * Math.sqrt(validEigenvalues[j]));
+            projection[i] = new Array(numComponents).fill(0);
+            
+            for (let j = 0; j < Math.min(validEigenvectors.length, numComponents); j++) {
+                // CORRECTED: The projection is sqrt(lambda) * alpha[i]
+                // This gives the coordinate of the i-th point along the j-th principal component
+                projection[i][j] = Math.sqrt(validEigenvalues[j]) * validEigenvectors[j][i];
             }
-            // Pad with zeros if we have fewer valid components than requested
-            for (let j = normalizedEigenvectors.length; j < numComponents; j++) {
-                proj.push(0);
-            }
-            projection.push(proj);
         }
         
         // Pad eigenvalues with zeros if needed
@@ -1033,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             projection,
             eigenvalues: paddedEigenvalues,
-            eigenvectors: normalizedEigenvectors,
+            eigenvectors: validEigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
@@ -1054,21 +1106,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Encoder weights
             this.W1 = this.randomMatrix(hiddenDim, inputDim, scale1);
-            this.b1 = Array(hiddenDim).fill(0);
+            this.b1 = new Array(hiddenDim).fill(0);
             this.W2 = this.randomMatrix(latentDim, hiddenDim, scale2);
-            this.b2 = Array(latentDim).fill(0);
+            this.b2 = new Array(latentDim).fill(0);
             
             // Decoder weights
             this.W3 = this.randomMatrix(hiddenDim, latentDim, scale3);
-            this.b3 = Array(hiddenDim).fill(0);
+            this.b3 = new Array(hiddenDim).fill(0);
             this.W4 = this.randomMatrix(inputDim, hiddenDim, scale4);
-            this.b4 = Array(inputDim).fill(0);
+            this.b4 = new Array(inputDim).fill(0);
         }
         
         randomMatrix(rows, cols, scale) {
-            const matrix = [];
+            const matrix = new Array(rows);
             for (let i = 0; i < rows; i++) {
-                matrix[i] = [];
+                matrix[i] = new Array(cols);
                 for (let j = 0; j < cols; j++) {
                     matrix[i][j] = (Math.random() - 0.5) * 2 * scale;
                 }
@@ -1089,14 +1141,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!input || input.length !== this.inputDim) {
                 console.error('Invalid input to autoencoder:', input);
                 return {
-                    output: Array(this.inputDim).fill(0),
-                    latent: Array(this.latentDim).fill(0),
-                    z1: Array(this.hiddenDim).fill(0),
-                    a1: Array(this.hiddenDim).fill(0),
-                    z2: Array(this.latentDim).fill(0),
-                    z3: Array(this.hiddenDim).fill(0),
-                    a3: Array(this.hiddenDim).fill(0),
-                    z4: Array(this.inputDim).fill(0)
+                    output: new Array(this.inputDim).fill(0),
+                    latent: new Array(this.latentDim).fill(0),
+                    z1: new Array(this.hiddenDim).fill(0),
+                    a1: new Array(this.hiddenDim).fill(0),
+                    z2: new Array(this.latentDim).fill(0),
+                    z3: new Array(this.hiddenDim).fill(0),
+                    a3: new Array(this.hiddenDim).fill(0),
+                    z4: new Array(this.inputDim).fill(0)
                 };
             }
             
@@ -1123,13 +1175,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 return [];
             }
             
-            const result = [];
+            const result = new Array(matrix.length);
             for (let i = 0; i < matrix.length; i++) {
                 let sum = 0;
-                for (let j = 0; j < Math.min(matrix[i].length, vector.length); j++) {
-                    sum += matrix[i][j] * vector[j];
+                const row = matrix[i];
+                const len = Math.min(row.length, vector.length);
+                for (let j = 0; j < len; j++) {
+                    sum += row[j] * vector[j];
                 }
-                result.push(sum);
+                result[i] = sum;
             }
             return result;
         }
@@ -1137,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addBias(vector, bias) {
             if (!vector || !bias) return vector || [];
             
-            const result = [];
+            const result = new Array(vector.length);
             for (let i = 0; i < vector.length; i++) {
                 result[i] = vector[i] + (bias[i] || 0);
             }
@@ -1173,14 +1227,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const lr = learningRate * (1.0 / (1.0 + epoch * 0.01)); // Learning rate decay
                     
                     // Output layer gradients
-                    const dL_dz4 = [];
+                    const dL_dz4 = new Array(this.inputDim);
                     for (let j = 0; j < this.inputDim; j++) {
                         dL_dz4[j] = 2.0 * (output[j] - input[j]) / n;
                     }
                     
                     // Hidden layer 2 gradients
                     const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
-                    const dL_dz3 = [];
+                    const dL_dz3 = new Array(this.hiddenDim);
                     for (let j = 0; j < this.hiddenDim; j++) {
                         dL_dz3[j] = dL_da3[j] * this.reluDerivative(z3[j]);
                     }
@@ -1191,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Hidden layer 1 gradients
                     const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
-                    const dL_dz1 = [];
+                    const dL_dz1 = new Array(this.hiddenDim);
                     for (let j = 0; j < this.hiddenDim; j++) {
                         dL_dz1[j] = dL_da1[j] * this.reluDerivative(z1[j]);
                     }
@@ -1199,59 +1253,63 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update weights and biases
                     // W4 and b4
                     for (let j = 0; j < this.inputDim; j++) {
+                        const grad = dL_dz4[j];
                         for (let k = 0; k < this.hiddenDim; k++) {
-                            this.W4[j][k] -= lr * dL_dz4[j] * a3[k];
+                            this.W4[j][k] -= lr * grad * a3[k];
                         }
-                        this.b4[j] -= lr * dL_dz4[j];
+                        this.b4[j] -= lr * grad;
                     }
                     
                     // W3 and b3
                     for (let j = 0; j < this.hiddenDim; j++) {
+                        const grad = dL_dz3[j];
                         for (let k = 0; k < this.latentDim; k++) {
-                            this.W3[j][k] -= lr * dL_dz3[j] * latent[k];
+                            this.W3[j][k] -= lr * grad * latent[k];
                         }
-                        this.b3[j] -= lr * dL_dz3[j];
+                        this.b3[j] -= lr * grad;
                     }
                     
                     // W2 and b2
                     for (let j = 0; j < this.latentDim; j++) {
+                        const grad = dL_dz2[j];
                         for (let k = 0; k < this.hiddenDim; k++) {
-                            this.W2[j][k] -= lr * dL_dz2[j] * a1[k];
+                            this.W2[j][k] -= lr * grad * a1[k];
                         }
-                        this.b2[j] -= lr * dL_dz2[j];
+                        this.b2[j] -= lr * grad;
                     }
                     
                     // W1 and b1
                     for (let j = 0; j < this.hiddenDim; j++) {
+                        const grad = dL_dz1[j];
                         for (let k = 0; k < this.inputDim; k++) {
-                            this.W1[j][k] -= lr * dL_dz1[j] * input[k];
+                            this.W1[j][k] -= lr * grad * input[k];
                         }
-                        this.b1[j] -= lr * dL_dz1[j];
+                        this.b1[j] -= lr * grad;
                     }
                 }
                 
                 // Update progress
-                if (epoch % 20 === 0 && aeProgressElement) {
+                if (epoch % 20 === 0 && elements.aeProgressElement) {
                     const avgLoss = totalLoss / n;
-                    aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
+                    elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
                 }
             }
             
             // Final update
-            if (aeProgressElement) {
+            if (elements.aeProgressElement) {
                 const avgLoss = totalLoss / n;
-                aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
+                elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
             }
         }
         
         vectorMatrixMultiply(vector, matrix) {
-            const result = [];
+            const result = new Array(matrix[0].length);
             for (let j = 0; j < matrix[0].length; j++) {
                 let sum = 0;
                 for (let i = 0; i < vector.length; i++) {
                     sum += vector[i] * matrix[i][j];
                 }
-                result.push(sum);
+                result[j] = sum;
             }
             return result;
         }
@@ -1259,18 +1317,18 @@ document.addEventListener('DOMContentLoaded', function() {
         encode(data) {
             if (!data || data.length === 0) return [];
             
-            const encoded = [];
+            const encoded = new Array(data.length);
             for (let i = 0; i < data.length; i++) {
                 try {
                     const { latent } = this.forward(data[i]);
                     // Ensure we always return 2D points
-                    encoded.push([
+                    encoded[i] = [
                         latent[0] || 0,
                         latent[1] || 0
-                    ]);
+                    ];
                 } catch (error) {
                     console.error('Encoding error for point', i, error);
-                    encoded.push([0, 0]);
+                    encoded[i] = [0, 0];
                 }
             }
             return encoded;
@@ -1310,7 +1368,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Add padding
-        const padding = 0.1 * Math.max(maxX - minX, maxY - minY, 0.1);
+        const range = Math.max(maxX - minX, maxY - minY, 0.1);
+        const padding = 0.1 * range;
         minX -= padding;
         maxX += padding;
         minY -= padding;
@@ -1414,9 +1473,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Algorithm visualization
     function drawAlgorithmStep(step) {
-        const ctx = algorithmCanvas.getContext('2d');
-        const width = algorithmCanvas.width;
-        const height = algorithmCanvas.height;
+        const ctx = elements.algorithmCanvas.getContext('2d');
+        const width = elements.algorithmCanvas.width;
+        const height = elements.algorithmCanvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
@@ -1437,13 +1496,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 description: 'Calculate pairwise similarities using the kernel function K(xi, xj).',
                 draw: () => {
                     if (kpcaResult && kpcaResult.kernelMatrix && kpcaResult.kernelMatrix.length > 0) {
-                        drawKernelMatrix(algorithmCanvas, kpcaResult.kernelMatrix, 'Kernel Matrix K');
+                        drawKernelMatrix(elements.algorithmCanvas, kpcaResult.kernelMatrix, 'Kernel Matrix K');
                     } else {
-                        const ctx = algorithmCanvas.getContext('2d');
+                        const ctx = elements.algorithmCanvas.getContext('2d');
                         ctx.font = '14px Arial';
                         ctx.fillStyle = '#666';
                         ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see kernel matrix', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
+                        ctx.fillText('Run Kernel PCA to see kernel matrix', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1452,13 +1511,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 description: 'Center the kernel matrix in feature space: K̃ = K - 1K - K1 + 1K1',
                 draw: () => {
                     if (kpcaResult && kpcaResult.centeredKernelMatrix && kpcaResult.centeredKernelMatrix.length > 0) {
-                        drawKernelMatrix(algorithmCanvas, kpcaResult.centeredKernelMatrix, 'Centered Kernel Matrix K̃');
+                        drawKernelMatrix(elements.algorithmCanvas, kpcaResult.centeredKernelMatrix, 'Centered Kernel Matrix K̃');
                     } else {
-                        const ctx = algorithmCanvas.getContext('2d');
+                        const ctx = elements.algorithmCanvas.getContext('2d');
                         ctx.font = '14px Arial';
                         ctx.fillStyle = '#666';
                         ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see centered kernel matrix', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
+                        ctx.fillText('Run Kernel PCA to see centered kernel matrix', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1467,13 +1526,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 description: 'Find eigenvalues and eigenvectors of the centered kernel matrix.',
                 draw: () => {
                     if (kpcaResult && kpcaResult.eigenvalues && kpcaResult.eigenvalues.length > 0) {
-                        drawEigenvalues(algorithmCanvas, kpcaResult.eigenvalues);
+                        drawEigenvalues(elements.algorithmCanvas, kpcaResult.eigenvalues);
                     } else {
-                        const ctx = algorithmCanvas.getContext('2d');
+                        const ctx = elements.algorithmCanvas.getContext('2d');
                         ctx.font = '14px Arial';
                         ctx.fillStyle = '#666';
                         ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see eigenvalues', algorithmCanvas.width / 2, algorithmCanvas.height / 2);
+                        ctx.fillText('Run Kernel PCA to see eigenvalues', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
                     }
                 }
             },
@@ -1670,9 +1729,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Autoencoder visualization
     function drawAutoencoderArchitecture() {
-        const ctx = aeArchCanvas.getContext('2d');
-        const width = aeArchCanvas.width;
-        const height = aeArchCanvas.height;
+        const ctx = elements.aeArchCanvas.getContext('2d');
+        const width = elements.aeArchCanvas.width;
+        const height = elements.aeArchCanvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
@@ -1741,9 +1800,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function drawAutoencoderComparison() {
-        const ctx = aeProjCanvas.getContext('2d');
-        const width = aeProjCanvas.width;
-        const height = aeProjCanvas.height;
+        const ctx = elements.aeProjCanvas.getContext('2d');
+        const width = elements.aeProjCanvas.width;
+        const height = elements.aeProjCanvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
@@ -1803,18 +1862,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event handlers
     function handleDatasetChange() {
         generateData();
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             computeProjections();
-        }, 50);
+        });
     }
     
     function handleKernelChange() {
-        const kernel = kernelSelect.value;
+        const kernel = elements.kernelSelect.value;
         
         // Show/hide relevant parameter controls
-        gammaContainer.style.display = kernel === 'rbf' || kernel === 'poly' ? 'block' : 'none';
-        degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
-        coefContainer.style.display = kernel === 'poly' ? 'block' : 'none';
+        elements.gammaContainer.style.display = kernel === 'rbf' || kernel === 'poly' ? 'block' : 'none';
+        elements.degreeContainer.style.display = kernel === 'poly' ? 'block' : 'none';
+        elements.coefContainer.style.display = kernel === 'poly' ? 'block' : 'none';
         
         // Update gamma label for polynomial kernel
         if (kernel === 'poly') {
@@ -1824,31 +1883,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // CORRECTED: Better parameter handling and default values
+    // Better parameter handling and default values
     function handleParameterChange() {
         // Use more appropriate gamma range for demonstration
-        gamma = Math.pow(10, parseFloat(gammaInput.value));
-        gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
+        gamma = Math.pow(10, parseFloat(elements.gammaInput.value));
+        elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
         
-        degree = parseInt(degreeInput.value);
-        degreeDisplay.textContent = `d = ${degree}`;
+        degree = parseInt(elements.degreeInput.value);
+        elements.degreeDisplay.textContent = `d = ${degree}`;
         
-        coef = parseFloat(coefInput.value);
-        coefDisplay.textContent = `c = ${coef.toFixed(1)}`;
+        coef = parseFloat(elements.coefInput.value);
+        elements.coefDisplay.textContent = `c = ${coef.toFixed(1)}`;
         
-        componentsDisplay.textContent = componentsInput.value;
+        elements.componentsDisplay.textContent = elements.componentsInput.value;
         
-        const noise = parseFloat(noiseInput.value);
-        noiseDisplay.textContent = noise.toFixed(2);
+        const noise = parseFloat(elements.noiseInput.value);
+        elements.noiseDisplay.textContent = noise.toFixed(2);
         
-        const sampleSize = parseInt(sampleSizeInput.value);
-        sampleSizeDisplay.textContent = sampleSize;
+        const sampleSize = parseInt(elements.sampleSizeInput.value);
+        elements.sampleSizeDisplay.textContent = sampleSize;
     }
     
     function generateData() {
-        const dataset = datasetSelect.value;
-        const n = parseInt(sampleSizeInput.value);
-        const noise = parseFloat(noiseInput.value);
+        const dataset = elements.datasetSelect.value;
+        const n = parseInt(elements.sampleSizeInput.value);
+        const noise = parseFloat(elements.noiseInput.value);
         
         switch (dataset) {
             case 'blobs':
@@ -1868,11 +1927,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset AE
         aeModel = null;
         aeProjection = null;
-        aeProgressElement.textContent = '';
+        elements.aeProgressElement.textContent = '';
         
         // Ensure data is available
         if (data && data.length > 0) {
-            drawData(originalCanvas, data, null, 'Original Data');
+            drawData(elements.originalCanvas, data, null, 'Original Data');
         }
     }
     
@@ -1882,19 +1941,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const numComponents = parseInt(componentsInput.value);
+        const numComponents = parseInt(elements.componentsInput.value);
         
         // Compute standard PCA
         pcaResult = computePCA(data, numComponents);
         
         // Compute Kernel PCA
-        kpcaResult = computeKernelPCA(data, kernelSelect.value, numComponents);
+        kpcaResult = computeKernelPCA(data, elements.kernelSelect.value, numComponents);
         
         // Update visualizations
-        drawData(originalCanvas, data, null, 'Original Data');
-        drawData(pcaCanvas, data, pcaResult.projection, 'PCA Projection');
-        drawData(kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
-        drawVariance(varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
+        drawData(elements.originalCanvas, data, null, 'Original Data');
+        drawData(elements.pcaCanvas, data, pcaResult.projection, 'PCA Projection');
+        drawData(elements.kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
+        drawVariance(elements.varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
         // Update other tabs
         drawAlgorithmStep(currentStep);
@@ -1904,12 +1963,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function trainAutoencoder() {
         if (!data || data.length === 0) {
-            aeProgressElement.textContent = 'No data available. Generate data first!';
+            elements.aeProgressElement.textContent = 'No data available. Generate data first!';
             return;
         }
         
-        trainAeBtn.disabled = true;
-        aeProgressElement.textContent = 'Initializing autoencoder...';
+        elements.trainAeBtn.disabled = true;
+        elements.aeProgressElement.textContent = 'Initializing autoencoder...';
         
         // Create and train autoencoder with 2D input, 4 hidden units, 2D latent space
         aeModel = new SimpleAutoencoder(2, 4, 2);
@@ -1921,11 +1980,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 aeProjection = aeModel.encode(data);
                 
                 drawAutoencoderComparison();
-                trainAeBtn.disabled = false;
+                elements.trainAeBtn.disabled = false;
             } catch (error) {
                 console.error('Autoencoder training error:', error);
-                aeProgressElement.textContent = 'Training failed: ' + error.message;
-                trainAeBtn.disabled = false;
+                elements.aeProgressElement.textContent = 'Training failed: ' + error.message;
+                elements.trainAeBtn.disabled = false;
             }
         }, 100);
     }
@@ -1935,10 +1994,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const targetTab = e.target.dataset.tab;
         
         // Update active states
-        tabBtns.forEach(btn => btn.classList.remove('active'));
+        elements.tabBtns.forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         
-        tabPanes.forEach(pane => {
+        elements.tabPanes.forEach(pane => {
             pane.classList.remove('active');
             if (pane.id === `${targetTab}-tab`) {
                 pane.classList.add('active');
@@ -1976,25 +2035,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add event listeners
-    datasetSelect.addEventListener('change', handleDatasetChange);
-    kernelSelect.addEventListener('change', handleKernelChange);
-    gammaInput.addEventListener('input', handleParameterChange);
-    degreeInput.addEventListener('input', handleParameterChange);
-    coefInput.addEventListener('input', handleParameterChange);
-    componentsInput.addEventListener('input', handleParameterChange);
-    noiseInput.addEventListener('input', handleParameterChange);
-    sampleSizeInput.addEventListener('input', handleParameterChange);
+    elements.datasetSelect.addEventListener('change', handleDatasetChange);
+    elements.kernelSelect.addEventListener('change', handleKernelChange);
+    elements.gammaInput.addEventListener('input', handleParameterChange);
+    elements.degreeInput.addEventListener('input', handleParameterChange);
+    elements.coefInput.addEventListener('input', handleParameterChange);
+    elements.componentsInput.addEventListener('input', handleParameterChange);
+    elements.noiseInput.addEventListener('input', handleParameterChange);
+    elements.sampleSizeInput.addEventListener('input', handleParameterChange);
     
-    computeBtn.addEventListener('click', computeProjections);
-    generateBtn.addEventListener('click', () => {
+    elements.computeBtn.addEventListener('click', computeProjections);
+    elements.generateBtn.addEventListener('click', () => {
         generateData();
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             computeProjections();
-        }, 50);
+        });
     });
-    trainAeBtn.addEventListener('click', trainAutoencoder);
+    elements.trainAeBtn.addEventListener('click', trainAutoencoder);
     
-    tabBtns.forEach(btn => btn.addEventListener('click', handleTabClick));
+    elements.tabBtns.forEach(btn => btn.addEventListener('click', handleTabClick));
     
     document.getElementById('step-forward').addEventListener('click', handleStepForward);
     document.getElementById('step-back').addEventListener('click', handleStepBack);
@@ -2004,8 +2063,8 @@ document.addEventListener('DOMContentLoaded', function() {
     handleParameterChange();
     handleKernelChange();
     
-    // CORRECTED: Better default gamma for demonstration
-    gammaInput.value = "1";  // Sets gamma = 10, good for circles/moons
+    // Better default gamma for demonstration
+    elements.gammaInput.value = "0.5";  // Sets gamma = 3.2, good for circles/moons
     handleParameterChange();
     
     // Generate initial data and compute projections
