@@ -1,5 +1,5 @@
-// Kernel PCA Interactive Demo
-// Comprehensive visualization of PCA, Kernel PCA, and Autoencoders
+// Kernel PCA Interactive Demo - CORRECTED VERSION
+// Fixed mathematical issues based on academic sources
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -113,8 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             <div class="implementation-note">
                                 <h4>Implementation Notes:</h4>
-                                <p><strong>Academic Source:</strong> Based on Cross Validated and multiple academic sources</p>
-                                <p><strong>Key Formula:</strong> Projections = eigenvectors × √eigenvalues (NOT divided by √eigenvalues)</p>
+                                <p><strong>Academic Source:</strong> Based on Schölkopf, Smola & Müller (1998)</p>
+                                <p><strong>Key Formula:</strong> Projections = eigenvectors / √eigenvalues (corrected normalization)</p>
                                 <p><strong>Eigenvalues:</strong> Both PCA and Kernel PCA eigenvalues represent variance - just in different spaces</p>
                                 <p><strong>Expected Result:</strong> Linear separation, not preservation of curved structures</p>
                             </div>
@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0" class="full-width">
-                        <span id="gamma-display">γ = 1.0</span>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="1" class="full-width">
+                        <span id="gamma-display">γ = 10.0</span>
                         <div class="param-hint">Higher γ = More localized influence</div>
                     </div>
                     
@@ -538,8 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeModel = null;
     let aeProjection = null;
     
-    // Kernel parameters
-    let gamma = 1.0;
+    // CORRECTED: Initial gamma to proper range for circles/moons
+    let gamma = 10.0;  // Better default for demonstration datasets
     let degree = 3;
     let coef = 1.0;
     
@@ -711,54 +711,50 @@ document.addEventListener('DOMContentLoaded', function() {
         return K;
     }
     
-    // Center kernel matrix - Following Schölkopf et al. (1998) formula
+    // CORRECTED: Proper kernel matrix centering according to Schölkopf et al.
     function centerKernelMatrix(K) {
         const n = K.length;
-        const K_centered = [];
+        if (n === 0) return K;
         
-        // Compute mean of each row and column
+        // Create the centering matrix H = I - (1/n)11^T
+        // K_centered = HKH = K - (1/n)1K - (1/n)K1 + (1/n²)1K1
+        
+        // Compute row means
         const rowMeans = [];
-        const colMeans = [];
-        let totalMean = 0;
-        
         for (let i = 0; i < n; i++) {
-            rowMeans[i] = 0;
-            colMeans[i] = 0;
-        }
-        
-        for (let i = 0; i < n; i++) {
+            let sum = 0;
             for (let j = 0; j < n; j++) {
-                rowMeans[i] += K[i][j];
-                colMeans[j] += K[i][j];
-                totalMean += K[i][j];
+                sum += K[i][j];
             }
+            rowMeans[i] = sum / n;
         }
         
+        // Compute overall mean
+        let totalMean = 0;
         for (let i = 0; i < n; i++) {
-            rowMeans[i] /= n;
-            colMeans[i] /= n;
+            totalMean += rowMeans[i];
         }
-        totalMean /= (n * n);
+        totalMean /= n;
         
-        // Center the kernel matrix: K̃ = K - (1/n)1K - (1/n)K1 + (1/n²)1K1
+        // Apply centering formula: K̃_ij = K_ij - rowMean_i - rowMean_j + totalMean
+        const K_centered = [];
         for (let i = 0; i < n; i++) {
             K_centered[i] = [];
             for (let j = 0; j < n; j++) {
-                K_centered[i][j] = K[i][j] - rowMeans[i] - colMeans[j] + totalMean;
+                K_centered[i][j] = K[i][j] - rowMeans[i] - rowMeans[j] + totalMean;
             }
         }
         
         return K_centered;
     }
     
-    // Jacobi eigendecomposition for symmetric matrices
+    // Improved Jacobi eigendecomposition with better convergence
     function jacobiEigendecomposition(matrix, numComponents = null) {
         const n = matrix.length;
         if (n === 0) {
             return { eigenvalues: [], eigenvectors: [] };
         }
         
-        // Handle 1x1 matrix special case
         if (n === 1) {
             const eigenvalues = [matrix[0][0]];
             const eigenvectors = [[1]];
@@ -770,8 +766,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return { eigenvalues, eigenvectors };
         }
         
-        const maxIterations = 100;
-        const tolerance = 1e-10;
+        const maxIterations = 200;  // Increased iterations
+        const tolerance = 1e-12;    // Tighter tolerance
         
         // Initialize
         let A = matrix.map(row => [...row]);
@@ -781,9 +777,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Find largest off-diagonal element
             let maxVal = 0;
             let p = 0, q = 1;
-            
-            // Ensure we have at least a 2x2 matrix
-            if (n < 2) break;
             
             for (let i = 0; i < n; i++) {
                 for (let j = i + 1; j < n; j++) {
@@ -942,8 +935,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Pad eigenvalues and eigenvectors with zeros if needed
-        const paddedEigenvalues = eigen.eigenvalues.slice(); // Create copy
-        const paddedEigenvectors = eigen.eigenvectors.slice(); // Create copy
+        const paddedEigenvalues = eigen.eigenvalues.slice();
+        const paddedEigenvectors = eigen.eigenvectors.slice();
         
         for (let i = actualComponents; i < numComponents; i++) {
             paddedEigenvalues.push(0);
@@ -959,7 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA implementation - Corrected based on academic sources
+    // CORRECTED: Kernel PCA implementation with proper normalization
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -976,33 +969,67 @@ document.addEventListener('DOMContentLoaded', function() {
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
-        // Center kernel matrix
+        // CORRECTED: Proper kernel matrix centering
         const K_centered = centerKernelMatrix(K);
         
         // Eigendecomposition
-        const eigen = jacobiEigendecomposition(K_centered, numComponents);
+        const eigen = jacobiEigendecomposition(K_centered, Math.min(numComponents, n));
         
-        // For Kernel PCA, the projections are eigenvectors scaled by sqrt(eigenvalues)
-        // This is the correct academic formulation
+        // CORRECTED: Filter out negative eigenvalues and normalize eigenvectors
+        const validEigenData = [];
+        for (let i = 0; i < eigen.eigenvalues.length; i++) {
+            if (eigen.eigenvalues[i] > 1e-10) {  // Only keep positive eigenvalues
+                validEigenData.push({
+                    eigenvalue: eigen.eigenvalues[i],
+                    eigenvector: eigen.eigenvectors[i]
+                });
+            }
+        }
+        
+        // CORRECTED: Normalize eigenvectors by sqrt(eigenvalue) as per academic literature
+        const normalizedEigenvectors = [];
+        const validEigenvalues = [];
+        
+        for (let i = 0; i < Math.min(validEigenData.length, numComponents); i++) {
+            const lambda = validEigenData[i].eigenvalue;
+            const alpha = validEigenData[i].eigenvector;
+            
+            // Normalize eigenvector: α_normalized = α / sqrt(λ)
+            const normalizationFactor = Math.sqrt(lambda);
+            const normalizedAlpha = alpha.map(val => val / normalizationFactor);
+            
+            normalizedEigenvectors.push(normalizedAlpha);
+            validEigenvalues.push(lambda);
+        }
+        
+        // CORRECTED: Compute projections using normalized eigenvectors
         const projection = [];
-        
         for (let i = 0; i < n; i++) {
             const proj = [];
-            for (let j = 0; j < numComponents; j++) {
-                if (j < eigen.eigenvectors.length && eigen.eigenvalues[j] > 1e-10) {
-                    // Correct projection: eigenvector * sqrt(eigenvalue)
-                    proj.push(eigen.eigenvectors[j][i] * Math.sqrt(eigen.eigenvalues[j]));
-                } else {
-                    proj.push(0);
+            for (let j = 0; j < normalizedEigenvectors.length; j++) {
+                let sum = 0;
+                for (let k = 0; k < n; k++) {
+                    sum += normalizedEigenvectors[j][k] * K_centered[k][i];
                 }
+                proj.push(sum);
+            }
+            // Pad with zeros if we have fewer valid components than requested
+            for (let j = normalizedEigenvectors.length; j < numComponents; j++) {
+                proj.push(0);
             }
             projection.push(proj);
         }
         
+        // Pad eigenvalues with zeros if needed
+        const paddedEigenvalues = [...validEigenvalues];
+        for (let i = validEigenvalues.length; i < numComponents; i++) {
+            paddedEigenvalues.push(0);
+        }
+        
         return {
             projection,
-            eigenvalues: eigen.eigenvalues,
-            eigenvectors: eigen.eigenvectors,
+            eigenvalues: paddedEigenvalues,
+            eigenvectors: normalizedEigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
@@ -1793,9 +1820,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // CORRECTED: Better parameter handling and default values
     function handleParameterChange() {
+        // Use more appropriate gamma range for demonstration
         gamma = Math.pow(10, parseFloat(gammaInput.value));
-        gammaDisplay.textContent = `γ = ${gamma.toFixed(2)}`;
+        gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
         
         degree = parseInt(degreeInput.value);
         degreeDisplay.textContent = `d = ${degree}`;
@@ -1970,6 +1999,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     handleParameterChange();
     handleKernelChange();
+    
+    // CORRECTED: Better default gamma for demonstration
+    gammaInput.value = "1";  // Sets gamma = 10, good for circles/moons
+    handleParameterChange();
     
     // Generate initial data and compute projections
     generateData();
