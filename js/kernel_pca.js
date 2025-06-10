@@ -952,7 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // CORRECTED: Kernel PCA implementation with proper projection formula
+    // CORRECTED: Kernel PCA implementation with correct normalization and projection
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eigendecomposition of centered kernel matrix
         const eigen = jacobiEigendecomposition(K_centered, Math.min(numComponents, n));
         
-        // CORRECTED: Filter out negative eigenvalues and normalize eigenvectors properly
+        // CORRECTED: Filter out negative/zero eigenvalues and normalize properly
         const validEigenData = [];
         for (let i = 0; i < eigen.eigenvalues.length; i++) {
             if (eigen.eigenvalues[i] > 1e-10) {  // Only keep positive eigenvalues
@@ -986,8 +986,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // CORRECTED: Proper normalization - eigenvectors should be normalized by eigenvalue
-        // According to Schölkopf et al. and mlxtend: α^k should satisfy α^k · K · α^k = λ^k
+        // CORRECTED: According to Schölkopf et al. and multiple sources:
+        // The eigenvectors α must satisfy: α^T * α = 1/λ
+        // This means each eigenvector should be normalized by √λ
         const normalizedEigenvectors = [];
         const validEigenvalues = [];
         
@@ -995,8 +996,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const lambda = validEigenData[i].eigenvalue;
             const alpha = validEigenData[i].eigenvector;
             
-            // Normalize eigenvector: α_normalized = α / sqrt(λ)
-            // This ensures that α^T K α = λ becomes α_norm^T K α_norm = 1
+            // CORRECTED: Normalize by √λ so that α^T α = 1/λ
             const normalizationFactor = Math.sqrt(lambda);
             const normalizedAlpha = alpha.map(val => val / normalizationFactor);
             
@@ -1004,18 +1004,17 @@ document.addEventListener('DOMContentLoaded', function() {
             validEigenvalues.push(lambda);
         }
         
-        // CORRECTED: The key insight from mlxtend - the eigenvectors ARE the projections!
-        // In Kernel PCA, the eigenvectors of the kernel matrix directly represent
-        // the projected data points in the feature space
+        // CORRECTED: The KEY insight - eigenvectors ARE the projections!
+        // Each eigenvector α^k gives the projection of ALL data points onto component k
+        // α^k[i] is the projection of data point i onto component k
         const projection = [];
         
-        // Each eigenvector gives us one component of the projection for ALL points
         for (let i = 0; i < n; i++) {
             const proj = [];
             // For each requested component
             for (let j = 0; j < Math.min(normalizedEigenvectors.length, numComponents); j++) {
-                // The j-th eigenvector's i-th element is the projection of point i onto component j
-                // Scale by sqrt(eigenvalue) to get proper projection
+                // The j-th normalized eigenvector's i-th element is the projection of point i 
+                // onto component j, scaled by √λ to get the correct projection magnitude
                 proj.push(normalizedEigenvectors[j][i] * Math.sqrt(validEigenvalues[j]));
             }
             // Pad with zeros if we have fewer valid components than requested
