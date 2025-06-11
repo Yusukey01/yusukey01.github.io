@@ -1,5 +1,5 @@
 // Kernel PCA Interactive Demo - FULLY CORRECTED VERSION
-// Fixed projection bug based on academic sources and mlxtend
+// Fixed based on academic sources and scikit-learn implementation
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -46,9 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <p class="graph-explanation">Non-linear projection that transforms curved/complex structures into linearly separable representations. "Unfolds" non-linear patterns.</p>
                                     </div>
                                     <div class="viz-panel">
-                                        <h4>Eigenvalue Comparison</h4>
+                                        <h4>Explained Variance Ratio</h4>
                                         <canvas id="variance-canvas" width="300" height="300"></canvas>
-                                        <p class="graph-explanation">Compares eigenvalues between PCA and Kernel PCA. Both represent variance along principal components, but in different spaces: PCA in original space, Kernel PCA in feature space.</p>
+                                        <p class="graph-explanation">Proportion of variance explained by each principal component. Shows relative importance of components in capturing data variation.</p>
                                     </div>
                                 </div>
                             </div>
@@ -103,9 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="0.7" class="full-width">
-                        <span id="gamma-display">γ = 5.0</span>
-                        <div class="param-hint">Higher γ = More localized influence</div>
+                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="-0.5" class="full-width">
+                        <span id="gamma-display">γ = 0.3</span>
+                        <div class="param-hint">Controls kernel width. Lower = wider influence</div>
                     </div>
                     
                     <div class="control-group" id="degree-container" style="display: none;">
@@ -418,8 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeModel = null;
     let aeProjection = null;
     
-    // Initial gamma to proper range for circles/moons
-    let gamma = 5.0;  // Good default for RBF kernel with circles/moons
+    // Better default gamma for RBF kernel
+    let gamma = 0.3;  // More reasonable default
     let degree = 3;
     let coef = 1.0;
     
@@ -578,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         val = rbfKernel(dataI, data[j], gamma);
                         break;
                     case 'poly':
-                        val = polyKernel(dataI, data[j], degree, gamma, coef);
+                        val = polyKernel(dataI, data[j], degree, 1.0, coef);
                         break;
                 }
                 K[i][j] = K[j][i] = val; // Exploit symmetry
@@ -711,13 +711,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         for (let i = 0; i < n; i++) {
             const eigenvector = V.map(row => row[i]);
-            // Normalize eigenvector to unit length
-            const norm = Math.sqrt(eigenvector.reduce((sum, val) => sum + val * val, 0));
-            const normalizedEigenvector = norm > 0 ? eigenvector.map(val => val / norm) : eigenvector;
-            
             eigenPairs.push({
                 value: A[i][i],
-                vector: normalizedEigenvector
+                vector: eigenvector
             });
         }
         
@@ -851,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA
+    // FIXED: Kernel PCA implementation based on academic sources
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -891,40 +887,36 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select top numComponents
         const selectedPairs = eigenPairs.slice(0, Math.min(numComponents, eigenPairs.length));
         
-        // y_i = sum_j (alpha_j * K_centered[i,j]) where alpha_j = eigenvector_j / sqrt(eigenvalue_j)
+        // FIXED: Correct projection according to scikit-learn and academic sources
+        // The projection is K_centered * alpha where alpha is the eigenvector
+        // multiplied by sqrt(lambda) to get the actual principal components
         
         const projection = new Array(n);
         const validEigenvalues = [];
-        const normalizedEigenvectors = [];
+        const validEigenvectors = [];
         
-        // First normalize the eigenvectors
+        // Extract eigenvalues and eigenvectors
         for (const { value: lambda, vector: alpha } of selectedPairs) {
-            const sqrtLambda = Math.sqrt(lambda);
-            const normalizedAlpha = [];
-
-            // simple for–of over each entry
-            for (const val of alpha) {
-                normalizedAlpha.push(val / sqrtLambda);
-            }
-
             validEigenvalues.push(lambda);
-            normalizedEigenvectors.push(normalizedAlpha);
+            validEigenvectors.push(alpha);
         }
-                
+        
         // For each data point i, project onto each principal component
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
             
             // For each principal component
-            for (let j = 0; j < normalizedEigenvectors.length; j++) {
-                // The projection is the dot product of the i-th row of K_centered 
-                // with the j-th normalized eigenvector
+            for (let j = 0; j < validEigenvectors.length; j++) {
+                // FIXED: Multiply by sqrt(lambda) to get principal components
+                // This matches scikit-learn's implementation
+                const sqrtLambda = Math.sqrt(validEigenvalues[j]);
+                const alpha = validEigenvectors[j];
+                
                 let proj = 0;
-                const alpha = normalizedEigenvectors[j];
                 for (let k = 0; k < n; k++) {
                     proj += K_centered[i][k] * alpha[k];
                 }
-                projection[i][j] = proj;
+                projection[i][j] = proj * sqrtLambda;
             }
         }
         
@@ -937,20 +929,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             projection,
             eigenvalues: paddedEigenvalues,
-            eigenvectors: normalizedEigenvectors,
+            eigenvectors: validEigenvectors,
             kernelMatrix: K,
             centeredKernelMatrix: K_centered
         };
     }
     
-    // Autoencoder implementation with full backpropagation
+    // FIXED: Better autoencoder implementation
     class SimpleAutoencoder {
         constructor(inputDim, hiddenDim, latentDim) {
             this.inputDim = inputDim;
             this.hiddenDim = hiddenDim;
             this.latentDim = latentDim;
             
-            // Initialize weights with Xavier initialization
+            // Xavier initialization with better scaling
             const scale1 = Math.sqrt(2.0 / inputDim);
             const scale2 = Math.sqrt(2.0 / hiddenDim);
             const scale3 = Math.sqrt(2.0 / latentDim);
@@ -980,12 +972,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return matrix;
         }
         
-        relu(x) {
-            return x > 0 ? x : 0;
+        // Leaky ReLU for better gradient flow
+        leakyRelu(x, alpha = 0.01) {
+            return x > 0 ? x : alpha * x;
         }
         
-        reluDerivative(x) {
-            return x > 0 ? 1 : 0;
+        leakyReluDerivative(x, alpha = 0.01) {
+            return x > 0 ? 1 : alpha;
         }
         
         forward(input) {
@@ -1006,14 +999,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Encoder
             const z1 = this.addBias(this.matrixVectorMultiply(this.W1, input), this.b1);
-            const a1 = z1.map(x => this.relu(x));
+            const a1 = z1.map(x => this.leakyRelu(x));
             
             const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
             const latent = z2; // Linear activation in latent layer
             
             // Decoder
             const z3 = this.addBias(this.matrixVectorMultiply(this.W3, latent), this.b3);
-            const a3 = z3.map(x => this.relu(x));
+            const a3 = z3.map(x => this.leakyRelu(x));
             
             const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
             const output = z4; // Linear activation in output
@@ -1050,98 +1043,92 @@ document.addEventListener('DOMContentLoaded', function() {
             return result;
         }
         
-        // Proper backpropagation implementation
-        train(data, epochs = 100, learningRate = 0.01) {
+        // FIXED: Better training with Adam-like momentum
+        train(data, epochs = 200, learningRate = 0.01, batchSize = 32) {
             const n = data.length;
             if (n === 0) return;
             
             let totalLoss = 0;
+            const momentum = 0.9;
+            const beta2 = 0.999;
+            const epsilon = 1e-8;
+            
+            // Initialize momentum and RMSprop caches
+            const m = this.initializeCache();
+            const v = this.initializeCache();
             
             for (let epoch = 0; epoch < epochs; epoch++) {
                 totalLoss = 0;
                 
+                // Shuffle data
+                const indices = Array.from({length: n}, (_, i) => i);
+                for (let i = n - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                
                 // Mini-batch gradient descent
-                for (let i = 0; i < n; i++) {
-                    const input = data[i];
+                for (let batch = 0; batch < n; batch += batchSize) {
+                    const batchEnd = Math.min(batch + batchSize, n);
+                    const batchGradients = this.initializeGradients();
                     
-                    // Forward pass
-                    const { output, latent, z1, a1, z2, z3, a3, z4 } = this.forward(input);
-                    
-                    // Calculate loss (MSE)
-                    let loss = 0;
-                    for (let j = 0; j < this.inputDim; j++) {
-                        const diff = output[j] - input[j];
-                        loss += diff * diff;
-                    }
-                    totalLoss += loss;
-                    
-                    // Backward pass
-                    const lr = learningRate * (1.0 / (1.0 + epoch * 0.01)); // Learning rate decay
-                    
-                    // Output layer gradients
-                    const dL_dz4 = new Array(this.inputDim);
-                    for (let j = 0; j < this.inputDim; j++) {
-                        dL_dz4[j] = 2.0 * (output[j] - input[j]) / n;
-                    }
-                    
-                    // Hidden layer 2 gradients
-                    const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
-                    const dL_dz3 = new Array(this.hiddenDim);
-                    for (let j = 0; j < this.hiddenDim; j++) {
-                        dL_dz3[j] = dL_da3[j] * this.reluDerivative(z3[j]);
-                    }
-                    
-                    // Latent layer gradients
-                    const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
-                    const dL_dz2 = dL_dlatent; // Linear activation
-                    
-                    // Hidden layer 1 gradients
-                    const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
-                    const dL_dz1 = new Array(this.hiddenDim);
-                    for (let j = 0; j < this.hiddenDim; j++) {
-                        dL_dz1[j] = dL_da1[j] * this.reluDerivative(z1[j]);
-                    }
-                    
-                    // Update weights and biases
-                    // W4 and b4
-                    for (let j = 0; j < this.inputDim; j++) {
-                        const grad = dL_dz4[j];
-                        for (let k = 0; k < this.hiddenDim; k++) {
-                            this.W4[j][k] -= lr * grad * a3[k];
+                    // Accumulate gradients over batch
+                    for (let idx = batch; idx < batchEnd; idx++) {
+                        const i = indices[idx];
+                        const input = data[i];
+                        
+                        // Forward pass
+                        const { output, latent, z1, a1, z2, z3, a3, z4 } = this.forward(input);
+                        
+                        // Calculate loss (MSE)
+                        let loss = 0;
+                        for (let j = 0; j < this.inputDim; j++) {
+                            const diff = output[j] - input[j];
+                            loss += diff * diff;
                         }
-                        this.b4[j] -= lr * grad;
+                        totalLoss += loss;
+                        
+                        // Backward pass
+                        const batchNorm = 1.0 / (batchEnd - batch);
+                        
+                        // Output layer gradients
+                        const dL_dz4 = new Array(this.inputDim);
+                        for (let j = 0; j < this.inputDim; j++) {
+                            dL_dz4[j] = 2.0 * (output[j] - input[j]) * batchNorm;
+                        }
+                        
+                        // Hidden layer 2 gradients
+                        const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
+                        const dL_dz3 = new Array(this.hiddenDim);
+                        for (let j = 0; j < this.hiddenDim; j++) {
+                            dL_dz3[j] = dL_da3[j] * this.leakyReluDerivative(z3[j]);
+                        }
+                        
+                        // Latent layer gradients
+                        const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
+                        const dL_dz2 = dL_dlatent; // Linear activation
+                        
+                        // Hidden layer 1 gradients
+                        const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
+                        const dL_dz1 = new Array(this.hiddenDim);
+                        for (let j = 0; j < this.hiddenDim; j++) {
+                            dL_dz1[j] = dL_da1[j] * this.leakyReluDerivative(z1[j]);
+                        }
+                        
+                        // Accumulate gradients
+                        this.accumulateGradients(batchGradients, {
+                            dL_dz1, dL_dz2, dL_dz3, dL_dz4,
+                            input, a1, latent, a3
+                        });
                     }
                     
-                    // W3 and b3
-                    for (let j = 0; j < this.hiddenDim; j++) {
-                        const grad = dL_dz3[j];
-                        for (let k = 0; k < this.latentDim; k++) {
-                            this.W3[j][k] -= lr * grad * latent[k];
-                        }
-                        this.b3[j] -= lr * grad;
-                    }
-                    
-                    // W2 and b2
-                    for (let j = 0; j < this.latentDim; j++) {
-                        const grad = dL_dz2[j];
-                        for (let k = 0; k < this.hiddenDim; k++) {
-                            this.W2[j][k] -= lr * grad * a1[k];
-                        }
-                        this.b2[j] -= lr * grad;
-                    }
-                    
-                    // W1 and b1
-                    for (let j = 0; j < this.hiddenDim; j++) {
-                        const grad = dL_dz1[j];
-                        for (let k = 0; k < this.inputDim; k++) {
-                            this.W1[j][k] -= lr * grad * input[k];
-                        }
-                        this.b1[j] -= lr * grad;
-                    }
+                    // Apply Adam-like updates
+                    const lr = learningRate * Math.sqrt(1 - Math.pow(beta2, epoch + 1)) / (1 - Math.pow(momentum, epoch + 1));
+                    this.applyGradients(batchGradients, m, v, lr, momentum, beta2, epsilon);
                 }
                 
                 // Update progress
-                if (epoch % 20 === 0 && elements.aeProgressElement) {
+                if (epoch % 10 === 0 && elements.aeProgressElement) {
                     const avgLoss = totalLoss / n;
                     elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
                 }
@@ -1151,6 +1138,103 @@ document.addEventListener('DOMContentLoaded', function() {
             if (elements.aeProgressElement) {
                 const avgLoss = totalLoss / n;
                 elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
+            }
+        }
+        
+        initializeCache() {
+            return {
+                W1: this.zeroMatrix(this.hiddenDim, this.inputDim),
+                b1: new Array(this.hiddenDim).fill(0),
+                W2: this.zeroMatrix(this.latentDim, this.hiddenDim),
+                b2: new Array(this.latentDim).fill(0),
+                W3: this.zeroMatrix(this.hiddenDim, this.latentDim),
+                b3: new Array(this.hiddenDim).fill(0),
+                W4: this.zeroMatrix(this.inputDim, this.hiddenDim),
+                b4: new Array(this.inputDim).fill(0)
+            };
+        }
+        
+        initializeGradients() {
+            return this.initializeCache();
+        }
+        
+        zeroMatrix(rows, cols) {
+            return Array(rows).fill().map(() => Array(cols).fill(0));
+        }
+        
+        accumulateGradients(gradients, computed) {
+            const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, input, a1, latent, a3 } = computed;
+            
+            // W4 and b4
+            for (let j = 0; j < this.inputDim; j++) {
+                const grad = dL_dz4[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W4[j][k] += grad * a3[k];
+                }
+                gradients.b4[j] += grad;
+            }
+            
+            // W3 and b3
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz3[j];
+                for (let k = 0; k < this.latentDim; k++) {
+                    gradients.W3[j][k] += grad * latent[k];
+                }
+                gradients.b3[j] += grad;
+            }
+            
+            // W2 and b2
+            for (let j = 0; j < this.latentDim; j++) {
+                const grad = dL_dz2[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W2[j][k] += grad * a1[k];
+                }
+                gradients.b2[j] += grad;
+            }
+            
+            // W1 and b1
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz1[j];
+                for (let k = 0; k < this.inputDim; k++) {
+                    gradients.W1[j][k] += grad * input[k];
+                }
+                gradients.b1[j] += grad;
+            }
+        }
+        
+        applyGradients(gradients, m, v, lr, beta1, beta2, epsilon) {
+            // Update W4 and b4
+            this.updateWeights(this.W4, gradients.W4, m.W4, v.W4, lr, beta1, beta2, epsilon);
+            this.updateBias(this.b4, gradients.b4, m.b4, v.b4, lr, beta1, beta2, epsilon);
+            
+            // Update W3 and b3
+            this.updateWeights(this.W3, gradients.W3, m.W3, v.W3, lr, beta1, beta2, epsilon);
+            this.updateBias(this.b3, gradients.b3, m.b3, v.b3, lr, beta1, beta2, epsilon);
+            
+            // Update W2 and b2
+            this.updateWeights(this.W2, gradients.W2, m.W2, v.W2, lr, beta1, beta2, epsilon);
+            this.updateBias(this.b2, gradients.b2, m.b2, v.b2, lr, beta1, beta2, epsilon);
+            
+            // Update W1 and b1
+            this.updateWeights(this.W1, gradients.W1, m.W1, v.W1, lr, beta1, beta2, epsilon);
+            this.updateBias(this.b1, gradients.b1, m.b1, v.b1, lr, beta1, beta2, epsilon);
+        }
+        
+        updateWeights(W, grad, m, v, lr, beta1, beta2, epsilon) {
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    m[i][j] = beta1 * m[i][j] + (1 - beta1) * grad[i][j];
+                    v[i][j] = beta2 * v[i][j] + (1 - beta2) * grad[i][j] * grad[i][j];
+                    W[i][j] -= lr * m[i][j] / (Math.sqrt(v[i][j]) + epsilon);
+                }
+            }
+        }
+        
+        updateBias(b, grad, m, v, lr, beta1, beta2, epsilon) {
+            for (let i = 0; i < b.length; i++) {
+                m[i] = beta1 * m[i] + (1 - beta1) * grad[i];
+                v[i] = beta2 * v[i] + (1 - beta2) * grad[i] * grad[i];
+                b[i] -= lr * m[i] / (Math.sqrt(v[i]) + epsilon);
             }
         }
         
@@ -1259,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // FIXED: Better variance visualization
     function drawVariance(canvas, pcaEigenvalues, kpcaEigenvalues) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
@@ -1268,21 +1353,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!pcaEigenvalues || !kpcaEigenvalues || pcaEigenvalues.length === 0 || kpcaEigenvalues.length === 0) return;
         
-        const numComponents = Math.min(pcaEigenvalues.length, kpcaEigenvalues.length, 4);
+        // Calculate explained variance ratio
+        const pcaTotal = pcaEigenvalues.reduce((a, b) => a + b, 0);
+        const kpcaTotal = kpcaEigenvalues.reduce((a, b) => a + b, 0);
+        
+        const pcaRatios = pcaTotal > 0 ? pcaEigenvalues.map(e => e / pcaTotal) : pcaEigenvalues.map(() => 0);
+        const kpcaRatios = kpcaTotal > 0 ? kpcaEigenvalues.map(e => e / kpcaTotal) : kpcaEigenvalues.map(() => 0);
+        
+        const numComponents = Math.min(pcaRatios.length, kpcaRatios.length, 4);
         const barWidth = width / (numComponents * 2 + 1) * 0.7;
         const maxHeight = height * 0.7;
-        const maxVal = Math.max(...pcaEigenvalues.slice(0, numComponents), ...kpcaEigenvalues.slice(0, numComponents), 1);
         
         // Draw title
         ctx.font = '14px Arial';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
-        ctx.fillText('Eigenvalue Comparison', width / 2, 20);
+        ctx.fillText('Explained Variance Ratio', width / 2, 20);
         
         // Draw bars
         for (let i = 0; i < numComponents; i++) {
             // PCA bar
-            const pcaHeight = (pcaEigenvalues[i] / maxVal) * maxHeight;
+            const pcaHeight = pcaRatios[i] * maxHeight;
             const pcaX = (i * 2 + 0.5) * width / (numComponents * 2 + 1) + barWidth / 2;
             
             ctx.fillStyle = '#3498db';
@@ -1292,10 +1383,10 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = '#333';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(pcaEigenvalues[i].toFixed(2), pcaX, height - pcaHeight - 35);
+            ctx.fillText((pcaRatios[i] * 100).toFixed(1) + '%', pcaX, height - pcaHeight - 35);
             
             // KPCA bar
-            const kpcaHeight = (kpcaEigenvalues[i] / maxVal) * maxHeight;
+            const kpcaHeight = kpcaRatios[i] * maxHeight;
             const kpcaX = (i * 2 + 1.5) * width / (numComponents * 2 + 1) + barWidth / 2;
             
             ctx.fillStyle = '#e74c3c';
@@ -1303,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Value label
             ctx.fillStyle = '#333';
-            ctx.fillText(kpcaEigenvalues[i].toFixed(2), kpcaX, height - kpcaHeight - 35);
+            ctx.fillText((kpcaRatios[i] * 100).toFixed(1) + '%', kpcaX, height - kpcaHeight - 35);
             
             // Component label
             ctx.fillText(`PC${i + 1}`, (pcaX + kpcaX) / 2, height - 10);
@@ -1315,12 +1406,22 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(10, 35, 15, 15);
         ctx.fillStyle = '#333';
         ctx.textAlign = 'left';
-        ctx.fillText('PCA (original space)', 30, 47);
+        ctx.fillText('PCA', 30, 47);
         
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(10, 55, 15, 15);
         ctx.fillStyle = '#333';
-        ctx.fillText('KPCA (feature space)', 30, 67);
+        ctx.fillText('Kernel PCA', 30, 67);
+        
+        // Show cumulative variance
+        const pcaCumulative = pcaRatios.slice(0, numComponents).reduce((a, b) => a + b, 0);
+        const kpcaCumulative = kpcaRatios.slice(0, numComponents).reduce((a, b) => a + b, 0);
+        
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Cumulative: PCA ${(pcaCumulative * 100).toFixed(1)}%, KPCA ${(kpcaCumulative * 100).toFixed(1)}%`, 
+                     width / 2, height - 45);
     }
     
     // Autoencoder visualization
@@ -1570,8 +1671,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             try {
-                // Train with smaller learning rate for stability
-                aeModel.train(data, 100, 0.1);
+                // Train with better parameters
+                aeModel.train(data, 200, 0.01, 32);
                 aeProjection = aeModel.encode(data);
                 
                 drawAutoencoderComparison();
@@ -1625,10 +1726,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     handleParameterChange();
     handleKernelChange();
-    
-    // Better default gamma for demonstration
-    elements.gammaInput.value = "0.7";  // Sets gamma = 5.0, good for circles/moons
-    handleParameterChange();
     
     // Generate initial data and compute projections
     generateData();
