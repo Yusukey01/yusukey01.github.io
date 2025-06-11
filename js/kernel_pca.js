@@ -1552,7 +1552,6 @@ document.addEventListener('DOMContentLoaded', function() {
         drawVariance(elements.varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
         // Update other tabs
-        drawAlgorithmStep(currentStep);
         drawAutoencoderArchitecture();
         drawAutoencoderComparison();
     }
