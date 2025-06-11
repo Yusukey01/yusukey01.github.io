@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- Tab navigation -->
                         <div class="tab-nav">
                             <button class="tab-btn active" data-tab="comparison">PCA Comparison</button>
-                            <button class="tab-btn" data-tab="algorithm">Algorithm Steps</button>
                             <button class="tab-btn" data-tab="autoencoder">Autoencoder</button>
                         </div>
                         
@@ -54,20 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             
-                            <!-- Algorithm Tab -->
-                            <div id="algorithm-tab" class="tab-pane">
-                                <div class="algorithm-container">
-                                    <div class="step-controls">
-                                        <button id="step-back" class="step-btn">◀ Previous</button>
-                                        <span id="step-indicator">Step 1 / 5</span>
-                                        <button id="step-forward" class="step-btn">Next ▶</button>
-                                        <button id="step-auto" class="step-btn">Auto Play</button>
-                                    </div>
-                                    <canvas id="algorithm-canvas" width="900" height="400"></canvas>
-                                    <div id="step-description" class="step-description"></div>
-                                </div>
-                            </div>
-                            
                             <!-- Autoencoder Tab -->
                             <div id="autoencoder-tab" class="tab-pane">
                                 <div class="autoencoder-grid">
@@ -92,32 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="btn-container">
                             <button id="compute-btn" class="primary-btn">Compute Kernel PCA</button>
                             <button id="generate-btn" class="secondary-btn">Generate New Data</button>
-                        </div>
-                        
-                        <div class="expected-behavior">
-                            <h3>Expected Behavior by Dataset:</h3>
-                            <div class="behavior-grid">
-                                <div class="behavior-item">
-                                    <strong>Concentric Circles:</strong> Kernel PCA should separate inner/outer circles into distinct clusters. Linear PCA cannot achieve this separation.
-                                </div>
-                                <div class="behavior-item">
-                                    <strong>Two Moons:</strong> Kernel PCA should separate the two crescent shapes. Linear PCA will show overlapping clusters.
-                                </div>
-                                <div class="behavior-item">
-                                    <strong>Gaussian Blobs:</strong> Both methods should work similarly since the structure is already linear.
-                                </div>
-                                <div class="behavior-item">
-                                    <strong>Spiral:</strong> Kernel PCA may show more organized structure by "unwinding" the spiral pattern.
-                                </div>
-                            </div>
-                            
-                            <div class="implementation-note">
-                                <h4>Implementation Notes:</h4>
-                                <p><strong>Academic Source:</strong> Based on Schölkopf, Smola & Müller (1998)</p>
-                                <p><strong>Key Formula:</strong> y = K_centered × (α / √λ)</p>
-                                <p><strong>Eigenvalues:</strong> Both PCA and Kernel PCA eigenvalues represent variance - just in different spaces</p>
-                                <p><strong>Expected Result:</strong> Linear separation, not preservation of curved structures</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -370,42 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
-        .step-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .step-btn {
-            padding: 8px 15px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        
-        .step-btn:hover {
-            background: #f0f0f0;
-        }
-        
-        #step-indicator {
-            font-weight: bold;
-        }
-        
-        .step-description {
-            margin-top: 15px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        
-        .algorithm-container {
-            text-align: center;
-        }
-        
         .autoencoder-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -429,20 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
             color: #666;
         }
         
-        .expected-behavior {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f7ff;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .expected-behavior h3 {
-            margin: 0 0 15px 0;
-            font-size: 1rem;
-            color: #2c3e50;
-        }
-        
         .behavior-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -455,37 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        .behavior-item {
-            font-size: 0.85rem;
-            line-height: 1.4;
-            padding: 8px;
-            background: white;
-            border-radius: 4px;
-        }
-        
-        .behavior-item strong {
-            color: #2c3e50;
-        }
-        
-        .implementation-note {
-            margin-top: 15px;
-            padding: 12px;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 4px;
-        }
-        
-        .implementation-note h4 {
-            margin: 0 0 8px 0;
-            font-size: 0.9rem;
-            color: #856404;
-        }
-        
-        .implementation-note p {
-            margin: 4px 0;
-            font-size: 0.8rem;
-            line-height: 1.3;
-        }
     `;
     
     document.head.appendChild(styleElement);
@@ -544,49 +422,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let gamma = 5.0;  // Good default for RBF kernel with circles/moons
     let degree = 3;
     let coef = 1.0;
-    
-    // Optimized matrix operations with cached arrays
-    const matrixCache = new Map();
-    
-    function matrixMultiply(A, B) {
-        const m = A.length;
-        const n = A[0].length;
-        const p = B[0].length;
-        
-        // Use pre-allocated array for better performance
-        const C = new Array(m);
-        for (let i = 0; i < m; i++) {
-            C[i] = new Array(p).fill(0);
-        }
-        
-        // Cache-friendly loop ordering
-        for (let i = 0; i < m; i++) {
-            const Ai = A[i];
-            const Ci = C[i];
-            for (let k = 0; k < n; k++) {
-                const Aik = Ai[k];
-                const Bk = B[k];
-                for (let j = 0; j < p; j++) {
-                    Ci[j] += Aik * Bk[j];
-                }
-            }
-        }
-        return C;
-    }
-    
-    function transpose(matrix) {
-        const rows = matrix.length;
-        const cols = matrix[0].length;
-        const result = new Array(cols);
-        
-        for (let i = 0; i < cols; i++) {
-            result[i] = new Array(rows);
-            for (let j = 0; j < rows; j++) {
-                result[i][j] = matrix[j][i];
-            }
-        }
-        return result;
-    }
     
     // Box-Muller transform for Gaussian random numbers
     let spareRandom = null;
@@ -753,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return K;
     }
     
-    // Proper kernel matrix centering according to Schölkopf et al.
+    // Proper kernel matrix centering
     function centerKernelMatrix(K) {
         const n = K.length;
         if (n === 0) return K;
@@ -1016,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // FIXED: Kernel PCA implementation based on mlxtend and academic sources
+    // Kernel PCA
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -1056,8 +891,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select top numComponents
         const selectedPairs = eigenPairs.slice(0, Math.min(numComponents, eigenPairs.length));
         
-        // CRITICAL FIX: The projection formula is NOT what was in the original code
-        // According to Schölkopf et al. and mlxtend, the projection is:
         // y_i = sum_j (alpha_j * K_centered[i,j]) where alpha_j = eigenvector_j / sqrt(eigenvalue_j)
         
         const projection = new Array(n);
@@ -1065,22 +898,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const normalizedEigenvectors = [];
         
         // First normalize the eigenvectors
-        for (let i = 0; i < selectedPairs.length; i++) {
-            const lambda = selectedPairs[i].value;
-            const alpha = selectedPairs[i].vector;
-            
-            // Normalize eigenvector by dividing by sqrt(lambda)
-            const normalizedAlpha = new Array(n);
+        for (const { value: lambda, vector: alpha } of selectedPairs) {
             const sqrtLambda = Math.sqrt(lambda);
-            for (let j = 0; j < n; j++) {
-                normalizedAlpha[j] = alpha[j] / sqrtLambda;
+            const normalizedAlpha = [];
+
+            // simple for–of over each entry
+            for (const val of alpha) {
+                normalizedAlpha.push(val / sqrtLambda);
             }
-            
+
             validEigenvalues.push(lambda);
             normalizedEigenvectors.push(normalizedAlpha);
         }
-        
-        // FIXED: Correct projection calculation
+                
         // For each data point i, project onto each principal component
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
@@ -1491,262 +1321,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(10, 55, 15, 15);
         ctx.fillStyle = '#333';
         ctx.fillText('KPCA (feature space)', 30, 67);
-    }
-    
-    // Algorithm visualization
-    function drawAlgorithmStep(step) {
-        const ctx = elements.algorithmCanvas.getContext('2d');
-        const width = elements.algorithmCanvas.width;
-        const height = elements.algorithmCanvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        const steps = [
-            {
-                title: 'Step 1: Original Data',
-                description: 'Start with the original data points in their native space.',
-                draw: () => {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = width;
-                    tempCanvas.height = height;
-                    drawData(tempCanvas, data, null, 'Original Data');
-                    ctx.drawImage(tempCanvas, 0, 0);
-                }
-            },
-            {
-                title: 'Step 2: Compute Kernel Matrix',
-                description: 'Calculate pairwise similarities using the kernel function K(xi, xj).',
-                draw: () => {
-                    if (kpcaResult && kpcaResult.kernelMatrix && kpcaResult.kernelMatrix.length > 0) {
-                        drawKernelMatrix(elements.algorithmCanvas, kpcaResult.kernelMatrix, 'Kernel Matrix K');
-                    } else {
-                        const ctx = elements.algorithmCanvas.getContext('2d');
-                        ctx.font = '14px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see kernel matrix', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
-                    }
-                }
-            },
-            {
-                title: 'Step 3: Center Kernel Matrix',
-                description: 'Center the kernel matrix in feature space: K̃ = K - 1K - K1 + 1K1',
-                draw: () => {
-                    if (kpcaResult && kpcaResult.centeredKernelMatrix && kpcaResult.centeredKernelMatrix.length > 0) {
-                        drawKernelMatrix(elements.algorithmCanvas, kpcaResult.centeredKernelMatrix, 'Centered Kernel Matrix K̃');
-                    } else {
-                        const ctx = elements.algorithmCanvas.getContext('2d');
-                        ctx.font = '14px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see centered kernel matrix', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
-                    }
-                }
-            },
-            {
-                title: 'Step 4: Eigendecomposition',
-                description: 'Find eigenvalues and eigenvectors of the centered kernel matrix.',
-                draw: () => {
-                    if (kpcaResult && kpcaResult.eigenvalues && kpcaResult.eigenvalues.length > 0) {
-                        drawEigenvalues(elements.algorithmCanvas, kpcaResult.eigenvalues);
-                    } else {
-                        const ctx = elements.algorithmCanvas.getContext('2d');
-                        ctx.font = '14px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see eigenvalues', elements.algorithmCanvas.width / 2, elements.algorithmCanvas.height / 2);
-                    }
-                }
-            },
-            {
-                title: 'Step 5: Project Data',
-                description: 'Project data onto principal components in feature space.',
-                draw: () => {
-                    if (kpcaResult && kpcaResult.projection && kpcaResult.projection.length > 0) {
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = width;
-                        tempCanvas.height = height;
-                        drawData(tempCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
-                        ctx.drawImage(tempCanvas, 0, 0);
-                    } else {
-                        ctx.font = '14px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('Run Kernel PCA to see projection', width / 2, height / 2);
-                    }
-                }
-            }
-        ];
-        
-        const currentStepData = steps[step];
-        document.getElementById('step-indicator').textContent = `Step ${step + 1} / ${steps.length}`;
-        document.getElementById('step-description').innerHTML = `
-            <h4>${currentStepData.title}</h4>
-            <p>${currentStepData.description}</p>
-        `;
-        
-        currentStepData.draw();
-    }
-    
-    function drawKernelMatrix(canvas, matrix, title = '') {
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        if (!matrix || matrix.length === 0) {
-            ctx.font = '14px Arial';
-            ctx.fillStyle = '#666';
-            ctx.textAlign = 'center';
-            ctx.fillText('No matrix data available', width / 2, height / 2);
-            return;
-        }
-        
-        const n = Math.min(matrix.length, 50); // Limit size for visualization
-        const availableHeight = height - 40;
-        const cellSize = Math.min(availableHeight / n, width * 0.8 / n);
-        const matrixSize = cellSize * n;
-        const offsetX = (width - matrixSize) / 2;
-        const offsetY = 30;
-        
-        // Title
-        if (title) {
-            ctx.font = '14px Arial';
-            ctx.fillStyle = '#333';
-            ctx.textAlign = 'center';
-            ctx.fillText(title, width / 2, 20);
-        }
-        
-        // Find min and max values for color scaling
-        let minVal = Infinity, maxVal = -Infinity;
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j < n; j++) {
-                minVal = Math.min(minVal, matrix[i][j]);
-                maxVal = Math.max(maxVal, matrix[i][j]);
-            }
-        }
-        
-        // Draw matrix
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j < n; j++) {
-                const val = (matrix[i][j] - minVal) / (maxVal - minVal);
-                const intensity = Math.floor(val * 255);
-                
-                // Blue to red gradient
-                const r = intensity;
-                const g = 0;
-                const b = 255 - intensity;
-                
-                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                ctx.fillRect(offsetX + j * cellSize, offsetY + i * cellSize, cellSize - 1, cellSize - 1);
-            }
-        }
-        
-        // Color bar
-        const barWidth = 20;
-        const barHeight = matrixSize;
-        const barX = offsetX + matrixSize + 20;
-        const barY = offsetY;
-        
-        // Gradient
-        for (let i = 0; i < barHeight; i++) {
-            const val = 1 - i / barHeight;
-            const intensity = Math.floor(val * 255);
-            ctx.fillStyle = `rgb(${intensity}, 0, ${255 - intensity})`;
-            ctx.fillRect(barX, barY + i, barWidth, 1);
-        }
-        
-        // Labels
-        ctx.fillStyle = '#333';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(maxVal.toFixed(2), barX + barWidth + 5, barY + 10);
-        ctx.fillText(minVal.toFixed(2), barX + barWidth + 5, barY + barHeight);
-    }
-    
-    function drawEigenvalues(canvas, eigenvalues) {
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        if (!eigenvalues || eigenvalues.length === 0) {
-            ctx.font = '14px Arial';
-            ctx.fillStyle = '#666';
-            ctx.textAlign = 'center';
-            ctx.fillText('No eigenvalues available', width / 2, height / 2);
-            return;
-        }
-        
-        const n = Math.min(eigenvalues.length, 10);
-        const barWidth = width * 0.6 / n;
-        const offsetX = width * 0.2;
-        const maxHeight = height * 0.6;
-        const maxVal = Math.max(...eigenvalues.slice(0, n));
-        
-        // Title
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#333';
-        ctx.textAlign = 'center';
-        ctx.fillText('Eigenvalues (sorted)', width / 2, 30);
-        
-        // Draw bars
-        for (let i = 0; i < n; i++) {
-            const barHeight = (eigenvalues[i] / maxVal) * maxHeight;
-            const x = offsetX + i * barWidth;
-            const y = height - barHeight - 50;
-            
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(x + barWidth * 0.1, y, barWidth * 0.8, barHeight);
-            
-            // Value label
-            ctx.fillStyle = '#333';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(eigenvalues[i].toFixed(2), x + barWidth / 2, y - 5);
-            
-            // Index label
-            ctx.fillText(`λ${i + 1}`, x + barWidth / 2, height - 35);
-        }
-        
-        // Cumulative variance
-        const total = eigenvalues.reduce((a, b) => a + b, 0);
-        let cumulative = 0;
-        ctx.strokeStyle = '#e74c3c';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        for (let i = 0; i < n; i++) {
-            cumulative += eigenvalues[i] / total;
-            const x = offsetX + (i + 0.5) * barWidth;
-            const y = height - 50 - cumulative * maxHeight;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.stroke();
-        
-        // Legend
-        ctx.font = '12px Arial';
-        ctx.fillStyle = '#3498db';
-        ctx.fillRect(width - 150, 40, 15, 15);
-        ctx.fillStyle = '#333';
-        ctx.textAlign = 'left';
-        ctx.fillText('Eigenvalues', width - 130, 52);
-        
-        ctx.strokeStyle = '#e74c3c';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(width - 150, 65);
-        ctx.lineTo(width - 135, 65);
-        ctx.stroke();
-        ctx.fillStyle = '#333';
-        ctx.fillText('Cumulative %', width - 130, 69);
     }
     
     // Autoencoder visualization
