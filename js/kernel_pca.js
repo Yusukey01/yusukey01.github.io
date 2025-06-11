@@ -1601,35 +1601,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Algorithm step controls
-    function handleStepForward() {
-        if (currentStep < 4) {
-            currentStep++;
-            drawAlgorithmStep(currentStep);
-        }
-    }
-    
-    function handleStepBack() {
-        if (currentStep > 0) {
-            currentStep--;
-            drawAlgorithmStep(currentStep);
-        }
-    }
-    
-    function handleAutoplay() {
-        if (autoplayInterval) {
-            clearInterval(autoplayInterval);
-            autoplayInterval = null;
-            document.getElementById('step-auto').textContent = 'Auto Play';
-        } else {
-            autoplayInterval = setInterval(() => {
-                currentStep = (currentStep + 1) % 5;
-                drawAlgorithmStep(currentStep);
-            }, 2000);
-            document.getElementById('step-auto').textContent = 'Stop';
-        }
-    }
-    
     // Add event listeners
     elements.datasetSelect.addEventListener('change', handleDatasetChange);
     elements.kernelSelect.addEventListener('change', handleKernelChange);
@@ -1651,9 +1622,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     elements.tabBtns.forEach(btn => btn.addEventListener('click', handleTabClick));
     
-    document.getElementById('step-forward').addEventListener('click', handleStepForward);
-    document.getElementById('step-back').addEventListener('click', handleStepBack);
-    document.getElementById('step-auto').addEventListener('click', handleAutoplay);
     
     // Initialize
     handleParameterChange();
