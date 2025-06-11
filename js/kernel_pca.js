@@ -1103,6 +1103,15 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = validEigenvalues.length; i < numComponents; i++) {
             paddedEigenvalues.push(0);
         }
+        //normalize the projected data
+        for (let i = 0; i < n; i++) {
+            let norm = Math.sqrt(projection[i].reduce((sum, val) => sum + val * val, 0));
+            if (norm > 0) {
+                for (let j = 0; j < projection[i].length; j++) {
+                    projection[i][j] /= norm;
+                }
+            }
+        }
         
         return {
             projection,
