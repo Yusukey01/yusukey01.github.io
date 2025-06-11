@@ -103,9 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="gamma-container">
                         <label for="gamma-parameter">RBF γ (gamma):</label>
-                        <input type="range" id="gamma-parameter" min="-2" max="2" step="0.1" value="-0.5" class="full-width">
-                        <span id="gamma-display">γ = 0.3</span>
-                        <div class="param-hint">Controls kernel width. Lower = wider influence</div>
+                        <input type="range" id="gamma-parameter" min="-1" max="2" step="0.1" value="1" class="full-width">
+                        <span id="gamma-display">γ = 10.0</span>
+                        <div class="param-hint">Controls kernel width. Higher = more local influence</div>
                     </div>
                     
                     <div class="control-group" id="degree-container" style="display: none;">
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let aeProjection = null;
     
     // Better default gamma for RBF kernel
-    let gamma = 0.3;  // More reasonable default
+    let gamma = 10.0;  // Good default for separating non-linear patterns
     let degree = 3;
     let coef = 1.0;
     
@@ -887,36 +887,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select top numComponents
         const selectedPairs = eigenPairs.slice(0, Math.min(numComponents, eigenPairs.length));
         
-        // FIXED: Correct projection according to scikit-learn and academic sources
-        // The projection is K_centered * alpha where alpha is the eigenvector
-        // multiplied by sqrt(lambda) to get the actual principal components
+        // FIXED: According to mlxtend and academic sources, the eigenvectors ARE the projections
+        // We just need to scale them by sqrt(eigenvalues) to get principal components
         
         const projection = new Array(n);
         const validEigenvalues = [];
         const validEigenvectors = [];
         
-        // Extract eigenvalues and eigenvectors
-        for (const { value: lambda, vector: alpha } of selectedPairs) {
+        // For each selected eigenpair
+        for (let j = 0; j < selectedPairs.length; j++) {
+            const { value: lambda, vector: alpha } = selectedPairs[j];
             validEigenvalues.push(lambda);
             validEigenvectors.push(alpha);
         }
         
-        // For each data point i, project onto each principal component
+        // The projection is simply the eigenvectors scaled by sqrt(eigenvalues)
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
             
-            // For each principal component
             for (let j = 0; j < validEigenvectors.length; j++) {
-                // FIXED: Multiply by sqrt(lambda) to get principal components
-                // This matches scikit-learn's implementation
-                const sqrtLambda = Math.sqrt(validEigenvalues[j]);
-                const alpha = validEigenvectors[j];
-                
-                let proj = 0;
-                for (let k = 0; k < n; k++) {
-                    proj += K_centered[i][k] * alpha[k];
-                }
-                projection[i][j] = proj * sqrtLambda;
+                // The eigenvector values ARE the projections, scaled by sqrt(lambda)
+                projection[i][j] = validEigenvectors[j][i] * Math.sqrt(validEigenvalues[j]);
             }
         }
         
@@ -1122,13 +1113,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                     
-                    // Apply Adam-like updates
-                    const lr = learningRate * Math.sqrt(1 - Math.pow(beta2, epoch + 1)) / (1 - Math.pow(momentum, epoch + 1));
+                    // Apply Adam-like updates with less aggressive learning rate decay
+                    const t = epoch * Math.ceil(n / batchSize) + Math.floor(batch / batchSize) + 1;
+                    const lr = learningRate * Math.sqrt(1 - Math.pow(beta2, t)) / (1 - Math.pow(momentum, t));
                     this.applyGradients(batchGradients, m, v, lr, momentum, beta2, epsilon);
                 }
                 
                 // Update progress
-                if (epoch % 10 === 0 && elements.aeProgressElement) {
+                if (epoch % 20 === 0 && elements.aeProgressElement) {
                     const avgLoss = totalLoss / n;
                     elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
                 }
@@ -1435,9 +1427,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw network architecture
         const layers = [
             { size: 2, name: 'Input' },
-            { size: 4, name: 'Hidden 1' },
+            { size: 8, name: 'Hidden 1' },
             { size: 2, name: 'Latent' },
-            { size: 4, name: 'Hidden 2' },
+            { size: 8, name: 'Hidden 2' },
             { size: 2, name: 'Output' }
         ];
         
@@ -1666,13 +1658,13 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.trainAeBtn.disabled = true;
         elements.aeProgressElement.textContent = 'Initializing autoencoder...';
         
-        // Create and train autoencoder with 2D input, 4 hidden units, 2D latent space
-        aeModel = new SimpleAutoencoder(2, 4, 2);
+        // Create and train autoencoder with 2D input, 8 hidden units, 2D latent space
+        aeModel = new SimpleAutoencoder(2, 8, 2);
         
         setTimeout(() => {
             try {
                 // Train with better parameters
-                aeModel.train(data, 200, 0.01, 32);
+                aeModel.train(data, 300, 0.01, 32);
                 aeProjection = aeModel.encode(data);
                 
                 drawAutoencoderComparison();
