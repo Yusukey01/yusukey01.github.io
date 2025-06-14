@@ -2145,17 +2145,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Auto-adjust gamma if using RBF kernel
         if (elements.kernelSelect.value === 'rbf') {
             const datasetType = elements.datasetSelect.value;
-            
-            // For two moons, always recalculate optimal gamma
-            if (datasetType === 'moons') {
-                const suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
-                gamma = suggestedGamma;
-                
-                // Update UI
-                const logGamma = Math.log10(gamma);
-                elements.gammaInput.value = Math.max(-1, Math.min(2, logGamma)).toString();
-                elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
-            }
+        
         }
         
         // Compute Kernel PCA on normalized data
