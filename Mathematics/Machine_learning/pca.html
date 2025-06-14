@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Principal Component Analysis (PCA)
+title: Principal Component Analysis (PCA) & Autoeocoders
 level: detail
-description: Learn about unsupervised learning basics from PCA.
+description: Learn about unsupervised learning basics from PCA and Autoencoders.
 uses_math: true
 uses_python: false
 ---
@@ -10,13 +10,13 @@ uses_python: false
 <html>
     <body> 
         <div class="hero-section">
-            <h1 class="webpage-name">Principal Component Analysis (PCA)</h1>
+            <h1 class="webpage-name">Principal Component Analysis (PCA) & Autoeocoders</h1>
         </div>
 
         <div class="topic-nav">
             <a href="#intro">Recap & Introduction</a>
-            <a href="#"></a>
-            <a href="#"></a>
+            <a href="#auto">Autoencoders</a>
+            <a href="#demo">Kernel PCA Demo</a>
         </div> 
 
         <div class="container">  
@@ -132,86 +132,32 @@ uses_python: false
 
             </section>
 
-            <section id="" class="section-content">
-                 <h2>PCA vs Autoencoders</h2>
+            <section id="auto" class="section-content">
+                 <h2>Autoencoders</h2>
+
                 <p>
-                    While Kernel PCA extends linear PCA to non-linear spaces using the kernel trick, 
-                    <strong>autoencoders</strong> provide another approach to non-linear dimensionality reduction 
-                    using neural networks. Understanding the relationship between these methods is crucial for 
-                    choosing the right technique for your application.
+                    We can consider PCA as the process of learning linear mappings such as an encoder \(f_e : x \to z\) and a decoder \(f_d : z \to x\). 
+                    Then the reconstruction function can be represented as \(r(x) = f_d \left(f_e(x) \right)\), which is trained to minimize 
+                    \(\mathcal{L}(\theta) = -\log p(x | r(x))\). 
                 </p>
-                
-                <h3>Linear Autoencoders ≈ PCA</h3>
                 <p>
-                    A surprising result is that a <strong>linear autoencoder</strong> with one hidden layer learns 
-                    essentially the same representation as PCA:
+                    We can implement \(f_e\) and \(f_e\) by <strong>neural networks</strong>. This is called <strong>autoencoder</strong>. 
+                    Especially, A linear autoencoder is equivalent to PCA:
+                    <ul style="padding-left: 40px;">
+                        <li>Input: \(x \in \mathbb{R}^D\)</li>
+                        <li>Hidden units: \(z = W_1 x, \quad W_1 \in \mathbb{R}^{L \times D}\) </li>
+                        <li>Output: \(\hat{x} = W_2 z = W_2 W_1 x = Wx, \quad W_2 \in \mathbb{R}^{D \times L}\)</li>
+                    </ul>
+                    This model is trained by minimizing the squared reconstruction error: 
+                    \[
+                    \mathcal{L}(W) = \sum_{n=1}^N \| x_n - W x_n\|_2^2 
+                    \]
+                    Then we obtain \(\hat{W}\), an orthgonal projection onto the first L eigenvectors of empirical covariance matrix of the data. 
+                    In general, it is known that if we introduce nonlinearities into the autoencoder, the model becomes strictly more powerful than PCA. 
+                    Moreover, autoencoders designed with deep learning architectures handle large datasets and complex structures much better than Kernel PCA, so 
+                    autoencoders have generally become more popular than Kernel PCA for nonlinear mapping in practical applications.
                 </p>
-                <ul style="padding-left: 40px;">
-                    <li>Encoder: \(z = W_e x + b_e\) (linear activation)</li>
-                    <li>Decoder: \(\hat{x} = W_d z + b_d\) (linear activation)</li>
-                    <li>Loss: Mean Squared Error \(\mathcal{L} = \|x - \hat{x}\|^2\)</li>
-                </ul>
-                <p>
-                    When trained to convergence, the encoder weights \(W_e\) span the same subspace as the top 
-                    principal components from PCA (though they may not be orthogonal).
-                </p>
-                
-                <h3>Non-linear Autoencoders</h3>
-                <p>
-                    The real power of autoencoders comes from using <strong>non-linear activation functions</strong>:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Can capture complex, non-linear manifolds in data</li>
-                    <li>More flexible than Kernel PCA in choosing the architecture</li>
-                    <li>Can learn hierarchical representations with deep architectures</li>
-                    <li>Allow for various regularization techniques (dropout, L1/L2, etc.)</li>
-                </ul>
-                
-                <h3>Comparison: PCA vs Kernel PCA vs Autoencoders</h3>
-                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                    <tr style="background-color: #f0f0f0;">
-                        <th style="padding: 10px; border: 1px solid #ddd;">Aspect</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">PCA</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Kernel PCA</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Autoencoders</th>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Type</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Linear</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Non-linear (implicit)</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Linear or Non-linear</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Computation</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Eigendecomposition</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Kernel matrix eigen.</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Gradient descent</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Scalability</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Good (\(O(n^3)\))</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Poor (\(O(m^3)\))</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Excellent (SGD)</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Interpretability</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">High</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Medium</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Low</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Reconstruction</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Easy</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Difficult</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Built-in</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Hyperparameters</strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">None</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Kernel choice, params</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">Many (architecture, etc.)</td>
-                    </tr>
-                </table>
+
                 
                 <h3>When to Use Which Method?</h3>
                 <p>
@@ -248,7 +194,7 @@ uses_python: false
             </section>
 
             <section id="demo" class="section-content">
-                <h2>Interactive Kernel PCA Demo</h2>
+                <h2>Kernel PCA Demo</h2>
                 <p>
                     This interactive demo allows you to explore the differences between standard PCA and Kernel PCA 
                     on various datasets. You can see how different kernels capture non-linear patterns and how 
