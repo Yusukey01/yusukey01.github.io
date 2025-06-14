@@ -1735,7 +1735,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Dataset-specific gamma recommendations
     const DATASET_GAMMA_HINTS = {
         'circles': { base: 0.5, hint: 'Concentric circles need moderate gamma' },
-        'moons': { base: 2.0, hint: 'Two moons work well with higher gamma' },
+        'moons': { base: 0.8, hint: 'Two moons work well with higher gamma' },
         'blobs': { base: 0.1, hint: 'Gaussian blobs need low gamma' },
         'spiral': { base: 1.0, hint: 'Spirals need balanced gamma' }
     };
@@ -1747,15 +1747,66 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Compute actual data statistics
         const medianDist = computeMedianPairwiseDistance(data);
+        console.log(`Dataset: ${datasetType}, Median distance: ${medianDist}`);
         
-        // For normalized data, median distance is typically 1-3
-        // Adjust base gamma based on actual data scale
-        const scaleAdjustment = 2.0 / medianDist; // Target median distance of 2
+        // For two moons, we need special handling
+        if (datasetType === 'moons') {
+            // Two moons typically have median distance around 1.5-2.5 after normalization
+            // We want gamma such that exp(-gamma * median_dist^2) ≈ 0.3-0.5
+            // This gives good separation without being too local
+            const targetSimilarity = 0.4;
+            const suggestedGamma = -Math.log(targetSimilarity) / (medianDist * medianDist);
+            console.log(`Two moons: suggested gamma = ${suggestedGamma}`);
+            return suggestedGamma;
+        }
         
+        // For other datasets, use the standard scaling
+        const scaleAdjustment = 2.0 / medianDist;
         return datasetHint.base * scaleAdjustment;
     }
 
-    // Replace the existing handleDatasetChange with this improved version
+    // analyze the kernel matrix quality specifically for two moons
+    function analyzeKernelMatrixForMoons(K, labels) {
+        const n = K.length;
+        if (n === 0) return;
+        
+        // Calculate average within-class and between-class similarities
+        let withinClassSim = 0;
+        let betweenClassSim = 0;
+        let withinCount = 0;
+        let betweenCount = 0;
+        
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                if (labels[i] === labels[j]) {
+                    withinClassSim += K[i][j];
+                    withinCount++;
+                } else {
+                    betweenClassSim += K[i][j];
+                    betweenCount++;
+                }
+            }
+        }
+        
+        withinClassSim /= withinCount;
+        betweenClassSim /= betweenCount;
+        
+        console.log('Two moons kernel analysis:', {
+            withinClassSimilarity: withinClassSim.toFixed(4),
+            betweenClassSimilarity: betweenClassSim.toFixed(4),
+            separabilityRatio: (withinClassSim / betweenClassSim).toFixed(2)
+        });
+        
+        // Good separation: within-class > between-class by factor of 2-10
+        if (withinClassSim / betweenClassSim < 1.5) {
+            console.warn('Poor class separation - gamma might be too low');
+        } else if (withinClassSim / betweenClassSim > 20) {
+            console.warn('Too much locality - gamma might be too high');
+        }
+        
+        return { withinClassSim, betweenClassSim };
+    }
+
     function handleDatasetChange() {
         generateData();
         
@@ -1766,7 +1817,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Get dataset-specific gamma
             const datasetType = elements.datasetSelect.value;
-            const suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
+            let suggestedGamma;
+            
+            if (datasetType === 'moons') {
+                // Use adaptive search for two moons
+                suggestedGamma = findOptimalGammaForMoons(normalizedData);
+            } else {
+                suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
+            }
             
             // Set gamma
             gamma = suggestedGamma;
@@ -2077,7 +2135,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return { normalized, mean, std };
     }
 
-    // Update computeProjections to use normalized data for kernel PCA
     function computeProjections() {
         if (!data || data.length === 0) {
             console.warn('No data available for projection');
@@ -2094,14 +2151,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Auto-adjust gamma if using RBF kernel
         if (elements.kernelSelect.value === 'rbf') {
-            const suggestedGammaNorm = suggestGamma(normalizedData, true);
-            console.log('Suggested gamma for normalized data:', suggestedGammaNorm);
+            const datasetType = elements.datasetSelect.value;
             
-            // Only auto-adjust if current gamma seems wrong
-            if (gamma > suggestedGammaNorm * 10 || gamma < suggestedGammaNorm / 10) {
-                gamma = suggestedGammaNorm;
+            // For two moons, always recalculate optimal gamma
+            if (datasetType === 'moons') {
+                const suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
+                gamma = suggestedGamma;
                 
-                // Update slider
+                // Update UI
                 const logGamma = Math.log10(gamma);
                 elements.gammaInput.value = Math.max(-1, Math.min(2, logGamma)).toString();
                 elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
@@ -2110,6 +2167,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Compute Kernel PCA on normalized data
         kpcaResult = computeKernelPCA(normalizedData, elements.kernelSelect.value, numComponents);
+        
+        // Special analysis for two moons
+        if (elements.datasetSelect.value === 'moons' && kpcaResult.kernelMatrix) {
+            analyzeKernelMatrixForMoons(kpcaResult.kernelMatrix, labels);
+        }
         
         // Scale kernel PCA projection for better visualization
         kpcaResult.projectionScaled = scaleProjectionForVisualization(
@@ -2131,6 +2193,47 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update other tabs
         drawAutoencoderArchitecture();
         drawAutoencoderComparison();
+    }
+
+    // adaptive gamma search for two moons if the initial guess is poor
+    function findOptimalGammaForMoons(normalizedData) {
+        console.log('Searching for optimal gamma for two moons...');
+        
+        const gammaValues = [0.1, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0];
+        let bestGamma = 1.0;
+        let bestScore = -Infinity;
+        
+        for (const testGamma of gammaValues) {
+            // Temporarily set gamma
+            const originalGamma = gamma;
+            gamma = testGamma;
+            
+            // Compute kernel matrix
+            const K = computeKernelMatrix(normalizedData, 'rbf');
+            
+            // Analyze separation
+            const { withinClassSim, betweenClassSim } = analyzeKernelMatrixForMoons(K, labels);
+            
+            // Score based on separation quality
+            // We want high within-class similarity and low between-class similarity
+            const separabilityRatio = withinClassSim / (betweenClassSim + 1e-10);
+            
+            // But not too extreme (avoid degeneracy)
+            const score = separabilityRatio * Math.exp(-Math.abs(Math.log(separabilityRatio) - Math.log(5)));
+            
+            console.log(`Gamma ${testGamma}: score = ${score.toFixed(4)}`);
+            
+            if (score > bestScore) {
+                bestScore = score;
+                bestGamma = testGamma;
+            }
+            
+            // Restore gamma
+            gamma = originalGamma;
+        }
+        
+        console.log(`Best gamma for two moons: ${bestGamma}`);
+        return bestGamma;
     }
 
     
