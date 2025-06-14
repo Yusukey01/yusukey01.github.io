@@ -1323,66 +1323,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-
-    // check if the projection successfully separates classes
-    function checkProjectionSeparation(projection, labels) {
-        if (!projection || projection.length === 0) return { separated: false, score: 0 };
-        
-        const n = projection.length;
-        const classes = [...new Set(labels)];
-        
-        // Calculate class centroids in projection space
-        const centroids = {};
-        const counts = {};
-        
-        for (const c of classes) {
-            centroids[c] = [0, 0];
-            counts[c] = 0;
-        }
-        
-        for (let i = 0; i < n; i++) {
-            const label = labels[i];
-            centroids[label][0] += projection[i][0];
-            centroids[label][1] += projection[i][1];
-            counts[label]++;
-        }
-        
-        for (const c of classes) {
-            centroids[c][0] /= counts[c];
-            centroids[c][1] /= counts[c];
-        }
-        
-        // Calculate average within-class and between-class distances
-        let withinDist = 0;
-        let betweenDist = 0;
-        
-        // Within-class distances
-        for (let i = 0; i < n; i++) {
-            const label = labels[i];
-            const dist = Math.sqrt(
-                Math.pow(projection[i][0] - centroids[label][0], 2) +
-                Math.pow(projection[i][1] - centroids[label][1], 2)
-            );
-            withinDist += dist;
-        }
-        withinDist /= n;
-        
-        // Between-class distance (for two classes)
-        if (classes.length === 2) {
-            betweenDist = Math.sqrt(
-                Math.pow(centroids[classes[0]][0] - centroids[classes[1]][0], 2) +
-                Math.pow(centroids[classes[0]][1] - centroids[classes[1]][1], 2)
-            );
-        }
-        
-        // Separation score: ratio of between-class to within-class distance
-        const score = betweenDist / (withinDist + 1e-10);
-        const separated = score > 2.0; // Good separation if between-class is 2x within-class
-        
-        return { separated, score, withinDist, betweenDist };
-    }
-
-    // show separation quality for kernel PCA
+    // Improved drawing function with better error handling
     function drawData(canvas, data, projection, title) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
@@ -1417,21 +1358,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             drawData = projection.map(p => [p[0] || 0, p[1] || 0]);
-            
-            // Check separation quality for kernel PCA
-            if (title.includes('Kernel PCA')) {
-                const { separated, score } = checkProjectionSeparation(drawData, labels);
-                
-                // Add separation indicator
-                ctx.font = '11px Arial';
-                if (separated) {
-                    ctx.fillStyle = '#27ae60';
-                    ctx.fillText(`✓ Good separation (score: ${score.toFixed(2)})`, width / 2, height - 25);
-                } else {
-                    ctx.fillStyle = '#e74c3c';
-                    ctx.fillText(`✗ Poor separation (score: ${score.toFixed(2)})`, width / 2, height - 25);
-                }
-            }
         } else {
             drawData = data;
         }
@@ -1476,9 +1402,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const finalXRange = maxX - minX;
         const finalYRange = maxY - minY;
         
-        // Drawing area (leave space for title and indicator)
+        // Drawing area (leave space for title)
         const drawTop = 30;
-        const drawHeight = height - drawTop - 30; // Extra space for indicator
+        const drawHeight = height - drawTop - 10;
         
         // Draw axes
         ctx.strokeStyle = '#ddd';
@@ -1498,16 +1424,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const xZero = 5 + ((0 - minX) / finalXRange) * (width - 10);
             ctx.beginPath();
             ctx.moveTo(xZero, drawTop);
-            ctx.lineTo(xZero, height - 30);
+            ctx.lineTo(xZero, height - 10);
             ctx.stroke();
         }
         
         // Draw data points
         const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e'];
-        
-        // For two moons, use specific colors for better visualization
-        const moonColors = elements.datasetSelect.value === 'moons' ? 
-            ['#3498db', '#e74c3c'] : colors;
         
         for (let i = 0; i < drawData.length; i++) {
             const point = drawData[i];
@@ -1523,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Skip points outside canvas
             if (px < 0 || px > width || py < 0 || py > height) continue;
             
-            ctx.fillStyle = moonColors[labels[i] % moonColors.length];
+            ctx.fillStyle = colors[labels[i] % colors.length];
             ctx.beginPath();
             ctx.arc(px, py, 4, 0, 2 * Math.PI);
             ctx.fill();
@@ -1541,7 +1463,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.textAlign = 'center';
             
             // X-axis label
-            ctx.fillText('PC1', width / 2, height - 10);
+            ctx.fillText('PC1', width / 2, height - 2);
             
             // Y-axis label
             ctx.save();
