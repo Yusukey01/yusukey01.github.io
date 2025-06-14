@@ -2230,7 +2230,6 @@ document.addEventListener('DOMContentLoaded', function() {
     gamma = 1.0;  // Start with reasonable defaul
     handleParameterChange();
     handleKernelChange();
-    addGammaAdjustmentFeedback();
 
     // Generate initial data with proper gamma
     elements.datasetSelect.value = 'circles';  // Start with circles dataset
