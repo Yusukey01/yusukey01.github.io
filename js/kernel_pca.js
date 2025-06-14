@@ -1714,8 +1714,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return median > 0 ? median : 1.0;
     }
 
-    
-
     // Dataset-specific gamma recommendations
     const DATASET_GAMMA_HINTS = {
         'circles': { base: 0.5, hint: 'Concentric circles need moderate gamma' },
@@ -1832,6 +1830,18 @@ document.addEventListener('DOMContentLoaded', function() {
             computeProjections();
         });
     }
+
+    // Add visual feedback when gamma is adjusted
+    function addGammaAdjustmentFeedback() {
+        elements.gammaInput.addEventListener('input', function() {    
+            // Recompute projections with slight delay to avoid too many updates
+            clearTimeout(window.gammaUpdateTimeout);
+            window.gammaUpdateTimeout = setTimeout(() => {
+                computeProjections();
+            }, 300);
+        });
+    }
+    
 
     // Add debug information for kernel matrix
     function debugKernelMatrix(K) {
@@ -2097,6 +2107,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Normalize data for kernel PCA
         const { normalized: normalizedData } = normalizeData(data);
         
+        // Auto-adjust gamma if using RBF kernel
+        if (elements.kernelSelect.value === 'rbf') {
+            const datasetType = elements.datasetSelect.value;
+        
+        }
+        
         // Compute Kernel PCA on normalized data
         kpcaResult = computeKernelPCA(normalizedData, elements.kernelSelect.value, numComponents);
         
@@ -2230,6 +2246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gamma = 1.0;  // Start with reasonable defaul
     handleParameterChange();
     handleKernelChange();
+    addGammaAdjustmentFeedback();
 
     // Generate initial data with proper gamma
     elements.datasetSelect.value = 'circles';  // Start with circles dataset
