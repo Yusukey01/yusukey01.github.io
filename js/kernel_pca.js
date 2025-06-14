@@ -413,13 +413,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let labels = [];
     let pcaResult = null;
     let kpcaResult = null;
-    let currentStep = 0;
-    let autoplayInterval = null;
     let aeModel = null;
     let aeProjection = null;
     
     // Better default gamma for RBF kernel
-    let gamma = 10.0;  // Good default for separating non-linear patterns
+    let gamma = 1.0;  
     let degree = 3;
     let coef = 1.0;
     
@@ -864,7 +862,20 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Kernel PCA implementation 
+    // regularization to kernel matrix for numerical stability
+    function regularizeKernelMatrix(K, epsilon = 1e-6) {
+        const n = K.length;
+        const K_reg = K.map(row => [...row]);
+        
+        // Add small value to diagonal for numerical stability
+        for (let i = 0; i < n; i++) {
+            K_reg[i][i] += epsilon;
+        }
+        
+        return K_reg;
+    }
+
+    // Update computeKernelPCA to use regularization
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -881,16 +892,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Compute kernel matrix
         const K = computeKernelMatrix(data, kernelType);
         
+        // Check if kernel matrix is degenerate and warn
+        if (isKernelMatrixDegenerate(K)) {
+            console.warn('Kernel matrix is nearly diagonal - results may be poor');
+        }
+        
         // Center kernel matrix
         const K_centered = centerKernelMatrix(K);
         
+        // Regularize for numerical stability
+        const K_regularized = regularizeKernelMatrix(K_centered, 1e-8);
+        
         // Eigendecomposition of centered kernel matrix
-        const eigen = jacobiEigendecomposition(K_centered);
+        const eigen = jacobiEigendecomposition(K_regularized);
         
         // Sort and filter valid eigenvalues/eigenvectors
         const eigenPairs = [];
         for (let i = 0; i < eigen.eigenvalues.length; i++) {
-            if (eigen.eigenvalues[i] > 1e-10) {  // Only positive eigenvalues
+            // Use a slightly higher threshold for numerical stability
+            if (eigen.eigenvalues[i] > 1e-8) {  
                 eigenPairs.push({
                     value: eigen.eigenvalues[i],
                     vector: eigen.eigenvectors[i]
@@ -914,28 +934,40 @@ document.addEventListener('DOMContentLoaded', function() {
             validEigenvalues.push(lambda);
             validEigenvectors.push(alpha);
         }
+        
+        // Check if we have enough valid components
+        if (validEigenvectors.length === 0) {
+            console.error('No valid eigenvectors found! Kernel matrix may be degenerate.');
+            
+            // Return zero projections
+            for (let i = 0; i < n; i++) {
+                projection[i] = new Array(numComponents).fill(0);
+            }
+            
+            return {
+                projection,
+                eigenvalues: new Array(numComponents).fill(0),
+                eigenvectors: [],
+                kernelMatrix: K,
+                centeredKernelMatrix: K_centered
+            };
+        }
 
-        // For training data, we use the centered kernel matrix rows
+        // Project data
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
             
             // Project using k_i^T U Λ^(-1/2)
-            // Since we're projecting training data, k_i is the i-th row of K_centered
             for (let j = 0; j < validEigenvectors.length; j++) {
                 let sum = 0;
                 const eigenvector = validEigenvectors[j];
                 const sqrtLambda = Math.sqrt(validEigenvalues[j]);
                 
-                // Compute k_i^T * u_j / sqrt(lambda_j)
+                // Use centered kernel matrix for projection
                 for (let k = 0; k < n; k++) {
                     sum += K_centered[i][k] * eigenvector[k];
                 }
                 projection[i][j] = sum / sqrtLambda;
-            }
-            
-            // Fill remaining components with zeros
-            for (let j = validEigenvectors.length; j < numComponents; j++) {
-                projection[i][j] = 0;
             }
         }
         
@@ -1683,40 +1715,117 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Suggest good gamma value for RBF kernel
-    function suggestGamma(data) {
+    // Better gamma suggestion that works with normalized data
+    function suggestGamma(data, isNormalized = false) {
         const medianDist = computeMedianPairwiseDistance(data);
-        // gamma = 1 / (2 * sigma^2), where sigma is typically set to median distance
-        return 1 / (2 * medianDist * medianDist);
+        
+        // For normalized data, the median distance is typically around 1-2
+        // The rule of thumb is gamma = 1 / (2 * sigma^2)
+        // But we need to be more conservative for normalized data
+        
+        if (isNormalized) {
+            // For normalized data, use a more conservative estimate
+            return 1 / (2 * medianDist * medianDist);
+        } else {
+            // For raw data
+            return 1 / (2 * medianDist * medianDist);
+        }
     }
 
-    // Update the handleDatasetChange function to adjust gamma
+    // Dataset-specific gamma recommendations
+    const DATASET_GAMMA_HINTS = {
+        'circles': { base: 0.5, hint: 'Concentric circles need moderate gamma' },
+        'moons': { base: 2.0, hint: 'Two moons work well with higher gamma' },
+        'blobs': { base: 0.1, hint: 'Gaussian blobs need low gamma' },
+        'spiral': { base: 1.0, hint: 'Spirals need balanced gamma' }
+    };
+
+    // Improved gamma suggestion based on dataset characteristics
+    function suggestGammaForDataset(data, datasetType) {
+        // Get base gamma for dataset type
+        const datasetHint = DATASET_GAMMA_HINTS[datasetType] || { base: 1.0 };
+        
+        // Compute actual data statistics
+        const medianDist = computeMedianPairwiseDistance(data);
+        
+        // For normalized data, median distance is typically 1-3
+        // Adjust base gamma based on actual data scale
+        const scaleAdjustment = 2.0 / medianDist; // Target median distance of 2
+        
+        return datasetHint.base * scaleAdjustment;
+    }
+
+    // Replace the existing handleDatasetChange with this improved version
     function handleDatasetChange() {
         generateData();
         
-        // Suggest gamma for RBF kernel
+        // Update gamma for RBF kernel based on dataset
         if (data && data.length > 0 && elements.kernelSelect.value === 'rbf') {
-            const suggestedGamma = suggestGamma(data);
+            // Normalize data first
+            const { normalized: normalizedData } = normalizeData(data);
             
-            // Convert to log scale for the slider
-            const logGamma = Math.log10(suggestedGamma);
+            // Get dataset-specific gamma
+            const datasetType = elements.datasetSelect.value;
+            const suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
             
-            // Clamp to slider range
-            const clampedLogGamma = Math.max(-1, Math.min(2, logGamma));
+            // Set gamma
+            gamma = suggestedGamma;
             
-            elements.gammaInput.value = clampedLogGamma.toString();
-            handleParameterChange();
+            // Update slider
+            const logGamma = Math.log10(gamma);
+            elements.gammaInput.value = Math.max(-1, Math.min(2, logGamma)).toString();
             
-            // Add hint about suggested value
-            const hint = document.querySelector('#gamma-container .param-hint');
-            if (hint) {
-                hint.textContent = `Controls kernel width. Suggested: γ ≈ ${suggestedGamma.toFixed(2)}`;
+            // Update display
+            if (gamma < 1) {
+                elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
+            } else {
+                elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(2)}`;
             }
+            
+            // Update hint with dataset-specific info
+            const hint = document.querySelector('#gamma-container .param-hint');
+            const datasetHint = DATASET_GAMMA_HINTS[datasetType];
+            if (hint && datasetHint) {
+                hint.style.color = '#666';
+                hint.textContent = datasetHint.hint + ` (γ = ${gamma.toFixed(3)})`;
+            }
+            
+            console.log(`Set gamma to ${gamma} for ${datasetType} dataset`);
         }
         
         requestAnimationFrame(() => {
             computeProjections();
         });
     }
+
+    // Add visual feedback when gamma is adjusted
+    function addGammaAdjustmentFeedback() {
+        elements.gammaInput.addEventListener('input', function() {
+            // Compute current kernel matrix quality
+            if (kpcaResult && kpcaResult.kernelMatrix) {
+                const isDegenerate = isKernelMatrixDegenerate(kpcaResult.kernelMatrix);
+                
+                // Update hint color based on kernel matrix quality
+                const hint = document.querySelector('#gamma-container .param-hint');
+                if (hint) {
+                    if (isDegenerate) {
+                        hint.style.color = '#e74c3c';
+                        hint.textContent = '⚠️ Kernel matrix degenerate - adjust gamma!';
+                    } else {
+                        hint.style.color = '#27ae60';
+                        hint.textContent = '✓ Good kernel matrix quality';
+                    }
+                }
+            }
+            
+            // Recompute projections with slight delay to avoid too many updates
+            clearTimeout(window.gammaUpdateTimeout);
+            window.gammaUpdateTimeout = setTimeout(() => {
+                computeProjections();
+            }, 300);
+        });
+    }
+    
 
     // Add debug information for kernel matrix
     function debugKernelMatrix(K) {
@@ -1766,11 +1875,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Better parameter handling and default values
+    // parameter handling and default values
     function handleParameterChange() {
         // Use more appropriate gamma range for demonstration
         gamma = Math.pow(10, parseFloat(elements.gammaInput.value));
-        elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
+        
+        // Show more precision for small values
+        if (gamma < 1) {
+            elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
+        } else if (gamma < 10) {
+            elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(2)}`;
+        } else {
+            elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(1)}`;
+        }
         
         degree = parseInt(elements.degreeInput.value);
         elements.degreeDisplay.textContent = `d = ${degree}`;
@@ -1785,6 +1902,104 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const sampleSize = parseInt(elements.sampleSizeInput.value);
         elements.sampleSizeDisplay.textContent = sampleSize;
+    }
+
+    // Add a helper to check if kernel matrix is degenerate
+    function isKernelMatrixDegenerate(K) {
+        if (!K || K.length === 0) return true;
+        
+        const n = K.length;
+        let offDiagonalMax = 0;
+        
+        // Find maximum off-diagonal element
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                if (i !== j) {
+                    offDiagonalMax = Math.max(offDiagonalMax, K[i][j]);
+                }
+            }
+        }
+        
+        // If all off-diagonal elements are near zero, the matrix is degenerate
+        return offDiagonalMax < 0.01;
+    }
+
+    // Add a helper to check if kernel matrix is degenerate
+    function isKernelMatrixDegenerate(K) {
+        if (!K || K.length === 0) return true;
+        
+        const n = K.length;
+        let offDiagonalMax = 0;
+        
+        // Find maximum off-diagonal element
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                if (i !== j) {
+                    offDiagonalMax = Math.max(offDiagonalMax, K[i][j]);
+                }
+            }
+        }
+        
+        // If all off-diagonal elements are near zero, the matrix is degenerate
+        return offDiagonalMax < 0.01;
+    }
+
+    // Enhanced debug function
+    function debugKernelMatrix(K) {
+        if (!K || K.length === 0) return;
+        
+        // Check if kernel matrix is valid
+        let minVal = Infinity, maxVal = -Infinity;
+        let avgVal = 0;
+        let offDiagAvg = 0;
+        let diagAvg = 0;
+        const n = K.length;
+        
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                const val = K[i][j];
+                minVal = Math.min(minVal, val);
+                maxVal = Math.max(maxVal, val);
+                avgVal += val;
+                
+                if (i === j) {
+                    diagAvg += val;
+                } else {
+                    offDiagAvg += val;
+                }
+            }
+        }
+        avgVal /= (n * n);
+        diagAvg /= n;
+        offDiagAvg /= (n * (n - 1));
+        
+        console.log('Kernel matrix stats:', {
+            min: minVal,
+            max: maxVal,
+            avg: avgVal,
+            diagAvg: diagAvg,
+            offDiagAvg: offDiagAvg,
+            size: n
+        });
+        
+        // Check if matrix is degenerate
+        if (isKernelMatrixDegenerate(K)) {
+            console.warn('⚠️ Kernel matrix is degenerate! Off-diagonal values too small.');
+            console.warn('Try decreasing gamma (move slider left) for RBF kernel.');
+            
+            // Show warning in UI
+            const hint = document.querySelector('#gamma-container .param-hint');
+            if (hint && elements.kernelSelect.value === 'rbf') {
+                hint.style.color = '#e74c3c';
+                hint.textContent = '⚠️ Gamma too high! Try moving slider left.';
+            }
+        } else {
+            // Reset hint color if matrix is good
+            const hint = document.querySelector('#gamma-container .param-hint');
+            if (hint) {
+                hint.style.color = '#666';
+            }
+        }
     }
     
     function generateData() {
@@ -1877,23 +2092,76 @@ document.addEventListener('DOMContentLoaded', function() {
         // Normalize data for kernel PCA
         const { normalized: normalizedData } = normalizeData(data);
         
+        // Auto-adjust gamma if using RBF kernel
+        if (elements.kernelSelect.value === 'rbf') {
+            const suggestedGammaNorm = suggestGamma(normalizedData, true);
+            console.log('Suggested gamma for normalized data:', suggestedGammaNorm);
+            
+            // Only auto-adjust if current gamma seems wrong
+            if (gamma > suggestedGammaNorm * 10 || gamma < suggestedGammaNorm / 10) {
+                gamma = suggestedGammaNorm;
+                
+                // Update slider
+                const logGamma = Math.log10(gamma);
+                elements.gammaInput.value = Math.max(-1, Math.min(2, logGamma)).toString();
+                elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
+            }
+        }
+        
         // Compute Kernel PCA on normalized data
         kpcaResult = computeKernelPCA(normalizedData, elements.kernelSelect.value, numComponents);
         
-        // Debug kernel matrix if needed
+        // Scale kernel PCA projection for better visualization
+        kpcaResult.projectionScaled = scaleProjectionForVisualization(
+            kpcaResult.projection, 
+            data
+        );
+        
+        // Debug kernel matrix
         if (kpcaResult.kernelMatrix) {
             debugKernelMatrix(kpcaResult.kernelMatrix);
         }
         
-        // Update visualizations
+        // Update visualizations - use scaled projection for kernel PCA
         drawData(elements.originalCanvas, data, null, 'Original Data');
         drawData(elements.pcaCanvas, data, pcaResult.projection, 'PCA Projection');
-        drawData(elements.kpcaCanvas, data, kpcaResult.projection, 'Kernel PCA Projection');
+        drawData(elements.kpcaCanvas, data, kpcaResult.projectionScaled || kpcaResult.projection, 'Kernel PCA Projection');
         drawVariance(elements.varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
         // Update other tabs
         drawAutoencoderArchitecture();
         drawAutoencoderComparison();
+    }
+
+    
+    // Scaling function for visualization
+    function scaleProjectionForVisualization(projection, referenceData) {
+        if (!projection || projection.length === 0) return projection;
+        
+        // Compute scale of reference data
+        let refScale = 0;
+        for (let i = 0; i < referenceData.length; i++) {
+            for (let j = 0; j < referenceData[i].length; j++) {
+                refScale = Math.max(refScale, Math.abs(referenceData[i][j]));
+            }
+        }
+        
+        // Compute scale of projection
+        let projScale = 0;
+        for (let i = 0; i < projection.length; i++) {
+            for (let j = 0; j < Math.min(2, projection[i].length); j++) {
+                projScale = Math.max(projScale, Math.abs(projection[i][j]));
+            }
+        }
+        
+        if (projScale < 1e-10 || refScale < 1e-10) return projection;
+        
+        // Scale projection to match reference scale
+        const scaleFactor = refScale / projScale * 0.8; // 0.8 to keep some margin
+        
+        return projection.map(row => 
+            row.map(val => val * scaleFactor)
+        );
     }
    
     
@@ -1964,14 +2232,73 @@ document.addEventListener('DOMContentLoaded', function() {
     
     
     // Initialize
+    gamma = 1.0;  // Start with reasonable defaul
     handleParameterChange();
     handleKernelChange();
-    
+    addGammaAdjustmentFeedback();
+
+    // Generate initial data with proper gamma
+    elements.datasetSelect.value = 'circles';  // Start with circles dataset
     // Generate initial data and compute projections
     generateData();
-    
-    // Wait for DOM to be fully ready before computing projections
-    requestAnimationFrame(() => {
+
+    // Set initial gamma based on dataset
+    if (data && data.length > 0) {
+        const { normalized: normalizedData } = normalizeData(data);
+        const suggestedGamma = suggestGammaForDataset(normalizedData, 'circles');
+        gamma = suggestedGamma;
+        
+        // Update UI
+        const logGamma = Math.log10(gamma);
+        elements.gammaInput.value = Math.max(-1, Math.min(2, logGamma)).toString();
+        elements.gammaDisplay.textContent = `γ = ${gamma.toFixed(3)}`;
+    }
+
+    // Compute projections after a short delay to ensure everything is ready
+    setTimeout(() => {
         computeProjections();
+        
+        // Show initial hint
+        const hint = document.querySelector('#gamma-container .param-hint');
+        if (hint) {
+            hint.textContent = 'Adjust slider to control kernel width. Left = wider, Right = narrower';
+        }
+    }, 100);
+
+    
+    // keyboard shortcuts for quick gamma adjustment
+    document.addEventListener('keydown', function(e) {
+        if (elements.kernelSelect.value !== 'rbf') return;
+        
+        if (e.key === '[') {
+            // Decrease gamma
+            const currentLog = parseFloat(elements.gammaInput.value);
+            elements.gammaInput.value = (currentLog - 0.1).toString();
+            handleParameterChange();
+            computeProjections();
+        } else if (e.key === ']') {
+            // Increase gamma
+            const currentLog = parseFloat(elements.gammaInput.value);
+            elements.gammaInput.value = (currentLog + 0.1).toString();
+            handleParameterChange();
+            computeProjections();
+        }
     });
+
+
+    const gammaContainer = document.getElementById('gamma-container');
+    if (gammaContainer) {
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Reset γ';
+        resetBtn.style.cssText = 'margin-left: 10px; padding: 2px 8px; font-size: 0.8rem;';
+        resetBtn.onclick = function() {
+            handleDatasetChange();  // This will reset gamma to optimal value
+        };
+        
+        const gammaDisplay = document.getElementById('gamma-display');
+        if (gammaDisplay) {
+            gammaDisplay.parentNode.insertBefore(resetBtn, gammaDisplay.nextSibling);
+        }
+    }
+    
 });
