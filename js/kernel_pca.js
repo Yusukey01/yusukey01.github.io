@@ -1714,23 +1714,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return median > 0 ? median : 1.0;
     }
 
-    // Suggest good gamma value for RBF kernel
-    // Better gamma suggestion that works with normalized data
-    function suggestGamma(data, isNormalized = false) {
-        const medianDist = computeMedianPairwiseDistance(data);
-        
-        // For normalized data, the median distance is typically around 1-2
-        // The rule of thumb is gamma = 1 / (2 * sigma^2)
-        // But we need to be more conservative for normalized data
-        
-        if (isNormalized) {
-            // For normalized data, use a more conservative estimate
-            return 1 / (2 * medianDist * medianDist);
-        } else {
-            // For raw data
-            return 1 / (2 * medianDist * medianDist);
-        }
-    }
+    
 
     // Dataset-specific gamma recommendations
     const DATASET_GAMMA_HINTS = {
@@ -1848,35 +1832,6 @@ document.addEventListener('DOMContentLoaded', function() {
             computeProjections();
         });
     }
-
-    // Add visual feedback when gamma is adjusted
-    function addGammaAdjustmentFeedback() {
-        elements.gammaInput.addEventListener('input', function() {
-            // Compute current kernel matrix quality
-            if (kpcaResult && kpcaResult.kernelMatrix) {
-                const isDegenerate = isKernelMatrixDegenerate(kpcaResult.kernelMatrix);
-                
-                // Update hint color based on kernel matrix quality
-                const hint = document.querySelector('#gamma-container .param-hint');
-                if (hint) {
-                    if (isDegenerate) {
-                        hint.style.color = '#e74c3c';
-                        hint.textContent = '⚠️ Kernel matrix degenerate - adjust gamma!';
-                    } else {
-                        hint.style.color = '#27ae60';
-                        hint.textContent = '✓ Good kernel matrix quality';
-                    }
-                }
-            }
-            
-            // Recompute projections with slight delay to avoid too many updates
-            clearTimeout(window.gammaUpdateTimeout);
-            window.gammaUpdateTimeout = setTimeout(() => {
-                computeProjections();
-            }, 300);
-        });
-    }
-    
 
     // Add debug information for kernel matrix
     function debugKernelMatrix(K) {
@@ -2141,12 +2096,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Normalize data for kernel PCA
         const { normalized: normalizedData } = normalizeData(data);
-        
-        // Auto-adjust gamma if using RBF kernel
-        if (elements.kernelSelect.value === 'rbf') {
-            const datasetType = elements.datasetSelect.value;
-        
-        }
         
         // Compute Kernel PCA on normalized data
         kpcaResult = computeKernelPCA(normalizedData, elements.kernelSelect.value, numComponents);
