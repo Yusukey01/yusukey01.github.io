@@ -1817,14 +1817,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Get dataset-specific gamma
             const datasetType = elements.datasetSelect.value;
-            let suggestedGamma;
-            
-            if (datasetType === 'moons') {
-                // Use adaptive search for two moons
-                suggestedGamma = findOptimalGammaForMoons(normalizedData);
-            } else {
-                suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
-            }
+            const suggestedGamma = suggestGammaForDataset(normalizedData, datasetType);
             
             // Set gamma
             gamma = suggestedGamma;
@@ -2194,47 +2187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawAutoencoderArchitecture();
         drawAutoencoderComparison();
     }
-
-    // adaptive gamma search for two moons if the initial guess is poor
-    function findOptimalGammaForMoons(normalizedData) {
-        console.log('Searching for optimal gamma for two moons...');
-        
-        const gammaValues = [0.1, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0];
-        let bestGamma = 1.0;
-        let bestScore = -Infinity;
-        
-        for (const testGamma of gammaValues) {
-            // Temporarily set gamma
-            const originalGamma = gamma;
-            gamma = testGamma;
-            
-            // Compute kernel matrix
-            const K = computeKernelMatrix(normalizedData, 'rbf');
-            
-            // Analyze separation
-            const { withinClassSim, betweenClassSim } = analyzeKernelMatrixForMoons(K, labels);
-            
-            // Score based on separation quality
-            // We want high within-class similarity and low between-class similarity
-            const separabilityRatio = withinClassSim / (betweenClassSim + 1e-10);
-            
-            // But not too extreme (avoid degeneracy)
-            const score = separabilityRatio * Math.exp(-Math.abs(Math.log(separabilityRatio) - Math.log(5)));
-            
-            console.log(`Gamma ${testGamma}: score = ${score.toFixed(4)}`);
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestGamma = testGamma;
-            }
-            
-            // Restore gamma
-            gamma = originalGamma;
-        }
-        
-        console.log(`Best gamma for two moons: ${bestGamma}`);
-        return bestGamma;
-    }
+    
 
     
     // Scaling function for visualization
