@@ -562,7 +562,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compute kernel matrix
     function computeKernelMatrix(data, kernelType) {
         const n = data.length;
+        if (n === 0) return [];
+        
         const K = new Array(n);
+        
+        // Validate gamma for RBF kernel
+        if (kernelType === 'rbf' && gamma <= 0) {
+            console.warn('Invalid gamma value, using default');
+            gamma = 1.0;
+        }
         
         for (let i = 0; i < n; i++) {
             K[i] = new Array(n);
@@ -588,35 +596,44 @@ document.addEventListener('DOMContentLoaded', function() {
         return K;
     }
     
-    // Proper kernel matrix centering
+   // Fixed kernel matrix centering with correct formula
     function centerKernelMatrix(K) {
         const n = K.length;
         if (n === 0) return K;
         
-        // Compute row means
-        const rowMeans = new Array(n);
-        let totalMean = 0;
-        
-        for (let i = 0; i < n; i++) {
-            let sum = 0;
-            const Ki = K[i];
-            for (let j = 0; j < n; j++) {
-                sum += Ki[j];
-            }
-            rowMeans[i] = sum / n;
-            totalMean += rowMeans[i];
-        }
-        totalMean /= n;
-        
-        // Apply centering formula: K̃_ij = K_ij - rowMean_i - rowMean_j + totalMean
+        // Create centered kernel matrix
         const K_centered = new Array(n);
         for (let i = 0; i < n; i++) {
             K_centered[i] = new Array(n);
-            const Ki = K[i];
-            const rowMeanI = rowMeans[i];
-            
+        }
+        
+        // Compute the mean of each row and column, and overall mean
+        const rowMeans = new Array(n).fill(0);
+        const colMeans = new Array(n).fill(0);
+        let overallMean = 0;
+        
+        // Compute row sums (which equal column sums for symmetric matrix)
+        for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
-                K_centered[i][j] = Ki[j] - rowMeanI - rowMeans[j] + totalMean;
+                rowMeans[i] += K[i][j];
+                colMeans[j] += K[i][j];
+            }
+        }
+        
+        // Convert sums to means
+        for (let i = 0; i < n; i++) {
+            rowMeans[i] /= n;
+            colMeans[i] /= n;
+            overallMean += rowMeans[i];
+        }
+        overallMean /= n;
+        
+        // Apply double centering formula:
+        // K̃_ij = K_ij - (1/n)∑_k K_ik - (1/n)∑_k K_kj + (1/n²)∑_kl K_kl
+        // Which simplifies to: K̃_ij = K_ij - rowMean_i - colMean_j + overallMean
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                K_centered[i][j] = K[i][j] - rowMeans[i] - colMeans[j] + overallMean;
             }
         }
         
@@ -847,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // FIXED: Kernel PCA implementation based on academic sources
+    // Kernel PCA implementation 
     function computeKernelPCA(data, kernelType, numComponents) {
         if (!data || data.length === 0) {
             return {
@@ -887,27 +904,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select top numComponents
         const selectedPairs = eigenPairs.slice(0, Math.min(numComponents, eigenPairs.length));
         
-        // FIXED: According to mlxtend and academic sources, the eigenvectors ARE the projections
-        // We just need to scale them by sqrt(eigenvalues) to get principal components
-        
         const projection = new Array(n);
         const validEigenvalues = [];
         const validEigenvectors = [];
         
-        // For each selected eigenpair
+        // Extract eigenvalues and eigenvectors
         for (let j = 0; j < selectedPairs.length; j++) {
             const { value: lambda, vector: alpha } = selectedPairs[j];
             validEigenvalues.push(lambda);
             validEigenvectors.push(alpha);
         }
-        
-        // The projection is simply the eigenvectors scaled by sqrt(eigenvalues)
+
+        // For training data, we use the centered kernel matrix rows
         for (let i = 0; i < n; i++) {
             projection[i] = new Array(numComponents).fill(0);
             
+            // Project using k_i^T U Λ^(-1/2)
+            // Since we're projecting training data, k_i is the i-th row of K_centered
             for (let j = 0; j < validEigenvectors.length; j++) {
-                // The eigenvector values ARE the projections, scaled by sqrt(lambda)
-                projection[i][j] = validEigenvectors[j][i] * Math.sqrt(validEigenvalues[j]);
+                let sum = 0;
+                const eigenvector = validEigenvectors[j];
+                const sqrtLambda = Math.sqrt(validEigenvalues[j]);
+                
+                // Compute k_i^T * u_j / sqrt(lambda_j)
+                for (let k = 0; k < n; k++) {
+                    sum += K_centered[i][k] * eigenvector[k];
+                }
+                projection[i][j] = sum / sqrtLambda;
+            }
+            
+            // Fill remaining components with zeros
+            for (let j = validEigenvectors.length; j < numComponents; j++) {
+                projection[i][j] = 0;
             }
         }
         
@@ -926,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // FIXED: Better autoencoder implementation
+    // autoencoder implementation
     class SimpleAutoencoder {
         constructor(inputDim, hiddenDim, latentDim) {
             this.inputDim = inputDim;
@@ -1263,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Drawing functions
+    // Improved drawing function with better error handling
     function drawData(canvas, data, projection, title) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
@@ -1271,9 +1299,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
+        // Add title
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, width / 2, 20);
+        
         // Check if we have data
         if (!data || data.length === 0) {
-            ctx.font = '14px Arial';
+            ctx.font = '12px Arial';
             ctx.fillStyle = '#666';
             ctx.textAlign = 'center';
             ctx.fillText('No data available', width / 2, height / 2);
@@ -1281,59 +1315,133 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Use projection if available, otherwise use original data
-        // For projections with more than 2 components, use only first 2 for visualization
-        const drawData = projection && projection.length > 0 ? projection.map(p => [p[0] || 0, p[1] || 0]) : data;
+        let drawData;
+        if (projection && projection.length > 0) {
+            // Validate projection dimensions
+            if (!projection[0] || projection[0].length < 2) {
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText('Invalid projection dimensions', width / 2, height / 2);
+                return;
+            }
+            drawData = projection.map(p => [p[0] || 0, p[1] || 0]);
+        } else {
+            drawData = data;
+        }
         
-        // Find data bounds
+        // Find data bounds with safety checks
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
         
         for (const point of drawData) {
-            minX = Math.min(minX, point[0]);
-            maxX = Math.max(maxX, point[0]);
-            minY = Math.min(minY, point[1]);
-            maxY = Math.max(maxY, point[1]);
+            if (!point || point.length < 2) continue;
+            const x = point[0];
+            const y = point[1];
+            if (!isFinite(x) || !isFinite(y)) continue;
+            
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
         }
         
-        // Add padding
-        const range = Math.max(maxX - minX, maxY - minY, 0.1);
-        const padding = 0.1 * range;
+        // Check if we found valid bounds
+        if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) {
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('Invalid data bounds', width / 2, height / 2);
+            return;
+        }
+        
+        // Calculate range and padding
+        const xRange = maxX - minX;
+        const yRange = maxY - minY;
+        const range = Math.max(xRange, yRange, 0.1);
+        const padding = 0.15 * range;
+        
         minX -= padding;
         maxX += padding;
         minY -= padding;
         maxY += padding;
         
+        // Update ranges after padding
+        const finalXRange = maxX - minX;
+        const finalYRange = maxY - minY;
+        
+        // Drawing area (leave space for title)
+        const drawTop = 30;
+        const drawHeight = height - drawTop - 10;
+        
         // Draw axes
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 1;
         
-        // X-axis
-        const yZero = height - ((0 - minY) / (maxY - minY)) * height;
-        ctx.beginPath();
-        ctx.moveTo(0, yZero);
-        ctx.lineTo(width, yZero);
-        ctx.stroke();
+        // X-axis (only if 0 is in range)
+        if (minY <= 0 && maxY >= 0) {
+            const yZero = drawTop + drawHeight - ((0 - minY) / finalYRange) * drawHeight;
+            ctx.beginPath();
+            ctx.moveTo(5, yZero);
+            ctx.lineTo(width - 5, yZero);
+            ctx.stroke();
+        }
         
-        // Y-axis
-        const xZero = ((0 - minX) / (maxX - minX)) * width;
-        ctx.beginPath();
-        ctx.moveTo(xZero, 0);
-        ctx.lineTo(xZero, height);
-        ctx.stroke();
+        // Y-axis (only if 0 is in range)
+        if (minX <= 0 && maxX >= 0) {
+            const xZero = 5 + ((0 - minX) / finalXRange) * (width - 10);
+            ctx.beginPath();
+            ctx.moveTo(xZero, drawTop);
+            ctx.lineTo(xZero, height - 10);
+            ctx.stroke();
+        }
         
         // Draw data points
-        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e'];
         
         for (let i = 0; i < drawData.length; i++) {
-            const x = ((drawData[i][0] - minX) / (maxX - minX)) * width;
-            const y = height - ((drawData[i][1] - minY) / (maxY - minY)) * height;
+            const point = drawData[i];
+            if (!point || point.length < 2) continue;
+            
+            const x = point[0];
+            const y = point[1];
+            if (!isFinite(x) || !isFinite(y)) continue;
+            
+            const px = 5 + ((x - minX) / finalXRange) * (width - 10);
+            const py = drawTop + drawHeight - ((y - minY) / finalYRange) * drawHeight;
+            
+            // Skip points outside canvas
+            if (px < 0 || px > width || py < 0 || py > height) continue;
             
             ctx.fillStyle = colors[labels[i] % colors.length];
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.arc(px, py, 4, 0, 2 * Math.PI);
             ctx.fill();
+            
+            // Add border for better visibility
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Add axis labels if space permits
+        if (width > 200) {
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            
+            // X-axis label
+            ctx.fillText('PC1', width / 2, height - 2);
+            
+            // Y-axis label
+            ctx.save();
+            ctx.translate(10, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('PC2', 0, 0);
+            ctx.restore();
         }
     }
+
     
     // FIXED: Better variance visualization
     function drawVariance(canvas, pcaEigenvalues, kpcaEigenvalues) {
@@ -1548,12 +1656,98 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
     }
     
-    // Event handlers
+    // Compute median pairwise distance for gamma suggestion
+    function computeMedianPairwiseDistance(data, sampleSize = 100) {
+        if (!data || data.length < 2) return 1.0;
+        
+        const n = Math.min(data.length, sampleSize);
+        const distances = [];
+        
+        // Sample random pairs to compute distances
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                let dist = 0;
+                for (let k = 0; k < data[i].length; k++) {
+                    const diff = data[i][k] - data[j][k];
+                    dist += diff * diff;
+                }
+                distances.push(Math.sqrt(dist));
+            }
+        }
+        
+        // Find median
+        distances.sort((a, b) => a - b);
+        const median = distances[Math.floor(distances.length / 2)];
+        
+        return median > 0 ? median : 1.0;
+    }
+
+    // Suggest good gamma value for RBF kernel
+    function suggestGamma(data) {
+        const medianDist = computeMedianPairwiseDistance(data);
+        // gamma = 1 / (2 * sigma^2), where sigma is typically set to median distance
+        return 1 / (2 * medianDist * medianDist);
+    }
+
+    // Update the handleDatasetChange function to adjust gamma
     function handleDatasetChange() {
         generateData();
+        
+        // Suggest gamma for RBF kernel
+        if (data && data.length > 0 && elements.kernelSelect.value === 'rbf') {
+            const suggestedGamma = suggestGamma(data);
+            
+            // Convert to log scale for the slider
+            const logGamma = Math.log10(suggestedGamma);
+            
+            // Clamp to slider range
+            const clampedLogGamma = Math.max(-1, Math.min(2, logGamma));
+            
+            elements.gammaInput.value = clampedLogGamma.toString();
+            handleParameterChange();
+            
+            // Add hint about suggested value
+            const hint = document.querySelector('#gamma-container .param-hint');
+            if (hint) {
+                hint.textContent = `Controls kernel width. Suggested: γ ≈ ${suggestedGamma.toFixed(2)}`;
+            }
+        }
+        
         requestAnimationFrame(() => {
             computeProjections();
         });
+    }
+
+    // Add debug information for kernel matrix
+    function debugKernelMatrix(K) {
+        if (!K || K.length === 0) return;
+        
+        // Check if kernel matrix is valid
+        let minVal = Infinity, maxVal = -Infinity;
+        let avgVal = 0;
+        const n = K.length;
+        
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                const val = K[i][j];
+                minVal = Math.min(minVal, val);
+                maxVal = Math.max(maxVal, val);
+                avgVal += val;
+            }
+        }
+        avgVal /= (n * n);
+        
+        console.log('Kernel matrix stats:', {
+            min: minVal,
+            max: maxVal,
+            avg: avgVal,
+            size: n
+        });
+        
+        // Check if matrix is too uniform (all values similar)
+        if (maxVal - minVal < 0.01) {
+            console.warn('Kernel matrix values are too uniform. Try adjusting gamma.');
+        }
     }
     
     function handleKernelChange() {
@@ -1624,6 +1818,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Normalize data to have zero mean and unit variance per feature
+    function normalizeData(data) {
+        if (!data || data.length === 0) return { normalized: [], mean: [], std: [] };
+        
+        const n = data.length;
+        const d = data[0].length;
+        
+        // Compute mean
+        const mean = new Array(d).fill(0);
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < d; j++) {
+                mean[j] += data[i][j];
+            }
+        }
+        for (let j = 0; j < d; j++) {
+            mean[j] /= n;
+        }
+        
+        // Compute standard deviation
+        const std = new Array(d).fill(0);
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < d; j++) {
+                const diff = data[i][j] - mean[j];
+                std[j] += diff * diff;
+            }
+        }
+        for (let j = 0; j < d; j++) {
+            std[j] = Math.sqrt(std[j] / (n - 1));
+            // Avoid division by zero
+            if (std[j] < 1e-10) std[j] = 1;
+        }
+        
+        // Normalize
+        const normalized = new Array(n);
+        for (let i = 0; i < n; i++) {
+            normalized[i] = new Array(d);
+            for (let j = 0; j < d; j++) {
+                normalized[i][j] = (data[i][j] - mean[j]) / std[j];
+            }
+        }
+        
+        return { normalized, mean, std };
+    }
+
+    // Update computeProjections to use normalized data for kernel PCA
     function computeProjections() {
         if (!data || data.length === 0) {
             console.warn('No data available for projection');
@@ -1635,8 +1874,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Compute standard PCA
         pcaResult = computePCA(data, numComponents);
         
-        // Compute Kernel PCA
-        kpcaResult = computeKernelPCA(data, elements.kernelSelect.value, numComponents);
+        // Normalize data for kernel PCA
+        const { normalized: normalizedData } = normalizeData(data);
+        
+        // Compute Kernel PCA on normalized data
+        kpcaResult = computeKernelPCA(normalizedData, elements.kernelSelect.value, numComponents);
+        
+        // Debug kernel matrix if needed
+        if (kpcaResult.kernelMatrix) {
+            debugKernelMatrix(kpcaResult.kernelMatrix);
+        }
         
         // Update visualizations
         drawData(elements.originalCanvas, data, null, 'Original Data');
@@ -1648,6 +1895,7 @@ document.addEventListener('DOMContentLoaded', function() {
         drawAutoencoderArchitecture();
         drawAutoencoderComparison();
     }
+   
     
     function trainAutoencoder() {
         if (!data || data.length === 0) {
