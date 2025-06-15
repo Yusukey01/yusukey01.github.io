@@ -1018,6 +1018,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Dropout parameters for regularization
             this.dropoutRate = 0.1;
+         }
     }
     
     // drawing function with error handling
