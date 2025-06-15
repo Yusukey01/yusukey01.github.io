@@ -1736,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Two moons typically have median distance around 1.5-2.5 after normalization
             // We want gamma such that exp(-gamma * median_dist^2) ≈ 0.3-0.5
             // This gives good separation without being too local
-            const targetSimilarity = 0.4;
+            const targetSimilarity = 0.05;
             const suggestedGamma = -Math.log(targetSimilarity) / (medianDist * medianDist);
             console.log(`Two moons: suggested gamma = ${suggestedGamma}`);
             return suggestedGamma;
