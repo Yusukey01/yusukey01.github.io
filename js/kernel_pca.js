@@ -1,5 +1,4 @@
-// Kernel PCA Interactive Demo - FULLY CORRECTED VERSION
-// Fixed based on academic sources and scikit-learn implementation
+// Kernel PCA Interactive Demo
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -594,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return K;
     }
     
-   // Fixed kernel matrix centering with correct formula
+   // kernel matrix centering with correct formula
     function centerKernelMatrix(K) {
         const n = K.length;
         if (n === 0) return K;
@@ -638,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return K_centered;
     }
     
-    // Improved Jacobi eigendecomposition with better convergence
+    // Jacobi eigendecomposition
     function jacobiEigendecomposition(matrix, numComponents = null) {
         const n = matrix.length;
         if (n === 0) {
@@ -1107,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return { output, latent, z1, a1, z2, z3, a3, z4 };
         }
         
-        // Improved training with adaptive learning rate
+        // training with adaptive learning rate
         train(data, epochs = 500, initialLearningRate = 0.01, batchSize = 32) {
             const n = data.length;
             if (n === 0) return;
@@ -1247,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 gradients.b3[j] += grad;
             }
             
-            // W2 and b2 - FIXED: use dL_dlatent instead of dL_dz2
+            // W2 and b2
             for (let j = 0; j < this.latentDim; j++) {
                 const grad = dL_dlatent[j];
                 for (let k = 0; k < this.hiddenDim; k++) {
@@ -1412,7 +1411,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Improved drawing function with better error handling
+    // drawing function with error handling
     function drawData(canvas, data, projection, title) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
@@ -1564,7 +1563,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     
-    // FIXED: Better variance visualization
+    // variance visualization
     function drawVariance(canvas, pcaEigenvalues, kpcaEigenvalues) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
@@ -1823,7 +1822,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Improved gamma suggestion based on dataset characteristics
+    //  gamma suggestion based on dataset characteristics
     function suggestGammaForDataset(data, datasetType) {
         // Get base gamma for dataset type
         const datasetHint = DATASET_GAMMA_HINTS[datasetType] || { base: 1.0 };
@@ -2306,7 +2305,7 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
    
-    // training function
+    // training function with better parameters
     function trainAutoencoder() {
         if (!data || data.length === 0) {
             elements.aeProgressElement.textContent = 'No data available. Generate data first!';
