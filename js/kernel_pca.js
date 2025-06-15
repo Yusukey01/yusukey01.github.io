@@ -1018,7 +1018,493 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Dropout parameters for regularization
             this.dropoutRate = 0.1;
-         }
+        }
+        
+        randomMatrix(rows, cols, scale) {
+            const matrix = new Array(rows);
+            for (let i = 0; i < rows; i++) {
+                matrix[i] = new Array(cols);
+                for (let j = 0; j < cols; j++) {
+                    // Use normal distribution for better initialization
+                    matrix[i][j] = gaussianRandom() * scale;
+                }
+            }
+            return matrix;
+        }
+        
+        zeroMatrix(rows, cols) {
+            return Array(rows).fill().map(() => Array(cols).fill(0));
+        }
+        
+        // ELU activation for better gradient flow and nonlinearity
+        elu(x, alpha = 1.0) {
+            return x > 0 ? x : alpha * (Math.exp(x) - 1);
+        }
+        
+        eluDerivative(x, alpha = 1.0) {
+            return x > 0 ? 1 : alpha * Math.exp(x);
+        }
+        
+        // Swish activation for smooth nonlinearity
+        swish(x) {
+            return x / (1 + Math.exp(-x));
+        }
+        
+        swishDerivative(x) {
+            const sigmoid = 1 / (1 + Math.exp(-x));
+            return sigmoid + x * sigmoid * (1 - sigmoid);
+        }
+        
+        // Linear activation (identity)
+        linear(x) {
+            return x;
+        }
+        
+        linearDerivative(x) {
+            return 1;
+        }
+        
+        // Dropout for regularization
+        dropout(vector, rate, training = true) {
+            if (!training || rate === 0) return vector;
+            
+            return vector.map(val => {
+                if (Math.random() < rate) {
+                    return 0;
+                } else {
+                    return val / (1 - rate); // Scale to maintain expected value
+                }
+            });
+        }
+        
+        forward(input, training = false) {
+            // Validate input
+            if (!input || input.length !== this.inputDim) {
+                console.error('Invalid input to autoencoder:', input);
+                return {
+                    output: new Array(this.inputDim).fill(0),
+                    latent: new Array(this.latentDim).fill(0),
+                    intermediates: {}
+                };
+            }
+            
+            // Encoder: Input -> Hidden1 -> Hidden2 -> Latent
+            // First hidden layer with ELU activation
+            const z1 = this.addBias(this.matrixVectorMultiply(this.W1, input), this.b1);
+            let a1 = z1.map(x => this.elu(x));
+            a1 = this.dropout(a1, this.dropoutRate, training);
+            
+            // Second hidden layer with Swish activation
+            const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
+            let a2 = z2.map(x => this.swish(x));
+            a2 = this.dropout(a2, this.dropoutRate, training);
+            
+            // Latent layer with linear activation (no bounds!)
+            const z3 = this.addBias(this.matrixVectorMultiply(this.W3, a2), this.b3);
+            const latent = z3.map(x => this.linear(x)); // Linear latent space
+            
+            // Decoder: Latent -> Hidden3 -> Hidden4 -> Output
+            // First decoder hidden layer with Swish activation
+            const z4 = this.addBias(this.matrixVectorMultiply(this.W4, latent), this.b4);
+            let a4 = z4.map(x => this.swish(x));
+            a4 = this.dropout(a4, this.dropoutRate, training);
+            
+            // Second decoder hidden layer with ELU activation
+            const z5 = this.addBias(this.matrixVectorMultiply(this.W5, a4), this.b5);
+            let a5 = z5.map(x => this.elu(x));
+            a5 = this.dropout(a5, this.dropoutRate, training);
+            
+            // Output layer with linear activation
+            const z6 = this.addBias(this.matrixVectorMultiply(this.W6, a5), this.b6);
+            const output = z6; // Linear output for regression
+            
+            return { 
+                output, 
+                latent, 
+                intermediates: { z1, a1, z2, a2, z3, z4, a4, z5, a5, z6 }
+            };
+        }
+        
+        // Enhanced training with focus on nonlinear learning
+        train(data, epochs = 800, initialLearningRate = 0.002, batchSize = 16) {
+            const n = data.length;
+            if (n === 0) return;
+            
+            let totalLoss = 0;
+            const momentum = 0.9;
+            const beta2 = 0.999;
+            const epsilon = 1e-8;
+            
+            // Initialize momentum and RMSprop caches for deeper architecture
+            const m = this.initializeCache();
+            const v = this.initializeCache();
+            
+            // Learning rate schedule with warmup
+            const lrSchedule = (epoch) => {
+                const warmupEpochs = 50;
+                if (epoch < warmupEpochs) {
+                    return initialLearningRate * epoch / warmupEpochs;
+                }
+                // Cosine annealing after warmup
+                const adjustedEpoch = epoch - warmupEpochs;
+                const adjustedEpochs = epochs - warmupEpochs;
+                return initialLearningRate * 0.5 * (1 + Math.cos(Math.PI * adjustedEpoch / adjustedEpochs));
+            };
+            
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                totalLoss = 0;
+                const currentLr = lrSchedule(epoch);
+                
+                // Shuffle data
+                const indices = Array.from({length: n}, (_, i) => i);
+                for (let i = n - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                
+                // Mini-batch gradient descent
+                for (let batch = 0; batch < n; batch += batchSize) {
+                    const batchEnd = Math.min(batch + batchSize, n);
+                    const batchGradients = this.initializeGradients();
+                    
+                    // Accumulate gradients over batch
+                    for (let idx = batch; idx < batchEnd; idx++) {
+                        const i = indices[idx];
+                        const input = data[i];
+                        
+                        // Forward pass
+                        const { output, latent, intermediates } = this.forward(input, true);
+                        
+                        // Calculate ONLY reconstruction loss (no latent penalty!)
+                        let loss = 0;
+                        for (let j = 0; j < this.inputDim; j++) {
+                            const diff = output[j] - input[j];
+                            loss += diff * diff;
+                        }
+                        
+                        // Add small contractive penalty to encourage smooth manifold learning
+                        const contractiveWeight = 0.0001;
+                        const jacobianPenalty = this.computeContractiveRegularization(input, latent, contractiveWeight);
+                        loss += jacobianPenalty;
+                        
+                        totalLoss += loss;
+                        
+                        // Backward pass for deeper network
+                        const batchNorm = 1.0 / (batchEnd - batch);
+                        this.backpropagateDeeper(batchGradients, input, intermediates, batchNorm);
+                    }
+                    
+                    // Apply Adam updates
+                    const t = epoch * Math.ceil(n / batchSize) + Math.floor(batch / batchSize) + 1;
+                    const lr = currentLr * Math.sqrt(1 - Math.pow(beta2, t)) / (1 - Math.pow(momentum, t));
+                    this.applyGradientsDeeper(batchGradients, m, v, lr, momentum, beta2, epsilon);
+                }
+                
+                // Update progress
+                if (epoch % 50 === 0 && elements.aeProgressElement) {
+                    const avgLoss = totalLoss / n;
+                    elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
+                }
+            }
+            
+            // Final update
+            if (elements.aeProgressElement) {
+                const avgLoss = totalLoss / n;
+                elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
+            }
+        }
+        
+        // Contractive regularization to encourage smooth manifold learning
+        computeContractiveRegularization(input, latent, weight) {
+            if (weight === 0) return 0;
+            
+            // Approximate Jacobian using finite differences
+            const eps = 1e-5;
+            let jacobianNorm = 0;
+            
+            for (let i = 0; i < this.inputDim; i++) {
+                // Perturb input slightly
+                const perturbedInput = [...input];
+                perturbedInput[i] += eps;
+                
+                const { latent: perturbedLatent } = this.forward(perturbedInput, false);
+                
+                // Compute gradient of latent w.r.t. input
+                for (let j = 0; j < this.latentDim; j++) {
+                    const grad = (perturbedLatent[j] - latent[j]) / eps;
+                    jacobianNorm += grad * grad;
+                }
+            }
+            
+            return weight * jacobianNorm;
+        }
+        
+        // Backpropagation for deeper network
+        backpropagateDeeper(batchGradients, input, intermediates, batchNorm) {
+            const { z1, a1, z2, a2, z3, z4, a4, z5, a5, z6 } = intermediates;
+            
+            // Output layer gradients (z6 -> output)
+            const dL_dz6 = new Array(this.inputDim);
+            for (let j = 0; j < this.inputDim; j++) {
+                dL_dz6[j] = 2.0 * (z6[j] - input[j]) * batchNorm;
+            }
+            
+            // Fifth layer gradients (z5 -> z6)
+            const dL_da5 = this.vectorMatrixMultiply(dL_dz6, this.W6);
+            const dL_dz5 = new Array(this.hiddenDim);
+            for (let j = 0; j < this.hiddenDim; j++) {
+                dL_dz5[j] = dL_da5[j] * this.eluDerivative(z5[j]);
+            }
+            
+            // Fourth layer gradients (z4 -> z5)
+            const dL_da4 = this.vectorMatrixMultiply(dL_dz5, this.W5);
+            const dL_dz4 = new Array(this.hiddenDim);
+            for (let j = 0; j < this.hiddenDim; j++) {
+                dL_dz4[j] = dL_da4[j] * this.swishDerivative(z4[j]);
+            }
+            
+            // Latent layer gradients (z3 -> z4) - NO L2 penalty!
+            const dL_dlatent = this.vectorMatrixMultiply(dL_dz4, this.W4);
+            const dL_dz3 = new Array(this.latentDim);
+            for (let j = 0; j < this.latentDim; j++) {
+                dL_dz3[j] = dL_dlatent[j] * this.linearDerivative(z3[j]); // Linear activation
+            }
+            
+            // Second encoder layer gradients (z2 -> z3)
+            const dL_da2 = this.vectorMatrixMultiply(dL_dz3, this.W3);
+            const dL_dz2 = new Array(this.hiddenDim);
+            for (let j = 0; j < this.hiddenDim; j++) {
+                dL_dz2[j] = dL_da2[j] * this.swishDerivative(z2[j]);
+            }
+            
+            // First encoder layer gradients (z1 -> z2)
+            const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
+            const dL_dz1 = new Array(this.hiddenDim);
+            for (let j = 0; j < this.hiddenDim; j++) {
+                dL_dz1[j] = dL_da1[j] * this.eluDerivative(z1[j]);
+            }
+            
+            // Accumulate gradients for all layers
+            this.accumulateGradientsDeeper(batchGradients, {
+                dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
+                input, a1, a2, dL_dlatent, a4, a5
+            });
+        }
+        
+        // Accumulate gradients for deeper architecture
+        accumulateGradientsDeeper(gradients, computed) {
+            const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
+                    input, a1, a2, dL_dlatent, a4, a5 } = computed;
+            
+            // W6 and b6 (final output layer)
+            for (let j = 0; j < this.inputDim; j++) {
+                const grad = dL_dz6[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W6[j][k] += grad * a5[k];
+                }
+                gradients.b6[j] += grad;
+            }
+            
+            // W5 and b5 (second decoder layer)
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz5[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W5[j][k] += grad * a4[k];
+                }
+                gradients.b5[j] += grad;
+            }
+            
+            // W4 and b4 (first decoder layer)
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz4[j];
+                for (let k = 0; k < this.latentDim; k++) {
+                    gradients.W4[j][k] += grad * dL_dlatent[k];
+                }
+                gradients.b4[j] += grad;
+            }
+            
+            // W3 and b3 (latent layer)
+            for (let j = 0; j < this.latentDim; j++) {
+                const grad = dL_dz3[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W3[j][k] += grad * a2[k];
+                }
+                gradients.b3[j] += grad;
+            }
+            
+            // W2 and b2 (second encoder layer)
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz2[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W2[j][k] += grad * a1[k];
+                }
+                gradients.b2[j] += grad;
+            }
+            
+            // W1 and b1 (first encoder layer)
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz1[j];
+                for (let k = 0; k < this.inputDim; k++) {
+                    gradients.W1[j][k] += grad * input[k];
+                }
+                gradients.b1[j] += grad;
+            }
+        }
+        
+        // Apply gradients for deeper architecture with gradient clipping
+        applyGradientsDeeper(gradients, m, v, lr, beta1, beta2, epsilon) {
+            const maxGradNorm = 1.0; // Gradient clipping threshold
+            
+            // Compute gradient norm
+            let gradNorm = 0;
+            const countGradNorm = (g) => {
+                if (Array.isArray(g)) {
+                    for (let val of g) {
+                        if (Array.isArray(val)) {
+                            countGradNorm(val);
+                        } else {
+                            gradNorm += val * val;
+                        }
+                    }
+                }
+            };
+            
+            // Count all gradients
+            countGradNorm(gradients.W1);
+            countGradNorm(gradients.W2);
+            countGradNorm(gradients.W3);
+            countGradNorm(gradients.W4);
+            countGradNorm(gradients.W5);
+            countGradNorm(gradients.W6);
+            countGradNorm(gradients.b1);
+            countGradNorm(gradients.b2);
+            countGradNorm(gradients.b3);
+            countGradNorm(gradients.b4);
+            countGradNorm(gradients.b5);
+            countGradNorm(gradients.b6);
+            
+            gradNorm = Math.sqrt(gradNorm);
+            const clipCoef = Math.min(1.0, maxGradNorm / (gradNorm + epsilon));
+            
+            // Update all weights with gradient clipping
+            this.updateWeights(this.W6, gradients.W6, m.W6, v.W6, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b6, gradients.b6, m.b6, v.b6, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W5, gradients.W5, m.W5, v.W5, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b5, gradients.b5, m.b5, v.b5, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W4, gradients.W4, m.W4, v.W4, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b4, gradients.b4, m.b4, v.b4, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W3, gradients.W3, m.W3, v.W3, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b3, gradients.b3, m.b3, v.b3, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W2, gradients.W2, m.W2, v.W2, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b2, gradients.b2, m.b2, v.b2, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W1, gradients.W1, m.W1, v.W1, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b1, gradients.b1, m.b1, v.b1, lr * clipCoef, beta1, beta2, epsilon);
+        }
+        
+        matrixVectorMultiply(matrix, vector) {
+            if (!matrix || !vector || matrix.length === 0 || vector.length === 0) {
+                console.error('Invalid matrix or vector for multiplication');
+                return [];
+            }
+            
+            const result = new Array(matrix.length);
+            for (let i = 0; i < matrix.length; i++) {
+                let sum = 0;
+                const row = matrix[i];
+                const len = Math.min(row.length, vector.length);
+                for (let j = 0; j < len; j++) {
+                    sum += row[j] * vector[j];
+                }
+                result[i] = sum;
+            }
+            return result;
+        }
+        
+        addBias(vector, bias) {
+            if (!vector || !bias) return vector || [];
+            
+            const result = new Array(vector.length);
+            for (let i = 0; i < vector.length; i++) {
+                result[i] = vector[i] + (bias[i] || 0);
+            }
+            return result;
+        }
+        
+        vectorMatrixMultiply(vector, matrix) {
+            const result = new Array(matrix[0].length);
+            for (let j = 0; j < matrix[0].length; j++) {
+                let sum = 0;
+                for (let i = 0; i < vector.length; i++) {
+                    sum += vector[i] * matrix[i][j];
+                }
+                result[j] = sum;
+            }
+            return result;
+        }
+        
+        updateWeights(W, grad, m, v, lr, beta1, beta2, epsilon) {
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    m[i][j] = beta1 * m[i][j] + (1 - beta1) * grad[i][j];
+                    v[i][j] = beta2 * v[i][j] + (1 - beta2) * grad[i][j] * grad[i][j];
+                    W[i][j] -= lr * m[i][j] / (Math.sqrt(v[i][j]) + epsilon);
+                }
+            }
+        }
+        
+        updateBias(b, grad, m, v, lr, beta1, beta2, epsilon) {
+            for (let i = 0; i < b.length; i++) {
+                m[i] = beta1 * m[i] + (1 - beta1) * grad[i];
+                v[i] = beta2 * v[i] + (1 - beta2) * grad[i] * grad[i];
+                b[i] -= lr * m[i] / (Math.sqrt(v[i]) + epsilon);
+            }
+        }
+        
+        initializeCache() {
+            return {
+                W1: this.zeroMatrix(this.hiddenDim, this.inputDim),
+                b1: new Array(this.hiddenDim).fill(0),
+                W2: this.zeroMatrix(this.hiddenDim, this.hiddenDim),
+                b2: new Array(this.hiddenDim).fill(0),
+                W3: this.zeroMatrix(this.latentDim, this.hiddenDim),
+                b3: new Array(this.latentDim).fill(0),
+                W4: this.zeroMatrix(this.hiddenDim, this.latentDim),
+                b4: new Array(this.hiddenDim).fill(0),
+                W5: this.zeroMatrix(this.hiddenDim, this.hiddenDim),
+                b5: new Array(this.hiddenDim).fill(0),
+                W6: this.zeroMatrix(this.inputDim, this.hiddenDim),
+                b6: new Array(this.inputDim).fill(0)
+            };
+        }
+        
+        initializeGradients() {
+            return this.initializeCache();
+        }
+        
+        encode(data) {
+            if (!data || data.length === 0) return [];
+            
+            const encoded = new Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                try {
+                    const { latent } = this.forward(data[i], false);
+                    // Ensure we always return 2D points
+                    encoded[i] = [
+                        latent[0] || 0,
+                        latent[1] || 0
+                    ];
+                } catch (error) {
+                    console.error('Encoding error for point', i, error);
+                    encoded[i] = [0, 0];
+                }
+            }
+            return encoded;
+        }
     }
     
     // drawing function with error handling
@@ -1254,7 +1740,7 @@ document.addEventListener('DOMContentLoaded', function() {
                      width / 2, height - 45);
     }
     
-    // Autoencoder visualization
+    // Autoencoder visualization for deeper architecture
     function drawAutoencoderArchitecture() {
         const ctx = elements.aeArchCanvas.getContext('2d');
         const width = elements.aeArchCanvas.width;
@@ -1262,17 +1748,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.clearRect(0, 0, width, height);
         
-        // Draw network architecture
+        // Draw network architecture for deeper autoencoder
         const layers = [
             { size: 2, name: 'Input' },
-            { size: 8, name: 'Hidden 1' },
+            { size: 6, name: 'Hidden 1' },
+            { size: 6, name: 'Hidden 2' },
             { size: 2, name: 'Latent' },
-            { size: 8, name: 'Hidden 2' },
+            { size: 6, name: 'Hidden 3' },
+            { size: 6, name: 'Hidden 4' },
             { size: 2, name: 'Output' }
         ];
         
         const layerSpacing = width / (layers.length + 1);
-        const nodeRadius = 8;
+        const nodeRadius = 6;
         
         // Draw connections
         ctx.strokeStyle = '#ddd';
@@ -1283,10 +1771,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const x2 = (l + 2) * layerSpacing;
             
             for (let i = 0; i < layers[l].size; i++) {
-                const y1 = height / 2 + (i - layers[l].size / 2 + 0.5) * 30;
+                const y1 = height / 2 + (i - layers[l].size / 2 + 0.5) * 25;
                 
                 for (let j = 0; j < layers[l + 1].size; j++) {
-                    const y2 = height / 2 + (j - layers[l + 1].size / 2 + 0.5) * 30;
+                    const y2 = height / 2 + (j - layers[l + 1].size / 2 + 0.5) * 25;
                     
                     ctx.beginPath();
                     ctx.moveTo(x1 + nodeRadius, y1);
@@ -1301,29 +1789,49 @@ document.addEventListener('DOMContentLoaded', function() {
             const x = (l + 1) * layerSpacing;
             
             for (let i = 0; i < layers[l].size; i++) {
-                const y = height / 2 + (i - layers[l].size / 2 + 0.5) * 30;
+                const y = height / 2 + (i - layers[l].size / 2 + 0.5) * 25;
                 
-                // Node
-                ctx.fillStyle = l === 2 ? '#e74c3c' : '#3498db';
+                // Node color based on layer type
+                let nodeColor;
+                if (l === 3) { // Latent layer
+                    nodeColor = '#e74c3c';
+                } else if (l === 0 || l === layers.length - 1) { // Input/Output
+                    nodeColor = '#2ecc71';
+                } else { // Hidden layers
+                    nodeColor = '#3498db';
+                }
+                
+                ctx.fillStyle = nodeColor;
                 ctx.beginPath();
                 ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
                 ctx.fill();
                 
                 ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1;
                 ctx.stroke();
             }
             
             // Layer labels
             ctx.fillStyle = '#333';
-            ctx.font = '12px Arial';
+            ctx.font = '10px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(layers[l].name, x, height - 20);
+            ctx.fillText(layers[l].name, x, height - 15);
         }
         
         // Title
         ctx.font = '14px Arial';
-        ctx.fillText('Autoencoder Architecture', width / 2, 20);
+        ctx.fillText('Deep Autoencoder Architecture', width / 2, 20);
+        
+        // Add activation function labels
+        ctx.font = '8px Arial';
+        ctx.fillStyle = '#666';
+        
+        // ELU for hidden layers
+        ctx.fillText('ELU', layerSpacing * 2, height - 5);
+        ctx.fillText('Swish', layerSpacing * 3, height - 5);
+        ctx.fillText('Linear', layerSpacing * 4, height - 5);
+        ctx.fillText('Swish', layerSpacing * 5, height - 5);
+        ctx.fillText('ELU', layerSpacing * 6, height - 5);
     }
     
     function drawAutoencoderComparison() {
@@ -1915,7 +2423,7 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
    
-    // training function with better parameters
+    // training function for nonlinear learning
     function trainAutoencoder() {
         if (!data || data.length === 0) {
             elements.aeProgressElement.textContent = 'No data available. Generate data first!';
@@ -1923,44 +2431,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         elements.trainAeBtn.disabled = true;
-        elements.aeProgressElement.textContent = 'Initializing autoencoder...';
+        elements.aeProgressElement.textContent = 'Initializing deep autoencoder...';
         
         // Normalize data for better training
         const { normalized: normalizedData, mean, std } = normalizeData(data);
         
-        // Create autoencoder with better architecture
-        // Use more hidden units for complex datasets
-        const hiddenSize = elements.datasetSelect.value === 'moons' ? 16 : 8;
+        // Create deeper autoencoder with more capacity for nonlinear patterns
+        let hiddenSize, epochs, lr, batchSize;
+        
+        switch (elements.datasetSelect.value) {
+            case 'moons':
+                hiddenSize = 24; // Increased capacity for complex curved structure
+                epochs = 1000;
+                lr = 0.001;
+                batchSize = 16;
+                break;
+            case 'circles':
+                hiddenSize = 20; // Good capacity for radial patterns
+                epochs = 800;
+                lr = 0.0015;
+                batchSize = 16;
+                break;
+            case 'spiral':
+                hiddenSize = 32; // High capacity for complex spiral structure
+                epochs = 1200;
+                lr = 0.0008;
+                batchSize = 8;
+                break;
+            case 'blobs':
+                hiddenSize = 16; // Moderate capacity for cluster separation
+                epochs = 600;
+                lr = 0.002;
+                batchSize = 16;
+                break;
+            default:
+                hiddenSize = 20;
+                epochs = 800;
+                lr = 0.001;
+                batchSize = 16;
+        }
+        
+        // Create deeper autoencoder
         aeModel = new SimpleAutoencoder(2, hiddenSize, 2);
         
         setTimeout(() => {
             try {
-                // Train with dataset-specific parameters
-                let epochs, lr, batchSize;
-                
-                switch (elements.datasetSelect.value) {
-                    case 'moons':
-                        epochs = 500;
-                        lr = 0.005;
-                        batchSize = 32;
-                        break;
-                    case 'circles':
-                        epochs = 400;
-                        lr = 0.008;
-                        batchSize = 32;
-                        break;
-                    case 'spiral':
-                        epochs = 600;
-                        lr = 0.003;
-                        batchSize = 16;
-                        break;
-                    default:
-                        epochs = 300;
-                        lr = 0.01;
-                        batchSize = 32;
-                }
-                
-                // Train on normalized data
+                // Train with optimized parameters for nonlinear learning
                 aeModel.train(normalizedData, epochs, lr, batchSize);
                 
                 // Get encoded representation
@@ -1972,20 +2488,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 drawAutoencoderComparison();
                 elements.trainAeBtn.disabled = false;
                 
-                // Show reconstruction quality
-                let reconstructionError = 0;
-                for (let i = 0; i < normalizedData.length; i++) {
-                    const { output } = aeModel.forward(normalizedData[i]);
-                    for (let j = 0; j < 2; j++) {
-                        const diff = output[j] - normalizedData[i][j];
-                        reconstructionError += diff * diff;
+                // Analyze nonlinearity by comparing with PCA
+                const pcaProjection = pcaResult ? pcaResult.projection : null;
+                if (pcaProjection && aeProjection) {
+                    const nonlinearityScore = computeNonlinearityScore(pcaProjection, aeProjection);
+                    
+                    if (elements.aeProgressElement) {
+                        elements.aeProgressElement.innerHTML += 
+                            `<br>Nonlinearity Score: ${nonlinearityScore.toFixed(3)} (higher = more nonlinear)`;
+                        
+                        if (nonlinearityScore < 0.1) {
+                            elements.aeProgressElement.innerHTML += 
+                                '<br><span style="color: orange;">⚠️ Low nonlinearity - try different dataset parameters</span>';
+                        } else if (nonlinearityScore > 0.5) {
+                            elements.aeProgressElement.innerHTML += 
+                                '<br><span style="color: green;">✓ Good nonlinear separation achieved!</span>';
+                        }
                     }
-                }
-                reconstructionError = Math.sqrt(reconstructionError / normalizedData.length);
-                
-                if (elements.aeProgressElement) {
-                    elements.aeProgressElement.innerHTML += 
-                        `<br>Reconstruction RMSE: ${reconstructionError.toFixed(4)}`;
                 }
                 
             } catch (error) {
@@ -1994,6 +2513,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 elements.trainAeBtn.disabled = false;
             }
         }, 100);
+    }
+
+    // Compute a score indicating how different the autoencoder is from PCA
+    function computeNonlinearityScore(pcaProjection, aeProjection) {
+        if (!pcaProjection || !aeProjection || pcaProjection.length !== aeProjection.length) {
+            return 0;
+        }
+        
+        let totalDistance = 0;
+        let maxDistance = 0;
+        const n = pcaProjection.length;
+        
+        // Normalize both projections to unit scale for fair comparison
+        const pcaNorm = normalizeProjectionScale(pcaProjection);
+        const aeNorm = normalizeProjectionScale(aeProjection);
+        
+        // Compute average distance between corresponding points
+        for (let i = 0; i < n; i++) {
+            if (pcaNorm[i] && aeNorm[i] && pcaNorm[i].length >= 2 && aeNorm[i].length >= 2) {
+                const dx = pcaNorm[i][0] - aeNorm[i][0];
+                const dy = pcaNorm[i][1] - aeNorm[i][1];
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                totalDistance += dist;
+                maxDistance = Math.max(maxDistance, dist);
+            }
+        }
+        
+        return totalDistance / n;
+    }
+
+    // Helper function to normalize projection scale
+    function normalizeProjectionScale(projection) {
+        let maxVal = 0;
+        for (let i = 0; i < projection.length; i++) {
+            for (let j = 0; j < Math.min(2, projection[i].length); j++) {
+                maxVal = Math.max(maxVal, Math.abs(projection[i][j]));
+            }
+        }
+        
+        if (maxVal < 1e-10) return projection;
+        
+        return projection.map(row => 
+            row.map(val => val / maxVal)
+        );
     }
     
     // Tab handling
