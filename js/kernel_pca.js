@@ -1080,8 +1080,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const decay = 0.999;
             const m = this.initializeCache();
             
+            let totalLoss = 0;
             for (let epoch = 0; epoch < epochs; epoch++) {
-                let totalLoss = 0;
+                totalLoss = 0;
                 const currentLr = learningRate * Math.pow(decay, epoch / 100);
                 
                 // Shuffle data
