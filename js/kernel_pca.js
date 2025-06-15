@@ -991,32 +991,21 @@ document.addEventListener('DOMContentLoaded', function() {
             this.hiddenDim = hiddenDim;
             this.latentDim = latentDim;
             
-            // Xavier/Glorot initialization for better gradient flow
-            const scale1 = Math.sqrt(6.0 / (inputDim + hiddenDim));
-            const scale2 = Math.sqrt(6.0 / (hiddenDim + hiddenDim)); // Second hidden layer
-            const scale3 = Math.sqrt(6.0 / (hiddenDim + latentDim));
-            const scale4 = Math.sqrt(6.0 / (latentDim + hiddenDim));
-            const scale5 = Math.sqrt(6.0 / (hiddenDim + hiddenDim));
-            const scale6 = Math.sqrt(6.0 / (hiddenDim + inputDim));
+            // He initialization for ReLU networks
+            const scale1 = Math.sqrt(2.0 / inputDim);
+            const scale2 = Math.sqrt(2.0 / hiddenDim);
+            const scale3 = Math.sqrt(2.0 / latentDim);
+            const scale4 = Math.sqrt(2.0 / hiddenDim);
             
-            // Deeper encoder: Input -> Hidden1 -> Hidden2 -> Latent
+            // Simple 4-layer architecture: Input -> Hidden -> Latent -> Hidden -> Output
             this.W1 = this.randomMatrix(hiddenDim, inputDim, scale1);
             this.b1 = new Array(hiddenDim).fill(0);
-            this.W2 = this.randomMatrix(hiddenDim, hiddenDim, scale2);
-            this.b2 = new Array(hiddenDim).fill(0);
-            this.W3 = this.randomMatrix(latentDim, hiddenDim, scale3);
-            this.b3 = new Array(latentDim).fill(0);
-            
-            // Deeper decoder: Latent -> Hidden3 -> Hidden4 -> Output
-            this.W4 = this.randomMatrix(hiddenDim, latentDim, scale4);
-            this.b4 = new Array(hiddenDim).fill(0);
-            this.W5 = this.randomMatrix(hiddenDim, hiddenDim, scale5);
-            this.b5 = new Array(hiddenDim).fill(0);
-            this.W6 = this.randomMatrix(inputDim, hiddenDim, scale6);
-            this.b6 = new Array(inputDim).fill(0);
-            
-            // Dropout parameters for regularization
-            this.dropoutRate = 0.1;
+            this.W2 = this.randomMatrix(latentDim, hiddenDim, scale2);
+            this.b2 = new Array(latentDim).fill(0);
+            this.W3 = this.randomMatrix(hiddenDim, latentDim, scale3);
+            this.b3 = new Array(hiddenDim).fill(0);
+            this.W4 = this.randomMatrix(inputDim, hiddenDim, scale4);
+            this.b4 = new Array(inputDim).fill(0);
         }
         
         randomMatrix(rows, cols, scale) {
@@ -1024,8 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < rows; i++) {
                 matrix[i] = new Array(cols);
                 for (let j = 0; j < cols; j++) {
-                    // Use normal distribution for better initialization
-                    matrix[i][j] = gaussianRandom() * scale;
+                    matrix[i][j] = (Math.random() - 0.5) * 2 * scale;
                 }
             }
             return matrix;
@@ -1035,51 +1023,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return Array(rows).fill().map(() => Array(cols).fill(0));
         }
         
-        // ELU activation for better gradient flow and nonlinearity
-        elu(x, alpha = 1.0) {
-            return x > 0 ? x : alpha * (Math.exp(x) - 1);
+        // ReLU activation for stability
+        relu(x) {
+            return Math.max(0, x);
         }
         
-        eluDerivative(x, alpha = 1.0) {
-            return x > 0 ? 1 : alpha * Math.exp(x);
+        reluDerivative(x) {
+            return x > 0 ? 1 : 0;
         }
         
-        // Swish activation for smooth nonlinearity
-        swish(x) {
-            return x / (1 + Math.exp(-x));
+        // Tanh for bounded latent space
+        tanh(x) {
+            return Math.tanh(x);
         }
         
-        swishDerivative(x) {
-            const sigmoid = 1 / (1 + Math.exp(-x));
-            return sigmoid + x * sigmoid * (1 - sigmoid);
-        }
-        
-        // Linear activation (identity)
-        linear(x) {
-            return x;
-        }
-        
-        linearDerivative(x) {
-            return 1;
-        }
-        
-        // Dropout for regularization
-        dropout(vector, rate, training = true) {
-            if (!training || rate === 0) return vector;
-            
-            return vector.map(val => {
-                if (Math.random() < rate) {
-                    return 0;
-                } else {
-                    return val / (1 - rate); // Scale to maintain expected value
-                }
-            });
+        tanhDerivative(x) {
+            const t = Math.tanh(x);
+            return 1 - t * t;
         }
         
         forward(input, training = false) {
-            // Validate input
             if (!input || input.length !== this.inputDim) {
-                console.error('Invalid input to autoencoder:', input);
                 return {
                     output: new Array(this.inputDim).fill(0),
                     latent: new Array(this.latentDim).fill(0),
@@ -1087,72 +1051,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             }
             
-            // Encoder: Input -> Hidden1 -> Hidden2 -> Latent
-            // First hidden layer with ELU activation
+            // Encoder: Input -> Hidden -> Latent
             const z1 = this.addBias(this.matrixVectorMultiply(this.W1, input), this.b1);
-            let a1 = z1.map(x => this.elu(x));
-            a1 = this.dropout(a1, this.dropoutRate, training);
+            const a1 = z1.map(x => this.relu(x));
             
-            // Second hidden layer with Swish activation
             const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
-            let a2 = z2.map(x => this.swish(x));
-            a2 = this.dropout(a2, this.dropoutRate, training);
+            const latent = z2.map(x => this.tanh(x));
             
-            // Latent layer with linear activation (no bounds!)
-            const z3 = this.addBias(this.matrixVectorMultiply(this.W3, a2), this.b3);
-            const latent = z3.map(x => this.linear(x)); // Linear latent space
+            // Decoder: Latent -> Hidden -> Output
+            const z3 = this.addBias(this.matrixVectorMultiply(this.W3, latent), this.b3);
+            const a3 = z3.map(x => this.relu(x));
             
-            // Decoder: Latent -> Hidden3 -> Hidden4 -> Output
-            // First decoder hidden layer with Swish activation
-            const z4 = this.addBias(this.matrixVectorMultiply(this.W4, latent), this.b4);
-            let a4 = z4.map(x => this.swish(x));
-            a4 = this.dropout(a4, this.dropoutRate, training);
-            
-            // Second decoder hidden layer with ELU activation
-            const z5 = this.addBias(this.matrixVectorMultiply(this.W5, a4), this.b5);
-            let a5 = z5.map(x => this.elu(x));
-            a5 = this.dropout(a5, this.dropoutRate, training);
-            
-            // Output layer with linear activation
-            const z6 = this.addBias(this.matrixVectorMultiply(this.W6, a5), this.b6);
-            const output = z6; // Linear output for regression
+            const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
+            const output = z4; // Linear output
             
             return { 
                 output, 
                 latent, 
-                intermediates: { z1, a1, z2, a2, z3, z4, a4, z5, a5, z6 }
+                intermediates: { z1, a1, z2, z3, a3, z4 }
             };
         }
         
-        // Enhanced training with focus on nonlinear learning
-        train(data, epochs = 800, initialLearningRate = 0.002, batchSize = 16) {
+        train(data, epochs = 500, learningRate = 0.01, batchSize = 16) {
             const n = data.length;
             if (n === 0) return;
             
-            let totalLoss = 0;
             const momentum = 0.9;
-            const beta2 = 0.999;
-            const epsilon = 1e-8;
-            
-            // Initialize momentum and RMSprop caches for deeper architecture
+            const decay = 0.999;
             const m = this.initializeCache();
-            const v = this.initializeCache();
-            
-            // Learning rate schedule with warmup
-            const lrSchedule = (epoch) => {
-                const warmupEpochs = 50;
-                if (epoch < warmupEpochs) {
-                    return initialLearningRate * epoch / warmupEpochs;
-                }
-                // Cosine annealing after warmup
-                const adjustedEpoch = epoch - warmupEpochs;
-                const adjustedEpochs = epochs - warmupEpochs;
-                return initialLearningRate * 0.5 * (1 + Math.cos(Math.PI * adjustedEpoch / adjustedEpochs));
-            };
             
             for (let epoch = 0; epoch < epochs; epoch++) {
-                totalLoss = 0;
-                const currentLr = lrSchedule(epoch);
+                let totalLoss = 0;
+                const currentLr = learningRate * Math.pow(decay, epoch / 100);
                 
                 // Shuffle data
                 const indices = Array.from({length: n}, (_, i) => i);
@@ -1161,173 +1091,90 @@ document.addEventListener('DOMContentLoaded', function() {
                     [indices[i], indices[j]] = [indices[j], indices[i]];
                 }
                 
-                // Mini-batch gradient descent
+                // Mini-batch training
                 for (let batch = 0; batch < n; batch += batchSize) {
                     const batchEnd = Math.min(batch + batchSize, n);
                     const batchGradients = this.initializeGradients();
                     
-                    // Accumulate gradients over batch
                     for (let idx = batch; idx < batchEnd; idx++) {
                         const i = indices[idx];
                         const input = data[i];
                         
-                        // Forward pass
-                        const { output, latent, intermediates } = this.forward(input, true);
+                        const { output, intermediates } = this.forward(input, true);
                         
-                        // Calculate ONLY reconstruction loss (no latent penalty!)
+                        // Reconstruction loss only
                         let loss = 0;
                         for (let j = 0; j < this.inputDim; j++) {
                             const diff = output[j] - input[j];
                             loss += diff * diff;
                         }
-                    
                         totalLoss += loss;
                         
-                        // Backward pass for deeper network
-                        const batchNorm = 1.0 / (batchEnd - batch);
-                        this.backpropagateDeeper(batchGradients, input, intermediates, batchNorm);
+                        this.backpropagate(batchGradients, input, intermediates, 1.0 / (batchEnd - batch));
                     }
                     
-                    // Apply Adam updates
-                    const t = epoch * Math.ceil(n / batchSize) + Math.floor(batch / batchSize) + 1;
-                    const lr = currentLr * Math.sqrt(1 - Math.pow(beta2, t)) / (1 - Math.pow(momentum, t));
-                    this.applyGradientsDeeper(batchGradients, m, v, lr, momentum, beta2, epsilon);
+                    this.applyGradients(batchGradients, m, currentLr, momentum);
                 }
                 
-                // Update progress
                 if (epoch % 50 === 0 && elements.aeProgressElement) {
                     const avgLoss = totalLoss / n;
                     elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
                 }
             }
             
-            // Final update
             if (elements.aeProgressElement) {
                 const avgLoss = totalLoss / n;
                 elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
             }
         }
         
-        // Contractive regularization to encourage smooth manifold learning
-        computeContractiveRegularization(input, latent, weight) {
-            if (weight === 0) return 0;
+        backpropagate(batchGradients, input, intermediates, batchNorm) {
+            const { z1, a1, z2, z3, a3, z4 } = intermediates;
             
-            // Approximate Jacobian using finite differences
-            const eps = 1e-5;
-            let jacobianNorm = 0;
+            // Output gradients
+            const dL_dz4 = z4.map((val, j) => 2.0 * (val - input[j]) * batchNorm);
             
-            for (let i = 0; i < this.inputDim; i++) {
-                // Perturb input slightly
-                const perturbedInput = [...input];
-                perturbedInput[i] += eps;
-                
-                const { latent: perturbedLatent } = this.forward(perturbedInput, false);
-                
-                // Compute gradient of latent w.r.t. input
-                for (let j = 0; j < this.latentDim; j++) {
-                    const grad = (perturbedLatent[j] - latent[j]) / eps;
-                    jacobianNorm += grad * grad;
-                }
-            }
+            // Decoder hidden gradients
+            const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
+            const dL_dz3 = dL_da3.map((val, j) => val * this.reluDerivative(z3[j]));
             
-            return weight * jacobianNorm;
-        }
-        
-        // Backpropagation for deeper network
-        backpropagateDeeper(batchGradients, input, intermediates, batchNorm) {
-            const { z1, a1, z2, a2, z3, z4, a4, z5, a5, z6 } = intermediates;
+            // Latent gradients
+            const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
+            const dL_dz2 = dL_dlatent.map((val, j) => val * this.tanhDerivative(z2[j]));
             
-            // Output layer gradients (z6 -> output)
-            const dL_dz6 = new Array(this.inputDim);
-            for (let j = 0; j < this.inputDim; j++) {
-                dL_dz6[j] = 2.0 * (z6[j] - input[j]) * batchNorm;
-            }
-            
-            // Fifth layer gradients (z5 -> z6)
-            const dL_da5 = this.vectorMatrixMultiply(dL_dz6, this.W6);
-            const dL_dz5 = new Array(this.hiddenDim);
-            for (let j = 0; j < this.hiddenDim; j++) {
-                dL_dz5[j] = dL_da5[j] * this.eluDerivative(z5[j]);
-            }
-            
-            // Fourth layer gradients (z4 -> z5)
-            const dL_da4 = this.vectorMatrixMultiply(dL_dz5, this.W5);
-            const dL_dz4 = new Array(this.hiddenDim);
-            for (let j = 0; j < this.hiddenDim; j++) {
-                dL_dz4[j] = dL_da4[j] * this.swishDerivative(z4[j]);
-            }
-            
-            // Latent layer gradients (z3 -> z4) - NO L2 penalty!
-            const dL_dlatent = this.vectorMatrixMultiply(dL_dz4, this.W4);
-            const dL_dz3 = new Array(this.latentDim);
-            for (let j = 0; j < this.latentDim; j++) {
-                dL_dz3[j] = dL_dlatent[j] * this.linearDerivative(z3[j]); // Linear activation
-            }
-            
-            // Second encoder layer gradients (z2 -> z3)
-            const dL_da2 = this.vectorMatrixMultiply(dL_dz3, this.W3);
-            const dL_dz2 = new Array(this.hiddenDim);
-            for (let j = 0; j < this.hiddenDim; j++) {
-                dL_dz2[j] = dL_da2[j] * this.swishDerivative(z2[j]);
-            }
-            
-            // First encoder layer gradients (z1 -> z2)
+            // Encoder hidden gradients
             const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
-            const dL_dz1 = new Array(this.hiddenDim);
-            for (let j = 0; j < this.hiddenDim; j++) {
-                dL_dz1[j] = dL_da1[j] * this.eluDerivative(z1[j]);
-            }
+            const dL_dz1 = dL_da1.map((val, j) => val * this.reluDerivative(z1[j]));
             
-            // Accumulate gradients for all layers
-            this.accumulateGradientsDeeper(batchGradients, {
-                dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
-                input, a1, a2, latent: z3, a4, a5
+            this.accumulateGradients(batchGradients, {
+                dL_dz1, dL_dz2, dL_dz3, dL_dz4,
+                input, a1, latent: z2, a3
             });
         }
         
-        // Accumulate gradients for deeper architecture
-        accumulateGradientsDeeper(gradients, computed) {
-            const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
-                    input, a1, a2, latent, a4, a5 } = computed;
+        accumulateGradients(gradients, computed) {
+            const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, input, a1, latent, a3 } = computed;
             
-            // W6 and b6 (final output layer)
+            // Output layer
             for (let j = 0; j < this.inputDim; j++) {
-                const grad = dL_dz6[j];
-                for (let k = 0; k < this.hiddenDim; k++) {
-                    gradients.W6[j][k] += grad * a5[k];
-                }
-                gradients.b6[j] += grad;
-            }
-            
-            // W5 and b5 (second decoder layer)
-            for (let j = 0; j < this.hiddenDim; j++) {
-                const grad = dL_dz5[j];
-                for (let k = 0; k < this.hiddenDim; k++) {
-                    gradients.W5[j][k] += grad * a4[k];
-                }
-                gradients.b5[j] += grad;
-            }
-            
-            // W4 and b4 (first decoder layer)
-            for (let j = 0; j < this.hiddenDim; j++) {
                 const grad = dL_dz4[j];
-                for (let k = 0; k < this.latentDim; k++) {
-                    gradients.W4[j][k] += grad * latent[k]; // Fixed: use latent values
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W4[j][k] += grad * a3[k];
                 }
                 gradients.b4[j] += grad;
             }
             
-            // W3 and b3 (latent layer)
-            for (let j = 0; j < this.latentDim; j++) {
+            // Decoder hidden
+            for (let j = 0; j < this.hiddenDim; j++) {
                 const grad = dL_dz3[j];
-                for (let k = 0; k < this.hiddenDim; k++) {
-                    gradients.W3[j][k] += grad * a2[k];
+                for (let k = 0; k < this.latentDim; k++) {
+                    gradients.W3[j][k] += grad * latent[k];
                 }
                 gradients.b3[j] += grad;
             }
             
-            // W2 and b2 (second encoder layer)
-            for (let j = 0; j < this.hiddenDim; j++) {
+            // Latent layer
+            for (let j = 0; j < this.latentDim; j++) {
                 const grad = dL_dz2[j];
                 for (let k = 0; k < this.hiddenDim; k++) {
                     gradients.W2[j][k] += grad * a1[k];
@@ -1335,7 +1182,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 gradients.b2[j] += grad;
             }
             
-            // W1 and b1 (first encoder layer)
+            // Encoder hidden
             for (let j = 0; j < this.hiddenDim; j++) {
                 const grad = dL_dz1[j];
                 for (let k = 0; k < this.inputDim; k++) {
@@ -1345,73 +1192,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Apply gradients for deeper architecture with gradient clipping
-        applyGradientsDeeper(gradients, m, v, lr, beta1, beta2, epsilon) {
-            const maxGradNorm = 1.0; // Gradient clipping threshold
-            
-            // Compute gradient norm
-            let gradNorm = 0;
-            const countGradNorm = (g) => {
-                if (Array.isArray(g)) {
-                    for (let val of g) {
-                        if (Array.isArray(val)) {
-                            countGradNorm(val);
-                        } else {
-                            gradNorm += val * val;
-                        }
-                    }
-                }
-            };
-            
-            // Count all gradients
-            countGradNorm(gradients.W1);
-            countGradNorm(gradients.W2);
-            countGradNorm(gradients.W3);
-            countGradNorm(gradients.W4);
-            countGradNorm(gradients.W5);
-            countGradNorm(gradients.W6);
-            countGradNorm(gradients.b1);
-            countGradNorm(gradients.b2);
-            countGradNorm(gradients.b3);
-            countGradNorm(gradients.b4);
-            countGradNorm(gradients.b5);
-            countGradNorm(gradients.b6);
-            
-            gradNorm = Math.sqrt(gradNorm);
-            const clipCoef = Math.min(1.0, maxGradNorm / (gradNorm + epsilon));
-            
-            // Update all weights with gradient clipping
-            this.updateWeights(this.W6, gradients.W6, m.W6, v.W6, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b6, gradients.b6, m.b6, v.b6, lr * clipCoef, beta1, beta2, epsilon);
-            
-            this.updateWeights(this.W5, gradients.W5, m.W5, v.W5, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b5, gradients.b5, m.b5, v.b5, lr * clipCoef, beta1, beta2, epsilon);
-            
-            this.updateWeights(this.W4, gradients.W4, m.W4, v.W4, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b4, gradients.b4, m.b4, v.b4, lr * clipCoef, beta1, beta2, epsilon);
-            
-            this.updateWeights(this.W3, gradients.W3, m.W3, v.W3, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b3, gradients.b3, m.b3, v.b3, lr * clipCoef, beta1, beta2, epsilon);
-            
-            this.updateWeights(this.W2, gradients.W2, m.W2, v.W2, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b2, gradients.b2, m.b2, v.b2, lr * clipCoef, beta1, beta2, epsilon);
-            
-            this.updateWeights(this.W1, gradients.W1, m.W1, v.W1, lr * clipCoef, beta1, beta2, epsilon);
-            this.updateBias(this.b1, gradients.b1, m.b1, v.b1, lr * clipCoef, beta1, beta2, epsilon);
+        applyGradients(gradients, m, lr, momentum) {
+            this.updateWeightsWithMomentum(this.W4, gradients.W4, m.W4, lr, momentum);
+            this.updateBiasWithMomentum(this.b4, gradients.b4, m.b4, lr, momentum);
+            this.updateWeightsWithMomentum(this.W3, gradients.W3, m.W3, lr, momentum);
+            this.updateBiasWithMomentum(this.b3, gradients.b3, m.b3, lr, momentum);
+            this.updateWeightsWithMomentum(this.W2, gradients.W2, m.W2, lr, momentum);
+            this.updateBiasWithMomentum(this.b2, gradients.b2, m.b2, lr, momentum);
+            this.updateWeightsWithMomentum(this.W1, gradients.W1, m.W1, lr, momentum);
+            this.updateBiasWithMomentum(this.b1, gradients.b1, m.b1, lr, momentum);
         }
         
+        updateWeightsWithMomentum(W, grad, m, lr, momentum) {
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    m[i][j] = momentum * m[i][j] + lr * grad[i][j];
+                    W[i][j] -= m[i][j];
+                }
+            }
+        }
+        
+        updateBiasWithMomentum(b, grad, m, lr, momentum) {
+            for (let i = 0; i < b.length; i++) {
+                m[i] = momentum * m[i] + lr * grad[i];
+                b[i] -= m[i];
+            }
+        }
+        
+        // Helper methods remain the same
         matrixVectorMultiply(matrix, vector) {
             if (!matrix || !vector || matrix.length === 0 || vector.length === 0) {
-                console.error('Invalid matrix or vector for multiplication');
                 return [];
             }
-            
             const result = new Array(matrix.length);
             for (let i = 0; i < matrix.length; i++) {
                 let sum = 0;
                 const row = matrix[i];
-                const len = Math.min(row.length, vector.length);
-                for (let j = 0; j < len; j++) {
+                for (let j = 0; j < Math.min(row.length, vector.length); j++) {
                     sum += row[j] * vector[j];
                 }
                 result[i] = sum;
@@ -1421,12 +1238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         addBias(vector, bias) {
             if (!vector || !bias) return vector || [];
-            
-            const result = new Array(vector.length);
-            for (let i = 0; i < vector.length; i++) {
-                result[i] = vector[i] + (bias[i] || 0);
-            }
-            return result;
+            return vector.map((val, i) => val + (bias[i] || 0));
         }
         
         vectorMatrixMultiply(vector, matrix) {
@@ -1441,38 +1253,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return result;
         }
         
-        updateWeights(W, grad, m, v, lr, beta1, beta2, epsilon) {
-            for (let i = 0; i < W.length; i++) {
-                for (let j = 0; j < W[i].length; j++) {
-                    m[i][j] = beta1 * m[i][j] + (1 - beta1) * grad[i][j];
-                    v[i][j] = beta2 * v[i][j] + (1 - beta2) * grad[i][j] * grad[i][j];
-                    W[i][j] -= lr * m[i][j] / (Math.sqrt(v[i][j]) + epsilon);
-                }
-            }
-        }
-        
-        updateBias(b, grad, m, v, lr, beta1, beta2, epsilon) {
-            for (let i = 0; i < b.length; i++) {
-                m[i] = beta1 * m[i] + (1 - beta1) * grad[i];
-                v[i] = beta2 * v[i] + (1 - beta2) * grad[i] * grad[i];
-                b[i] -= lr * m[i] / (Math.sqrt(v[i]) + epsilon);
-            }
-        }
-        
         initializeCache() {
             return {
                 W1: this.zeroMatrix(this.hiddenDim, this.inputDim),
                 b1: new Array(this.hiddenDim).fill(0),
-                W2: this.zeroMatrix(this.hiddenDim, this.hiddenDim),
-                b2: new Array(this.hiddenDim).fill(0),
-                W3: this.zeroMatrix(this.latentDim, this.hiddenDim),
-                b3: new Array(this.latentDim).fill(0),
-                W4: this.zeroMatrix(this.hiddenDim, this.latentDim),
-                b4: new Array(this.hiddenDim).fill(0),
-                W5: this.zeroMatrix(this.hiddenDim, this.hiddenDim),
-                b5: new Array(this.hiddenDim).fill(0),
-                W6: this.zeroMatrix(this.inputDim, this.hiddenDim),
-                b6: new Array(this.inputDim).fill(0)
+                W2: this.zeroMatrix(this.latentDim, this.hiddenDim),
+                b2: new Array(this.latentDim).fill(0),
+                W3: this.zeroMatrix(this.hiddenDim, this.latentDim),
+                b3: new Array(this.hiddenDim).fill(0),
+                W4: this.zeroMatrix(this.inputDim, this.hiddenDim),
+                b4: new Array(this.inputDim).fill(0)
             };
         }
         
@@ -1482,18 +1272,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         encode(data) {
             if (!data || data.length === 0) return [];
-            
             const encoded = new Array(data.length);
             for (let i = 0; i < data.length; i++) {
                 try {
                     const { latent } = this.forward(data[i], false);
-                    // Ensure we always return 2D points
                     encoded[i] = [
                         latent[0] || 0,
-                        latent[1] || 0
+                        this.latentDim > 1 ? (latent[1] || 0) : (latent[0] || 0)
                     ];
                 } catch (error) {
-                    console.error('Encoding error for point', i, error);
                     encoded[i] = [0, 0];
                 }
             }
@@ -1735,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Draw original vs reconstructed data comparison
-    function drawReconstructionComparison() {
+   function drawReconstructionComparison() {
         const ctx = elements.reconstructionCanvas.getContext('2d');
         const width = elements.reconstructionCanvas.width;
         const height = elements.reconstructionCanvas.height;
@@ -1750,65 +1537,115 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Get reconstructed data
-        const { normalized: normalizedData } = normalizeData(data);
-        const reconstructed = [];
+        // Get normalization parameters and normalize data
+        const { normalized: normalizedData, mean, std } = normalizeData(data);
         
+        // Get reconstructions in normalized space
+        const reconstructedNormalized = [];
         for (let i = 0; i < normalizedData.length; i++) {
             const { output } = aeModel.forward(normalizedData[i], false);
-            reconstructed.push(output);
+            reconstructedNormalized.push(output);
         }
         
-        // Denormalize reconstructed data
-        const { mean, std } = normalizeData(data);
-        const denormalizedReconstructed = reconstructed.map(point => [
+        // Denormalize back to original scale
+        const reconstructedOriginal = reconstructedNormalized.map(point => [
             point[0] * std[0] + mean[0],
             point[1] * std[1] + mean[1]
         ]);
         
-        // Split canvas in half
+        // Split canvas and draw both datasets
         const halfWidth = width / 2;
         
         // Draw original on left
         ctx.save();
-        ctx.translate(0, 0);
-        ctx.scale(0.5, 1);
-        
-        const tempCanvas1 = document.createElement('canvas');
-        tempCanvas1.width = width;
-        tempCanvas1.height = height;
-        drawData(tempCanvas1, data, null, 'Original');
-        ctx.drawImage(tempCanvas1, 0, 0);
-        
+        ctx.clipRect(0, 0, halfWidth - 1, height);
+        drawDataSubset(ctx, data, 'Original', 0, 0, halfWidth, height);
         ctx.restore();
         
         // Draw reconstructed on right
         ctx.save();
-        ctx.translate(halfWidth, 0);
-        ctx.scale(0.5, 1);
-        
-        const tempCanvas2 = document.createElement('canvas');
-        tempCanvas2.width = width;
-        tempCanvas2.height = height;
-        drawData(tempCanvas2, denormalizedReconstructed, null, 'Reconstructed');
-        ctx.drawImage(tempCanvas2, 0, 0);
-        
+        ctx.clipRect(halfWidth + 1, 0, halfWidth - 1, height);
+        drawDataSubset(ctx, reconstructedOriginal, 'Reconstructed', halfWidth, 0, halfWidth, height);
         ctx.restore();
         
-        // Labels
+        // Draw divider
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(halfWidth, 30);
+        ctx.lineTo(halfWidth, height - 10);
+        ctx.stroke();
+        
+        // Show reconstruction error
+        let totalError = 0;
+        for (let i = 0; i < data.length; i++) {
+            for (let j = 0; j < 2; j++) {
+                const diff = reconstructedOriginal[i][j] - data[i][j];
+                totalError += diff * diff;
+            }
+        }
+        const rmse = Math.sqrt(totalError / (data.length * 2));
+        
+        ctx.font = '11px Arial';
+        ctx.fillStyle = rmse < 0.3 ? '#27ae60' : rmse < 0.6 ? '#f39c12' : '#e74c3c';
+        ctx.textAlign = 'center';
+        ctx.fillText(`RMSE: ${rmse.toFixed(3)}`, width / 2, height - 5);
+    }
+
+    // Helper function for drawing data subsets
+    function drawDataSubset(ctx, drawData, title, offsetX, offsetY, canvasWidth, canvasHeight) {
+        if (!drawData || drawData.length === 0) return;
+        
+        // Find bounds
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const point of drawData) {
+            if (!point || point.length < 2) continue;
+            const [x, y] = point;
+            if (!isFinite(x) || !isFinite(y)) continue;
+            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        }
+        
+        // Add padding
+        const range = Math.max(maxX - minX, maxY - minY, 0.1);
+        const padding = 0.1 * range;
+        minX -= padding; maxX += padding; minY -= padding; maxY += padding;
+        
+        const xRange = maxX - minX;
+        const yRange = maxY - minY;
+        
+        // Drawing area
+        const drawTop = offsetY + 25;
+        const drawHeight = canvasHeight - 35;
+        const drawLeft = offsetX + 5;
+        const drawWidth = canvasWidth - 10;
+        
+        // Title
         ctx.font = '12px Arial';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
-        ctx.fillText('Original', halfWidth / 2, 20);
-        ctx.fillText('Reconstructed', halfWidth + halfWidth / 2, 20);
+        ctx.fillText(title, offsetX + canvasWidth / 2, offsetY + 15);
         
-        // Divider
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(halfWidth, 30);
-        ctx.lineTo(halfWidth, height);
-        ctx.stroke();
+        // Draw points
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e'];
+        
+        for (let i = 0; i < drawData.length; i++) {
+            const point = drawData[i];
+            if (!point || point.length < 2) continue;
+            
+            const [x, y] = point;
+            if (!isFinite(x) || !isFinite(y)) continue;
+            
+            const px = drawLeft + ((x - minX) / xRange) * drawWidth;
+            const py = drawTop + drawHeight - ((y - minY) / yRange) * drawHeight;
+            
+            if (px < drawLeft || px > drawLeft + drawWidth || py < drawTop || py > drawTop + drawHeight) continue;
+            
+            ctx.fillStyle = colors[labels[i] % colors.length];
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
     }
 
     // Draw 1D latent space visualization
@@ -2428,59 +2265,40 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.trainAeBtn.disabled = true;
         elements.aeProgressElement.textContent = 'Initializing 1D autoencoder...';
         
-        // Normalize data for better training
-        const { normalized: normalizedData, mean, std } = normalizeData(data);
+        const { normalized: normalizedData } = normalizeData(data);
         
-        // Create 1D autoencoder (2D → 1D → 2D)
+        // Conservative parameters for better convergence
         let hiddenSize, epochs, lr, batchSize;
         
         switch (elements.datasetSelect.value) {
             case 'moons':
-                hiddenSize = 32; // More capacity for complex mapping to 1D
-                epochs = 800;
-                lr = 0.003;
-                batchSize = 16;
+                hiddenSize = 16; epochs = 600; lr = 0.02; batchSize = 16;
                 break;
             case 'circles':
-                hiddenSize = 24;
-                epochs = 600;
-                lr = 0.005;
-                batchSize = 16;
+                hiddenSize = 12; epochs = 400; lr = 0.025; batchSize = 16;
                 break;
             case 'spiral':
-                hiddenSize = 40; // High capacity for spiral → 1D mapping
-                epochs = 1000;
-                lr = 0.002;
-                batchSize = 8;
+                hiddenSize = 20; epochs = 800; lr = 0.015; batchSize = 8;
                 break;
             case 'blobs':
-                hiddenSize = 20;
-                epochs = 400;
-                lr = 0.008;
-                batchSize = 16;
+                hiddenSize = 10; epochs = 300; lr = 0.03; batchSize = 16;
                 break;
             default:
-                hiddenSize = 24;
-                epochs = 600;
-                lr = 0.005;
-                batchSize = 16;
+                hiddenSize = 12; epochs = 400; lr = 0.02; batchSize = 16;
         }
         
-        // Create 1D autoencoder: 2D input → hidden → 1D latent → hidden → 2D output
-        aeModel = new SimpleAutoencoder(2, hiddenSize, 1); // Key change: latentDim = 1
+        aeModel = new SimpleAutoencoder(2, hiddenSize, 1);
         
         setTimeout(() => {
             try {
-                // Train with optimized parameters
                 aeModel.train(normalizedData, epochs, lr, batchSize);
                 
-                // Update visualizations
                 drawReconstructionComparison();
                 drawLatent1D();
                 
                 elements.trainAeBtn.disabled = false;
                 
-                // Calculate reconstruction error
+                // Calculate and display reconstruction error
                 let totalError = 0;
                 for (let i = 0; i < normalizedData.length; i++) {
                     const { output } = aeModel.forward(normalizedData[i], false);
@@ -2492,23 +2310,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rmse = Math.sqrt(totalError / (normalizedData.length * 2));
                 
                 if (elements.aeProgressElement) {
-                    elements.aeProgressElement.innerHTML += 
-                        `<br>Reconstruction RMSE: ${rmse.toFixed(4)}`;
+                    elements.aeProgressElement.innerHTML += `<br>Reconstruction RMSE: ${rmse.toFixed(4)}`;
                     
-                    if (rmse < 0.3) {
-                        elements.aeProgressElement.innerHTML += 
-                            '<br><span style="color: green;">✓ Excellent 1D manifold learning!</span>';
-                    } else if (rmse < 0.5) {
-                        elements.aeProgressElement.innerHTML += 
-                            '<br><span style="color: orange;">⚠️ Good 1D compression</span>';
+                    if (rmse < 0.2) {
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: green;">✓ Excellent reconstruction!</span>';
+                    } else if (rmse < 0.4) {
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: orange;">⚠️ Good reconstruction</span>';
                     } else {
-                        elements.aeProgressElement.innerHTML += 
-                            '<br><span style="color: red;">⚠️ Difficult 1D compression - try different dataset</span>';
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: red;">⚠️ Poor reconstruction - try different parameters</span>';
                     }
                 }
                 
             } catch (error) {
-                console.error('1D Autoencoder training error:', error);
+                console.error('Training error:', error);
                 elements.aeProgressElement.textContent = 'Training failed: ' + error.message;
                 elements.trainAeBtn.disabled = false;
             }
