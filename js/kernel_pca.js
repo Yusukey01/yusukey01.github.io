@@ -66,8 +66,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <p class="graph-explanation">1D latent space forces the autoencoder to learn the underlying 1D manifold of the 2D data.</p>
                                     </div>
                                 </div>
+                                <div class="ae-controls">
+                                    <button id="train-ae" class="primary-btn">Train 1D Autoencoder</button>
+                                    <div id="ae-progress" class="progress-info"></div>
+                                </div>
                             </div>
-                        </div>
                         
                         <div class="btn-container">
                             <button id="compute-btn" class="primary-btn">Compute Kernel PCA</button>
@@ -392,8 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
         kpcaCanvas: document.getElementById('kpca-canvas'),
         varianceCanvas: document.getElementById('variance-canvas'),
         algorithmCanvas: document.getElementById('algorithm-canvas'),
-        aeArchCanvas: document.getElementById('ae-architecture-canvas'),
-        aeProjCanvas: document.getElementById('ae-projection-canvas'),
+        reconstructionCanvas: document.getElementById('reconstruction-canvas'),
+        latent1dCanvas: document.getElementById('latent-1d-canvas'),
         
         // Tab elements
         tabBtns: document.querySelectorAll('.tab-btn'),
@@ -1730,120 +1733,43 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillText(`Cumulative: PCA ${(pcaCumulative * 100).toFixed(1)}%, KPCA ${(kpcaCumulative * 100).toFixed(1)}%`, 
                      width / 2, height - 45);
     }
-    
-    // Autoencoder visualization for deeper architecture
-    function drawAutoencoderArchitecture() {
-        const ctx = elements.aeArchCanvas.getContext('2d');
-        const width = elements.aeArchCanvas.width;
-        const height = elements.aeArchCanvas.height;
+
+    // Draw original vs reconstructed data comparison
+    function drawReconstructionComparison() {
+        const ctx = elements.reconstructionCanvas.getContext('2d');
+        const width = elements.reconstructionCanvas.width;
+        const height = elements.reconstructionCanvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
-        // Draw network architecture for deeper autoencoder
-        const layers = [
-            { size: 2, name: 'Input' },
-            { size: 6, name: 'Hidden 1' },
-            { size: 6, name: 'Hidden 2' },
-            { size: 2, name: 'Latent' },
-            { size: 6, name: 'Hidden 3' },
-            { size: 6, name: 'Hidden 4' },
-            { size: 2, name: 'Output' }
-        ];
-        
-        const layerSpacing = width / (layers.length + 1);
-        const nodeRadius = 6;
-        
-        // Draw connections
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 0.5;
-        
-        for (let l = 0; l < layers.length - 1; l++) {
-            const x1 = (l + 1) * layerSpacing;
-            const x2 = (l + 2) * layerSpacing;
-            
-            for (let i = 0; i < layers[l].size; i++) {
-                const y1 = height / 2 + (i - layers[l].size / 2 + 0.5) * 25;
-                
-                for (let j = 0; j < layers[l + 1].size; j++) {
-                    const y2 = height / 2 + (j - layers[l + 1].size / 2 + 0.5) * 25;
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(x1 + nodeRadius, y1);
-                    ctx.lineTo(x2 - nodeRadius, y2);
-                    ctx.stroke();
-                }
-            }
-        }
-        
-        // Draw nodes
-        for (let l = 0; l < layers.length; l++) {
-            const x = (l + 1) * layerSpacing;
-            
-            for (let i = 0; i < layers[l].size; i++) {
-                const y = height / 2 + (i - layers[l].size / 2 + 0.5) * 25;
-                
-                // Node color based on layer type
-                let nodeColor;
-                if (l === 3) { // Latent layer
-                    nodeColor = '#e74c3c';
-                } else if (l === 0 || l === layers.length - 1) { // Input/Output
-                    nodeColor = '#2ecc71';
-                } else { // Hidden layers
-                    nodeColor = '#3498db';
-                }
-                
-                ctx.fillStyle = nodeColor;
-                ctx.beginPath();
-                ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-            
-            // Layer labels
-            ctx.fillStyle = '#333';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(layers[l].name, x, height - 15);
-        }
-        
-        // Title
-        ctx.font = '14px Arial';
-        ctx.fillText('Deep Autoencoder Architecture', width / 2, 20);
-        
-        // Add activation function labels
-        ctx.font = '8px Arial';
-        ctx.fillStyle = '#666';
-        
-        // ELU for hidden layers
-        ctx.fillText('ELU', layerSpacing * 2, height - 5);
-        ctx.fillText('Swish', layerSpacing * 3, height - 5);
-        ctx.fillText('Linear', layerSpacing * 4, height - 5);
-        ctx.fillText('Swish', layerSpacing * 5, height - 5);
-        ctx.fillText('ELU', layerSpacing * 6, height - 5);
-    }
-    
-    function drawAutoencoderComparison() {
-        const ctx = elements.aeProjCanvas.getContext('2d');
-        const width = elements.aeProjCanvas.width;
-        const height = elements.aeProjCanvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        if (!aeProjection || !kpcaResult || !aeProjection.length || !kpcaResult.projection) {
+        if (!aeModel || !data || data.length === 0) {
             ctx.font = '14px Arial';
             ctx.fillStyle = '#666';
             ctx.textAlign = 'center';
-            ctx.fillText('Train autoencoder to see comparison', width / 2, height / 2);
+            ctx.fillText('Train autoencoder to see reconstruction', width / 2, height / 2);
             return;
         }
         
-        // Split canvas
+        // Get reconstructed data
+        const { normalized: normalizedData } = normalizeData(data);
+        const reconstructed = [];
+        
+        for (let i = 0; i < normalizedData.length; i++) {
+            const { output } = aeModel.forward(normalizedData[i], false);
+            reconstructed.push(output);
+        }
+        
+        // Denormalize reconstructed data
+        const { mean, std } = normalizeData(data);
+        const denormalizedReconstructed = reconstructed.map(point => [
+            point[0] * std[0] + mean[0],
+            point[1] * std[1] + mean[1]
+        ]);
+        
+        // Split canvas in half
         const halfWidth = width / 2;
         
-        // Draw KPCA on left
+        // Draw original on left
         ctx.save();
         ctx.translate(0, 0);
         ctx.scale(0.5, 1);
@@ -1851,12 +1777,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const tempCanvas1 = document.createElement('canvas');
         tempCanvas1.width = width;
         tempCanvas1.height = height;
-        drawData(tempCanvas1, data, kpcaResult.projection, 'KPCA');
+        drawData(tempCanvas1, data, null, 'Original');
         ctx.drawImage(tempCanvas1, 0, 0);
         
         ctx.restore();
         
-        // Draw AE on right
+        // Draw reconstructed on right
         ctx.save();
         ctx.translate(halfWidth, 0);
         ctx.scale(0.5, 1);
@@ -1864,7 +1790,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tempCanvas2 = document.createElement('canvas');
         tempCanvas2.width = width;
         tempCanvas2.height = height;
-        drawData(tempCanvas2, data, aeProjection, 'Autoencoder');
+        drawData(tempCanvas2, denormalizedReconstructed, null, 'Reconstructed');
         ctx.drawImage(tempCanvas2, 0, 0);
         
         ctx.restore();
@@ -1873,8 +1799,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.font = '12px Arial';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
-        ctx.fillText('Kernel PCA', halfWidth / 2, 20);
-        ctx.fillText('Autoencoder', halfWidth + halfWidth / 2, 20);
+        ctx.fillText('Original', halfWidth / 2, 20);
+        ctx.fillText('Reconstructed', halfWidth + halfWidth / 2, 20);
         
         // Divider
         ctx.strokeStyle = '#ddd';
@@ -1884,6 +1810,84 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineTo(halfWidth, height);
         ctx.stroke();
     }
+
+    // Draw 1D latent space visualization
+    function drawLatent1D() {
+        const ctx = elements.latent1dCanvas.getContext('2d');
+        const width = elements.latent1dCanvas.width;
+        const height = elements.latent1dCanvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!aeModel || !data || data.length === 0) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('Train 1D autoencoder to see latent space', width / 2, height / 2);
+            return;
+        }
+        
+        // Get 1D latent representations
+        const { normalized: normalizedData } = normalizeData(data);
+        const latentValues = [];
+        
+        for (let i = 0; i < normalizedData.length; i++) {
+            const { latent } = aeModel.forward(normalizedData[i], false);
+            latentValues.push(latent[0]); // Only first component for 1D
+        }
+        
+        // Find latent range
+        const minLatent = Math.min(...latentValues);
+        const maxLatent = Math.max(...latentValues);
+        const latentRange = maxLatent - minLatent;
+        
+        // Draw title
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('1D Latent Space Visualization', width / 2, 20);
+        
+        // Draw latent line
+        const lineY = height / 2;
+        const lineStartX = 50;
+        const lineEndX = width - 50;
+        const lineLength = lineEndX - lineStartX;
+        
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(lineStartX, lineY);
+        ctx.lineTo(lineEndX, lineY);
+        ctx.stroke();
+        
+        // Draw points on latent line
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e'];
+        
+        for (let i = 0; i < latentValues.length; i++) {
+            const latentVal = latentValues[i];
+            const x = lineStartX + ((latentVal - minLatent) / latentRange) * lineLength;
+            
+            ctx.fillStyle = colors[labels[i] % colors.length];
+            ctx.beginPath();
+            ctx.arc(x, lineY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Add labels
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText('Low latent values', lineStartX, lineY + 20);
+        ctx.fillText('High latent values', lineEndX, lineY + 20);
+        
+        // Show latent range
+        ctx.fillText(`Range: [${minLatent.toFixed(2)}, ${maxLatent.toFixed(2)}]`, width / 2, height - 20);
+    }
+    
     
     // Compute median pairwise distance for gamma suggestion
     function computeMedianPairwiseDistance(data, sampleSize = 100) {
@@ -2377,9 +2381,9 @@ document.addEventListener('DOMContentLoaded', function() {
         drawData(elements.kpcaCanvas, data, kpcaResult.projectionScaled || kpcaResult.projection, 'Kernel PCA Projection');
         drawVariance(elements.varianceCanvas, pcaResult.eigenvalues, kpcaResult.eigenvalues);
         
-        // Update other tabs
-        drawAutoencoderArchitecture();
-        drawAutoencoderComparison();
+        // Update Autoencoder tab
+        drawReconstructionComparison();
+        drawLatent1D();
     }
     
 
@@ -2413,8 +2417,8 @@ document.addEventListener('DOMContentLoaded', function() {
             row.map(val => val * scaleFactor)
         );
     }
-   
-    // training function for nonlinear learning
+
+    // Enhanced training function for 1D autoencoder
     function trainAutoencoder() {
         if (!data || data.length === 0) {
             elements.aeProgressElement.textContent = 'No data available. Generate data first!';
@@ -2422,132 +2426,93 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         elements.trainAeBtn.disabled = true;
-        elements.aeProgressElement.textContent = 'Initializing deep autoencoder...';
+        elements.aeProgressElement.textContent = 'Initializing 1D autoencoder...';
         
         // Normalize data for better training
         const { normalized: normalizedData, mean, std } = normalizeData(data);
         
-        // Create deeper autoencoder with more capacity for nonlinear patterns
+        // Create 1D autoencoder (2D → 1D → 2D)
         let hiddenSize, epochs, lr, batchSize;
         
         switch (elements.datasetSelect.value) {
             case 'moons':
-                hiddenSize = 24; // Increased capacity for complex curved structure
+                hiddenSize = 32; // More capacity for complex mapping to 1D
+                epochs = 800;
+                lr = 0.003;
+                batchSize = 16;
+                break;
+            case 'circles':
+                hiddenSize = 24;
                 epochs = 600;
                 lr = 0.005;
                 batchSize = 16;
                 break;
-            case 'circles':
-                hiddenSize = 20; // Good capacity for radial patterns
+            case 'spiral':
+                hiddenSize = 40; // High capacity for spiral → 1D mapping
+                epochs = 1000;
+                lr = 0.002;
+                batchSize = 8;
+                break;
+            case 'blobs':
+                hiddenSize = 20;
                 epochs = 400;
                 lr = 0.008;
                 batchSize = 16;
                 break;
-            case 'spiral':
-                hiddenSize = 32; // High capacity for complex spiral structure
-                epochs = 500;
-                lr = 0.003;
-                batchSize = 8;
-                break;
-            case 'blobs':
-                hiddenSize = 16; // Moderate capacity for cluster separation
-                epochs = 300;
-                lr = 0.001;
-                batchSize = 16;
-                break;
             default:
-                hiddenSize = 20;
-                epochs = 400;
+                hiddenSize = 24;
+                epochs = 600;
                 lr = 0.005;
                 batchSize = 16;
         }
         
-        // Create deeper autoencoder
-        aeModel = new SimpleAutoencoder(2, hiddenSize, 2);
+        // Create 1D autoencoder: 2D input → hidden → 1D latent → hidden → 2D output
+        aeModel = new SimpleAutoencoder(2, hiddenSize, 1); // Key change: latentDim = 1
         
         setTimeout(() => {
             try {
-                // Train with optimized parameters for nonlinear learning
+                // Train with optimized parameters
                 aeModel.train(normalizedData, epochs, lr, batchSize);
                 
-                // Get encoded representation
-                const normalizedProjection = aeModel.encode(normalizedData);
+                // Update visualizations
+                drawReconstructionComparison();
+                drawLatent1D();
                 
-                // Scale back for visualization
-                aeProjection = scaleProjectionForVisualization(normalizedProjection, data);
-                
-                drawAutoencoderComparison();
                 elements.trainAeBtn.disabled = false;
                 
-                // Analyze nonlinearity by comparing with PCA
-                const pcaProjection = pcaResult ? pcaResult.projection : null;
-                if (pcaProjection && aeProjection) {
-                    const nonlinearityScore = computeNonlinearityScore(pcaProjection, aeProjection);
+                // Calculate reconstruction error
+                let totalError = 0;
+                for (let i = 0; i < normalizedData.length; i++) {
+                    const { output } = aeModel.forward(normalizedData[i], false);
+                    for (let j = 0; j < 2; j++) {
+                        const diff = output[j] - normalizedData[i][j];
+                        totalError += diff * diff;
+                    }
+                }
+                const rmse = Math.sqrt(totalError / (normalizedData.length * 2));
+                
+                if (elements.aeProgressElement) {
+                    elements.aeProgressElement.innerHTML += 
+                        `<br>Reconstruction RMSE: ${rmse.toFixed(4)}`;
                     
-                    if (elements.aeProgressElement) {
+                    if (rmse < 0.3) {
                         elements.aeProgressElement.innerHTML += 
-                            `<br>Nonlinearity Score: ${nonlinearityScore.toFixed(3)} (higher = more nonlinear)`;
-                        
-                        if (nonlinearityScore < 0.1) {
-                            elements.aeProgressElement.innerHTML += 
-                                '<br><span style="color: orange;">⚠️ Low nonlinearity - try different dataset parameters</span>';
-                        } else if (nonlinearityScore > 0.5) {
-                            elements.aeProgressElement.innerHTML += 
-                                '<br><span style="color: green;">✓ Good nonlinear separation achieved!</span>';
-                        }
+                            '<br><span style="color: green;">✓ Excellent 1D manifold learning!</span>';
+                    } else if (rmse < 0.5) {
+                        elements.aeProgressElement.innerHTML += 
+                            '<br><span style="color: orange;">⚠️ Good 1D compression</span>';
+                    } else {
+                        elements.aeProgressElement.innerHTML += 
+                            '<br><span style="color: red;">⚠️ Difficult 1D compression - try different dataset</span>';
                     }
                 }
                 
             } catch (error) {
-                console.error('Autoencoder training error:', error);
+                console.error('1D Autoencoder training error:', error);
                 elements.aeProgressElement.textContent = 'Training failed: ' + error.message;
                 elements.trainAeBtn.disabled = false;
             }
         }, 100);
-    }
-
-    // Compute a score indicating how different the autoencoder is from PCA
-    function computeNonlinearityScore(pcaProjection, aeProjection) {
-        if (!pcaProjection || !aeProjection || pcaProjection.length !== aeProjection.length) {
-            return 0;
-        }
-        
-        let totalDistance = 0;
-        let maxDistance = 0;
-        const n = pcaProjection.length;
-        
-        // Normalize both projections to unit scale for fair comparison
-        const pcaNorm = normalizeProjectionScale(pcaProjection);
-        const aeNorm = normalizeProjectionScale(aeProjection);
-        
-        // Compute average distance between corresponding points
-        for (let i = 0; i < n; i++) {
-            if (pcaNorm[i] && aeNorm[i] && pcaNorm[i].length >= 2 && aeNorm[i].length >= 2) {
-                const dx = pcaNorm[i][0] - aeNorm[i][0];
-                const dy = pcaNorm[i][1] - aeNorm[i][1];
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                totalDistance += dist;
-                maxDistance = Math.max(maxDistance, dist);
-            }
-        }
-        
-        return totalDistance / n;
-    }
-
-    // Helper function to normalize projection scale
-    function normalizeProjectionScale(projection) {
-        let maxVal = 0;
-        for (let i = 0; i < projection.length; i++) {
-            for (let j = 0; j < Math.min(2, projection[i].length); j++) {
-                maxVal = Math.max(maxVal, Math.abs(projection[i][j]));
-            }
-        }
-        
-        if (maxVal < 1e-10) return projection;
-        
-        return projection.map(row => 
-            row.map(val => val / maxVal)
-        );
     }
     
     // Tab handling
