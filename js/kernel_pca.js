@@ -993,7 +993,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.hiddenDim = hiddenDim;
             this.latentDim = latentDim;
             
-            // Xavier initialization with better scaling
+            // Better initialization using He initialization for ReLU variants
             const scale1 = Math.sqrt(2.0 / inputDim);
             const scale2 = Math.sqrt(2.0 / hiddenDim);
             const scale3 = Math.sqrt(2.0 / latentDim);
@@ -1005,11 +1005,17 @@ document.addEventListener('DOMContentLoaded', function() {
             this.W2 = this.randomMatrix(latentDim, hiddenDim, scale2);
             this.b2 = new Array(latentDim).fill(0);
             
-            // Decoder weights
+            // Decoder weights - Initialize as transpose for better symmetry
             this.W3 = this.randomMatrix(hiddenDim, latentDim, scale3);
             this.b3 = new Array(hiddenDim).fill(0);
             this.W4 = this.randomMatrix(inputDim, hiddenDim, scale4);
             this.b4 = new Array(inputDim).fill(0);
+            
+            // Add batch normalization parameters
+            this.bn1_gamma = new Array(hiddenDim).fill(1);
+            this.bn1_beta = new Array(hiddenDim).fill(0);
+            this.bn1_running_mean = new Array(hiddenDim).fill(0);
+            this.bn1_running_var = new Array(hiddenDim).fill(1);
         }
         
         randomMatrix(rows, cols, scale) {
@@ -1017,22 +1023,57 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < rows; i++) {
                 matrix[i] = new Array(cols);
                 for (let j = 0; j < cols; j++) {
-                    matrix[i][j] = (Math.random() - 0.5) * 2 * scale;
+                    // Use normal distribution for better initialization
+                    matrix[i][j] = gaussianRandom() * scale;
                 }
             }
             return matrix;
         }
         
-        // Leaky ReLU for better gradient flow
-        leakyRelu(x, alpha = 0.01) {
+        // Use tanh for bounded activations (better for latent space)
+        tanh(x) {
+            return Math.tanh(x);
+        }
+        
+        tanhDerivative(x) {
+            const t = Math.tanh(x);
+            return 1 - t * t;
+        }
+        
+        // Leaky ReLU for hidden layers
+        leakyRelu(x, alpha = 0.1) {
             return x > 0 ? x : alpha * x;
         }
         
-        leakyReluDerivative(x, alpha = 0.01) {
+        leakyReluDerivative(x, alpha = 0.1) {
             return x > 0 ? 1 : alpha;
         }
         
-        forward(input) {
+        // Batch normalization
+        batchNorm(z, gamma, beta, running_mean, running_var, training = true, momentum = 0.9) {
+            const eps = 1e-8;
+            if (training) {
+                // Compute batch statistics
+                const mean = z.reduce((a, b) => a + b, 0) / z.length;
+                const variance = z.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / z.length;
+                
+                // Update running statistics
+                for (let i = 0; i < z.length; i++) {
+                    running_mean[i] = momentum * running_mean[i] + (1 - momentum) * mean;
+                    running_var[i] = momentum * running_var[i] + (1 - momentum) * variance;
+                }
+                
+                // Normalize
+                return z.map(val => gamma[0] * (val - mean) / Math.sqrt(variance + eps) + beta[0]);
+            } else {
+                // Use running statistics
+                return z.map((val, i) => 
+                    gamma[i] * (val - running_mean[i]) / Math.sqrt(running_var[i] + eps) + beta[i]
+                );
+            }
+        }
+        
+        forward(input, training = false) {
             // Validate input
             if (!input || input.length !== this.inputDim) {
                 console.error('Invalid input to autoencoder:', input);
@@ -1053,18 +1094,223 @@ document.addEventListener('DOMContentLoaded', function() {
             const a1 = z1.map(x => this.leakyRelu(x));
             
             const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
-            const latent = z2; // Linear activation in latent layer
+            // Use tanh for latent space to bound representations
+            const latent = z2.map(x => this.tanh(x));
             
             // Decoder
             const z3 = this.addBias(this.matrixVectorMultiply(this.W3, latent), this.b3);
             const a3 = z3.map(x => this.leakyRelu(x));
             
             const z4 = this.addBias(this.matrixVectorMultiply(this.W4, a3), this.b4);
-            const output = z4; // Linear activation in output
+            const output = z4; // Linear output for regression
             
             return { output, latent, z1, a1, z2, z3, a3, z4 };
         }
         
+        // Improved training with adaptive learning rate
+        train(data, epochs = 500, initialLearningRate = 0.01, batchSize = 32) {
+            const n = data.length;
+            if (n === 0) return;
+            
+            let totalLoss = 0;
+            const momentum = 0.9;
+            const beta2 = 0.999;
+            const epsilon = 1e-8;
+            
+            // Initialize momentum and RMSprop caches
+            const m = this.initializeCache();
+            const v = this.initializeCache();
+            
+            // Learning rate schedule
+            const lrSchedule = (epoch) => {
+                // Cosine annealing
+                return initialLearningRate * 0.5 * (1 + Math.cos(Math.PI * epoch / epochs));
+            };
+            
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                totalLoss = 0;
+                const currentLr = lrSchedule(epoch);
+                
+                // Shuffle data
+                const indices = Array.from({length: n}, (_, i) => i);
+                for (let i = n - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                
+                // Mini-batch gradient descent
+                for (let batch = 0; batch < n; batch += batchSize) {
+                    const batchEnd = Math.min(batch + batchSize, n);
+                    const batchGradients = this.initializeGradients();
+                    
+                    // Accumulate gradients over batch
+                    for (let idx = batch; idx < batchEnd; idx++) {
+                        const i = indices[idx];
+                        const input = data[i];
+                        
+                        // Forward pass
+                        const { output, latent, z1, a1, z2, z3, a3, z4 } = this.forward(input, true);
+                        
+                        // Calculate loss (MSE + L2 regularization on latent)
+                        let loss = 0;
+                        for (let j = 0; j < this.inputDim; j++) {
+                            const diff = output[j] - input[j];
+                            loss += diff * diff;
+                        }
+                        
+                        // Add small L2 penalty on latent codes to encourage smoothness
+                        const latentPenalty = 0.001;
+                        for (let j = 0; j < this.latentDim; j++) {
+                            loss += latentPenalty * latent[j] * latent[j];
+                        }
+                        
+                        totalLoss += loss;
+                        
+                        // Backward pass
+                        const batchNorm = 1.0 / (batchEnd - batch);
+                        
+                        // Output layer gradients
+                        const dL_dz4 = new Array(this.inputDim);
+                        for (let j = 0; j < this.inputDim; j++) {
+                            dL_dz4[j] = 2.0 * (output[j] - input[j]) * batchNorm;
+                        }
+                        
+                        // Hidden layer 2 gradients
+                        const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
+                        const dL_dz3 = new Array(this.hiddenDim);
+                        for (let j = 0; j < this.hiddenDim; j++) {
+                            dL_dz3[j] = dL_da3[j] * this.leakyReluDerivative(z3[j]);
+                        }
+                        
+                        // Latent layer gradients
+                        const dL_dlatent_rec = this.vectorMatrixMultiply(dL_dz3, this.W3);
+                        const dL_dlatent = new Array(this.latentDim);
+                        for (let j = 0; j < this.latentDim; j++) {
+                            // Add gradient from reconstruction + L2 penalty
+                            dL_dlatent[j] = dL_dlatent_rec[j] * this.tanhDerivative(z2[j]) 
+                                        + 2 * latentPenalty * latent[j] * batchNorm;
+                        }
+                        
+                        // Hidden layer 1 gradients
+                        const dL_da1 = this.vectorMatrixMultiply(dL_dlatent, this.W2);
+                        const dL_dz1 = new Array(this.hiddenDim);
+                        for (let j = 0; j < this.hiddenDim; j++) {
+                            dL_dz1[j] = dL_da1[j] * this.leakyReluDerivative(z1[j]);
+                        }
+                        
+                        // Accumulate gradients
+                        this.accumulateGradients(batchGradients, {
+                            dL_dz1, dL_dlatent, dL_dz3, dL_dz4,
+                            input, a1, latent, a3
+                        });
+                    }
+                    
+                    // Apply Adam updates
+                    const t = epoch * Math.ceil(n / batchSize) + Math.floor(batch / batchSize) + 1;
+                    const lr = currentLr * Math.sqrt(1 - Math.pow(beta2, t)) / (1 - Math.pow(momentum, t));
+                    this.applyGradients(batchGradients, m, v, lr, momentum, beta2, epsilon);
+                }
+                
+                // Update progress
+                if (epoch % 20 === 0 && elements.aeProgressElement) {
+                    const avgLoss = totalLoss / n;
+                    elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
+                }
+            }
+            
+            // Final update
+            if (elements.aeProgressElement) {
+                const avgLoss = totalLoss / n;
+                elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
+            }
+        }
+        
+        // Fix the gradient accumulation for latent layer
+        accumulateGradients(gradients, computed) {
+            const { dL_dz1, dL_dlatent, dL_dz3, dL_dz4, input, a1, latent, a3 } = computed;
+            
+            // W4 and b4
+            for (let j = 0; j < this.inputDim; j++) {
+                const grad = dL_dz4[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W4[j][k] += grad * a3[k];
+                }
+                gradients.b4[j] += grad;
+            }
+            
+            // W3 and b3
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz3[j];
+                for (let k = 0; k < this.latentDim; k++) {
+                    gradients.W3[j][k] += grad * latent[k];
+                }
+                gradients.b3[j] += grad;
+            }
+            
+            // W2 and b2 - FIXED: use dL_dlatent instead of dL_dz2
+            for (let j = 0; j < this.latentDim; j++) {
+                const grad = dL_dlatent[j];
+                for (let k = 0; k < this.hiddenDim; k++) {
+                    gradients.W2[j][k] += grad * a1[k];
+                }
+                gradients.b2[j] += grad;
+            }
+            
+            // W1 and b1
+            for (let j = 0; j < this.hiddenDim; j++) {
+                const grad = dL_dz1[j];
+                for (let k = 0; k < this.inputDim; k++) {
+                    gradients.W1[j][k] += grad * input[k];
+                }
+                gradients.b1[j] += grad;
+            }
+        }
+        
+        // Add gradient clipping for stability
+        applyGradients(gradients, m, v, lr, beta1, beta2, epsilon) {
+            const maxGradNorm = 1.0; // Gradient clipping threshold
+            
+            // Compute gradient norm
+            let gradNorm = 0;
+            const countGradNorm = (g) => {
+                if (Array.isArray(g)) {
+                    for (let val of g) {
+                        if (Array.isArray(val)) {
+                            countGradNorm(val);
+                        } else {
+                            gradNorm += val * val;
+                        }
+                    }
+                }
+            };
+            
+            countGradNorm(gradients.W1);
+            countGradNorm(gradients.W2);
+            countGradNorm(gradients.W3);
+            countGradNorm(gradients.W4);
+            countGradNorm(gradients.b1);
+            countGradNorm(gradients.b2);
+            countGradNorm(gradients.b3);
+            countGradNorm(gradients.b4);
+            
+            gradNorm = Math.sqrt(gradNorm);
+            const clipCoef = Math.min(1.0, maxGradNorm / (gradNorm + epsilon));
+            
+            // Update weights with gradient clipping
+            this.updateWeights(this.W4, gradients.W4, m.W4, v.W4, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b4, gradients.b4, m.b4, v.b4, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W3, gradients.W3, m.W3, v.W3, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b3, gradients.b3, m.b3, v.b3, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W2, gradients.W2, m.W2, v.W2, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b2, gradients.b2, m.b2, v.b2, lr * clipCoef, beta1, beta2, epsilon);
+            
+            this.updateWeights(this.W1, gradients.W1, m.W1, v.W1, lr * clipCoef, beta1, beta2, epsilon);
+            this.updateBias(this.b1, gradients.b1, m.b1, v.b1, lr * clipCoef, beta1, beta2, epsilon);
+        }
+        
+        // Rest of methods remain the same...
         matrixVectorMultiply(matrix, vector) {
             if (!matrix || !vector || matrix.length === 0 || vector.length === 0) {
                 console.error('Invalid matrix or vector for multiplication');
@@ -1092,184 +1338,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 result[i] = vector[i] + (bias[i] || 0);
             }
             return result;
-        }
-        
-        // FIXED: Better training with Adam-like momentum
-        train(data, epochs = 200, learningRate = 0.01, batchSize = 32) {
-            const n = data.length;
-            if (n === 0) return;
-            
-            let totalLoss = 0;
-            const momentum = 0.9;
-            const beta2 = 0.999;
-            const epsilon = 1e-8;
-            
-            // Initialize momentum and RMSprop caches
-            const m = this.initializeCache();
-            const v = this.initializeCache();
-            
-            for (let epoch = 0; epoch < epochs; epoch++) {
-                totalLoss = 0;
-                
-                // Shuffle data
-                const indices = Array.from({length: n}, (_, i) => i);
-                for (let i = n - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [indices[i], indices[j]] = [indices[j], indices[i]];
-                }
-                
-                // Mini-batch gradient descent
-                for (let batch = 0; batch < n; batch += batchSize) {
-                    const batchEnd = Math.min(batch + batchSize, n);
-                    const batchGradients = this.initializeGradients();
-                    
-                    // Accumulate gradients over batch
-                    for (let idx = batch; idx < batchEnd; idx++) {
-                        const i = indices[idx];
-                        const input = data[i];
-                        
-                        // Forward pass
-                        const { output, latent, z1, a1, z2, z3, a3, z4 } = this.forward(input);
-                        
-                        // Calculate loss (MSE)
-                        let loss = 0;
-                        for (let j = 0; j < this.inputDim; j++) {
-                            const diff = output[j] - input[j];
-                            loss += diff * diff;
-                        }
-                        totalLoss += loss;
-                        
-                        // Backward pass
-                        const batchNorm = 1.0 / (batchEnd - batch);
-                        
-                        // Output layer gradients
-                        const dL_dz4 = new Array(this.inputDim);
-                        for (let j = 0; j < this.inputDim; j++) {
-                            dL_dz4[j] = 2.0 * (output[j] - input[j]) * batchNorm;
-                        }
-                        
-                        // Hidden layer 2 gradients
-                        const dL_da3 = this.vectorMatrixMultiply(dL_dz4, this.W4);
-                        const dL_dz3 = new Array(this.hiddenDim);
-                        for (let j = 0; j < this.hiddenDim; j++) {
-                            dL_dz3[j] = dL_da3[j] * this.leakyReluDerivative(z3[j]);
-                        }
-                        
-                        // Latent layer gradients
-                        const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
-                        const dL_dz2 = dL_dlatent; // Linear activation
-                        
-                        // Hidden layer 1 gradients
-                        const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
-                        const dL_dz1 = new Array(this.hiddenDim);
-                        for (let j = 0; j < this.hiddenDim; j++) {
-                            dL_dz1[j] = dL_da1[j] * this.leakyReluDerivative(z1[j]);
-                        }
-                        
-                        // Accumulate gradients
-                        this.accumulateGradients(batchGradients, {
-                            dL_dz1, dL_dz2, dL_dz3, dL_dz4,
-                            input, a1, latent, a3
-                        });
-                    }
-                    
-                    // Apply Adam-like updates with less aggressive learning rate decay
-                    const t = epoch * Math.ceil(n / batchSize) + Math.floor(batch / batchSize) + 1;
-                    const lr = learningRate * Math.sqrt(1 - Math.pow(beta2, t)) / (1 - Math.pow(momentum, t));
-                    this.applyGradients(batchGradients, m, v, lr, momentum, beta2, epsilon);
-                }
-                
-                // Update progress
-                if (epoch % 20 === 0 && elements.aeProgressElement) {
-                    const avgLoss = totalLoss / n;
-                    elements.aeProgressElement.textContent = `Training... Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(4)}`;
-                }
-            }
-            
-            // Final update
-            if (elements.aeProgressElement) {
-                const avgLoss = totalLoss / n;
-                elements.aeProgressElement.textContent = `Training complete! Final loss: ${avgLoss.toFixed(4)}`;
-            }
-        }
-        
-        initializeCache() {
-            return {
-                W1: this.zeroMatrix(this.hiddenDim, this.inputDim),
-                b1: new Array(this.hiddenDim).fill(0),
-                W2: this.zeroMatrix(this.latentDim, this.hiddenDim),
-                b2: new Array(this.latentDim).fill(0),
-                W3: this.zeroMatrix(this.hiddenDim, this.latentDim),
-                b3: new Array(this.hiddenDim).fill(0),
-                W4: this.zeroMatrix(this.inputDim, this.hiddenDim),
-                b4: new Array(this.inputDim).fill(0)
-            };
-        }
-        
-        initializeGradients() {
-            return this.initializeCache();
-        }
-        
-        zeroMatrix(rows, cols) {
-            return Array(rows).fill().map(() => Array(cols).fill(0));
-        }
-        
-        accumulateGradients(gradients, computed) {
-            const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, input, a1, latent, a3 } = computed;
-            
-            // W4 and b4
-            for (let j = 0; j < this.inputDim; j++) {
-                const grad = dL_dz4[j];
-                for (let k = 0; k < this.hiddenDim; k++) {
-                    gradients.W4[j][k] += grad * a3[k];
-                }
-                gradients.b4[j] += grad;
-            }
-            
-            // W3 and b3
-            for (let j = 0; j < this.hiddenDim; j++) {
-                const grad = dL_dz3[j];
-                for (let k = 0; k < this.latentDim; k++) {
-                    gradients.W3[j][k] += grad * latent[k];
-                }
-                gradients.b3[j] += grad;
-            }
-            
-            // W2 and b2
-            for (let j = 0; j < this.latentDim; j++) {
-                const grad = dL_dz2[j];
-                for (let k = 0; k < this.hiddenDim; k++) {
-                    gradients.W2[j][k] += grad * a1[k];
-                }
-                gradients.b2[j] += grad;
-            }
-            
-            // W1 and b1
-            for (let j = 0; j < this.hiddenDim; j++) {
-                const grad = dL_dz1[j];
-                for (let k = 0; k < this.inputDim; k++) {
-                    gradients.W1[j][k] += grad * input[k];
-                }
-                gradients.b1[j] += grad;
-            }
-        }
-        
-        applyGradients(gradients, m, v, lr, beta1, beta2, epsilon) {
-            // Update W4 and b4
-            this.updateWeights(this.W4, gradients.W4, m.W4, v.W4, lr, beta1, beta2, epsilon);
-            this.updateBias(this.b4, gradients.b4, m.b4, v.b4, lr, beta1, beta2, epsilon);
-            
-            // Update W3 and b3
-            this.updateWeights(this.W3, gradients.W3, m.W3, v.W3, lr, beta1, beta2, epsilon);
-            this.updateBias(this.b3, gradients.b3, m.b3, v.b3, lr, beta1, beta2, epsilon);
-            
-            // Update W2 and b2
-            this.updateWeights(this.W2, gradients.W2, m.W2, v.W2, lr, beta1, beta2, epsilon);
-            this.updateBias(this.b2, gradients.b2, m.b2, v.b2, lr, beta1, beta2, epsilon);
-            
-            // Update W1 and b1
-            this.updateWeights(this.W1, gradients.W1, m.W1, v.W1, lr, beta1, beta2, epsilon);
-            this.updateBias(this.b1, gradients.b1, m.b1, v.b1, lr, beta1, beta2, epsilon);
         }
         
         updateWeights(W, grad, m, v, lr, beta1, beta2, epsilon) {
@@ -1300,6 +1368,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 result[j] = sum;
             }
             return result;
+        }
+        
+        initializeCache() {
+            return {
+                W1: this.zeroMatrix(this.hiddenDim, this.inputDim),
+                b1: new Array(this.hiddenDim).fill(0),
+                W2: this.zeroMatrix(this.latentDim, this.hiddenDim),
+                b2: new Array(this.latentDim).fill(0),
+                W3: this.zeroMatrix(this.hiddenDim, this.latentDim),
+                b3: new Array(this.hiddenDim).fill(0),
+                W4: this.zeroMatrix(this.inputDim, this.hiddenDim),
+                b4: new Array(this.inputDim).fill(0)
+            };
+        }
+        
+        initializeGradients() {
+            return this.initializeCache();
+        }
+        
+        zeroMatrix(rows, cols) {
+            return Array(rows).fill().map(() => Array(cols).fill(0));
         }
         
         encode(data) {
@@ -1716,12 +1805,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Dataset-specific gamma recommendations
     const DATASET_GAMMA_HINTS = {
-        'circles': { base: 0.5, hint: 'Concentric circles need moderate gamma' },
-        'moons': { base: 0.8, hint: 'Two moons work well with higher gamma' },
-        'blobs': { base: 0.1, hint: 'Gaussian blobs need low gamma' },
-        'spiral': { base: 1.0, hint: 'Spirals need balanced gamma' }
+        'circles': { 
+            base: 0.5, 
+            hint: 'Concentric circles need moderate gamma for radial separation' 
+        },
+        'moons': { 
+            base: 5.0,
+            hint: 'Two moons need high gamma to capture local curved structure' 
+        },
+        'blobs': { 
+            base: 0.1, 
+            hint: 'Gaussian blobs need low gamma for global structure' 
+        },
+        'spiral': { 
+            base: 2.0, 
+            hint: 'Spirals need balanced gamma for following the curve' 
+        }
     };
-
+    
     // Improved gamma suggestion based on dataset characteristics
     function suggestGammaForDataset(data, datasetType) {
         // Get base gamma for dataset type
@@ -1733,10 +1834,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // For two moons, we need special handling
         if (datasetType === 'moons') {
-            // Two moons typically have median distance around 1.5-2.5 after normalization
-            // We want gamma such that exp(-gamma * median_dist^2) ≈ 0.3-0.5
-            // This gives good separation without being too local
-            const targetSimilarity = 0.05;
+                       const targetSimilarity = 0.2;
             const suggestedGamma = -Math.log(targetSimilarity) / (medianDist * medianDist);
             console.log(`Two moons: suggested gamma = ${suggestedGamma}`);
             return suggestedGamma;
@@ -1747,7 +1845,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return datasetHint.base * scaleAdjustment;
     }
 
-    // analyze the kernel matrix quality specifically for two moons
+    // analyze the kernel matrix quality
     function analyzeKernelMatrixForMoons(K, labels) {
         const n = K.length;
         if (n === 0) return;
@@ -1758,7 +1856,34 @@ document.addEventListener('DOMContentLoaded', function() {
         let withinCount = 0;
         let betweenCount = 0;
         
+        // Also track local neighborhood similarities
+        let localWithinSim = 0;
+        let localBetweenSim = 0;
+        let localCount = 0;
+        
         for (let i = 0; i < n; i++) {
+            // Find k nearest neighbors based on kernel values
+            const neighbors = [];
+            for (let j = 0; j < n; j++) {
+                if (i !== j) {
+                    neighbors.push({ idx: j, sim: K[i][j] });
+                }
+            }
+            neighbors.sort((a, b) => b.sim - a.sim);
+            
+            // Analyze top 10 neighbors
+            const k = Math.min(10, neighbors.length);
+            for (let nIdx = 0; nIdx < k; nIdx++) {
+                const j = neighbors[nIdx].idx;
+                if (labels[i] === labels[j]) {
+                    localWithinSim += neighbors[nIdx].sim;
+                } else {
+                    localBetweenSim += neighbors[nIdx].sim;
+                }
+                localCount++;
+            }
+            
+            // Global statistics
             for (let j = i + 1; j < n; j++) {
                 if (labels[i] === labels[j]) {
                     withinClassSim += K[i][j];
@@ -1772,22 +1897,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         withinClassSim /= withinCount;
         betweenClassSim /= betweenCount;
+        localWithinSim /= localCount;
+        localBetweenSim /= localCount;
         
         console.log('Two moons kernel analysis:', {
-            withinClassSimilarity: withinClassSim.toFixed(4),
-            betweenClassSimilarity: betweenClassSim.toFixed(4),
-            separabilityRatio: (withinClassSim / betweenClassSim).toFixed(2)
+            globalWithinClassSim: withinClassSim.toFixed(4),
+            globalBetweenClassSim: betweenClassSim.toFixed(4),
+            globalRatio: (withinClassSim / betweenClassSim).toFixed(2),
+            localWithinClassSim: localWithinSim.toFixed(4),
+            localBetweenClassSim: localBetweenSim.toFixed(4),
+            localRatio: (localWithinSim / localBetweenSim).toFixed(2)
         });
         
-        // Good separation: within-class > between-class by factor of 2-10
-        if (withinClassSim / betweenClassSim < 1.5) {
-            console.warn('Poor class separation - gamma might be too low');
-        } else if (withinClassSim / betweenClassSim > 20) {
+        // For two moons, we want strong LOCAL separation
+        if (localWithinSim / localBetweenSim < 2.0) {
+            console.warn('Poor local separation - gamma might be too low');
+        } else if (localWithinSim / localBetweenSim > 50) {
             console.warn('Too much locality - gamma might be too high');
         }
         
-        return { withinClassSim, betweenClassSim };
+        return { withinClassSim, betweenClassSim, localWithinSim, localBetweenSim };
     }
+    
 
     function handleDatasetChange() {
         generateData();
@@ -2175,7 +2306,7 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
    
-    
+    // training function
     function trainAutoencoder() {
         if (!data || data.length === 0) {
             elements.aeProgressElement.textContent = 'No data available. Generate data first!';
@@ -2185,17 +2316,69 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.trainAeBtn.disabled = true;
         elements.aeProgressElement.textContent = 'Initializing autoencoder...';
         
-        // Create and train autoencoder with 2D input, 8 hidden units, 2D latent space
-        aeModel = new SimpleAutoencoder(2, 8, 2);
+        // Normalize data for better training
+        const { normalized: normalizedData, mean, std } = normalizeData(data);
+        
+        // Create autoencoder with better architecture
+        // Use more hidden units for complex datasets
+        const hiddenSize = elements.datasetSelect.value === 'moons' ? 16 : 8;
+        aeModel = new SimpleAutoencoder(2, hiddenSize, 2);
         
         setTimeout(() => {
             try {
-                // Train with better parameters
-                aeModel.train(data, 300, 0.01, 32);
-                aeProjection = aeModel.encode(data);
+                // Train with dataset-specific parameters
+                let epochs, lr, batchSize;
+                
+                switch (elements.datasetSelect.value) {
+                    case 'moons':
+                        epochs = 500;
+                        lr = 0.005;
+                        batchSize = 32;
+                        break;
+                    case 'circles':
+                        epochs = 400;
+                        lr = 0.008;
+                        batchSize = 32;
+                        break;
+                    case 'spiral':
+                        epochs = 600;
+                        lr = 0.003;
+                        batchSize = 16;
+                        break;
+                    default:
+                        epochs = 300;
+                        lr = 0.01;
+                        batchSize = 32;
+                }
+                
+                // Train on normalized data
+                aeModel.train(normalizedData, epochs, lr, batchSize);
+                
+                // Get encoded representation
+                const normalizedProjection = aeModel.encode(normalizedData);
+                
+                // Scale back for visualization
+                aeProjection = scaleProjectionForVisualization(normalizedProjection, data);
                 
                 drawAutoencoderComparison();
                 elements.trainAeBtn.disabled = false;
+                
+                // Show reconstruction quality
+                let reconstructionError = 0;
+                for (let i = 0; i < normalizedData.length; i++) {
+                    const { output } = aeModel.forward(normalizedData[i]);
+                    for (let j = 0; j < 2; j++) {
+                        const diff = output[j] - normalizedData[i][j];
+                        reconstructionError += diff * diff;
+                    }
+                }
+                reconstructionError = Math.sqrt(reconstructionError / normalizedData.length);
+                
+                if (elements.aeProgressElement) {
+                    elements.aeProgressElement.innerHTML += 
+                        `<br>Reconstruction RMSE: ${reconstructionError.toFixed(4)}`;
+                }
+                
             } catch (error) {
                 console.error('Autoencoder training error:', error);
                 elements.aeProgressElement.textContent = 'Training failed: ' + error.message;
