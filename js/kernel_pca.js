@@ -56,19 +56,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div id="autoencoder-tab" class="tab-pane">
                                 <div class="autoencoder-grid">
                                     <div class="viz-panel">
-                                        <h4>Autoencoder Architecture</h4>
-                                        <canvas id="ae-architecture-canvas" width="400" height="300"></canvas>
-                                        <p class="graph-explanation">Neural network that learns to compress and reconstruct data through a bottleneck layer.</p>
+                                        <h4>Original vs Reconstructed</h4>
+                                        <canvas id="reconstruction-canvas" width="400" height="300"></canvas>
+                                        <p class="graph-explanation">Shows how well the autoencoder learned to reconstruct the original data through the bottleneck.</p>
                                     </div>
                                     <div class="viz-panel">
-                                        <h4>Autoencoder vs KPCA</h4>
-                                        <canvas id="ae-projection-canvas" width="400" height="300"></canvas>
-                                        <p class="graph-explanation">Side-by-side comparison of dimensionality reduction methods on the same dataset.</p>
+                                        <h4>Latent Space (2D → 1D → 2D)</h4>
+                                        <canvas id="latent-1d-canvas" width="400" height="300"></canvas>
+                                        <p class="graph-explanation">1D latent space forces the autoencoder to learn the underlying 1D manifold of the 2D data.</p>
                                     </div>
-                                </div>
-                                <div class="ae-controls">
-                                    <button id="train-ae" class="primary-btn">Train Autoencoder</button>
-                                    <div id="ae-progress" class="progress-info"></div>
                                 </div>
                             </div>
                         </div>
