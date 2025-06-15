@@ -1079,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const momentum = 0.9;
             const decay = 0.999;
             const m = this.initializeCache();
-            
+
             let totalLoss = 0;
             for (let epoch = 0; epoch < epochs; epoch++) {
                 totalLoss = 0;
@@ -1557,15 +1557,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Split canvas and draw both datasets
         const halfWidth = width / 2;
         
-        // Draw original on left
+       // Draw original on left
         ctx.save();
-        ctx.clipRect(0, 0, halfWidth - 1, height);
+        ctx.rect(0, 0, halfWidth - 1, height);  // <-- FIX: use rect() then clip()
+        ctx.clip();
         drawDataSubset(ctx, data, 'Original', 0, 0, halfWidth, height);
         ctx.restore();
-        
+
         // Draw reconstructed on right
         ctx.save();
-        ctx.clipRect(halfWidth + 1, 0, halfWidth - 1, height);
+        ctx.rect(halfWidth + 1, 0, halfWidth - 1, height);  // <-- FIX: use rect() then clip()
+        ctx.clip();
         drawDataSubset(ctx, reconstructedOriginal, 'Reconstructed', halfWidth, 0, halfWidth, height);
         ctx.restore();
         
