@@ -1181,12 +1181,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const diff = output[j] - input[j];
                             loss += diff * diff;
                         }
-                        
-                        // Add small contractive penalty to encourage smooth manifold learning
-                        const contractiveWeight = 0.0001;
-                        const jacobianPenalty = this.computeContractiveRegularization(input, latent, contractiveWeight);
-                        loss += jacobianPenalty;
-                        
+                    
                         totalLoss += loss;
                         
                         // Backward pass for deeper network
@@ -1287,14 +1282,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Accumulate gradients for all layers
             this.accumulateGradientsDeeper(batchGradients, {
                 dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
-                input, a1, a2, dL_dlatent, a4, a5
+                input, a1, a2, latent: z3, a4, a5
             });
         }
         
         // Accumulate gradients for deeper architecture
         accumulateGradientsDeeper(gradients, computed) {
             const { dL_dz1, dL_dz2, dL_dz3, dL_dz4, dL_dz5, dL_dz6,
-                    input, a1, a2, dL_dlatent, a4, a5 } = computed;
+                    input, a1, a2, latent, a4, a5 } = computed;
             
             // W6 and b6 (final output layer)
             for (let j = 0; j < this.inputDim; j++) {
@@ -1318,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let j = 0; j < this.hiddenDim; j++) {
                 const grad = dL_dz4[j];
                 for (let k = 0; k < this.latentDim; k++) {
-                    gradients.W4[j][k] += grad * dL_dlatent[k];
+                    gradients.W4[j][k] += grad * latent[k]; // Fixed: use latent values
                 }
                 gradients.b4[j] += grad;
             }
@@ -2442,32 +2437,32 @@ document.addEventListener('DOMContentLoaded', function() {
         switch (elements.datasetSelect.value) {
             case 'moons':
                 hiddenSize = 24; // Increased capacity for complex curved structure
-                epochs = 1000;
-                lr = 0.001;
+                epochs = 600;
+                lr = 0.005;
                 batchSize = 16;
                 break;
             case 'circles':
                 hiddenSize = 20; // Good capacity for radial patterns
-                epochs = 800;
-                lr = 0.0015;
+                epochs = 400;
+                lr = 0.008;
                 batchSize = 16;
                 break;
             case 'spiral':
                 hiddenSize = 32; // High capacity for complex spiral structure
-                epochs = 1200;
-                lr = 0.0008;
+                epochs = 500;
+                lr = 0.003;
                 batchSize = 8;
                 break;
             case 'blobs':
                 hiddenSize = 16; // Moderate capacity for cluster separation
-                epochs = 600;
-                lr = 0.002;
+                epochs = 300;
+                lr = 0.001;
                 batchSize = 16;
                 break;
             default:
                 hiddenSize = 20;
-                epochs = 800;
-                lr = 0.001;
+                epochs = 400;
+                lr = 0.005;
                 batchSize = 16;
         }
         
