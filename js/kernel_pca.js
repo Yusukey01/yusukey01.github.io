@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (n === 0) return;
             
             const momentum = 0.9;
-            const decay = 0.999;
+            const decay = 0.995;
             const m = this.initializeCache();
 
             let totalLoss = 0;
@@ -1149,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             this.accumulateGradients(batchGradients, {
                 dL_dz1, dL_dz2, dL_dz3, dL_dz4,
-                input, a1, latent: z2, a3
+                input, a1, latent: z2.map(x => this.tanh(x)), a3
             });
         }
         
@@ -2273,21 +2273,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Conservative parameters for better convergence
         let hiddenSize, epochs, lr, batchSize;
         
-        switch (elements.datasetSelect.value) {
+       switch (elements.datasetSelect.value) {
             case 'moons':
-                hiddenSize = 16; epochs = 600; lr = 0.02; batchSize = 16;
+                hiddenSize = 24; epochs = 800; lr = 0.005; batchSize = 32;
                 break;
             case 'circles':
-                hiddenSize = 12; epochs = 400; lr = 0.025; batchSize = 16;
+                hiddenSize = 16; epochs = 600; lr = 0.008; batchSize = 32;
                 break;
             case 'spiral':
-                hiddenSize = 20; epochs = 800; lr = 0.015; batchSize = 8;
+                hiddenSize = 32; epochs = 1000; lr = 0.005; batchSize = 16;
                 break;
             case 'blobs':
-                hiddenSize = 10; epochs = 300; lr = 0.03; batchSize = 16;
+                hiddenSize = 12; epochs = 400; lr = 0.01; batchSize = 32;
                 break;
             default:
-                hiddenSize = 12; epochs = 400; lr = 0.02; batchSize = 16;
+                hiddenSize = 16; epochs = 600; lr = 0.008; batchSize = 32;
         }
         
         aeModel = new SimpleAutoencoder(2, hiddenSize, 1);
