@@ -58,12 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="viz-panel">
                                         <h4>Original vs Reconstructed</h4>
                                         <canvas id="reconstruction-canvas" width="400" height="300"></canvas>
-                                        <p class="graph-explanation">Shows how well the autoencoder learned to reconstruct the original data through the bottleneck.</p>
+                                        <p class="graph-explanation">Shows how the 1D bottleneck autoencoder projects 2D data onto a 1D manifold (curve). Some information loss is expected when compressing 2D → 1D → 2D.</p>
                                     </div>
                                     <div class="viz-panel">
-                                        <h4>Latent Space (2D → 1D → 2D)</h4>
+                                        <h4>1D Latent Representation</h4>
                                         <canvas id="latent-1d-canvas" width="400" height="300"></canvas>
-                                        <p class="graph-explanation">1D latent space forces the autoencoder to learn the underlying 1D manifold of the 2D data.</p>
+                                        <p class="graph-explanation">Visualization of how data points are arranged in the 1D latent space. Colors show which cluster each point belongs to. Good representations group similar points together.</p>
                                     </div>
                                 </div>
                                 <div class="ae-controls">
@@ -2334,13 +2334,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (elements.aeProgressElement) {
                     elements.aeProgressElement.innerHTML += `<br>Reconstruction RMSE: ${rmse.toFixed(4)}`;
                     
-                    if (rmse < 0.2) {
-                        elements.aeProgressElement.innerHTML += '<br><span style="color: green;">✓ Excellent reconstruction!</span>';
-                    } else if (rmse < 0.4) {
-                        elements.aeProgressElement.innerHTML += '<br><span style="color: orange;">⚠️ Good reconstruction</span>';
-                    } else {
-                        elements.aeProgressElement.innerHTML += '<br><span style="color: red;">⚠️ Poor reconstruction - try different parameters</span>';
+                    // Adjust thresholds based on dataset complexity
+                    let excellentThreshold, goodThreshold;
+                    switch (elements.datasetSelect.value) {
+                        case 'blobs':
+                            excellentThreshold = 0.3; goodThreshold = 0.5;
+                            break;
+                        case 'circles':
+                            excellentThreshold = 0.5; goodThreshold = 0.7;
+                            break;
+                        case 'moons':
+                            excellentThreshold = 0.4; goodThreshold = 0.6;
+                            break;
+                        case 'spiral':
+                            excellentThreshold = 0.6; goodThreshold = 0.8;
+                            break;
+                        default:
+                            excellentThreshold = 0.4; goodThreshold = 0.6;
                     }
+                    
+                    if (rmse < excellentThreshold) {
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: green;">✓ Excellent 1D reconstruction!</span>';
+                    } else if (rmse < goodThreshold) {
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: orange;">✓ Good 1D reconstruction</span>';
+                    } else {
+                        elements.aeProgressElement.innerHTML += '<br><span style="color: red;">⚠️ High reconstruction error</span>';
+                    }
+                    
+                    elements.aeProgressElement.innerHTML += '<br><small style="color: #666;">Note: 1D bottleneck projects data onto a curve</small>';
                 }
                 
             } catch (error) {
