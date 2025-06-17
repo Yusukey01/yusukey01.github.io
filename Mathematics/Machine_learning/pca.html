@@ -18,6 +18,8 @@ uses_python: false
             <a href="#kernel-pca">Kernel PCA</a>
             <a href="#auto">Autoencoders</a>
             <a href="#demo">Demo</a>
+            <a href="#noise">Denoising Autoencoders</a>
+           
         </div> 
 
         <div class="container">  
@@ -208,27 +210,44 @@ uses_python: false
 
              <section id="noise" class="section-content">
                 <h2>Denoising Autoencoders</h2>
+
                 <p>
-                    To regularize a model, <strong>denoising autoencoder</strong> adds noise to its input data and 
-                    then trains the model for reconstructing an uncorrupted version of the original input data. 
+                    <strong>Denoising autoencoders (DAE)</strong> are a more regularized variant of standard autoencoders that 
+                    add noise to the input during training, then learn to reconstruct the original, uncorrupted data. 
+                    This seemingly simple modification has profound theoretical implications.
                 </p>
                 <p>
-                    For example, a denoising autoencoder can be trained by Gaussian corruption and squared error reconstruction:
-                     \[
-                     p_c (\tilde{x} | x) = \mathcal{N}(\tilde{x} | x, \sigma^2 I)
-                     \]
-                     \[
-                     \ell (x, r(\tilde{x})) = \| e \|_2^2 
-                     \]
-                     where \(e(x) = r(\tilde{x}) - x \) is the residual error for a sample \(x\). 
-                </p>
-                <p>
-                    In this case, as \(\sigma \to 0\), the residual error approximates the score function: 
+                    The training process involves corrupting the input \(x\) to produce \(\tilde{x}\), typically using 
+                    Gaussian noise:
                     \[
-                    e(x) \approx \nabla_x \log p(x).
+                    p_c (\tilde{x} | x) = \mathcal{N}(\tilde{x} | x, \sigma^2 I)
                     \]
-                    So, the denosing autoencoder learns a <strong>vector field</strong> corresponding to the gradient of the log data density. In other words, 
-                    any data points in the vector field will be projected onto the data manifold through the sampling process. 
+                    The model then minimizes the reconstruction error between its output \(r(\tilde{x})\) and the 
+                    clean input \(x\):
+                    \[
+                    \ell (x, r(\tilde{x})) = \| e \|_2^2 
+                    \]
+                    where \(e(x) = r(\tilde{x}) - x \) is the residual error for a sample \(x\). 
+                </p>
+            
+                <p>
+                   A remarkable result is that, as \(\sigma \to 0\), the optimal denoising function satisfies:
+                    \[
+                    e(x) = r(\tilde{x}) - \tilde{x} \approx \sigma^2 \nabla_{\tilde{x}} \log p(\tilde{x}).
+                    \]
+                    This means the denoising autoencoder implicitly learns the <strong>score function</strong> 
+                    (gradient of log-density), which forms a <strong>vector field</strong> over the entire feature space. 
+                    At each point, this vector field indicates the direction and magnitude to move toward regions 
+                    of higher data density. The reconstruction process follows these vectors, effectively "flowing" 
+                    corrupted points back to the <strong>data manifold</strong> along the steepest ascent of the probability landscape.
+                </p>
+
+                <p>
+                    <h3> <strong>Data Manifolds in Our Demo:</strong></h3><br>
+                    The autoencoder tab in our demo visualizes data manifolds. When the 2D data is compressed 
+                    through a 1D bottleneck, the network must learn the underlying <strong>1D manifold (curve)</strong> 
+                    that best represents the data. The "Reconstructed" visualization shows points projected onto this learned 
+                    manifold This is the autoencoder discovering and representing the intrinsic lower-dimensional structure of the data.
                 </p>
              </section>
 
