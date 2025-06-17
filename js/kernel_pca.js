@@ -991,12 +991,12 @@ document.addEventListener('DOMContentLoaded', function() {
             this.hiddenDim = hiddenDim;
             this.latentDim = latentDim;
             
-            // He initialization for ReLU networks
-            const scale1 = Math.sqrt(2.0 / inputDim);
-            const scale2 = Math.sqrt(2.0 / hiddenDim);
-            const scale3 = Math.sqrt(2.0 / latentDim);
-            const scale4 = Math.sqrt(2.0 / hiddenDim);
-            
+            // Xavier/Glorot initialization for mixed activations
+            const scale1 = Math.sqrt(2.0 / (inputDim + hiddenDim));
+            const scale2 = Math.sqrt(2.0 / (hiddenDim + latentDim));
+            const scale3 = Math.sqrt(2.0 / (latentDim + hiddenDim));
+            const scale4 = Math.sqrt(2.0 / (hiddenDim + inputDim));
+          
             // Simple 4-layer architecture: Input -> Hidden -> Latent -> Hidden -> Output
             this.W1 = this.randomMatrix(hiddenDim, inputDim, scale1);
             this.b1 = new Array(hiddenDim).fill(0);
@@ -1056,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const a1 = z1.map(x => this.relu(x));
             
             const z2 = this.addBias(this.matrixVectorMultiply(this.W2, a1), this.b2);
-            const latent = z2.map(x => this.tanh(x));
+            const latent = z2;
             
             // Decoder: Latent -> Hidden -> Output
             const z3 = this.addBias(this.matrixVectorMultiply(this.W3, latent), this.b3);
@@ -1141,15 +1141,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Latent gradients
             const dL_dlatent = this.vectorMatrixMultiply(dL_dz3, this.W3);
-            const dL_dz2 = dL_dlatent.map((val, j) => val * this.tanhDerivative(z2[j]));
+            const dL_dz2 = dL_dlatent; 
             
             // Encoder hidden gradients
             const dL_da1 = this.vectorMatrixMultiply(dL_dz2, this.W2);
             const dL_dz1 = dL_da1.map((val, j) => val * this.reluDerivative(z1[j]));
             
-            this.accumulateGradients(batchGradients, {
+           this.accumulateGradients(batchGradients, {
                 dL_dz1, dL_dz2, dL_dz3, dL_dz4,
-                input, a1, latent: z2.map(x => this.tanh(x)), a3
+                input, a1, latent: z2, a3
             });
         }
         
@@ -1194,6 +1194,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         applyGradients(gradients, m, lr, momentum) {
+            // gradient clipping
+            const clipValue = 5.0;
+            const clipGradients = (grad) => {
+                for (let i = 0; i < grad.length; i++) {
+                    if (Array.isArray(grad[i])) {
+                        for (let j = 0; j < grad[i].length; j++) {
+                            grad[i][j] = Math.max(-clipValue, Math.min(clipValue, grad[i][j]));
+                        }
+                    } else {
+                        grad[i] = Math.max(-clipValue, Math.min(clipValue, grad[i]));
+                    }
+                }
+            };
+            
+            clipGradients(gradients.W1); clipGradients(gradients.b1);
+            clipGradients(gradients.W2); clipGradients(gradients.b2);
+            clipGradients(gradients.W3); clipGradients(gradients.b3);
+            clipGradients(gradients.W4); clipGradients(gradients.b4);
+            
             this.updateWeightsWithMomentum(this.W4, gradients.W4, m.W4, lr, momentum);
             this.updateBiasWithMomentum(this.b4, gradients.b4, m.b4, lr, momentum);
             this.updateWeightsWithMomentum(this.W3, gradients.W3, m.W3, lr, momentum);
@@ -2275,19 +2294,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
        switch (elements.datasetSelect.value) {
             case 'moons':
-                hiddenSize = 24; epochs = 800; lr = 0.005; batchSize = 32;
+                hiddenSize = 32; epochs = 1000; lr = 0.003; batchSize = 64;
                 break;
             case 'circles':
-                hiddenSize = 16; epochs = 600; lr = 0.008; batchSize = 32;
+                hiddenSize = 24; epochs = 800; lr = 0.005; batchSize = 64;
                 break;
             case 'spiral':
-                hiddenSize = 32; epochs = 1000; lr = 0.005; batchSize = 16;
+                hiddenSize = 64; epochs = 1500; lr = 0.002; batchSize = 32;
                 break;
             case 'blobs':
-                hiddenSize = 12; epochs = 400; lr = 0.01; batchSize = 32;
+                hiddenSize = 16; epochs = 500; lr = 0.008; batchSize = 64;
                 break;
             default:
-                hiddenSize = 16; epochs = 600; lr = 0.008; batchSize = 32;
+                hiddenSize = 24; epochs = 800; lr = 0.005; batchSize = 64;
         }
         
         aeModel = new SimpleAutoencoder(2, hiddenSize, 1);
