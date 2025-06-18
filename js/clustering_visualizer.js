@@ -108,17 +108,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div class="control-group" id="vq-colors-group" style="display: none;">
                         <label for="vq-colors">Number of Colors:</label>
-                        <input type="range" id="vq-colors" min="2" max="64" step="2" value="16" class="full-width">
-                        <span id="vq-colors-display">16 colors</span>
+                        <input type="range" id="vq-colors" min="2" max="32" step="2" value="8" class="full-width">
+                        <span id="vq-colors-display">8 colors</span>
                     </div>
 
                     <div class="control-group" id="vq-image-group" style="display: none;">
                         <label for="image-select">Select Image:</label>
                         <select id="image-select" class="full-width">
-                            <option value="landscape">Landscape</option>
-                            <option value="portrait">Portrait</option>
-                            <option value="abstract">Abstract</option>
+                            <option value="landscape">Generated Landscape</option>
+                            <option value="portrait">Generated Portrait</option>
+                            <option value="abstract">Generated Abstract</option>
+                            <option value="upload">Upload Your Own</option>
                         </select>
+                        <input type="file" id="image-upload" accept="image/*" style="display: none; margin-top: 10px;" class="full-width">
                     </div>
 
                     <div class="control-group" id="spectral-sigma-group" style="display: none;">
@@ -382,7 +384,8 @@ document.addEventListener('DOMContentLoaded', function() {
         quantizedImageCanvas: document.getElementById('quantized-image-canvas'),
         quantizeBtn: document.getElementById('quantize-btn'),
         colorCountSpan: document.getElementById('color-count'),
-        
+        imageUpload: document.getElementById('image-upload'),
+
         // Spectral clustering specific
         spectralSigmaInput: document.getElementById('spectral-sigma'),
         sigmaDisplay: document.getElementById('sigma-display'),
@@ -1283,11 +1286,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const noise = parseFloat(elements.noiseLevelInput.value);
         elements.noiseDisplay.textContent = noise.toFixed(2);
-        
+
         const vqColors = parseInt(elements.vqColorsInput.value);
         elements.vqColorsDisplay.textContent = `${vqColors} colors`;
         elements.colorCountSpan.textContent = vqColors;
-        
+                
         const sigma = Math.pow(10, parseFloat(elements.spectralSigmaInput.value));
         elements.sigmaDisplay.textContent = `σ = ${sigma.toFixed(2)}`;
     }
@@ -1321,6 +1324,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     elements.imageSelect.addEventListener('change', () => {
         generateSampleImage(elements.imageSelect.value, elements.originalImageCanvas);
+    });
+
+    elements.imageSelect.addEventListener('change', () => {
+        if (elements.imageSelect.value === 'upload') {
+            elements.imageUpload.style.display = 'block';
+        } else {
+            elements.imageUpload.style.display = 'none';
+            generateSampleImage(elements.imageSelect.value, elements.originalImageCanvas);
+        }
+    });
+
+    elements.imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = elements.originalImageCanvas;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    
+                    // Scale image to fit canvas
+                    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                    const x = (canvas.width - img.width * scale) / 2;
+                    const y = (canvas.height - img.height * scale) / 2;
+                    
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
     });
     
     elements.tabBtns.forEach(btn => btn.addEventListener('click', handleTabClick));
