@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate sample images for vector quantization
     function generateSampleImage(type, canvas) {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const width = canvas.width;
         const height = canvas.height;
         
@@ -1007,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Extract pixels from canvas
     function getPixelsFromCanvas(canvas) {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = [];
         
