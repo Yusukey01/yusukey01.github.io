@@ -116,15 +116,80 @@ uses_python: false
                       &= \frac{1}{N} \sum_{n=1}^N \|x_n - \mu_{z_n} \|^2.
                     \end{align*}
                     \]
-                    This is exactly equivalent to the cost function minimized by the <strong>K-means algorithm</strong>, which can be interpreted 
-                    as a special case of vector quantization where the codebook is learned by minimizing distortion via iterative updates.
+                    Indeed, this is equivalent to the cost function minimized by the <strong>K-means algorithm</strong>, which can be interpreted 
+                    as a special case of vector quantization where the codebook is learned by minimizing distortion via iterative updates. VQ is 
+                    more focused on signal compression and encoding, whereas K-means is usually employed for data analysis and clustering tasks.
                 </p>
                 
             </section>
 
              <section id="sp" class="section-content">
                 <h2>Spectral Clustering</h2>
-                     
+                <p>
+                    Traditional clustering methods like K-means assume clusters are linearly separable and spherical in shape. 
+                    However, many real-world datasets exhibit complex, non-convex structures that are not well-captured by distance alone. 
+                    <strong>Spectral clustering</strong> addresses this limitation by transforming the data into a new space that reflects 
+                    the connectivity structure of the data, often represented as a <strong>graph</strong>.
+                </p>
+
+                <p>
+                    The idea is to build a <strong>similarity graph</strong> where each data point is a node, and edges encode pairwise similarities. 
+                    Let \(W \in \mathbb{R}^{N \times N}\) be a symmetric <strong>weight matrix</strong> such that \(W_{ij} = W_{ji}  \geq 0\) measures 
+                    the similarity between points \(i\) and \(j\). The <strong>degree</strong> of node \(i\) is defined as:
+                    \[
+                    d_i = \sum_{j=1}^N W_{ij},
+                    \]
+                    and we define the <strong>degree matrix</strong> \(D \in \mathbb{R}^{N \times N}\) as a diagonal matrix with entries \(D_{ii} = d_i\).
+                </p>
+
+                <p>
+                    The fundamental object in spectral clustering is the <strong>graph Laplacian</strong>, defined as:
+                    \[
+                    L = D - W.
+                    \]
+                    The Laplacian captures the structure of the graph in a way that supports clustering via <strong>eigenvector analysis</strong>.
+                </p>
+
+                <p>
+                    A key result is that if the graph has \(K\) <strong>connected components</strong> \(S_1, S_2, \cdots, S_K\), then the Laplacian \(L\) 
+                    has exactly \(K\) zero eigenvalues. The corresponding eigenspace is spanned by the indicator vectors:
+                    \[
+                    \mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_K},
+                    \]
+                    where \(\mathbf{1}_{S_k} \in \mathbb{R}^N\) is a vector that is 1 on nodes in component \(S_k\), and 0 elsewhere. 
+                    This makes spectral methods especially powerful for separating well-connected groups in a graph.
+                </p>
+
+                <p>
+                    In practice, graphs are usually connected but not perfectly block-structured, so we use the spectrum of a 
+                    <strong>normalized graph Laplacian.</strong> Let:
+                    \[
+                    L_{\text{sym}} = D^{-1/2} L D^{-1/2} = I - D^{-1/2} W D^{-1/2},
+                    \]
+                    which is a symmetric and positive semi-definite matrix with nice theoretical properties.
+                </p>
+
+                <h3>Algorithm: Spectral Clustering</h3>
+                <p>
+                    The spectral clustering algorithm proceeds as follows:
+                    <ol>
+                        <li>Compute the symmetric normalized Laplacian \(L_{\text{sym}} = I - D^{-1/2} W D^{-1/2}\).</li>
+                        <li>Find the \(K\) smallest eigenvectors of \(L_{\text{sym}}\) and stack them column-wise into a matrix \(U \in \mathbb{R}^{N \times K}\).</li>
+                        <li>Normalize each row of \(U\) to have unit norm, forming a matrix \(T \in \mathbb{R}^{N \times K}\): 
+                            \[
+                            T_{i \cdot} = \frac{U_{i \cdot}}{\|U_{i \cdot}\|}.
+                            \]
+                        </li>
+                        <li>Apply K-means clustering to the rows of \(T\).</li>
+                        <li>Assign the original data point \(x_i\) to cluster \(k\) if row \(i\) of \(T\) is assigned to cluster \(k\).</li>
+                    </ol>
+                </p>
+
+                <p>
+                    This algorithm reveals the intrinsic cluster structure based on the connectivity of the similarity graph, and is 
+                    especially effective for non-convex or manifold-structured data.
+                </p>
+                                
             </section>
 
              <section id="demo" class="section-content">
