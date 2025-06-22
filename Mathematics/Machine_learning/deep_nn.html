@@ -31,60 +31,84 @@ uses_python: false
                     of foundational innovations. 
                 </p>
 
-                <p> 
-                    In the 1990s, <strong>Convolutional Neural Networks (CNNs)</strong> emerged as a biologically inspired architecture for 
-                    processing grid-like data such as images. CNNs apply local filters across spatial dimensions, enabling them to learn hierarchical 
-                    features while drastically reducing the number of parameters compared to fully connected networks. 
-                </p> 
+                <p>
+                    In the 1990s, <strong>Convolutional Neural Networks (CNNs)</strong> emerged as a biologically inspired architecture for processing grid-like data such as images. 
+                    A CNN uses <em>convolutional layers</em> that apply learnable filters across local spatial regions. Mathematically, a 2D convolution operation is given by:
+                    \[
+                    (f * x)(i, j) = \sum_m \sum_n f(m, n) \cdot x(i - m, j - n)
+                    \]
+                    where \(f\) is the filter (or kernel) and \(x\) is the input image. This operation captures local spatial patterns while sharing parameters across the image.
+                </p>
 
-                <p> The breakthrough came in 2012, when <strong>AlexNet</strong> won the ImageNet competition by a wide margin. Designed by Alex Krizhevsky, 
-                    it used stacked convolutional and pooling layers, ReLU activation, and dropout regularization, all trained on GPUs. AlexNet launched the 
-                    deep learning revolution by proving that large-scale deep networks could outperform traditional computer vision methods. 
-                </p> 
+                <p>
+                    The breakthrough came in 2012, when <strong>AlexNet</strong> won the ImageNet competition. It stacked convolution and pooling layers, used the ReLU nonlinearity \( \text{ReLU}(x) = \max(0, x) \), 
+                    and applied dropout to reduce overfitting. AlexNet demonstrated that deep CNNs trained on GPUs could vastly outperform traditional vision pipelines.
+                </p>
 
-                <p> 
-                    This success inspired deeper and more sophisticated CNN architectures: 
+                <p>
+                    This success led to deeper architectures:
                     <ul style="padding-left: 40px;"> 
-                        <li><strong>ResNet</strong> (2015) introduced <em>residual connections</em>, enabling the training of very deep networks (e.g., 152 layers) by mitigating vanishing gradients.</li> 
-                        <li><strong>DenseNet</strong> (2017) took it further by connecting each layer to every other layer in a feed-forward fashion, promoting feature reuse and improving gradient flow.</li>
+                        <li><strong>ResNet</strong> introduced <em>residual connections</em> to learn functions of the form \( \mathcal{F}(x) + x \), helping gradients propagate through deep networks.</li> 
+                        <li><strong>DenseNet</strong> connected each layer to all previous layers via concatenation, enhancing feature reuse and reducing redundancy.</li>
                     </ul> 
-                    These architectures dominated image recognition tasks and are still used in specialized domains like medical imaging and remote sensing. 
+                    These models advanced image recognition and set the stage for modern vision architectures.
                 </p>
             </section>
 
             <section id="RNN" class="section-content">
                 <h2> Recurrent Neural Networks (RNNs): Modeling Sequences</h2>
-                <p> 
-                    While CNNs excel at spatial data, they are not suited for sequential data such as text, audio, or time series. 
-                    This led to the development of <strong>Recurrent Neural Networks (RNNs)</strong>, which process inputs sequentially 
-                    while maintaining a hidden state to capture temporal dependencies. 
-                </p> 
+                <p>
+                    <strong>Recurrent Neural Networks (RNNs)</strong> process sequential data by maintaining a hidden state across time steps. 
+                    At each time step \(t\), the hidden state \(h_t\) is updated using the previous state and the current input:
+                    \[
+                    h_t = \sigma(W x_t + U h_{t-1} + b)
+                    \]
+                    where \(\sigma\) is an activation function (e.g., \(\tanh\)), \(W\) and \(U\) are weight matrices, and \(x_t\) is the input.
+                </p>
 
-                <p> 
-                    However, basic RNNs struggled with long-term dependencies due to vanishing gradients. To address this, 
-                    <strong>Long Short-Term Memory (LSTM)</strong> networks (Hochreiter & Schmidhuber, 1997) and 
-                    <strong>Gated Recurrent Units (GRUs)</strong> were developed. These architectures use gating mechanisms to 
-                    selectively retain or discard information over time, and became foundational for tasks like machine translation, 
-                    speech recognition, and music modeling. 
+                <p>
+                    While RNNs can, in principle, capture long-term dependencies, in practice they suffer from <em>vanishing and exploding gradients</em>. 
+                    To mitigate this, <strong>Long Short-Term Memory (LSTM)</strong> units were introduced. LSTMs use gating mechanisms:
+                    \[
+                    \begin{aligned}
+                    f_t &= \sigma(W_f x_t + U_f h_{t-1} + b_f) \quad &\text{(forget gate)} \\
+                    i_t &= \sigma(W_i x_t + U_i h_{t-1} + b_i) \quad &\text{(input gate)} \\
+                    o_t &= \sigma(W_o x_t + U_o h_{t-1} + b_o) \quad &\text{(output gate)} \\
+                    \tilde{c}_t &= \tanh(W_c x_t + U_c h_{t-1} + b_c) \\
+                    c_t &= f_t \odot c_{t-1} + i_t \odot \tilde{c}_t \\
+                    h_t &= o_t \odot \tanh(c_t)
+                    \end{aligned}
+                    \]
+                    These gates allow the network to learn when to forget, update, and output information, enabling stable training over longer sequences.
                 </p>
             </section>
 
             <section id="attention" class="section-content">
                 <h2>Attention Mechanisms and the Rise of Transformers</h2>
-                <p> 
-                    Despite their success, RNNs process sequences step by step, which limits parallelism and long-range modeling. This 
-                    led to the development of the <strong>attention mechanism</strong>, which allows models to dynamically focus on different 
-                    parts of the input when generating an output. 
-                </p> 
-                <p> 
-                    The concept culminated in the introduction of the <strong>Transformer</strong> architecture (Vaswani et al., 2017), which 
-                    relies entirely on <strong>self-attention</strong> instead of recurrence or convolution. This breakthrough enabled efficient, 
-                    scalable modeling of long sequences with full parallelization, revolutionizing natural language processing. 
-                </p> 
+                <p>
+                    RNNs process sequences step-by-step, limiting parallelism and making it hard to model long-range dependencies. 
+                    <strong>Attention mechanisms</strong> solve this by computing a weighted combination of all input positions, allowing the model to focus on relevant parts.
+                </p>
 
-                <p> 
-                    Transformers now form the foundation of state-of-the-art models like BERT, GPT, and Vision Transformers (ViTs). They also 
-                    generalize beyond text to support multimodal learning, including image, video, audio, and code. 
+                <p>
+                    The basic attention computation involves:
+                    \[
+                    \text{Attention}(Q, K, V) = \text{softmax}\left( \frac{QK^\top}{\sqrt{d_k}} \right) V
+                    \]
+                    where \(Q\), \(K\), and \(V\) are learned query, key, and value matrices derived from the input. This formulation allows the model to aggregate information across the sequence in a data-dependent way.
+                </p>
+
+                <p>
+                    The <strong>Transformer</strong> architecture (Vaswani et al., 2017) relies entirely on self-attention and forgoes recurrence. 
+                    Each layer applies multi-head self-attention and feedforward sublayers:
+                    \[
+                    \text{MultiHead}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_h) W^O, \quad \text{head}_i = \text{Attention}(XW_i^Q, XW_i^K, XW_i^V)
+                    \]
+                    This enables parallel processing of entire sequences, efficient long-range context modeling, and scalability to large datasets.
+                </p>
+
+                <p>
+                    Transformers now power models like BERT, GPT, and Vision Transformers, and have become the foundation of modern AI across text, images, and multimodal data.
                 </p>
             </section>
 
