@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <!-- K-means Tab -->
                             <div id="kmeans-tab" class="tab-pane active">
                                 <div class="kmeans-container">
-                                    <canvas id="kmeans-canvas" width="600" height="400"></canvas>
+                                    <canvas id="kmeans-canvas" width="500" height="400"></canvas>
                                     <div class="iteration-info">
                                         <span id="iteration-display">Iteration: 0</span>
                                         <span id="converged-display"></span>
@@ -148,6 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add styles
     const styleElement = document.createElement('style');
     styleElement.textContent = `
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
         .clustering-container {
             font-family: Arial, sans-serif;
             margin-bottom: 20px;
@@ -213,6 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .kmeans-container {
             text-align: center;
         }
+        .kmeans-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
         
         .iteration-info {
             margin-top: 10px;
@@ -229,10 +237,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .image-comparison {
-            display: flex;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .image-comparison {
+                grid-template-columns: 1fr;
+            }
         }
         
         .image-panel {
