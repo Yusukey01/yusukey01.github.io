@@ -496,9 +496,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Visualize attention weights
-    function createAttentionVisualization(tokens, weights) {
+    function createAttentionVisualization(tokens, weights, rowTokens = null) {
         const container = document.createElement('div');
         container.className = 'matrix-viz';
+        
+        // If rowTokens is not provided, assume square matrix
+        if (!rowTokens) rowTokens = tokens;
+        
+        // Safety checks
+        if (!tokens || tokens.length === 0 || !weights || weights.length === 0) {
+            container.innerHTML = '<p>No attention weights to display</p>';
+            return container;
+        }
         
         const grid = document.createElement('div');
         grid.className = 'attention-grid';
@@ -519,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Weight rows
-        tokens.forEach((token, i) => {
+        rowTokens.forEach((token, i) => {
             const rowLabel = document.createElement('div');
             rowLabel.className = 'attention-cell';
             rowLabel.textContent = token.substring(0, 4);
@@ -529,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tokens.forEach((_, j) => {
                 const cell = document.createElement('div');
                 cell.className = 'attention-cell';
-                const weight = weights[i][j];
+                const weight = weights[i] && weights[i][j] ? weights[i][j] : 0;
                 cell.style.backgroundColor = `rgba(52, 152, 219, ${weight})`;
                 cell.style.color = weight > 0.5 ? 'white' : 'black';
                 cell.textContent = weight.toFixed(2);
@@ -603,6 +612,11 @@ document.addEventListener('DOMContentLoaded', function() {
         decoder.className = 'flow-component';
         decoder.innerHTML = '<h3>Decoder</h3>';
         
+        // Safety check
+        if (!outputTokens || outputTokens.length === 0) {
+            outputTokens = ['<START>', 'output', '<END>'];
+        }
+        
         // Output embeddings
         const embSection = document.createElement('div');
         embSection.innerHTML = '<h4>1. Output Embeddings (shifted right)</h4>';
@@ -630,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
         decoder.appendChild(maskedAttSection);
         
         // Cross-attention (if encoder-decoder)
-        if (showCrossAttention) {
+        if (showCrossAttention && inputTokens && inputTokens.length > 0) {
             const crossAttSection = document.createElement('div');
             crossAttSection.className = 'cross-attention';
             crossAttSection.innerHTML = '<h4>3. Cross-Attention (to Encoder)</h4>';
@@ -649,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 crossWeights[i] = crossWeights[i].map(w => w / sum);
             }
             
-            const crossGrid = createAttentionVisualization(inputTokens, crossWeights);
+            const crossGrid = createAttentionVisualization(inputTokens, crossWeights, outputTokens);
             crossAttSection.appendChild(crossGrid);
             decoder.appendChild(crossAttSection);
         }
@@ -683,6 +697,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Process with encoder-decoder architecture
     function processEncoderDecoder(inputTokens) {
         const flow = elements.architectureFlow;
+        
+        // Check for empty input
+        if (!inputTokens || inputTokens.length === 0) {
+            inputTokens = ['hello', 'world'];
+        }
         
         // Input
         const inputDiv = document.createElement('div');
@@ -722,6 +741,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Process with decoder-only architecture
     function processDecoderOnly(inputTokens) {
         const flow = elements.architectureFlow;
+        
+        // Check for empty input
+        if (!inputTokens || inputTokens.length === 0) {
+            inputTokens = ['hello', 'world'];
+        }
         
         // Prepare prompt based on task
         let fullTokens;
