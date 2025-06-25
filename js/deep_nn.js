@@ -323,6 +323,18 @@ document.addEventListener('DOMContentLoaded', function() {
             color: white;
         }
         
+        .viz-tab.has-data::after {
+            content: '•';
+            color: #27ae60;
+            margin-left: 5px;
+            font-size: 20px;
+            vertical-align: middle;
+        }
+        
+        .viz-tab.active.has-data::after {
+            color: #fff;
+        }
+        
         .viz-pane {
             display: none;
         }
@@ -1262,6 +1274,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Process multi-head attention if on that tab
         if (document.querySelector('.viz-tab.active').dataset.tab === 'multi') {
             processMultiHeadAttention();
+        }
+        
+        // Update positional encoding if on that tab
+        if (document.querySelector('.viz-tab.active').dataset.tab === 'position') {
+            visualizePositionalEncodingSteps();
         }
     }
 
