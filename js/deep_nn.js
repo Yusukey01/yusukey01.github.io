@@ -1007,13 +1007,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function visualizePositionalEncodingSteps() {
-        if (!tokens || tokens.length === 0) return;
-        
         const dim = parseInt(elements.embeddingDim.value);
+        
+        // Use example tokens if none are processed yet
+        const displayTokens = tokens.length > 0 ? tokens : ['the', 'cat', 'sat', 'on', 'mat'];
+        const displayEmbeddings = tokens.length > 0 ? embeddings : createEmbeddings(displayTokens, dim);
         
         // Step 1: Show tokens without position
         elements.tokensNoPosition.innerHTML = '';
-        tokens.forEach((token, idx) => {
+        displayTokens.forEach((token, idx) => {
             const tokenBox = document.createElement('div');
             tokenBox.className = 'token-box';
             
@@ -1033,18 +1035,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Step 3: Show individual position vectors
         elements.positionVectorsGrid.innerHTML = '';
-        for (let pos = 0; pos < Math.min(tokens.length, 10); pos++) {
+        const numPositions = Math.min(displayTokens.length, 10);
+        
+        for (let pos = 0; pos < numPositions; pos++) {
             const posBox = document.createElement('div');
             posBox.className = 'position-vector-box';
             
             const title = document.createElement('h6');
             title.textContent = `Position ${pos}`;
+            if (pos < displayTokens.length) {
+                title.textContent += ` (${displayTokens[pos]})`;
+            }
             posBox.appendChild(title);
             
             const pattern = document.createElement('div');
             pattern.className = 'position-pattern';
             
             const encoding = computePositionalEncoding(pos, dim);
+            
+            // Show visual pattern
             for (let i = 0; i < Math.min(dim, 8); i++) {
                 const dimBox = document.createElement('div');
                 dimBox.className = 'position-dim';
@@ -1061,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         : `hsl(280, 70%, ${50 + (1 - intensity) * 40}%)`;
                 }
                 
+                dimBox.title = `d${i}: ${value.toFixed(3)}`;
                 pattern.appendChild(dimBox);
             }
             
@@ -1073,26 +1083,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             posBox.appendChild(pattern);
+            
+            // Add numeric values
+            const values = document.createElement('div');
+            values.style.fontSize = '10px';
+            values.style.color = '#666';
+            values.style.marginTop = '5px';
+            values.textContent = '[' + encoding.slice(0, 3).map(v => v.toFixed(2)).join(', ') + '...]';
+            posBox.appendChild(values);
+            
             elements.positionVectorsGrid.appendChild(posBox);
         }
         
         // Step 4: Show addition visualization
+        const numExamples = Math.min(5, displayTokens.length);
+        
         // Draw embeddings matrix
-        drawMatrix(elements.embeddingCanvas, embeddings.slice(0, Math.min(5, tokens.length)), 'Embeddings', true);
+        drawMatrix(elements.embeddingCanvas, displayEmbeddings.slice(0, numExamples), 'Embeddings', true);
         
         // Draw position encodings matrix
         const positionEncodings = [];
-        for (let i = 0; i < Math.min(5, tokens.length); i++) {
+        for (let i = 0; i < numExamples; i++) {
             positionEncodings.push(computePositionalEncoding(i, dim));
         }
         drawMatrix(elements.positionCanvas, positionEncodings, 'Positions', true);
         
         // Draw final embeddings + positions
         const finalEmbeddings = [];
-        for (let i = 0; i < Math.min(5, tokens.length); i++) {
+        for (let i = 0; i < numExamples; i++) {
             const combined = [];
             for (let j = 0; j < dim; j++) {
-                combined.push(embeddings[i][j] + positionEncodings[i][j]);
+                combined.push(displayEmbeddings[i][j] + positionEncodings[i][j]);
             }
             finalEmbeddings.push(combined);
         }
@@ -1100,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show final tokens with position
         elements.finalTokensPosition.innerHTML = '';
-        tokens.forEach((token, idx) => {
+        displayTokens.forEach((token, idx) => {
             const tokenBox = document.createElement('div');
             tokenBox.className = 'token-box';
             
@@ -1113,9 +1134,29 @@ document.addEventListener('DOMContentLoaded', function() {
             pos.style.color = '#27ae60';
             pos.textContent = `Position ${idx}`;
             
+            const vector = document.createElement('div');
+            vector.className = 'token-vector';
+            vector.style.fontSize = '10px';
+            vector.style.marginTop = '3px';
+            const finalVec = finalEmbeddings[idx] || [];
+            vector.textContent = '[' + finalVec.slice(0, 3).map(v => v ? v.toFixed(2) : '0.00').join(', ') + '...]';
+            
             tokenBox.appendChild(label);
             tokenBox.appendChild(pos);
+            tokenBox.appendChild(vector);
             elements.finalTokensPosition.appendChild(tokenBox);
+        });
+        
+        // Add labels to the addition visualization
+        const canvases = [elements.embeddingCanvas, elements.positionCanvas, elements.finalCanvas];
+        const labels = ['Token Embeddings', 'Position Encodings', 'Final (Emb + Pos)'];
+        
+        canvases.forEach((canvas, idx) => {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(labels[idx], canvas.width / 2, canvas.height + 15);
         });
     }
 
@@ -1435,9 +1476,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const dim = parseInt(elements.embeddingDim.value);
             const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
             drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
-            if (tokens.length > 0) {
-                visualizePositionalEncodingSteps();
-            }
+            // Always visualize steps, with example tokens if needed
+            visualizePositionalEncodingSteps();
         }
     }
 
@@ -1452,9 +1492,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const dim = parseInt(elements.embeddingDim.value);
             const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
             drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
-            if (tokens.length > 0) {
-                visualizePositionalEncodingSteps();
-            }
+            // Always visualize steps
+            visualizePositionalEncodingSteps();
         }
     }
 
@@ -1474,4 +1513,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize
     updateParameterDisplays();
+    
+    // Initialize positional encoding visualization with example if it's the active tab
+    const activeTab = document.querySelector('.viz-tab.active');
+    if (activeTab && activeTab.dataset.tab === 'position') {
+        const dim = parseInt(elements.embeddingDim.value);
+        drawPositionalEncoding(elements.positionEncodingViz, 20, dim);
+        visualizePositionalEncodingSteps();
+    }
 });
