@@ -1,5 +1,6 @@
 // Transformer Architecture Interactive Demo
 // Based on "Attention is All You Need" (Vaswani et al., 2017)
+// Educational visualization - not a real translation model
 
 document.addEventListener('DOMContentLoaded', function() {
     // Get the container element
@@ -13,10 +14,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create HTML structure
     container.innerHTML = `
         <div class="transformer-container">
+            <div class="demo-notice">
+                <h3>⚠️ Educational Visualization</h3>
+                <p>This demo shows <strong>HOW</strong> transformers work, not actual translation. Real models have millions of parameters learned from data.</p>
+                <p>What you'll see:</p>
+                <ul>
+                    <li>How text flows through encoder/decoder architectures</li>
+                    <li>How attention mechanisms work (with simulated weights)</li>
+                    <li>The difference between encoder-decoder and decoder-only models</li>
+                </ul>
+            </div>
+
             <div class="architecture-selector">
                 <label class="radio-label">
                     <input type="radio" name="architecture" value="encoder-decoder" checked>
-                    <span>Encoder-Decoder (Vaswani et al., 2017)</span>
+                    <span>Encoder-Decoder (Original Transformer)</span>
                 </label>
                 <label class="radio-label">
                     <input type="radio" name="architecture" value="decoder-only">
@@ -25,17 +37,20 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="input-section">
-                <div class="task-selector">
-                    <label>Task:</label>
-                    <select id="task-select">
-                        <option value="translation">Translation (EN→FR)</option>
-                        <option value="completion">Text Completion</option>
-                        <option value="qa">Question Answering</option>
-                    </select>
-                </div>
                 <div class="input-area">
-                    <textarea id="input-text" placeholder="Enter text here...">Hello world</textarea>
-                    <button id="process-btn" class="primary-btn">Process</button>
+                    <label>Input Text (any English sentence):</label>
+                    <textarea id="input-text" placeholder="Enter text here...">The cat sat on the mat</textarea>
+                    <button id="process-btn" class="primary-btn">Visualize Architecture</button>
+                </div>
+                <div class="demo-options">
+                    <label>
+                        <input type="checkbox" id="show-math" checked>
+                        Show Mathematical Operations
+                    </label>
+                    <label>
+                        <input type="checkbox" id="animate-flow" checked>
+                        Animate Data Flow
+                    </label>
                 </div>
             </div>
 
@@ -44,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="info-panel">
-                <h3>Architecture Details</h3>
+                <h3>Understanding the Visualization</h3>
                 <div id="architecture-info"></div>
             </div>
         </div>
@@ -58,6 +73,23 @@ document.addEventListener('DOMContentLoaded', function() {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        .demo-notice {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .demo-notice h3 {
+            margin-top: 0;
+            color: #e65100;
+        }
+
+        .demo-notice ul {
+            margin-bottom: 0;
         }
 
         .architecture-selector {
@@ -86,29 +118,24 @@ document.addEventListener('DOMContentLoaded', function() {
             border-radius: 8px;
         }
 
-        .task-selector {
-            margin-bottom: 15px;
-        }
-
-        .task-selector select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-left: 10px;
+        .input-area label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
         }
 
         .input-area {
-            display: flex;
-            gap: 10px;
+            margin-bottom: 15px;
         }
 
         #input-text {
-            flex: 1;
+            width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             resize: none;
             height: 50px;
+            box-sizing: border-box;
         }
 
         .primary-btn {
@@ -118,10 +145,24 @@ document.addEventListener('DOMContentLoaded', function() {
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-top: 10px;
         }
 
         .primary-btn:hover {
             background: #2980b9;
+        }
+
+        .demo-options {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .demo-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
         }
 
         .architecture-flow {
@@ -135,6 +176,12 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             position: relative;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
 
         .flow-component h3 {
@@ -147,6 +194,8 @@ document.addEventListener('DOMContentLoaded', function() {
             font-size: 24px;
             color: #3498db;
             margin: 10px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s 0.2s forwards;
         }
 
         .token-display {
@@ -162,16 +211,33 @@ document.addEventListener('DOMContentLoaded', function() {
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
 
         .token:hover {
             background: #3498db;
             color: white;
+            transform: translateY(-2px);
         }
 
-        .token.selected {
+        .token.highlighted {
             background: #e74c3c;
             color: white;
+        }
+
+        .token-index {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #95a5a6;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
         }
 
         .matrix-viz {
@@ -182,34 +248,53 @@ document.addEventListener('DOMContentLoaded', function() {
         .attention-grid {
             display: inline-block;
             border: 1px solid #ddd;
+            background: white;
         }
 
         .attention-cell {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             display: inline-block;
             text-align: center;
-            line-height: 40px;
-            font-size: 12px;
+            line-height: 50px;
+            font-size: 11px;
             border: 1px solid #eee;
+            transition: all 0.3s;
+        }
+
+        .attention-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .math-notation {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
         }
 
         .embedding-viz {
             display: flex;
             gap: 10px;
             margin: 10px 0;
+            align-items: flex-end;
         }
 
         .embedding-vector {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 2px;
         }
 
         .embedding-bar {
             width: 30px;
             background: #3498db;
-            margin: 2px;
             transition: all 0.3s;
         }
 
@@ -220,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         .position-wave {
-            width: 60px;
+            width: 80px;
             height: 60px;
             border: 1px solid #ddd;
         }
@@ -247,11 +332,12 @@ document.addEventListener('DOMContentLoaded', function() {
             background: #ecf0f1;
         }
 
-        .decoder-output {
-            margin: 10px 0;
-            padding: 15px;
-            background: #e8f5e9;
+        .layer-norm {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #e3f2fd;
             border-radius: 4px;
+            margin: 5px;
         }
 
         .cross-attention {
@@ -261,17 +347,19 @@ document.addEventListener('DOMContentLoaded', function() {
             border-radius: 4px;
         }
 
-        canvas {
-            border: 1px solid #ddd;
+        .simulated-output {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 4px;
             margin: 10px 0;
         }
 
-        .layer-norm {
-            display: inline-block;
-            padding: 5px 10px;
-            background: #e3f2fd;
+        .attention-explanation {
+            background: #f3e5f5;
+            padding: 10px;
+            margin: 10px 0;
             border-radius: 4px;
-            margin: 5px;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
@@ -283,6 +371,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .token-display {
                 flex-direction: column;
             }
+
+            .demo-options {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     `;
     
@@ -290,188 +383,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // State variables
     let currentArchitecture = 'encoder-decoder';
-    let currentTask = 'translation';
     let tokens = [];
-    let selectedTokenIndex = -1;
-
-    // Simplified vocabulary for demonstration
-    const vocabulary = {
-        'hello': 0, 'world': 1, 'the': 2, 'weather': 3, 'is': 4, 
-        'good': 5, 'bad': 6, 'today': 7, 'tomorrow': 8, 'what': 9,
-        'capital': 10, 'of': 11, 'france': 12, 'paris': 13, 'bonjour': 14,
-        'monde': 15, 'le': 16, 'temps': 17, 'est': 18, 'beau': 19,
-        'sunny': 20, 'rainy': 21, '<PAD>': 22, '<START>': 23, '<END>': 24
-    };
-
-    const vocabReverse = Object.fromEntries(Object.entries(vocabulary).map(([k, v]) => [v, k]));
-
-    // Model parameters (following Vaswani et al., 2017)
-    const d_model = 512;  // Model dimension
-    const n_heads = 8;    // Number of attention heads
-    const d_k = 64;       // Dimension of K, Q, V (d_model / n_heads)
+    let showMath = true;
+    let animateFlow = true;
 
     // DOM elements
     const elements = {
         architectureRadios: document.querySelectorAll('input[name="architecture"]'),
-        taskSelect: document.getElementById('task-select'),
         inputText: document.getElementById('input-text'),
         processBtn: document.getElementById('process-btn'),
         architectureFlow: document.getElementById('architecture-flow'),
-        architectureInfo: document.getElementById('architecture-info')
+        architectureInfo: document.getElementById('architecture-info'),
+        showMathCheckbox: document.getElementById('show-math'),
+        animateFlowCheckbox: document.getElementById('animate-flow')
     };
 
     // Tokenization function
     function tokenize(text) {
+        // Simple whitespace tokenization for demo
         return text.toLowerCase().split(/\s+/).filter(t => t.length > 0);
     }
 
-    // Create positional encoding (Vaswani et al., 2017, Section 3.5)
-    function getPositionalEncoding(position, dimension) {
-        const encoding = [];
-        for (let i = 0; i < dimension; i++) {
-            const angle = position / Math.pow(10000, (2 * i) / dimension);
-            encoding.push(i % 2 === 0 ? Math.sin(angle) : Math.cos(angle));
-        }
-        return encoding;
-    }
-
-    // Scaled dot-product attention (Vaswani et al., 2017, Eq. 1)
-    function scaledDotProductAttention(Q, K, V, mask = null) {
-        const seq_len = Q.length;
-        const d_k = Q[0].length;
-        
-        // Compute attention scores
-        const scores = [];
-        for (let i = 0; i < seq_len; i++) {
-            scores[i] = [];
-            for (let j = 0; j < seq_len; j++) {
-                let score = 0;
-                for (let k = 0; k < d_k; k++) {
-                    score += Q[i][k] * K[j][k];
-                }
-                scores[i][j] = score / Math.sqrt(d_k);
-            }
-        }
-
-        // Apply mask if provided (for decoder self-attention)
-        if (mask) {
-            for (let i = 0; i < seq_len; i++) {
-                for (let j = 0; j < seq_len; j++) {
-                    if (mask[i][j] === 0) {
-                        scores[i][j] = -Infinity;
-                    }
-                }
-            }
-        }
-
-        // Apply softmax
-        const attention_weights = [];
-        for (let i = 0; i < seq_len; i++) {
-            const exp_scores = scores[i].map(s => Math.exp(s));
-            const sum_exp = exp_scores.reduce((a, b) => a + b, 0);
-            attention_weights[i] = exp_scores.map(e => e / sum_exp);
-        }
-
-        // Apply attention to values
-        const output = [];
-        for (let i = 0; i < seq_len; i++) {
-            output[i] = new Array(V[0].length).fill(0);
-            for (let j = 0; j < seq_len; j++) {
-                for (let k = 0; k < V[0].length; k++) {
-                    output[i][k] += attention_weights[i][j] * V[j][k];
-                }
-            }
-        }
-
-        return { output, attention_weights };
-    }
-
-    // Create causal mask for decoder
-    function createCausalMask(size) {
-        const mask = [];
-        for (let i = 0; i < size; i++) {
-            mask[i] = [];
-            for (let j = 0; j < size; j++) {
-                mask[i][j] = i >= j ? 1 : 0;
-            }
-        }
-        return mask;
-    }
-
-    // Visualize tokens
-    function createTokenDisplay(tokens, containerId) {
-        const container = document.createElement('div');
-        container.className = 'token-display';
-        
-        tokens.forEach((token, idx) => {
-            const tokenEl = document.createElement('div');
-            tokenEl.className = 'token';
-            tokenEl.textContent = token;
-            tokenEl.dataset.index = idx;
-            
-            tokenEl.addEventListener('click', () => {
-                document.querySelectorAll('.token').forEach(t => t.classList.remove('selected'));
-                tokenEl.classList.add('selected');
-                selectedTokenIndex = idx;
-                updateAttentionVisualization();
-            });
-            
-            container.appendChild(tokenEl);
-        });
-        
-        return container;
-    }
-
-    // Visualize embeddings
-    function createEmbeddingVisualization(tokens) {
-        const container = document.createElement('div');
-        container.className = 'embedding-viz';
-        
-        tokens.forEach(token => {
-            const vectorDiv = document.createElement('div');
-            vectorDiv.className = 'embedding-vector';
-            
-            // Create random embedding values for visualization
-            for (let i = 0; i < 8; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'embedding-bar';
-                const value = Math.random() * 0.8 + 0.2;
-                bar.style.height = `${value * 40}px`;
-                bar.style.opacity = value;
-                vectorDiv.appendChild(bar);
-            }
-            
-            const label = document.createElement('div');
-            label.textContent = token;
-            label.style.fontSize = '12px';
-            vectorDiv.appendChild(label);
-            
-            container.appendChild(vectorDiv);
-        });
-        
-        return container;
-    }
-
-    // Visualize positional encoding
+    // Create positional encoding visualization
     function createPositionalEncodingVisualization(length) {
         const container = document.createElement('div');
         container.className = 'position-encoding';
         
-        for (let pos = 0; pos < Math.min(length, 6); pos++) {
+        for (let pos = 0; pos < Math.min(length, 4); pos++) {
             const canvas = document.createElement('canvas');
             canvas.className = 'position-wave';
-            canvas.width = 60;
+            canvas.width = 80;
             canvas.height = 60;
             
             const ctx = canvas.getContext('2d');
-            ctx.strokeStyle = '#3498db';
-            ctx.lineWidth = 2;
             
-            // Draw sine wave
+            // Draw sine wave for even dimensions
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            for (let x = 0; x < 60; x++) {
-                const angle = (x / 60) * 2 * Math.PI + (pos * Math.PI / 3);
-                const y = 30 + 20 * Math.sin(angle);
+            for (let x = 0; x < 80; x++) {
+                const angle = (x / 80) * 2 * Math.PI + (pos * Math.PI / 3);
+                const y = 30 + 15 * Math.sin(angle);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Draw cosine wave for odd dimensions
+            ctx.strokeStyle = '#3498db';
+            ctx.beginPath();
+            for (let x = 0; x < 80; x++) {
+                const angle = (x / 80) * 2 * Math.PI + (pos * Math.PI / 3);
+                const y = 30 + 15 * Math.cos(angle);
                 if (x === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
@@ -480,14 +443,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Label
             ctx.fillStyle = '#666';
             ctx.font = '10px Arial';
-            ctx.fillText(`Pos ${pos}`, 15, 55);
+            ctx.fillText(`Pos ${pos}`, 25, 55);
             
             container.appendChild(canvas);
         }
         
-        if (length > 6) {
+        if (length > 4) {
             const more = document.createElement('div');
             more.style.alignSelf = 'center';
+            more.style.fontSize = '20px';
             more.textContent = '...';
             container.appendChild(more);
         }
@@ -495,58 +459,203 @@ document.addEventListener('DOMContentLoaded', function() {
         return container;
     }
 
-    // Visualize attention weights
-    function createAttentionVisualization(tokens, weights, rowTokens = null) {
+    // Create token display with indices
+    function createTokenDisplay(tokens, startIndex = 0) {
         const container = document.createElement('div');
-        container.className = 'matrix-viz';
+        container.className = 'token-display';
         
-        // If rowTokens is not provided, assume square matrix
-        if (!rowTokens) rowTokens = tokens;
+        tokens.forEach((token, idx) => {
+            const tokenEl = document.createElement('div');
+            tokenEl.className = 'token';
+            tokenEl.textContent = token;
+            
+            const indexEl = document.createElement('div');
+            indexEl.className = 'token-index';
+            indexEl.textContent = startIndex + idx;
+            tokenEl.appendChild(indexEl);
+            
+            tokenEl.addEventListener('mouseenter', () => {
+                // Highlight related tokens in attention matrices
+                document.querySelectorAll(`.attn-row-${startIndex + idx}, .attn-col-${startIndex + idx}`).forEach(cell => {
+                    cell.style.border = '2px solid #e74c3c';
+                });
+            });
+            
+            tokenEl.addEventListener('mouseleave', () => {
+                document.querySelectorAll('.attention-cell').forEach(cell => {
+                    cell.style.border = '1px solid #eee';
+                });
+            });
+            
+            container.appendChild(tokenEl);
+        });
         
-        // Safety checks
-        if (!tokens || tokens.length === 0 || !weights || weights.length === 0) {
-            container.innerHTML = '<p>No attention weights to display</p>';
-            return container;
+        return container;
+    }
+
+    // Create embedding visualization
+    function createEmbeddingVisualization(tokens) {
+        const container = document.createElement('div');
+        container.className = 'embedding-viz';
+        
+        tokens.slice(0, 8).forEach(token => {
+            const vectorDiv = document.createElement('div');
+            vectorDiv.className = 'embedding-vector';
+            
+            // Create 8 dimensions for visualization
+            for (let i = 0; i < 8; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'embedding-bar';
+                // Random values for visualization
+                const value = Math.random() * 0.8 + 0.2;
+                bar.style.height = `${value * 40}px`;
+                bar.style.opacity = value;
+                vectorDiv.appendChild(bar);
+            }
+            
+            const label = document.createElement('div');
+            label.textContent = token.substring(0, 5);
+            label.style.fontSize = '11px';
+            label.style.marginTop = '5px';
+            vectorDiv.appendChild(label);
+            
+            container.appendChild(vectorDiv);
+        });
+        
+        if (tokens.length > 8) {
+            const more = document.createElement('div');
+            more.style.alignSelf = 'center';
+            more.textContent = '...';
+            more.style.fontSize = '20px';
+            more.style.padding = '0 10px';
+            container.appendChild(more);
         }
+        
+        return container;
+    }
+
+    // Generate attention patterns
+    function generateAttentionWeights(queryTokens, keyTokens, type = 'self') {
+        const weights = [];
+        
+        for (let i = 0; i < queryTokens.length; i++) {
+            weights[i] = [];
+            for (let j = 0; j < keyTokens.length; j++) {
+                let weight = 0.1; // Base attention
+                
+                if (type === 'self') {
+                    // Self-attention patterns
+                    if (i === j) weight = 0.5; // Tokens attend to themselves
+                    if (Math.abs(i - j) === 1) weight = 0.3; // Adjacent tokens
+                    
+                    // Linguistic patterns
+                    const queryToken = queryTokens[i];
+                    const keyToken = keyTokens[j];
+                    
+                    // Articles attend to nouns
+                    if ((queryToken === 'the' || queryToken === 'a') && j === i + 1) weight = 0.4;
+                    // Verbs attend to subjects and objects
+                    if (queryToken === 'is' || queryToken === 'was' || queryToken === 'are') {
+                        if (j === i - 1 || j === i + 1) weight = 0.4;
+                    }
+                } else if (type === 'cross') {
+                    // Cross-attention (decoder to encoder)
+                    // Simulate alignment
+                    if (Math.abs(i - j) <= 1) weight = 0.4;
+                    // Some randomness for realism
+                    weight += Math.random() * 0.2;
+                } else if (type === 'masked') {
+                    // Masked self-attention (causal)
+                    if (j > i) {
+                        weight = 0; // Can't attend to future
+                    } else {
+                        weight = 1 / (i + 1); // Uniform over past
+                    }
+                }
+                
+                weights[i][j] = weight;
+            }
+            
+            // Normalize weights (softmax)
+            if (type !== 'masked' || i > 0) {
+                const sum = weights[i].reduce((a, b) => a + b, 0);
+                if (sum > 0) {
+                    weights[i] = weights[i].map(w => w / sum);
+                }
+            }
+        }
+        
+        return weights;
+    }
+
+    // Visualize attention weights
+    function createAttentionVisualization(queryTokens, keyTokens, weights, title = "Attention Weights") {
+        const container = document.createElement('div');
+        
+        const titleEl = document.createElement('h4');
+        titleEl.textContent = title;
+        container.appendChild(titleEl);
+        
+        const explanation = document.createElement('div');
+        explanation.className = 'attention-explanation';
+        explanation.textContent = 'Each row shows where a query token attends. Darker = stronger attention.';
+        container.appendChild(explanation);
+        
+        const matrixContainer = document.createElement('div');
+        matrixContainer.className = 'matrix-viz';
         
         const grid = document.createElement('div');
         grid.className = 'attention-grid';
         grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `repeat(${tokens.length + 1}, 40px)`;
+        grid.style.gridTemplateColumns = `repeat(${keyTokens.length + 1}, 50px)`;
         
         // Header row
         const empty = document.createElement('div');
         empty.className = 'attention-cell';
+        empty.style.background = '#f8f9fa';
         grid.appendChild(empty);
         
-        tokens.forEach(token => {
+        keyTokens.forEach((token, idx) => {
             const cell = document.createElement('div');
-            cell.className = 'attention-cell';
-            cell.textContent = token.substring(0, 4);
+            cell.className = `attention-cell attn-col-${idx}`;
+            cell.textContent = token.substring(0, 5);
             cell.style.fontWeight = 'bold';
+            cell.style.background = '#f8f9fa';
+            cell.style.fontSize = '10px';
             grid.appendChild(cell);
         });
         
         // Weight rows
-        rowTokens.forEach((token, i) => {
+        queryTokens.forEach((token, i) => {
             const rowLabel = document.createElement('div');
-            rowLabel.className = 'attention-cell';
-            rowLabel.textContent = token.substring(0, 4);
+            rowLabel.className = `attention-cell attn-row-${i}`;
+            rowLabel.textContent = token.substring(0, 5);
             rowLabel.style.fontWeight = 'bold';
+            rowLabel.style.background = '#f8f9fa';
+            rowLabel.style.fontSize = '10px';
             grid.appendChild(rowLabel);
             
-            tokens.forEach((_, j) => {
+            keyTokens.forEach((_, j) => {
                 const cell = document.createElement('div');
-                cell.className = 'attention-cell';
-                const weight = weights[i] && weights[i][j] ? weights[i][j] : 0;
+                cell.className = `attention-cell attn-row-${i} attn-col-${j}`;
+                const weight = weights[i][j];
+                
+                // Color based on weight
+                const intensity = Math.floor(weight * 255);
                 cell.style.backgroundColor = `rgba(52, 152, 219, ${weight})`;
                 cell.style.color = weight > 0.5 ? 'white' : 'black';
                 cell.textContent = weight.toFixed(2);
+                
+                // Tooltip on hover
+                cell.title = `${queryTokens[i]} → ${keyTokens[j]}: ${weight.toFixed(3)}`;
+                
                 grid.appendChild(cell);
             });
         });
         
-        container.appendChild(grid);
+        matrixContainer.appendChild(grid);
+        container.appendChild(matrixContainer);
+        
         return container;
     }
 
@@ -556,51 +665,64 @@ document.addEventListener('DOMContentLoaded', function() {
         encoder.className = 'flow-component';
         encoder.innerHTML = '<h3>Encoder</h3>';
         
-        // Input embeddings
+        // Step 1: Embeddings
         const embSection = document.createElement('div');
-        embSection.innerHTML = '<h4>1. Input Embeddings</h4>';
+        embSection.innerHTML = '<h4>Step 1: Token Embeddings</h4>';
+        embSection.innerHTML += '<p>Each token is converted to a high-dimensional vector (typically 512 dimensions).</p>';
         embSection.appendChild(createTokenDisplay(tokens));
         embSection.appendChild(createEmbeddingVisualization(tokens));
+        
+        if (showMath) {
+            const math = document.createElement('div');
+            math.className = 'math-notation';
+            math.innerHTML = 'X = [Embed(token₁), Embed(token₂), ..., Embed(tokenₙ)]';
+            embSection.appendChild(math);
+        }
         encoder.appendChild(embSection);
         
-        // Positional encoding
+        // Step 2: Positional encoding
         const posSection = document.createElement('div');
-        posSection.innerHTML = '<h4>2. + Positional Encoding</h4>';
+        posSection.innerHTML = '<h4>Step 2: + Positional Encoding</h4>';
+        posSection.innerHTML += '<p>Sine/cosine waves encode position information since attention has no inherent order.</p>';
         posSection.appendChild(createPositionalEncodingVisualization(tokens.length));
+        
+        if (showMath) {
+            const math = document.createElement('div');
+            math.className = 'math-notation';
+            math.innerHTML = 'PE(pos, 2i) = sin(pos/10000^(2i/d))<br>PE(pos, 2i+1) = cos(pos/10000^(2i/d))';
+            posSection.appendChild(math);
+        }
         encoder.appendChild(posSection);
         
-        // Self-attention
+        // Step 3: Self-attention
         const attSection = document.createElement('div');
-        attSection.innerHTML = '<h4>3. Multi-Head Self-Attention</h4>';
+        attSection.innerHTML = '<h4>Step 3: Multi-Head Self-Attention</h4>';
+        attSection.innerHTML += '<p>Each token can attend to all other tokens to build contextual representations.</p>';
         
-        // Create simple attention weights for visualization
-        const simpleWeights = [];
-        for (let i = 0; i < tokens.length; i++) {
-            simpleWeights[i] = [];
-            for (let j = 0; j < tokens.length; j++) {
-                // Simulate attention pattern
-                const dist = Math.abs(i - j);
-                simpleWeights[i][j] = Math.exp(-dist * 0.5) / 2;
-            }
-            // Normalize
-            const sum = simpleWeights[i].reduce((a, b) => a + b, 0);
-            simpleWeights[i] = simpleWeights[i].map(w => w / sum);
+        const selfAttentionWeights = generateAttentionWeights(tokens, tokens, 'self');
+        attSection.appendChild(createAttentionVisualization(tokens, tokens, selfAttentionWeights, "Self-Attention"));
+        
+        if (showMath) {
+            const math = document.createElement('div');
+            math.className = 'math-notation';
+            math.innerHTML = 'Attention(Q,K,V) = softmax(QK^T/√d_k)V';
+            attSection.appendChild(math);
         }
-        
-        attSection.appendChild(createAttentionVisualization(tokens, simpleWeights));
         encoder.appendChild(attSection);
         
-        // Add & Norm
-        const normSection = document.createElement('div');
-        normSection.innerHTML = '<h4>4. Add & Norm</h4>';
-        normSection.innerHTML += '<div class="layer-norm">LayerNorm(x + Attention(x))</div>';
-        encoder.appendChild(normSection);
-        
-        // Feed-forward
+        // Step 4: Feed-forward
         const ffSection = document.createElement('div');
-        ffSection.innerHTML = '<h4>5. Position-wise Feed-Forward</h4>';
-        ffSection.innerHTML += '<div>FFN(x) = ReLU(xW₁ + b₁)W₂ + b₂</div>';
-        ffSection.innerHTML += '<div class="layer-norm">LayerNorm(x + FFN(x))</div>';
+        ffSection.innerHTML = '<h4>Step 4: Feed-Forward Network</h4>';
+        ffSection.innerHTML += '<p>Two linear transformations with ReLU activation, applied to each position.</p>';
+        
+        if (showMath) {
+            const math = document.createElement('div');
+            math.className = 'math-notation';
+            math.innerHTML = 'FFN(x) = max(0, xW₁ + b₁)W₂ + b₂';
+            ffSection.appendChild(math);
+        }
+        
+        ffSection.innerHTML += '<div class="layer-norm">Add & Norm</div>';
         encoder.appendChild(ffSection);
         
         return encoder;
@@ -612,261 +734,237 @@ document.addEventListener('DOMContentLoaded', function() {
         decoder.className = 'flow-component';
         decoder.innerHTML = '<h3>Decoder</h3>';
         
-        // Safety check
+        // Output tokens for demo
         if (!outputTokens || outputTokens.length === 0) {
-            outputTokens = ['<START>', 'output', '<END>'];
+            outputTokens = ['<START>', 'the', 'chat', 's\'est', 'assis', 'sur', 'le', 'tapis', '<END>'];
         }
         
-        // Output embeddings
+        // Step 1: Output embeddings
         const embSection = document.createElement('div');
-        embSection.innerHTML = '<h4>1. Output Embeddings (shifted right)</h4>';
+        embSection.innerHTML = '<h4>Step 1: Output Embeddings (shifted right)</h4>';
+        embSection.innerHTML += '<p>During training, the target sequence is shifted right. During inference, we generate one token at a time.</p>';
         embSection.appendChild(createTokenDisplay(outputTokens));
         decoder.appendChild(embSection);
         
-        // Masked self-attention
+        // Step 2: Masked self-attention
         const maskedAttSection = document.createElement('div');
-        maskedAttSection.innerHTML = '<h4>2. Masked Multi-Head Self-Attention</h4>';
+        maskedAttSection.innerHTML = '<h4>Step 2: Masked Multi-Head Self-Attention</h4>';
+        maskedAttSection.innerHTML += '<p>Each position can only attend to earlier positions (causal masking).</p>';
         
-        // Create causal mask visualization
-        const causalWeights = [];
-        for (let i = 0; i < outputTokens.length; i++) {
-            causalWeights[i] = [];
-            for (let j = 0; j < outputTokens.length; j++) {
-                if (j > i) {
-                    causalWeights[i][j] = 0;
-                } else {
-                    causalWeights[i][j] = 1 / (i + 1);
-                }
-            }
-        }
-        
-        maskedAttSection.appendChild(createAttentionVisualization(outputTokens, causalWeights));
+        const maskedWeights = generateAttentionWeights(outputTokens, outputTokens, 'masked');
+        maskedAttSection.appendChild(createAttentionVisualization(
+            outputTokens, 
+            outputTokens, 
+            maskedWeights, 
+            "Masked Self-Attention (Causal)"
+        ));
         decoder.appendChild(maskedAttSection);
         
-        // Cross-attention (if encoder-decoder)
+        // Step 3: Cross-attention (if encoder-decoder)
         if (showCrossAttention && inputTokens && inputTokens.length > 0) {
             const crossAttSection = document.createElement('div');
             crossAttSection.className = 'cross-attention';
-            crossAttSection.innerHTML = '<h4>3. Cross-Attention (to Encoder)</h4>';
-            crossAttSection.innerHTML += '<p>Queries from decoder, Keys & Values from encoder</p>';
+            crossAttSection.innerHTML = '<h4>Step 3: Cross-Attention (Encoder-Decoder Attention)</h4>';
+            crossAttSection.innerHTML += '<p>Decoder queries attend to encoder outputs. This is how the decoder "sees" the input.</p>';
             
-            // Create cross-attention weights
-            const crossWeights = [];
-            for (let i = 0; i < outputTokens.length; i++) {
-                crossWeights[i] = [];
-                for (let j = 0; j < inputTokens.length; j++) {
-                    // Simulate some attention pattern
-                    crossWeights[i][j] = Math.random() * 0.5 + 0.25;
-                }
-                // Normalize
-                const sum = crossWeights[i].reduce((a, b) => a + b, 0);
-                crossWeights[i] = crossWeights[i].map(w => w / sum);
-            }
-            
-            const crossGrid = createAttentionVisualization(inputTokens, crossWeights, outputTokens);
-            crossAttSection.appendChild(crossGrid);
+            const crossWeights = generateAttentionWeights(outputTokens, inputTokens, 'cross');
+            crossAttSection.appendChild(createAttentionVisualization(
+                outputTokens,
+                inputTokens,
+                crossWeights,
+                "Cross-Attention (Decoder → Encoder)"
+            ));
             decoder.appendChild(crossAttSection);
         }
         
-        // Feed-forward
+        // Step 4: Feed-forward
         const ffSection = document.createElement('div');
-        ffSection.innerHTML = '<h4>4. Position-wise Feed-Forward</h4>';
-        ffSection.innerHTML += '<div class="layer-norm">LayerNorm(x + FFN(x))</div>';
+        ffSection.innerHTML = '<h4>Step 4: Feed-Forward Network</h4>';
+        ffSection.innerHTML += '<div class="layer-norm">Add & Norm after each sub-layer</div>';
         decoder.appendChild(ffSection);
         
         return decoder;
     }
 
-    // Process input based on architecture and task
+    // Process input
     function processInput() {
         const inputText = elements.inputText.value.trim();
-        if (!inputText) return;
+        if (!inputText) {
+            alert('Please enter some text to visualize.');
+            return;
+        }
         
         tokens = tokenize(inputText);
+        if (tokens.length === 0) {
+            alert('Please enter valid text.');
+            return;
+        }
+        
         elements.architectureFlow.innerHTML = '';
         
+        // Add delay for animation
+        const addComponent = (component, delay = 0) => {
+            if (animateFlow) {
+                component.style.animationDelay = `${delay}s`;
+            } else {
+                component.style.animation = 'none';
+                component.style.opacity = '1';
+            }
+            elements.architectureFlow.appendChild(component);
+        };
+        
+        let delay = 0;
+        
+        // Input display
+        const inputDiv = document.createElement('div');
+        inputDiv.className = 'flow-component';
+        inputDiv.innerHTML = `<h3>Input: "${tokens.join(' ')}"</h3>`;
+        addComponent(inputDiv, delay);
+        delay += 0.3;
+        
+        // Arrow
+        const arrow1 = document.createElement('div');
+        arrow1.className = 'flow-arrow';
+        arrow1.textContent = '↓';
+        addComponent(arrow1, delay);
+        delay += 0.2;
+        
         if (currentArchitecture === 'encoder-decoder') {
-            processEncoderDecoder(tokens);
+            // Encoder
+            const encoder = createEncoderComponent(tokens);
+            addComponent(encoder, delay);
+            delay += 0.3;
+            
+            // Arrow
+            const arrow2 = document.createElement('div');
+            arrow2.className = 'flow-arrow';
+            arrow2.textContent = '↓';
+            addComponent(arrow2, delay);
+            delay += 0.2;
+            
+            // Decoder
+            const decoder = createDecoderComponent(tokens, null, true);
+            addComponent(decoder, delay);
+            delay += 0.3;
+            
+            // Output
+            const outputDiv = document.createElement('div');
+            outputDiv.className = 'flow-component simulated-output';
+            outputDiv.innerHTML = `
+                <h3>Output Generation</h3>
+                <p>In a real model, this would be the translated text. Each output token is generated by:</p>
+                <ol>
+                    <li>Computing attention over previous outputs (masked self-attention)</li>
+                    <li>Attending to encoder outputs (cross-attention)</li>
+                    <li>Passing through feed-forward layers</li>
+                    <li>Applying softmax to get token probabilities</li>
+                </ol>
+                <p><strong>Note:</strong> This demo shows random attention patterns. Real models learn these patterns from millions of examples.</p>
+            `;
+            addComponent(outputDiv, delay);
+            
         } else {
-            processDecoderOnly(tokens);
+            // Decoder-only architecture
+            const fullSequence = ['<START>', ...tokens, '<SEP>', 'generated', 'text', 'would', 'appear', 'here'];
+            
+            const decoder = createDecoderComponent([], fullSequence, false);
+            decoder.querySelector('h3').textContent = 'Transformer Decoder (Autoregressive)';
+            addComponent(decoder, delay);
+            delay += 0.3;
+            
+            // Output explanation
+            const outputDiv = document.createElement('div');
+            outputDiv.className = 'flow-component simulated-output';
+            outputDiv.innerHTML = `
+                <h3>Autoregressive Generation</h3>
+                <p>Decoder-only models (like GPT) process everything as one sequence:</p>
+                <ul>
+                    <li>Input and output are concatenated</li>
+                    <li>Each position can only see previous positions (causal masking)</li>
+                    <li>No separate encoder or cross-attention needed</li>
+                    <li>More flexible: can handle any text generation task</li>
+                </ul>
+                <p><strong>Key insight:</strong> Everything is framed as "predict the next token"</p>
+            `;
+            addComponent(outputDiv, delay);
         }
         
         updateArchitectureInfo();
     }
 
-    // Process with encoder-decoder architecture
-    function processEncoderDecoder(inputTokens) {
-        const flow = elements.architectureFlow;
-        
-        // Check for empty input
-        if (!inputTokens || inputTokens.length === 0) {
-            inputTokens = ['hello', 'world'];
-        }
-        
-        // Input
-        const inputDiv = document.createElement('div');
-        inputDiv.className = 'flow-component';
-        inputDiv.innerHTML = `<h3>Input: "${inputTokens.join(' ')}"</h3>`;
-        flow.appendChild(inputDiv);
-        
-        // Arrow
-        flow.innerHTML += '<div class="flow-arrow">↓</div>';
-        
-        // Encoder
-        flow.appendChild(createEncoderComponent(inputTokens));
-        
-        // Arrow
-        flow.innerHTML += '<div class="flow-arrow">↓</div>';
-        
-        // Decoder
-        let outputTokens;
-        if (currentTask === 'translation') {
-            outputTokens = ['<START>', 'bonjour', 'monde', '<END>'];
-        } else if (currentTask === 'qa') {
-            outputTokens = ['<START>', 'paris', '<END>'];
-        } else {
-            outputTokens = ['<START>', 'sunny', 'today', '<END>'];
-        }
-        
-        flow.appendChild(createDecoderComponent(inputTokens, outputTokens, true));
-        
-        // Output
-        flow.innerHTML += '<div class="flow-arrow">↓</div>';
-        const outputDiv = document.createElement('div');
-        outputDiv.className = 'flow-component decoder-output';
-        outputDiv.innerHTML = `<h3>Output: "${outputTokens.slice(1, -1).join(' ')}"</h3>`;
-        flow.appendChild(outputDiv);
-    }
-
-    // Process with decoder-only architecture
-    function processDecoderOnly(inputTokens) {
-        const flow = elements.architectureFlow;
-        
-        // Check for empty input
-        if (!inputTokens || inputTokens.length === 0) {
-            inputTokens = ['hello', 'world'];
-        }
-        
-        // Prepare prompt based on task
-        let fullTokens;
-        if (currentTask === 'translation') {
-            fullTokens = ['translate:', ...inputTokens, 'to', 'french:', 'bonjour', 'monde'];
-        } else if (currentTask === 'qa') {
-            fullTokens = [...inputTokens, 'answer:', 'paris'];
-        } else {
-            fullTokens = [...inputTokens, 'sunny', 'today'];
-        }
-        
-        // Input
-        const inputDiv = document.createElement('div');
-        inputDiv.className = 'flow-component';
-        inputDiv.innerHTML = `<h3>Input Sequence: "${fullTokens.join(' ')}"</h3>`;
-        inputDiv.innerHTML += '<p style="color: #666;">Everything processed as one sequence</p>';
-        flow.appendChild(inputDiv);
-        
-        // Arrow
-        flow.innerHTML += '<div class="flow-arrow">↓</div>';
-        
-        // Single decoder
-        const decoder = createDecoderComponent([], fullTokens, false);
-        decoder.querySelector('h3').textContent = 'Transformer Decoder (Autoregressive)';
-        flow.appendChild(decoder);
-        
-        // Output
-        flow.innerHTML += '<div class="flow-arrow">↓</div>';
-        const outputDiv = document.createElement('div');
-        outputDiv.className = 'flow-component decoder-output';
-        
-        let outputText;
-        if (currentTask === 'translation') {
-            outputText = 'bonjour monde';
-        } else if (currentTask === 'qa') {
-            outputText = 'paris';
-        } else {
-            outputText = 'sunny today';
-        }
-        
-        outputDiv.innerHTML = `<h3>Generated: "${outputText}"</h3>`;
-        outputDiv.innerHTML += '<p style="color: #666;">Tokens generated one at a time, each attending to all previous tokens</p>';
-        flow.appendChild(outputDiv);
-    }
-
-    // Update architecture info panel
+    // Update architecture info
     function updateArchitectureInfo() {
         const info = elements.architectureInfo;
         
         if (currentArchitecture === 'encoder-decoder') {
             info.innerHTML = `
+                <h4>Encoder-Decoder Architecture (Vaswani et al., 2017)</h4>
                 <table class="info-table">
                     <tr>
                         <th>Component</th>
-                        <th>Description</th>
+                        <th>Purpose</th>
+                        <th>Key Feature</th>
                     </tr>
                     <tr>
                         <td>Encoder</td>
-                        <td>Processes entire input with bidirectional attention</td>
+                        <td>Process input sequence</td>
+                        <td>Bidirectional attention (sees all tokens)</td>
                     </tr>
                     <tr>
                         <td>Decoder</td>
-                        <td>Generates output autoregressively with causal masking</td>
+                        <td>Generate output sequence</td>
+                        <td>Causal attention (only sees past)</td>
                     </tr>
                     <tr>
                         <td>Cross-Attention</td>
-                        <td>Decoder attends to encoder output (Q from decoder, K,V from encoder)</td>
-                    </tr>
-                    <tr>
-                        <td>Use Cases</td>
-                        <td>Translation, summarization, seq2seq tasks</td>
-                    </tr>
-                    <tr>
-                        <td>Examples</td>
-                        <td>Original Transformer, T5, BART</td>
+                        <td>Connect encoder to decoder</td>
+                        <td>Decoder queries, encoder keys/values</td>
                     </tr>
                 </table>
-                <p style="margin-top: 10px; font-style: italic;">
-                    Reference: Vaswani et al. (2017) "Attention is All You Need"
-                </p>
+                <p><strong>Best for:</strong> Sequence-to-sequence tasks where input and output are different (translation, summarization)</p>
+                <p><strong>Examples:</strong> Original Transformer, T5, BART, mT5</p>
             `;
         } else {
             info.innerHTML = `
+                <h4>Decoder-Only Architecture (Radford et al., 2018)</h4>
                 <table class="info-table">
                     <tr>
                         <th>Component</th>
-                        <th>Description</th>
+                        <th>Purpose</th>
+                        <th>Key Feature</th>
                     </tr>
                     <tr>
-                        <td>Architecture</td>
-                        <td>Decoder-only with causal (left-to-right) attention</td>
+                        <td>Decoder Stack</td>
+                        <td>Process entire sequence</td>
+                        <td>Causal masking throughout</td>
                     </tr>
                     <tr>
-                        <td>Processing</td>
-                        <td>All tasks framed as next-token prediction</td>
+                        <td>Self-Attention</td>
+                        <td>Build representations</td>
+                        <td>Can only attend to past positions</td>
                     </tr>
                     <tr>
-                        <td>Attention Mask</td>
-                        <td>Causal mask prevents attending to future tokens</td>
-                    </tr>
-                    <tr>
-                        <td>Advantages</td>
-                        <td>Simpler, more flexible, better scaling</td>
-                    </tr>
-                    <tr>
-                        <td>Examples</td>
-                        <td>GPT, GPT-2, GPT-3, LLaMA</td>
+                        <td>No Cross-Attention</td>
+                        <td>Simpler architecture</td>
+                        <td>Everything is one sequence</td>
                     </tr>
                 </table>
-                <p style="margin-top: 10px; font-style: italic;">
-                    References: Radford et al. (2018, 2019), Brown et al. (2020)
-                </p>
+                <p><strong>Best for:</strong> Language modeling, text generation, any task that can be framed as completion</p>
+                <p><strong>Examples:</strong> GPT, GPT-2, GPT-3, GPT-4, LLaMA, PaLM</p>
             `;
         }
-    }
-
-    // Update attention visualization when token is selected
-    function updateAttentionVisualization() {
-        // This would update the attention weights visualization
-        // to show attention patterns for the selected token
-        console.log(`Token ${selectedTokenIndex} selected`);
+        
+        info.innerHTML += `
+            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 4px;">
+                <strong>Key Parameters in Real Models:</strong>
+                <ul style="margin: 5px 0;">
+                    <li><strong>d_model:</strong> Hidden size (512-4096)</li>
+                    <li><strong>n_heads:</strong> Number of attention heads (8-64)</li>
+                    <li><strong>n_layers:</strong> Number of encoder/decoder layers (6-96)</li>
+                    <li><strong>vocab_size:</strong> Number of tokens (30k-100k+)</li>
+                </ul>
+            </div>
+        `;
     }
 
     // Event listeners
@@ -877,22 +975,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    elements.taskSelect.addEventListener('change', (e) => {
-        currentTask = e.target.value;
-        
-        // Update placeholder text
-        if (currentTask === 'translation') {
-            elements.inputText.placeholder = 'Enter English text to translate...';
-            elements.inputText.value = 'Hello world';
-        } else if (currentTask === 'completion') {
-            elements.inputText.placeholder = 'Enter text to complete...';
-            elements.inputText.value = 'The weather is';
-        } else if (currentTask === 'qa') {
-            elements.inputText.placeholder = 'Enter a question...';
-            elements.inputText.value = 'What is the capital of France';
-        }
-    });
-
     elements.processBtn.addEventListener('click', processInput);
     
     elements.inputText.addEventListener('keypress', (e) => {
@@ -901,7 +983,15 @@ document.addEventListener('DOMContentLoaded', function() {
             processInput();
         }
     });
+    
+    elements.showMathCheckbox.addEventListener('change', (e) => {
+        showMath = e.target.checked;
+    });
+    
+    elements.animateFlowCheckbox.addEventListener('change', (e) => {
+        animateFlow = e.target.checked;
+    });
 
-    // Initialize
+    // Initialize with sample
     processInput();
 });
