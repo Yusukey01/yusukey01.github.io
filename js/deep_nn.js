@@ -81,11 +81,57 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         <!-- Multi-Head Attention Tab -->
                         <div id="multi-tab" class="viz-pane">
-                            <div class="multi-head-grid">
-                                <div id="head-visualizations"></div>
+                            <div class="multi-head-container">
+                                <div class="head-selector">
+                                    <label>Select Head to View Details:</label>
+                                    <div id="head-buttons"></div>
+                                </div>
+                                
+                                <div class="multi-head-overview">
+                                    <h4>All Heads Attention Patterns</h4>
+                                    <div id="all-heads-grid"></div>
+                                </div>
+                                
+                                <div id="selected-head-details" style="display: none;">
+                                    <h4>Head <span id="current-head-num">1</span> Detailed View</h4>
+                                    
+                                    <div class="step-section">
+                                        <h5>Q, K, V Projections (Head <span class="current-head-num">1</span>)</h5>
+                                        <div class="qkv-matrices">
+                                            <div class="matrix-display">
+                                                <h6>Q</h6>
+                                                <canvas id="head-query-matrix" width="150" height="120"></canvas>
+                                            </div>
+                                            <div class="matrix-display">
+                                                <h6>K</h6>
+                                                <canvas id="head-key-matrix" width="150" height="120"></canvas>
+                                            </div>
+                                            <div class="matrix-display">
+                                                <h6>V</h6>
+                                                <canvas id="head-value-matrix" width="150" height="120"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="step-section">
+                                        <h5>Attention Scores & Weights</h5>
+                                        <div class="attention-comparison">
+                                            <div>
+                                                <h6>Scores (QK<sup>T</sup>/√d<sub>k</sub>)</h6>
+                                                <canvas id="head-attention-scores" width="200" height="200"></canvas>
+                                            </div>
+                                            <div>
+                                                <h6>Weights (Softmax)</h6>
+                                                <canvas id="head-attention-weights" width="200" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div class="concat-section">
-                                    <h4>Concatenated & Projected Output</h4>
-                                    <canvas id="multi-output" width="400" height="150"></canvas>
+                                    <h4>Concatenation & Output Projection</h4>
+                                    <canvas id="concat-visualization" width="600" height="200"></canvas>
+                                    <p class="formula">MultiHead(Q,K,V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>)W<sup>O</sup></p>
                                 </div>
                             </div>
                         </div>
@@ -363,36 +409,122 @@ document.addEventListener('DOMContentLoaded', function() {
             font-family: monospace;
         }
         
-        .multi-head-grid {
-            display: grid;
+        .multi-head-container {
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
         
-        #head-visualizations {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .head-viz {
+        .head-selector {
             background: white;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        .head-viz h5 {
+        .head-selector label {
+            display: block;
             margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        #head-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .head-btn {
+            padding: 8px 16px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .head-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .head-btn:hover {
+            background: #e3f2fd;
+        }
+        
+        .head-btn.active:hover {
+            background: #2980b9;
+        }
+        
+        .multi-head-overview {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #all-heads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mini-head-viz {
             text-align: center;
+        }
+        
+        .mini-head-viz h6 {
+            margin: 0 0 5px 0;
             color: #34495e;
+            font-size: 14px;
+        }
+        
+        #selected-head-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #selected-head-details h4 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        #selected-head-details h5 {
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        
+        #selected-head-details h6 {
+            margin-bottom: 10px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .attention-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            justify-items: center;
+        }
+        
+        .attention-comparison > div {
+            text-align: center;
         }
         
         .concat-section {
             background: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-align: center;
+        }
+        
+        #concat-visualization {
+            margin: 20px auto;
         }
         
         @media (max-width: 768px) {
@@ -406,6 +538,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
             .controls-panel {
                 width: 100%;
+            }
+            
+            .qkv-matrices {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .attention-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            #all-heads-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            #concat-visualization {
+                width: 100%;
+                max-width: 600px;
+                height: auto;
             }
         }
     `;
@@ -434,8 +585,17 @@ document.addEventListener('DOMContentLoaded', function() {
         scoreDetail: document.getElementById('score-detail'),
         
         // Multi-head elements
-        headVisualizations: document.getElementById('head-visualizations'),
-        multiOutput: document.getElementById('multi-output'),
+        headButtons: document.getElementById('head-buttons'),
+        allHeadsGrid: document.getElementById('all-heads-grid'),
+        selectedHeadDetails: document.getElementById('selected-head-details'),
+        currentHeadNum: document.getElementById('current-head-num'),
+        currentHeadNumSpans: document.getElementsByClassName('current-head-num'),
+        headQueryMatrix: document.getElementById('head-query-matrix'),
+        headKeyMatrix: document.getElementById('head-key-matrix'),
+        headValueMatrix: document.getElementById('head-value-matrix'),
+        headAttentionScores: document.getElementById('head-attention-scores'),
+        headAttentionWeights: document.getElementById('head-attention-weights'),
+        concatVisualization: document.getElementById('concat-visualization'),
         
         // Positional encoding
         positionEncodingViz: document.getElementById('position-encoding-viz'),
@@ -471,20 +631,28 @@ document.addEventListener('DOMContentLoaded', function() {
         return matrix;
     }
 
+    // Simple seeded random for consistent embeddings
+    function seededRandom(seed) {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+
     function createEmbeddings(tokens, dim) {
         // Create random embeddings for each token
         const embeddings = [];
-        for (let token of tokens) {
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
             const embedding = [];
             // Use a simple hash to get consistent embeddings for same tokens
             let hash = 0;
-            for (let i = 0; i < token.length; i++) {
-                hash = ((hash << 5) - hash) + token.charCodeAt(i);
+            for (let j = 0; j < token.length; j++) {
+                hash = ((hash << 5) - hash) + token.charCodeAt(j);
                 hash = hash & hash;
             }
-            Math.seedrandom(hash); // Use seeded random for consistency
-            for (let i = 0; i < dim; i++) {
-                embedding.push((Math.random() - 0.5) * 0.5);
+            
+            // Generate embedding values
+            for (let j = 0; j < dim; j++) {
+                embedding.push((seededRandom(hash + j * 1000) - 0.5) * 0.5);
             }
             embeddings.push(embedding);
         }
@@ -844,9 +1012,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const temperature = parseFloat(elements.temperature.value);
         const headDim = Math.floor(dim / numHeads);
         
-        elements.headVisualizations.innerHTML = '';
+        // Clear previous content
+        elements.headButtons.innerHTML = '';
+        elements.allHeadsGrid.innerHTML = '';
         multiHeadResults = [];
         
+        // Store detailed results for each head
+        const headDetails = [];
+        
+        // Process each head
         for (let h = 0; h < numHeads; h++) {
             // Create separate projections for each head
             const Wq = initializeRandomMatrix(dim, headDim);
@@ -858,44 +1032,166 @@ document.addEventListener('DOMContentLoaded', function() {
             const Vh = matrixMultiply(embeddings, Wv);
             
             const attention = computeAttention(Qh, Kh, Vh, temperature);
+            
+            headDetails.push({
+                Q: Qh,
+                K: Kh,
+                V: Vh,
+                Wq: Wq,
+                Wk: Wk,
+                Wv: Wv,
+                scores: attention.scores,
+                weights: attention.weights,
+                output: attention.output
+            });
+            
             multiHeadResults.push(attention);
             
-            // Create visualization for this head
-            const headDiv = document.createElement('div');
-            headDiv.className = 'head-viz';
+            // Create head selection button
+            const btn = document.createElement('button');
+            btn.className = 'head-btn';
+            btn.textContent = `Head ${h + 1}`;
+            btn.dataset.head = h;
+            btn.addEventListener('click', () => showHeadDetails(h, headDetails[h]));
+            elements.headButtons.appendChild(btn);
             
-            const title = document.createElement('h5');
+            // Create mini visualization for overview
+            const miniViz = document.createElement('div');
+            miniViz.className = 'mini-head-viz';
+            
+            const title = document.createElement('h6');
             title.textContent = `Head ${h + 1}`;
-            headDiv.appendChild(title);
+            miniViz.appendChild(title);
             
             const canvas = document.createElement('canvas');
-            canvas.width = 250;
-            canvas.height = 250;
-            headDiv.appendChild(canvas);
+            canvas.width = 180;
+            canvas.height = 180;
+            miniViz.appendChild(canvas);
             
             drawAttentionMatrix(canvas, attention.weights, tokens);
             
-            elements.headVisualizations.appendChild(headDiv);
+            elements.allHeadsGrid.appendChild(miniViz);
         }
         
-        // Visualize concatenated output
-        const ctx = elements.multiOutput.getContext('2d');
-        ctx.clearRect(0, 0, elements.multiOutput.width, elements.multiOutput.height);
+        // Select first head by default
+        elements.headButtons.firstChild.classList.add('active');
+        showHeadDetails(0, headDetails[0]);
         
-        // Simple visualization showing concatenation
-        const segmentWidth = elements.multiOutput.width / numHeads;
+        // Visualize concatenation
+        visualizeConcatenation(headDetails);
+    }
+    
+    function showHeadDetails(headIndex, details) {
+        // Update active button
+        document.querySelectorAll('.head-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.head == headIndex);
+        });
+        
+        // Update head number displays
+        elements.currentHeadNum.textContent = headIndex + 1;
+        Array.from(elements.currentHeadNumSpans).forEach(span => {
+            span.textContent = headIndex + 1;
+        });
+        
+        // Show details section
+        elements.selectedHeadDetails.style.display = 'block';
+        
+        // Draw Q, K, V matrices
+        drawMatrix(elements.headQueryMatrix, details.Q, 'Query', true);
+        drawMatrix(elements.headKeyMatrix, details.K, 'Key', true);
+        drawMatrix(elements.headValueMatrix, details.V, 'Value', true);
+        
+        // Draw attention scores and weights
+        drawAttentionMatrix(elements.headAttentionScores, details.scores, tokens, (row, col, value) => {
+            if (row >= 0 && col >= 0) {
+                const dim = details.K[0].length;
+                elements.scoreDetail.textContent = 
+                    `Head ${headIndex + 1}: ${tokens[row]} → ${tokens[col]}: score = ${value.toFixed(3)}`;
+            }
+        });
+        
+        drawAttentionMatrix(elements.headAttentionWeights, details.weights, tokens);
+    }
+    
+    function visualizeConcatenation(headDetails) {
+        const canvas = elements.concatVisualization;
+        const ctx = canvas.getContext('2d');
+        const numHeads = headDetails.length;
+        const tokenCount = tokens.length;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw concatenation diagram
+        const headWidth = canvas.width / (numHeads + 1);
+        const tokenHeight = 30;
+        const startY = 20;
+        
+        // Draw each head's output
         const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
         
         for (let h = 0; h < numHeads; h++) {
-            ctx.fillStyle = colors[h % colors.length];
-            ctx.globalAlpha = 0.3;
-            ctx.fillRect(h * segmentWidth, 0, segmentWidth - 2, elements.multiOutput.height);
+            const x = h * headWidth + 10;
             
-            ctx.globalAlpha = 1.0;
+            // Draw head label
             ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
+            ctx.font = '12px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`Head ${h + 1}`, h * segmentWidth + segmentWidth / 2, elements.multiOutput.height / 2);
+            ctx.fillText(`Head ${h + 1}`, x + headWidth / 2, startY - 5);
+            
+            // Draw tokens for this head
+            for (let t = 0; t < tokenCount; t++) {
+                const y = startY + t * tokenHeight;
+                
+                // Draw box
+                ctx.fillStyle = colors[h % colors.length];
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(x, y, headWidth - 20, tokenHeight - 5);
+                
+                // Draw token
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#333';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(tokens[t], x + headWidth / 2, y + tokenHeight / 2);
+            }
+        }
+        
+        // Draw concatenation arrow
+        const arrowX = numHeads * headWidth;
+        const arrowY = startY + (tokenCount * tokenHeight) / 2;
+        
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(arrowX - 10, arrowY);
+        ctx.lineTo(arrowX + 30, arrowY);
+        ctx.stroke();
+        
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(arrowX + 30, arrowY);
+        ctx.lineTo(arrowX + 25, arrowY - 5);
+        ctx.lineTo(arrowX + 25, arrowY + 5);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw output
+        const outputX = arrowX + 40;
+        ctx.fillStyle = '#95a5a6';
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(outputX, startY, headWidth - 20, tokenCount * tokenHeight - 5);
+        
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Concat + W^O', outputX + (headWidth - 20) / 2, startY - 5);
+        
+        // Draw final tokens
+        for (let t = 0; t < tokenCount; t++) {
+            const y = startY + t * tokenHeight;
+            ctx.font = '11px Arial';
+            ctx.fillText(tokens[t], outputX + (headWidth - 20) / 2, y + tokenHeight / 2);
         }
     }
 
@@ -945,10 +1241,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize
     updateParameterDisplays();
-    
-    // Add seedrandom for consistent random numbers
-    !function(a,b){function c(c,j,k){var n=[];j=1==j?{entropy:!0}:j||{};var s=g(f(j.entropy?[c,i(a)]:null==c?h():c,3),n),t=new d(n),u=function(){for(var a=t.g(m),b=p,c=0;q>a;)a=(a+c)*l,b*=l,c=t.g(1);for(;a>=r;)a/=2,b/=2,c>>>=1;return(a+c)/b};return u.int32=function(){return 0|t.g(4)},u.quick=function(){return t.g(4)/4294967296},u.double=u,g(i(t.S),a),(j.pass||k||function(a,c,d,f){return f&&(f.S&&e(f,t),a.state=function(){return e(t,{})}),d?(b[o]=a,c):a})(u,s,"global"in j?j.global:this==b,j.state)}function d(a){var b,c=a.length,d=this,e=0,f=d.i=d.j=0,g=d.S=[];for(c||(a=[c++]);l>e;)g[e]=e++;for(e=0;l>e;e++)g[e]=g[f=s&f+a[e%c]+(b=g[e])],g[f]=b;(d.g=function(a){for(var b,c=0,e=d.i,f=d.j,g=d.S;a--;)b=g[e=s&e+1],c=c*l+g[s&(g[e]=g[f=s&f+b])+(g[f]=b)];return d.i=e,d.j=f,c})(l)}function e(a,b){return b.i=a.i,b.j=a.j,b.S=a.S.slice(),b}function f(a,b){var c,d=[],e=typeof a;if(b&&"object"==e)for(c in a)try{d.push(f(a[c],b-1))}catch(g){}return d.length?d:"string"==e?a:a+"\0"}function g(a,b){for(var c,d=a+"",e=0;e<d.length;)b[s&e]=s&(c^=19*b[s&e])+d.charCodeAt(e++);return i(b)}function h(){try{if(j)return i(j.randomBytes(l));var b=new Uint8Array(l);return(k.crypto||k.msCrypto).getRandomValues(b),i(b)}catch(c){var d=k.navigator,e=d&&d.plugins;return[+new Date,k,e,k.screen,i(a)]}}function i(a){return String.fromCharCode.apply(0,a)}var j,k=this,l=256,m=6,n=52,o="random",p=b.pow(l,m),q=b.pow(2,n),r=2*q,s=l-1;if(b["seed"+o]=c,g(b.random(),a),"object"==typeof module&&module.exports){module.exports=c;try{j=require("crypto")}catch(t){}}else"function"==typeof define&&define.amd&&define(function(){return c})}([],Math);
-    Math.seedrandom = function(seed) {
-        return Math.random;
-    };
 });
