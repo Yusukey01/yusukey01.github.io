@@ -139,11 +139,59 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- Positional Encoding Tab -->
                         <div id="position-tab" class="viz-pane">
                             <div class="position-encoding">
-                                <h4>Sinusoidal Positional Encoding</h4>
-                                <canvas id="position-encoding-viz" width="600" height="300"></canvas>
-                                <div class="encoding-info">
-                                    <p>PE(pos, 2i) = sin(pos/10000<sup>2i/d</sup>)</p>
-                                    <p>PE(pos, 2i+1) = cos(pos/10000<sup>2i/d</sup>)</p>
+                                <div class="step-section">
+                                    <h4>Why Positional Encoding?</h4>
+                                    <p>Attention mechanisms have no inherent notion of word order. Positional encodings add position information to help the model understand sequence structure.</p>
+                                </div>
+                                
+                                <div class="step-section">
+                                    <h4>Step 1: Token Embeddings Without Position</h4>
+                                    <div id="tokens-no-position"></div>
+                                </div>
+                                
+                                <div class="step-section">
+                                    <h4>Step 2: Sinusoidal Positional Encoding Pattern</h4>
+                                    <canvas id="position-encoding-viz" width="600" height="200"></canvas>
+                                    <div class="encoding-formula">
+                                        <p>PE(pos, 2i) = sin(pos/10000<sup>2i/d</sup>)</p>
+                                        <p>PE(pos, 2i+1) = cos(pos/10000<sup>2i/d</sup>)</p>
+                                    </div>
+                                    <div id="position-hover-info">Hover over the pattern to see values</div>
+                                </div>
+                                
+                                <div class="step-section">
+                                    <h4>Step 3: Individual Position Vectors</h4>
+                                    <div id="position-vectors-grid"></div>
+                                </div>
+                                
+                                <div class="step-section">
+                                    <h4>Step 4: Embeddings + Positional Encoding</h4>
+                                    <div class="encoding-addition">
+                                        <canvas id="embedding-canvas" width="180" height="150"></canvas>
+                                        <span class="plus-sign">+</span>
+                                        <canvas id="position-canvas" width="180" height="150"></canvas>
+                                        <span class="equals-sign">=</span>
+                                        <canvas id="final-canvas" width="180" height="150"></canvas>
+                                    </div>
+                                    <div id="final-tokens-position"></div>
+                                </div>
+                                
+                                <div class="step-section">
+                                    <h4>Positional Encoding Properties</h4>
+                                    <div class="properties-grid">
+                                        <div class="property-box">
+                                            <h5>Unique Encoding</h5>
+                                            <p>Each position has a unique encoding vector</p>
+                                        </div>
+                                        <div class="property-box">
+                                            <h5>Relative Position</h5>
+                                            <p>Model can learn to attend based on relative positions</p>
+                                        </div>
+                                        <div class="property-box">
+                                            <h5>Extrapolation</h5>
+                                            <p>Can handle sequences longer than training data</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -558,6 +606,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 max-width: 600px;
                 height: auto;
             }
+            
+            .encoding-addition {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .encoding-addition canvas {
+                max-width: 150px;
+            }
+            
+            .properties-grid {
+                grid-template-columns: 1fr;
+            }
         }
     `;
     document.head.appendChild(styleElement);
@@ -599,6 +660,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Positional encoding
         positionEncodingViz: document.getElementById('position-encoding-viz'),
+        tokensNoPosition: document.getElementById('tokens-no-position'),
+        positionVectorsGrid: document.getElementById('position-vectors-grid'),
+        positionHoverInfo: document.getElementById('position-hover-info'),
+        embeddingCanvas: document.getElementById('embedding-canvas'),
+        positionCanvas: document.getElementById('position-canvas'),
+        finalCanvas: document.getElementById('final-canvas'),
+        finalTokensPosition: document.getElementById('final-tokens-position'),
         
         // Tabs
         vizTabs: document.querySelectorAll('.viz-tab'),
@@ -844,7 +912,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function drawPositionalEncoding(canvas, maxLen = 20, dim = 8) {
+    function computePositionalEncoding(pos, dim) {
+        const encoding = [];
+        for (let i = 0; i < dim; i++) {
+            const angle = pos / Math.pow(10000, (2 * Math.floor(i / 2)) / dim);
+            encoding[i] = i % 2 === 0 ? Math.sin(angle) : Math.cos(angle);
+        }
+        return encoding;
+    }
+
+    function drawPositionalEncoding(canvas, maxLen, dim) {
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
@@ -854,11 +931,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate positional encodings
         const encodings = [];
         for (let pos = 0; pos < maxLen; pos++) {
-            encodings[pos] = [];
-            for (let i = 0; i < dim; i++) {
-                const angle = pos / Math.pow(10000, (2 * Math.floor(i / 2)) / dim);
-                encodings[pos][i] = i % 2 === 0 ? Math.sin(angle) : Math.cos(angle);
-            }
+            encodings[pos] = computePositionalEncoding(pos, dim);
         }
         
         // Draw heatmap
@@ -870,9 +943,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const value = encodings[pos][i];
                 const intensity = (value + 1) / 2; // Normalize to [0, 1]
                 
-                ctx.fillStyle = value >= 0 
-                    ? `hsl(30, 70%, ${90 - intensity * 40}%)`  // Warm colors for positive
-                    : `hsl(210, 70%, ${90 - (1 - intensity) * 40}%)`; // Cool colors for negative
+                // Use different colors for sin (even) and cos (odd) dimensions
+                if (i % 2 === 0) {
+                    // Sin - use warm colors
+                    ctx.fillStyle = value >= 0 
+                        ? `hsl(30, 70%, ${90 - intensity * 40}%)`
+                        : `hsl(200, 70%, ${50 + (1 - intensity) * 40}%)`;
+                } else {
+                    // Cos - use cool colors
+                    ctx.fillStyle = value >= 0 
+                        ? `hsl(120, 70%, ${90 - intensity * 40}%)`
+                        : `hsl(280, 70%, ${50 + (1 - intensity) * 40}%)`;
+                }
                 
                 ctx.fillRect(
                     pos * cellWidth,
@@ -889,16 +971,152 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.textAlign = 'center';
         
         // Position labels
-        for (let pos = 0; pos < maxLen; pos += 5) {
-            ctx.fillText(pos.toString(), pos * cellWidth + cellWidth / 2, height - 5);
+        for (let pos = 0; pos < maxLen; pos += Math.max(1, Math.floor(maxLen / 10))) {
+            ctx.fillText(pos.toString(), pos * cellWidth + cellWidth / 2, height + 15);
         }
         
-        // Dimension labels
-        ctx.save();
-        ctx.translate(10, height / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('Embedding Dimension', 0, 0);
-        ctx.restore();
+        // Dimension labels on the left
+        ctx.textAlign = 'right';
+        for (let i = 0; i < dim; i += Math.max(1, Math.floor(dim / 8))) {
+            ctx.fillText(`d${i}`, -5, i * cellHeight + cellHeight / 2);
+        }
+        
+        // Add hover interaction
+        canvas.onmousemove = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const pos = Math.floor(x / cellWidth);
+            const dimIdx = Math.floor(y / cellHeight);
+            
+            if (pos >= 0 && pos < maxLen && dimIdx >= 0 && dimIdx < dim) {
+                const value = encodings[pos][dimIdx];
+                const funcType = dimIdx % 2 === 0 ? 'sin' : 'cos';
+                const i = Math.floor(dimIdx / 2);
+                const angle = pos / Math.pow(10000, (2 * i) / dim);
+                
+                elements.positionHoverInfo.textContent = 
+                    `Position ${pos}, Dimension ${dimIdx}: ${funcType}(${pos}/10000^(${2*i}/${dim})) = ${funcType}(${angle.toFixed(4)}) = ${value.toFixed(4)}`;
+            }
+        };
+        
+        canvas.onmouseleave = () => {
+            elements.positionHoverInfo.textContent = 'Hover over the pattern to see values';
+        };
+    }
+
+    function visualizePositionalEncodingSteps() {
+        if (!tokens || tokens.length === 0) return;
+        
+        const dim = parseInt(elements.embeddingDim.value);
+        
+        // Step 1: Show tokens without position
+        elements.tokensNoPosition.innerHTML = '';
+        tokens.forEach((token, idx) => {
+            const tokenBox = document.createElement('div');
+            tokenBox.className = 'token-box';
+            
+            const label = document.createElement('div');
+            label.className = 'token-label';
+            label.textContent = token;
+            
+            const pos = document.createElement('div');
+            pos.style.fontSize = '12px';
+            pos.style.color = '#e74c3c';
+            pos.textContent = 'No position info!';
+            
+            tokenBox.appendChild(label);
+            tokenBox.appendChild(pos);
+            elements.tokensNoPosition.appendChild(tokenBox);
+        });
+        
+        // Step 3: Show individual position vectors
+        elements.positionVectorsGrid.innerHTML = '';
+        for (let pos = 0; pos < Math.min(tokens.length, 10); pos++) {
+            const posBox = document.createElement('div');
+            posBox.className = 'position-vector-box';
+            
+            const title = document.createElement('h6');
+            title.textContent = `Position ${pos}`;
+            posBox.appendChild(title);
+            
+            const pattern = document.createElement('div');
+            pattern.className = 'position-pattern';
+            
+            const encoding = computePositionalEncoding(pos, dim);
+            for (let i = 0; i < Math.min(dim, 8); i++) {
+                const dimBox = document.createElement('div');
+                dimBox.className = 'position-dim';
+                const value = encoding[i];
+                const intensity = (value + 1) / 2;
+                
+                if (i % 2 === 0) {
+                    dimBox.style.backgroundColor = value >= 0 
+                        ? `hsl(30, 70%, ${90 - intensity * 40}%)`
+                        : `hsl(200, 70%, ${50 + (1 - intensity) * 40}%)`;
+                } else {
+                    dimBox.style.backgroundColor = value >= 0 
+                        ? `hsl(120, 70%, ${90 - intensity * 40}%)`
+                        : `hsl(280, 70%, ${50 + (1 - intensity) * 40}%)`;
+                }
+                
+                pattern.appendChild(dimBox);
+            }
+            
+            if (dim > 8) {
+                const more = document.createElement('span');
+                more.style.fontSize = '10px';
+                more.style.color = '#666';
+                more.textContent = '...';
+                pattern.appendChild(more);
+            }
+            
+            posBox.appendChild(pattern);
+            elements.positionVectorsGrid.appendChild(posBox);
+        }
+        
+        // Step 4: Show addition visualization
+        // Draw embeddings matrix
+        drawMatrix(elements.embeddingCanvas, embeddings.slice(0, Math.min(5, tokens.length)), 'Embeddings', true);
+        
+        // Draw position encodings matrix
+        const positionEncodings = [];
+        for (let i = 0; i < Math.min(5, tokens.length); i++) {
+            positionEncodings.push(computePositionalEncoding(i, dim));
+        }
+        drawMatrix(elements.positionCanvas, positionEncodings, 'Positions', true);
+        
+        // Draw final embeddings + positions
+        const finalEmbeddings = [];
+        for (let i = 0; i < Math.min(5, tokens.length); i++) {
+            const combined = [];
+            for (let j = 0; j < dim; j++) {
+                combined.push(embeddings[i][j] + positionEncodings[i][j]);
+            }
+            finalEmbeddings.push(combined);
+        }
+        drawMatrix(elements.finalCanvas, finalEmbeddings, 'Final', true);
+        
+        // Show final tokens with position
+        elements.finalTokensPosition.innerHTML = '';
+        tokens.forEach((token, idx) => {
+            const tokenBox = document.createElement('div');
+            tokenBox.className = 'token-box';
+            
+            const label = document.createElement('div');
+            label.className = 'token-label';
+            label.textContent = token;
+            
+            const pos = document.createElement('div');
+            pos.style.fontSize = '12px';
+            pos.style.color = '#27ae60';
+            pos.textContent = `Position ${idx}`;
+            
+            tokenBox.appendChild(label);
+            tokenBox.appendChild(pos);
+            elements.finalTokensPosition.appendChild(tokenBox);
+        });
     }
 
     function displayTokenEmbeddings() {
@@ -1215,7 +1433,11 @@ document.addEventListener('DOMContentLoaded', function() {
             processMultiHeadAttention();
         } else if (targetTab === 'position') {
             const dim = parseInt(elements.embeddingDim.value);
-            drawPositionalEncoding(elements.positionEncodingViz, 20, dim);
+            const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
+            drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
+            if (tokens.length > 0) {
+                visualizePositionalEncodingSteps();
+            }
         }
     }
 
@@ -1223,6 +1445,17 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.dimDisplay.textContent = elements.embeddingDim.value;
         elements.headsDisplay.textContent = elements.numHeads.value;
         elements.tempDisplay.textContent = elements.temperature.value;
+        
+        // Update positional encoding if on that tab
+        const activeTab = document.querySelector('.viz-tab.active');
+        if (activeTab && activeTab.dataset.tab === 'position') {
+            const dim = parseInt(elements.embeddingDim.value);
+            const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
+            drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
+            if (tokens.length > 0) {
+                visualizePositionalEncodingSteps();
+            }
+        }
     }
 
     // Add event listeners
