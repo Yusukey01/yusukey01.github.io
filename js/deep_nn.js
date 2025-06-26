@@ -307,23 +307,15 @@ class AttentionTrainer {
                 </div>
                 
                 <div class="training-visualization">
-                    <div class="target-pattern">
-                        <h4>Target Attention Pattern</h4>
-                        <canvas id="target-pattern" width="200" height="200"></canvas>
-                        <p id="target-description" style="font-size: 12px; color: #666; margin-top: 5px;">
-                            Select a task to see the target pattern
-                        </p>
-                    </div>
-                    
                     <div class="loss-chart">
                         <h4>Training Loss</h4>
                         <canvas id="loss-chart" width="400" height="200"></canvas>
                     </div>
-                </div>
-                
-                <div class="attention-evolution">
-                    <h4>Attention Pattern Evolution</h4>
-                    <div class="evolution-grid" id="evolution-grid"></div>
+                    
+                    <div class="attention-evolution">
+                        <h4>Attention Pattern Evolution</h4>
+                        <div class="evolution-grid" id="evolution-grid"></div>
+                    </div>
                 </div>
                 
                 <div class="training-insights">
@@ -883,7 +875,6 @@ class AttentionTrainer {
             this.currentTask = e.target.value;
             document.querySelector('.task-description').textContent = 
                 this.tasks[this.currentTask].description;
-            this.visualizeTargetPattern();
             this.reset();
         });
         
@@ -912,38 +903,7 @@ class AttentionTrainer {
             this.reset();
         });
         
-        // Visualize initial target pattern
-        this.visualizeTargetPattern();
-        
         this.initialized = true;
-    }
-    
-    visualizeTargetPattern() {
-        const canvas = document.getElementById('target-pattern');
-        if (!canvas) return;
-        
-        // Use example tokens for visualization
-        const exampleTokens = ['the', 'cat', 'sat', 'on', 'mat'];
-        const exampleEmbeddings = this.visualizer.createEmbeddings(exampleTokens, 8);
-        
-        // Create target pattern
-        const task = this.tasks[this.currentTask];
-        const targetPattern = task.createTargets(exampleTokens, exampleEmbeddings);
-        
-        // Draw the pattern
-        this.drawMiniAttention(canvas, targetPattern);
-        
-        // Update description
-        const descriptions = {
-            nextWord: "Causal mask: each position attends to previous positions",
-            copyTask: "Identity matrix: each position attends mainly to itself",
-            similarity: "Similarity-based: tokens with shared characters attend to each other"
-        };
-        
-        const descElement = document.getElementById('target-description');
-        if (descElement) {
-            descElement.textContent = descriptions[this.currentTask];
-        }
     }
 }
 
@@ -2480,24 +2440,15 @@ class StyleGenerator {
             
             .training-visualization {
                 display: grid;
-                grid-template-columns: 200px 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 margin: 20px 0;
             }
             
-            .target-pattern, .loss-chart {
+            .loss-chart, .attention-evolution {
                 background: #f8f9fa;
                 padding: 15px;
                 border-radius: 8px;
-            }
-            
-            .target-pattern {
-                text-align: center;
-            }
-            
-            .target-pattern canvas {
-                margin: 10px auto;
-                display: block;
             }
             
             .evolution-grid {
