@@ -260,32 +260,37 @@ class AttentionTrainer {
         this.momentum_Wq = null;
         this.momentum_Wk = null;
         
+        this.currentTask = 'nextWord';
+        
+        // Initialize trainable parameters first
+        this.initializeParameters();
+        
+        // Define tasks after methods are available
+        this.setupTasks();
+    }
+    
+    setupTasks() {
         // Training task configurations with clearer descriptions
         this.tasks = {
             nextWord: {
                 name: "Next Word Prediction (Causal)",
                 description: "Learn causal attention: each word attends to previous words only (GPT-style)",
-                createTargets: this.createNextWordTargets.bind(this),
-                loss: this.mseLoss.bind(this)
+                createTargets: (tokens, embeddings) => this.createNextWordTargets(tokens, embeddings),
+                loss: (predicted, target) => this.mseLoss(predicted, target)
             },
             copyTask: {
                 name: "Copy Task (Identity)",
                 description: "Learn diagonal attention: each position focuses mainly on itself",
-                createTargets: this.createCopyTargets.bind(this),
-                loss: this.mseLoss.bind(this)
+                createTargets: (tokens, embeddings) => this.createCopyTargets(tokens, embeddings),
+                loss: (predicted, target) => this.mseLoss(predicted, target)
             },
             similarity: {
                 name: "Word Similarity (Semantic)",
                 description: "Learn semantic attention: similar words attend to each other more",
-                createTargets: this.createSimilarityTargets.bind(this),
-                loss: this.mseLoss.bind(this)
+                createTargets: (tokens, embeddings) => this.createSimilarityTargets(tokens, embeddings),
+                loss: (predicted, target) => this.mseLoss(predicted, target)
             }
         };
-        
-        this.currentTask = 'nextWord';
-        
-        // Initialize trainable parameters
-        this.initializeParameters();
     }
     
     initializeParameters() {
@@ -331,6 +336,11 @@ class AttentionTrainer {
     }
     
     createTrainingUI() {
+        // Ensure tasks are set up
+        if (!this.tasks) {
+            this.setupTasks();
+        }
+        
         return `
             <div class="training-section">
                 <h3>Training Section</h3>
@@ -340,7 +350,7 @@ class AttentionTrainer {
                         <label>Training Task:</label>
                         <select id="training-task">
                             ${Object.entries(this.tasks).map(([key, task]) => 
-                                `<option value="${key}">${task.name}</option>`
+                                `<option value="${key}" ${key === this.currentTask ? 'selected' : ''}>${task.name}</option>`
                             ).join('')}
                         </select>
                         <p class="task-description">${this.tasks[this.currentTask].description}</p>
@@ -406,8 +416,13 @@ class AttentionTrainer {
     
     // Training task implementations with meaningful patterns
     createNextWordTargets(tokens, embeddings) {
-        // For next word prediction: each position should attend to previous positions
-        // with exponentially decreasing weights (causal attention)
+        console.log('Creating next word targets for tokens:', tokens);
+        
+        if (!tokens || tokens.length === 0) {
+            console.error('No tokens provided to createNextWordTargets');
+            return [];
+        }
+        
         const seqLen = tokens.length;
         const targets = [];
         
@@ -425,31 +440,48 @@ class AttentionTrainer {
                     sum += targetRow[j];
                 }
                 // Normalize to sum to 1
-                for (let j = 0; j <= i; j++) {
-                    targetRow[j] /= sum;
+                if (sum > 0) {
+                    for (let j = 0; j <= i; j++) {
+                        targetRow[j] /= sum;
+                    }
                 }
             }
+            targets.push(targetRow);
         }
         
+        console.log('Created targets with shape:', targets.length, 'x', targets[0]?.length);
         return targets;
     }
     
     createCopyTargets(tokens, embeddings) {
-        // For copy task: strong diagonal attention (each position attends to itself)
+        console.log('Creating copy targets for tokens:', tokens);
+        
+        if (!tokens || tokens.length === 0) {
+            console.error('No tokens provided to createCopyTargets');
+            return [];
+        }
+        
         const seqLen = tokens.length;
         const targets = [];
         
         for (let i = 0; i < seqLen; i++) {
-            const targetRow = new Array(seqLen).fill(0.05 / (seqLen - 1)); // Small attention to others
+            const targetRow = new Array(seqLen).fill(0.05 / Math.max(1, seqLen - 1)); // Small attention to others
             targetRow[i] = 0.95; // Strong self-attention
             targets.push(targetRow);
         }
         
+        console.log('Created targets with shape:', targets.length, 'x', targets[0]?.length);
         return targets;
     }
     
     createSimilarityTargets(tokens, embeddings) {
-        // For similarity: attend based on token similarity
+        console.log('Creating similarity targets for tokens:', tokens);
+        
+        if (!tokens || tokens.length === 0) {
+            console.error('No tokens provided to createSimilarityTargets');
+            return [];
+        }
+        
         const seqLen = tokens.length;
         const targets = [];
         
@@ -462,7 +494,7 @@ class AttentionTrainer {
                 // Base similarity on shared characters and length difference
                 const shared = this.countSharedChars(tokens[i], tokens[j]);
                 const lenDiff = Math.abs(tokens[i].length - tokens[j].length);
-                const similarity = shared / Math.max(tokens[i].length, tokens[j].length);
+                const similarity = shared / Math.max(tokens[i].length, tokens[j].length, 1);
                 
                 // Boost self-attention and similar tokens
                 if (i === j) {
@@ -474,13 +506,16 @@ class AttentionTrainer {
             }
             
             // Normalize
-            for (let j = 0; j < seqLen; j++) {
-                targetRow[j] /= sum;
+            if (sum > 0) {
+                for (let j = 0; j < seqLen; j++) {
+                    targetRow[j] /= sum;
+                }
             }
             
             targets.push(targetRow);
         }
         
+        console.log('Created targets with shape:', targets.length, 'x', targets[0]?.length);
         return targets;
     }
     
@@ -754,19 +789,35 @@ class AttentionTrainer {
         const task = this.tasks[this.currentTask];
         console.log('Current task:', this.currentTask, task);
         
-        if (!task || !task.createTargets || !task.loss) {
+        if (!task || typeof task.createTargets !== 'function' || typeof task.loss !== 'function') {
             console.error('Invalid task configuration:', task);
             alert('Invalid training task configuration.');
             this.stopTraining();
             return;
         }
         
-        const targets = task.createTargets(tokens, embeddings);
+        let targets;
+        try {
+            targets = task.createTargets(tokens, embeddings);
+            console.log('Targets created:', targets);
+        } catch (error) {
+            console.error('Error in createTargets:', error);
+            alert('Error creating training targets: ' + error.message);
+            this.stopTraining();
+            return;
+        }
         
         // Validate targets
-        if (!targets || targets.length !== tokens.length) {
+        if (!targets || !Array.isArray(targets) || targets.length === 0) {
             console.error('Invalid targets created:', targets);
-            alert('Error creating training targets.');
+            alert('Error: No targets were created.');
+            this.stopTraining();
+            return;
+        }
+        
+        if (targets.length !== tokens.length) {
+            console.error('Target length mismatch:', targets.length, 'vs', tokens.length);
+            alert('Error: Target length does not match token length.');
             this.stopTraining();
             return;
         }
