@@ -234,15 +234,28 @@ class AttentionTrainer {
     initializeParameters() {
         const dim = parseInt(this.visualizer.elements.embedding_dim.value);
         
-        // Initialize with small random values
-        this.Wq = MatrixUtils.initialize(dim, dim, 0.1);
-        this.Wk = MatrixUtils.initialize(dim, dim, 0.1);
-        this.Wv = MatrixUtils.initialize(dim, dim, 0.1);
+        // Initialize with Xavier/He initialization for better training
+        const scale = Math.sqrt(2.0 / dim);
+        this.Wq = this.xavierInitialize(dim, dim, scale);
+        this.Wk = this.xavierInitialize(dim, dim, scale);
+        this.Wv = this.xavierInitialize(dim, dim, scale);
         
         // Store original weights
         this.originalWq = null;
         this.originalWk = null;
         this.originalWv = null;
+    }
+    
+    xavierInitialize(rows, cols, scale = 1.0) {
+        const matrix = [];
+        for (let i = 0; i < rows; i++) {
+            matrix[i] = [];
+            for (let j = 0; j < cols; j++) {
+                // Xavier initialization
+                matrix[i][j] = (Math.random() * 2 - 1) * scale * Math.sqrt(6.0 / (rows + cols));
+            }
+        }
+        return matrix;
     }
     
     createTrainingUI() {
@@ -410,31 +423,73 @@ class AttentionTrainer {
         const seqLen = embeddings.length;
         const dim = embeddings[0].length;
         
-        // Compute attention weight gradients
+        // Compute attention weight gradients (dL/dA)
         const dWeights = [];
         for (let i = 0; i < seqLen; i++) {
             dWeights[i] = [];
             for (let j = 0; j < seqLen; j++) {
-                dWeights[i][j] = 2 * (attentionWeights[i][j] - target[i][j]) / seqLen;
+                dWeights[i][j] = 2 * (attentionWeights[i][j] - target[i][j]);
             }
         }
         
-        // Simplified gradient updates
-        for (let i = 0; i < dim; i++) {
-            for (let j = 0; j < dim; j++) {
-                let gradQ = 0;
-                let gradK = 0;
+        // Compute gradients through softmax and attention scores
+        // This is a simplified but working gradient computation
+        const Q = MatrixUtils.multiply(embeddings, this.Wq);
+        const K = MatrixUtils.multiply(embeddings, this.Wk);
+        const V = MatrixUtils.multiply(embeddings, this.Wv);
+        
+        const dim_k = K[0].length;
+        const scale = Math.sqrt(dim_k);
+        
+        // Gradient w.r.t Q and K through attention mechanism
+        const dQ = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
+        const dK = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
+        
+        for (let i = 0; i < seqLen; i++) {
+            for (let j = 0; j < seqLen; j++) {
+                const grad = dWeights[i][j] * attentionWeights[i][j];
                 
-                for (let s = 0; s < seqLen; s++) {
-                    for (let t = 0; t < seqLen; t++) {
-                        const errorSignal = dWeights[s][t];
-                        gradQ += errorSignal * embeddings[s][i] * 0.1;
-                        gradK += errorSignal * embeddings[t][i] * 0.1;
+                for (let d = 0; d < dim_k; d++) {
+                    // Gradient flows through softmax and QK^T
+                    dQ[i][d] += grad * K[j][d] / scale;
+                    dK[j][d] += grad * Q[i][d] / scale;
+                }
+                
+                // Account for softmax derivative
+                for (let k = 0; k < seqLen; k++) {
+                    if (k !== j) {
+                        const grad2 = -dWeights[i][k] * attentionWeights[i][j] * attentionWeights[i][k];
+                        for (let d = 0; d < dim_k; d++) {
+                            dQ[i][d] += grad2 * K[j][d] / scale;
+                            dK[j][d] += grad2 * Q[i][d] / scale;
+                        }
                     }
                 }
+            }
+        }
+        
+        // Update weight matrices using gradients
+        const embT = MatrixUtils.transpose(embeddings);
+        const dWq = MatrixUtils.multiply(embT, dQ);
+        const dWk = MatrixUtils.multiply(embT, dK);
+        
+        // Apply updates with gradient clipping
+        const clipValue = 1.0;
+        for (let i = 0; i < dim; i++) {
+            for (let j = 0; j < dim_k; j++) {
+                // Clip gradients to prevent explosion
+                const gradQ = Math.max(-clipValue, Math.min(clipValue, dWq[i][j]));
+                const gradK = Math.max(-clipValue, Math.min(clipValue, dWk[i][j]));
                 
                 this.Wq[i][j] -= learningRate * gradQ;
                 this.Wk[i][j] -= learningRate * gradK;
+            }
+        }
+        
+        // Small random perturbation to V to maintain diversity
+        for (let i = 0; i < dim; i++) {
+            for (let j = 0; j < dim_k; j++) {
+                this.Wv[i][j] += (Math.random() - 0.5) * 0.001;
             }
         }
     }
@@ -458,18 +513,28 @@ class AttentionTrainer {
             return;
         }
         
-        // Store original weights
-        if (!this.originalWq) {
-            this.storeOriginalWeights();
-        }
-        
+        // Process attention first to ensure we have embeddings
         this.visualizer.processAttention();
         const tokens = this.visualizer.state.tokens;
         const embeddings = this.visualizer.state.embeddings;
         
+        // Initialize parameters with proper dimensions
+        const dim = parseInt(this.visualizer.elements.embedding_dim.value);
+        if (this.Wq.length !== dim) {
+            this.initializeParameters();
+        }
+        
+        // Store original weights before training
+        if (!this.originalWq) {
+            this.storeOriginalWeights();
+        }
+        
         // Create targets
         const task = this.tasks[this.currentTask];
         const targets = task.createTargets(tokens, embeddings);
+        
+        // Use adaptive learning rate
+        let adaptiveLR = this.learningRate;
         
         // Capture initial state
         this.captureAttentionSnapshot(0);
@@ -480,31 +545,55 @@ class AttentionTrainer {
             
             this.currentEpoch = epoch + 1;
             
-            // Forward pass
+            // Forward pass with current weights
             const result = this.forward(embeddings);
             
             // Compute loss
             const loss = task.loss(result.attentionWeights, targets);
             this.trainingHistory.push(loss);
             
-            // Backward pass
-            this.backward(embeddings, result.attentionWeights, targets, this.learningRate);
+            // Adaptive learning rate decay
+            if (epoch > 0 && epoch % 50 === 0) {
+                adaptiveLR *= 0.9;
+            }
+            
+            // Backward pass with gradient computation
+            this.backward(embeddings, result.attentionWeights, targets, adaptiveLR);
+            
+            // Add small noise to prevent getting stuck
+            if (epoch % 20 === 0) {
+                this.addNoise(0.01);
+            }
             
             // Update UI
             this.updateTrainingProgress(epoch + 1, loss);
             
             // Update visualization periodically
-            if (epoch % 10 === 0 || epoch === this.epochs - 1) {
+            if (epoch % 5 === 0 || epoch === this.epochs - 1) {
                 this.updateVisualizerWeights();
-                this.captureAttentionSnapshot(epoch + 1);
+                if (epoch % 20 === 0 || epoch === this.epochs - 1) {
+                    this.captureAttentionSnapshot(epoch + 1);
+                }
             }
             
             // Small delay for visualization
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise(resolve => setTimeout(resolve, 5));
         }
         
+        // Final update
+        this.updateVisualizerWeights();
         this.stopTraining();
         this.showTrainingInsights();
+    }
+    
+    addNoise(scale) {
+        const dim = this.Wq.length;
+        for (let i = 0; i < dim; i++) {
+            for (let j = 0; j < this.Wq[0].length; j++) {
+                this.Wq[i][j] += (Math.random() - 0.5) * scale;
+                this.Wk[i][j] += (Math.random() - 0.5) * scale;
+            }
+        }
     }
     
     storeOriginalWeights() {
@@ -627,21 +716,27 @@ class AttentionTrainer {
     }
     
     updateVisualizerWeights() {
-        // Update the main visualizer with trained weights
+        // Use the trained weights for attention computation
+        const temperature = parseFloat(this.visualizer.elements.temperature.value);
+        
+        // Update Q, K, V with trained weights
         this.visualizer.state.Q = MatrixUtils.multiply(this.visualizer.state.embeddings, this.Wq);
         this.visualizer.state.K = MatrixUtils.multiply(this.visualizer.state.embeddings, this.Wk);
         this.visualizer.state.V = MatrixUtils.multiply(this.visualizer.state.embeddings, this.Wv);
         
+        // Compute attention with trained parameters
         const attention = this.visualizer.computeAttention(
             this.visualizer.state.Q,
             this.visualizer.state.K,
-            this.visualizer.state.V
+            this.visualizer.state.V,
+            temperature
         );
         
         this.visualizer.state.attentionScores = attention.scores;
         this.visualizer.state.attentionWeights = attention.weights;
         this.visualizer.state.outputVectors = attention.output;
         
+        // Update visualizations
         this.visualizer.updateVisualizations();
     }
     
@@ -673,17 +768,15 @@ class AttentionTrainer {
     }
     
     reset() {
+        // Reset to initial random weights
         this.initializeParameters();
         this.trainingHistory = [];
         this.currentEpoch = 0;
         
-        // Restore original weights if available
-        if (this.originalWq) {
-            const dim = this.originalWq.length;
-            this.Wq = Array.from({length: dim}, (_, i) => [...this.originalWq[i]]);
-            this.Wk = Array.from({length: dim}, (_, i) => [...this.originalWk[i]]);
-            this.Wv = Array.from({length: dim}, (_, i) => [...this.originalWv[i]]);
-        }
+        // Clear stored original weights
+        this.originalWq = null;
+        this.originalWk = null;
+        this.originalWv = null;
         
         // Reset progress UI
         document.getElementById('current-epoch').textContent = '0';
@@ -696,7 +789,15 @@ class AttentionTrainer {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Reset main visualizer
+        // Reset main visualizer to use new random weights
+        if (this.visualizer.state.Wq) {
+            const dim = this.visualizer.state.Wq.length;
+            this.visualizer.state.Wq = MatrixUtils.initialize(dim, dim);
+            this.visualizer.state.Wk = MatrixUtils.initialize(dim, dim);
+            this.visualizer.state.Wv = MatrixUtils.initialize(dim, dim);
+        }
+        
+        // Reprocess with new weights
         this.visualizer.processAttention();
         
         document.getElementById('training-explanation').innerHTML = 
@@ -945,14 +1046,24 @@ class AttentionVisualizer {
         this.state.tokens = this.tokenize(sentence);
         this.state.embeddings = this.createEmbeddings(this.state.tokens, dim);
         
-        // Create Q, K, V matrices
-        const Wq = MatrixUtils.initialize(dim, dim);
-        const Wk = MatrixUtils.initialize(dim, dim);
-        const Wv = MatrixUtils.initialize(dim, dim);
-        
-        this.state.Q = MatrixUtils.multiply(this.state.embeddings, Wq);
-        this.state.K = MatrixUtils.multiply(this.state.embeddings, Wk);
-        this.state.V = MatrixUtils.multiply(this.state.embeddings, Wv);
+        // Check if we're in training mode and have trained weights
+        if (this.trainer && this.trainer.Wq && this.trainer.Wq.length === dim) {
+            // Use trained weights
+            this.state.Q = MatrixUtils.multiply(this.state.embeddings, this.trainer.Wq);
+            this.state.K = MatrixUtils.multiply(this.state.embeddings, this.trainer.Wk);
+            this.state.V = MatrixUtils.multiply(this.state.embeddings, this.trainer.Wv);
+        } else {
+            // Create new random weights only if not training
+            if (!this.state.Wq || this.state.Wq.length !== dim) {
+                this.state.Wq = MatrixUtils.initialize(dim, dim);
+                this.state.Wk = MatrixUtils.initialize(dim, dim);
+                this.state.Wv = MatrixUtils.initialize(dim, dim);
+            }
+            
+            this.state.Q = MatrixUtils.multiply(this.state.embeddings, this.state.Wq);
+            this.state.K = MatrixUtils.multiply(this.state.embeddings, this.state.Wk);
+            this.state.V = MatrixUtils.multiply(this.state.embeddings, this.state.Wv);
+        }
         
         // Compute attention
         const attention = this.computeAttention(this.state.Q, this.state.K, this.state.V, temperature);
