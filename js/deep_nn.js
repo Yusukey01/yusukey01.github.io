@@ -1,757 +1,58 @@
-// Interactive Attention Mechanism Visualizer
+/**
+ * Optimized Interactive Attention Mechanism Visualizer
+ * 
+ * Key optimizations:
+ * 1. Class-based architecture for better organization
+ * 2. Separated configuration and constants
+ * 3. Consolidated drawing utilities
+ * 4. Performance improvements in matrix operations
+ * 5. Better error handling and input validation
+ * 6. Improved code reusability and maintainability
+ */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the container element
-    const container = document.getElementById('transformer_demo');
+// Configuration constants
+const CONFIG = {
+    CANVAS_SIZES: {
+        matrix: { width: 200, height: 150 },
+        attention: { width: 300, height: 300 },
+        multihead: { width: 180, height: 180 },
+        concat: { width: 600, height: 200 },
+        position: { width: 600, height: 200 }
+    },
+    COLORS: {
+        primary: '#3498db',
+        secondary: '#e74c3c',
+        success: '#2ecc71',
+        warning: '#f39c12',
+        info: '#95a5a6',
+        dark: '#2c3e50',
+        light: '#ecf0f1',
+        attentionHue: 210
+    },
+    DEFAULTS: {
+        embeddingDim: 8,
+        numHeads: 2,
+        temperature: 1.0,
+        sentence: "The cat sat on mat"
+    }
+};
+
+// Matrix utility functions
+const MatrixUtils = {
+    initialize(rows, cols, scale = 0.5) {
+        return Array.from({length: rows}, () => 
+            Array.from({length: cols}, () => (Math.random() - 0.5) * scale)
+        );
+    },
     
-    if (!container) {
-        console.error('Container element not found!');
-        return;
-    }
-
-    // Create HTML structure
-    container.innerHTML = `
-        <div class="attention-container">
-            <div class="attention-layout">
-                <div class="attention-visualization">
-                    <div class="input-section">
-                        <h3>Input Sentence</h3>
-                        <input type="text" id="input-sentence" value="The cat sat on mat" placeholder="Enter a short sentence...">
-                        <button id="process-btn" class="primary-btn">Process with Attention</button>
-                    </div>
-                    
-                    <div class="visualization-tabs">
-                        <button class="viz-tab active" data-tab="single">Single-Head Attention</button>
-                        <button class="viz-tab" data-tab="multi">Multi-Head Attention</button>
-                        <button class="viz-tab" data-tab="position">Positional Encoding</button>
-                    </div>
-                    
-                    <div class="viz-content">
-                        <!-- Single-Head Attention Tab -->
-                        <div id="single-tab" class="viz-pane active">
-                            <div class="attention-steps">
-                                <div class="step-section">
-                                    <h4>Step 1: Token Embeddings</h4>
-                                    <div id="token-embeddings"></div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 2: Query, Key, Value Projections</h4>
-                                    <div class="qkv-matrices">
-                                        <div class="matrix-display">
-                                            <h5>Q (Query)</h5>
-                                            <canvas id="query-matrix" width="200" height="150"></canvas>
-                                        </div>
-                                        <div class="matrix-display">
-                                            <h5>K (Key)</h5>
-                                            <canvas id="key-matrix" width="200" height="150"></canvas>
-                                        </div>
-                                        <div class="matrix-display">
-                                            <h5>V (Value)</h5>
-                                            <canvas id="value-matrix" width="200" height="150"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 3: Attention Scores (QK<sup>T</sup>/√d<sub>k</sub>)</h4>
-                                    <canvas id="attention-scores" width="300" height="300"></canvas>
-                                    <div class="score-info">
-                                        <span>Hover over cells to see score calculation</span>
-                                        <div id="score-detail"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 4: Attention Weights (Softmax)</h4>
-                                    <canvas id="attention-weights" width="300" height="300"></canvas>
-                                    <div class="weight-legend">
-                                        <span>0.0</span>
-                                        <div class="gradient-bar"></div>
-                                        <span>1.0</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 5: Attended Values</h4>
-                                    <div id="output-values"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Multi-Head Attention Tab -->
-                        <div id="multi-tab" class="viz-pane">
-                            <div class="multi-head-container">
-                                <div class="head-selector">
-                                    <label>Select Head to View Details:</label>
-                                    <div id="head-buttons"></div>
-                                </div>
-                                
-                                <div class="multi-head-overview">
-                                    <h4>All Heads Attention Patterns</h4>
-                                    <div id="all-heads-grid"></div>
-                                </div>
-                                
-                                <div id="selected-head-details" style="display: none;">
-                                    <h4>Head <span id="current-head-num">1</span> Detailed View</h4>
-                                    
-                                    <div class="step-section">
-                                        <h5>Q, K, V Projections (Head <span class="current-head-num">1</span>)</h5>
-                                        <div class="qkv-matrices">
-                                            <div class="matrix-display">
-                                                <h6>Q</h6>
-                                                <canvas id="head-query-matrix" width="150" height="120"></canvas>
-                                            </div>
-                                            <div class="matrix-display">
-                                                <h6>K</h6>
-                                                <canvas id="head-key-matrix" width="150" height="120"></canvas>
-                                            </div>
-                                            <div class="matrix-display">
-                                                <h6>V</h6>
-                                                <canvas id="head-value-matrix" width="150" height="120"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="step-section">
-                                        <h5>Attention Scores & Weights</h5>
-                                        <div class="attention-comparison">
-                                            <div>
-                                                <h6>Scores (QK<sup>T</sup>/√d<sub>k</sub>)</h6>
-                                                <canvas id="head-attention-scores" width="200" height="200"></canvas>
-                                            </div>
-                                            <div>
-                                                <h6>Weights (Softmax)</h6>
-                                                <canvas id="head-attention-weights" width="200" height="200"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="concat-section">
-                                    <h4>Concatenation & Output Projection</h4>
-                                    <canvas id="concat-visualization" width="600" height="200"></canvas>
-                                    <p class="formula">MultiHead(Q,K,V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>)W<sup>O</sup></p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Positional Encoding Tab -->
-                        <div id="position-tab" class="viz-pane">
-                            <div class="position-encoding">
-                                <div class="step-section">
-                                    <h4>Why Positional Encoding?</h4>
-                                    <p>Attention mechanisms have no inherent notion of word order. Positional encodings add position information to help the model understand sequence structure.</p>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 1: Token Embeddings Without Position</h4>
-                                    <div id="tokens-no-position"></div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 2: Sinusoidal Positional Encoding Pattern</h4>
-                                    <canvas id="position-encoding-viz" width="600" height="200"></canvas>
-                                    <div class="encoding-formula">
-                                        <p>PE(pos, 2i) = sin(pos/10000<sup>2i/d</sup>)</p>
-                                        <p>PE(pos, 2i+1) = cos(pos/10000<sup>2i/d</sup>)</p>
-                                    </div>
-                                    <div id="position-hover-info">Hover over the pattern to see values</div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 3: Individual Position Vectors</h4>
-                                    <div id="position-vectors-grid"></div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Step 4: Embeddings + Positional Encoding</h4>
-                                    <div class="encoding-addition">
-                                        <canvas id="embedding-canvas" width="180" height="150"></canvas>
-                                        <span class="plus-sign">+</span>
-                                        <canvas id="position-canvas" width="180" height="150"></canvas>
-                                        <span class="equals-sign">=</span>
-                                        <canvas id="final-canvas" width="180" height="150"></canvas>
-                                    </div>
-                                    <div id="final-tokens-position"></div>
-                                </div>
-                                
-                                <div class="step-section">
-                                    <h4>Positional Encoding Properties</h4>
-                                    <div class="properties-grid">
-                                        <div class="property-box">
-                                            <h5>Unique Encoding</h5>
-                                            <p>Each position has a unique encoding vector</p>
-                                        </div>
-                                        <div class="property-box">
-                                            <h5>Relative Position</h5>
-                                            <p>Model can learn to attend based on relative positions</p>
-                                        </div>
-                                        <div class="property-box">
-                                            <h5>Extrapolation</h5>
-                                            <p>Can handle sequences longer than training data</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="controls-panel">
-                    <h3>Parameters</h3>
-                    
-                    <div class="control-group">
-                        <label for="embedding-dim">Embedding Dimension (d<sub>model</sub>):</label>
-                        <input type="range" id="embedding-dim" min="4" max="16" step="2" value="8">
-                        <span id="dim-display">8</span>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="num-heads">Number of Attention Heads:</label>
-                        <input type="range" id="num-heads" min="1" max="4" step="1" value="2">
-                        <span id="heads-display">2</span>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="temperature">Temperature (for visualization):</label>
-                        <input type="range" id="temperature" min="0.5" max="2.0" step="0.1" value="1.0">
-                        <span id="temp-display">1.0</span>
-                    </div>
-                    
-                    <div class="info-panel">
-                        <h4>Current Computation:</h4>
-                        <div id="computation-info">
-                            <p>Click "Process with Attention" to start</p>
-                        </div>
-                    </div>
-                    
-                    <div class="formula-panel">
-                        <h4>Key Formulas:</h4>
-                        <div class="formula">
-                            Attention(Q,K,V) = softmax(QK<sup>T</sup>/√d<sub>k</sub>)V
-                        </div>
-                        <div class="formula">
-                            MultiHead = Concat(head<sub>1</sub>, ..., head<sub>h</sub>)W<sup>O</sup>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Add styles
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        .attention-container {
-            font-family: Arial, sans-serif;
-            margin: 20px 0;
-        }
-        
-        .attention-layout {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .attention-visualization {
-            flex: 1;
-            min-width: 600px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        
-        .controls-panel {
-            width: 300px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            height: fit-content;
-        }
-        
-        .input-section {
-            margin-bottom: 20px;
-        }
-        
-        .input-section h3 {
-            margin-bottom: 10px;
-        }
-        
-        #input-sentence {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        
-        .primary-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-        }
-        
-        .primary-btn:hover {
-            background: #2980b9;
-        }
-        
-        .visualization-tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-        
-        .viz-tab {
-            padding: 10px 20px;
-            border: none;
-            background: #f0f0f0;
-            cursor: pointer;
-            border-radius: 4px 4px 0 0;
-            transition: all 0.3s;
-        }
-        
-        .viz-tab.active {
-            background: #3498db;
-            color: white;
-        }
-        
-        .viz-tab.has-data::after {
-            content: '•';
-            color: #27ae60;
-            margin-left: 5px;
-            font-size: 20px;
-            vertical-align: middle;
-        }
-        
-        .viz-tab.active.has-data::after {
-            color: #fff;
-        }
-        
-        .viz-pane {
-            display: none;
-        }
-        
-        .viz-pane.active {
-            display: block;
-        }
-        
-        .step-section {
-            margin-bottom: 30px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .step-section h4 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-        
-        .qkv-matrices {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .matrix-display {
-            text-align: center;
-        }
-        
-        .matrix-display h5 {
-            margin-bottom: 10px;
-            color: #34495e;
-        }
-        
-        canvas {
-            border: 1px solid #ddd;
-            background: white;
-        }
-        
-        #attention-scores, #attention-weights {
-            display: block;
-            margin: 0 auto;
-        }
-        
-        .score-info {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-        
-        #score-detail {
-            margin-top: 5px;
-            font-family: monospace;
-            background: #f0f0f0;
-            padding: 5px;
-            border-radius: 4px;
-            min-height: 25px;
-        }
-        
-        .weight-legend {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .gradient-bar {
-            width: 200px;
-            height: 20px;
-            background: linear-gradient(to right, #f0f0f0, #3498db);
-            border: 1px solid #ddd;
-        }
-        
-        .control-group {
-            margin-bottom: 20px;
-        }
-        
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        .control-group input[type="range"] {
-            width: calc(100% - 50px);
-            margin-right: 10px;
-        }
-        
-        .info-panel, .formula-panel {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        
-        .formula {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            font-family: 'Times New Roman', serif;
-            text-align: center;
-        }
-        
-        #token-embeddings, #output-values {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .token-box {
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 4px;
-            text-align: center;
-            min-width: 60px;
-        }
-        
-        .token-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .token-vector {
-            font-size: 12px;
-            font-family: monospace;
-        }
-        
-        .multi-head-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .head-selector {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .head-selector label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        
-        #head-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .head-btn {
-            padding: 8px 16px;
-            border: 2px solid #3498db;
-            background: white;
-            color: #3498db;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .head-btn.active {
-            background: #3498db;
-            color: white;
-        }
-        
-        .head-btn:hover {
-            background: #e3f2fd;
-        }
-        
-        .head-btn.active:hover {
-            background: #2980b9;
-        }
-        
-        .multi-head-overview {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        #all-heads-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .mini-head-viz {
-            text-align: center;
-        }
-        
-        .mini-head-viz h6 {
-            margin: 0 0 5px 0;
-            color: #34495e;
-            font-size: 14px;
-        }
-        
-        #selected-head-details {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        #selected-head-details h4 {
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-        
-        #selected-head-details h5 {
-            margin-bottom: 15px;
-            color: #34495e;
-        }
-        
-        #selected-head-details h6 {
-            margin-bottom: 10px;
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-        
-        .attention-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            justify-items: center;
-        }
-        
-        .attention-comparison > div {
-            text-align: center;
-        }
-        
-        .concat-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        #concat-visualization {
-            margin: 20px auto;
-        }
-        
-        @media (max-width: 768px) {
-            .attention-layout {
-                flex-direction: column;
-            }
-            
-            .attention-visualization {
-                min-width: auto;
-            }
-            
-            .controls-panel {
-                width: 100%;
-            }
-            
-            .qkv-matrices {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .attention-comparison {
-                grid-template-columns: 1fr;
-            }
-            
-            #all-heads-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-            
-            #concat-visualization {
-                width: 100%;
-                max-width: 600px;
-                height: auto;
-            }
-            
-            .encoding-addition {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .encoding-addition canvas {
-                max-width: 150px;
-            }
-            
-            .properties-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    `;
-    document.head.appendChild(styleElement);
-
-    // Get DOM elements
-    const elements = {
-        inputSentence: document.getElementById('input-sentence'),
-        processBtn: document.getElementById('process-btn'),
-        embeddingDim: document.getElementById('embedding-dim'),
-        dimDisplay: document.getElementById('dim-display'),
-        numHeads: document.getElementById('num-heads'),
-        headsDisplay: document.getElementById('heads-display'),
-        temperature: document.getElementById('temperature'),
-        tempDisplay: document.getElementById('temp-display'),
-        computationInfo: document.getElementById('computation-info'),
-        
-        // Visualization elements
-        tokenEmbeddings: document.getElementById('token-embeddings'),
-        queryMatrix: document.getElementById('query-matrix'),
-        keyMatrix: document.getElementById('key-matrix'),
-        valueMatrix: document.getElementById('value-matrix'),
-        attentionScores: document.getElementById('attention-scores'),
-        attentionWeights: document.getElementById('attention-weights'),
-        outputValues: document.getElementById('output-values'),
-        scoreDetail: document.getElementById('score-detail'),
-        
-        // Multi-head elements
-        headButtons: document.getElementById('head-buttons'),
-        allHeadsGrid: document.getElementById('all-heads-grid'),
-        selectedHeadDetails: document.getElementById('selected-head-details'),
-        currentHeadNum: document.getElementById('current-head-num'),
-        currentHeadNumSpans: document.getElementsByClassName('current-head-num'),
-        headQueryMatrix: document.getElementById('head-query-matrix'),
-        headKeyMatrix: document.getElementById('head-key-matrix'),
-        headValueMatrix: document.getElementById('head-value-matrix'),
-        headAttentionScores: document.getElementById('head-attention-scores'),
-        headAttentionWeights: document.getElementById('head-attention-weights'),
-        concatVisualization: document.getElementById('concat-visualization'),
-        
-        // Positional encoding
-        positionEncodingViz: document.getElementById('position-encoding-viz'),
-        tokensNoPosition: document.getElementById('tokens-no-position'),
-        positionVectorsGrid: document.getElementById('position-vectors-grid'),
-        positionHoverInfo: document.getElementById('position-hover-info'),
-        embeddingCanvas: document.getElementById('embedding-canvas'),
-        positionCanvas: document.getElementById('position-canvas'),
-        finalCanvas: document.getElementById('final-canvas'),
-        finalTokensPosition: document.getElementById('final-tokens-position'),
-        
-        // Tabs
-        vizTabs: document.querySelectorAll('.viz-tab'),
-        vizPanes: document.querySelectorAll('.viz-pane')
-    };
-
-    // State variables
-    let tokens = [];
-    let embeddings = [];
-    let Q, K, V;
-    let attentionScores = [];
-    let attentionWeights = [];
-    let outputVectors = [];
-    let multiHeadResults = [];
-
-    // Helper functions
-    function tokenize(sentence) {
-        // Simple tokenization by splitting on spaces and converting to lowercase
-        return sentence.toLowerCase().split(/\s+/).filter(token => token.length > 0);
-    }
-
-    function initializeRandomMatrix(rows, cols, scale = 0.5) {
-        const matrix = [];
-        for (let i = 0; i < rows; i++) {
-            matrix[i] = [];
-            for (let j = 0; j < cols; j++) {
-                matrix[i][j] = (Math.random() - 0.5) * scale;
-            }
-        }
-        return matrix;
-    }
-
-    // Simple seeded random for consistent embeddings
-    function seededRandom(seed) {
-        const x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
-    }
-
-    function createEmbeddings(tokens, dim) {
-        // Create random embeddings for each token
-        const embeddings = [];
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            const embedding = [];
-            // Use a simple hash to get consistent embeddings for same tokens
-            let hash = 0;
-            for (let j = 0; j < token.length; j++) {
-                hash = ((hash << 5) - hash) + token.charCodeAt(j);
-                hash = hash & hash;
-            }
-            
-            // Generate embedding values
-            for (let j = 0; j < dim; j++) {
-                embedding.push((seededRandom(hash + j * 1000) - 0.5) * 0.5);
-            }
-            embeddings.push(embedding);
-        }
-        return embeddings;
-    }
-
-    function matrixMultiply(A, B) {
+    multiply(A, B) {
         const rowsA = A.length;
         const colsA = A[0].length;
-        const rowsB = B.length;
         const colsB = B[0].length;
         
-        if (colsA !== rowsB) {
-            throw new Error('Invalid matrix dimensions for multiplication');
-        }
-        
-        const result = [];
+        const result = new Array(rowsA);
         for (let i = 0; i < rowsA; i++) {
-            result[i] = [];
+            result[i] = new Array(colsB);
             for (let j = 0; j < colsB; j++) {
                 let sum = 0;
                 for (let k = 0; k < colsA; k++) {
@@ -761,50 +62,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         return result;
-    }
-
-    function transpose(matrix) {
+    },
+    
+    transpose(matrix) {
         const rows = matrix.length;
         const cols = matrix[0].length;
-        const result = [];
-        for (let j = 0; j < cols; j++) {
-            result[j] = [];
-            for (let i = 0; i < rows; i++) {
-                result[j][i] = matrix[i][j];
-            }
-        }
-        return result;
-    }
-
-    function softmax(scores, temperature = 1.0) {
+        return Array.from({length: cols}, (_, j) =>
+            Array.from({length: rows}, (_, i) => matrix[i][j])
+        );
+    },
+    
+    softmax(scores, temperature = 1.0) {
         const expScores = scores.map(score => Math.exp(score / temperature));
         const sumExp = expScores.reduce((a, b) => a + b, 0);
         return expScores.map(exp => exp / sumExp);
     }
+};
 
-    function computeAttention(Q, K, V, temperature = 1.0) {
-        const seqLen = Q.length;
-        const dim = K[0].length;
-        
-        // Compute QK^T
-        const scores = matrixMultiply(Q, transpose(K));
-        
-        // Scale by sqrt(d_k)
-        const scaledScores = scores.map(row => 
-            row.map(score => score / Math.sqrt(dim))
-        );
-        
-        // Apply softmax to each row
-        const weights = scaledScores.map(row => softmax(row, temperature));
-        
-        // Compute weighted values
-        const output = matrixMultiply(weights, V);
-        
-        return { scores: scaledScores, weights, output };
-    }
-
-    // Visualization functions
-    function drawMatrix(canvas, matrix, title = '', colorScale = false) {
+// Canvas drawing utilities
+class CanvasUtils {
+    static drawMatrix(canvas, matrix, colorScale = false) {
         const ctx = canvas.getContext('2d');
         const rows = matrix.length;
         const cols = matrix[0].length;
@@ -818,19 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const value = matrix[i][j];
                 
                 if (colorScale) {
-                    // Use color to represent values
                     const intensity = Math.max(0, Math.min(1, (value + 1) / 2));
-                    const hue = 210; // Blue hue
-                    ctx.fillStyle = `hsl(${hue}, 70%, ${90 - intensity * 40}%)`;
+                    ctx.fillStyle = `hsl(${CONFIG.COLORS.attentionHue}, 70%, ${90 - intensity * 40}%)`;
                 } else {
-                    // Grayscale
                     const gray = Math.floor(255 - Math.abs(value) * 100);
                     ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
                 }
                 
                 ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth - 1, cellHeight - 1);
                 
-                // Draw value text if space allows
                 if (cellWidth > 30 && cellHeight > 20) {
                     ctx.fillStyle = Math.abs(value) > 0.5 ? 'white' : 'black';
                     ctx.font = '10px Arial';
@@ -844,11 +117,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-
-    function drawAttentionMatrix(canvas, matrix, tokens, onHover) {
+    
+    static drawAttentionMatrix(canvas, matrix, tokens, onHover) {
         const ctx = canvas.getContext('2d');
         const size = matrix.length;
-        const cellSize = canvas.width / (size + 1); // +1 for labels
+        const cellSize = canvas.width / (size + 1);
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -876,10 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const value = matrix[i][j];
                 const intensity = Math.min(1, Math.max(0, value));
                 
-                // Color based on attention weight
-                const hue = 210;
                 const lightness = 90 - intensity * 60;
-                ctx.fillStyle = `hsl(${hue}, 70%, ${lightness}%)`;
+                ctx.fillStyle = `hsl(${CONFIG.COLORS.attentionHue}, 70%, ${lightness}%)`;
                 
                 ctx.fillRect(
                     cellSize * (j + 1) + 1,
@@ -888,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     cellSize - 2
                 );
                 
-                // Draw value if cell is large enough
                 if (cellSize > 40) {
                     ctx.fillStyle = intensity > 0.5 ? 'white' : 'black';
                     ctx.font = '10px Arial';
@@ -903,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mouse hover handler
         if (onHover) {
-            canvas.onmousemove = (e) => {
+            const handleMouseMove = (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
@@ -918,13 +188,498 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             
-            canvas.onmouseleave = () => {
-                onHover(-1, -1, 0);
-            };
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseleave', () => onHover(-1, -1, 0));
         }
     }
+}
 
-    function computePositionalEncoding(pos, dim) {
+// Main visualizer class
+class AttentionVisualizer {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        if (!this.container) {
+            console.error('Container element not found!');
+            return;
+        }
+        
+        this.state = {
+            tokens: [],
+            embeddings: [],
+            Q: null,
+            K: null,
+            V: null,
+            attentionScores: [],
+            attentionWeights: [],
+            outputVectors: [],
+            multiHeadResults: [],
+            activeTab: 'single',
+            selectedHead: 0
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        this.createHTML();
+        this.createStyles();
+        this.cacheElements();
+        this.attachEventListeners();
+        this.updateParameterDisplays();
+    }
+    
+    createHTML() {
+        const html = new HTMLGenerator();
+        this.container.innerHTML = html.generate();
+    }
+    
+    createStyles() {
+        const styles = new StyleGenerator();
+        const styleElement = document.createElement('style');
+        styleElement.textContent = styles.generate();
+        document.head.appendChild(styleElement);
+    }
+    
+    cacheElements() {
+        // Cache all elements by ID
+        const elementIds = [
+            'input-sentence', 'process-btn', 'embedding-dim', 'num-heads', 'temperature',
+            'computation-info', 'token-embeddings', 'query-matrix', 'key-matrix',
+            'value-matrix', 'attention-scores', 'attention-weights', 'output-values',
+            'score-detail', 'head-buttons', 'all-heads-grid', 'selected-head-details',
+            'current-head-num', 'head-query-matrix', 'head-key-matrix', 'head-value-matrix',
+            'head-attention-scores', 'head-attention-weights', 'concat-visualization',
+            'position-encoding-viz', 'tokens-no-position', 'position-vectors-grid',
+            'position-hover-info', 'embedding-canvas', 'position-canvas', 'final-canvas',
+            'final-tokens-position'
+        ];
+        
+        this.elements = {};
+        elementIds.forEach(id => {
+            this.elements[id.replace(/-/g, '_')] = document.getElementById(id);
+        });
+        
+        // Cache display elements
+        this.elements.dim_display = document.getElementById('dim-display');
+        this.elements.heads_display = document.getElementById('heads-display');
+        this.elements.temp_display = document.getElementById('temp-display');
+        
+        // Cache tab elements
+        this.elements.vizTabs = document.querySelectorAll('.viz-tab');
+        this.elements.vizPanes = document.querySelectorAll('.viz-pane');
+    }
+    
+    attachEventListeners() {
+        // Process button
+        this.elements.process_btn.addEventListener('click', () => this.processAttention());
+        this.elements.input_sentence.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.processAttention();
+        });
+        
+        // Parameter controls
+        this.elements.embedding_dim.addEventListener('input', () => this.updateParameterDisplays());
+        this.elements.num_heads.addEventListener('input', () => this.updateParameterDisplays());
+        this.elements.temperature.addEventListener('input', () => this.updateParameterDisplays());
+        
+        // Tab switching
+        this.elements.vizTabs.forEach(tab => 
+            tab.addEventListener('click', (e) => this.handleTabClick(e))
+        );
+    }
+    
+    updateParameterDisplays() {
+        this.elements.dim_display.textContent = this.elements.embedding_dim.value;
+        this.elements.heads_display.textContent = this.elements.num_heads.value;
+        this.elements.temp_display.textContent = this.elements.temperature.value;
+        
+        // Update visualizations if needed
+        if (this.state.activeTab === 'position') {
+            this.updatePositionalEncoding();
+        }
+    }
+    
+    handleTabClick(e) {
+        const targetTab = e.target.dataset.tab;
+        
+        // Update active states
+        this.elements.vizTabs.forEach(tab => tab.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        this.elements.vizPanes.forEach(pane => {
+            pane.classList.toggle('active', pane.id === `${targetTab}-tab`);
+        });
+        
+        this.state.activeTab = targetTab;
+        
+        // Process tab-specific content
+        if (targetTab === 'multi' && this.state.tokens.length > 0) {
+            this.processMultiHeadAttention();
+        } else if (targetTab === 'position') {
+            this.updatePositionalEncoding();
+        }
+    }
+    
+    // Core processing methods
+    tokenize(sentence) {
+        return sentence.toLowerCase().split(/\s+/).filter(token => token.length > 0);
+    }
+    
+    seededRandom(seed) {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+    
+    createEmbeddings(tokens, dim) {
+        return tokens.map(token => {
+            let hash = 0;
+            for (let j = 0; j < token.length; j++) {
+                hash = ((hash << 5) - hash) + token.charCodeAt(j);
+                hash = hash & hash;
+            }
+            
+            return Array.from({length: dim}, (_, j) => 
+                (this.seededRandom(hash + j * 1000) - 0.5) * 0.5
+            );
+        });
+    }
+    
+    computeAttention(Q, K, V, temperature = 1.0) {
+        const seqLen = Q.length;
+        const dim = K[0].length;
+        
+        // Compute QK^T
+        const scores = MatrixUtils.multiply(Q, MatrixUtils.transpose(K));
+        
+        // Scale by sqrt(d_k)
+        const scaledScores = scores.map(row => 
+            row.map(score => score / Math.sqrt(dim))
+        );
+        
+        // Apply softmax to each row
+        const weights = scaledScores.map(row => MatrixUtils.softmax(row, temperature));
+        
+        // Compute weighted values
+        const output = MatrixUtils.multiply(weights, V);
+        
+        return { scores: scaledScores, weights, output };
+    }
+    
+    processAttention() {
+        const sentence = this.elements.input_sentence.value.trim();
+        if (!sentence) {
+            alert('Please enter a sentence');
+            return;
+        }
+        
+        const dim = parseInt(this.elements.embedding_dim.value);
+        const temperature = parseFloat(this.elements.temperature.value);
+        
+        // Tokenize and create embeddings
+        this.state.tokens = this.tokenize(sentence);
+        this.state.embeddings = this.createEmbeddings(this.state.tokens, dim);
+        
+        // Create Q, K, V matrices
+        const Wq = MatrixUtils.initialize(dim, dim);
+        const Wk = MatrixUtils.initialize(dim, dim);
+        const Wv = MatrixUtils.initialize(dim, dim);
+        
+        this.state.Q = MatrixUtils.multiply(this.state.embeddings, Wq);
+        this.state.K = MatrixUtils.multiply(this.state.embeddings, Wk);
+        this.state.V = MatrixUtils.multiply(this.state.embeddings, Wv);
+        
+        // Compute attention
+        const attention = this.computeAttention(this.state.Q, this.state.K, this.state.V, temperature);
+        this.state.attentionScores = attention.scores;
+        this.state.attentionWeights = attention.weights;
+        this.state.outputVectors = attention.output;
+        
+        // Update visualizations
+        this.updateVisualizations();
+        
+        // Process other tabs if active
+        if (this.state.activeTab === 'multi') {
+            this.processMultiHeadAttention();
+        } else if (this.state.activeTab === 'position') {
+            this.updatePositionalEncoding();
+        }
+    }
+    
+    updateVisualizations() {
+        // Display token embeddings
+        this.displayTokenEmbeddings();
+        
+        // Draw matrices
+        CanvasUtils.drawMatrix(this.elements.query_matrix, this.state.Q, true);
+        CanvasUtils.drawMatrix(this.elements.key_matrix, this.state.K, true);
+        CanvasUtils.drawMatrix(this.elements.value_matrix, this.state.V, true);
+        
+        // Draw attention scores with hover
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.attention_scores, 
+            this.state.attentionScores, 
+            this.state.tokens,
+            (row, col, value) => {
+                if (row >= 0 && col >= 0) {
+                    const dim = this.state.K[0].length;
+                    this.elements.score_detail.textContent = 
+                        `${this.state.tokens[row]} → ${this.state.tokens[col]}: QK^T = ${(value * Math.sqrt(dim)).toFixed(3)}, scaled = ${value.toFixed(3)}`;
+                } else {
+                    this.elements.score_detail.textContent = '';
+                }
+            }
+        );
+        
+        // Draw attention weights
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.attention_weights, 
+            this.state.attentionWeights, 
+            this.state.tokens
+        );
+        
+        // Display output values
+        this.displayOutputValues();
+        
+        // Update computation info
+        this.updateComputationInfo();
+    }
+    
+    displayTokenEmbeddings() {
+        this.elements.token_embeddings.innerHTML = this.state.tokens.map((token, idx) => `
+            <div class="token-box">
+                <div class="token-label">${token}</div>
+                <div class="token-vector">[${this.state.embeddings[idx].slice(0, 3).map(v => v.toFixed(2)).join(', ')}...]</div>
+            </div>
+        `).join('');
+    }
+    
+    displayOutputValues() {
+        this.elements.output_values.innerHTML = this.state.tokens.map((token, idx) => `
+            <div class="token-box">
+                <div class="token-label">${token}</div>
+                <div class="token-vector">[${this.state.outputVectors[idx].slice(0, 3).map(v => v.toFixed(2)).join(', ')}...]</div>
+            </div>
+        `).join('');
+    }
+    
+    updateComputationInfo() {
+        const dim = parseInt(this.elements.embedding_dim.value);
+        this.elements.computation_info.innerHTML = `
+            <p><strong>Tokens:</strong> ${this.state.tokens.length}</p>
+            <p><strong>Embedding dim:</strong> ${dim}</p>
+            <p><strong>Q, K, V shape:</strong> [${this.state.tokens.length}, ${dim}]</p>
+            <p><strong>Attention shape:</strong> [${this.state.tokens.length}, ${this.state.tokens.length}]</p>
+        `;
+    }
+    
+    // Multi-head attention methods
+    processMultiHeadAttention() {
+        const dim = parseInt(this.elements.embedding_dim.value);
+        const numHeads = parseInt(this.elements.num_heads.value);
+        const temperature = parseFloat(this.elements.temperature.value);
+        const headDim = Math.floor(dim / numHeads);
+        
+        // Clear previous content
+        this.elements.head_buttons.innerHTML = '';
+        this.elements.all_heads_grid.innerHTML = '';
+        this.state.multiHeadResults = [];
+        
+        const headDetails = [];
+        
+        // Process each head
+        for (let h = 0; h < numHeads; h++) {
+            // Create separate projections for each head
+            const Wq = MatrixUtils.initialize(dim, headDim);
+            const Wk = MatrixUtils.initialize(dim, headDim);
+            const Wv = MatrixUtils.initialize(dim, headDim);
+            
+            const Qh = MatrixUtils.multiply(this.state.embeddings, Wq);
+            const Kh = MatrixUtils.multiply(this.state.embeddings, Wk);
+            const Vh = MatrixUtils.multiply(this.state.embeddings, Wv);
+            
+            const attention = this.computeAttention(Qh, Kh, Vh, temperature);
+            
+            headDetails.push({
+                Q: Qh,
+                K: Kh,
+                V: Vh,
+                scores: attention.scores,
+                weights: attention.weights,
+                output: attention.output
+            });
+            
+            this.state.multiHeadResults.push(attention);
+            
+            // Create UI elements
+            this.createHeadButton(h, headDetails[h]);
+            this.createMiniVisualization(h, attention);
+        }
+        
+        // Select first head by default
+        this.elements.head_buttons.firstChild.classList.add('active');
+        this.showHeadDetails(0, headDetails[0]);
+        
+        // Visualize concatenation
+        this.visualizeConcatenation(headDetails);
+    }
+    
+    createHeadButton(index, details) {
+        const btn = document.createElement('button');
+        btn.className = 'head-btn';
+        btn.textContent = `Head ${index + 1}`;
+        btn.dataset.head = index;
+        btn.addEventListener('click', () => this.showHeadDetails(index, details));
+        this.elements.head_buttons.appendChild(btn);
+    }
+    
+    createMiniVisualization(index, attention) {
+        const miniViz = document.createElement('div');
+        miniViz.className = 'mini-head-viz';
+        miniViz.innerHTML = `<h6>Head ${index + 1}</h6>`;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = CONFIG.CANVAS_SIZES.multihead.width;
+        canvas.height = CONFIG.CANVAS_SIZES.multihead.height;
+        miniViz.appendChild(canvas);
+        
+        CanvasUtils.drawAttentionMatrix(canvas, attention.weights, this.state.tokens);
+        
+        this.elements.all_heads_grid.appendChild(miniViz);
+    }
+    
+    showHeadDetails(headIndex, details) {
+        // Update active button
+        document.querySelectorAll('.head-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.head == headIndex);
+        });
+        
+        // Update head number displays
+        this.elements.current_head_num.textContent = headIndex + 1;
+        document.querySelectorAll('.current-head-num').forEach(span => {
+            span.textContent = headIndex + 1;
+        });
+        
+        // Show details section
+        this.elements.selected_head_details.style.display = 'block';
+        
+        // Draw matrices
+        CanvasUtils.drawMatrix(this.elements.head_query_matrix, details.Q, true);
+        CanvasUtils.drawMatrix(this.elements.head_key_matrix, details.K, true);
+        CanvasUtils.drawMatrix(this.elements.head_value_matrix, details.V, true);
+        
+        // Draw attention scores and weights
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.head_attention_scores, 
+            details.scores, 
+            this.state.tokens,
+            (row, col, value) => {
+                if (row >= 0 && col >= 0) {
+                    const dim = details.K[0].length;
+                    this.elements.score_detail.textContent = 
+                        `Head ${headIndex + 1}: ${this.state.tokens[row]} → ${this.state.tokens[col]}: score = ${value.toFixed(3)}`;
+                }
+            }
+        );
+        
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.head_attention_weights, 
+            details.weights, 
+            this.state.tokens
+        );
+    }
+    
+    visualizeConcatenation(headDetails) {
+        const canvas = this.elements.concat_visualization;
+        const ctx = canvas.getContext('2d');
+        const numHeads = headDetails.length;
+        const tokenCount = this.state.tokens.length;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Drawing parameters
+        const headWidth = canvas.width / (numHeads + 1);
+        const tokenHeight = 30;
+        const startY = 20;
+        
+        // Colors for different heads
+        const colors = [CONFIG.COLORS.primary, CONFIG.COLORS.secondary, CONFIG.COLORS.success, CONFIG.COLORS.warning];
+        
+        // Draw each head's output
+        for (let h = 0; h < numHeads; h++) {
+            const x = h * headWidth + 10;
+            
+            // Draw head label
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Head ${h + 1}`, x + headWidth / 2, startY - 5);
+            
+            // Draw tokens for this head
+            for (let t = 0; t < tokenCount; t++) {
+                const y = startY + t * tokenHeight;
+                
+                // Draw box
+                ctx.fillStyle = colors[h % colors.length];
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(x, y, headWidth - 20, tokenHeight - 5);
+                
+                // Draw token
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#333';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.state.tokens[t], x + headWidth / 2, y + tokenHeight / 2);
+            }
+        }
+        
+        // Draw concatenation arrow
+        const arrowX = numHeads * headWidth;
+        const arrowY = startY + (tokenCount * tokenHeight) / 2;
+        
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(arrowX - 10, arrowY);
+        ctx.lineTo(arrowX + 30, arrowY);
+        ctx.stroke();
+        
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(arrowX + 30, arrowY);
+        ctx.lineTo(arrowX + 25, arrowY - 5);
+        ctx.lineTo(arrowX + 25, arrowY + 5);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw output
+        const outputX = arrowX + 40;
+        ctx.fillStyle = CONFIG.COLORS.info;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(outputX, startY, headWidth - 20, tokenCount * tokenHeight - 5);
+        
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Concat + W^O', outputX + (headWidth - 20) / 2, startY - 5);
+        
+        // Draw final tokens
+        for (let t = 0; t < tokenCount; t++) {
+            const y = startY + t * tokenHeight;
+            ctx.font = '11px Arial';
+            ctx.fillText(this.state.tokens[t], outputX + (headWidth - 20) / 2, y + tokenHeight / 2);
+        }
+    }
+    
+    // Positional encoding methods
+    updatePositionalEncoding() {
+        const dim = parseInt(this.elements.embedding_dim.value);
+        const maxLen = this.state.tokens.length > 0 ? Math.max(this.state.tokens.length, 10) : 20;
+        
+        this.drawPositionalEncodingPattern(maxLen, dim);
+        this.visualizePositionalEncodingSteps();
+    }
+    
+    computePositionalEncoding(pos, dim) {
         const encoding = [];
         for (let i = 0; i < dim; i++) {
             const angle = pos / Math.pow(10000, (2 * Math.floor(i / 2)) / dim);
@@ -932,27 +687,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return encoding;
     }
-
-    function drawPositionalEncoding(canvas, maxLen, dim) {
+    
+    drawPositionalEncodingPattern(maxLen, dim) {
+        const canvas = this.elements.position_encoding_viz;
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
         
         ctx.clearRect(0, 0, width, height);
         
-        // Calculate positional encodings
-        const encodings = [];
-        for (let pos = 0; pos < maxLen; pos++) {
-            encodings[pos] = computePositionalEncoding(pos, dim);
-        }
-        
-        // Draw heatmap
+        // Calculate cell sizes
         const cellWidth = width / maxLen;
         const cellHeight = height / dim;
         
+        // Draw positional encoding heatmap
         for (let pos = 0; pos < maxLen; pos++) {
+            const encoding = this.computePositionalEncoding(pos, dim);
             for (let i = 0; i < dim; i++) {
-                const value = encodings[pos][i];
+                const value = encoding[i];
                 const intensity = (value + 1) / 2; // Normalize to [0, 1]
                 
                 // Use different colors for sin (even) and cos (odd) dimensions
@@ -977,22 +729,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Draw axes labels
-        ctx.fillStyle = '#333';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        
-        // Position labels
-        for (let pos = 0; pos < maxLen; pos += Math.max(1, Math.floor(maxLen / 10))) {
-            ctx.fillText(pos.toString(), pos * cellWidth + cellWidth / 2, height + 15);
-        }
-        
-        // Dimension labels on the left
-        ctx.textAlign = 'right';
-        for (let i = 0; i < dim; i += Math.max(1, Math.floor(dim / 8))) {
-            ctx.fillText(`d${i}`, -5, i * cellHeight + cellHeight / 2);
-        }
-        
         // Add hover interaction
         canvas.onmousemove = (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -1003,50 +739,38 @@ document.addEventListener('DOMContentLoaded', function() {
             const dimIdx = Math.floor(y / cellHeight);
             
             if (pos >= 0 && pos < maxLen && dimIdx >= 0 && dimIdx < dim) {
-                const value = encodings[pos][dimIdx];
+                const value = this.computePositionalEncoding(pos, dim)[dimIdx];
                 const funcType = dimIdx % 2 === 0 ? 'sin' : 'cos';
                 const i = Math.floor(dimIdx / 2);
                 const angle = pos / Math.pow(10000, (2 * i) / dim);
                 
-                elements.positionHoverInfo.textContent = 
+                this.elements.position_hover_info.textContent = 
                     `Position ${pos}, Dimension ${dimIdx}: ${funcType}(${pos}/10000^(${2*i}/${dim})) = ${funcType}(${angle.toFixed(4)}) = ${value.toFixed(4)}`;
             }
         };
         
         canvas.onmouseleave = () => {
-            elements.positionHoverInfo.textContent = 'Hover over the pattern to see values';
+            this.elements.position_hover_info.textContent = 'Hover over the pattern to see values';
         };
     }
-
-    function visualizePositionalEncodingSteps() {
-        const dim = parseInt(elements.embeddingDim.value);
+    
+    visualizePositionalEncodingSteps() {
+        const dim = parseInt(this.elements.embedding_dim.value);
         
         // Use example tokens if none are processed yet
-        const displayTokens = tokens.length > 0 ? tokens : ['the', 'cat', 'sat', 'on', 'mat'];
-        const displayEmbeddings = tokens.length > 0 ? embeddings : createEmbeddings(displayTokens, dim);
+        const displayTokens = this.state.tokens.length > 0 ? this.state.tokens : ['the', 'cat', 'sat', 'on', 'mat'];
+        const displayEmbeddings = this.state.tokens.length > 0 ? this.state.embeddings : this.createEmbeddings(displayTokens, dim);
         
         // Step 1: Show tokens without position
-        elements.tokensNoPosition.innerHTML = '';
-        displayTokens.forEach((token, idx) => {
-            const tokenBox = document.createElement('div');
-            tokenBox.className = 'token-box';
-            
-            const label = document.createElement('div');
-            label.className = 'token-label';
-            label.textContent = token;
-            
-            const pos = document.createElement('div');
-            pos.style.fontSize = '12px';
-            pos.style.color = '#e74c3c';
-            pos.textContent = 'No position info!';
-            
-            tokenBox.appendChild(label);
-            tokenBox.appendChild(pos);
-            elements.tokensNoPosition.appendChild(tokenBox);
-        });
+        this.elements.tokens_no_position.innerHTML = displayTokens.map(token => `
+            <div class="token-box">
+                <div class="token-label">${token}</div>
+                <div style="font-size: 12px; color: #e74c3c;">No position info!</div>
+            </div>
+        `).join('');
         
         // Step 3: Show individual position vectors
-        elements.positionVectorsGrid.innerHTML = '';
+        this.elements.position_vectors_grid.innerHTML = '';
         const numPositions = Math.min(displayTokens.length, 10);
         
         for (let pos = 0; pos < numPositions; pos++) {
@@ -1063,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pattern = document.createElement('div');
             pattern.className = 'position-pattern';
             
-            const encoding = computePositionalEncoding(pos, dim);
+            const encoding = this.computePositionalEncoding(pos, dim);
             
             // Show visual pattern
             for (let i = 0; i < Math.min(dim, 8); i++) {
@@ -1104,21 +828,21 @@ document.addEventListener('DOMContentLoaded', function() {
             values.textContent = '[' + encoding.slice(0, 3).map(v => v.toFixed(2)).join(', ') + '...]';
             posBox.appendChild(values);
             
-            elements.positionVectorsGrid.appendChild(posBox);
+            this.elements.position_vectors_grid.appendChild(posBox);
         }
         
         // Step 4: Show addition visualization
         const numExamples = Math.min(5, displayTokens.length);
         
         // Draw embeddings matrix
-        drawMatrix(elements.embeddingCanvas, displayEmbeddings.slice(0, numExamples), 'Embeddings', true);
+        CanvasUtils.drawMatrix(this.elements.embedding_canvas, displayEmbeddings.slice(0, numExamples), true);
         
         // Draw position encodings matrix
         const positionEncodings = [];
         for (let i = 0; i < numExamples; i++) {
-            positionEncodings.push(computePositionalEncoding(i, dim));
+            positionEncodings.push(this.computePositionalEncoding(i, dim));
         }
-        drawMatrix(elements.positionCanvas, positionEncodings, 'Positions', true);
+        CanvasUtils.drawMatrix(this.elements.position_canvas, positionEncodings, true);
         
         // Draw final embeddings + positions
         const finalEmbeddings = [];
@@ -1129,413 +853,720 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             finalEmbeddings.push(combined);
         }
-        drawMatrix(elements.finalCanvas, finalEmbeddings, 'Final', true);
+        CanvasUtils.drawMatrix(this.elements.final_canvas, finalEmbeddings, true);
         
         // Show final tokens with position
-        elements.finalTokensPosition.innerHTML = '';
-        displayTokens.forEach((token, idx) => {
-            const tokenBox = document.createElement('div');
-            tokenBox.className = 'token-box';
-            
-            const label = document.createElement('div');
-            label.className = 'token-label';
-            label.textContent = token;
-            
-            const pos = document.createElement('div');
-            pos.style.fontSize = '12px';
-            pos.style.color = '#27ae60';
-            pos.textContent = `Position ${idx}`;
-            
-            const vector = document.createElement('div');
-            vector.className = 'token-vector';
-            vector.style.fontSize = '10px';
-            vector.style.marginTop = '3px';
-            const finalVec = finalEmbeddings[idx] || [];
-            vector.textContent = '[' + finalVec.slice(0, 3).map(v => v ? v.toFixed(2) : '0.00').join(', ') + '...]';
-            
-            tokenBox.appendChild(label);
-            tokenBox.appendChild(pos);
-            tokenBox.appendChild(vector);
-            elements.finalTokensPosition.appendChild(tokenBox);
-        });
-        
-        // Add labels to the addition visualization
-        const canvases = [elements.embeddingCanvas, elements.positionCanvas, elements.finalCanvas];
-        const labels = ['Token Embeddings', 'Position Encodings', 'Final (Emb + Pos)'];
-        
-        canvases.forEach((canvas, idx) => {
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#333';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(labels[idx], canvas.width / 2, canvas.height + 15);
-        });
+        this.elements.final_tokens_position.innerHTML = displayTokens.slice(0, numExamples).map((token, idx) => `
+            <div class="token-box">
+                <div class="token-label">${token}</div>
+                <div style="font-size: 12px; color: #27ae60;">Position ${idx}</div>
+                <div class="token-vector" style="font-size: 10px; margin-top: 3px;">
+                    [${finalEmbeddings[idx].slice(0, 3).map(v => v.toFixed(2)).join(', ')}...]
+                </div>
+            </div>
+        `).join('');
     }
+}
 
-    function displayTokenEmbeddings() {
-        elements.tokenEmbeddings.innerHTML = '';
-        
-        tokens.forEach((token, idx) => {
-            const tokenBox = document.createElement('div');
-            tokenBox.className = 'token-box';
-            
-            const label = document.createElement('div');
-            label.className = 'token-label';
-            label.textContent = token;
-            
-            const vector = document.createElement('div');
-            vector.className = 'token-vector';
-            vector.textContent = '[' + embeddings[idx].slice(0, 3).map(v => v.toFixed(2)).join(', ') + '...]';
-            
-            tokenBox.appendChild(label);
-            tokenBox.appendChild(vector);
-            elements.tokenEmbeddings.appendChild(tokenBox);
-        });
-    }
-
-    function displayOutputValues() {
-        elements.outputValues.innerHTML = '';
-        
-        tokens.forEach((token, idx) => {
-            const tokenBox = document.createElement('div');
-            tokenBox.className = 'token-box';
-            
-            const label = document.createElement('div');
-            label.className = 'token-label';
-            label.textContent = token;
-            
-            const vector = document.createElement('div');
-            vector.className = 'token-vector';
-            vector.textContent = '[' + outputVectors[idx].slice(0, 3).map(v => v.toFixed(2)).join(', ') + '...]';
-            
-            tokenBox.appendChild(label);
-            tokenBox.appendChild(vector);
-            elements.outputValues.appendChild(tokenBox);
-        });
-    }
-
-    function processAttention() {
-        const sentence = elements.inputSentence.value.trim();
-        if (!sentence) return;
-        
-        const dim = parseInt(elements.embeddingDim.value);
-        const numHeads = parseInt(elements.numHeads.value);
-        const temperature = parseFloat(elements.temperature.value);
-        
-        // Tokenize and create embeddings
-        tokens = tokenize(sentence);
-        embeddings = createEmbeddings(tokens, dim);
-        
-        // Create Q, K, V matrices (simple linear projections)
-        const Wq = initializeRandomMatrix(dim, dim);
-        const Wk = initializeRandomMatrix(dim, dim);
-        const Wv = initializeRandomMatrix(dim, dim);
-        
-        Q = matrixMultiply(embeddings, Wq);
-        K = matrixMultiply(embeddings, Wk);
-        V = matrixMultiply(embeddings, Wv);
-        
-        // Compute attention
-        const attention = computeAttention(Q, K, V, temperature);
-        attentionScores = attention.scores;
-        attentionWeights = attention.weights;
-        outputVectors = attention.output;
-        
-        // Update visualizations
-        displayTokenEmbeddings();
-        drawMatrix(elements.queryMatrix, Q, 'Query', true);
-        drawMatrix(elements.keyMatrix, K, 'Key', true);
-        drawMatrix(elements.valueMatrix, V, 'Value', true);
-        
-        // Draw attention scores with hover
-        drawAttentionMatrix(elements.attentionScores, attentionScores, tokens, (row, col, value) => {
-            if (row >= 0 && col >= 0) {
-                const dim = K[0].length;
-                elements.scoreDetail.textContent = 
-                    `${tokens[row]} → ${tokens[col]}: QK^T = ${(value * Math.sqrt(dim)).toFixed(3)}, scaled = ${value.toFixed(3)}`;
-            } else {
-                elements.scoreDetail.textContent = '';
-            }
-        });
-        
-        // Draw attention weights
-        drawAttentionMatrix(elements.attentionWeights, attentionWeights, tokens);
-        
-        displayOutputValues();
-        
-        // Update computation info
-        elements.computationInfo.innerHTML = `
-            <p><strong>Tokens:</strong> ${tokens.length}</p>
-            <p><strong>Embedding dim:</strong> ${dim}</p>
-            <p><strong>Q, K, V shape:</strong> [${tokens.length}, ${dim}]</p>
-            <p><strong>Attention shape:</strong> [${tokens.length}, ${tokens.length}]</p>
+// HTML Generator class
+class HTMLGenerator {
+    generate() {
+        return `
+            <div class="attention-container">
+                <div class="attention-layout">
+                    <div class="attention-visualization">
+                        ${this.inputSection()}
+                        ${this.tabs()}
+                        <div class="viz-content">
+                            ${this.singleHeadTab()}
+                            ${this.multiHeadTab()}
+                            ${this.positionalTab()}
+                        </div>
+                    </div>
+                    ${this.controlsPanel()}
+                </div>
+            </div>
         `;
-        
-        // Process multi-head attention if on that tab
-        if (document.querySelector('.viz-tab.active').dataset.tab === 'multi') {
-            processMultiHeadAttention();
-        }
-        
-        // Update positional encoding if on that tab
-        if (document.querySelector('.viz-tab.active').dataset.tab === 'position') {
-            visualizePositionalEncodingSteps();
-        }
-    }
-
-    function processMultiHeadAttention() {
-        const dim = parseInt(elements.embeddingDim.value);
-        const numHeads = parseInt(elements.numHeads.value);
-        const temperature = parseFloat(elements.temperature.value);
-        const headDim = Math.floor(dim / numHeads);
-        
-        // Clear previous content
-        elements.headButtons.innerHTML = '';
-        elements.allHeadsGrid.innerHTML = '';
-        multiHeadResults = [];
-        
-        // Store detailed results for each head
-        const headDetails = [];
-        
-        // Process each head
-        for (let h = 0; h < numHeads; h++) {
-            // Create separate projections for each head
-            const Wq = initializeRandomMatrix(dim, headDim);
-            const Wk = initializeRandomMatrix(dim, headDim);
-            const Wv = initializeRandomMatrix(dim, headDim);
-            
-            const Qh = matrixMultiply(embeddings, Wq);
-            const Kh = matrixMultiply(embeddings, Wk);
-            const Vh = matrixMultiply(embeddings, Wv);
-            
-            const attention = computeAttention(Qh, Kh, Vh, temperature);
-            
-            headDetails.push({
-                Q: Qh,
-                K: Kh,
-                V: Vh,
-                Wq: Wq,
-                Wk: Wk,
-                Wv: Wv,
-                scores: attention.scores,
-                weights: attention.weights,
-                output: attention.output
-            });
-            
-            multiHeadResults.push(attention);
-            
-            // Create head selection button
-            const btn = document.createElement('button');
-            btn.className = 'head-btn';
-            btn.textContent = `Head ${h + 1}`;
-            btn.dataset.head = h;
-            btn.addEventListener('click', () => showHeadDetails(h, headDetails[h]));
-            elements.headButtons.appendChild(btn);
-            
-            // Create mini visualization for overview
-            const miniViz = document.createElement('div');
-            miniViz.className = 'mini-head-viz';
-            
-            const title = document.createElement('h6');
-            title.textContent = `Head ${h + 1}`;
-            miniViz.appendChild(title);
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 180;
-            canvas.height = 180;
-            miniViz.appendChild(canvas);
-            
-            drawAttentionMatrix(canvas, attention.weights, tokens);
-            
-            elements.allHeadsGrid.appendChild(miniViz);
-        }
-        
-        // Select first head by default
-        elements.headButtons.firstChild.classList.add('active');
-        showHeadDetails(0, headDetails[0]);
-        
-        // Visualize concatenation
-        visualizeConcatenation(headDetails);
     }
     
-    function showHeadDetails(headIndex, details) {
-        // Update active button
-        document.querySelectorAll('.head-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.head == headIndex);
-        });
-        
-        // Update head number displays
-        elements.currentHeadNum.textContent = headIndex + 1;
-        Array.from(elements.currentHeadNumSpans).forEach(span => {
-            span.textContent = headIndex + 1;
-        });
-        
-        // Show details section
-        elements.selectedHeadDetails.style.display = 'block';
-        
-        // Draw Q, K, V matrices
-        drawMatrix(elements.headQueryMatrix, details.Q, 'Query', true);
-        drawMatrix(elements.headKeyMatrix, details.K, 'Key', true);
-        drawMatrix(elements.headValueMatrix, details.V, 'Value', true);
-        
-        // Draw attention scores and weights
-        drawAttentionMatrix(elements.headAttentionScores, details.scores, tokens, (row, col, value) => {
-            if (row >= 0 && col >= 0) {
-                const dim = details.K[0].length;
-                elements.scoreDetail.textContent = 
-                    `Head ${headIndex + 1}: ${tokens[row]} → ${tokens[col]}: score = ${value.toFixed(3)}`;
-            }
-        });
-        
-        drawAttentionMatrix(elements.headAttentionWeights, details.weights, tokens);
+    inputSection() {
+        return `
+            <div class="input-section">
+                <h3>Input Sentence</h3>
+                <input type="text" id="input-sentence" value="${CONFIG.DEFAULTS.sentence}" placeholder="Enter a short sentence...">
+                <button id="process-btn" class="primary-btn">Process with Attention</button>
+            </div>
+        `;
     }
     
-    function visualizeConcatenation(headDetails) {
-        const canvas = elements.concatVisualization;
-        const ctx = canvas.getContext('2d');
-        const numHeads = headDetails.length;
-        const tokenCount = tokens.length;
+    tabs() {
+        return `
+            <div class="visualization-tabs">
+                <button class="viz-tab active" data-tab="single">Single-Head Attention</button>
+                <button class="viz-tab" data-tab="multi">Multi-Head Attention</button>
+                <button class="viz-tab" data-tab="position">Positional Encoding</button>
+            </div>
+        `;
+    }
+    
+    singleHeadTab() {
+        const steps = [
+            { title: 'Step 1: Token Embeddings', content: '<div id="token-embeddings"></div>' },
+            { title: 'Step 2: Query, Key, Value Projections', content: this.qkvMatrices() },
+            { title: 'Step 3: Attention Scores (QK<sup>T</sup>/√d<sub>k</sub>)', content: this.attentionScoresSection() },
+            { title: 'Step 4: Attention Weights (Softmax)', content: this.attentionWeightsSection() },
+            { title: 'Step 5: Attended Values', content: '<div id="output-values"></div>' }
+        ];
         
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw concatenation diagram
-        const headWidth = canvas.width / (numHeads + 1);
-        const tokenHeight = 30;
-        const startY = 20;
-        
-        // Draw each head's output
-        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
-        
-        for (let h = 0; h < numHeads; h++) {
-            const x = h * headWidth + 10;
+        return `
+            <div id="single-tab" class="viz-pane active">
+                <div class="attention-steps">
+                    ${steps.map(step => this.stepSection(step.title, step.content)).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    multiHeadTab() {
+        return `
+            <div id="multi-tab" class="viz-pane">
+                <div class="multi-head-container">
+                    <div class="head-selector">
+                        <label>Select Head to View Details:</label>
+                        <div id="head-buttons"></div>
+                    </div>
+                    
+                    <div class="multi-head-overview">
+                        <h4>All Heads Attention Patterns</h4>
+                        <div id="all-heads-grid"></div>
+                    </div>
+                    
+                    <div id="selected-head-details" style="display: none;">
+                        <h4>Head <span id="current-head-num">1</span> Detailed View</h4>
+                        ${this.headDetailsSection()}
+                    </div>
+                    
+                    <div class="concat-section">
+                        <h4>Concatenation & Output Projection</h4>
+                        <canvas id="concat-visualization" width="${CONFIG.CANVAS_SIZES.concat.width}" height="${CONFIG.CANVAS_SIZES.concat.height}"></canvas>
+                        <p class="formula">MultiHead(Q,K,V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>)W<sup>O</sup></p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    positionalTab() {
+        return `
+            <div id="position-tab" class="viz-pane">
+                <div class="position-encoding">
+                    ${this.stepSection('Why Positional Encoding?', 
+                        '<p>Attention mechanisms have no inherent notion of word order. Positional encodings add position information to help the model understand sequence structure.</p>')}
+                    ${this.stepSection('Step 1: Token Embeddings Without Position', '<div id="tokens-no-position"></div>')}
+                    ${this.stepSection('Step 2: Sinusoidal Positional Encoding Pattern', this.positionEncodingPattern())}
+                    ${this.stepSection('Step 3: Individual Position Vectors', '<div id="position-vectors-grid"></div>')}
+                    ${this.stepSection('Step 4: Embeddings + Positional Encoding', this.embeddingAddition())}
+                    ${this.positionalProperties()}
+                </div>
+            </div>
+        `;
+    }
+    
+    stepSection(title, content) {
+        return `
+            <div class="step-section">
+                <h4>${title}</h4>
+                ${content}
+            </div>
+        `;
+    }
+    
+    qkvMatrices() {
+        return `
+            <div class="qkv-matrices">
+                ${['Query', 'Key', 'Value'].map(type => `
+                    <div class="matrix-display">
+                        <h5>${type.charAt(0)} (${type})</h5>
+                        <canvas id="${type.toLowerCase()}-matrix" width="${CONFIG.CANVAS_SIZES.matrix.width}" height="${CONFIG.CANVAS_SIZES.matrix.height}"></canvas>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    attentionScoresSection() {
+        return `
+            <canvas id="attention-scores" width="${CONFIG.CANVAS_SIZES.attention.width}" height="${CONFIG.CANVAS_SIZES.attention.height}"></canvas>
+            <div class="score-info">
+                <span>Hover over cells to see score calculation</span>
+                <div id="score-detail"></div>
+            </div>
+        `;
+    }
+    
+    attentionWeightsSection() {
+        return `
+            <canvas id="attention-weights" width="${CONFIG.CANVAS_SIZES.attention.width}" height="${CONFIG.CANVAS_SIZES.attention.height}"></canvas>
+            <div class="weight-legend">
+                <span>0.0</span>
+                <div class="gradient-bar"></div>
+                <span>1.0</span>
+            </div>
+        `;
+    }
+    
+    headDetailsSection() {
+        return `
+            <div class="step-section">
+                <h5>Q, K, V Projections (Head <span class="current-head-num">1</span>)</h5>
+                <div class="qkv-matrices">
+                    ${['Query', 'Key', 'Value'].map(type => `
+                        <div class="matrix-display">
+                            <h6>${type.charAt(0)}</h6>
+                            <canvas id="head-${type.toLowerCase()}-matrix" width="150" height="120"></canvas>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
             
-            // Draw head label
-            ctx.fillStyle = '#333';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`Head ${h + 1}`, x + headWidth / 2, startY - 5);
-            
-            // Draw tokens for this head
-            for (let t = 0; t < tokenCount; t++) {
-                const y = startY + t * tokenHeight;
+            <div class="step-section">
+                <h5>Attention Scores & Weights</h5>
+                <div class="attention-comparison">
+                    <div>
+                        <h6>Scores (QK<sup>T</sup>/√d<sub>k</sub>)</h6>
+                        <canvas id="head-attention-scores" width="200" height="200"></canvas>
+                    </div>
+                    <div>
+                        <h6>Weights (Softmax)</h6>
+                        <canvas id="head-attention-weights" width="200" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    positionEncodingPattern() {
+        return `
+            <canvas id="position-encoding-viz" width="${CONFIG.CANVAS_SIZES.position.width}" height="${CONFIG.CANVAS_SIZES.position.height}"></canvas>
+            <div class="encoding-formula">
+                <p>PE(pos, 2i) = sin(pos/10000<sup>2i/d</sup>)</p>
+                <p>PE(pos, 2i+1) = cos(pos/10000<sup>2i/d</sup>)</p>
+            </div>
+            <div id="position-hover-info">Hover over the pattern to see values</div>
+        `;
+    }
+    
+    embeddingAddition() {
+        return `
+            <div class="encoding-addition">
+                <canvas id="embedding-canvas" width="180" height="150"></canvas>
+                <span class="plus-sign">+</span>
+                <canvas id="position-canvas" width="180" height="150"></canvas>
+                <span class="equals-sign">=</span>
+                <canvas id="final-canvas" width="180" height="150"></canvas>
+            </div>
+            <div id="final-tokens-position"></div>
+        `;
+    }
+    
+    positionalProperties() {
+        const properties = [
+            { title: 'Unique Encoding', desc: 'Each position has a unique encoding vector' },
+            { title: 'Relative Position', desc: 'Model can learn to attend based on relative positions' },
+            { title: 'Extrapolation', desc: 'Can handle sequences longer than training data' }
+        ];
+        
+        return this.stepSection('Positional Encoding Properties', `
+            <div class="properties-grid">
+                ${properties.map(prop => `
+                    <div class="property-box">
+                        <h5>${prop.title}</h5>
+                        <p>${prop.desc}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `);
+    }
+    
+    controlsPanel() {
+        return `
+            <div class="controls-panel">
+                <h3>Parameters</h3>
                 
-                // Draw box
-                ctx.fillStyle = colors[h % colors.length];
-                ctx.globalAlpha = 0.3;
-                ctx.fillRect(x, y, headWidth - 20, tokenHeight - 5);
+                <div class="control-group">
+                    <label for="embedding-dim">Embedding Dimension (d<sub>model</sub>):</label>
+                    <input type="range" id="embedding-dim" min="4" max="16" step="2" value="${CONFIG.DEFAULTS.embeddingDim}">
+                    <span id="dim-display">${CONFIG.DEFAULTS.embeddingDim}</span>
+                </div>
                 
-                // Draw token
-                ctx.globalAlpha = 1.0;
-                ctx.fillStyle = '#333';
-                ctx.font = '11px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(tokens[t], x + headWidth / 2, y + tokenHeight / 2);
+                <div class="control-group">
+                    <label for="num-heads">Number of Attention Heads:</label>
+                    <input type="range" id="num-heads" min="1" max="4" step="1" value="${CONFIG.DEFAULTS.numHeads}">
+                    <span id="heads-display">${CONFIG.DEFAULTS.numHeads}</span>
+                </div>
+                
+                <div class="control-group">
+                    <label for="temperature">Temperature (for visualization):</label>
+                    <input type="range" id="temperature" min="0.5" max="2.0" step="0.1" value="${CONFIG.DEFAULTS.temperature}">
+                    <span id="temp-display">${CONFIG.DEFAULTS.temperature}</span>
+                </div>
+                
+                <div class="info-panel">
+                    <h4>Current Computation:</h4>
+                    <div id="computation-info">
+                        <p>Click "Process with Attention" to start</p>
+                    </div>
+                </div>
+                
+                <div class="formula-panel">
+                    <h4>Key Formulas:</h4>
+                    <div class="formula">
+                        Attention(Q,K,V) = softmax(QK<sup>T</sup>/√d<sub>k</sub>)V
+                    </div>
+                    <div class="formula">
+                        MultiHead = Concat(head<sub>1</sub>, ..., head<sub>h</sub>)W<sup>O</sup>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Style Generator class
+class StyleGenerator {
+    generate() {
+        return `
+            .attention-container {
+                font-family: Arial, sans-serif;
+                margin: 20px 0;
             }
-        }
-        
-        // Draw concatenation arrow
-        const arrowX = numHeads * headWidth;
-        const arrowY = startY + (tokenCount * tokenHeight) / 2;
-        
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(arrowX - 10, arrowY);
-        ctx.lineTo(arrowX + 30, arrowY);
-        ctx.stroke();
-        
-        // Arrow head
-        ctx.beginPath();
-        ctx.moveTo(arrowX + 30, arrowY);
-        ctx.lineTo(arrowX + 25, arrowY - 5);
-        ctx.lineTo(arrowX + 25, arrowY + 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Draw output
-        const outputX = arrowX + 40;
-        ctx.fillStyle = '#95a5a6';
-        ctx.globalAlpha = 0.3;
-        ctx.fillRect(outputX, startY, headWidth - 20, tokenCount * tokenHeight - 5);
-        
-        ctx.globalAlpha = 1.0;
-        ctx.fillStyle = '#333';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Concat + W^O', outputX + (headWidth - 20) / 2, startY - 5);
-        
-        // Draw final tokens
-        for (let t = 0; t < tokenCount; t++) {
-            const y = startY + t * tokenHeight;
-            ctx.font = '11px Arial';
-            ctx.fillText(tokens[t], outputX + (headWidth - 20) / 2, y + tokenHeight / 2);
-        }
-    }
-
-    // Event handlers
-    function handleTabClick(e) {
-        const targetTab = e.target.dataset.tab;
-        
-        // Update active states
-        elements.vizTabs.forEach(tab => tab.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        elements.vizPanes.forEach(pane => {
-            pane.classList.remove('active');
-            if (pane.id === `${targetTab}-tab`) {
-                pane.classList.add('active');
+            
+            .attention-layout {
+                display: flex;
+                gap: 20px;
+                flex-wrap: wrap;
             }
-        });
-        
-        // Process specific visualizations
-        if (targetTab === 'multi' && tokens.length > 0) {
-            processMultiHeadAttention();
-        } else if (targetTab === 'position') {
-            const dim = parseInt(elements.embeddingDim.value);
-            const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
-            drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
-            // Always visualize steps, with example tokens if needed
-            visualizePositionalEncodingSteps();
-        }
+            
+            .attention-visualization {
+                flex: 1;
+                min-width: 600px;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+            }
+            
+            .controls-panel {
+                width: 300px;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                height: fit-content;
+            }
+            
+            .input-section {
+                margin-bottom: 20px;
+            }
+            
+            .input-section h3 {
+                margin-bottom: 10px;
+            }
+            
+            #input-sentence {
+                width: 100%;
+                padding: 10px;
+                font-size: 16px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                margin-bottom: 10px;
+            }
+            
+            .primary-btn {
+                background: ${CONFIG.COLORS.primary};
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                width: 100%;
+                transition: background 0.3s;
+            }
+            
+            .primary-btn:hover {
+                background: #2980b9;
+            }
+            
+            .visualization-tabs {
+                display: flex;
+                gap: 5px;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #ddd;
+            }
+            
+            .viz-tab {
+                padding: 10px 20px;
+                border: none;
+                background: #f0f0f0;
+                cursor: pointer;
+                border-radius: 4px 4px 0 0;
+                transition: all 0.3s;
+            }
+            
+            .viz-tab.active {
+                background: ${CONFIG.COLORS.primary};
+                color: white;
+            }
+            
+            .viz-pane {
+                display: none;
+            }
+            
+            .viz-pane.active {
+                display: block;
+            }
+            
+            .step-section {
+                margin-bottom: 30px;
+                padding: 15px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .step-section h4 {
+                margin-bottom: 15px;
+                color: ${CONFIG.COLORS.dark};
+            }
+            
+            .qkv-matrices {
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .matrix-display {
+                text-align: center;
+            }
+            
+            .matrix-display h5, .matrix-display h6 {
+                margin-bottom: 10px;
+                color: #34495e;
+            }
+            
+            canvas {
+                border: 1px solid #ddd;
+                background: white;
+            }
+            
+            #attention-scores, #attention-weights {
+                display: block;
+                margin: 0 auto;
+            }
+            
+            .score-info {
+                text-align: center;
+                margin-top: 10px;
+                font-size: 14px;
+                color: #666;
+            }
+            
+            #score-detail {
+                margin-top: 5px;
+                font-family: monospace;
+                background: #f0f0f0;
+                padding: 5px;
+                border-radius: 4px;
+                min-height: 25px;
+            }
+            
+            .weight-legend {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            
+            .gradient-bar {
+                width: 200px;
+                height: 20px;
+                background: linear-gradient(to right, #f0f0f0, ${CONFIG.COLORS.primary});
+                border: 1px solid #ddd;
+            }
+            
+            .control-group {
+                margin-bottom: 20px;
+            }
+            
+            .control-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+            
+            .control-group input[type="range"] {
+                width: calc(100% - 50px);
+                margin-right: 10px;
+            }
+            
+            .info-panel, .formula-panel {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+            
+            .formula {
+                margin: 10px 0;
+                padding: 10px;
+                background: #f0f0f0;
+                border-radius: 4px;
+                font-family: 'Times New Roman', serif;
+                text-align: center;
+            }
+            
+            #token-embeddings, #output-values {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .token-box {
+                padding: 10px;
+                background: #e3f2fd;
+                border-radius: 4px;
+                text-align: center;
+                min-width: 60px;
+            }
+            
+            .token-label {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+            
+            .token-vector {
+                font-size: 12px;
+                font-family: monospace;
+            }
+            
+            .multi-head-container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .head-selector {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .head-selector label {
+                display: block;
+                margin-bottom: 10px;
+                font-weight: bold;
+            }
+            
+            #head-buttons {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .head-btn {
+                padding: 8px 16px;
+                border: 2px solid ${CONFIG.COLORS.primary};
+                background: white;
+                color: ${CONFIG.COLORS.primary};
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            
+            .head-btn.active {
+                background: ${CONFIG.COLORS.primary};
+                color: white;
+            }
+            
+            .head-btn:hover {
+                background: #e3f2fd;
+            }
+            
+            .head-btn.active:hover {
+                background: #2980b9;
+            }
+            
+            .multi-head-overview {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            #all-heads-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 15px;
+                margin-top: 15px;
+            }
+            
+            .mini-head-viz {
+                text-align: center;
+            }
+            
+            .mini-head-viz h6 {
+                margin: 0 0 5px 0;
+                color: #34495e;
+                font-size: 14px;
+            }
+            
+            #selected-head-details {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .attention-comparison {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                justify-items: center;
+            }
+            
+            .attention-comparison > div {
+                text-align: center;
+            }
+            
+            .concat-section {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-align: center;
+            }
+            
+            .encoding-addition {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .plus-sign, .equals-sign {
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+            }
+            
+            #position-vectors-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .position-vector-box {
+                background: white;
+                padding: 10px;
+                border-radius: 4px;
+                border: 1px solid #ddd;
+            }
+            
+            .position-vector-box h6 {
+                margin: 0 0 10px 0;
+                color: #34495e;
+                font-size: 14px;
+            }
+            
+            .position-pattern {
+                display: flex;
+                gap: 2px;
+                margin-bottom: 5px;
+            }
+            
+            .position-dim {
+                width: 15px;
+                height: 15px;
+                border-radius: 2px;
+                cursor: help;
+            }
+            
+            .properties-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            
+            .property-box {
+                background: #f0f0f0;
+                padding: 15px;
+                border-radius: 4px;
+            }
+            
+            .property-box h5 {
+                margin: 0 0 8px 0;
+                color: ${CONFIG.COLORS.dark};
+            }
+            
+            .property-box p {
+                margin: 0;
+                font-size: 14px;
+                color: #666;
+            }
+            
+            .encoding-formula {
+                text-align: center;
+                margin: 10px 0;
+                font-family: 'Times New Roman', serif;
+            }
+            
+            .encoding-formula p {
+                margin: 5px 0;
+            }
+            
+            @media (max-width: 768px) {
+                .attention-layout {
+                    flex-direction: column;
+                }
+                
+                .attention-visualization {
+                    min-width: auto;
+                }
+                
+                .controls-panel {
+                    width: 100%;
+                }
+                
+                .qkv-matrices {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                
+                .attention-comparison {
+                    grid-template-columns: 1fr;
+                }
+                
+                #all-heads-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                }
+                
+                .encoding-addition {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                
+                .properties-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        `;
     }
+}
 
-    function updateParameterDisplays() {
-        elements.dimDisplay.textContent = elements.embeddingDim.value;
-        elements.headsDisplay.textContent = elements.numHeads.value;
-        elements.tempDisplay.textContent = elements.temperature.value;
-        
-        // Update positional encoding if on that tab
-        const activeTab = document.querySelector('.viz-tab.active');
-        if (activeTab && activeTab.dataset.tab === 'position') {
-            const dim = parseInt(elements.embeddingDim.value);
-            const maxLen = tokens.length > 0 ? Math.max(tokens.length, 10) : 20;
-            drawPositionalEncoding(elements.positionEncodingViz, maxLen, dim);
-            // Always visualize steps
-            visualizePositionalEncodingSteps();
-        }
-    }
-
-    // Add event listeners
-    elements.processBtn.addEventListener('click', processAttention);
-    elements.inputSentence.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            processAttention();
-        }
-    });
-    
-    elements.embeddingDim.addEventListener('input', updateParameterDisplays);
-    elements.numHeads.addEventListener('input', updateParameterDisplays);
-    elements.temperature.addEventListener('input', updateParameterDisplays);
-    
-    elements.vizTabs.forEach(tab => tab.addEventListener('click', handleTabClick));
-    
-    // Initialize
-    updateParameterDisplays();
-    
-    // Initialize positional encoding visualization with example if it's the active tab
-    const activeTab = document.querySelector('.viz-tab.active');
-    if (activeTab && activeTab.dataset.tab === 'position') {
-        const dim = parseInt(elements.embeddingDim.value);
-        drawPositionalEncoding(elements.positionEncodingViz, 20, dim);
-        visualizePositionalEncodingSteps();
-    }
+// Initialize the visualizer when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    new AttentionVisualizer('transformer_demo');
 });
