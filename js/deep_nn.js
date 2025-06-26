@@ -38,15 +38,36 @@ const CONFIG = {
 // Matrix utility functions
 const MatrixUtils = {
     initialize(rows, cols, scale = 0.5) {
-        return Array.from({length: rows}, () => 
-            Array.from({length: cols}, () => (Math.random() - 0.5) * scale)
-        );
+        const matrix = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+            matrix[i] = new Array(cols);
+            for (let j = 0; j < cols; j++) {
+                matrix[i][j] = (Math.random() - 0.5) * scale;
+            }
+        }
+        return matrix;
     },
     
     multiply(A, B) {
+        if (!A || !B || !Array.isArray(A) || !Array.isArray(B)) {
+            console.error('Invalid matrices for multiplication');
+            return [];
+        }
+        
+        if (A.length === 0 || B.length === 0) {
+            console.error('Empty matrices for multiplication');
+            return [];
+        }
+        
         const rowsA = A.length;
-        const colsA = A[0].length;
-        const colsB = B[0].length;
+        const colsA = A[0]?.length || 0;
+        const rowsB = B.length;
+        const colsB = B[0]?.length || 0;
+        
+        if (colsA !== rowsB) {
+            console.error('Matrix dimension mismatch:', colsA, '!=', rowsB);
+            return [];
+        }
         
         const result = new Array(rowsA);
         for (let i = 0; i < rowsA; i++) {
@@ -54,7 +75,7 @@ const MatrixUtils = {
             for (let j = 0; j < colsB; j++) {
                 let sum = 0;
                 for (let k = 0; k < colsA; k++) {
-                    sum += A[i][k] * B[k][j];
+                    sum += (A[i][k] || 0) * (B[k][j] || 0);
                 }
                 result[i][j] = sum;
             }
@@ -63,16 +84,48 @@ const MatrixUtils = {
     },
     
     transpose(matrix) {
+        if (!matrix || !Array.isArray(matrix) || matrix.length === 0) {
+            console.error('Invalid matrix for transpose');
+            return [];
+        }
+        
         const rows = matrix.length;
-        const cols = matrix[0].length;
-        return Array.from({length: cols}, (_, j) =>
-            Array.from({length: rows}, (_, i) => matrix[i][j])
-        );
+        const cols = matrix[0]?.length || 0;
+        
+        if (cols === 0) {
+            console.error('Empty matrix columns for transpose');
+            return [];
+        }
+        
+        const result = new Array(cols);
+        for (let j = 0; j < cols; j++) {
+            result[j] = new Array(rows);
+            for (let i = 0; i < rows; i++) {
+                result[j][i] = matrix[i][j] || 0;
+            }
+        }
+        return result;
     },
     
     softmax(scores, temperature = 1.0) {
-        const expScores = scores.map(score => Math.exp(score / temperature));
-        const sumExp = expScores.reduce((a, b) => a + b, 0);
+        if (!scores || !Array.isArray(scores) || scores.length === 0) {
+            console.error('Invalid scores for softmax');
+            return [];
+        }
+        
+        // Find max for numerical stability
+        let maxScore = scores[0] || 0;
+        for (let i = 1; i < scores.length; i++) {
+            if (scores[i] > maxScore) maxScore = scores[i];
+        }
+        
+        // Compute exp scores
+        const expScores = scores.map(score => 
+            Math.exp((score - maxScore) / temperature)
+        );
+        
+        const sumExp = expScores.reduce((a, b) => a + b, 0) || 1;
+        
         return expScores.map(exp => exp / sumExp);
     }
 };
@@ -442,36 +495,73 @@ class AttentionTrainer {
     }
     
     mseLoss(predicted, target) {
+        // Debug logging
+        console.log('mseLoss called with:', {
+            predicted: predicted,
+            target: target,
+            predictedLength: predicted ? predicted.length : 'undefined',
+            targetLength: target ? target.length : 'undefined'
+        });
+        
         // Validate inputs
-        if (!predicted || !target || !Array.isArray(predicted) || !Array.isArray(target)) {
-            console.error('Invalid inputs to mseLoss:', predicted, target);
+        if (!predicted || !target) {
+            console.error('mseLoss: predicted or target is undefined');
+            return 0;
+        }
+        
+        if (!Array.isArray(predicted) || !Array.isArray(target)) {
+            console.error('mseLoss: predicted or target is not an array', {
+                predictedType: typeof predicted,
+                targetType: typeof target
+            });
+            return 0;
+        }
+        
+        if (predicted.length === 0 || target.length === 0) {
+            console.error('mseLoss: empty arrays');
             return 0;
         }
         
         if (predicted.length !== target.length) {
-            console.error('Dimension mismatch in mseLoss:', predicted.length, target.length);
+            console.error('mseLoss: dimension mismatch', predicted.length, 'vs', target.length);
             return 0;
         }
         
         let loss = 0;
         let count = 0;
         
-        for (let i = 0; i < predicted.length; i++) {
-            if (!predicted[i] || !target[i] || !Array.isArray(predicted[i]) || !Array.isArray(target[i])) {
-                console.error('Invalid row in mseLoss:', i, predicted[i], target[i]);
-                continue;
-            }
-            
-            for (let j = 0; j < predicted[i].length; j++) {
-                if (typeof predicted[i][j] === 'number' && typeof target[i][j] === 'number') {
-                    const diff = predicted[i][j] - target[i][j];
-                    loss += diff * diff;
-                    count++;
+        try {
+            for (let i = 0; i < predicted.length; i++) {
+                // Check if rows exist and are arrays
+                if (!Array.isArray(predicted[i]) || !Array.isArray(target[i])) {
+                    console.error(`mseLoss: row ${i} is not an array`, {
+                        predictedRow: predicted[i],
+                        targetRow: target[i]
+                    });
+                    continue;
+                }
+                
+                const rowLength = Math.min(predicted[i].length, target[i].length);
+                
+                for (let j = 0; j < rowLength; j++) {
+                    const p = predicted[i][j];
+                    const t = target[i][j];
+                    
+                    if (typeof p === 'number' && typeof t === 'number' && !isNaN(p) && !isNaN(t)) {
+                        const diff = p - t;
+                        loss += diff * diff;
+                        count++;
+                    }
                 }
             }
+        } catch (error) {
+            console.error('Error in mseLoss calculation:', error);
+            return 0;
         }
         
-        return count > 0 ? loss / count : 0;
+        const finalLoss = count > 0 ? loss / count : 0;
+        console.log('mseLoss result:', finalLoss, 'count:', count);
+        return finalLoss;
     }
     
     crossEntropyLoss(predicted, target) {
@@ -493,12 +583,18 @@ class AttentionTrainer {
             return null;
         }
         
+        console.log('Forward pass with embeddings shape:', embeddings.length, 'x', embeddings[0]?.length);
+        
         try {
             const Q = MatrixUtils.multiply(embeddings, this.Wq);
             const K = MatrixUtils.multiply(embeddings, this.Wk);
             const V = MatrixUtils.multiply(embeddings, this.Wv);
             
+            console.log('Q, K, V shapes:', Q.length, 'x', Q[0]?.length);
+            
             const attention = this.visualizer.computeAttention(Q, K, V, temperature);
+            
+            console.log('Attention weights shape:', attention.weights?.length, 'x', attention.weights[0]?.length);
             
             return {
                 Q, K, V,
@@ -656,6 +752,15 @@ class AttentionTrainer {
         
         // Create targets
         const task = this.tasks[this.currentTask];
+        console.log('Current task:', this.currentTask, task);
+        
+        if (!task || !task.createTargets || !task.loss) {
+            console.error('Invalid task configuration:', task);
+            alert('Invalid training task configuration.');
+            this.stopTraining();
+            return;
+        }
+        
         const targets = task.createTargets(tokens, embeddings);
         
         // Validate targets
@@ -665,6 +770,13 @@ class AttentionTrainer {
             this.stopTraining();
             return;
         }
+        
+        console.log('Training setup:', {
+            tokens: tokens,
+            embeddingShape: [embeddings.length, embeddings[0]?.length],
+            targetsShape: [targets.length, targets[0]?.length],
+            task: this.currentTask
+        });
         
         // Use adaptive learning rate
         let adaptiveLR = this.learningRate;
@@ -687,8 +799,19 @@ class AttentionTrainer {
                 break;
             }
             
+            console.log('Epoch', epoch + 1, 'attention weights:', result.attentionWeights);
+            console.log('Targets:', targets);
+            
             // Compute loss
-            const loss = task.loss(result.attentionWeights, targets);
+            let loss = 0;
+            try {
+                loss = task.loss(result.attentionWeights, targets);
+            } catch (error) {
+                console.error('Error computing loss at epoch', epoch + 1, ':', error);
+                console.error('AttentionWeights:', result.attentionWeights);
+                console.error('Targets:', targets);
+                break;
+            }
             
             if (isNaN(loss)) {
                 console.error('NaN loss detected at epoch', epoch);
