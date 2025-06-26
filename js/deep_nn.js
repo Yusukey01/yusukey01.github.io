@@ -236,13 +236,28 @@ class AttentionTrainer {
     }
     
     initializeParameters() {
-        const dim = parseInt(this.visualizer.elements.embedding_dim.value);
+        const dimElement = this.visualizer.elements.embedding_dim;
+        if (!dimElement) {
+            console.error('Cannot find embedding dimension element');
+            return;
+        }
+        
+        const dim = parseInt(dimElement.value);
+        
+        if (isNaN(dim) || dim <= 0) {
+            console.error('Invalid dimension:', dim);
+            return;
+        }
         
         // Initialize with Xavier/He initialization for better training
         const scale = Math.sqrt(2.0 / dim);
         this.Wq = this.xavierInitialize(dim, dim, scale);
         this.Wk = this.xavierInitialize(dim, dim, scale);
         this.Wv = this.xavierInitialize(dim, dim, scale);
+        
+        // Reset momentum
+        this.momentum_Wq = null;
+        this.momentum_Wk = null;
         
         // Store original weights
         this.originalWq = null;
@@ -427,14 +442,36 @@ class AttentionTrainer {
     }
     
     mseLoss(predicted, target) {
+        // Validate inputs
+        if (!predicted || !target || !Array.isArray(predicted) || !Array.isArray(target)) {
+            console.error('Invalid inputs to mseLoss:', predicted, target);
+            return 0;
+        }
+        
+        if (predicted.length !== target.length) {
+            console.error('Dimension mismatch in mseLoss:', predicted.length, target.length);
+            return 0;
+        }
+        
         let loss = 0;
+        let count = 0;
+        
         for (let i = 0; i < predicted.length; i++) {
+            if (!predicted[i] || !target[i] || !Array.isArray(predicted[i]) || !Array.isArray(target[i])) {
+                console.error('Invalid row in mseLoss:', i, predicted[i], target[i]);
+                continue;
+            }
+            
             for (let j = 0; j < predicted[i].length; j++) {
-                const diff = predicted[i][j] - target[i][j];
-                loss += diff * diff;
+                if (typeof predicted[i][j] === 'number' && typeof target[i][j] === 'number') {
+                    const diff = predicted[i][j] - target[i][j];
+                    loss += diff * diff;
+                    count++;
+                }
             }
         }
-        return loss / (predicted.length * predicted[0].length);
+        
+        return count > 0 ? loss / count : 0;
     }
     
     crossEntropyLoss(predicted, target) {
@@ -450,17 +487,28 @@ class AttentionTrainer {
     }
     
     forward(embeddings, temperature = 1.0) {
-        const Q = MatrixUtils.multiply(embeddings, this.Wq);
-        const K = MatrixUtils.multiply(embeddings, this.Wk);
-        const V = MatrixUtils.multiply(embeddings, this.Wv);
+        // Validate inputs
+        if (!embeddings || embeddings.length === 0) {
+            console.error('Invalid embeddings in forward pass');
+            return null;
+        }
         
-        const attention = this.visualizer.computeAttention(Q, K, V, temperature);
-        
-        return {
-            Q, K, V,
-            attentionWeights: attention.weights,
-            output: attention.output
-        };
+        try {
+            const Q = MatrixUtils.multiply(embeddings, this.Wq);
+            const K = MatrixUtils.multiply(embeddings, this.Wk);
+            const V = MatrixUtils.multiply(embeddings, this.Wv);
+            
+            const attention = this.visualizer.computeAttention(Q, K, V, temperature);
+            
+            return {
+                Q, K, V,
+                attentionWeights: attention.weights,
+                output: attention.output
+            };
+        } catch (error) {
+            console.error('Error in forward pass:', error);
+            return null;
+        }
     }
     
     backward(embeddings, attentionWeights, target, learningRate) {
@@ -589,9 +637,15 @@ class AttentionTrainer {
         const tokens = this.visualizer.state.tokens;
         const embeddings = this.visualizer.state.embeddings;
         
+        if (!tokens || tokens.length === 0) {
+            alert('No tokens found. Please enter a valid sentence.');
+            this.stopTraining();
+            return;
+        }
+        
         // Initialize parameters with proper dimensions
         const dim = parseInt(this.visualizer.elements.embedding_dim.value);
-        if (this.Wq.length !== dim) {
+        if (!this.Wq || this.Wq.length !== dim) {
             this.initializeParameters();
         }
         
@@ -603,6 +657,14 @@ class AttentionTrainer {
         // Create targets
         const task = this.tasks[this.currentTask];
         const targets = task.createTargets(tokens, embeddings);
+        
+        // Validate targets
+        if (!targets || targets.length !== tokens.length) {
+            console.error('Invalid targets created:', targets);
+            alert('Error creating training targets.');
+            this.stopTraining();
+            return;
+        }
         
         // Use adaptive learning rate
         let adaptiveLR = this.learningRate;
@@ -619,8 +681,20 @@ class AttentionTrainer {
             // Forward pass with current weights
             const result = this.forward(embeddings);
             
+            // Validate forward pass results
+            if (!result || !result.attentionWeights) {
+                console.error('Invalid forward pass result:', result);
+                break;
+            }
+            
             // Compute loss
             const loss = task.loss(result.attentionWeights, targets);
+            
+            if (isNaN(loss)) {
+                console.error('NaN loss detected at epoch', epoch);
+                break;
+            }
+            
             this.trainingHistory.push(loss);
             
             // Adaptive learning rate decay
@@ -770,18 +844,37 @@ class AttentionTrainer {
     }
     
     drawMiniAttention(canvas, weights) {
+        if (!canvas || !weights || !Array.isArray(weights)) {
+            console.error('Invalid inputs to drawMiniAttention');
+            return;
+        }
+        
         const ctx = canvas.getContext('2d');
         const size = weights.length;
+        
+        if (size === 0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data', canvas.width / 2, canvas.height / 2);
+            return;
+        }
+        
         const cellSize = canvas.width / size;
         
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         for (let i = 0; i < size; i++) {
+            if (!weights[i] || !Array.isArray(weights[i])) continue;
+            
             for (let j = 0; j < size; j++) {
-                const value = weights[i][j];
+                const value = weights[i][j] || 0;
                 const intensity = Math.min(1, Math.max(0, value));
                 const lightness = 90 - intensity * 60;
                 
                 ctx.fillStyle = `hsl(210, 70%, ${lightness}%)`;
-                ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                ctx.fillRect(j * cellSize, i * cellSize, cellSize - 1, cellSize - 1);
             }
         }
     }
@@ -986,6 +1079,12 @@ class AttentionVisualizer {
     }
     
     initializeTraining() {
+        // Ensure elements are cached before creating trainer
+        if (!this.elements || !this.elements.embedding_dim) {
+            console.error('Cannot initialize training - elements not ready');
+            return;
+        }
+        
         this.trainer = new AttentionTrainer(this);
     }
     
@@ -1115,6 +1214,11 @@ class AttentionVisualizer {
     }
     
     computeAttention(Q, K, V, temperature = 1.0) {
+        if (!Q || !K || !V || Q.length === 0) {
+            console.error('Invalid inputs to computeAttention');
+            return { scores: [], weights: [], output: [] };
+        }
+        
         const seqLen = Q.length;
         const dim = K[0].length;
         
