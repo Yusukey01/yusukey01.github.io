@@ -196,30 +196,34 @@ class CanvasUtils {
 class AttentionTrainer {
     constructor(visualizer) {
         this.visualizer = visualizer;
-        this.learningRate = 0.01;
+        this.learningRate = 0.05;  // Increased from 0.01
         this.epochs = 100;
         this.currentEpoch = 0;
         this.isTraining = false;
         this.trainingHistory = [];
         this.initialized = false;
         
-        // Training task configurations
+        // Momentum variables
+        this.momentum_Wq = null;
+        this.momentum_Wk = null;
+        
+        // Training task configurations with clearer descriptions
         this.tasks = {
             nextWord: {
-                name: "Next Word Prediction",
-                description: "Learn to attend to words that help predict the next word",
+                name: "Next Word Prediction (Causal)",
+                description: "Learn causal attention: each word attends to previous words only (GPT-style)",
                 createTargets: this.createNextWordTargets.bind(this),
-                loss: this.crossEntropyLoss.bind(this)
+                loss: this.mseLoss.bind(this)
             },
             copyTask: {
-                name: "Copy Task",
-                description: "Learn to attend to specific positions (diagonal attention)",
+                name: "Copy Task (Identity)",
+                description: "Learn diagonal attention: each position focuses mainly on itself",
                 createTargets: this.createCopyTargets.bind(this),
                 loss: this.mseLoss.bind(this)
             },
             similarity: {
-                name: "Word Similarity",
-                description: "Learn to attend to semantically related words",
+                name: "Word Similarity (Semantic)",
+                description: "Learn semantic attention: similar words attend to each other more",
                 createTargets: this.createSimilarityTargets.bind(this),
                 loss: this.mseLoss.bind(this)
             }
@@ -277,7 +281,7 @@ class AttentionTrainer {
                     <div class="training-params">
                         <div class="param-group">
                             <label>Learning Rate:</label>
-                            <input type="range" id="learning-rate" min="0.001" max="0.1" step="0.001" value="${this.learningRate}">
+                            <input type="range" id="learning-rate" min="0.001" max="0.2" step="0.001" value="${this.learningRate}">
                             <span id="lr-display">${this.learningRate}</span>
                         </div>
                         
@@ -303,15 +307,23 @@ class AttentionTrainer {
                 </div>
                 
                 <div class="training-visualization">
+                    <div class="target-pattern">
+                        <h4>Target Attention Pattern</h4>
+                        <canvas id="target-pattern" width="200" height="200"></canvas>
+                        <p id="target-description" style="font-size: 12px; color: #666; margin-top: 5px;">
+                            Select a task to see the target pattern
+                        </p>
+                    </div>
+                    
                     <div class="loss-chart">
                         <h4>Training Loss</h4>
                         <canvas id="loss-chart" width="400" height="200"></canvas>
                     </div>
-                    
-                    <div class="attention-evolution">
-                        <h4>Attention Pattern Evolution</h4>
-                        <div class="evolution-grid" id="evolution-grid"></div>
-                    </div>
+                </div>
+                
+                <div class="attention-evolution">
+                    <h4>Attention Pattern Evolution</h4>
+                    <div class="evolution-grid" id="evolution-grid"></div>
                 </div>
                 
                 <div class="training-insights">
@@ -324,30 +336,44 @@ class AttentionTrainer {
         `;
     }
     
-    // Training task implementations
+    // Training task implementations with meaningful patterns
     createNextWordTargets(tokens, embeddings) {
+        // For next word prediction: each position should attend to previous positions
+        // with exponentially decreasing weights (causal attention)
         const seqLen = tokens.length;
         const targets = [];
         
         for (let i = 0; i < seqLen; i++) {
             const targetRow = new Array(seqLen).fill(0);
-            for (let j = 0; j <= i; j++) {
-                targetRow[j] = Math.exp(-(i - j) * 0.5);
+            
+            if (i === 0) {
+                // First token can only attend to itself
+                targetRow[0] = 1.0;
+            } else {
+                // Attend to all previous positions with decreasing weights
+                let sum = 0;
+                for (let j = 0; j <= i; j++) {
+                    targetRow[j] = Math.exp(-0.3 * (i - j)); // Exponential decay
+                    sum += targetRow[j];
+                }
+                // Normalize to sum to 1
+                for (let j = 0; j <= i; j++) {
+                    targetRow[j] /= sum;
+                }
             }
-            const sum = targetRow.reduce((a, b) => a + b, 0);
-            targets.push(targetRow.map(v => v / sum));
         }
         
         return targets;
     }
     
     createCopyTargets(tokens, embeddings) {
+        // For copy task: strong diagonal attention (each position attends to itself)
         const seqLen = tokens.length;
         const targets = [];
         
         for (let i = 0; i < seqLen; i++) {
-            const targetRow = new Array(seqLen).fill(0);
-            targetRow[i] = 1.0;
+            const targetRow = new Array(seqLen).fill(0.05 / (seqLen - 1)); // Small attention to others
+            targetRow[i] = 0.95; // Strong self-attention
             targets.push(targetRow);
         }
         
@@ -355,18 +381,36 @@ class AttentionTrainer {
     }
     
     createSimilarityTargets(tokens, embeddings) {
+        // For similarity: attend based on token similarity
         const seqLen = tokens.length;
         const targets = [];
         
+        // Compute similarity matrix based on shared characters and length
         for (let i = 0; i < seqLen; i++) {
             const targetRow = new Array(seqLen).fill(0);
+            let sum = 0;
+            
             for (let j = 0; j < seqLen; j++) {
+                // Base similarity on shared characters and length difference
                 const shared = this.countSharedChars(tokens[i], tokens[j]);
-                targetRow[j] = shared / Math.max(tokens[i].length, tokens[j].length);
+                const lenDiff = Math.abs(tokens[i].length - tokens[j].length);
+                const similarity = shared / Math.max(tokens[i].length, tokens[j].length);
+                
+                // Boost self-attention and similar tokens
+                if (i === j) {
+                    targetRow[j] = 1.0 + similarity;
+                } else {
+                    targetRow[j] = similarity * Math.exp(-lenDiff * 0.2);
+                }
+                sum += targetRow[j];
             }
-            targetRow[i] += 0.5;
-            const sum = targetRow.reduce((a, b) => a + b, 0);
-            targets.push(targetRow.map(v => v / sum));
+            
+            // Normalize
+            for (let j = 0; j < seqLen; j++) {
+                targetRow[j] /= sum;
+            }
+            
+            targets.push(targetRow);
         }
         
         return targets;
@@ -423,73 +467,100 @@ class AttentionTrainer {
         const seqLen = embeddings.length;
         const dim = embeddings[0].length;
         
-        // Compute attention weight gradients (dL/dA)
-        const dWeights = [];
+        // Get current Q, K matrices
+        const Q = MatrixUtils.multiply(embeddings, this.Wq);
+        const K = MatrixUtils.multiply(embeddings, this.Wk);
+        const dim_k = K[0].length;
+        
+        // Compute loss gradient w.r.t attention weights
+        const dLoss_dA = [];
         for (let i = 0; i < seqLen; i++) {
-            dWeights[i] = [];
+            dLoss_dA[i] = [];
             for (let j = 0; j < seqLen; j++) {
-                dWeights[i][j] = 2 * (attentionWeights[i][j] - target[i][j]);
+                // MSE gradient
+                dLoss_dA[i][j] = 2 * (attentionWeights[i][j] - target[i][j]) / seqLen;
             }
         }
         
-        // Compute gradients through softmax and attention scores
-        // This is a simplified but working gradient computation
-        const Q = MatrixUtils.multiply(embeddings, this.Wq);
-        const K = MatrixUtils.multiply(embeddings, this.Wk);
-        const V = MatrixUtils.multiply(embeddings, this.Wv);
-        
-        const dim_k = K[0].length;
-        const scale = Math.sqrt(dim_k);
-        
-        // Gradient w.r.t Q and K through attention mechanism
-        const dQ = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
-        const dK = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
-        
+        // Backprop through softmax
+        const dLoss_dS = [];
         for (let i = 0; i < seqLen; i++) {
+            dLoss_dS[i] = new Array(seqLen).fill(0);
+            
+            // Jacobian of softmax
             for (let j = 0; j < seqLen; j++) {
-                const grad = dWeights[i][j] * attentionWeights[i][j];
-                
-                for (let d = 0; d < dim_k; d++) {
-                    // Gradient flows through softmax and QK^T
-                    dQ[i][d] += grad * K[j][d] / scale;
-                    dK[j][d] += grad * Q[i][d] / scale;
-                }
-                
-                // Account for softmax derivative
                 for (let k = 0; k < seqLen; k++) {
-                    if (k !== j) {
-                        const grad2 = -dWeights[i][k] * attentionWeights[i][j] * attentionWeights[i][k];
-                        for (let d = 0; d < dim_k; d++) {
-                            dQ[i][d] += grad2 * K[j][d] / scale;
-                            dK[j][d] += grad2 * Q[i][d] / scale;
-                        }
+                    if (j === k) {
+                        dLoss_dS[i][j] += dLoss_dA[i][k] * attentionWeights[i][j] * (1 - attentionWeights[i][j]);
+                    } else {
+                        dLoss_dS[i][j] -= dLoss_dA[i][k] * attentionWeights[i][j] * attentionWeights[i][k];
                     }
                 }
             }
         }
         
-        // Update weight matrices using gradients
-        const embT = MatrixUtils.transpose(embeddings);
-        const dWq = MatrixUtils.multiply(embT, dQ);
-        const dWk = MatrixUtils.multiply(embT, dK);
+        // Scale gradient
+        const scale = 1.0 / Math.sqrt(dim_k);
         
-        // Apply updates with gradient clipping
-        const clipValue = 1.0;
-        for (let i = 0; i < dim; i++) {
-            for (let j = 0; j < dim_k; j++) {
-                // Clip gradients to prevent explosion
-                const gradQ = Math.max(-clipValue, Math.min(clipValue, dWq[i][j]));
-                const gradK = Math.max(-clipValue, Math.min(clipValue, dWk[i][j]));
-                
-                this.Wq[i][j] -= learningRate * gradQ;
-                this.Wk[i][j] -= learningRate * gradK;
+        // Compute gradients w.r.t Q and K
+        const dLoss_dQ = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
+        const dLoss_dK = Array.from({length: seqLen}, () => new Array(dim_k).fill(0));
+        
+        for (let i = 0; i < seqLen; i++) {
+            for (let j = 0; j < seqLen; j++) {
+                for (let d = 0; d < dim_k; d++) {
+                    dLoss_dQ[i][d] += dLoss_dS[i][j] * K[j][d] * scale;
+                    dLoss_dK[j][d] += dLoss_dS[i][j] * Q[i][d] * scale;
+                }
             }
         }
         
-        // Small random perturbation to V to maintain diversity
+        // Compute weight gradients
+        const embT = MatrixUtils.transpose(embeddings);
+        const grad_Wq = MatrixUtils.multiply(embT, dLoss_dQ);
+        const grad_Wk = MatrixUtils.multiply(embT, dLoss_dK);
+        
+        // Update weights with momentum
+        if (!this.momentum_Wq) {
+            this.momentum_Wq = Array.from({length: dim}, () => new Array(dim_k).fill(0));
+            this.momentum_Wk = Array.from({length: dim}, () => new Array(dim_k).fill(0));
+        }
+        
+        const momentum = 0.9;
+        const maxGradNorm = 5.0;
+        
+        // Clip gradients by norm
+        let gradNorm = 0;
         for (let i = 0; i < dim; i++) {
             for (let j = 0; j < dim_k; j++) {
-                this.Wv[i][j] += (Math.random() - 0.5) * 0.001;
+                gradNorm += grad_Wq[i][j] * grad_Wq[i][j] + grad_Wk[i][j] * grad_Wk[i][j];
+            }
+        }
+        gradNorm = Math.sqrt(gradNorm);
+        
+        const clipScale = gradNorm > maxGradNorm ? maxGradNorm / gradNorm : 1.0;
+        
+        // Update with momentum and gradient clipping
+        for (let i = 0; i < dim; i++) {
+            for (let j = 0; j < dim_k; j++) {
+                // Momentum update
+                this.momentum_Wq[i][j] = momentum * this.momentum_Wq[i][j] + (1 - momentum) * grad_Wq[i][j] * clipScale;
+                this.momentum_Wk[i][j] = momentum * this.momentum_Wk[i][j] + (1 - momentum) * grad_Wk[i][j] * clipScale;
+                
+                // Weight update
+                this.Wq[i][j] -= learningRate * this.momentum_Wq[i][j];
+                this.Wk[i][j] -= learningRate * this.momentum_Wk[i][j];
+                
+                // Small weight decay
+                this.Wq[i][j] *= 0.9999;
+                this.Wk[i][j] *= 0.9999;
+            }
+        }
+        
+        // Keep V weights diverse but stable
+        for (let i = 0; i < dim; i++) {
+            for (let j = 0; j < dim_k; j++) {
+                this.Wv[i][j] = this.Wv[i][j] * 0.999 + (Math.random() - 0.5) * 0.001;
             }
         }
     }
@@ -812,6 +883,7 @@ class AttentionTrainer {
             this.currentTask = e.target.value;
             document.querySelector('.task-description').textContent = 
                 this.tasks[this.currentTask].description;
+            this.visualizeTargetPattern();
             this.reset();
         });
         
@@ -840,7 +912,38 @@ class AttentionTrainer {
             this.reset();
         });
         
+        // Visualize initial target pattern
+        this.visualizeTargetPattern();
+        
         this.initialized = true;
+    }
+    
+    visualizeTargetPattern() {
+        const canvas = document.getElementById('target-pattern');
+        if (!canvas) return;
+        
+        // Use example tokens for visualization
+        const exampleTokens = ['the', 'cat', 'sat', 'on', 'mat'];
+        const exampleEmbeddings = this.visualizer.createEmbeddings(exampleTokens, 8);
+        
+        // Create target pattern
+        const task = this.tasks[this.currentTask];
+        const targetPattern = task.createTargets(exampleTokens, exampleEmbeddings);
+        
+        // Draw the pattern
+        this.drawMiniAttention(canvas, targetPattern);
+        
+        // Update description
+        const descriptions = {
+            nextWord: "Causal mask: each position attends to previous positions",
+            copyTask: "Identity matrix: each position attends mainly to itself",
+            similarity: "Similarity-based: tokens with shared characters attend to each other"
+        };
+        
+        const descElement = document.getElementById('target-description');
+        if (descElement) {
+            descElement.textContent = descriptions[this.currentTask];
+        }
     }
 }
 
@@ -2377,15 +2480,24 @@ class StyleGenerator {
             
             .training-visualization {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 200px 1fr;
                 gap: 20px;
                 margin: 20px 0;
             }
             
-            .loss-chart, .attention-evolution {
+            .target-pattern, .loss-chart {
                 background: #f8f9fa;
                 padding: 15px;
                 border-radius: 8px;
+            }
+            
+            .target-pattern {
+                text-align: center;
+            }
+            
+            .target-pattern canvas {
+                margin: 10px auto;
+                display: block;
             }
             
             .evolution-grid {
