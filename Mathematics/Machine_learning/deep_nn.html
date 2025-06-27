@@ -92,69 +92,78 @@ uses_python: false
                 </p>
 
                 <p>
-                    So far the hidden activations are a linear combination of the input activations, followed by a nonlinearity:
+                    In traditional feedforward neural networks, each layer computes hidden activations as a linear transformation of input activations followed by a nonlinearity:
                     \[
                     \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}) \in \mathbb{R}^{m \times v'}
                     \]
-                    where \(\mathbf{X} \in \mathbb{R}^{m \times v}\) are the hidden feature vectors, and 
-                    \(\mathbf{W} \in \mathbb{R}^{v \times v'}\)  are a fixed set of weights that are learned on a training set.
+                    where \(\mathbf{X} \in \mathbb{R}^{m \times v}\) is a matrix of input (or hidden) feature vectors, and 
+                    \(\mathbf{W} \in \mathbb{R}^{v \times v'}\) is a fixed weight matrix learned during training.
                 </p>
 
                 <p>
-                    A model can be more flexible if the weights depend on the inputs such as: 
+                    This formulation uses the same set of weights \(\mathbf{W}\) for every input position. To allow more flexibility, 
+                    we can instead make the weights input-dependent. That is, we can allow:
                     \[
-                    \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}(\mathbf{X})), 
+                    \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}(\mathbf{X})),
                     \]
-                    This multiplicative interaction is called <strong>attention</strong>.
+                    where the transformation matrix \(\mathbf{W}(\mathbf{X})\) varies depending on the input itself.
+                    This allows the model to dynamically adjust its computations based on the input context.
+                    Such input-dependent multiplicative interactions are central to <strong>attention mechanisms</strong>.
                 </p>
 
-                <p> 
-                    More generally, a typical formulation is: 
+                <p>
+                    In more general settings, the input-dependent transformation matrix can be computed from separate sets of learned representations called 
+                    queries, keys, and values. This leads to a broader formulation of attention:
                     \[
                     \mathbf{Z} = \varphi (\mathbf{V}\mathbf{W}(\mathbf{Q}, \mathbf{K}))
                     \]
-                    where 
+                    where:
                     <ul style="padding-left: 40px;">
                         <li>\(\mathbf{Q} \in \mathbb{R}^{m \times q}\) is a set of <strong>queries</strong></li>
                         <li>\(\mathbf{K} \in \mathbb{R}^{m \times q}\) is a set of <strong>keys</strong></li>
                         <li>\(\mathbf{V} \in \mathbb{R}^{m \times v}\) is a set of <strong>values</strong></li>
-                    </ul> 
+                    </ul>
                     <br>
-                    Note: Often we use linear projections of input to compute these matrices. 
-                </p>
-                
-                <p>
-                    To compute output \(\mathbf{z}_j\), the model uses its corresponding query \(\mathbf{q}_j\) and 
-                    compares it to each key \(\mathbf{k}_i\) to obtain the similarity score \(\alpha_{ij}\), where \(0 \leq \alpha_{ij} \leq 1\) and 
-                    \(\sum_i \alpha_{ij} = 1\). Thus,
-                    \[
-                    \mathbf{z}_j = \sum_{i}\alpha_{ij}\mathbf{v}_i.
-                    \]
-                </p>
-               
-                <p>
-                    If \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with zero mean and 
-                    unit variance, then the inner product \(\mathbf{q}^\top \mathbf{k}\) has mean zero and variance \(d\). 
-                    To prevent large variance from affecting the softmax function, we use the <strong>scaled dot-product attention</strong>:
-                    \[
-                    a(\mathbf{q}, \mathbf{k}) = \frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}.
-                    \]
-                    The scale factor \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable(\(= 1\)) as the dimension \(d\) increases.
+                    The transformation matrix \(\mathbf{W}(\mathbf{Q}, \mathbf{K})\) represents a learned or computed relationship between queries and keys.
+                    Note: In practice, these matrices are often obtained by applying learned linear projections to the input sequence.
                 </p>
 
-                <p>
-                    In practice, we use minibatches of \(n\) query vectors at a time. Let the learned query, key, and value matrices derived from the input be:
+                
+                 <p>
+                    In attention, the core idea is to compute each output vector \(\mathbf{z}_j\) as a weighted sum over all value vectors \(\mathbf{v}_i\), 
+                    where the weights \(\alpha_{ij}\) are determined by a similarity between the query \(\mathbf{q}_j\) and each key \(\mathbf{k}_i\):
                     \[
-                    \mathbf{Q} \in \mathbb{R}^{n \times d}, \quad \mathbf{K} \in \mathbb{R}^{m \times d}, \quad \mathbf{V} \in \mathbb{R}^{m \times v}
+                    \mathbf{z}_j = \sum_{i}\alpha_{ij}\mathbf{v}_i
                     \]
-                    Then the attention-weighted output is given by:
-                    \[
-                    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \mathbf{V} \in \mathbb{R}^{n \times v}
-                    \]
-                    where the softmax function is applied row-wise to normalize each row of the \(n \times m\) similarity matrix.
+                    where \(0 \leq \alpha_{ij} \leq 1\) and \(\sum_i \alpha_{ij} = 1\). This allows the model to selectively attend to relevant parts of the input.
                 </p>
 
                  <p>
+                    A common similarity function is the inner product between query and key vectors. If 
+                    \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with zero mean and unit variance, 
+                    then their inner product \(\mathbf{q}^\top \mathbf{k}\) has zero mean and variance \(d\). 
+                    To prevent large variance from pushing the softmax into extreme regions, we normalize it:
+                    \[
+                    a(\mathbf{q}, \mathbf{k}) = \frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}.
+                    \]
+                    This is known as <strong>scaled dot-product attention score</strong>, where the scale factor 
+                    \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable(i.e., \(= 1\)) as the dimension \(d\) increases.  
+                    This is used to compute <strong>attention weights</strong> \(\alpha_{ij}\) after applying the softmax function.
+                </p>
+               
+                <p>
+                    In practice, we compute attention over minibatches of \(n\) query vectors. Let:
+                    \[
+                    \mathbf{Q} \in \mathbb{R}^{n \times d}, \quad \mathbf{K} \in \mathbb{R}^{m \times d}, \quad \mathbf{V} \in \mathbb{R}^{m \times v}
+                    \]
+                    Then the attention-weighted output is computed as:
+                    \[
+                    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \mathbf{V} \in \mathbb{R}^{n \times v}
+                    \]
+                    where the softmax is applied row-wise to normalize each row of the \(n \times m\) similarity matrix.
+                </p>
+
+                <p>
                     This formulation was introduced in the <strong>Transformer</strong> model (Vaswani et al., 2017) and enables:
                     <ul style="padding-left: 40px;">
                         <li>Full parallelization across positions,</li>
