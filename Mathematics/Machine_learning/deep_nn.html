@@ -92,8 +92,24 @@ uses_python: false
                 </p>
 
                 <p>
-                    A model can be more flexible if its weights depend on the inputs(hidden feature vectors) 
-                    \(\mathbf{X} \in \mathbb{R}^{m \times v}\) rather than fixed: 
+                    So far the hidden activations are a linear combination of the input activations, followed by a nonlinearity:
+                    \[
+                    \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}) \in \mathbb{R}^{m \times v'}
+                    \]
+                    where \(\mathbf{X} \in \mathbb{R}^{m \times v}\) are the hidden feature vectors, and 
+                    \(\mathbf{W} \in \mathbb{R}^{v \times v'}\)  are a fixed set of weights that are learned on a training set.
+                </p>
+
+                <p>
+                    A model can be more flexible if the weights depend on the inputs such as: 
+                    \[
+                    \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}(\mathbf{X})), 
+                    \]
+                    This multiplicative interaction is called <strong>attention</strong>.
+                </p>
+
+                <p> 
+                    More generally, a typical formulation is: 
                     \[
                     \mathbf{Z} = \varphi (\mathbf{V}\mathbf{W}(\mathbf{Q}, \mathbf{K}))
                     \]
@@ -102,38 +118,40 @@ uses_python: false
                         <li>\(\mathbf{Q} \in \mathbb{R}^{m \times q}\) is a set of <strong>queries</strong></li>
                         <li>\(\mathbf{K} \in \mathbb{R}^{m \times q}\) is a set of <strong>keys</strong></li>
                         <li>\(\mathbf{V} \in \mathbb{R}^{m \times v}\) is a set of <strong>values</strong></li>
-                    </ul>
+                    </ul> 
                     <br>
-                    This multiplicative interaction is called <strong>attention</strong>.
+                    Note: Often we use linear projections of input to compute these matrices. 
                 </p>
+                
                 <p>
-                    To compute output \(\mathbf{z}_j\), the mode use its corresponding query \(\mathbf{q}_j\) and 
-                    compare it to each key \(\mathbf{k}_i\) to obtain the similarity score \(\alpha_{ij}\) where \(0 \leq \alpha_{ij} \leq 1\) and 
-                    \(\sum_i \alpha_{ij} = 1\). Thus, 
+                    To compute output \(\mathbf{z}_j\), the model uses its corresponding query \(\mathbf{q}_j\) and 
+                    compares it to each key \(\mathbf{k}_i\) to obtain the similarity score \(\alpha_{ij}\), where \(0 \leq \alpha_{ij} \leq 1\) and 
+                    \(\sum_i \alpha_{ij} = 1\). Thus,
                     \[
                     \mathbf{z}_j = \sum_{i}\alpha_{ij}\mathbf{v}_i.
                     \]
                 </p>
+               
                 <p>
-                    If \(\mathbf{q}, \, \mathbf{k} \in \mathbb{R}^d\) and these are independent random variables with zero mean and 
-                    unit variance, the mean of their inner product \(\mathbf{q}^\top \mathbf{k} = 0\) and the variance is \(d\). Then we obtain 
-                    the <strong>scaled dot-product attention</strong>:
+                    If \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with zero mean and 
+                    unit variance, then the inner product \(\mathbf{q}^\top \mathbf{k}\) has mean zero and variance \(d\). 
+                    To prevent large variance from affecting the softmax function, we use the <strong>scaled dot-product attention</strong>:
                     \[
                     a(\mathbf{q}, \mathbf{k}) = \frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}.
                     \]
-                    The scale factor \(\frac{1}{\sqrt{d}}\) controls the variance so that it remains 1 regardless of the size of the inputs.
+                    The scale factor \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable(\(= 1\)) as the dimension \(d\) increases.
                 </p>
 
                 <p>
-                    In practice, we use minibatches of \(n\) vectors at a time. So, let learned query, key, and value matrices derived from the input be:
+                    In practice, we use minibatches of \(n\) query vectors at a time. Let the learned query, key, and value matrices derived from the input be:
                     \[
-                    \mathbf{Q} \in \mathbb{R}^{n \times d}, \, \mathbf{K} \in \mathbb{R}^{m \times d}, \, \mathbf{V} \in \mathbb{R}^{m \times v}
+                    \mathbf{Q} \in \mathbb{R}^{n \times d}, \quad \mathbf{K} \in \mathbb{R}^{m \times d}, \quad \mathbf{V} \in \mathbb{R}^{m \times v}
                     \]
-                    and then we the attention-weighted output is give by:
+                    Then the attention-weighted output is given by:
                     \[
-                    \text{Attention }(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax } \left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \mathbf{V} \in \mathbb{R}^{n \times v}
+                    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \mathbf{V} \in \mathbb{R}^{n \times v}
                     \]
-                    where the softmax function is applied row-wise.
+                    where the softmax function is applied row-wise to normalize each row of the \(n \times m\) similarity matrix.
                 </p>
 
                  <p>
