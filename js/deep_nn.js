@@ -698,7 +698,251 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make visualizer available globally for debugging
     window.attentionVisualizer = visualizer;
-});// HTML Generator class with pattern explorer instead of training
+});// Configuration constants
+const CONFIG = {
+    CANVAS_SIZES: {
+        matrix: { width: 200, height: 150 },
+        attention: { width: 300, height: 300 },
+        multihead: { width: 180, height: 180 },
+        concat: { width: 600, height: 200 },
+        position: { width: 600, height: 200 }
+    },
+    
+    COLORS: {
+        primary: '#3498db',
+        secondary: '#e74c3c',
+        success: '#2ecc71',
+        warning: '#f39c12',
+        info: '#95a5a6',
+        dark: '#2c3e50',
+        light: '#ecf0f1',
+        attentionHue: 210
+    },
+    
+    DEFAULTS: {
+        embeddingDim: 8,
+        numHeads: 2,
+        temperature: 1.0,
+        sentence: "The cat sat on mat"
+    }
+};
+
+// Matrix utility functions
+const MatrixUtils = {
+    initialize(rows, cols, scale = 0.5) {
+        const matrix = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+            matrix[i] = new Array(cols);
+            for (let j = 0; j < cols; j++) {
+                matrix[i][j] = (Math.random() - 0.5) * scale;
+            }
+        }
+        return matrix;
+    },
+    
+    multiply(A, B) {
+        if (!A || !B || !Array.isArray(A) || !Array.isArray(B)) {
+            console.error('Invalid matrices for multiplication');
+            return [];
+        }
+        
+        if (A.length === 0 || B.length === 0) {
+            console.error('Empty matrices for multiplication');
+            return [];
+        }
+        
+        const rowsA = A.length;
+        const colsA = A[0]?.length || 0;
+        const rowsB = B.length;
+        const colsB = B[0]?.length || 0;
+        
+        if (colsA !== rowsB) {
+            console.error('Matrix dimension mismatch:', colsA, '!=', rowsB);
+            return [];
+        }
+        
+        const result = new Array(rowsA);
+        for (let i = 0; i < rowsA; i++) {
+            result[i] = new Array(colsB);
+            for (let j = 0; j < colsB; j++) {
+                let sum = 0;
+                for (let k = 0; k < colsA; k++) {
+                    sum += (A[i][k] || 0) * (B[k][j] || 0);
+                }
+                result[i][j] = sum;
+            }
+        }
+        return result;
+    },
+    
+    transpose(matrix) {
+        if (!matrix || !Array.isArray(matrix) || matrix.length === 0) {
+            console.error('Invalid matrix for transpose');
+            return [];
+        }
+        
+        const rows = matrix.length;
+        const cols = matrix[0]?.length || 0;
+        
+        if (cols === 0) {
+            console.error('Empty matrix columns for transpose');
+            return [];
+        }
+        
+        const result = new Array(cols);
+        for (let j = 0; j < cols; j++) {
+            result[j] = new Array(rows);
+            for (let i = 0; i < rows; i++) {
+                result[j][i] = matrix[i][j] || 0;
+            }
+        }
+        return result;
+    },
+    
+    softmax(scores, temperature = 1.0) {
+        if (!scores || !Array.isArray(scores) || scores.length === 0) {
+            console.error('Invalid scores for softmax');
+            return [];
+        }
+        
+        // Find max for numerical stability
+        let maxScore = scores[0] || 0;
+        for (let i = 1; i < scores.length; i++) {
+            if (scores[i] > maxScore) maxScore = scores[i];
+        }
+        
+        // Compute exp scores
+        const expScores = scores.map(score => 
+            Math.exp((score - maxScore) / temperature)
+        );
+        
+        const sumExp = expScores.reduce((a, b) => a + b, 0) || 1;
+        
+        return expScores.map(exp => exp / sumExp);
+    },
+
+    copy(matrix) {
+        if (!Array.isArray(matrix)) return [];
+        return matrix.map(row => Array.isArray(row) ? [...row] : row);
+    }
+};
+
+// Canvas drawing utilities
+class CanvasUtils {
+    static drawMatrix(canvas, matrix, colorScale = false) {
+        const ctx = canvas.getContext('2d');
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const cellWidth = canvas.width / cols;
+        const cellHeight = canvas.height / rows;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                const value = matrix[i][j];
+                
+                if (colorScale) {
+                    const intensity = Math.max(0, Math.min(1, (value + 1) / 2));
+                    ctx.fillStyle = `hsl(${CONFIG.COLORS.attentionHue}, 70%, ${90 - intensity * 40}%)`;
+                } else {
+                    const gray = Math.floor(255 - Math.abs(value) * 100);
+                    ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+                }
+                
+                ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth - 1, cellHeight - 1);
+                
+                if (cellWidth > 30 && cellHeight > 20) {
+                    ctx.fillStyle = Math.abs(value) > 0.5 ? 'white' : 'black';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value.toFixed(2), 
+                        j * cellWidth + cellWidth / 2, 
+                        i * cellHeight + cellHeight / 2
+                    );
+                }
+            }
+        }
+    }
+    
+    static drawAttentionMatrix(canvas, matrix, tokens, onHover) {
+        const ctx = canvas.getContext('2d');
+        const size = matrix.length;
+        const cellSize = canvas.width / (size + 1);
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw labels
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i < size; i++) {
+            // Top labels
+            ctx.save();
+            ctx.translate(cellSize * (i + 1) + cellSize / 2, cellSize / 2);
+            ctx.rotate(-Math.PI / 4);
+            ctx.fillText(tokens[i], 0, 0);
+            ctx.restore();
+            
+            // Left labels
+            ctx.fillText(tokens[i], cellSize / 2, cellSize * (i + 1) + cellSize / 2);
+        }
+        
+        // Draw attention values
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                const value = matrix[i][j];
+                const intensity = Math.min(1, Math.max(0, value));
+                
+                const lightness = 90 - intensity * 60;
+                ctx.fillStyle = `hsl(${CONFIG.COLORS.attentionHue}, 70%, ${lightness}%)`;
+                
+                ctx.fillRect(
+                    cellSize * (j + 1) + 1,
+                    cellSize * (i + 1) + 1,
+                    cellSize - 2,
+                    cellSize - 2
+                );
+                
+                if (cellSize > 40) {
+                    ctx.fillStyle = intensity > 0.5 ? 'white' : 'black';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(
+                        value.toFixed(3),
+                        cellSize * (j + 1) + cellSize / 2,
+                        cellSize * (i + 1) + cellSize / 2
+                    );
+                }
+            }
+        }
+        
+        // Mouse hover handler
+        if (onHover) {
+            const handleMouseMove = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const col = Math.floor(x / cellSize) - 1;
+                const row = Math.floor(y / cellSize) - 1;
+                
+                if (row >= 0 && row < size && col >= 0 && col < size) {
+                    onHover(row, col, matrix[row][col]);
+                } else {
+                    onHover(-1, -1, 0);
+                }
+            };
+            
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseleave', () => onHover(-1, -1, 0));
+        }
+    }
+}
+
+// HTML Generator class with pattern explorer instead of training
 class HTMLGenerator {
     generate() {
         return `
