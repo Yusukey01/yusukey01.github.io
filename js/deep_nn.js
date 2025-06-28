@@ -986,44 +986,7 @@ const CONFIG = {
         position: { width: 600, height: 200 }
     },
     
-    updateVisualizations() {
-        // Display token embeddings
-        this.displayTokenEmbeddings();
-        
-        // Draw matrices
-        CanvasUtils.drawMatrix(this.elements.query_matrix, this.state.Q, true);
-        CanvasUtils.drawMatrix(this.elements.key_matrix, this.state.K, true);
-        CanvasUtils.drawMatrix(this.elements.value_matrix, this.state.V, true);
-        
-        // Draw attention scores with hover
-        CanvasUtils.drawAttentionMatrix(
-            this.elements.attention_scores, 
-            this.state.attentionScores, 
-            this.state.tokens,
-            (row, col, value) => {
-                if (row >= 0 && col >= 0) {
-                    const dim = this.state.K[0].length;
-                    this.elements.score_detail.textContent = 
-                        `${this.state.tokens[row]} → ${this.state.tokens[col]}: QK^T = ${(value * Math.sqrt(dim)).toFixed(3)}, scaled = ${value.toFixed(3)}`;
-                } else {
-                    this.elements.score_detail.textContent = '';
-                }
-            }
-        );
-        
-        // Draw attention weights
-        CanvasUtils.drawAttentionMatrix(
-            this.elements.attention_weights, 
-            this.state.attentionWeights, 
-            this.state.tokens
-        );
-        
-        // Display output values
-        this.displayOutputValues();
-        
-        // Update computation info
-        this.updateComputationInfo();
-    },
+   
     COLORS: {
         primary: '#3498db',
         secondary: '#e74c3c',
@@ -2380,6 +2343,45 @@ class AttentionVisualizer {
         // Cache tab elements
         this.elements.vizTabs = document.querySelectorAll('.viz-tab');
         this.elements.vizPanes = document.querySelectorAll('.viz-pane');
+    }
+
+     updateVisualizations() {
+        // Display token embeddings
+        this.displayTokenEmbeddings();
+        
+        // Draw matrices
+        CanvasUtils.drawMatrix(this.elements.query_matrix, this.state.Q, true);
+        CanvasUtils.drawMatrix(this.elements.key_matrix, this.state.K, true);
+        CanvasUtils.drawMatrix(this.elements.value_matrix, this.state.V, true);
+        
+        // Draw attention scores with hover
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.attention_scores, 
+            this.state.attentionScores, 
+            this.state.tokens,
+            (row, col, value) => {
+                if (row >= 0 && col >= 0) {
+                    const dim = this.state.K[0].length;
+                    this.elements.score_detail.textContent = 
+                        `${this.state.tokens[row]} → ${this.state.tokens[col]}: QK^T = ${(value * Math.sqrt(dim)).toFixed(3)}, scaled = ${value.toFixed(3)}`;
+                } else {
+                    this.elements.score_detail.textContent = '';
+                }
+            }
+        );
+        
+        // Draw attention weights
+        CanvasUtils.drawAttentionMatrix(
+            this.elements.attention_weights, 
+            this.state.attentionWeights, 
+            this.state.tokens
+        );
+        
+        // Display output values
+        this.displayOutputValues();
+        
+        // Update computation info
+        this.updateComputationInfo();
     }
     
     attachEventListeners() {
