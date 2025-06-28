@@ -17,6 +17,7 @@ uses_python: false
             <a href="#CNN">Convolutional Neural Networks (CNNs)</a>
             <a href="#RNN">Recurrent Neural Networks (RNNs)</a>
             <a href="#attention">Attention Mechanisms</a>
+            <a href="#position">Positional Encoding</a>
             <a href="#transformer">The Rise of Transformers</a>
             <a href="#demo">Demo</a>
         </div> 
@@ -172,6 +173,69 @@ uses_python: false
                     </ul>
                 </p>
             </section>
+
+            <section id="position" class="section-content"> 
+                <h2>Positional Encoding</h2> 
+                <p> 
+                    In transformer-based architectures, there is no recurrence or convolution to model the order of tokens in a 
+                    sequence. To address this, positional encoding is added to the input embeddings to inject information about 
+                    the position of each token. A widely used method is to define fixed, deterministic positional encodings using 
+                    sine and cosine functions of varying frequencies. 
+                </p> 
+
+                <p> 
+                    The positional encoding vector for position \( i \) and dimension \( j \) is defined as follows: 
+                    \[ 
+                    p_{i, 2j} = \sin \left( \frac{i}{C^{2j/d}} \right) 
+                    \]
+                    \[ 
+                    p_{i, 2j+1} = \cos \left( \frac{i}{C^{2j/d}} \right) 
+                    \] 
+                    where: 
+                    <ul> 
+                        <li>\( i \) is the position index in the sequence, starting from 0,</li> 
+                        <li>\( j \) is the dimension index in the positional encoding vector,</li> 
+                        <li>\( d \) is the total dimension of the model (e.g., 512),</li> 
+                        <li>\( C \) is a constant (usually set to 10,000) to control the frequency scale.</li> 
+                    </ul> 
+                </p>
+
+                 <p> 
+                    This formulation ensures that each dimension of the positional encoding corresponds to a sinusoid of a 
+                    different frequency. As a result, any two positions will have a unique positional encoding vector, and the 
+                    relative position between tokens can be represented as a linear function of the encodings. 
+                </p> 
+
+                <p> 
+                    <strong>Example:</strong> Suppose the model dimension is \( d = 4 \), and we compute the positional encoding for 
+                    position \( i = 2 \). Then we compute each component of the encoding as:
+                    \[ 
+                    p_{2,0} = \sin \left( \frac{2}{10,000^{0/4}} \right) = \sin(2) 
+                    \] 
+                    \[
+                     p_{2,1} = \cos \left( \frac{2}{10,000^{0/4}} \right) = \cos(2) 
+                    \] 
+                    \[
+                     p_{2,2} = \sin \left( \frac{2}{10,000^{2/4}} \right) = \sin \left( \frac{2}{100} \right) 
+                     \] 
+                     \[
+                      p_{2,3} = \cos \left( \frac{2}{10,000^{2/4}} \right) = \cos \left( \frac{2}{100} \right) 
+                      \] 
+                    </p> 
+
+                    <p> 
+                        This results in the positional encoding vector for position 2 as: 
+                        \[ 
+                        \left[ \sin(2),\ \cos(2),\ \sin(0.02),\ \cos(0.02) \right] 
+                        \]
+                    </p> 
+
+                     <p> These encodings are added element-wise to the token embeddings at each position, allowing the model to 
+                        incorporate position information without relying on sequence-aware architectures like RNNs or CNNs. 
+                        Moreover, the use of periodic functions enables the model to potentially generalize to sequences longer 
+                        than those seen during training. 
+                    </p> 
+                </section>
 
             <section id="transformer" class="section-content">
                 <h2>The Rise of Transformers</h2>
