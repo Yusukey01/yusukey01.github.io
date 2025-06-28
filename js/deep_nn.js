@@ -2480,7 +2480,7 @@ class AttentionVisualizer {
         
         // Scale by sqrt(d_k)
         const scaledScores = scores.map(row => 
-            row.map(score => score / Math.sqrt(dim))
+            row.map(score => Math.max(0, score / Math.sqrt(dim))) 
         );
         
         // Apply softmax to each row
