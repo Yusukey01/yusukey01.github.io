@@ -1097,6 +1097,11 @@ const MatrixUtils = {
         const sumExp = expScores.reduce((a, b) => a + b, 0) || 1;
         
         return expScores.map(exp => exp / sumExp);
+    },
+    
+     copy(matrix) {
+        if (!Array.isArray(matrix)) return [];
+        return matrix.map(row => Array.isArray(row) ? [...row] : row);
     }
 };
 
