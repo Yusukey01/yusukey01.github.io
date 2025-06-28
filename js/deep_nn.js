@@ -959,6 +959,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const trainingTab = document.getElementById('training-tab');
         if (trainingTab) {
             trainingTab.innerHTML = visualizer.trainer.createTrainingUI();
+            setTimeout(() => {
+                visualizer.trainer.attachEventListeners();
+            }, 0);
         }
     }
     
@@ -966,16 +969,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.attentionVisualizer = visualizer;
 });    
     
-/**
- * Optimized Interactive Attention Mechanism Visualizer with Training
- * 
- * This integrated version includes:
- * 1. Complete attention mechanism visualization
- * 2. Training module to demonstrate learning
- * 3. Multiple training tasks
- * 4. Real-time visualization of learning progress
- */
-
 // Configuration constants
 const CONFIG = {
     CANVAS_SIZES: {
@@ -1098,7 +1091,7 @@ const MatrixUtils = {
         
         return expScores.map(exp => exp / sumExp);
     },
-    
+
      copy(matrix) {
         if (!Array.isArray(matrix)) return [];
         return matrix.map(row => Array.isArray(row) ? [...row] : row);
