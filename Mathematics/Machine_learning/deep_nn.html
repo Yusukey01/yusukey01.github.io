@@ -51,11 +51,46 @@ uses_python: false
                 <p>
                     This success led to deeper architectures:
                     <ul style="padding-left: 40px;"> 
-                        <li><strong>ResNet</strong> introduced <em>residual connections</em> to learn functions of the form \( \mathcal{F}(x) + x \), helping gradients propagate through deep networks.</li> 
+                        <li><strong>ResNet</strong> introduced <strong>residual connections</strong>, which help gradients propagate through deep networks.</li> 
                         <li><strong>DenseNet</strong> connected each layer to all previous layers via concatenation, enhancing feature reuse and reducing redundancy.</li>
                     </ul> 
                     These models advanced image recognition and set the stage for modern vision architectures.
                 </p>
+
+               <div class="theorem">
+                    <span class="theorem-title">Residual Connections:</span>
+                    <p>
+                        <strong>ResNet</strong> is a feedforward architecture in which each layer uses a <strong>residual block</strong> of the form:
+                        \[
+                        \mathcal{F}_{\ell}' (\mathbf{x}) = \mathcal{F}_{\ell} (\mathbf{x}) + \mathbf{x}
+                        \]
+                        where \(\mathcal{F}_{\ell}\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{x}\) is added back directly.
+                    </p>
+
+                    <p>
+                        The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
+                        \[
+                        \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \mathbf{\theta}_i),
+                        \]
+                        where \(\mathbf{\theta}_i\) denotes the parameters of the transformation at layer \(i\).
+                    </p>
+
+                    <p>
+                        This formulation implies that the gradient at any layer \(\ell\) can propagate directly to the loss, regardless of the network depth. 
+                        This mitigates the <strong>vanishing gradient problem</strong> in deep neural networks, enabling the successful training of very deep models.
+                        \[
+                        \begin{align*}
+                        \frac{\partial \mathcal{L}}{\partial \mathbf{\theta}_{\ell}} 
+                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
+                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
+                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
+                                    \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i : \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
+                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
+                            \end{align*}
+                        \]
+                    </p>
+                </div>
+
             </section>
 
             <section id="RNN" class="section-content">
