@@ -18,7 +18,7 @@ uses_python: false
             <a href="#RNN">Recurrent Neural Networks (RNNs)</a>
             <a href="#attention">Attention Mechanisms</a>
             <a href="#self">Self-Attention</a>
-            <a href="#multihead">Multi-Head Attention</a>
+            <a href="#multihead">Multi-Headed Attention</a>
             <a href="#position">Positional Encoding</a>
             <a href="#transformer">The Rise of Transformers</a>
             <a href="#demo">Demo</a>
@@ -166,15 +166,7 @@ uses_python: false
                     where the softmax is applied row-wise to normalize each row of the \(n \times m\) similarity matrix.
                 </p>
 
-                <p>
-                    This formulation was introduced in the <strong>Transformer</strong> model (Vaswani et al., 2017) and enables:
-                    <ul style="padding-left: 40px;">
-                        <li>Full parallelization across positions,</li>
-                        <li>Effective modeling of long-range dependencies, and</li>
-                        <li>Dynamic, data-dependent weighting of inputs.</li>
-                    </ul>
-                </p>
-            </section>
+           </section>
 
             <section id="self" class="section-content">  
             <h2>Self-Attention</h2>  
@@ -196,7 +188,7 @@ uses_python: false
             </section>  
 
             <section id="multihead" class="section-content">
-                <h2>Multi-Head Attention</h2>
+                <h2>Multi-Headed Attention</h2>
                 <p>
                     While a single self-attention mechanism can capture dependencies between tokens, using only one set of projections 
                     may limit the model's expressiveness. <strong>Multi-headed attention (MHA)</strong> addresses this by computing 
@@ -214,7 +206,7 @@ uses_python: false
                 <p>
                     All heads are computed in parallel and their outputs are concatenated and linearly projected to produce the final output:
                     \[
-                    MHA(\mathbf{X}) = \text{MHA}\left(\mathbf{q}, \{\mathbf{k}_j, \mathbf{v}_j\}\right) 
+                    \text{MHA}(\mathbf{X}) = \text{MHA}\left(\mathbf{q}, \{\mathbf{k}_j, \mathbf{v}_j\}\right) 
                         = \mathbf{W}_o  \begin{bmatrix} 
                                     \text{head}_1 \\
                                     \vdots \\
@@ -292,8 +284,25 @@ uses_python: false
 
             <section id="transformer" class="section-content">
                 <h2>The Rise of Transformers</h2>
+
                 <p>
-                    The <strong>Transformer</strong> architecture (Vaswani et al., 2017) relies entirely on self-attention and forgoes recurrence. 
+                    The <strong>transformer</strong> architecture (Vaswani et al., 2017) relies on self-attention for the encoder 
+                    & decoder blocks. 
+                </p>
+
+                <div class="pseudocode">
+                    <span class="pseudocode-title">EncoderBlock(X)</span>
+                    &emsp;Z = LayerNormalization(MHA(Q =X, K = X, V = X) + X)
+                    &emsp;E = LayerNormalization(FeedForward(Z) + Z)
+                    &emsp;<strong>return</strong> E
+                    <span class="pseudocode-title">Encode(X, N)</span>
+                    &emsp;E = POS(Embed(X))
+                    &emsp;for \(n\) in range (N)
+                    &emsp;&emsp; E = EncoderBlock(E)
+                    &emsp;<strong>return</strong> E
+                </div>
+
+                <p>
                     Each layer applies multi-head self-attention and feedforward sublayers:
                     \[
                     \text{MultiHead}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_h) W^O, \quad \text{head}_i = \text{Attention}(XW_i^Q, XW_i^K, XW_i^V)
@@ -303,6 +312,14 @@ uses_python: false
 
                 <p>
                     Transformers now power models like BERT, GPT, and Vision Transformers, and have become the foundation of modern AI across text, images, and multimodal data.
+                </p>
+                <p>
+                    This formulation was introduced in the <strong>Transformer</strong> model (Vaswani et al., 2017) and enables:
+                    <ul style="padding-left: 40px;">
+                        <li>Full parallelization across positions,</li>
+                        <li>Effective modeling of long-range dependencies, and</li>
+                        <li>Dynamic, data-dependent weighting of inputs.</li>
+                    </ul>
                 </p>
             </section>
 
