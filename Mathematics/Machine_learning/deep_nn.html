@@ -18,11 +18,11 @@ uses_python: false
             <a href="#RNN">Recurrent Neural Networks (RNNs)</a>
             <a href="#attention">Attention Mechanisms</a>
             <a href="#self">Self-Attention</a>
-            <a href="#multihead">Multi-Headed Attention</a>
+            <a href="#multihead">Multi-Head Attention</a>
             <a href="#position">Positional Encoding</a>
             <a href="#transformer">The Rise of Transformers</a>
             <a href="#demo">Demo</a>
-        </div> 
+        </div>
 
         <div class="container">  
 
@@ -188,10 +188,10 @@ uses_python: false
             </section>  
 
             <section id="multihead" class="section-content">
-                <h2>Multi-Headed Attention</h2>
+                <h2>Multi-Head Attention</h2>
                 <p>
                     While a single self-attention mechanism can capture dependencies between tokens, using only one set of projections 
-                    may limit the model's expressiveness. <strong>Multi-headed attention (MHA)</strong> addresses this by computing 
+                    may limit the model's expressiveness. <strong>Multi-head attention (MHA)</strong> addresses this by computing 
                     multiple self-attention operations in parallel using different learned projections, called "heads." 
                 </p>
 
@@ -293,8 +293,8 @@ uses_python: false
                 <div class="pseudocode">
                     <span class="pseudocode-title">Transformer Encoder & Decoder</span>
                     <strong>EncoderBlock(X)</strong>
-                    &emsp;&emsp;Z = LayerNormalization(MHA(Q =X, K = X, V = X) + X)
-                    &emsp;&emsp;E = LayerNormalization(FeedForward(Z) + Z)
+                    &emsp;&emsp;Z = LayerNorm(MHA(Q =X, K = X, V = X) + X)
+                    &emsp;&emsp;E = LayerNorm(FeedForward(Z) + Z)
                     &emsp;&emsp;<strong>return</strong> E
                     <br>
                     <strong>Encoder(X, N)</strong>
@@ -304,9 +304,9 @@ uses_python: false
                     &emsp;&emsp;<strong>return</strong> E
                     <br>
                     <strong>DecoderBlock(Y, E)</strong>
-                    &emsp;&emsp;Z = LayerNormalization(MHA(Q =Y, K = Y, V = Y) + Y)
-                    &emsp;&emsp;Z' = LayerNormalization(MHA(Q = Z, K = E, V = E) + Z)
-                    &emsp;&emsp;D = LayerNormalization(FeedForward(Z') + Z')
+                    &emsp;&emsp;Z = LayerNorm(MHA(Q =Y, K = Y, V = Y) + Y)
+                    &emsp;&emsp;Z' = LayerNorm(MHA(Q = Z, K = E, V = E) + Z)
+                    &emsp;&emsp;D = LayerNorm(FeedForward(Z') + Z')
                     &emsp;&emsp;<strong>return</strong> D
                     <br>
                     <strong>Decoder(Y, E, N)</strong>
@@ -315,6 +315,21 @@ uses_python: false
                     &emsp;&emsp;&emsp;&emsp; D = DecoderBlock(D, E)
                     &emsp;&emsp;<strong>return</strong> D
                 </div>
+                <p>
+                    where 
+                    <ul>
+                        <li>MHA(...): the Multi-head self-attention. Each token attends to every other token.</li>
+                        <li> \(+ ...\): residual connection. The input is added back to the output of attention. </li>
+                        <li> LayerNorm(...): Layer normalization, which is applied after the residual connection to stabilize training.</li>
+                        <li>FeedForward(...): A position-wise fully connected feedforward network is applied to each token vector independently.</li>
+                        <li>Embed(...): Each token is mapped to a high-dimensional embedding vector.</li>
+                        <li>POS(...): Positional encoding is added to embeddings to inject token order information.</li>
+                        <li>N is the number of copies of the block</li>
+                    </ul>
+                   
+
+
+                </p>
 
                 <p>
                     Transformers now power models like BERT, GPT, and Vision Transformers, and have become the foundation of modern AI across text, images, and multimodal data.
