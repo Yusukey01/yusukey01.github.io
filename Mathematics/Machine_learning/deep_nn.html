@@ -123,12 +123,35 @@ uses_python: false
                     Since layer normalization does not rely on batch statistics, it is well-suited to models where inputs have variable length or where batch size is small. 
                     These properties make it particularly useful in architectures with recurrent or attention-based computations.
                 </p>
+            </section>
 
+
+            <section id="normalization" class="section-content">
+                <h2>Layer Normalization</h2>
                 <p>
-                    Although it became widely known through its use in Transformer models, layer normalization was introduced prior to both residual connections and self-attention. 
-                    It serves as a general-purpose method for stabilizing intermediate activations in deep networks.
+                    Let \(z_i\) be the \(i\)'th element of a tensor. For example, in 2d images, the index \(i\) has four components, 
+                    indicating batch, height, width, and channel:
+                    \[
+                    i = (i_N, i_H, i_W, i_C).
+                    \]
+                    For each index \(z_i\), the mean and variance are computed by pooling statistics across other dimensions of the tensor 
+                    but not across examples in the batch:
+                    \[
+                    \begin{align*}
+                    &\mu_i = \frac{1}{\| \mathcal{S}_i\|} \sum_{k \in \mathcal{S}_i} z_k \\\\
+                    &\sigma_i = \sqrt{\frac{1}{\| \mathcal{S}_i\|}\sum_{k \in \mathcal{S}_i} (z_k - \mu_i)^2 + \epsilon}
+                    \end{align*}
+                    \]
+                    where \(\mathcal{S}_i\) is the set of elements being averaged over. Then 
+                     \[
+                    \begin{align*}
+                    &\hat{z}_i = \frac{(z_i - \mu_i)}{\sigma_i}
+                    &\tilde{z_i} = \gamma_c \hat{z}_i + \beta_c
+                    \end{align*}
+                    where \(c\) is the channel correspondind to index \(i\).
+                    \]
                 </p>
-                </section>
+            </section>
 
 
             <section id="attention" class="section-content">
