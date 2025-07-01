@@ -15,18 +15,20 @@ uses_python: false
 
         <div class="topic-nav">
             <a href="#CNN">Convolutional Neural Networks (CNNs)</a>
+            <a href="#ResNet">ResNet: Residual Connections</a>
+            <a href="#normalization">Layer Normalization</a>
             <a href="#attention">Attention Mechanisms</a>
             <a href="#self">Self-Attention</a>
             <a href="#multihead">Multi-Head Attention</a>
             <a href="#position">Positional Encoding</a>
-            <a href="#transformer">The Rise of Transformers</a>
+            <a href="#transformer">Transformers</a>
             <a href="#demo">Demo</a>
         </div>
 
         <div class="container">  
 
             <section id="CNN" class="section-content">
-                <h2>Convolutional Neural Networks (CNNs): The First Breakthrough</h2>
+                <h2>Convolutional Neural Networks (CNNs)</h2>
                 <p> 
                     Deep neural networks have undergone remarkable evolution over the past few decades. From early image 
                     classifiers to today's powerful language and multimodal models, the field has progressed through a series 
@@ -51,48 +53,81 @@ uses_python: false
                     This success led to the deeper architecture, <strong>ResNet</strong>(2015), which introduced <strong>residual connections</strong>.
                     Such a model advanced image recognition and set the stage for modern vision architectures.
                 </p>
-
-               <div class="theorem">
-                    <span class="theorem-title">Residual Connections:</span>
-                    <p>
-                        <strong>ResNet</strong> is a feedforward architecture in which each layer uses a <strong>residual block</strong> of the form:
-                        \[
-                        \mathcal{F}_{\ell}' (\mathbf{x}) = \mathcal{F}_{\ell} (\mathbf{x}) + \mathbf{x}
-                        \]
-                        where \(\mathcal{F}_{\ell}\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{x}\) is added back directly.
-                    </p>
-
-                    <p>
-                        The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
-                        \[
-                        \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \mathbf{\theta}_i),
-                        \]
-                        where \(\mathbf{\theta}_i\) denotes the parameters of the transformation at layer \(i\).
-                    </p>
-
-                    <p>
-                        This formulation mitigates the <strong>vanishing gradient problem</strong> in deep neural networks, enabling the 
-                        successful training of very deep models.
-                    </p>
-                    <p>
-                        Applying the chain rule, the gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) becomes:
-                        \[
-                        \begin{align*}
-                        \frac{\partial \mathcal{L}}{\partial \mathbf{\theta}_{\ell}} 
-                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
-                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
-                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
-                                    \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i : \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
-                            &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
-                        \end{align*}
-                        \]
-                        The <em>“other terms”</em> in the gradient capture indirect paths through deeper residual blocks and reflect how updates propagate backward through the network.
-                        These terms may diminish in magnitude in very deep networks, but they are generally not zero and play a critical role in learning refined representations.
-                        Residual networks avoid the vanishing gradient problem not by eliminating these terms, but by ensuring they are <strong>not the only path</strong> for gradient flow.
-                    </p>
-                </div>
-
             </section>
+
+            <section id="CNN" class="section-content">
+                <h2>ResNet: Residual Connections</h2>
+                <p>
+                    <strong>ResNet</strong> is a feedforward architecture in which each layer uses a <strong>residual block</strong> of the form:
+                    \[
+                    \mathcal{F}_{\ell}' (\mathbf{x}) = \mathcal{F}_{\ell} (\mathbf{x}) + \mathbf{x}
+                    \]
+                    where \(\mathcal{F}_{\ell}\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{x}\) is added back directly.
+                </p>
+
+                <p>
+                    The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
+                    \[
+                    \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \mathbf{\theta}_i),
+                    \]
+                    where \(\mathbf{\theta}_i\) denotes the parameters of the transformation at layer \(i\).
+                </p>
+
+                <p>
+                    This formulation mitigates the <strong>vanishing gradient problem</strong> in deep neural networks, enabling the 
+                    successful training of very deep models.
+                </p>
+                <p>
+                    Applying the chain rule, the gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) becomes:
+                    \[
+                    \begin{align*}
+                    \frac{\partial \mathcal{L}}{\partial \mathbf{\theta}_{\ell}} 
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
+                                \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i : \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
+                    \end{align*}
+                    \]
+                    The <em>“other terms”</em> in the gradient capture indirect paths through deeper residual blocks and reflect how updates propagate backward through the network.
+                    These terms may diminish in magnitude in very deep networks, but they are generally not zero and play a critical role in learning refined representations.
+                    Residual networks avoid the vanishing gradient problem not by eliminating these terms, but by ensuring they are <strong>not the only path</strong> for gradient flow.
+                </p>
+            </section>
+
+            <section id="normalization" class="section-content">
+                <h2>Layer Normalization</h2>
+                <p>
+                    <strong>Layer normalization</strong> is a normalization technique introduced by Ba, Kiros, and Hinton (2016) to improve the stability and convergence of deep networks. 
+                    Unlike batch normalization, which normalizes across the batch dimension, layer normalization operates independently for each input sample and normalizes across the feature dimensions.
+                </p>
+
+                <p>
+                    Given an input vector \(\mathbf{x} \in \mathbb{R}^d\), layer normalization computes the normalized output as:
+                    \[
+                    \text{LayerNorm}(\mathbf{x}) = \frac{\mathbf{x} - \mu}{\sqrt{\sigma^2 + \epsilon}} \cdot \gamma + \beta
+                    \]
+                    where:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>\(\mu = \frac{1}{d} \sum_{i=1}^d x_i\) is the mean of the input features</li>
+                    <li>\(\sigma^2 = \frac{1}{d} \sum_{i=1}^d (x_i - \mu)^2\) is the variance</li>
+                    <li>\(\gamma, \beta \in \mathbb{R}^d\) are learnable scale and shift parameters</li>
+                    <li>\(\epsilon\) is a small constant added for numerical stability</li>
+                </ul>
+
+                <p>
+                    Since layer normalization does not rely on batch statistics, it is well-suited to models where inputs have variable length or where batch size is small. 
+                    These properties make it particularly useful in architectures with recurrent or attention-based computations.
+                </p>
+
+                <p>
+                    Although it became widely known through its use in Transformer models, layer normalization was introduced prior to both residual connections and self-attention. 
+                    It serves as a general-purpose method for stabilizing intermediate activations in deep networks.
+                </p>
+                </section>
+
 
             <section id="attention" class="section-content">
                 <h2>Attention Mechanisms</h2>
@@ -291,7 +326,7 @@ uses_python: false
                 </section>
 
             <section id="transformer" class="section-content">
-                <h2>The Rise of Transformers</h2>
+                <h2>Transformers</h2>
 
 
                 <p> 
