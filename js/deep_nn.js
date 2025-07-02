@@ -107,23 +107,51 @@ class TransformerDemo {
     initializeProjectionWeights() {
         // Create projection weights for output layer
         this.projectionWeights = [];
+        
+        // Initialize with Xavier/Glorot initialization
+        const scale = Math.sqrt(2.0 / (this.config.hiddenDim + this.config.vocab.length));
+        
         for (let v = 0; v < this.config.vocab.length; v++) {
             this.projectionWeights[v] = [];
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                this.projectionWeights[v][h] = (Math.random() - 0.5) * 0.1;
+                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale;
             }
         }
         
-        // Add some bias to make certain tokens more likely
-        // This simulates learned patterns
-        const commonTokens = ['is', 'the', 'a', 'and', 'on', 'in', 'was', '.'];
-        commonTokens.forEach(token => {
+        // Create more realistic biases based on token type and context
+        // This simulates learned patterns from training
+        
+        // Special tokens get negative bias
+        ['<PAD>', '<START>', '<END>', '<UNK>'].forEach(token => {
             const idx = this.config.vocab.indexOf(token);
             if (idx !== -1) {
                 this.projectionWeights[idx].forEach((_, i) => {
-                    this.projectionWeights[idx][i] += Math.random() * 0.05;
+                    this.projectionWeights[idx][i] -= 0.5;
                 });
             }
+        });
+        
+        // Common continuation patterns
+        const continuationBias = {
+            'the': ['cat', 'dog', 'house', 'car', 'tree', 'man', 'woman', 'boy', 'girl'],
+            'a': ['cat', 'dog', 'house', 'car', 'tree', 'big', 'small', 'good', 'nice'],
+            'cat': ['is', 'was', 'sat', 'sleeps', 'runs', 'walks', 'jumped', 'and'],
+            'dog': ['is', 'was', 'runs', 'barks', 'sleeps', 'and', 'jumped'],
+            'is': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'a', 'the'],
+            'was': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'a', 'the']
+        };
+        
+        // Apply continuation biases
+        Object.entries(continuationBias).forEach(([prevToken, likelyNextTokens]) => {
+            likelyNextTokens.forEach(nextToken => {
+                const idx = this.config.vocab.indexOf(nextToken);
+                if (idx !== -1) {
+                    // Add positive bias for likely continuations
+                    this.projectionWeights[idx].forEach((_, i) => {
+                        this.projectionWeights[idx][i] += Math.random() * 0.3;
+                    });
+                }
+            });
         });
     }
     
@@ -1030,6 +1058,7 @@ class TransformerDemo {
     
     initializeGenerationSteps(promptTokens) {
         this.state.processingSteps = [];
+        this.state.generatedTokens = [...promptTokens]; // Track all tokens
         
         // We'll generate 3 additional tokens
         const numGenerationSteps = 3;
@@ -1049,7 +1078,8 @@ class TransformerDemo {
                 shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
                 tokens: stepTokens,
                 generationStep: genStep,
-                phase: 'embedding'
+                phase: 'embedding',
+                promptLength: promptTokens.length
             });
             
             // Step 2: Positional Encoding
@@ -1063,16 +1093,23 @@ class TransformerDemo {
                 shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
                 details: 'Sinusoidal positional encodings',
                 generationStep: genStep,
-                phase: 'encoding'
+                phase: 'encoding',
+                promptLength: promptTokens.length
             });
             
             // Step 3-6: Decoder Layers with Causal Masking
             let decoderOutput = posEncoded;
             for (let layer = 0; layer < this.config.numLayers; layer++) {
                 const layerSteps = this.processDecoderLayer(decoderOutput, stepTokens, layer, genStep);
+                layerSteps.forEach(step => {
+                    step.promptLength = promptTokens.length;
+                });
                 this.state.processingSteps.push(...layerSteps);
                 decoderOutput = layerSteps[layerSteps.length - 1].data;
             }
+            
+            // Update state for context-aware projection
+            this.state.generatedTokens = [...stepTokens];
             
             // Step 7: Output Projection
             const logits = this.projectToVocab(decoderOutput[decoderOutput.length - 1]);
@@ -1088,23 +1125,30 @@ class TransformerDemo {
                 tokens: stepTokens,
                 generationStep: genStep,
                 phase: 'output',
-                logits: logits
+                logits: logits,
+                promptLength: promptTokens.length
             });
             
             // Step 8: Token Selection
             const nextToken = this.sampleToken(probs);
             currentTokens.push(nextToken);
+            this.state.generatedTokens.push(nextToken);
             
             this.state.processingSteps.push({
                 name: `Token Selection (Generation ${genStep + 1})`,
                 description: `Selected token: "${nextToken}" from probability distribution`,
                 component: 'output-projection',
-                data: { token: nextToken, probs: probs },
-                tokens: [...stepTokens, nextToken],
+                data: { 
+                    token: nextToken, 
+                    probs: probs,
+                    allTokens: [...currentTokens] // Store complete sequence
+                },
+                tokens: [...currentTokens], // Updated sequence with new token
                 generationStep: genStep,
                 phase: 'selection',
                 isNewToken: true,
-                selectedIndex: this.config.vocab.indexOf(nextToken)
+                selectedIndex: this.config.vocab.indexOf(nextToken),
+                promptLength: promptTokens.length
             });
         }
         
@@ -1362,10 +1406,40 @@ class TransformerDemo {
                 score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
-            // Add small bias based on token frequency
-            // Common tokens get slight boost
-            if (['is', 'was', 'the', 'a', 'and'].includes(this.config.vocab[v])) {
-                score += 0.5;
+            // Add context-aware bias
+            const token = this.config.vocab[v];
+            
+            // Get the last few tokens for context
+            const currentTokens = this.state.generatedTokens || [];
+            const lastToken = currentTokens[currentTokens.length - 1] || '';
+            const secondLastToken = currentTokens[currentTokens.length - 2] || '';
+            
+            // Apply contextual biases
+            if (lastToken === 'the' || lastToken === 'a') {
+                // After articles, favor nouns and adjectives
+                if (['cat', 'dog', 'house', 'car', 'tree', 'big', 'small', 'red', 'blue'].includes(token)) {
+                    score += 2.0;
+                }
+            } else if (['cat', 'dog', 'bird', 'car', 'house'].includes(lastToken)) {
+                // After nouns, favor verbs
+                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps'].includes(token)) {
+                    score += 2.5;
+                }
+            } else if (['is', 'was', 'are', 'were'].includes(lastToken)) {
+                // After be-verbs, favor adjectives or articles
+                if (['big', 'small', 'happy', 'sad', 'red', 'blue', 'a', 'the'].includes(token)) {
+                    score += 2.0;
+                }
+            }
+            
+            // Penalize special tokens
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+                score -= 5.0;
+            }
+            
+            // Penalize repeating the same word
+            if (token === lastToken) {
+                score -= 3.0;
             }
             
             logits.push(score);
@@ -1501,6 +1575,12 @@ class TransformerDemo {
     updateGenerationView(step) {
         const container = document.querySelector('.generation-container');
         
+        // For selection phase, use the complete token list
+        const tokens = step.phase === 'selection' && step.data.allTokens ? 
+            step.data.allTokens : (step.tokens || []);
+        
+        const promptLength = step.promptLength || this.tokenize(document.getElementById('transformer-input').value).length;
+        
         // Show current sequence
         let html = `
             <div class="generation-sequence">
@@ -1508,14 +1588,16 @@ class TransformerDemo {
                 <div class="token-sequence">
         `;
         
-        const tokens = step.tokens || [];
-        const promptLength = this.tokenize(document.getElementById('transformer-input').value).length;
+        // Only show tokens up to current generation step
+        const tokensToShow = step.phase === 'selection' ? 
+            tokens : // Show all tokens including newly selected
+            tokens.slice(0, promptLength + step.generationStep); // Show only up to current position
         
-        tokens.forEach((token, idx) => {
+        tokensToShow.forEach((token, idx) => {
             let tokenClass = 'sequence-token';
             if (idx < promptLength) {
                 tokenClass += ' prompt';
-            } else if (idx === tokens.length - 1 && step.isNewToken) {
+            } else if (idx === tokensToShow.length - 1 && step.isNewToken) {
                 tokenClass += ' generating';
             } else if (idx >= promptLength) {
                 tokenClass += ' generated';
@@ -1531,8 +1613,8 @@ class TransformerDemo {
         
         html += '</div></div>';
         
-        // Show causal mask visualization
-        if (step.causalMask && tokens.length <= 8) { // Only show for small sequences
+        // Show causal mask visualization for small sequences
+        if (step.causalMask && tokens.length <= 8) {
             html += this.renderCausalMask(step.causalMask, tokens);
         }
         
@@ -1548,10 +1630,13 @@ class TransformerDemo {
         
         // Show debug info for selection phase
         if (step.phase === 'selection' && step.data) {
+            const tokenProb = step.data.probs[this.config.vocab.indexOf(step.data.token)] * 100;
             html += `
                 <div class="debug-info">
                     <strong>Selected:</strong> "${step.data.token}" 
-                    (probability: ${(step.data.probs[this.config.vocab.indexOf(step.data.token)] * 100).toFixed(2)}%)
+                    (probability: ${tokenProb.toFixed(2)}%)
+                    <br>
+                    <strong>Sequence so far:</strong> "${step.data.allTokens.join(' ')}"
                 </div>
             `;
         }
