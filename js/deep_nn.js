@@ -1,4 +1,4 @@
-// deep_nn.js - Interactive Transformer Architecture Demo (Improved)
+// deep_nn.js - Interactive Transformer Architecture Demo (Decoder-only like GPT)
 
 class TransformerDemo {
     constructor(containerId) {
@@ -16,7 +16,8 @@ class TransformerDemo {
             numLayers: 2,
             maxLength: 10,
             playbackSpeed: 1000,
-            posEncodingBase: 10000
+            posEncodingBase: 10000,
+            temperature: 1.0
         };
         
         // State
@@ -25,7 +26,9 @@ class TransformerDemo {
             currentStep: 0,
             isPlaying: false,
             processingSteps: [],
-            attentionWeights: []
+            attentionWeights: [],
+            generatedTokens: [],
+            isGenerating: false
         };
         
         // Event cleanup
@@ -54,18 +57,23 @@ class TransformerDemo {
         return `
             <div class="transformer-demo">
                 <div class="demo-header">
-                    <h3>Interactive Transformer Demo</h3>
+                    <h3>GPT-Style Decoder Transformer Demo</h3>
                     <div class="input-section">
-                        <input type="text" id="transformer-input" placeholder="Enter text (e.g., 'the cat')" value="the cat" maxlength="50">
-                        <button id="process-btn" class="demo-button">Process Text</button>
+                        <input type="text" id="transformer-input" placeholder="Enter prompt text (e.g., 'the cat')" value="the cat" maxlength="50">
+                        <button id="process-btn" class="demo-button">Start Generation</button>
+                    </div>
+                    <div class="model-info">
+                        <span class="info-badge">Autoregressive</span>
+                        <span class="info-badge">Causal Attention</span>
+                        <span class="info-badge">Decoder-only</span>
                     </div>
                 </div>
                 
                 <div class="view-tabs">
                     <button class="view-tab active" data-view="architecture">Architecture</button>
+                    <button class="view-tab" data-view="generation">Token Generation</button>
+                    <button class="view-tab" data-view="attention">Causal Attention</button>
                     <button class="view-tab" data-view="dataflow">Data Flow</button>
-                    <button class="view-tab" data-view="attention">Attention Patterns</button>
-                    <button class="view-tab" data-view="output">Output Generation</button>
                 </div>
                 
                 <div class="playback-controls">
@@ -87,20 +95,20 @@ class TransformerDemo {
                     <div id="architecture-view" class="view-content active">
                         <svg id="transformer-svg" width="800" height="600" viewBox="0 0 800 600"></svg>
                     </div>
-                    <div id="dataflow-view" class="view-content">
-                        <div class="dataflow-container"></div>
+                    <div id="generation-view" class="view-content">
+                        <div class="generation-container"></div>
                     </div>
                     <div id="attention-view" class="view-content">
                         <div class="attention-container"></div>
                     </div>
-                    <div id="output-view" class="view-content">
-                        <div class="output-container"></div>
+                    <div id="dataflow-view" class="view-content">
+                        <div class="dataflow-container"></div>
                     </div>
                 </div>
                 
                 <div class="info-panel">
                     <h4>Current Step: <span id="step-title">Ready</span></h4>
-                    <p id="step-description">Click "Process Text" to begin the visualization</p>
+                    <p id="step-description">Click "Start Generation" to begin autoregressive text generation</p>
                     <div id="step-details" class="step-details"></div>
                 </div>
             </div>
@@ -136,6 +144,20 @@ class TransformerDemo {
                 display: flex;
                 gap: 10px;
                 margin-top: 15px;
+            }
+            
+            .model-info {
+                margin-top: 15px;
+                display: flex;
+                gap: 10px;
+            }
+            
+            .info-badge {
+                background: rgba(255,255,255,0.2);
+                padding: 5px 10px;
+                border-radius: 15px;
+                font-size: 12px;
+                font-weight: 500;
             }
             
             #transformer-input {
@@ -350,6 +372,176 @@ class TransformerDemo {
                 100% { stroke-dashoffset: -20; }
             }
             
+            /* Generation view styles */
+            .generation-sequence {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .generation-sequence h4 {
+                margin: 0 0 15px 0;
+                color: #2c3e50;
+            }
+            
+            .token-sequence {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .sequence-token {
+                background: white;
+                border: 2px solid #dee2e6;
+                border-radius: 5px;
+                padding: 10px 15px;
+                font-size: 16px;
+                font-weight: 500;
+                transition: all 0.3s;
+                position: relative;
+            }
+            
+            .sequence-token.prompt {
+                background: #e3f2fd;
+                border-color: #2196f3;
+            }
+            
+            .sequence-token.generated {
+                background: #e8f5e9;
+                border-color: #4caf50;
+                animation: tokenAppear 0.5s ease-in-out;
+            }
+            
+            .sequence-token.generating {
+                background: #fff3e0;
+                border-color: #ff9800;
+                animation: tokenPulse 1s ease-in-out infinite;
+            }
+            
+            @keyframes tokenAppear {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            
+            @keyframes tokenPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            
+            .token-position {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: #3498db;
+                color: white;
+                font-size: 10px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Causal attention mask visualization */
+            .causal-mask-demo {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .mask-grid {
+                display: grid;
+                gap: 2px;
+                margin-top: 15px;
+                justify-content: center;
+            }
+            
+            .mask-cell {
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                transition: all 0.3s;
+            }
+            
+            .mask-cell.allowed {
+                background: #4caf50;
+                color: white;
+            }
+            
+            .mask-cell.masked {
+                background: #f44336;
+                color: white;
+            }
+            
+            .mask-cell.current {
+                background: #ff9800;
+                color: white;
+                animation: pulse 1s ease-in-out infinite;
+            }
+            
+            /* Attention heatmap styles */
+            .attention-heatmap {
+                display: inline-block;
+                margin: 10px;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                overflow: hidden;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            
+            .attention-heatmap h4 {
+                margin: 0;
+                padding: 10px;
+                background: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .attention-grid {
+                display: grid;
+                padding: 5px;
+                background: white;
+            }
+            
+            .attention-cell {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                font-size: 11px;
+                transition: all 0.3s;
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .attention-cell:hover {
+                transform: scale(1.1);
+                z-index: 10;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            
+            .attention-cell.masked-attention {
+                background: #ffebee !important;
+                color: #c62828 !important;
+                opacity: 0.3;
+            }
+            
+            .attention-label {
+                background: #f8f9fa;
+                font-weight: bold;
+                font-size: 10px;
+            }
+            
             /* Data flow styles */
             .tensor-view {
                 background: #f8f9fa;
@@ -399,100 +591,7 @@ class TransformerDemo {
                 transform: scale(1.05);
             }
             
-            /* Attention heatmap styles */
-            .attention-heatmap {
-                display: inline-block;
-                margin: 10px;
-                border: 1px solid #dee2e6;
-                border-radius: 5px;
-                overflow: hidden;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }
-            
-            .attention-heatmap h4 {
-                margin: 0;
-                padding: 10px;
-                background: #f8f9fa;
-                border-bottom: 1px solid #dee2e6;
-            }
-            
-            .attention-grid {
-                display: grid;
-                padding: 5px;
-                background: white;
-            }
-            
-            .attention-cell {
-                width: 40px;
-                height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                font-size: 11px;
-                transition: all 0.3s;
-                cursor: pointer;
-                position: relative;
-            }
-            
-            .attention-cell:hover {
-                transform: scale(1.1);
-                z-index: 10;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            }
-            
-            .attention-label {
-                background: #f8f9fa;
-                font-weight: bold;
-                font-size: 10px;
-            }
-            
-            /* Output generation styles */
-            .token-generation {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin: 20px 0;
-            }
-            
-            .token-box {
-                background: #f8f9fa;
-                border: 2px solid #dee2e6;
-                border-radius: 5px;
-                padding: 15px;
-                min-width: 100px;
-                text-align: center;
-                transition: all 0.3s;
-            }
-            
-            .token-box:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
-            
-            .token-box.generated {
-                background: #d4edda;
-                border-color: #28a745;
-                animation: popIn 0.3s ease-in-out;
-            }
-            
-            @keyframes popIn {
-                0% { transform: scale(0.8); opacity: 0; }
-                100% { transform: scale(1); opacity: 1; }
-            }
-            
-            .token-value {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 5px;
-            }
-            
-            .token-prob {
-                font-size: 12px;
-                color: #6c757d;
-                margin-top: 5px;
-            }
-            
+            /* Probability distribution */
             .probability-chart {
                 margin: 20px 0;
                 background: #f8f9fa;
@@ -591,6 +690,12 @@ class TransformerDemo {
                     width: 100%;
                     margin: 10px 0;
                 }
+                
+                .mask-cell {
+                    width: 25px;
+                    height: 25px;
+                    font-size: 10px;
+                }
             }
         `;
         document.head.appendChild(style);
@@ -599,13 +704,13 @@ class TransformerDemo {
     setupEventListeners() {
         // Process button
         const processBtn = document.getElementById('process-btn');
-        const processFn = () => this.processText();
+        const processFn = () => this.startGeneration();
         processBtn.addEventListener('click', processFn);
         this.eventCleanup.push(() => processBtn.removeEventListener('click', processFn));
         
         // Enter key on input
         const input = document.getElementById('transformer-input');
-        const enterFn = (e) => { if (e.key === 'Enter') this.processText(); };
+        const enterFn = (e) => { if (e.key === 'Enter') this.startGeneration(); };
         input.addEventListener('keypress', enterFn);
         this.eventCleanup.push(() => input.removeEventListener('keypress', enterFn));
         
@@ -661,41 +766,44 @@ class TransformerDemo {
             </defs>
             
             <!-- Title -->
-            <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">Transformer Architecture</text>
+            <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">GPT-Style Decoder Architecture</text>
             
             <!-- Input -->
-            <rect class="component-box" id="input-embed" x="350" y="520" width="100" height="40" rx="5" />
-            <text class="component-text" x="400" y="545">Input Embed</text>
+            <rect class="component-box" id="token-embed" x="320" y="520" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="545">Token Embedding</text>
             
-            <rect class="component-box" id="pos-encoding" x="350" y="460" width="100" height="40" rx="5" />
-            <text class="component-text" x="400" y="485">Pos Encoding</text>
+            <rect class="component-box" id="pos-encoding" x="320" y="460" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="485">Positional Encoding</text>
             
-            <!-- Encoder Stack -->
-            <g id="encoder-stack">
-                <rect x="250" y="140" width="300" height="300" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
-                <text x="400" y="130" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Encoder Stack</text>
+            <!-- Decoder Stack -->
+            <g id="decoder-stack">
+                <rect x="220" y="120" width="360" height="320" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
+                <text x="400" y="110" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Decoder Stack (Autoregressive)</text>
                 
                 <!-- Layer 1 -->
-                <rect class="component-box" id="enc-self-attn-1" x="300" y="370" width="200" height="40" rx="5" />
-                <text class="component-text" x="400" y="395">Multi-Head Attention</text>
-                
-                <rect class="component-box" id="enc-norm-1" x="300" y="310" width="200" height="40" rx="5" />
-                <text class="component-text" x="400" y="335">Add & Layer Norm</text>
-                
-                <rect class="component-box" id="enc-ff-1" x="300" y="250" width="200" height="40" rx="5" />
-                <text class="component-text" x="400" y="275">Feed Forward</text>
-                
-                <rect class="component-box" id="enc-norm-2" x="300" y="190" width="200" height="40" rx="5" />
-                <text class="component-text" x="400" y="215">Add & Layer Norm</text>
+                <g id="decoder-layer-1">
+                    <rect class="component-box" id="dec-masked-attn-1" x="260" y="370" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="385">Masked Multi-Head</text>
+                    <text class="component-text" x="400" y="400" font-size="12">Self-Attention</text>
+                    
+                    <rect class="component-box" id="dec-norm-1" x="260" y="310" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="335">Add & Layer Norm</text>
+                    
+                    <rect class="component-box" id="dec-ff-1" x="260" y="250" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="275">Feed Forward</text>
+                    
+                    <rect class="component-box" id="dec-norm-2" x="260" y="190" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="215">Add & Layer Norm</text>
+                </g>
                 
                 <!-- Layer 2 (simplified) -->
-                <rect class="component-box" id="enc-layer-2" x="300" y="150" width="200" height="30" rx="5" />
-                <text class="component-text" x="400" y="170">Encoder Layer 2</text>
+                <rect class="component-box" id="dec-layer-2" x="260" y="140" width="280" height="35" rx="5" />
+                <text class="component-text" x="400" y="162">Decoder Layer 2</text>
             </g>
             
-            <!-- Output -->
-            <rect class="component-box" id="output" x="350" y="70" width="100" height="40" rx="5" />
-            <text class="component-text" x="400" y="95">Output</text>
+            <!-- Output Head -->
+            <rect class="component-box" id="output-projection" x="320" y="70" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="95">Output Projection</text>
             
             <!-- Connections -->
             <line class="connection-line" id="conn-1" x1="400" y1="520" x2="400" y2="500" stroke-dasharray="5,5" />
@@ -703,61 +811,70 @@ class TransformerDemo {
             <line class="connection-line" id="conn-3" x1="400" y1="370" x2="400" y2="350" stroke-dasharray="5,5" />
             <line class="connection-line" id="conn-4" x1="400" y1="310" x2="400" y2="290" stroke-dasharray="5,5" />
             <line class="connection-line" id="conn-5" x1="400" y1="250" x2="400" y2="230" stroke-dasharray="5,5" />
-            <line class="connection-line" id="conn-6" x1="400" y1="190" x2="400" y2="180" stroke-dasharray="5,5" />
-            <line class="connection-line" id="conn-7" x1="400" y1="150" x2="400" y2="110" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-6" x1="400" y1="190" x2="400" y2="175" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-7" x1="400" y1="140" x2="400" y2="110" stroke-dasharray="5,5" />
             
             <!-- Skip connections -->
-            <path class="connection-line" d="M 280 390 Q 250 330 280 330" stroke-dasharray="3,3" opacity="0.5" />
-            <path class="connection-line" d="M 280 270 Q 250 210 280 210" stroke-dasharray="3,3" opacity="0.5" />
+            <path class="connection-line" d="M 240 390 Q 210 330 240 330" stroke-dasharray="3,3" opacity="0.5" />
+            <path class="connection-line" d="M 240 270 Q 210 210 240 210" stroke-dasharray="3,3" opacity="0.5" />
             
-            <!-- Labels for skip connections -->
-            <text x="240" y="360" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
-            <text x="240" y="240" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
+            <!-- Labels -->
+            <text x="200" y="360" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
+            <text x="200" y="240" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
+            
+            <!-- Causal mask indicator -->
+            <g transform="translate(550, 380)">
+                <rect x="0" y="-15" width="30" height="30" fill="#ff9800" rx="3" />
+                <text x="15" y="5" text-anchor="middle" fill="white" font-size="20">🔒</text>
+                <text x="15" y="30" text-anchor="middle" font-size="10" fill="#7f8c8d">Causal</text>
+                <text x="15" y="42" text-anchor="middle" font-size="10" fill="#7f8c8d">Mask</text>
+            </g>
         `;
     }
     
-    processText() {
+    startGeneration() {
         const input = document.getElementById('transformer-input').value.trim();
         if (!input) {
-            this.showError('Please enter some text to process');
+            this.showError('Please enter some text to start generation');
             return;
         }
         
         // Disable process button during processing
         const processBtn = document.getElementById('process-btn');
         processBtn.disabled = true;
-        processBtn.textContent = 'Processing...';
+        processBtn.textContent = 'Generating...';
         
         try {
             this.reset();
             
             // Tokenize input
-            const tokens = this.tokenize(input);
+            const promptTokens = this.tokenize(input);
+            this.state.generatedTokens = [...promptTokens];
             
-            // Initialize processing steps
-            this.initializeProcessingSteps(tokens);
+            // Initialize generation steps
+            this.initializeGenerationSteps(promptTokens);
             
             // Start visualization
             this.state.currentStep = 0;
             this.updateVisualization();
             
-            // Switch to data flow view
-            this.switchView('dataflow');
+            // Switch to generation view
+            this.switchView('generation');
             
-            processBtn.textContent = 'Process Text';
+            processBtn.textContent = 'Start Generation';
             processBtn.disabled = false;
             
         } catch (error) {
-            console.error('Error processing text:', error);
-            this.showError('Error processing text. Please try again.');
-            processBtn.textContent = 'Process Text';
+            console.error('Error starting generation:', error);
+            this.showError('Error starting generation. Please try again.');
+            processBtn.textContent = 'Start Generation';
             processBtn.disabled = false;
         }
     }
     
     tokenize(text) {
         const words = text.toLowerCase().split(/\s+/);
-        const tokens = ['<START>'];
+        const tokens = [];
         
         for (const word of words) {
             if (this.config.vocab.includes(word)) {
@@ -768,64 +885,88 @@ class TransformerDemo {
             }
         }
         
-        tokens.push('<END>');
-        
-        // Limit sequence length
-        if (tokens.length > this.config.maxLength) {
-            tokens.splice(this.config.maxLength - 1, tokens.length - this.config.maxLength);
-            tokens.push('<END>');
-        }
-        
+        // Don't add START/END tokens for prompt
         return tokens;
     }
     
-    initializeProcessingSteps(tokens) {
+    initializeGenerationSteps(promptTokens) {
         this.state.processingSteps = [];
         
-        // Step 1: Input Embedding
-        const embeddings = this.generateEmbeddings(tokens);
-        this.state.processingSteps.push({
-            name: 'Input Embedding',
-            description: `Converting tokens "${tokens.join(' ')}" to ${this.config.hiddenDim}-dimensional embeddings`,
-            component: 'input-embed',
-            connection: 'conn-1',
-            data: embeddings,
-            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
-            tokens: tokens
-        });
+        // We'll generate 3 additional tokens
+        const numGenerationSteps = 3;
+        let currentTokens = [...promptTokens];
         
-        // Step 2: Positional Encoding
-        const posEncoded = this.addPositionalEncoding(embeddings);
-        this.state.processingSteps.push({
-            name: 'Positional Encoding',
-            description: 'Adding sinusoidal position information to embeddings',
-            component: 'pos-encoding',
-            connection: 'conn-2',
-            data: posEncoded,
-            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
-            details: 'Using sine and cosine functions with different frequencies for each dimension'
-        });
-        
-        // Step 3-6: Encoder Layers
-        let encoderOutput = posEncoded;
-        for (let layer = 0; layer < this.config.numLayers; layer++) {
-            const layerSteps = this.processEncoderLayer(encoderOutput, tokens, layer);
-            this.state.processingSteps.push(...layerSteps);
-            encoderOutput = layerSteps[layerSteps.length - 1].data;
+        for (let genStep = 0; genStep < numGenerationSteps; genStep++) {
+            const stepTokens = [...currentTokens];
+            
+            // Step 1: Token Embedding
+            const embeddings = this.generateEmbeddings(stepTokens);
+            this.state.processingSteps.push({
+                name: `Token Embedding (Generation ${genStep + 1})`,
+                description: `Embedding tokens: "${stepTokens.join(' ')}"`,
+                component: 'token-embed',
+                connection: 'conn-1',
+                data: embeddings,
+                shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
+                tokens: stepTokens,
+                generationStep: genStep,
+                phase: 'embedding'
+            });
+            
+            // Step 2: Positional Encoding
+            const posEncoded = this.addPositionalEncoding(embeddings);
+            this.state.processingSteps.push({
+                name: `Positional Encoding (Generation ${genStep + 1})`,
+                description: `Adding position information for ${stepTokens.length} tokens`,
+                component: 'pos-encoding',
+                connection: 'conn-2',
+                data: posEncoded,
+                shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
+                details: 'Sinusoidal positional encodings',
+                generationStep: genStep,
+                phase: 'encoding'
+            });
+            
+            // Step 3-6: Decoder Layers with Causal Masking
+            let decoderOutput = posEncoded;
+            for (let layer = 0; layer < this.config.numLayers; layer++) {
+                const layerSteps = this.processDecoderLayer(decoderOutput, stepTokens, layer, genStep);
+                this.state.processingSteps.push(...layerSteps);
+                decoderOutput = layerSteps[layerSteps.length - 1].data;
+            }
+            
+            // Step 7: Output Projection
+            const logits = this.projectToVocab(decoderOutput[decoderOutput.length - 1]);
+            const probs = this.softmax(logits);
+            
+            this.state.processingSteps.push({
+                name: `Output Projection (Generation ${genStep + 1})`,
+                description: `Computing probability distribution over vocabulary`,
+                component: 'output-projection',
+                connection: 'conn-7',
+                data: probs,
+                shape: `[${this.config.vocab.length}]`,
+                tokens: stepTokens,
+                generationStep: genStep,
+                phase: 'output',
+                logits: logits
+            });
+            
+            // Step 8: Token Selection
+            const nextToken = this.sampleToken(probs);
+            currentTokens.push(nextToken);
+            
+            this.state.processingSteps.push({
+                name: `Token Selection (Generation ${genStep + 1})`,
+                description: `Selected token: "${nextToken}" from probability distribution`,
+                component: 'output-projection',
+                data: { token: nextToken, probs: probs },
+                tokens: [...stepTokens, nextToken],
+                generationStep: genStep,
+                phase: 'selection',
+                isNewToken: true
+            });
         }
-        
-        // Step 7: Output Generation
-        const output = this.generateOutput(encoderOutput, tokens);
-        this.state.processingSteps.push({
-            name: 'Output Generation',
-            description: 'Generating next token predictions from encoder output',
-            component: 'output',
-            connection: 'conn-7',
-            data: output,
-            shape: `[${tokens.length}, ${this.config.vocab.length}]`,
-            tokens: tokens,
-            details: 'Computing probability distribution over vocabulary for each position'
-        });
         
         // Update slider
         const slider = document.getElementById('step-slider');
@@ -837,7 +978,7 @@ class TransformerDemo {
             const embedding = new Array(this.config.hiddenDim);
             const tokenIdx = this.config.vocab.indexOf(token);
             
-            // Simple deterministic embedding based on token index
+            // Generate embeddings with some structure
             for (let i = 0; i < this.config.hiddenDim; i++) {
                 embedding[i] = Math.sin(tokenIdx * (i + 1) * 0.1) * 0.5 + 
                                Math.cos(tokenIdx * (i + 1) * 0.05) * 0.3;
@@ -869,21 +1010,24 @@ class TransformerDemo {
         return encoded;
     }
     
-    processEncoderLayer(input, tokens, layerNum) {
+    processDecoderLayer(input, tokens, layerNum, genStep) {
         const steps = [];
         const connectionBase = layerNum === 0 ? 3 : 6;
         
-        // Multi-head attention
-        const attention = this.multiHeadAttention(input, tokens);
+        // Masked Multi-head attention
+        const attention = this.maskedMultiHeadAttention(input, tokens);
         steps.push({
-            name: `Multi-Head Attention (Layer ${layerNum + 1})`,
-            description: `Computing self-attention with ${this.config.numHeads} heads`,
-            component: layerNum === 0 ? 'enc-self-attn-1' : 'enc-layer-2',
+            name: `Masked Self-Attention (Layer ${layerNum + 1})`,
+            description: `Computing causal self-attention with ${this.config.numHeads} heads`,
+            component: layerNum === 0 ? 'dec-masked-attn-1' : 'dec-layer-2',
             connection: `conn-${connectionBase}`,
             data: attention.output,
             shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
             attentionWeights: attention.weights,
-            details: `Each head attends to all positions with learned attention patterns`
+            causalMask: attention.mask,
+            details: `Causal mask prevents attending to future tokens`,
+            generationStep: genStep,
+            phase: 'attention'
         });
         
         // Add & Norm
@@ -891,11 +1035,12 @@ class TransformerDemo {
         steps.push({
             name: `Add & Norm (Layer ${layerNum + 1})`,
             description: 'Residual connection and layer normalization',
-            component: layerNum === 0 ? 'enc-norm-1' : 'enc-layer-2',
+            component: layerNum === 0 ? 'dec-norm-1' : 'dec-layer-2',
             connection: `conn-${connectionBase + 1}`,
             data: norm1,
             shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
-            details: 'Stabilizes training and enables gradient flow'
+            generationStep: genStep,
+            phase: 'norm'
         });
         
         // Feed-forward
@@ -903,11 +1048,13 @@ class TransformerDemo {
         steps.push({
             name: `Feed Forward (Layer ${layerNum + 1})`,
             description: 'Position-wise feed-forward network',
-            component: layerNum === 0 ? 'enc-ff-1' : 'enc-layer-2',
+            component: layerNum === 0 ? 'dec-ff-1' : 'dec-layer-2',
             connection: `conn-${connectionBase + 2}`,
             data: ffOutput,
             shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
-            details: 'Two linear transformations with ReLU activation'
+            details: 'Two linear transformations with ReLU',
+            generationStep: genStep,
+            phase: 'feedforward'
         });
         
         // Add & Norm
@@ -915,21 +1062,25 @@ class TransformerDemo {
         steps.push({
             name: `Add & Norm 2 (Layer ${layerNum + 1})`,
             description: 'Second residual connection and layer normalization',
-            component: layerNum === 0 ? 'enc-norm-2' : 'enc-layer-2',
+            component: layerNum === 0 ? 'dec-norm-2' : 'dec-layer-2',
             connection: layerNum === 0 ? 'conn-6' : 'conn-7',
             data: norm2,
             shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
-            details: 'Final output of encoder layer'
+            generationStep: genStep,
+            phase: 'norm2'
         });
         
         return steps;
     }
     
-    multiHeadAttention(input, tokens) {
+    maskedMultiHeadAttention(input, tokens) {
         const seqLen = input.length;
         const headDim = Math.floor(this.config.hiddenDim / this.config.numHeads);
         const weights = [];
         const outputs = [];
+        
+        // Create causal mask
+        const mask = this.createCausalMask(seqLen);
         
         // Simulate attention for each head
         for (let h = 0; h < this.config.numHeads; h++) {
@@ -939,17 +1090,26 @@ class TransformerDemo {
                 const row = [];
                 let sum = 0;
                 
-                // Calculate attention scores
+                // Calculate attention scores with causal masking
                 for (let j = 0; j < seqLen; j++) {
-                    // Simple attention score based on position distance and randomness
-                    const distance = Math.abs(i - j);
-                    const score = Math.exp(-distance * 0.3) + Math.random() * 0.2;
-                    row.push(score);
-                    sum += score;
+                    if (mask[i][j]) {
+                        // Allowed to attend
+                        const distance = Math.abs(i - j);
+                        const score = Math.exp(-distance * 0.3) + Math.random() * 0.2;
+                        row.push(score);
+                        sum += score;
+                    } else {
+                        // Masked out (future position)
+                        row.push(0);
+                    }
                 }
                 
                 // Normalize to get attention weights
-                headWeights.push(row.map(v => v / sum));
+                if (sum > 0) {
+                    headWeights.push(row.map(v => v / sum));
+                } else {
+                    headWeights.push(row);
+                }
             }
             
             weights.push(headWeights);
@@ -964,7 +1124,7 @@ class TransformerDemo {
                     const weight = weights[h][i][j];
                     for (let d = 0; d < headDim; d++) {
                         const dimIdx = h * headDim + d;
-                        if (dimIdx < this.config.hiddenDim) {
+                        if (dimIdx < this.config.hiddenDim && weight > 0) {
                             combined[dimIdx] += input[j][dimIdx] * weight;
                         }
                     }
@@ -974,7 +1134,20 @@ class TransformerDemo {
             outputs.push(combined);
         }
         
-        return { output: outputs, weights: weights };
+        return { output: outputs, weights: weights, mask: mask };
+    }
+    
+    createCausalMask(seqLen) {
+        const mask = [];
+        for (let i = 0; i < seqLen; i++) {
+            const row = [];
+            for (let j = 0; j < seqLen; j++) {
+                // Can only attend to positions <= i (causal mask)
+                row.push(j <= i);
+            }
+            mask.push(row);
+        }
+        return mask;
     }
     
     feedForward(input) {
@@ -983,7 +1156,6 @@ class TransformerDemo {
         return input.map(vec => {
             // First linear layer with ReLU
             const hidden = vec.map((v, i) => {
-                // Simulate linear transformation
                 const transformed = v * 2 + Math.sin(i * 0.1) * 0.5;
                 return Math.max(0, transformed); // ReLU
             });
@@ -1001,50 +1173,66 @@ class TransformerDemo {
     
     layerNorm(input) {
         return input.map(vec => {
-            // Calculate mean
             const mean = vec.reduce((a, b) => a + b, 0) / vec.length;
-            
-            // Calculate variance
             const variance = vec.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / vec.length;
             const std = Math.sqrt(variance + 1e-5);
-            
-            // Normalize
             return vec.map(v => (v - mean) / std);
         });
     }
     
-    generateOutput(encoderOutput, tokens) {
-        // Generate vocabulary predictions for each position
-        const output = [];
+    projectToVocab(hiddenState) {
+        // Project hidden state to vocabulary size
+        const logits = [];
         
-        for (let i = 0; i < encoderOutput.length; i++) {
-            const logits = [];
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            let score = 0;
             
-            // Compute logits for each vocabulary word
-            for (let v = 0; v < this.config.vocab.length; v++) {
-                let score = 0;
-                
-                // Simple scoring based on encoder output
-                for (let d = 0; d < this.config.hiddenDim; d++) {
-                    score += encoderOutput[i][d] * Math.sin((v + 1) * (d + 1) * 0.1);
-                }
-                
-                // Add bias based on token frequency (simulate learned bias)
-                score += Math.cos(v * 0.5) * 2;
-                
-                logits.push(score);
+            // Simulate learned projection weights
+            for (let h = 0; h < this.config.hiddenDim; h++) {
+                score += hiddenState[h] * Math.sin((v + 1) * (h + 1) * 0.1);
             }
             
-            // Apply softmax
-            const maxLogit = Math.max(...logits);
-            const expLogits = logits.map(l => Math.exp(l - maxLogit));
-            const sumExp = expLogits.reduce((a, b) => a + b, 0);
-            const probs = expLogits.map(e => e / sumExp);
+            // Add learned bias
+            score += Math.cos(v * 0.5) * 2;
             
-            output.push(probs);
+            logits.push(score);
         }
         
-        return output;
+        return logits;
+    }
+    
+    softmax(logits) {
+        const maxLogit = Math.max(...logits);
+        const expLogits = logits.map(l => Math.exp(l - maxLogit));
+        const sumExp = expLogits.reduce((a, b) => a + b, 0);
+        return expLogits.map(e => e / sumExp);
+    }
+    
+    sampleToken(probs) {
+        // For demo, pick top-3 sampling
+        const topK = 3;
+        
+        // Get top K indices
+        const indexed = probs.map((p, i) => ({ prob: p, idx: i }));
+        indexed.sort((a, b) => b.prob - a.prob);
+        const topIndices = indexed.slice(0, topK);
+        
+        // Renormalize top-k probs
+        const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
+        const normalizedProbs = topIndices.map(item => item.prob / sumTopK);
+        
+        // Sample from top-k
+        const random = Math.random();
+        let cumsum = 0;
+        
+        for (let i = 0; i < normalizedProbs.length; i++) {
+            cumsum += normalizedProbs[i];
+            if (random < cumsum) {
+                return this.config.vocab[topIndices[i].idx];
+            }
+        }
+        
+        return this.config.vocab[topIndices[0].idx];
     }
     
     updateVisualization() {
@@ -1077,14 +1265,14 @@ class TransformerDemo {
         
         // Update current view
         switch (this.state.currentView) {
-            case 'dataflow':
-                this.updateDataFlowView(step);
+            case 'generation':
+                this.updateGenerationView(step);
                 break;
             case 'attention':
                 this.updateAttentionView(step);
                 break;
-            case 'output':
-                this.updateOutputView(step);
+            case 'dataflow':
+                this.updateDataFlowView(step);
                 break;
         }
         
@@ -1124,61 +1312,96 @@ class TransformerDemo {
         }
     }
     
-    updateDataFlowView(step) {
-        const container = document.querySelector('.dataflow-container');
+    updateGenerationView(step) {
+        const container = document.querySelector('.generation-container');
         
+        // Show current sequence
         let html = `
-            <h3>${step.name}</h3>
-            <div class="tensor-view">
-                <div class="tensor-shape">Shape: ${step.shape}</div>
+            <div class="generation-sequence">
+                <h4>Token Sequence (Generation Step ${(step.generationStep || 0) + 1})</h4>
+                <div class="token-sequence">
         `;
         
-        if (step.tokens && step.name === 'Input Embedding') {
+        const tokens = step.tokens || [];
+        const promptLength = this.tokenize(document.getElementById('transformer-input').value).length;
+        
+        tokens.forEach((token, idx) => {
+            let tokenClass = 'sequence-token';
+            if (idx < promptLength) {
+                tokenClass += ' prompt';
+            } else if (idx === tokens.length - 1 && step.isNewToken) {
+                tokenClass += ' generating';
+            } else if (idx >= promptLength) {
+                tokenClass += ' generated';
+            }
+            
             html += `
-                <div style="margin: 10px 0;">
-                    <strong>Tokens:</strong> ${step.tokens.join(' → ')}
+                <div class="${tokenClass}">
+                    ${token}
+                    <div class="token-position">${idx}</div>
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+        
+        // Show causal mask visualization
+        if (step.causalMask) {
+            html += this.renderCausalMask(step.causalMask, tokens);
+        }
+        
+        // Show probability distribution for output steps
+        if (step.phase === 'output' && step.data) {
+            html += `
+                <div class="probability-chart">
+                    <h4>Next Token Probabilities</h4>
+                    ${this.renderProbabilityChart(step.data)}
                 </div>
             `;
         }
         
-        html += `
-                <div class="tensor-preview">
-                    ${this.renderTensorPreview(step.data)}
-                </div>
-            </div>
-        `;
-        
         container.innerHTML = html;
+        
+        // Animate probability bars
+        if (step.phase === 'output') {
+            setTimeout(() => {
+                document.querySelectorAll('.prob-fill').forEach(fill => {
+                    const width = fill.dataset.width;
+                    if (width) {
+                        fill.style.width = width;
+                    }
+                });
+            }, 100);
+        }
     }
     
-    renderTensorPreview(data) {
-        if (!data || data.length === 0) return '<div class="loading">No data available</div>';
+    renderCausalMask(mask, tokens) {
+        let html = `
+            <div class="causal-mask-demo">
+                <h4>Causal Attention Mask</h4>
+                <p style="margin: 10px 0; color: #666;">Each token can only attend to previous tokens (autoregressive)</p>
+                <div class="mask-grid" style="grid-template-columns: repeat(${tokens.length + 1}, 30px);">
+        `;
         
-        let html = '';
-        const maxRows = 3;
-        const maxCols = 10;
+        // Header row
+        html += '<div class="mask-cell"></div>';
+        tokens.forEach((token, idx) => {
+            html += `<div class="mask-cell attention-label" title="${token}">${idx}</div>`;
+        });
         
-        // Show first few values of first few vectors
-        for (let i = 0; i < Math.min(data.length, maxRows); i++) {
-            for (let j = 0; j < Math.min(data[i].length, maxCols); j++) {
-                const value = data[i][j].toFixed(3);
-                const intensity = Math.abs(data[i][j]);
-                const color = data[i][j] >= 0 ? 
-                    `rgba(52, 152, 219, ${intensity})` : 
-                    `rgba(231, 76, 60, ${intensity})`;
-                
-                html += `<div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">${value}</div>`;
-            }
-            
-            if (data[i].length > maxCols) {
-                html += `<div class="tensor-value">...</div>`;
-            }
-        }
+        // Mask rows
+        mask.forEach((row, i) => {
+            html += `<div class="mask-cell attention-label" title="${tokens[i]}">${i}</div>`;
+            row.forEach((allowed, j) => {
+                const cellClass = allowed ? 'allowed' : 'masked';
+                const title = allowed ? 
+                    `Token ${i} (${tokens[i]}) CAN attend to token ${j} (${tokens[j]})` :
+                    `Token ${i} (${tokens[i]}) CANNOT attend to token ${j} (${tokens[j]})`;
+                html += `<div class="mask-cell ${cellClass}" title="${title}">${allowed ? '✓' : '✗'}</div>`;
+            });
+        });
         
-        if (data.length > maxRows) {
-            html += `<div class="tensor-value" style="grid-column: 1 / -1; text-align: center;">... ${data.length - maxRows} more rows ...</div>`;
-        }
-        
+        html += '</div></div>';
         return html;
     }
     
@@ -1190,9 +1413,14 @@ class TransformerDemo {
             return;
         }
         
-        const tokens = step.tokens || this.state.processingSteps.find(s => s.tokens)?.tokens || [];
+        const tokens = step.tokens || [];
+        const mask = step.causalMask;
         
-        container.innerHTML = '<h3>Attention Patterns</h3>';
+        container.innerHTML = '<h3>Causal Self-Attention Patterns</h3>';
+        
+        if (mask) {
+            container.innerHTML += '<p style="color: #666; margin-bottom: 20px;">Red cells indicate masked positions (cannot attend to future tokens)</p>';
+        }
         
         // Create container for attention heads
         const headsContainer = document.createElement('div');
@@ -1220,10 +1448,10 @@ class TransformerDemo {
             grid.appendChild(corner);
             
             // Add column labels
-            tokens.forEach(token => {
+            tokens.forEach((token, idx) => {
                 const label = document.createElement('div');
                 label.className = 'attention-cell attention-label';
-                label.textContent = token.substring(0, 4);
+                label.textContent = idx;
                 label.title = token;
                 grid.appendChild(label);
             });
@@ -1233,7 +1461,7 @@ class TransformerDemo {
                 // Row label
                 const rowLabel = document.createElement('div');
                 rowLabel.className = 'attention-cell attention-label';
-                rowLabel.textContent = tokens[i].substring(0, 4);
+                rowLabel.textContent = i;
                 rowLabel.title = tokens[i];
                 grid.appendChild(rowLabel);
                 
@@ -1242,13 +1470,22 @@ class TransformerDemo {
                     const cell = document.createElement('div');
                     cell.className = 'attention-cell';
                     
-                    // Color based on weight intensity
-                    const intensity = Math.floor(weight * 255);
-                    const color = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
-                    cell.style.background = color;
-                    cell.style.color = intensity < 128 ? 'black' : 'white';
-                    cell.textContent = weight.toFixed(2);
-                    cell.title = `${tokens[i]} → ${tokens[j]}: ${weight.toFixed(4)}`;
+                    // Check if this position is masked
+                    const isMasked = mask && !mask[i][j];
+                    
+                    if (isMasked) {
+                        cell.className += ' masked-attention';
+                        cell.textContent = '—';
+                        cell.title = `Masked: ${tokens[i]} cannot attend to future token ${tokens[j]}`;
+                    } else {
+                        // Color based on weight intensity
+                        const intensity = Math.floor(weight * 255);
+                        const color = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
+                        cell.style.background = color;
+                        cell.style.color = intensity < 128 ? 'black' : 'white';
+                        cell.textContent = weight.toFixed(2);
+                        cell.title = `${tokens[i]} → ${tokens[j]}: ${weight.toFixed(4)}`;
+                    }
                     
                     grid.appendChild(cell);
                 });
@@ -1261,54 +1498,98 @@ class TransformerDemo {
         container.appendChild(headsContainer);
     }
     
-    updateOutputView(step) {
-        const container = document.querySelector('.output-container');
+    updateDataFlowView(step) {
+        const container = document.querySelector('.dataflow-container');
         
-        if (!step.data || step.name !== 'Output Generation') {
-            container.innerHTML = '<p style="text-align: center; color: #6c757d;">Output generation not yet reached</p>';
-            return;
-        }
+        let html = `
+            <h3>${step.name}</h3>
+            <div class="tensor-view">
+                <div class="tensor-shape">Shape: ${step.shape}</div>
+        `;
         
-        const tokens = step.tokens;
-        const predictions = step.data;
-        
-        // Create token generation visualization
-        let html = '<h3>Token Generation</h3><div class="token-generation">';
-        
-        tokens.forEach((token, i) => {
-            const isLast = i === tokens.length - 1;
+        if (step.tokens && step.phase === 'embedding') {
             html += `
-                <div class="token-box ${isLast ? 'generated' : ''}">
-                    <div class="token-value">${token}</div>
-                    ${!isLast ? '<div class="token-prob">Input Token</div>' : '<div class="token-prob">Next Token?</div>'}
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        
-        // Show next token probabilities for the position before <END>
-        const lastPredictionIdx = predictions.length - 2;
-        if (lastPredictionIdx >= 0) {
-            html += `
-                <div class="probability-chart">
-                    <h4>Next Token Probabilities (after "${tokens[lastPredictionIdx]}")</h4>
-                    ${this.renderProbabilityChart(predictions[lastPredictionIdx])}
+                <div style="margin: 10px 0;">
+                    <strong>Tokens:</strong> ${step.tokens.map((t, i) => 
+                        `<span style="background: ${i < this.tokenize(document.getElementById('transformer-input').value).length ? '#e3f2fd' : '#e8f5e9'}; 
+                        padding: 2px 6px; border-radius: 3px; margin: 0 2px;">${t}</span>`
+                    ).join('')}
                 </div>
             `;
         }
+        
+        if (step.phase === 'output' && step.logits) {
+            html += '<div style="margin: 10px 0;"><strong>Output Type:</strong> Logits → Probabilities</div>';
+        }
+        
+        html += `
+                <div class="tensor-preview">
+                    ${this.renderTensorPreview(step.data)}
+                </div>
+            </div>
+        `;
         
         container.innerHTML = html;
+    }
+    
+    renderTensorPreview(data) {
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+            return '<div class="loading">No data available</div>';
+        }
         
-        // Animate probability bars
-        setTimeout(() => {
-            document.querySelectorAll('.prob-fill').forEach(fill => {
-                const width = fill.dataset.width;
-                if (width) {
-                    fill.style.width = width;
-                }
-            });
-        }, 100);
+        // Handle 1D array (probability distribution)
+        if (Array.isArray(data) && typeof data[0] === 'number') {
+            let html = '';
+            const maxShow = 15;
+            
+            for (let i = 0; i < Math.min(data.length, maxShow); i++) {
+                const value = data[i].toFixed(3);
+                const intensity = Math.abs(data[i]);
+                const color = data[i] >= 0 ? 
+                    `rgba(52, 152, 219, ${Math.min(intensity, 1)})` : 
+                    `rgba(231, 76, 60, ${Math.min(intensity, 1)})`;
+                
+                html += `
+                    <div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">
+                        <div style="font-size: 10px; opacity: 0.7;">${this.config.vocab[i] || 'UNK'}</div>
+                        <div>${value}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.length > maxShow) {
+                html += `<div class="tensor-value">... ${data.length - maxShow} more</div>`;
+            }
+            
+            return html;
+        }
+        
+        // Handle 2D array (embeddings, hidden states)
+        let html = '';
+        const maxRows = 3;
+        const maxCols = 10;
+        
+        for (let i = 0; i < Math.min(data.length, maxRows); i++) {
+            for (let j = 0; j < Math.min(data[i].length, maxCols); j++) {
+                const value = data[i][j].toFixed(3);
+                const intensity = Math.abs(data[i][j]);
+                const color = data[i][j] >= 0 ? 
+                    `rgba(52, 152, 219, ${intensity})` : 
+                    `rgba(231, 76, 60, ${intensity})`;
+                
+                html += `<div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">${value}</div>`;
+            }
+            
+            if (data[i].length > maxCols) {
+                html += `<div class="tensor-value">...</div>`;
+            }
+        }
+        
+        if (data.length > maxRows) {
+            html += `<div class="tensor-value" style="grid-column: 1 / -1; text-align: center;">... ${data.length - maxRows} more rows ...</div>`;
+        }
+        
+        return html;
     }
     
     renderProbabilityChart(probs) {
@@ -1383,20 +1664,22 @@ class TransformerDemo {
         this.state.isPlaying = false;
         this.state.processingSteps = [];
         this.state.attentionWeights = [];
+        this.state.generatedTokens = [];
+        this.state.isGenerating = false;
         
         document.getElementById('play-btn').textContent = '▶️ Play';
         document.getElementById('step-info').textContent = 'Step: 0/0';
         document.getElementById('step-title').textContent = 'Ready';
-        document.getElementById('step-description').textContent = 'Click "Process Text" to begin the visualization';
+        document.getElementById('step-description').textContent = 'Click "Start Generation" to begin autoregressive text generation';
         document.getElementById('step-slider').value = 0;
         document.getElementById('step-details').classList.remove('active');
         
         this.highlightComponent(null, null);
         
         // Clear all views
-        document.querySelector('.dataflow-container').innerHTML = '';
+        document.querySelector('.generation-container').innerHTML = '';
         document.querySelector('.attention-container').innerHTML = '';
-        document.querySelector('.output-container').innerHTML = '';
+        document.querySelector('.dataflow-container').innerHTML = '';
     }
     
     showError(message) {
