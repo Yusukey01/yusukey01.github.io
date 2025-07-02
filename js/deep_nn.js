@@ -1058,40 +1058,44 @@ class TransformerDemo {
     
     initializeGenerationSteps(promptTokens) {
         this.state.processingSteps = [];
-        this.state.generatedTokens = [...promptTokens]; // Track all tokens
+        this.state.generatedTokens = [];
         
-        // We'll generate 3 additional tokens
-        const numGenerationSteps = 3;
-        let currentTokens = [...promptTokens];
+        // Store the sequence as it builds
+        let currentSequence = [...promptTokens];
         
-        for (let genStep = 0; genStep < numGenerationSteps; genStep++) {
-            const stepTokens = [...currentTokens];
+        // Generate tokens one by one (autoregressive)
+        const numTokensToGenerate = 3;
+        
+        for (let genStep = 0; genStep < numTokensToGenerate; genStep++) {
+            // Process the ENTIRE sequence up to this point
+            const sequenceSoFar = [...currentSequence];
             
-            // Step 1: Token Embedding
-            const embeddings = this.generateEmbeddings(stepTokens);
+            // Step 1: Token Embedding for entire sequence
+            const embeddings = this.generateEmbeddings(sequenceSoFar);
             this.state.processingSteps.push({
-                name: `Token Embedding (Generation ${genStep + 1})`,
-                description: `Embedding tokens: "${stepTokens.join(' ')}"`,
+                name: `Token Embedding (Step ${genStep + 1})`,
+                description: `Embedding ${sequenceSoFar.length} tokens: "${sequenceSoFar.join(' ')}"`,
                 component: 'token-embed',
                 connection: 'conn-1',
                 data: embeddings,
-                shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
-                tokens: stepTokens,
+                shape: `[${sequenceSoFar.length}, ${this.config.hiddenDim}]`,
+                tokens: sequenceSoFar,
                 generationStep: genStep,
                 phase: 'embedding',
-                promptLength: promptTokens.length
+                promptLength: promptTokens.length,
+                isGenerating: true
             });
             
             // Step 2: Positional Encoding
             const posEncoded = this.addPositionalEncoding(embeddings);
             this.state.processingSteps.push({
-                name: `Positional Encoding (Generation ${genStep + 1})`,
-                description: `Adding position information for ${stepTokens.length} tokens`,
+                name: `Positional Encoding (Step ${genStep + 1})`,
+                description: `Adding position information for ${sequenceSoFar.length} positions`,
                 component: 'pos-encoding',
                 connection: 'conn-2',
                 data: posEncoded,
-                shape: `[${stepTokens.length}, ${this.config.hiddenDim}]`,
-                details: 'Sinusoidal positional encodings',
+                shape: `[${sequenceSoFar.length}, ${this.config.hiddenDim}]`,
+                tokens: sequenceSoFar,
                 generationStep: genStep,
                 phase: 'encoding',
                 promptLength: promptTokens.length
@@ -1100,50 +1104,55 @@ class TransformerDemo {
             // Step 3-6: Decoder Layers with Causal Masking
             let decoderOutput = posEncoded;
             for (let layer = 0; layer < this.config.numLayers; layer++) {
-                const layerSteps = this.processDecoderLayer(decoderOutput, stepTokens, layer, genStep);
+                const layerSteps = this.processDecoderLayer(decoderOutput, sequenceSoFar, layer, genStep);
                 layerSteps.forEach(step => {
                     step.promptLength = promptTokens.length;
+                    step.currentPosition = sequenceSoFar.length - 1; // Focus on last position
                 });
                 this.state.processingSteps.push(...layerSteps);
                 decoderOutput = layerSteps[layerSteps.length - 1].data;
             }
             
-            // Update state for context-aware projection
-            this.state.generatedTokens = [...stepTokens];
-            
-            // Step 7: Output Projection
-            const logits = this.projectToVocab(decoderOutput[decoderOutput.length - 1]);
+            // Step 7: Output Projection - ONLY from the LAST position
+            const lastPositionHidden = decoderOutput[decoderOutput.length - 1];
+            const logits = this.projectToVocab(lastPositionHidden, sequenceSoFar);
             const probs = this.softmaxWithTemperature(logits, this.config.temperature);
             
             this.state.processingSteps.push({
-                name: `Output Projection (Generation ${genStep + 1})`,
-                description: `Computing probability distribution over vocabulary`,
+                name: `Output Projection (Step ${genStep + 1})`,
+                description: `Predicting next token after: "${sequenceSoFar.join(' ')}"`,
                 component: 'output-projection',
                 connection: 'conn-7',
                 data: probs,
                 shape: `[${this.config.vocab.length}]`,
-                tokens: stepTokens,
+                tokens: sequenceSoFar,
                 generationStep: genStep,
                 phase: 'output',
                 logits: logits,
-                promptLength: promptTokens.length
+                promptLength: promptTokens.length,
+                lastPosition: sequenceSoFar.length - 1
             });
             
-            // Step 8: Token Selection
-            const nextToken = this.sampleToken(probs);
-            currentTokens.push(nextToken);
+            // Step 8: Sample next token
+            const nextToken = this.sampleToken(probs, sequenceSoFar);
+            const nextTokenProb = probs[this.config.vocab.indexOf(nextToken)];
+            
+            // Add the new token to our sequence
+            currentSequence.push(nextToken);
             this.state.generatedTokens.push(nextToken);
             
             this.state.processingSteps.push({
-                name: `Token Selection (Generation ${genStep + 1})`,
-                description: `Selected token: "${nextToken}" from probability distribution`,
+                name: `Token Selection (Step ${genStep + 1})`,
+                description: `Selected "${nextToken}" (${(nextTokenProb * 100).toFixed(1)}% probability)`,
                 component: 'output-projection',
                 data: { 
                     token: nextToken, 
                     probs: probs,
-                    allTokens: [...currentTokens] // Store complete sequence
+                    probability: nextTokenProb,
+                    sequenceBefore: [...sequenceSoFar],
+                    sequenceAfter: [...currentSequence]
                 },
-                tokens: [...currentTokens], // Updated sequence with new token
+                tokens: [...currentSequence], // Full sequence including new token
                 generationStep: genStep,
                 phase: 'selection',
                 isNewToken: true,
@@ -1394,7 +1403,7 @@ class TransformerDemo {
         });
     }
     
-    projectToVocab(hiddenState) {
+    projectToVocab(hiddenState, currentSequence) {
         // Use pre-initialized projection weights
         const logits = [];
         
@@ -1406,40 +1415,76 @@ class TransformerDemo {
                 score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
-            // Add context-aware bias
+            // Add context-aware bias based on the current sequence
             const token = this.config.vocab[v];
+            const lastToken = currentSequence[currentSequence.length - 1] || '';
+            const secondLastToken = currentSequence[currentSequence.length - 2] || '';
             
-            // Get the last few tokens for context
-            const currentTokens = this.state.generatedTokens || [];
-            const lastToken = currentTokens[currentTokens.length - 1] || '';
-            const secondLastToken = currentTokens[currentTokens.length - 2] || '';
+            // Strong penalties for special tokens
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+                score -= 10.0;
+            }
             
-            // Apply contextual biases
-            if (lastToken === 'the' || lastToken === 'a') {
-                // After articles, favor nouns and adjectives
-                if (['cat', 'dog', 'house', 'car', 'tree', 'big', 'small', 'red', 'blue'].includes(token)) {
-                    score += 2.0;
-                }
-            } else if (['cat', 'dog', 'bird', 'car', 'house'].includes(lastToken)) {
-                // After nouns, favor verbs
-                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps'].includes(token)) {
+            // Context-based adjustments
+            if (lastToken === 'the' || lastToken === 'a' || lastToken === 'an') {
+                // After articles, strongly favor nouns and adjectives
+                if (['cat', 'dog', 'house', 'car', 'tree', 'bird', 'man', 'woman', 'boy', 'girl'].includes(token)) {
+                    score += 3.0;
+                } else if (['big', 'small', 'red', 'blue', 'happy', 'old', 'new', 'good'].includes(token)) {
                     score += 2.5;
                 }
+                // Penalize another article or verb
+                if (['the', 'a', 'an', 'is', 'was', 'are'].includes(token)) {
+                    score -= 3.0;
+                }
+            } else if (['cat', 'dog', 'bird', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(lastToken)) {
+                // After nouns, favor verbs or connecting words
+                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats'].includes(token)) {
+                    score += 3.5;
+                } else if (['and', 'or', 'but'].includes(token)) {
+                    score += 1.5;
+                }
+                // Penalize articles or adjectives after nouns
+                if (['the', 'a', 'an', 'big', 'small'].includes(token)) {
+                    score -= 2.0;
+                }
             } else if (['is', 'was', 'are', 'were'].includes(lastToken)) {
-                // After be-verbs, favor adjectives or articles
-                if (['big', 'small', 'happy', 'sad', 'red', 'blue', 'a', 'the'].includes(token)) {
+                // After be-verbs, favor adjectives or verb-ing forms
+                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new', 'fast', 'slow'].includes(token)) {
+                    score += 3.0;
+                } else if (['running', 'walking', 'sleeping', 'playing', 'sitting', 'eating'].includes(token)) {
+                    score += 3.0;
+                } else if (['a', 'an', 'the'].includes(token)) {
+                    score += 1.5; // Can have articles after be-verbs
+                }
+            } else if (token.endsWith('ing')) {
+                // After -ing verbs, favor conjunctions or punctuation-like endings
+                if (['and', 'or', 'but', 'on', 'in', 'at'].includes(token)) {
                     score += 2.0;
                 }
             }
             
-            // Penalize special tokens
-            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+            // Avoid repetition
+            if (token === lastToken) {
                 score -= 5.0;
             }
+            if (currentSequence.slice(-3).includes(token)) {
+                score -= 2.0;
+            }
             
-            // Penalize repeating the same word
-            if (token === lastToken) {
-                score -= 3.0;
+            // Boost common continuation patterns
+            const bigrams = {
+                'the': ['cat', 'dog', 'house', 'car', 'man', 'woman', 'boy', 'girl'],
+                'is': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'good'],
+                'cat': ['is', 'was', 'runs', 'sleeps', 'sits', 'plays'],
+                'dog': ['is', 'was', 'runs', 'barks', 'plays'],
+                'and': ['the', 'a', 'then', 'she', 'he', 'it'],
+                'on': ['the', 'a', 'top', 'it'],
+                'in': ['the', 'a', 'her', 'his']
+            };
+            
+            if (bigrams[lastToken] && bigrams[lastToken].includes(token)) {
+                score += 2.0;
             }
             
             logits.push(score);
@@ -1460,32 +1505,58 @@ class TransformerDemo {
         return expLogits.map(e => e / sumExp);
     }
     
-    sampleToken(probs) {
-        // Top-k sampling
+    sampleToken(probs, currentSequence) {
+        // Top-k sampling with context awareness
         const k = this.config.topK;
         
         // Get top K indices with their probabilities
-        const indexed = probs.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
+        const indexed = probs.map((p, i) => ({ 
+            prob: p, 
+            idx: i, 
+            token: this.config.vocab[i] 
+        }));
         indexed.sort((a, b) => b.prob - a.prob);
         
-        // Filter out special tokens from top-k unless they're very likely
+        // Filter out obviously bad choices
         const filtered = indexed.filter((item, index) => {
             const isSpecial = ['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token);
-            return !isSpecial || item.prob > 0.3 || index < 3;
+            // Keep special tokens only if they have very high probability
+            return !isSpecial || item.prob > 0.5;
         });
         
-        const topIndices = filtered.slice(0, k);
+        // Take top-k from filtered list
+        const topIndices = filtered.slice(0, Math.min(k, filtered.length));
+        
+        // If we have very few options, add some more
+        if (topIndices.length < 3) {
+            const additional = indexed
+                .filter(item => !topIndices.includes(item))
+                .slice(0, 3 - topIndices.length);
+            topIndices.push(...additional);
+        }
         
         // Renormalize top-k probs
         const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
-        const normalizedProbs = topIndices.map(item => item.prob / sumTopK);
+        if (sumTopK === 0) {
+            // Fallback: uniform distribution over top-k
+            topIndices.forEach(item => item.prob = 1.0 / topIndices.length);
+        } else {
+            topIndices.forEach(item => item.prob = item.prob / sumTopK);
+        }
         
-        // Sample from top-k
+        // Temperature-adjusted sampling
+        const temp = this.config.temperature;
+        if (temp < 0.1) {
+            // Greedy: pick the most likely
+            return topIndices[0].token;
+        }
+        
+        // Sample from distribution
         const random = Math.random();
         let cumsum = 0;
         
-        for (let i = 0; i < normalizedProbs.length; i++) {
-            cumsum += normalizedProbs[i];
+        for (let i = 0; i < topIndices.length; i++) {
+            cumsum += topIndices[i].prob;
             if (random < cumsum) {
                 return topIndices[i].token;
             }
@@ -1575,68 +1646,119 @@ class TransformerDemo {
     updateGenerationView(step) {
         const container = document.querySelector('.generation-container');
         
-        // For selection phase, use the complete token list
-        const tokens = step.phase === 'selection' && step.data.allTokens ? 
-            step.data.allTokens : (step.tokens || []);
-        
         const promptLength = step.promptLength || this.tokenize(document.getElementById('transformer-input').value).length;
         
-        // Show current sequence
         let html = `
             <div class="generation-sequence">
-                <h4>Token Sequence (Generation Step ${(step.generationStep || 0) + 1})</h4>
-                <div class="token-sequence">
+                <h4>Token Generation - Step ${(step.generationStep || 0) + 1}</h4>
         `;
         
-        // Only show tokens up to current generation step
-        const tokensToShow = step.phase === 'selection' ? 
-            tokens : // Show all tokens including newly selected
-            tokens.slice(0, promptLength + step.generationStep); // Show only up to current position
-        
-        tokensToShow.forEach((token, idx) => {
-            let tokenClass = 'sequence-token';
-            if (idx < promptLength) {
-                tokenClass += ' prompt';
-            } else if (idx === tokensToShow.length - 1 && step.isNewToken) {
-                tokenClass += ' generating';
-            } else if (idx >= promptLength) {
-                tokenClass += ' generated';
-            }
+        // For selection phase, show before and after sequences
+        if (step.phase === 'selection' && step.data.sequenceBefore && step.data.sequenceAfter) {
+            // Show sequence before selection
+            html += '<p style="color: #666; margin: 10px 0;">Sequence before generation:</p>';
+            html += '<div class="token-sequence">';
             
+            step.data.sequenceBefore.forEach((token, idx) => {
+                const tokenClass = idx < promptLength ? 'sequence-token prompt' : 'sequence-token generated';
+                html += `
+                    <div class="${tokenClass}">
+                        ${token}
+                        <div class="token-position">${idx}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            // Show newly generated token
+            html += '<p style="color: #666; margin: 20px 0 10px 0;">Newly generated token:</p>';
+            html += '<div class="token-sequence">';
             html += `
-                <div class="${tokenClass}">
-                    ${token}
-                    <div class="token-position">${idx}</div>
+                <div class="sequence-token generating">
+                    ${step.data.token}
+                    <div style="margin-top: 5px; font-size: 12px;">
+                        ${(step.data.probability * 100).toFixed(1)}%
+                    </div>
                 </div>
             `;
-        });
-        
-        html += '</div></div>';
-        
-        // Show causal mask visualization for small sequences
-        if (step.causalMask && tokens.length <= 8) {
-            html += this.renderCausalMask(step.causalMask, tokens);
+            html += '</div>';
+            
+            // Show complete sequence
+            html += '<p style="color: #666; margin: 20px 0 10px 0;">Complete sequence:</p>';
+            html += '<div class="token-sequence">';
+            
+            step.data.sequenceAfter.forEach((token, idx) => {
+                let tokenClass = 'sequence-token';
+                if (idx < promptLength) {
+                    tokenClass += ' prompt';
+                } else if (idx === step.data.sequenceAfter.length - 1) {
+                    tokenClass += ' generating';
+                } else {
+                    tokenClass += ' generated';
+                }
+                
+                html += `
+                    <div class="${tokenClass}">
+                        ${token}
+                        <div class="token-position">${idx}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+        } else {
+            // For other phases, show current sequence
+            html += '<div class="token-sequence">';
+            
+            const tokens = step.tokens || [];
+            tokens.forEach((token, idx) => {
+                let tokenClass = 'sequence-token';
+                if (idx < promptLength) {
+                    tokenClass += ' prompt';
+                } else if (idx < promptLength + step.generationStep) {
+                    tokenClass += ' generated';
+                } else if (idx === promptLength + step.generationStep && step.phase === 'output') {
+                    tokenClass += ' generating';
+                }
+                
+                html += `
+                    <div class="${tokenClass}">
+                        ${token}
+                        <div class="token-position">${idx}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
         }
         
-        // Show probability distribution for output steps
+        html += '</div>';
+        
+        // Show causal mask for attention steps (only for small sequences)
+        if (step.causalMask && step.tokens && step.tokens.length <= 8) {
+            html += this.renderCausalMask(step.causalMask, step.tokens);
+        }
+        
+        // Show probability distribution for output phase
         if (step.phase === 'output' && step.data) {
             html += `
                 <div class="probability-chart">
                     <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Predicting token to follow: "${step.tokens.join(' ')}"
+                    </p>
                     ${this.renderProbabilityChart(step.data, step.selectedIndex)}
                 </div>
             `;
         }
         
-        // Show debug info for selection phase
-        if (step.phase === 'selection' && step.data) {
-            const tokenProb = step.data.probs[this.config.vocab.indexOf(step.data.token)] * 100;
+        // Show details for attention phase
+        if (step.phase === 'attention' && step.currentPosition !== undefined) {
             html += `
                 <div class="debug-info">
-                    <strong>Selected:</strong> "${step.data.token}" 
-                    (probability: ${tokenProb.toFixed(2)}%)
+                    <strong>Processing position:</strong> ${step.currentPosition} (last token: "${step.tokens[step.currentPosition]}")
                     <br>
-                    <strong>Sequence so far:</strong> "${step.data.allTokens.join(' ')}"
+                    <strong>Attention:</strong> This position can attend to positions 0-${step.currentPosition}
                 </div>
             `;
         }
