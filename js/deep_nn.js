@@ -1,4 +1,4 @@
-// deep_nn.js - Interactive Transformer Architecture Demo (Decoder-only like GPT)
+// deep_nn.js - Interactive Transformer Architecture Demo (GPT-style Decoder)
 
 class TransformerDemo {
     constructor(containerId) {
@@ -8,17 +8,67 @@ class TransformerDemo {
             return;
         }
         
-        // Configuration
+        // Configuration with expanded vocabulary
         this.config = {
-            vocab: ['<PAD>', '<START>', '<END>', 'the', 'cat', 'sat', 'on', 'mat', 'dog', 'runs', 'fast', 'is', 'a', 'big', 'small', 'red', 'blue', 'green', 'happy', 'sad', 'quick', 'slow', 'jumps', 'sleeps', 'eats', 'drinks', 'plays', 'walks', 'talks', 'thinks'],
+            vocab: [
+                '<PAD>', '<START>', '<END>', '<UNK>',
+                // Common words
+                'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'after',
+                // Common nouns
+                'cat', 'dog', 'bird', 'fish', 'mouse', 'lion', 'tiger', 'bear', 'fox',
+                'house', 'home', 'room', 'door', 'window', 'table', 'chair', 'bed',
+                'car', 'bus', 'train', 'plane', 'boat', 'bike',
+                'tree', 'flower', 'grass', 'sky', 'sun', 'moon', 'star', 'cloud',
+                'water', 'fire', 'earth', 'air', 'rain', 'snow', 'wind',
+                'food', 'bread', 'milk', 'cheese', 'apple', 'banana',
+                'person', 'man', 'woman', 'child', 'boy', 'girl', 'friend',
+                // Common verbs
+                'is', 'are', 'was', 'were', 'be', 'been', 'being',
+                'have', 'has', 'had', 'do', 'does', 'did',
+                'will', 'would', 'could', 'should', 'may', 'might', 'must',
+                'go', 'goes', 'went', 'gone', 'going',
+                'run', 'runs', 'ran', 'running',
+                'walk', 'walks', 'walked', 'walking',
+                'eat', 'eats', 'ate', 'eating',
+                'sleep', 'sleeps', 'slept', 'sleeping',
+                'sit', 'sits', 'sat', 'sitting',
+                'stand', 'stands', 'stood', 'standing',
+                'play', 'plays', 'played', 'playing',
+                'jump', 'jumps', 'jumped', 'jumping',
+                'talk', 'talks', 'talked', 'talking',
+                'see', 'sees', 'saw', 'seen', 'seeing',
+                'look', 'looks', 'looked', 'looking',
+                'make', 'makes', 'made', 'making',
+                'think', 'thinks', 'thought', 'thinking',
+                'know', 'knows', 'knew', 'knowing',
+                'want', 'wants', 'wanted', 'wanting',
+                'like', 'likes', 'liked', 'liking',
+                'love', 'loves', 'loved', 'loving',
+                'need', 'needs', 'needed', 'needing',
+                // Common adjectives
+                'big', 'small', 'large', 'little', 'long', 'short', 'tall', 'wide',
+                'good', 'bad', 'great', 'fine', 'nice', 'beautiful', 'pretty',
+                'new', 'old', 'young', 'fresh', 'ancient',
+                'hot', 'cold', 'warm', 'cool', 'frozen',
+                'fast', 'slow', 'quick', 'rapid',
+                'happy', 'sad', 'angry', 'glad', 'sorry',
+                'red', 'blue', 'green', 'yellow', 'black', 'white', 'brown',
+                'one', 'two', 'three', 'four', 'five', 'many', 'some', 'all'
+            ],
             hiddenDim: 64,
             numHeads: 4,
             numLayers: 2,
-            maxLength: 10,
+            maxLength: 20,
             playbackSpeed: 1000,
             posEncodingBase: 10000,
-            temperature: 1.0
+            temperature: 0.8,
+            topK: 10
         };
+        
+        // Initialize embeddings matrix with random values
+        this.initializeEmbeddings();
+        this.initializeProjectionWeights();
         
         // State
         this.state = {
@@ -40,6 +90,41 @@ class TransformerDemo {
         }
         
         this.init();
+    }
+    
+    initializeEmbeddings() {
+        // Create random embedding matrix
+        this.embeddings = {};
+        for (const token of this.config.vocab) {
+            this.embeddings[token] = [];
+            for (let i = 0; i < this.config.hiddenDim; i++) {
+                // Initialize with small random values
+                this.embeddings[token].push((Math.random() - 0.5) * 0.2);
+            }
+        }
+    }
+    
+    initializeProjectionWeights() {
+        // Create projection weights for output layer
+        this.projectionWeights = [];
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            this.projectionWeights[v] = [];
+            for (let h = 0; h < this.config.hiddenDim; h++) {
+                this.projectionWeights[v][h] = (Math.random() - 0.5) * 0.1;
+            }
+        }
+        
+        // Add some bias to make certain tokens more likely
+        // This simulates learned patterns
+        const commonTokens = ['is', 'the', 'a', 'and', 'on', 'in', 'was', '.'];
+        commonTokens.forEach(token => {
+            const idx = this.config.vocab.indexOf(token);
+            if (idx !== -1) {
+                this.projectionWeights[idx].forEach((_, i) => {
+                    this.projectionWeights[idx][i] += Math.random() * 0.05;
+                });
+            }
+        });
     }
     
     init() {
@@ -66,6 +151,7 @@ class TransformerDemo {
                         <span class="info-badge">Autoregressive</span>
                         <span class="info-badge">Causal Attention</span>
                         <span class="info-badge">Decoder-only</span>
+                        <span class="info-badge">Vocab: ${this.config.vocab.length} tokens</span>
                     </div>
                 </div>
                 
@@ -88,6 +174,13 @@ class TransformerDemo {
                         <option value="1000" selected>1x</option>
                         <option value="500">2x</option>
                         <option value="250">4x</option>
+                    </select>
+                    <label for="temperature-control" style="margin-left: 20px;">Temperature:</label>
+                    <select id="temperature-control">
+                        <option value="0.5">0.5 (focused)</option>
+                        <option value="0.8" selected>0.8 (balanced)</option>
+                        <option value="1.0">1.0 (creative)</option>
+                        <option value="1.2">1.2 (very creative)</option>
                     </select>
                 </div>
                 
@@ -150,6 +243,7 @@ class TransformerDemo {
                 margin-top: 15px;
                 display: flex;
                 gap: 10px;
+                flex-wrap: wrap;
             }
             
             .info-badge {
@@ -256,7 +350,7 @@ class TransformerDemo {
                 cursor: pointer;
             }
             
-            #speed-control {
+            #speed-control, #temperature-control {
                 padding: 5px;
                 border: 1px solid #bdc3c7;
                 border-radius: 3px;
@@ -301,7 +395,7 @@ class TransformerDemo {
             }
             
             #step-description {
-                margin: 0;
+                margin: 0 0 10px 0;
                 color: #555;
                 line-height: 1.6;
             }
@@ -567,9 +661,9 @@ class TransformerDemo {
             
             .tensor-preview {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
                 gap: 5px;
-                max-height: 200px;
+                max-height: 300px;
                 overflow-y: auto;
                 padding: 10px;
                 background: white;
@@ -615,6 +709,13 @@ class TransformerDemo {
                 transform: translateX(5px);
             }
             
+            .prob-bar.selected {
+                background: #e3f2fd;
+                padding: 5px;
+                margin-left: -5px;
+                border-radius: 5px;
+            }
+            
             .prob-label {
                 width: 120px;
                 font-size: 14px;
@@ -640,6 +741,10 @@ class TransformerDemo {
                 border-radius: 12px;
             }
             
+            .prob-bar.selected .prob-fill {
+                background: linear-gradient(to right, #4caf50, #388e3c);
+            }
+            
             .prob-percent {
                 margin-left: 10px;
                 font-size: 13px;
@@ -662,6 +767,16 @@ class TransformerDemo {
                 padding: 15px;
                 border-radius: 5px;
                 margin: 10px;
+            }
+            
+            /* Debug info */
+            .debug-info {
+                background: #f0f0f0;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+                font-family: monospace;
+                font-size: 12px;
             }
             
             /* Responsive design */
@@ -695,6 +810,10 @@ class TransformerDemo {
                     width: 25px;
                     height: 25px;
                     font-size: 10px;
+                }
+                
+                .tensor-preview {
+                    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
                 }
             }
         `;
@@ -741,6 +860,12 @@ class TransformerDemo {
         const speedFn = (e) => { this.config.playbackSpeed = parseInt(e.target.value); };
         speedControl.addEventListener('change', speedFn);
         this.eventCleanup.push(() => speedControl.removeEventListener('change', speedFn));
+        
+        // Temperature control
+        const tempControl = document.getElementById('temperature-control');
+        const tempFn = (e) => { this.config.temperature = parseFloat(e.target.value); };
+        tempControl.addEventListener('change', tempFn);
+        this.eventCleanup.push(() => tempControl.removeEventListener('change', tempFn));
         
         // View tabs
         document.querySelectorAll('.view-tab').forEach(tab => {
@@ -880,13 +1005,27 @@ class TransformerDemo {
             if (this.config.vocab.includes(word)) {
                 tokens.push(word);
             } else {
-                // For unknown words, use '<PAD>' token
-                tokens.push('<PAD>');
+                // For unknown words, try to find a similar one or use <UNK>
+                const similar = this.findSimilarToken(word);
+                tokens.push(similar || '<UNK>');
             }
         }
         
-        // Don't add START/END tokens for prompt
         return tokens;
+    }
+    
+    findSimilarToken(word) {
+        // Simple similarity check - find tokens that start with the same letters
+        const candidates = this.config.vocab.filter(token => 
+            token.startsWith(word.substring(0, 2)) && token !== '<PAD>' && token !== '<START>' && token !== '<END>' && token !== '<UNK>'
+        );
+        
+        if (candidates.length > 0) {
+            // Return the shortest matching candidate
+            return candidates.sort((a, b) => a.length - b.length)[0];
+        }
+        
+        return null;
     }
     
     initializeGenerationSteps(promptTokens) {
@@ -937,7 +1076,7 @@ class TransformerDemo {
             
             // Step 7: Output Projection
             const logits = this.projectToVocab(decoderOutput[decoderOutput.length - 1]);
-            const probs = this.softmax(logits);
+            const probs = this.softmaxWithTemperature(logits, this.config.temperature);
             
             this.state.processingSteps.push({
                 name: `Output Projection (Generation ${genStep + 1})`,
@@ -964,7 +1103,8 @@ class TransformerDemo {
                 tokens: [...stepTokens, nextToken],
                 generationStep: genStep,
                 phase: 'selection',
-                isNewToken: true
+                isNewToken: true,
+                selectedIndex: this.config.vocab.indexOf(nextToken)
             });
         }
         
@@ -974,17 +1114,14 @@ class TransformerDemo {
     }
     
     generateEmbeddings(tokens) {
+        // Use pre-initialized embeddings
         return tokens.map(token => {
-            const embedding = new Array(this.config.hiddenDim);
-            const tokenIdx = this.config.vocab.indexOf(token);
-            
-            // Generate embeddings with some structure
-            for (let i = 0; i < this.config.hiddenDim; i++) {
-                embedding[i] = Math.sin(tokenIdx * (i + 1) * 0.1) * 0.5 + 
-                               Math.cos(tokenIdx * (i + 1) * 0.05) * 0.3;
+            if (this.embeddings[token]) {
+                return [...this.embeddings[token]]; // Return copy
+            } else {
+                // Fallback for unknown tokens
+                return this.embeddings['<UNK>'] || new Array(this.config.hiddenDim).fill(0).map(() => (Math.random() - 0.5) * 0.1);
             }
-            
-            return embedding;
         });
     }
     
@@ -1093,9 +1230,25 @@ class TransformerDemo {
                 // Calculate attention scores with causal masking
                 for (let j = 0; j < seqLen; j++) {
                     if (mask[i][j]) {
-                        // Allowed to attend
-                        const distance = Math.abs(i - j);
-                        const score = Math.exp(-distance * 0.3) + Math.random() * 0.2;
+                        // Simple attention pattern with some randomness
+                        let score = 1.0;
+                        
+                        // Recent positions get higher attention
+                        const distance = i - j;
+                        score *= Math.exp(-distance * 0.2);
+                        
+                        // Add some head-specific patterns
+                        if (h === 0) {
+                            // First head focuses on recent tokens
+                            score *= Math.exp(-distance * 0.3);
+                        } else if (h === 1) {
+                            // Second head looks at first token more
+                            if (j === 0) score *= 2.0;
+                        }
+                        
+                        // Add small random noise
+                        score += Math.random() * 0.1;
+                        
                         row.push(score);
                         sum += score;
                     } else {
@@ -1122,10 +1275,12 @@ class TransformerDemo {
             for (let h = 0; h < this.config.numHeads; h++) {
                 for (let j = 0; j < seqLen; j++) {
                     const weight = weights[h][i][j];
-                    for (let d = 0; d < headDim; d++) {
-                        const dimIdx = h * headDim + d;
-                        if (dimIdx < this.config.hiddenDim && weight > 0) {
-                            combined[dimIdx] += input[j][dimIdx] * weight;
+                    if (weight > 0) {
+                        for (let d = 0; d < headDim; d++) {
+                            const dimIdx = h * headDim + d;
+                            if (dimIdx < this.config.hiddenDim) {
+                                combined[dimIdx] += input[j][dimIdx] * weight;
+                            }
                         }
                     }
                 }
@@ -1155,13 +1310,28 @@ class TransformerDemo {
         
         return input.map(vec => {
             // First linear layer with ReLU
-            const hidden = vec.map((v, i) => {
-                const transformed = v * 2 + Math.sin(i * 0.1) * 0.5;
-                return Math.max(0, transformed); // ReLU
-            });
+            const hidden = [];
+            for (let h = 0; h < hiddenSize; h++) {
+                let value = 0;
+                for (let i = 0; i < vec.length; i++) {
+                    // Simulate random weights
+                    value += vec[i] * (Math.sin((h + 1) * (i + 1) * 0.1) * 0.5);
+                }
+                hidden.push(Math.max(0, value)); // ReLU
+            }
             
             // Second linear layer (projection back)
-            return hidden.map((v, i) => v * 0.5 + Math.cos(i * 0.1) * 0.2);
+            const output = [];
+            for (let i = 0; i < this.config.hiddenDim; i++) {
+                let value = 0;
+                for (let h = 0; h < hiddenSize; h++) {
+                    // Simulate random weights
+                    value += hidden[h] * (Math.cos((i + 1) * (h + 1) * 0.1) * 0.3);
+                }
+                output.push(value);
+            }
+            
+            return output;
         });
     }
     
@@ -1181,19 +1351,22 @@ class TransformerDemo {
     }
     
     projectToVocab(hiddenState) {
-        // Project hidden state to vocabulary size
+        // Use pre-initialized projection weights
         const logits = [];
         
         for (let v = 0; v < this.config.vocab.length; v++) {
             let score = 0;
             
-            // Simulate learned projection weights
+            // Dot product with projection weights
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                score += hiddenState[h] * Math.sin((v + 1) * (h + 1) * 0.1);
+                score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
-            // Add learned bias
-            score += Math.cos(v * 0.5) * 2;
+            // Add small bias based on token frequency
+            // Common tokens get slight boost
+            if (['is', 'was', 'the', 'a', 'and'].includes(this.config.vocab[v])) {
+                score += 0.5;
+            }
             
             logits.push(score);
         }
@@ -1201,21 +1374,33 @@ class TransformerDemo {
         return logits;
     }
     
-    softmax(logits) {
-        const maxLogit = Math.max(...logits);
-        const expLogits = logits.map(l => Math.exp(l - maxLogit));
+    softmaxWithTemperature(logits, temperature) {
+        // Apply temperature scaling
+        const scaledLogits = logits.map(l => l / temperature);
+        
+        // Compute softmax
+        const maxLogit = Math.max(...scaledLogits);
+        const expLogits = scaledLogits.map(l => Math.exp(l - maxLogit));
         const sumExp = expLogits.reduce((a, b) => a + b, 0);
+        
         return expLogits.map(e => e / sumExp);
     }
     
     sampleToken(probs) {
-        // For demo, pick top-3 sampling
-        const topK = 3;
+        // Top-k sampling
+        const k = this.config.topK;
         
-        // Get top K indices
-        const indexed = probs.map((p, i) => ({ prob: p, idx: i }));
+        // Get top K indices with their probabilities
+        const indexed = probs.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
         indexed.sort((a, b) => b.prob - a.prob);
-        const topIndices = indexed.slice(0, topK);
+        
+        // Filter out special tokens from top-k unless they're very likely
+        const filtered = indexed.filter((item, index) => {
+            const isSpecial = ['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token);
+            return !isSpecial || item.prob > 0.3 || index < 3;
+        });
+        
+        const topIndices = filtered.slice(0, k);
         
         // Renormalize top-k probs
         const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
@@ -1228,11 +1413,12 @@ class TransformerDemo {
         for (let i = 0; i < normalizedProbs.length; i++) {
             cumsum += normalizedProbs[i];
             if (random < cumsum) {
-                return this.config.vocab[topIndices[i].idx];
+                return topIndices[i].token;
             }
         }
         
-        return this.config.vocab[topIndices[0].idx];
+        // Fallback
+        return topIndices[0].token;
     }
     
     updateVisualization() {
@@ -1346,7 +1532,7 @@ class TransformerDemo {
         html += '</div></div>';
         
         // Show causal mask visualization
-        if (step.causalMask) {
+        if (step.causalMask && tokens.length <= 8) { // Only show for small sequences
             html += this.renderCausalMask(step.causalMask, tokens);
         }
         
@@ -1354,8 +1540,18 @@ class TransformerDemo {
         if (step.phase === 'output' && step.data) {
             html += `
                 <div class="probability-chart">
-                    <h4>Next Token Probabilities</h4>
-                    ${this.renderProbabilityChart(step.data)}
+                    <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
+                    ${this.renderProbabilityChart(step.data, step.selectedIndex)}
+                </div>
+            `;
+        }
+        
+        // Show debug info for selection phase
+        if (step.phase === 'selection' && step.data) {
+            html += `
+                <div class="debug-info">
+                    <strong>Selected:</strong> "${step.data.token}" 
+                    (probability: ${(step.data.probs[this.config.vocab.indexOf(step.data.token)] * 100).toFixed(2)}%)
                 </div>
             `;
         }
@@ -1519,7 +1715,7 @@ class TransformerDemo {
         }
         
         if (step.phase === 'output' && step.logits) {
-            html += '<div style="margin: 10px 0;"><strong>Output Type:</strong> Logits → Probabilities</div>';
+            html += '<div style="margin: 10px 0;"><strong>Output Type:</strong> Logits → Probabilities (via softmax)</div>';
         }
         
         html += `
@@ -1540,25 +1736,29 @@ class TransformerDemo {
         // Handle 1D array (probability distribution)
         if (Array.isArray(data) && typeof data[0] === 'number') {
             let html = '';
-            const maxShow = 15;
+            const maxShow = 20;
             
-            for (let i = 0; i < Math.min(data.length, maxShow); i++) {
-                const value = data[i].toFixed(3);
-                const intensity = Math.abs(data[i]);
-                const color = data[i] >= 0 ? 
-                    `rgba(52, 152, 219, ${Math.min(intensity, 1)})` : 
-                    `rgba(231, 76, 60, ${Math.min(intensity, 1)})`;
+            // Sort by probability to show most likely tokens
+            const indexed = data.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
+            indexed.sort((a, b) => b.prob - a.prob);
+            
+            for (let i = 0; i < Math.min(indexed.length, maxShow); i++) {
+                const item = indexed[i];
+                const value = item.prob.toFixed(4);
+                const percent = (item.prob * 100).toFixed(1);
+                const intensity = Math.min(item.prob * 5, 1); // Scale for visibility
+                const color = `rgba(52, 152, 219, ${intensity})`;
                 
                 html += `
                     <div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">
-                        <div style="font-size: 10px; opacity: 0.7;">${this.config.vocab[i] || 'UNK'}</div>
-                        <div>${value}</div>
+                        <div style="font-size: 10px; opacity: 0.7;">${item.token}</div>
+                        <div>${percent}%</div>
                     </div>
                 `;
             }
             
-            if (data.length > maxShow) {
-                html += `<div class="tensor-value">... ${data.length - maxShow} more</div>`;
+            if (indexed.length > maxShow) {
+                html += `<div class="tensor-value">... ${indexed.length - maxShow} more</div>`;
             }
             
             return html;
@@ -1572,7 +1772,7 @@ class TransformerDemo {
         for (let i = 0; i < Math.min(data.length, maxRows); i++) {
             for (let j = 0; j < Math.min(data[i].length, maxCols); j++) {
                 const value = data[i][j].toFixed(3);
-                const intensity = Math.abs(data[i][j]);
+                const intensity = Math.min(Math.abs(data[i][j]), 1);
                 const color = data[i][j] >= 0 ? 
                     `rgba(52, 152, 219, ${intensity})` : 
                     `rgba(231, 76, 60, ${intensity})`;
@@ -1592,19 +1792,20 @@ class TransformerDemo {
         return html;
     }
     
-    renderProbabilityChart(probs) {
+    renderProbabilityChart(probs, selectedIndex) {
         if (!probs) return '';
         
-        // Get top 10 predictions
-        const topIndices = probs
-            .map((p, i) => ({ prob: p, idx: i }))
-            .sort((a, b) => b.prob - a.prob)
-            .slice(0, 10);
+        // Get top K predictions
+        const indexed = probs.map((p, i) => ({ prob: p, idx: i }));
+        indexed.sort((a, b) => b.prob - a.prob);
+        const topIndices = indexed.slice(0, this.config.topK);
         
         return topIndices.map(({ prob, idx }) => {
             const percent = (prob * 100).toFixed(1);
+            const isSelected = idx === selectedIndex;
+            
             return `
-                <div class="prob-bar">
+                <div class="prob-bar ${isSelected ? 'selected' : ''}">
                     <div class="prob-label">${this.config.vocab[idx]}</div>
                     <div class="prob-value">
                         <div class="prob-fill" data-width="${percent}%" style="width: 0"></div>
