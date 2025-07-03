@@ -114,41 +114,42 @@ class TransformerDemo {
         for (let v = 0; v < this.config.vocab.length; v++) {
             this.projectionWeights[v] = [];
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale;
+                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale * 0.1; // Smaller weights
             }
         }
         
-        // Create more realistic biases based on token type and context
-        // This simulates learned patterns from training
+        // Create more realistic biases based on token type
+        // This simulates what a trained model might learn
         
-        // Special tokens get negative bias
+        // Severely penalize special tokens
         ['<PAD>', '<START>', '<END>', '<UNK>'].forEach(token => {
             const idx = this.config.vocab.indexOf(token);
             if (idx !== -1) {
                 this.projectionWeights[idx].forEach((_, i) => {
-                    this.projectionWeights[idx][i] -= 0.5;
+                    this.projectionWeights[idx][i] -= 1.0;
                 });
             }
         });
         
-        // Common continuation patterns
-        const continuationBias = {
-            'the': ['cat', 'dog', 'house', 'car', 'tree', 'man', 'woman', 'boy', 'girl'],
-            'a': ['cat', 'dog', 'house', 'car', 'tree', 'big', 'small', 'good', 'nice'],
-            'cat': ['is', 'was', 'sat', 'sleeps', 'runs', 'walks', 'jumped', 'and'],
-            'dog': ['is', 'was', 'runs', 'barks', 'sleeps', 'and', 'jumped'],
-            'is': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'a', 'the'],
-            'was': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'a', 'the']
+        // Create linguistic categories with appropriate biases
+        const tokenCategories = {
+            articles: ['the', 'a', 'an'],
+            commonVerbs: ['is', 'was', 'are', 'were', 'has', 'have', 'had'],
+            actionVerbs: ['runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats'],
+            commonNouns: ['cat', 'dog', 'house', 'car', 'man', 'woman', 'boy', 'girl'],
+            adjectives: ['big', 'small', 'happy', 'sad', 'good', 'bad', 'new', 'old'],
+            conjunctions: ['and', 'but', 'or'],
+            prepositions: ['in', 'on', 'at', 'with', 'by', 'for', 'to']
         };
         
-        // Apply continuation biases
-        Object.entries(continuationBias).forEach(([prevToken, likelyNextTokens]) => {
-            likelyNextTokens.forEach(nextToken => {
-                const idx = this.config.vocab.indexOf(nextToken);
+        // Apply category-based biases
+        Object.entries(tokenCategories).forEach(([category, tokens]) => {
+            tokens.forEach(token => {
+                const idx = this.config.vocab.indexOf(token);
                 if (idx !== -1) {
-                    // Add positive bias for likely continuations
+                    // Small positive bias for common words
                     this.projectionWeights[idx].forEach((_, i) => {
-                        this.projectionWeights[idx][i] += Math.random() * 0.3;
+                        this.projectionWeights[idx][i] += Math.random() * 0.1;
                     });
                 }
             });
@@ -1576,8 +1577,8 @@ class TransformerDemo {
     }
     
     sampleToken(probs, currentSequence) {
-        // Top-k sampling with context awareness
-        const k = this.config.topK;
+        // Get the last token for context
+        const lastToken = currentSequence[currentSequence.length - 1] || '';
         
         // Get top K indices with their probabilities
         const indexed = probs.map((p, i) => ({ 
@@ -1587,28 +1588,64 @@ class TransformerDemo {
         }));
         indexed.sort((a, b) => b.prob - a.prob);
         
-        // Filter out obviously bad choices
-        const filtered = indexed.filter((item, index) => {
-            const isSpecial = ['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token);
-            // Keep special tokens only if they have very high probability
-            return !isSpecial || item.prob > 0.5;
+        // Filter out invalid choices based on context
+        const filtered = indexed.filter((item) => {
+            const token = item.token;
+            
+            // Always exclude special tokens unless extremely likely
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+                return item.prob > 0.8;
+            }
+            
+            // Prevent immediate repetition
+            if (token === lastToken) {
+                return false;
+            }
+            
+            // Prevent repetition of recent words
+            const recentTokens = currentSequence.slice(-3);
+            if (recentTokens.includes(token)) {
+                return false;
+            }
+            
+            // Grammar-based filtering
+            if (lastToken === 'and' || lastToken === 'or' || lastToken === 'but') {
+                // After conjunctions, don't allow adjectives without articles
+                if (['big', 'small', 'happy', 'sad', 'new', 'old', 'fast', 'slow'].includes(token)) {
+                    return false;
+                }
+            }
+            
+            if (lastToken === 'the' || lastToken === 'a' || lastToken === 'an') {
+                // After articles, don't allow verbs or other articles
+                if (['is', 'was', 'are', 'were', 'the', 'a', 'an'].includes(token)) {
+                    return false;
+                }
+            }
+            
+            return true;
         });
         
         // Take top-k from filtered list
-        const topIndices = filtered.slice(0, Math.min(k, filtered.length));
+        let topIndices = filtered.slice(0, Math.min(this.config.topK, filtered.length));
         
-        // If we have very few options, add some more
+        // If we filtered out too many options, be less strict
         if (topIndices.length < 3) {
-            const additional = indexed
-                .filter(item => !topIndices.includes(item))
-                .slice(0, 3 - topIndices.length);
-            topIndices.push(...additional);
+            // Just exclude special tokens and exact repetition
+            topIndices = indexed
+                .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token) && item.token !== lastToken)
+                .slice(0, this.config.topK);
         }
         
-        // Renormalize top-k probs
+        // If still no options, use original top-k
+        if (topIndices.length === 0) {
+            topIndices = indexed.slice(0, this.config.topK);
+        }
+        
+        // Renormalize probabilities
         const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
         if (sumTopK === 0) {
-            // Fallback: uniform distribution over top-k
+            // Uniform distribution as fallback
             topIndices.forEach(item => item.prob = 1.0 / topIndices.length);
         } else {
             topIndices.forEach(item => item.prob = item.prob / sumTopK);
