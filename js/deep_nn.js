@@ -1647,14 +1647,15 @@ class TransformerDemo {
         const container = document.querySelector('.generation-container');
         
         const promptLength = step.promptLength || this.tokenize(document.getElementById('transformer-input').value).length;
+        const generationStep = step.generationStep || 0;
         
         let html = `
             <div class="generation-sequence">
-                <h4>Token Generation - Step ${(step.generationStep || 0) + 1}</h4>
+                <h4>Token Generation - Step ${generationStep + 1}</h4>
         `;
         
         // For selection phase, show before and after sequences
-        if (step.phase === 'selection' && step.data.sequenceBefore && step.data.sequenceAfter) {
+        if (step.phase === 'selection' && step.data && step.data.sequenceBefore && step.data.sequenceAfter) {
             // Show sequence before selection
             html += '<p style="color: #666; margin: 10px 0;">Sequence before generation:</p>';
             html += '<div class="token-sequence">';
@@ -1715,9 +1716,9 @@ class TransformerDemo {
                 let tokenClass = 'sequence-token';
                 if (idx < promptLength) {
                     tokenClass += ' prompt';
-                } else if (idx < promptLength + step.generationStep) {
+                } else if (idx < promptLength + generationStep) {
                     tokenClass += ' generated';
-                } else if (idx === promptLength + step.generationStep && step.phase === 'output') {
+                } else if (idx === promptLength + generationStep && step.phase === 'output') {
                     tokenClass += ' generating';
                 }
                 
@@ -1740,12 +1741,12 @@ class TransformerDemo {
         }
         
         // Show probability distribution for output phase
-        if (step.phase === 'output' && step.data) {
+        if (step.phase === 'output' && step.data && Array.isArray(step.data)) {
             html += `
                 <div class="probability-chart">
                     <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
                     <p style="color: #666; margin-bottom: 15px;">
-                        Predicting token to follow: "${step.tokens.join(' ')}"
+                        Predicting token to follow: "${(step.tokens || []).join(' ')}"
                     </p>
                     ${this.renderProbabilityChart(step.data, step.selectedIndex)}
                 </div>
@@ -1754,9 +1755,10 @@ class TransformerDemo {
         
         // Show details for attention phase
         if (step.phase === 'attention' && step.currentPosition !== undefined) {
+            const currentToken = step.tokens && step.tokens[step.currentPosition] ? step.tokens[step.currentPosition] : '';
             html += `
                 <div class="debug-info">
-                    <strong>Processing position:</strong> ${step.currentPosition} (last token: "${step.tokens[step.currentPosition]}")
+                    <strong>Processing position:</strong> ${step.currentPosition} (last token: "${currentToken}")
                     <br>
                     <strong>Attention:</strong> This position can attend to positions 0-${step.currentPosition}
                 </div>
