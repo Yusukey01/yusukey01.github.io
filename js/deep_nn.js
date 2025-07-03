@@ -523,6 +523,8 @@ class TransformerDemo {
                 font-weight: 500;
                 transition: all 0.3s;
                 position: relative;
+                min-width: 60px;
+                text-align: center;
             }
             
             .sequence-token.prompt {
@@ -555,8 +557,8 @@ class TransformerDemo {
             
             .token-position {
                 position: absolute;
-                top: -8px;
-                right: -8px;
+                top: -10px;
+                right: -10px;
                 background: #3498db;
                 color: white;
                 font-size: 10px;
@@ -566,6 +568,7 @@ class TransformerDemo {
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                font-weight: normal;
             }
             
             /* Causal attention mask visualization */
@@ -1407,6 +1410,7 @@ class TransformerDemo {
         // Use pre-initialized projection weights
         const logits = [];
         
+        // Base projection
         for (let v = 0; v < this.config.vocab.length; v++) {
             let score = 0;
             
@@ -1415,79 +1419,131 @@ class TransformerDemo {
                 score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
-            // Add context-aware bias based on the current sequence
-            const token = this.config.vocab[v];
-            const lastToken = currentSequence[currentSequence.length - 1] || '';
-            const secondLastToken = currentSequence[currentSequence.length - 2] || '';
+            logits.push(score);
+        }
+        
+        // Normalize logits to reasonable range
+        const meanLogit = logits.reduce((a, b) => a + b, 0) / logits.length;
+        const stdLogit = Math.sqrt(logits.reduce((a, b) => a + Math.pow(b - meanLogit, 2), 0) / logits.length);
+        
+        // Standardize and scale
+        for (let v = 0; v < logits.length; v++) {
+            logits[v] = (logits[v] - meanLogit) / (stdLogit + 1e-5) * 2.0;
+        }
+        
+        // Apply context-aware adjustments
+        const token = currentSequence[currentSequence.length - 1] || '';
+        const secondLastToken = currentSequence[currentSequence.length - 2] || '';
+        
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            const candidateToken = this.config.vocab[v];
             
             // Strong penalties for special tokens
-            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
-                score -= 10.0;
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(candidateToken)) {
+                logits[v] -= 10.0;
+                continue;
             }
             
-            // Context-based adjustments
-            if (lastToken === 'the' || lastToken === 'a' || lastToken === 'an') {
-                // After articles, strongly favor nouns and adjectives
-                if (['cat', 'dog', 'house', 'car', 'tree', 'bird', 'man', 'woman', 'boy', 'girl'].includes(token)) {
-                    score += 3.0;
-                } else if (['big', 'small', 'red', 'blue', 'happy', 'old', 'new', 'good'].includes(token)) {
-                    score += 2.5;
+            // Context-based boosts
+            if (token === 'the' || token === 'a' || token === 'an') {
+                // After articles, boost nouns and adjectives
+                if (['cat', 'dog', 'house', 'car', 'tree', 'bird', 'man', 'woman', 'boy', 'girl'].includes(candidateToken)) {
+                    logits[v] += 3.0;
+                } else if (['big', 'small', 'red', 'blue', 'happy', 'old', 'new', 'good', 'little', 'great'].includes(candidateToken)) {
+                    logits[v] += 2.5;
                 }
-                // Penalize another article or verb
-                if (['the', 'a', 'an', 'is', 'was', 'are'].includes(token)) {
-                    score -= 3.0;
+                // Penalize another article or verb immediately after
+                if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
+                    logits[v] -= 4.0;
                 }
-            } else if (['cat', 'dog', 'bird', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(lastToken)) {
-                // After nouns, favor verbs or connecting words
-                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats'].includes(token)) {
-                    score += 3.5;
-                } else if (['and', 'or', 'but'].includes(token)) {
-                    score += 1.5;
+            } else if (['cat', 'dog', 'bird', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree'].includes(token)) {
+                // After nouns, boost verbs
+                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats', 'likes', 'loves'].includes(candidateToken)) {
+                    logits[v] += 4.0;
+                } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
+                    logits[v] += 2.0;
                 }
-                // Penalize articles or adjectives after nouns
-                if (['the', 'a', 'an', 'big', 'small'].includes(token)) {
-                    score -= 2.0;
+                // Slight penalty for adjectives right after nouns
+                if (['big', 'small', 'red', 'blue'].includes(candidateToken)) {
+                    logits[v] -= 1.0;
                 }
-            } else if (['is', 'was', 'are', 'were'].includes(lastToken)) {
-                // After be-verbs, favor adjectives or verb-ing forms
-                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new', 'fast', 'slow'].includes(token)) {
-                    score += 3.0;
-                } else if (['running', 'walking', 'sleeping', 'playing', 'sitting', 'eating'].includes(token)) {
-                    score += 3.0;
-                } else if (['a', 'an', 'the'].includes(token)) {
-                    score += 1.5; // Can have articles after be-verbs
+            } else if (['is', 'was', 'are', 'were'].includes(token)) {
+                // After be-verbs, strongly boost adjectives and -ing forms
+                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new', 'fast', 'slow', 'beautiful', 'nice'].includes(candidateToken)) {
+                    logits[v] += 4.0;
+                } else if (candidateToken.endsWith('ing')) {
+                    logits[v] += 3.5;
+                } else if (['a', 'an', 'the'].includes(candidateToken)) {
+                    logits[v] += 2.0;
+                } else if (['very', 'so', 'quite'].includes(candidateToken)) {
+                    logits[v] += 2.5;
                 }
-            } else if (token.endsWith('ing')) {
-                // After -ing verbs, favor conjunctions or punctuation-like endings
-                if (['and', 'or', 'but', 'on', 'in', 'at'].includes(token)) {
-                    score += 2.0;
+            } else if (candidateToken.endsWith('ing')) {
+                // After -ing verbs, boost prepositions and conjunctions
+                if (['and', 'or', 'but', 'on', 'in', 'at', 'with', 'to'].includes(candidateToken)) {
+                    logits[v] += 2.5;
+                }
+            } else if (['happy', 'sad', 'big', 'small', 'fast', 'slow'].includes(token)) {
+                // After adjectives, boost "and", periods, or nouns
+                if (['and', 'but', 'or'].includes(candidateToken)) {
+                    logits[v] += 2.0;
+                } else if (['cat', 'dog', 'car', 'house', 'one'].includes(candidateToken)) {
+                    logits[v] += 1.5;
                 }
             }
             
-            // Avoid repetition
-            if (token === lastToken) {
-                score -= 5.0;
-            }
-            if (currentSequence.slice(-3).includes(token)) {
-                score -= 2.0;
+            // Special handling for specific sequences to ensure grammatical output
+            if (currentSequence.length >= 2) {
+                const twoBack = currentSequence[currentSequence.length - 2] || '';
+                
+                // "X was Y" patterns
+                if (twoBack === 'was' || twoBack === 'is') {
+                    // After "was/is [adjective]", avoid another adjective
+                    if (['big', 'small', 'happy', 'sad', 'new', 'old', 'good', 'bad'].includes(token)) {
+                        if (['big', 'small', 'happy', 'sad', 'new', 'old', 'good', 'bad'].includes(candidateToken)) {
+                            logits[v] -= 4.0;
+                        }
+                        // Boost conjunctions, prepositions, or end-of-thought words
+                        if (['and', 'but', 'when', 'because', 'so'].includes(candidateToken)) {
+                            logits[v] += 3.0;
+                        }
+                    }
+                }
+                
+                // Prevent awkward adjective chains
+                if (['big', 'small', 'new', 'old', 'good', 'bad'].includes(token) && 
+                    ['big', 'small', 'new', 'old', 'good', 'bad', 'short', 'long', 'fast', 'slow'].includes(candidateToken)) {
+                    logits[v] -= 5.0;
+                }
             }
             
-            // Boost common continuation patterns
-            const bigrams = {
-                'the': ['cat', 'dog', 'house', 'car', 'man', 'woman', 'boy', 'girl'],
-                'is': ['big', 'small', 'happy', 'sad', 'running', 'sleeping', 'good'],
-                'cat': ['is', 'was', 'runs', 'sleeps', 'sits', 'plays'],
-                'dog': ['is', 'was', 'runs', 'barks', 'plays'],
-                'and': ['the', 'a', 'then', 'she', 'he', 'it'],
-                'on': ['the', 'a', 'top', 'it'],
-                'in': ['the', 'a', 'her', 'his']
+            // Boost sentence-ending or transitional tokens after 4+ words
+            if (currentSequence.length >= 4) {
+                if (['and', 'but', 'so', 'then'].includes(candidateToken)) {
+                    logits[v] += 1.5;
+                }
+            }
+            
+            // Avoid repeating recent words
+            const recentTokens = currentSequence.slice(-4);
+            if (recentTokens.includes(candidateToken)) {
+                logits[v] -= 2.0;
+            }
+            
+            // Common bigram patterns
+            const commonBigrams = {
+                'the': ['cat', 'dog', 'house', 'car', 'big', 'small', 'red', 'blue'],
+                'cat': ['is', 'was', 'sat', 'runs', 'sleeps', 'and'],
+                'is': ['big', 'small', 'happy', 'running', 'sleeping', 'a', 'the', 'very'],
+                'was': ['big', 'small', 'happy', 'running', 'sleeping', 'a', 'the', 'very'],
+                'and': ['the', 'a', 'it', 'then', 'he', 'she'],
+                'very': ['big', 'small', 'happy', 'good', 'nice', 'fast'],
+                'a': ['cat', 'dog', 'big', 'small', 'good', 'nice', 'red', 'blue']
             };
             
-            if (bigrams[lastToken] && bigrams[lastToken].includes(token)) {
-                score += 2.0;
+            if (commonBigrams[token] && commonBigrams[token].includes(candidateToken)) {
+                logits[v] += 2.0;
             }
-            
-            logits.push(score);
         }
         
         return logits;
@@ -1497,12 +1553,26 @@ class TransformerDemo {
         // Apply temperature scaling
         const scaledLogits = logits.map(l => l / temperature);
         
-        // Compute softmax
+        // For numerical stability, subtract max
         const maxLogit = Math.max(...scaledLogits);
         const expLogits = scaledLogits.map(l => Math.exp(l - maxLogit));
         const sumExp = expLogits.reduce((a, b) => a + b, 0);
         
-        return expLogits.map(e => e / sumExp);
+        // Ensure we don't divide by zero
+        if (sumExp === 0) {
+            // Uniform distribution as fallback
+            return new Array(logits.length).fill(1.0 / logits.length);
+        }
+        
+        const probs = expLogits.map(e => e / sumExp);
+        
+        // Ensure probabilities sum to 1 (handle numerical errors)
+        const probSum = probs.reduce((a, b) => a + b, 0);
+        if (Math.abs(probSum - 1.0) > 0.001) {
+            return probs.map(p => p / probSum);
+        }
+        
+        return probs;
     }
     
     sampleToken(probs, currentSequence) {
