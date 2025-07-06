@@ -199,12 +199,66 @@ uses_python: false
                     &= \sum_{j =t}^{T-1} \gamma^{j-t}r_j.
                  \end{align*}
                 \]
-                Note: If it terminated at time \(T\), \(G_t = r_t + \gamma G_{t+1}\).
+                Notice that the discount factor \(\gamma\) ensures that return \(G_t\) is finite even if \(T = \infty\). Also, 
+                it assign more weight on short-term rewards, which generally has the effect of encouraging the agent to achieve its goal 
+                more quickly.
             </p>
-
             <p>
-                Define return \(G_t = \sum_{k=0}^\infty \gamma^k r_{t+k}\). Introduce value function \(V^\pi(s)\), action-value \(Q^\pi(s, a)\), 
-                and optimal versions. Explain their roles in policy evaluation.
+                Given a policy, we define the <strong>state-value function</strong>(or, <strong>value function</strong>): 
+                \[
+                \begin{align*}
+                V_{\pi}(s) &= \mathbb{E}_{\pi} \left[G_0 | s_0 = s \right] \\\\
+                           &= \mathbb{E}_{\pi} \left[\sum_{t = 0}^{\infty} \gamma^t r_t | s_0 = s \right]
+                \end{align*}
+                \]
+            where \(\mathbb{E}_{\pi}[\cdot]\) represents actions are selected by \(\pi\).
+            </p>
+            <p>
+                Also, we define the <strong>action-value function</strong>(or <strong>Q-function</strong>):
+                \[
+                \begin{align*}
+                Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[G_0 | s_0 = s, \, a_0 = a \right] \\\\
+                           &= \mathbb{E}_{\pi} \left[\sum_{t = 0}^{\infty} \gamma^t r_t | s_0 = s, \, a_0 = a  \right].
+                \end{align*}
+                \]
+            </p>
+            <p>
+                Finally we define the <strong>advantage function</strong>:
+                \[
+                A_{\pi}(s, a) =  Q_{\pi}(s, a) -  V_{\pi}(s)  \in \mathbb{R}
+                \]
+                which explain about the advantage of choosing the action \(a\) in the state \(s\) then switching to the 
+                policy \(\pi\), relative to baseline return of following \(\pi\).
+            </p>
+            <p>
+                We call a policy an <strong>optimal policy</strong> denoted as \(\pi_*\) if 
+                \[
+                \forall s \in \mathcal{S}, \, \forall \pi, \quad V_{\pi_*} \geq V_{\pi}.
+                \]
+                It it possible there are multiple optimal policies for the same MDP, but optimal value finctions, 
+                \(V_*, \, Q_*\) must be the identical. Moreover, any finite MDP guarantees that there exists at least one 
+                deterministic optimal policy. 
+            </p>
+            <p>
+                <div class="theorem">
+                    <span class="theorem-title"><strong>Bellman's Optimality Equations</strong>: </span>
+                    \[
+                    \begin{align*}
+                    V_* (s) &= \max_a R(s, a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[V_* (s') \right] \\\\
+                    Q_*(s, a) &= R(s, a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[\max_{a'} Q_* (s', a) \right]
+                    \]
+                    Conversely, the optimal value functions are the only solutions that satisfy these equations. 
+                </div>
+                Now the optimal plicy can be represented as:
+                \[
+                \begin{align*}
+                \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
+                         &= \arg \max_a \left[R(s,a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[V_*(s')\right] \right], 
+                \end{align*}
+                \]
+                which ensures that the agent obtains maximum expected return starting from any state. The problem solving for 
+                \(V_*, Q_*\) or \(\pi_*\) is called <strong>policy optimization</strong>, while the problem solving for 
+                \(V_{\pi}\) or \(Q_{\pi}\) for a policy \(\pi\) is called <strong>policy evaluation</strong>.
             </p>
             </section>
 
