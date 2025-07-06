@@ -66,87 +66,94 @@ uses_python: false
 
             <section id="mdp" class="section-content">
             <h2>Markov Decision Process (MDP)</h2>
-            
+
             <p>
-            In this section, we present a probabilistic formulation of Markov Decision Processes (MDPs), where both 
-            transitions and rewards are modeled as stochastic variables. This perspective is particularly useful for 
-            analyzing trajectory distributions and gradient-based learning methods.
+                In this section, we present a probabilistic formulation of Markov Decision Processes (MDPs), where both 
+                transitions and rewards are modeled as stochastic variables. This perspective is particularly useful for 
+                analyzing trajectory distributions and gradient-based learning methods.
             </p>
 
             <p>
-                An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> or 
-                multiple trajectories. 
-                The Trajectory of length \(T\) can be defined by: 
+                An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> 
+                or multiple trajectories. A trajectory of length \(T\) is defined as:
                 \[
-                \mathbf{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \cdots, s_T)
+                \boldsymbol{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \cdots, s_T),
                 \]
-                where \(s_t\) is a state, \(a_t\) is an action, and \(r_t\) is a reward. 
-            </p>
-            <p>
-                We want to optimize the action-selection policy so that the discounted cumulative reward:
-                \[
-                G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t 
-                \]
-                is maximized for some <strong>discount factor</strong> \(\gamma \in [0, 1]\). Here, we consider 
-                <strong>Markov decision process (MDP)</strong>, then the generative model for the trajectory \mathbf{\tau} can be 
-                factored into single-step models. We call the process to find an optimal policy from trajectories <strong>learning</strong>.
+                where \(s_t\) is a state, \(a_t\) is an action, and \(r_t\) is a reward.
             </p>
 
             <p>
-                We define MDP as a tuple:
+                The objective is to optimize the agent's action-selection policy so that the expected discounted cumulative reward
+                is maximized:
                 \[
-                \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle
+                G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t,
                 \]
-                where 
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{S}\): a set of environment states</li>
-                    <li>\(\mathcal{A}\): a set of actions that the agent can take</li>
-                    <li>\(p_T\): a transition model</li>
-                    <li>\(p_R\): a reward model</li>
-                    <li>\(p_0\): an initial state distribution</li>
-                </ul>
-                At starting time \(t = 0\), the initial state is \(s_0 \sim p_0\). At time \(t \geq 0\), the agent 
-                observes the environment state \(s_t \in \mathcal{S}\) following a policy \(\pi\) to take an 
-                action \(a_t \in \mathcal{A}\). On the other hand, the environment distributes a reward signal \(r_t \in \mathcal{R}\)
-                and enters a new state \(s_{t+1} \in \mathcal{S}\). The policy is stochastic with \(\pi(a | s)\) being the probability 
-                of choosing an action \(a\) in state \(s\).
+                where \(\gamma \in [0, 1]\) is the <strong>discount factor</strong>. We assume the environment follows a 
+                <strong>Markov Decision Process (MDP)</strong>, where the trajectory distribution can be factored into 
+                single-step transition and reward models. The process of estimating an optimal policy from trajectories 
+                is referred to as <strong>learning</strong>.
             </p>
+
             <p>
-                The precess at each step is called a <strong>transition</strong>. At tune \(t\), the transition consists of the 
-                tuple 
+                We define the MDP as the tuple:
                 \[
-                (s_t, a_t, r_t, s_{t+1})
+                \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle,
                 \]
-                where 
+                where:
                 <ul style="padding-left: 40px;">
-                    <li>\(a_t \sim \pi(s_t)\)</li>
-                    <li>\(s_{t+1} \sim p_T(s_t, a_t)\)</li>
-                    <li>\(r_t \sim p_R(s_t, a_t, s_{t+1})\).</li>
+                <li>\(\mathcal{S}\): set of environment states</li>
+                <li>\(\mathcal{A}\): set of available actions</li>
+                <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
+                <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
+                <li>\(p_0(s_0)\): initial state distribution</li>
                 </ul>
             </p>
+
             <p>
-                Therefore, under the policy \(\pi\), the probability of generating a trajectory \(\mathbf{\tau}\) of length 
-                \(T\) can be expressed by: 
+                At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
+                state \(s_t \in \mathcal{S}\), selects action \(a_t \sim \pi(a_t \mid s_t)\), and receives reward 
+                \(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\), where the next state is drawn from \(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\). 
+                The agent’s decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
+            </p>
+
+            <p>
+                This interaction at each step is called a <strong>transition</strong>, represented as the tuple:
                 \[
-                p(\mathbf{\tau}) = p_0(s_0)\prod_{t = 0}^{T -1} \pi(a_t | s_t)p_T(s_{t+1}|s_t, a_t)p_R(r_t | s_t, a_t, s_{s+1}).
+                (s_t, a_t, r_t, s_{t+1}),
                 \]
-                Moreover, we define the <strong>reward function</strong> from the reawrd model \(p_R\) as tje average iommediate reaward of 
-                taking action \(a\) in state \(s\) with the next state marginalized:
+                where:
+                <ul style="padding-left: 40px;">
+                <li>\(a_t \sim \pi(a \mid s_t)\)</li>
+                <li>\(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\)</li>
+                <li>\(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\)</li>
+                </ul>
+            </p>
+
+            <p>
+                Under policy \(\pi\), the joint distribution of a trajectory \(\boldsymbol{\tau}\) of length \(T\) is given by:
                 \[
-                R(s, a) = \mathbb{E}_{p_T(s' | s, a)} \left[\mathbb{E}_{p(r | s, a, s')}[r]\right].
+                p(\boldsymbol{\tau}) = p_0(s_0) \prod_{t = 0}^{T -1} 
+                \pi(a_t \mid s_t) \, p_T(s_{t+1} \mid s_t, a_t) \, p_R(r_t \mid s_t, a_t, s_{t+1}).
                 \]
             </p>
 
             <p>
-            While classical RL literature often defines the reward function deterministically as \( r(s, a) \), 
-            we treat it here as a distribution \( p_R(r | s, a, s') \), which allows us to model uncertainty and 
-            derive expectations explicitly. The expected reward function is then recovered via:
-            \[
-            R(s, a) = \mathbb{E}_{p_T(s' | s, a)} \left[\mathbb{E}_{p_R(r | s, a, s')}[r]\right].
-            \]
+                We define the expected <strong>reward function</strong> from the reward model \(p_R\) as the marginal average immediate reward 
+                for taking action \(a\) in state \(s\), integrating over possible next states:
+                \[
+                R(s, a) = \mathbb{E}_{p_T(s' \mid s, a)} \left[ 
+                \mathbb{E}_{p_R(r \mid s, a, s')}[r] 
+                \right].
+                \]
             </p>
 
+            <p>
+                While classical RL literature often defines the reward function deterministically as \(r(s, a)\), 
+                this probabilistic formulation allows us to account for uncertainty in transitions and rewards. 
+                It is particularly useful for gradient-based RL methods, where trajectory likelihoods must be modeled explicitly.
+            </p>
             </section>
+
 
            <section id="value-functions" class="section-content">
             <h2>Return and Value Functions</h2>
