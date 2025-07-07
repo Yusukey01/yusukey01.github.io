@@ -144,7 +144,7 @@ uses_python: false
                 At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
                 state \(s_t \in \mathcal{S}\), selects action \(a_t \sim \pi(a_t \mid s_t)\), and receives reward 
                 \(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\), where the next state is drawn from \(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\). 
-                The agent’s decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
+                The agent's decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
             </p>
 
             <p>
@@ -185,82 +185,84 @@ uses_python: false
             </p>
             </section>
 
-
-           <section id="value-functions" class="section-content">
+            <section id="value-functions" class="section-content">
             <h2>Return and Value Functions</h2>
+
             <p>
-                Let \(\tau\) be a trajectory of length \(T\) where \(T\) may be \(\infty\) if the task is continuing. 
-                We define the <strong>return</strong> for the state at time \(t\) to be the sum of expected rewards obtained 
-                going forwards, where each reward is multiplied by a discount factor \(\gamma \in [0, 1]\):
+                Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for continuing tasks. 
+                The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, discounted by a factor \(\gamma \in [0, 1]\):
                 \[
                 \begin{align*}
-                G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T-t-1} r_{T-1} \\\\
-                    &= \sum_{k =0}^{T-t-1}\gamma^k r_{t+k} \\\\
-                    &= \sum_{j =t}^{T-1} \gamma^{j-t}r_j.
-                 \end{align*}
-                \]
-                Notice that the discount factor \(\gamma\) ensures that return \(G_t\) is finite even if \(T = \infty\). Also, 
-                it assign more weight on short-term rewards, which generally has the effect of encouraging the agent to achieve its goal 
-                more quickly.
-            </p>
-            <p>
-                Given a policy, we define the <strong>state-value function</strong>(or, <strong>value function</strong>): 
-                \[
-                \begin{align*}
-                V_{\pi}(s) &= \mathbb{E}_{\pi} \left[G_0 | s_0 = s \right] \\\\
-                           &= \mathbb{E}_{\pi} \left[\sum_{t = 0}^{\infty} \gamma^t r_t | s_0 = s \right]
+                G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
+                    &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
+                    &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
                 \end{align*}
                 \]
-            where \(\mathbb{E}_{\pi}[\cdot]\) represents actions are selected by \(\pi\).
+                The discount factor \(\gamma\) ensures that the return remains finite even for infinite-horizon problems, and it gives higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
             </p>
+
             <p>
-                Also, we define the <strong>action-value function</strong>(or <strong>Q-function</strong>):
+                Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> (or simply, <strong>value function</strong>) is defined as:
                 \[
                 \begin{align*}
-                Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[G_0 | s_0 = s, \, a_0 = a \right] \\\\
-                           &= \mathbb{E}_{\pi} \left[\sum_{t = 0}^{\infty} \gamma^t r_t | s_0 = s, \, a_0 = a  \right].
+                V_{\pi}(s) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s \right] \\\\
+                        &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s \right],
+                \end{align*}
+                \]
+                where the expectation is over trajectories induced by the policy \(\pi\).
+            </p>
+
+            <p>
+                The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as:
+                \[
+                \begin{align*}
+                Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
+                            &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right].
                 \end{align*}
                 \]
             </p>
+
             <p>
-                Finally we define the <strong>advantage function</strong>:
+                The <strong>advantage function</strong> is defined as:
                 \[
-                A_{\pi}(s, a) =  Q_{\pi}(s, a) -  V_{\pi}(s)  \in \mathbb{R}
+                A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s),
                 \]
-                which explain about the advantage of choosing the action \(a\) in the state \(s\) then switching to the 
-                policy \(\pi\), relative to baseline return of following \(\pi\).
+                which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), compared to just following \(\pi\) from the beginning.
             </p>
+
             <p>
-                We call a policy an <strong>optimal policy</strong> denoted as \(\pi_*\) if 
+                A policy \(\pi_*\) is called an <strong>optimal policy</strong> if it yields the highest value for every state:
                 \[
-                \forall s \in \mathcal{S}, \, \forall \pi, \quad V_{\pi_*} \geq V_{\pi}.
+                \forall s \in \mathcal{S}, \quad V_{\pi_*}(s) \geq V_{\pi}(s), \quad \forall \pi.
                 \]
-                It it possible there are multiple optimal policies for the same MDP, but optimal value finctions, 
-                \(V_*, \, Q_*\) must be the identical. Moreover, any finite MDP guarantees that there exists at least one 
-                deterministic optimal policy. 
+                Although multiple optimal policies may exist, their value functions are the same: \(V_*(s) = V_{\pi_*}(s)\) and \(Q_*(s, a) = Q_{\pi_*}(s, a)\). 
+                Moreover, every finite MDP admits at least one deterministic optimal policy.
             </p>
+
+            <div class="theorem">
+                <span class="theorem-title"><strong>Bellman Optimality Equations</strong>:</span>
+                \[
+                \begin{align*}
+                V_*(s) &= \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right] \\\\
+                Q_*(s, a) &= R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \max_{a'} Q_*(s', a') \right]
+                \end{align*}
+                \]
+                The optimal value functions \(V_*\) and \(Q_*\) are the unique fixed points of these equations.
+            </div>
+
             <p>
-                <div class="theorem">
-                    <span class="theorem-title"><strong>Bellman's Optimality Equations</strong>: </span>
-                    \[
-                    \begin{align*}
-                    V_* (s) &= \max_a R(s, a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[V_* (s') \right] \\\\
-                    Q_*(s, a) &= R(s, a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[\max_{a'} Q_* (s', a) \right]
-                    \]
-                    Conversely, the optimal value functions are the only solutions that satisfy these equations. 
-                </div>
-                Now the optimal plicy can be represented as:
+                The optimal policy can then be derived by:
                 \[
                 \begin{align*}
                 \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
-                         &= \arg \max_a \left[R(s,a) + \gamma \mathbb{E}_{p_T(s' | s, a)} \left[V_*(s')\right] \right], 
+                        &= \arg \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right].
                 \end{align*}
                 \]
-                which ensures that the agent obtains maximum expected return starting from any state. The problem solving for 
-                \(V_*, Q_*\) or \(\pi_*\) is called <strong>policy optimization</strong>, while the problem solving for 
-                \(V_{\pi}\) or \(Q_{\pi}\) for a policy \(\pi\) is called <strong>policy evaluation</strong>.
+                Solving for \(V_*\), \(Q_*\), or \(\pi_*\) is known as <strong>policy optimization</strong>, while computing \(V_{\pi}\) or \(Q_{\pi}\) for a given policy \(\pi\) is called <strong>policy evaluation</strong>.
             </p>
             </section>
+
+           
 
             <section id="td" class="section-content">
             <h2>Temporal Difference Learning</h2>
