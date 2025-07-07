@@ -19,6 +19,9 @@ uses_python: false
             <a href="#intro">Introduction</a>
             <a href="#rl-types">Model-Based and Model-Free RL</a>
             <a href="#mdp">Markov Decision Process (MDP)</a>
+            <a href="#value-functions">Return and Value Functions</a>
+            <a href="#"></a>
+            <a href="#"></a>
             <a href="#"></a>
             <a href="#demo">Demo</a>
         </div>
@@ -65,201 +68,219 @@ uses_python: false
             </section>
 
             <section id="rl-types" class="section-content">
-            <h3>Model-Based and Model-Free Reinforcement Learning</h3>
+                <h3>Model-Based and Model-Free Reinforcement Learning</h3>
 
-            <p>
-                Reinforcement Learning (RL) algorithms can be broadly categorized into two classes based on how they interact with the environment: 
-                <strong>model-based</strong> and <strong>model-free</strong> methods.
-            </p>
+                <p>
+                    Reinforcement Learning (RL) algorithms can be broadly categorized into two classes based on how they interact with the environment: 
+                    <strong>model-based</strong> and <strong>model-free</strong> methods.
+                </p>
 
-            <p>
-                <strong>Model-based RL</strong> aims to learn an explicit model of the environment from data. This includes learning:
-                <ul style="padding-left: 40px;">
-                <li>the transition dynamics \(p_T(s' \mid s, a)\), and</li>
-                <li>the reward model \(p_R(r \mid s, a, s')\).</li>
-                </ul>
-                Once the model is learned from trajectories, classical planning algorithms such as 
-                <em>value iteration</em> or <em>policy iteration</em> can be applied to compute an optimal policy.
-            </p>
+                <p>
+                    <strong>Model-based RL</strong> aims to learn an explicit model of the environment from data. This includes learning:
+                    <ul style="padding-left: 40px;">
+                    <li>the transition dynamics \(p_T(s' \mid s, a)\), and</li>
+                    <li>the reward model \(p_R(r \mid s, a, s')\).</li>
+                    </ul>
+                    Once the model is learned from trajectories, classical planning algorithms such as 
+                    <em>value iteration</em> or <em>policy iteration</em> can be applied to compute an optimal policy.
+                </p>
 
-            <p>
-                In contrast, <strong>model-free RL</strong> methods bypass explicit modeling of the environment. 
-                Instead, they directly learn value functions (e.g., Q-learning) or policies (e.g., REINFORCE, PPO) based on sampled experience. 
-                These methods are generally simpler to implement but may require more interaction data.
-            </p>
+                <p>
+                    In contrast, <strong>model-free RL</strong> methods bypass explicit modeling of the environment. 
+                    Instead, they directly learn value functions (e.g., Q-learning) or policies (e.g., REINFORCE, PPO) based on sampled experience. 
+                    These methods are generally simpler to implement but may require more interaction data.
+                </p>
 
-            <p>
-                In both paradigms, the environment is formally assumed to follow a <strong>Markov Decision Process (MDP)</strong>, 
-                which we now define in the following section.
-            </p>
-            </section>
+                <p>
+                    In both paradigms, the environment is formally assumed to follow a <strong>Markov Decision Process (MDP)</strong>, 
+                    which we now define in the following section.
+                </p>
+                </section>
 
 
-            <section id="mdp" class="section-content">
-            <h2>Markov Decision Process (MDP)</h2>
+                <section id="mdp" class="section-content">
+                <h2>Markov Decision Process (MDP)</h2>
 
-            <p>
-                In this section, we present a probabilistic formulation of Markov Decision Processes (MDPs), where both 
-                transitions and rewards are modeled as stochastic variables. This perspective is particularly useful for 
-                analyzing trajectory distributions and gradient-based learning methods.
-            </p>
+                <p>
+                    In this section, we present a probabilistic formulation of Markov Decision Processes (MDPs), where both 
+                    transitions and rewards are modeled as stochastic variables. This perspective is particularly useful for 
+                    analyzing trajectory distributions and gradient-based learning methods.
+                </p>
 
-            <p>
-                An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> 
-                or multiple trajectories. A trajectory of length \(T\) is defined as:
-                \[
-                \boldsymbol{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \cdots, s_T),
-                \]
-                where \(s_t\) is a state, \(a_t\) is an action, and \(r_t\) is a reward.
-            </p>
+                <p>
+                    An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> 
+                    or multiple trajectories. A trajectory of length \(T\) is defined as:
+                    \[
+                    \boldsymbol{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \cdots, s_T),
+                    \]
+                    where \(s_t\) is a state, \(a_t\) is an action, and \(r_t\) is a reward.
+                </p>
 
-            <p>
-                The objective is to optimize the agent's action-selection policy so that the expected discounted cumulative reward
-                is maximized:
-                \[
-                G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t,
-                \]
-                where \(\gamma \in [0, 1]\) is the <strong>discount factor</strong>. We assume the environment follows a 
-                <strong>Markov Decision Process (MDP)</strong>, where the trajectory distribution can be factored into 
-                single-step transition and reward models. The process of estimating an optimal policy from trajectories 
-                is referred to as <strong>learning</strong>.
-            </p>
+                <p>
+                    The objective is to optimize the agent's action-selection policy so that the expected discounted cumulative reward
+                    is maximized:
+                    \[
+                    G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t,
+                    \]
+                    where \(\gamma \in [0, 1]\) is the <strong>discount factor</strong>. We assume the environment follows a 
+                    <strong>Markov Decision Process (MDP)</strong>, where the trajectory distribution can be factored into 
+                    single-step transition and reward models. The process of estimating an optimal policy from trajectories 
+                    is referred to as <strong>learning</strong>.
+                </p>
 
-            <p>
-                We define the MDP as the tuple:
-                \[
-                \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle,
-                \]
-                where:
-                <ul style="padding-left: 40px;">
-                <li>\(\mathcal{S}\): set of environment states</li>
-                <li>\(\mathcal{A}\): set of available actions</li>
-                <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
-                <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
-                <li>\(p_0(s_0)\): initial state distribution</li>
-                </ul>
-            </p>
+                <p>
+                    We define the MDP as the tuple:
+                    \[
+                    \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle,
+                    \]
+                    where:
+                    <ul style="padding-left: 40px;">
+                    <li>\(\mathcal{S}\): set of environment states</li>
+                    <li>\(\mathcal{A}\): set of available actions</li>
+                    <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
+                    <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
+                    <li>\(p_0(s_0)\): initial state distribution</li>
+                    </ul>
+                </p>
 
-            <p>
-                At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
-                state \(s_t \in \mathcal{S}\), selects action \(a_t \sim \pi(a_t \mid s_t)\), and receives reward 
-                \(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\), where the next state is drawn from \(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\). 
-                The agent's decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
-            </p>
+                <p>
+                    At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
+                    state \(s_t \in \mathcal{S}\), selects action \(a_t \sim \pi(a_t \mid s_t)\), and receives reward 
+                    \(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\), where the next state is drawn from \(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\). 
+                    The agent's decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
+                </p>
 
-            <p>
-                This interaction at each step is called a <strong>transition</strong>, represented as the tuple:
-                \[
-                (s_t, a_t, r_t, s_{t+1}),
-                \]
-                where:
-                <ul style="padding-left: 40px;">
-                <li>\(a_t \sim \pi(a \mid s_t)\)</li>
-                <li>\(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\)</li>
-                <li>\(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\)</li>
-                </ul>
-            </p>
+                <p>
+                    This interaction at each step is called a <strong>transition</strong>, represented as the tuple:
+                    \[
+                    (s_t, a_t, r_t, s_{t+1}),
+                    \]
+                    where:
+                    <ul style="padding-left: 40px;">
+                    <li>\(a_t \sim \pi(a \mid s_t)\)</li>
+                    <li>\(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\)</li>
+                    <li>\(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\)</li>
+                    </ul>
+                </p>
 
-            <p>
-                Under policy \(\pi\), the joint distribution of a trajectory \(\boldsymbol{\tau}\) of length \(T\) is given by:
-                \[
-                p(\boldsymbol{\tau}) = p_0(s_0) \prod_{t = 0}^{T -1} 
-                \pi(a_t \mid s_t) \, p_T(s_{t+1} \mid s_t, a_t) \, p_R(r_t \mid s_t, a_t, s_{t+1}).
-                \]
-            </p>
+                <p>
+                    Under policy \(\pi\), the joint distribution of a trajectory \(\boldsymbol{\tau}\) of length \(T\) is given by:
+                    \[
+                    p(\boldsymbol{\tau}) = p_0(s_0) \prod_{t = 0}^{T -1} 
+                    \pi(a_t \mid s_t) \, p_T(s_{t+1} \mid s_t, a_t) \, p_R(r_t \mid s_t, a_t, s_{t+1}).
+                    \]
+                </p>
 
-            <p>
-                We define the expected <strong>reward function</strong> from the reward model \(p_R\) as the marginal average immediate reward 
-                for taking action \(a\) in state \(s\), integrating over possible next states:
-                \[
-                R(s, a) = \mathbb{E}_{p_T(s' \mid s, a)} \left[ 
-                \mathbb{E}_{p_R(r \mid s, a, s')}[r] 
-                \right].
-                \]
-            </p>
+                <p>
+                    We define the expected <strong>reward function</strong> from the reward model \(p_R\) as the marginal average immediate reward 
+                    for taking action \(a\) in state \(s\), integrating over possible next states:
+                    \[
+                    R(s, a) = \mathbb{E}_{p_T(s' \mid s, a)} \left[ 
+                    \mathbb{E}_{p_R(r \mid s, a, s')}[r] 
+                    \right].
+                    \]
+                </p>
 
-            <p>
-                While classical RL literature often defines the reward function deterministically as \(r(s, a)\), 
-                this probabilistic formulation allows us to account for uncertainty in transitions and rewards. 
-                It is particularly useful for gradient-based RL methods, where trajectory likelihoods must be modeled explicitly.
-            </p>
-            </section>
+                <p>
+                    While classical RL literature often defines the reward function deterministically as \(r(s, a)\), 
+                    this probabilistic formulation allows us to account for uncertainty in transitions and rewards. 
+                    It is particularly useful for gradient-based RL methods, where trajectory likelihoods must be modeled explicitly.
+                </p>
+                </section>
 
-            <section id="value-functions" class="section-content">
-            <h2>Return and Value Functions</h2>
+                <section id="value-functions" class="section-content">
+                <h2>Return and Value Functions</h2>
 
-            <p>
-                Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for continuing tasks. 
-                The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, discounted by a factor \(\gamma \in [0, 1]\):
-                \[
-                \begin{align*}
-                G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
-                    &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
-                    &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
-                \end{align*}
-                \]
-                The discount factor \(\gamma\) ensures that the return remains finite even for infinite-horizon problems, and it gives higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
-            </p>
+                <p>
+                    Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for continuing tasks. 
+                    The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, discounted by a factor \(\gamma \in [0, 1]\):
+                    \[
+                    \begin{align*}
+                    G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
+                        &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
+                        &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
+                    \end{align*}
+                    \]
+                    The discount factor \(\gamma\) ensures that the return remains finite even for infinite-horizon problems, and it gives higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
+                </p>
 
-            <p>
-                Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> (or simply, <strong>value function</strong>) is defined as:
-                \[
-                \begin{align*}
-                V_{\pi}(s) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s \right] \\\\
-                        &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s \right],
-                \end{align*}
-                \]
-                where the expectation is over trajectories induced by the policy \(\pi\).
-            </p>
+                <p>
+                    Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> (or simply, <strong>value function</strong>) is defined as:
+                    \[
+                    \begin{align*}
+                    V_{\pi}(s) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s \right] \\\\
+                            &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s \right],
+                    \end{align*}
+                    \]
+                    where the expectation is over trajectories induced by the policy \(\pi\).
+                </p>
 
-            <p>
-                The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as:
-                \[
-                \begin{align*}
-                Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
-                            &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right].
-                \end{align*}
-                \]
-            </p>
+                <p>
+                    The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as:
+                    \[
+                    \begin{align*}
+                    Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
+                                &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right].
+                    \end{align*}
+                    \]
+                </p>
 
-            <p>
-                The <strong>advantage function</strong> is defined as:
-                \[
-                A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s),
-                \]
-                which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), compared to just following \(\pi\) from the beginning.
-            </p>
+                <p>
+                    The <strong>advantage function</strong> is defined as:
+                    \[
+                    A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s),
+                    \]
+                    which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), compared to just following \(\pi\) from the beginning.
+                </p>
 
-            <p>
-                A policy \(\pi_*\) is called an <strong>optimal policy</strong> if it yields the highest value for every state:
-                \[
-                \forall s \in \mathcal{S}, \quad V_{\pi_*}(s) \geq V_{\pi}(s), \quad \forall \pi.
-                \]
-                Although multiple optimal policies may exist, their value functions are the same: \(V_*(s) = V_{\pi_*}(s)\) and \(Q_*(s, a) = Q_{\pi_*}(s, a)\). 
-                Moreover, every finite MDP admits at least one deterministic optimal policy.
-            </p>
+                <p>
+                    A policy \(\pi_*\) is called an <strong>optimal policy</strong> if it yields the highest value for every state:
+                    \[
+                    \forall s \in \mathcal{S}, \quad V_{\pi_*}(s) \geq V_{\pi}(s), \quad \forall \pi.
+                    \]
+                    Although multiple optimal policies may exist, their value functions are the same: \(V_*(s) = V_{\pi_*}(s)\) and \(Q_*(s, a) = Q_{\pi_*}(s, a)\). 
+                    Moreover, every finite MDP admits at least one deterministic optimal policy.
+                </p>
 
-            <div class="theorem">
-                <span class="theorem-title"><strong>Bellman Optimality Equations</strong>:</span>
-                \[
-                \begin{align*}
-                V_*(s) &= \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right] \\\\
-                Q_*(s, a) &= R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \max_{a'} Q_*(s', a') \right]
-                \end{align*}
-                \]
-                The optimal value functions \(V_*\) and \(Q_*\) are the unique fixed points of these equations.
-            </div>
+                <div class="theorem">
+                    <span class="theorem-title"><strong>Bellman's Optimality Equations</strong>:</span>
+                    \[
+                    \begin{align*}
+                    V_*(s) &= \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right] \\\\
+                    Q_*(s, a) &= R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \max_{a'} Q_*(s', a') \right]
+                    \end{align*}
+                    \]
+                    The optimal value functions \(V_*\) and \(Q_*\) are the unique fixed points of these equations.
+                </div>
 
-            <p>
-                The optimal policy can then be derived by:
-                \[
-                \begin{align*}
-                \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
-                        &= \arg \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right].
-                \end{align*}
-                \]
-                Solving for \(V_*\), \(Q_*\), or \(\pi_*\) is known as <strong>policy optimization</strong>, while computing \(V_{\pi}\) or \(Q_{\pi}\) for a given policy \(\pi\) is called <strong>policy evaluation</strong>.
-            </p>
+                <p>
+                    The optimal policy can then be derived by:
+                    \[
+                    \begin{align*}
+                    \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
+                            &= \arg \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right].
+                    \end{align*}
+                    \]
+                    Solving for \(V_*\), \(Q_*\), or \(\pi_*\) is known as <strong>policy optimization</strong>, while computing 
+                    \(V_{\pi}\) or \(Q_{\pi}\) for a given policy \(\pi\) is called <strong>policy evaluation</strong>. We easily obtain 
+                    Bellman's equations for policy evaluation from the optimality equations by replacing \(\max_a [\cdot]\) with 
+                    \(\mathbb{E}_{\pi(a |s)}\):
+                    <div class="theorem">
+                        <span class="theorem-title"><strong>Bellman's Expectation Equations:</strong></span>
+                        <p>
+                            For a fixed policy \(\pi\), the state-value function satisfies:
+                            </p>
+                            \[
+                            V_{\pi}(s) = \mathbb{E}_{\pi(a \mid s)} \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_{\pi}(s') \right] \right]
+                            \]
+                            <p>
+                            The action-value function satisfies:
+                            </p>
+                            \[
+                            Q_{\pi}(s, a) = R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \mathbb{E}_{\pi(a' \mid s')} \left[ Q_{\pi}(s', a') \right] \right]
+                            \]
+                    </div>
+                </p>
             </section>
 
            
