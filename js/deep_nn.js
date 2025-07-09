@@ -215,7 +215,7 @@ class TransformerDemo {
                 
                 <div class="demo-content">
                     <div id="architecture-view" class="view-content active">
-                        <svg id="transformer-svg" width="800" height="600" viewBox="0 0 800 600"></svg>
+                        <svg id="transformer-svg" width="800" height="600" viewBox="0 0 800 600" style="max-width: 100%; height: auto;"></svg>
                     </div>
                     <div id="generation-view" class="view-content">
                         <div class="generation-container"></div>
@@ -282,7 +282,13 @@ class TransformerDemo {
                 font-size: 12px;
                 font-weight: 500;
             }
-            
+
+            #transformer-svg {
+                width: 100%;
+                height: auto;
+                max-width: 800px;
+            }
+                        
             #transformer-input {
                 flex: 1;
                 padding: 10px;
@@ -846,6 +852,157 @@ class TransformerDemo {
                 
                 .tensor-preview {
                     grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                }
+            }
+            @media (max-width: 768px) {
+                .transformer-demo {
+                    max-width: 100%;
+                    margin: 0;
+                    border-radius: 0;
+                }
+                
+                .demo-header {
+                    padding: 15px 10px; /* Reduce padding */
+                }
+                
+                .demo-header h3 {
+                    font-size: 18px; /* Smaller title */
+                    margin-bottom: 10px;
+                }
+                
+                .input-section {
+                    flex-direction: column; /* Stack vertically */
+                    gap: 8px;
+                }
+                
+                #transformer-input {
+                    font-size: 16px; /* Prevent zoom on iOS */
+                    padding: 12px; /* Larger touch target */
+                }
+                
+                .demo-button, .control-btn {
+                    padding: 12px 15px; /* Larger touch targets */
+                    font-size: 16px;
+                    width: 100%;
+                    margin-bottom: 8px;
+                }
+                
+                .view-tab {
+                    font-size: 12px;
+                    padding: 10px 5px;
+                    min-height: 44px; /* Minimum touch target */
+                }
+                
+                .playback-controls {
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+                
+                .control-btn {
+                    flex: 1;
+                    min-width: 80px;
+                }
+                
+                #step-slider {
+                    width: 100%;
+                    margin: 10px 0;
+                    order: 10; /* Move to bottom */
+                }
+                
+                .visualization-grid {
+                    grid-template-columns: 1fr; /* Single column */
+                    gap: 10px;
+                }
+                
+                .viz-panel canvas {
+                    max-width: 100%;
+                    height: auto;
+                }
+                
+                /* Make probability bars stack better */
+                .prob-bar {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    margin: 5px 0;
+                }
+                
+                .prob-label {
+                    width: 100%;
+                    margin-bottom: 5px;
+                }
+                
+                .prob-value {
+                    width: 100%;
+                }
+                
+                /* Adjust token sequence for mobile */
+                .token-sequence {
+                    gap: 5px;
+                }
+                
+                .sequence-token {
+                    min-width: 50px;
+                    padding: 8px 10px;
+                    font-size: 14px;
+                }
+                
+                /* Make attention heatmap scrollable */
+                .attention-container {
+                    overflow-x: auto;
+                }
+                
+                .attention-heatmap {
+                    min-width: 300px;
+                }
+                
+                /* Adjust causal mask for mobile */
+                .mask-cell {
+                    width: 25px;
+                    height: 25px;
+                    font-size: 10px;
+                }
+                
+                /* Stack tensor previews */
+                .tensor-preview {
+                    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                }
+                
+                /* Responsive info panel */
+                .info-panel {
+                    padding: 15px 10px;
+                }
+                
+                .step-details {
+                    font-size: 12px;
+                    padding: 8px;
+                }
+            }
+            @media (max-width: 480px) {
+                .demo-header h3 {
+                    font-size: 16px;
+                }
+                
+                .view-tab {
+                    font-size: 11px;
+                    padding: 8px 3px;
+                }
+                
+                .sequence-token {
+                    min-width: 40px;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                }
+                
+                .mask-cell {
+                    width: 20px;
+                    height: 20px;
+                    font-size: 9px;
+                }
+                
+                .attention-cell {
+                    width: 30px;
+                    height: 30px;
+                    font-size: 9px;
                 }
             }
         `;
