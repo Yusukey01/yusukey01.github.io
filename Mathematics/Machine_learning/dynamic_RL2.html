@@ -66,12 +66,52 @@ uses_python: false
                 <p>
                     For all possible states \(s\), VI computes \(V_*(s)\) and \(\pi_*(s)\), averaging over all possible 
                     next states \(s'\) at each iteration. (Note: If we need the value and policy for only certain starting states, other methods can be used such as 
-                    real-time dynamic programming).
+                    real-time dynamic programming). 
                 </p>
             </section>
 
              <section id="" class="section-content">
                 <h2>Policy Iteration</h2>
+                <p>
+                Let \(\mathbf{v}(s) = V_{\pi}(s)\) be the value function encoded as a vector indexed by states \(s\). Also, 
+                the reward vector is represented by 
+                \[
+                \mathbf{r}(s) = \sum_a \pi(a \mid s) R(s, a)
+                \]
+                and the state transition matrix is written as 
+                \[
+                \mathbf{T}(s' \mid s) = \sum_a \pi(a \mid s) p(s' \mid s, a).
+                \]
+                Then Bellman's equation for policy evaluation can be represented as a linear system in \(\| \mathcal{S}\|\) unknowns:
+                \[
+                \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v}
+                \]
+                Theoritically, we can solve this by \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\), but 
+                We can compute \(\mathbf{v}_{t+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_t\) iteratively. This process is called 
+                <strong>policy evaluation</strong>. Once we have evaluated \(V_{\pi}\) for the policy \(\pi\), we need to find "better" 
+                policy \(\pi'\). Now we move on the <strong>policy improvement</strong> step.
+                </p>
+                <p>
+                    \[
+                      \pi'(s) = \arg \max_a \{R(s, a) + \gamma \mathbb{E}[V_{\pi}(s')]\}
+                    \]
+                    This guarantees \(V_{\pi'} \geq V_{\pi}\) because: 
+                    \[
+                    \begin{align*}
+                    \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v} &\leq  \mathbf{r'} + \gamma \mathbf{T'}\mathbf{v} \\\\
+                                                                          &\leq  \mathbf{r'} + \gamma \mathbf{T'}(\mathbf{r'} + \gamma \mathbf{T'}\mathbf{v})\\\\
+                                                                          &\leq \cdots  \\\\
+                                                                          &= (\mathbf{I} - \gamma \mathbf{T'})^{-1} \mathbf{r} \\\\
+                                                                          &= \mathbf{v'}
+
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    In policy itertion algorithm, starting form an initial policy \(\pi_0\), we alternate between policy evaluation step and 
+                    policy improvement step. Within finite iterations, the algorithm will converge to optimal policy since there are at 
+                    most \(\|\mathcal{A}^{\|\mathcal{S}\|} \|\) deterministic policies and every update improves the policy. 
+                </p>
             </section>
 
              <section id="" class="section-content">
