@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Quick Jump Navigation - FIXED VERSION
+    // Quick Jump Navigation
     const quickJumpToggle = document.getElementById('quick-jump-toggle');
     const quickJumpMenu = document.getElementById('quick-jump-menu');
     
@@ -172,23 +172,40 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // When the user clicks on the button, scroll to the top of the document
         goTopButton.addEventListener('click', function() {
-            // For most modern browsers
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-            
-            // For older browsers that don't support smooth scrolling
-            function scrollToTop() {
-                const currentPosition = document.body.scrollTop || document.documentElement.scrollTop;
-                if (currentPosition > 0) {
-                    window.requestAnimationFrame(scrollToTop);
-                    window.scrollTo(0, currentPosition - currentPosition / 8);
-                }
-            }
-            
             // Check if smooth scrolling is supported
-            if (typeof window.scrollTo !== 'function' || typeof window.scrollTo.behavior !== 'string') {
+            if ('scrollBehavior' in document.documentElement.style) {
+                // For modern browsers with smooth scrolling support
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            } else {
+                // For older browsers that don't support smooth scrolling
+                let isScrolling = false;
+                
+                function scrollToTop() {
+                    if (isScrolling) return; // Prevent multiple instances
+                    
+                    isScrolling = true;
+                    const currentPosition = document.body.scrollTop || document.documentElement.scrollTop;
+                    
+                    if (currentPosition > 0) {
+                        const newPosition = currentPosition - Math.max(currentPosition / 8, 10);
+                        window.scrollTo(0, newPosition);
+                        
+                        // Continue scrolling if we haven't reached the top
+                        if (newPosition > 5) { // Small threshold to avoid infinite loop
+                            window.requestAnimationFrame(scrollToTop);
+                        } else {
+                            // Ensure we're at the very top and stop scrolling
+                            window.scrollTo(0, 0);
+                            isScrolling = false;
+                        }
+                    } else {
+                        isScrolling = false;
+                    }
+                }
+                
                 scrollToTop();
             }
         });
