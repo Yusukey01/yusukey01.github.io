@@ -1145,7 +1145,7 @@ class TransformerDemo {
             </g>
         `;
     }
-    
+
     startGeneration() {
         const input = document.getElementById('transformer-input').value.trim();
         if (!input) {
@@ -1163,10 +1163,18 @@ class TransformerDemo {
             
             // Tokenize input
             const promptTokens = this.tokenize(input);
+            if (promptTokens.length === 0) {
+                throw new Error('Failed to tokenize input');
+            }
+            
             this.state.generatedTokens = [...promptTokens];
             
             // Initialize generation steps
             this.initializeGenerationSteps(promptTokens);
+            
+            if (this.state.processingSteps.length === 0) {
+                throw new Error('Failed to generate processing steps');
+            }
             
             // Start visualization
             this.state.currentStep = 0;
@@ -1180,7 +1188,7 @@ class TransformerDemo {
             
         } catch (error) {
             console.error('Error starting generation:', error);
-            this.showError('Error starting generation. Please try again.');
+            this.showError(`Error starting generation: ${error.message}`);
             processBtn.textContent = 'Start Generation';
             processBtn.disabled = false;
         }
@@ -1340,26 +1348,49 @@ class TransformerDemo {
     }
     
     addPositionalEncoding(embeddings) {
-        const encoded = [];
-        const C = this.config.posEncodingBase;
+        const seqLen = embeddings.length;
+        const cacheKey = `pos_encoding_${seqLen}_${this.config.hiddenDim}`;
         
-        for (let pos = 0; pos < embeddings.length; pos++) {
-            const posEncoding = [];
+        // Check cache first (ADD this caching logic)
+        if (!this.posEncodingCache) {
+            this.posEncodingCache = new Map();
+        }
+        
+        let posEncodings;
+        if (this.posEncodingCache.has(cacheKey)) {
+            posEncodings = this.posEncodingCache.get(cacheKey);
+        } else {
+            // Compute positional encoding (KEEP existing logic below)
+            posEncodings = [];
+            const C = this.config.posEncodingBase;
             
-            for (let i = 0; i < this.config.hiddenDim; i++) {
-                if (i % 2 === 0) {
-                    posEncoding[i] = Math.sin(pos / Math.pow(C, i / this.config.hiddenDim));
-                } else {
-                    posEncoding[i] = Math.cos(pos / Math.pow(C, (i - 1) / this.config.hiddenDim));
+            for (let pos = 0; pos < seqLen; pos++) {
+                const posEncoding = [];
+                
+                for (let i = 0; i < this.config.hiddenDim; i++) {
+                    if (i % 2 === 0) {
+                        posEncoding[i] = Math.sin(pos / Math.pow(C, i / this.config.hiddenDim));
+                    } else {
+                        posEncoding[i] = Math.cos(pos / Math.pow(C, (i - 1) / this.config.hiddenDim));
+                    }
                 }
+                
+                posEncodings.push(posEncoding);
             }
             
-            // Add to embeddings
-            encoded[pos] = embeddings[pos].map((val, idx) => val + posEncoding[idx] * 0.1);
+            // Cache the result
+            this.posEncodingCache.set(cacheKey, posEncodings);
+        }
+        
+        // Add to embeddings (KEEP existing logic)
+        const encoded = [];
+        for (let pos = 0; pos < embeddings.length; pos++) {
+            encoded[pos] = embeddings[pos].map((val, idx) => val + posEncodings[pos][idx] * 0.1);
         }
         
         return encoded;
     }
+    
     
     processDecoderLayer(input, tokens, layerNum, genStep) {
         const steps = [];
@@ -1437,52 +1468,43 @@ class TransformerDemo {
         for (let h = 0; h < this.config.numHeads; h++) {
             const headWeights = [];
             
+            // Generate deterministic Q, K, V projections
+            const Q = this.generateQKV(input, h, 'query');
+            const K = this.generateQKV(input, h, 'key');
+            const V = this.generateQKV(input, h, 'value');
+            
             for (let i = 0; i < seqLen; i++) {
-                const row = [];
-                let sum = 0;
+                const scores = [];
                 
-                // Calculate attention scores with causal masking
+                // Compute scaled dot-product attention scores
                 for (let j = 0; j < seqLen; j++) {
                     if (mask[i][j]) {
-                        // Simple attention pattern with some randomness
-                        let score = 1.0;
-                        
-                        // Recent positions get higher attention
-                        const distance = i - j;
-                        score *= Math.exp(-distance * 0.2);
-                        
-                        // Add some head-specific patterns
-                        if (h === 0) {
-                            // First head focuses on recent tokens
-                            score *= Math.exp(-distance * 0.3);
-                        } else if (h === 1) {
-                            // Second head looks at first token more
-                            if (j === 0) score *= 2.0;
+                        // Proper scaled dot-product: Q_i · K_j / sqrt(d_k)
+                        let score = 0;
+                        for (let d = 0; d < headDim; d++) {
+                            score += Q[i][d] * K[j][d];
                         }
-                        
-                        // Add small random noise
-                        score += Math.random() * 0.1;
-                        
-                        row.push(score);
-                        sum += score;
+                        score = score / Math.sqrt(headDim);
+                        scores.push(score);
                     } else {
-                        // Masked out (future position)
-                        row.push(0);
+                        // Masked position
+                        scores.push(-Infinity);
                     }
                 }
                 
-                // Normalize to get attention weights
-                if (sum > 0) {
-                    headWeights.push(row.map(v => v / sum));
-                } else {
-                    headWeights.push(row);
-                }
+                // Apply softmax with numerical stability
+                const maxScore = Math.max(...scores.filter(s => isFinite(s)));
+                const expScores = scores.map(s => s === -Infinity ? 0 : Math.exp(s - maxScore));
+                const sumExp = expScores.reduce((a, b) => a + b, 0);
+                const attentionWeights = expScores.map(e => sumExp > 0 ? e / sumExp : 0);
+                
+                headWeights.push(attentionWeights);
             }
             
             weights.push(headWeights);
         }
         
-        // Combine outputs from all heads
+        // Combine outputs from all heads using attention-weighted values
         for (let i = 0; i < seqLen; i++) {
             const combined = new Array(this.config.hiddenDim).fill(0);
             
@@ -1490,8 +1512,8 @@ class TransformerDemo {
                 for (let j = 0; j < seqLen; j++) {
                     const weight = weights[h][i][j];
                     if (weight > 0) {
-                        for (let d = 0; d < headDim; d++) {
-                            const dimIdx = h * headDim + d;
+                        for (let d = 0; d < Math.floor(this.config.hiddenDim / this.config.numHeads); d++) {
+                            const dimIdx = h * Math.floor(this.config.hiddenDim / this.config.numHeads) + d;
                             if (dimIdx < this.config.hiddenDim) {
                                 combined[dimIdx] += input[j][dimIdx] * weight;
                             }
@@ -1505,17 +1527,57 @@ class TransformerDemo {
         
         return { output: outputs, weights: weights, mask: mask };
     }
-    
+
+    generateQKV(input, headIndex, projectionType) {
+        const headDim = Math.floor(this.config.hiddenDim / this.config.numHeads);
+        const projection = [];
+        
+        for (let i = 0; i < input.length; i++) {
+            const projectedVector = [];
+            for (let d = 0; d < headDim; d++) {
+                // Create deterministic but head-specific transformation
+                let value = 0;
+                for (let j = 0; j < input[i].length; j++) {
+                    // Deterministic projection matrix
+                    const weight = Math.sin((headIndex + 1) * (d + 1) * (j + 1) * 0.1) * 0.5;
+                    value += input[i][j] * weight;
+                }
+                // Add projection-type specific bias for educational variety
+                if (projectionType === 'query') value += 0.1;
+                else if (projectionType === 'key') value += 0.05;
+                else value += 0.02; // value projection
+                
+                projectedVector.push(value);
+            }
+            projection.push(projectedVector);
+        }
+        
+        return projection;
+    }
+
     createCausalMask(seqLen) {
+        // ADD caching
+        if (!this.maskCache) {
+            this.maskCache = new Map();
+        }
+        
+        const cacheKey = `causal_mask_${seqLen}`;
+        if (this.maskCache.has(cacheKey)) {
+            return this.maskCache.get(cacheKey);
+        }
+        
+        // KEEP existing logic but optimize
         const mask = [];
         for (let i = 0; i < seqLen; i++) {
-            const row = [];
+            const row = new Array(seqLen); // Pre-allocate
             for (let j = 0; j < seqLen; j++) {
-                // Can only attend to positions <= i (causal mask)
-                row.push(j <= i);
+                row[j] = j <= i; // Causal mask
             }
             mask.push(row);
         }
+        
+        // Cache result
+        this.maskCache.set(cacheKey, mask);
         return mask;
     }
     
@@ -1713,20 +1775,23 @@ class TransformerDemo {
         
         // For numerical stability, subtract max
         const maxLogit = Math.max(...scaledLogits);
-        const expLogits = scaledLogits.map(l => Math.exp(l - maxLogit));
+        const shiftedLogits = scaledLogits.map(l => l - maxLogit);
+        
+        // Compute softmax
+        const expLogits = shiftedLogits.map(l => Math.exp(l));
         const sumExp = expLogits.reduce((a, b) => a + b, 0);
         
-        // Ensure we don't divide by zero
-        if (sumExp === 0) {
-            // Uniform distribution as fallback
+        // Handle edge cases
+        if (sumExp === 0 || !isFinite(sumExp)) {
+            console.warn('Numerical instability in softmax, using uniform distribution');
             return new Array(logits.length).fill(1.0 / logits.length);
         }
         
         const probs = expLogits.map(e => e / sumExp);
         
-        // Ensure probabilities sum to 1 (handle numerical errors)
+        // Verify probabilities sum to 1
         const probSum = probs.reduce((a, b) => a + b, 0);
-        if (Math.abs(probSum - 1.0) > 0.001) {
+        if (Math.abs(probSum - 1.0) > 1e-6) {
             return probs.map(p => p / probSum);
         }
         
@@ -2369,15 +2434,21 @@ class TransformerDemo {
     }
     
     destroy() {
-        // Clean up event listeners
+        // Clean up event listeners (KEEP existing code)
         this.eventCleanup.forEach(cleanup => cleanup());
         this.eventCleanup = [];
         
-        // Clear container
+        // ADD: Clear caches
+        if (this.posEncodingCache) {
+            this.posEncodingCache.clear();
+        }
+        
+        // Clear container (KEEP existing code)
         if (this.container) {
             this.container.innerHTML = '';
         }
     }
+    
 }
 
 // Initialize the demo when the page loads
