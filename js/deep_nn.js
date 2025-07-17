@@ -1642,134 +1642,98 @@ class TransformerDemo {
             logits.push(score);
         }
         
-        // Normalize logits to reasonable range
+        // Normalize logits to reasonable range FIRST
         const meanLogit = logits.reduce((a, b) => a + b, 0) / logits.length;
         const stdLogit = Math.sqrt(logits.reduce((a, b) => a + Math.pow(b - meanLogit, 2), 0) / logits.length);
         
-        // Standardize and scale
+        // Standardize and scale to smaller range
         for (let v = 0; v < logits.length; v++) {
-            logits[v] = (logits[v] - meanLogit) / (stdLogit + 1e-5) * 2.0;
+            logits[v] = (logits[v] - meanLogit) / (stdLogit + 1e-5) * 1.0; // Reduced from 2.0
         }
         
-        // Apply context-aware adjustments
+        // Apply context-aware adjustments with SMALLER, CONTROLLED BOOSTS
         const token = currentSequence[currentSequence.length - 1] || '';
-        const secondLastToken = currentSequence[currentSequence.length - 2] || '';
         
         for (let v = 0; v < this.config.vocab.length; v++) {
             const candidateToken = this.config.vocab[v];
             
-            // Strong penalties for special tokens
+            // Strong penalties for special tokens (keep this)
             if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(candidateToken)) {
-                logits[v] -= 10.0;
+                logits[v] -= 5.0; // Reduced from 10.0
                 continue;
             }
             
-            // Context-based boosts
+            // MUCH SMALLER context-based boosts to prevent domination
             if (token === 'the' || token === 'a' || token === 'an') {
                 // After articles, boost nouns and adjectives
                 if (['cat', 'dog', 'house', 'car', 'tree', 'bird', 'man', 'woman', 'boy', 'girl'].includes(candidateToken)) {
-                    logits[v] += 3.0;
+                    logits[v] += 1.0; // Reduced from 3.0
                 } else if (['big', 'small', 'red', 'blue', 'happy', 'old', 'new', 'good', 'little', 'great'].includes(candidateToken)) {
-                    logits[v] += 2.5;
+                    logits[v] += 0.8; // Reduced from 2.5
                 }
                 // Penalize another article or verb immediately after
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
-                    logits[v] -= 4.0;
+                    logits[v] -= 2.0; // Reduced from 4.0
                 }
             } else if (['cat', 'dog', 'bird', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree'].includes(token)) {
                 // After nouns, boost verbs
                 if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats', 'likes', 'loves'].includes(candidateToken)) {
-                    logits[v] += 4.0;
+                    logits[v] += 1.5; // Reduced from 4.0
                 } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
-                    logits[v] += 2.0;
-                }
-                // Slight penalty for adjectives right after nouns
-                if (['big', 'small', 'red', 'blue'].includes(candidateToken)) {
-                    logits[v] -= 1.0;
+                    logits[v] += 0.8; // Reduced from 2.0
                 }
             } else if (['is', 'was', 'are', 'were'].includes(token)) {
-                // After be-verbs, strongly boost adjectives and -ing forms
+                // After be-verbs, boost adjectives
                 if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new', 'fast', 'slow', 'beautiful', 'nice'].includes(candidateToken)) {
-                    logits[v] += 4.0;
-                } else if (candidateToken.endsWith('ing')) {
-                    logits[v] += 3.5;
+                    logits[v] += 1.2; // Reduced from 4.0
                 } else if (['a', 'an', 'the'].includes(candidateToken)) {
-                    logits[v] += 2.0;
-                } else if (['very', 'so', 'quite'].includes(candidateToken)) {
-                    logits[v] += 2.5;
-                }
-            } else if (candidateToken.endsWith('ing')) {
-                // After -ing verbs, boost prepositions and conjunctions
-                if (['and', 'or', 'but', 'on', 'in', 'at', 'with', 'to'].includes(candidateToken)) {
-                    logits[v] += 2.5;
+                    logits[v] += 0.8; // Reduced from 2.0
                 }
             } else if (['happy', 'sad', 'big', 'small', 'fast', 'slow'].includes(token)) {
-                // After adjectives, boost "and", periods, or nouns
+                // After adjectives, SMALL boost for conjunctions
                 if (['and', 'but', 'or'].includes(candidateToken)) {
-                    logits[v] += 2.0;
-                } else if (['cat', 'dog', 'car', 'house', 'one'].includes(candidateToken)) {
-                    logits[v] += 1.5;
+                    logits[v] += 0.5; // Reduced from 2.0 - THIS WAS THE MAIN PROBLEM
                 }
             }
             
-            // Special handling for specific sequences to ensure grammatical output
-            if (currentSequence.length >= 2) {
-                const twoBack = currentSequence[currentSequence.length - 2] || '';
-                
-                // "X was Y" patterns
-                if (twoBack === 'was' || twoBack === 'is') {
-                    // After "was/is [adjective]", avoid another adjective
-                    if (['big', 'small', 'happy', 'sad', 'new', 'old', 'good', 'bad'].includes(token)) {
-                        if (['big', 'small', 'happy', 'sad', 'new', 'old', 'good', 'bad'].includes(candidateToken)) {
-                            logits[v] -= 4.0;
-                        }
-                        // Boost conjunctions, prepositions, or end-of-thought words
-                        if (['and', 'but', 'when', 'because', 'so'].includes(candidateToken)) {
-                            logits[v] += 3.0;
-                        }
-                    }
-                }
-                
-                // Prevent awkward adjective chains
-                if (['big', 'small', 'new', 'old', 'good', 'bad'].includes(token) && 
-                    ['big', 'small', 'new', 'old', 'good', 'bad', 'short', 'long', 'fast', 'slow'].includes(candidateToken)) {
-                    logits[v] -= 5.0;
-                }
-            }
-            
-            // Boost sentence-ending or transitional tokens after 4+ words
-            if (currentSequence.length >= 4) {
-                if (['and', 'but', 'so', 'then'].includes(candidateToken)) {
-                    logits[v] += 1.5;
-                }
-            }
-            
-            // Avoid repeating recent words
-            const recentTokens = currentSequence.slice(-4);
+            // Prevent repetition with MODERATE penalty
+            const recentTokens = currentSequence.slice(-3);
             if (recentTokens.includes(candidateToken)) {
-                logits[v] -= 2.0;
+                logits[v] -= 1.0; // Reduced from 2.0
             }
             
-            // Common bigram patterns
+            // Small boost for common patterns
             const commonBigrams = {
-                'the': ['cat', 'dog', 'house', 'car', 'big', 'small', 'red', 'blue'],
-                'cat': ['is', 'was', 'sat', 'runs', 'sleeps', 'and'],
-                'is': ['big', 'small', 'happy', 'running', 'sleeping', 'a', 'the', 'very'],
-                'was': ['big', 'small', 'happy', 'running', 'sleeping', 'a', 'the', 'very'],
-                'and': ['the', 'a', 'it', 'then', 'he', 'she'],
-                'very': ['big', 'small', 'happy', 'good', 'nice', 'fast'],
-                'a': ['cat', 'dog', 'big', 'small', 'good', 'nice', 'red', 'blue']
+                'the': ['cat', 'dog', 'house', 'car'],
+                'cat': ['is', 'was', 'runs', 'sleeps'],
+                'is': ['big', 'small', 'happy', 'running'],
+                'was': ['big', 'small', 'happy', 'running'],
+                'and': ['the', 'a', 'it'],
+                'a': ['cat', 'dog', 'big', 'small']
             };
             
             if (commonBigrams[token] && commonBigrams[token].includes(candidateToken)) {
-                logits[v] += 2.0;
+                logits[v] += 0.3; // Very small boost
             }
+        }
+        
+        // CLAMP logits to prevent extreme values
+        const maxAllowedLogit = 5.0;
+        const minAllowedLogit = -5.0;
+        
+        for (let v = 0; v < logits.length; v++) {
+            logits[v] = Math.max(minAllowedLogit, Math.min(maxAllowedLogit, logits[v]));
         }
         
         return logits;
     }
-    
+
     softmaxWithTemperature(logits, temperature) {
+        if (temperature <= 0) {
+            console.warn('Invalid temperature, using 0.8');
+            temperature = 0.8;
+        }
+        
         // Apply temperature scaling
         const scaledLogits = logits.map(l => l / temperature);
         
@@ -1793,6 +1757,17 @@ class TransformerDemo {
         const probSum = probs.reduce((a, b) => a + b, 0);
         if (Math.abs(probSum - 1.0) > 1e-6) {
             return probs.map(p => p / probSum);
+        }
+        
+        // DIAGNOSTIC: Log if any probability is too high
+        const maxProb = Math.max(...probs);
+        if (maxProb > 0.9) {
+            console.warn(`High probability detected: ${maxProb.toFixed(3)} for temperature ${temperature}`);
+            console.log('Top 3 logits:', 
+                logits.map((l, i) => ({token: this.config.vocab[i], logit: l.toFixed(2)}))
+                    .sort((a, b) => b.logit - a.logit)
+                    .slice(0, 3)
+            );
         }
         
         return probs;
