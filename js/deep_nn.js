@@ -1092,7 +1092,6 @@ class TransformerDemo {
             <!-- Decoder Stack -->
             <g id="decoder-stack">
                 <rect x="220" y="120" width="360" height="320" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
-                <text x="400" y="110" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Decoder Stack (Autoregressive)</text>
                 
                 <!-- Layer 1 -->
                 <g id="decoder-layer-1">
