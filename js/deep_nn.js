@@ -64,36 +64,128 @@ class TransformerDemo {
             posEncodingBase: 10000,
             temperature: 0.8,
             topK: 10,
+            
+            // IMPROVED TRAINING PARAMETERS
+            trainingSteps: 100,      // Increased from 50
+            learningRate: 0.05,      // Increased from 0.01
+            
+            // EXPANDED AND BETTER TRAINING EXAMPLES
             trainingExamples: [
-            "the cat is big",
-            "the cat is small", 
-            "the cat runs fast",
-            "the cat sleeps peacefully",
-            "the dog is happy",
-            "the dog runs quickly",
-            "the dog is good",
-            "the house is big",
-            "the house is old",
-            "the car is red",
-            "the car is new",
-            "the tree is tall",
-            "the tree is green",
-            "a cat sits quietly",
-            "a dog walks slowly",
-            "a house stands tall",
-            "big cat runs",
-            "small dog sleeps",
-            "red car goes fast",
-            "old house is beautiful"
-        ],
-        trainingSteps: 50,
-        learningRate: 0.01
+                // Original simple patterns
+                "the cat is big",
+                "the cat is small", 
+                "the cat runs fast",
+                "the cat sleeps peacefully",
+                "the dog is happy",
+                "the dog runs quickly",
+                "the dog is good",
+                "the dog barks loudly",
+                
+                // More animal variations
+                "the bird flies high",
+                "the bird sings beautifully",
+                "the fish swims quickly",
+                "the fish is small",
+                "the mouse runs fast",
+                "the mouse is little",
+                
+                // House and objects
+                "the house is big",
+                "the house is old",
+                "the house is beautiful",
+                "the car is red",
+                "the car is new",
+                "the car goes fast",
+                "the tree is tall",
+                "the tree is green",
+                "the tree is old",
+                
+                // More complex patterns with articles
+                "a cat sits quietly",
+                "a dog walks slowly",
+                "a house stands tall",
+                "a car drives fast",
+                "a bird flies away",
+                "a tree grows tall",
+                
+                // Adjective + noun + verb patterns
+                "big cat runs",
+                "small dog sleeps",
+                "red car goes fast",
+                "old house is beautiful",
+                "tall tree is green",
+                "happy dog plays",
+                
+                // More complex sentence structures
+                "a big cat sits quietly",
+                "a small dog walks slowly",
+                "the big dog runs fast",
+                "the small cat sleeps peacefully",
+                "big cats like to sleep",
+                "small dogs like to play",
+                "the happy cat runs",
+                "the sad dog walks",
+                
+                // Subject-verb-object patterns
+                "cats are big",
+                "dogs are small",
+                "birds are fast",
+                "fish are little",
+                "big animals sleep",
+                "small animals play",
+                "the animal is happy",
+                "happy animals run fast",
+                
+                // More descriptive sentences
+                "fast cats jump high",
+                "slow dogs walk carefully",
+                "old trees are tall",
+                "new cars are fast",
+                "big houses are beautiful",
+                "small birds sing",
+                
+                // Color and size combinations
+                "the red car is new",
+                "the blue bird is small",
+                "the green tree is tall",
+                "the black cat is big",
+                "the white dog is happy",
+                "the brown house is old",
+                
+                // Action sequences
+                "the cat runs and jumps",
+                "the dog walks and plays",
+                "the bird flies and sings",
+                "cats sleep and eat",
+                "dogs play and run",
+                "birds fly and sing",
+                
+                // Weather and nature
+                "the sky is blue",
+                "the sun is hot",
+                "the moon is bright",
+                "the wind is cold",
+                "the rain is wet",
+                "the snow is white",
+                
+                // More variety with people
+                "the person is happy",
+                "the man is tall",
+                "the woman is nice",
+                "the child is small",
+                "the boy runs fast",
+                "the girl is pretty"
+            ]
         };
-        
+
         // Initialize embeddings matrix with random values
         this.initializeEmbeddings();
         this.initializeProjectionWeights();
-        
+
+        // Initialize training momentum arrays
+        this.momentum = null;
+        this.embeddingMomentum = null;
+
         // State
         this.state = {
             currentView: 'architecture',
@@ -104,26 +196,52 @@ class TransformerDemo {
             generatedTokens: [],
             isGenerating: false
         };
-        
+
         // Event cleanup
         this.eventCleanup = [];
-        
+
         // Prevent multiple style injections
         if (!document.getElementById('transformer-demo-styles')) {
             this.setupStyles();
         }
-        
+
         this.init();
+        
     }
     
     initializeEmbeddings() {
-        // Create random embedding matrix
+        // Create embedding matrix with proper initialization
         this.embeddings = {};
+        
+        // Use smaller but more effective initialization
+        const scale = Math.sqrt(2.0 / this.config.hiddenDim);
+        
         for (const token of this.config.vocab) {
             this.embeddings[token] = [];
             for (let i = 0; i < this.config.hiddenDim; i++) {
-                // Initialize with small random values
-                this.embeddings[token].push((Math.random() - 0.5) * 0.2);
+                // Use Gaussian initialization
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const gaussianSample = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                this.embeddings[token].push(gaussianSample * scale * 0.1);
+            }
+        }
+        
+        // Add some structure to make training more effective
+        for (const token of this.config.vocab) {
+            // Similar tokens should have similar embeddings
+            if (token.includes('cat') || token.includes('dog')) {
+                // Animal tokens get similar patterns
+                for (let i = 0; i < Math.min(5, this.config.hiddenDim); i++) {
+                    this.embeddings[token][i] += 0.1;
+                }
+            }
+            
+            if (['big', 'small', 'large', 'little'].includes(token)) {
+                // Size adjectives get similar patterns
+                for (let i = 5; i < Math.min(10, this.config.hiddenDim); i++) {
+                    this.embeddings[token][i] += 0.1;
+                }
             }
         }
     }
@@ -131,36 +249,35 @@ class TransformerDemo {
     initializeProjectionWeights() {
         this.projectionWeights = [];
         
-        // Use Xavier initialization (standard for transformers)
-        const scale = Math.sqrt(2.0 / (this.config.hiddenDim + this.config.vocab.length));
+        // Use proper Xavier/Glorot initialization
+        const fanIn = this.config.hiddenDim;
+        const fanOut = this.config.vocab.length;
+        const scale = Math.sqrt(2.0 / (fanIn + fanOut));
         
         for (let v = 0; v < this.config.vocab.length; v++) {
             this.projectionWeights[v] = [];
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                // Initialize with Gaussian-like distribution
+                // Use proper Gaussian initialization
                 const u1 = Math.random();
                 const u2 = Math.random();
                 const gaussianSample = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-                this.projectionWeights[v][h] = gaussianSample * scale * 0.1;
+                this.projectionWeights[v][h] = gaussianSample * scale;
             }
         }
         
-        // Simulate realistic learned biases (what training would produce)
-        // This creates natural language patterns without explicit grammar rules
-        
+        // Add realistic learned patterns without explicit bias
         for (let v = 0; v < this.config.vocab.length; v++) {
             const token = this.config.vocab[v];
             
-            // Special tokens get negative bias (learned from training)
+            // Special tokens get slight negative initialization
             if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
-                this.projectionWeights[v] = this.projectionWeights[v].map(w => w - 0.5);
+                this.projectionWeights[v] = this.projectionWeights[v].map(w => w - 0.2);
             }
             
-            // Simulate frequency-based biases (common words are easier to predict)
-            const commonTokens = ['the', 'a', 'is', 'and', 'cat', 'big', 'was', 'in', 'on'];
+            // Common tokens get slight positive initialization
+            const commonTokens = ['the', 'a', 'is', 'and', 'cat', 'dog', 'big', 'small'];
             if (commonTokens.includes(token)) {
-                // Add small positive bias for common tokens
-                const boost = 0.1 * Math.sin(this.simpleHash(token) * 0.001);
+                const boost = 0.05 * (1 + Math.sin(this.simpleHash(token) * 0.001));
                 this.projectionWeights[v] = this.projectionWeights[v].map(w => w + boost);
             }
         }
@@ -1356,51 +1473,90 @@ class TransformerDemo {
     }
 
     async performTrainingStep() {
-        // Pick a random training example
-        const example = this.config.trainingExamples[Math.floor(Math.random() * this.config.trainingExamples.length)];
-        const tokens = this.tokenize(example);
+    // Pick a random training example
+    const example = this.config.trainingExamples[Math.floor(Math.random() * this.config.trainingExamples.length)];
+    const tokens = this.tokenize(example);
+    
+    if (tokens.length < 2) return;
+    
+    // For each position, train to predict the next token
+    for (let pos = 0; pos < tokens.length - 1; pos++) {
+        const context = tokens.slice(0, pos + 1);
+        const target = tokens[pos + 1];
+        const targetIndex = this.config.vocab.indexOf(target);
         
-        if (tokens.length < 2) return;
+        if (targetIndex === -1) continue;
         
-        // For each position, train to predict the next token
-        for (let pos = 0; pos < tokens.length - 1; pos++) {
-            const context = tokens.slice(0, pos + 1);
-            const target = tokens[pos + 1];
-            const targetIndex = this.config.vocab.indexOf(target);
+        // Forward pass (simplified)
+        const embeddings = this.generateEmbeddings(context);
+        const encoded = this.addPositionalEncoding(embeddings);
+        
+        // Simplified decoder processing
+        let hidden = encoded[encoded.length - 1]; // Last position
+        
+        // Get current logits
+        const logits = [];
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            let score = 0;
+            for (let h = 0; h < this.config.hiddenDim; h++) {
+                score += hidden[h] * this.projectionWeights[v][h];
+            }
+            logits.push(score);
+        }
+        
+        // Compute gradients and update with improved method
+        const probs = this.softmaxWithTemperature(logits, 1.0);
+        const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
+        
+        // Improved gradient update with momentum and better learning rate
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            const gradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
             
-            if (targetIndex === -1) continue;
-            
-            // Forward pass (simplified)
-            const embeddings = this.generateEmbeddings(context);
-            const encoded = this.addPositionalEncoding(embeddings);
-            
-            // Simplified decoder processing
-            let hidden = encoded[encoded.length - 1]; // Last position
-            
-            // Get current logits
-            const logits = [];
-            for (let v = 0; v < this.config.vocab.length; v++) {
-                let score = 0;
-                for (let h = 0; h < this.config.hiddenDim; h++) {
-                    score += hidden[h] * this.projectionWeights[v][h];
+            // Initialize momentum if not exists
+            if (!this.momentum) {
+                this.momentum = [];
+                for (let i = 0; i < this.config.vocab.length; i++) {
+                    this.momentum[i] = new Array(this.config.hiddenDim).fill(0);
                 }
-                logits.push(score);
             }
             
-            // Compute gradients and update (simplified)
-            const probs = this.softmaxWithTemperature(logits, 1.0);
-            const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
-            
-            // Simple gradient update for projection weights
-            for (let v = 0; v < this.config.vocab.length; v++) {
-                const gradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
+            for (let h = 0; h < this.config.hiddenDim; h++) {
+                // Apply momentum (0.9 is typical)
+                this.momentum[v][h] = 0.9 * this.momentum[v][h] + gradient * hidden[h];
+                
+                // Update weights with momentum and better learning rate
+                this.projectionWeights[v][h] -= this.config.learningRate * this.momentum[v][h];
+                
+                // Add weight decay for regularization
+                this.projectionWeights[v][h] *= 0.9999;
+            }
+        }
+        
+        // Also update embeddings (this is important!)
+        for (let i = 0; i < context.length; i++) {
+            const tokenIdx = this.config.vocab.indexOf(context[i]);
+            if (tokenIdx !== -1) {
+                // Initialize embedding momentum
+                if (!this.embeddingMomentum) {
+                    this.embeddingMomentum = {};
+                }
+                if (!this.embeddingMomentum[context[i]]) {
+                    this.embeddingMomentum[context[i]] = new Array(this.config.hiddenDim).fill(0);
+                }
+                
+                // Simple gradient for embeddings
+                const embeddingGradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
                 
                 for (let h = 0; h < this.config.hiddenDim; h++) {
-                    this.projectionWeights[v][h] -= this.config.learningRate * gradient * hidden[h];
+                    this.embeddingMomentum[context[i]][h] = 0.9 * this.embeddingMomentum[context[i]][h] + 
+                        embeddingGradient * this.projectionWeights[targetIndex][h] * 0.1;
+                    
+                    this.embeddings[context[i]][h] -= this.config.learningRate * 0.1 * this.embeddingMomentum[context[i]][h];
                 }
             }
         }
     }
+}
 
     calculateAverageLoss() {
         let totalLoss = 0;
