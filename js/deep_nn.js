@@ -209,6 +209,43 @@ class TransformerDemo {
         
     }
     
+    initializeProjectionWeights() {
+        this.projectionWeights = [];
+        
+        // Use proper Xavier/Glorot initialization
+        const fanIn = this.config.hiddenDim;
+        const fanOut = this.config.vocab.length;
+        const scale = Math.sqrt(2.0 / (fanIn + fanOut));
+        
+        for (let vocabIdx = 0; vocabIdx < this.config.vocab.length; vocabIdx++) {
+            this.projectionWeights[vocabIdx] = [];
+            for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
+                // Use proper Gaussian initialization
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const gaussianSample = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                this.projectionWeights[vocabIdx][hiddenIdx] = gaussianSample * scale;
+            }
+        }
+        
+        // Add realistic learned patterns without explicit bias
+        for (let vocabIdx = 0; vocabIdx < this.config.vocab.length; vocabIdx++) {
+            const token = this.config.vocab[vocabIdx];
+            
+            // Special tokens get slight negative initialization
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+                this.projectionWeights[vocabIdx] = this.projectionWeights[vocabIdx].map(w => w - 0.2);
+            }
+            
+            // Common tokens get slight positive initialization
+            const commonTokens = ['the', 'a', 'is', 'and', 'cat', 'dog', 'big', 'small'];
+            if (commonTokens.includes(token)) {
+                const boost = 0.05 * (1 + Math.sin(this.simpleHash(token) * 0.001));
+                this.projectionWeights[vocabIdx] = this.projectionWeights[vocabIdx].map(w => w + boost);
+            }
+        }
+    }
+
     initializeEmbeddings() {
         // Create embedding matrix with proper initialization
         this.embeddings = {};
@@ -218,7 +255,7 @@ class TransformerDemo {
         
         for (const token of this.config.vocab) {
             this.embeddings[token] = [];
-            for (let i = 0; i < this.config.hiddenDim; i++) {
+            for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
                 // Use Gaussian initialization
                 const u1 = Math.random();
                 const u2 = Math.random();
@@ -232,53 +269,16 @@ class TransformerDemo {
             // Similar tokens should have similar embeddings
             if (token.includes('cat') || token.includes('dog')) {
                 // Animal tokens get similar patterns
-                for (let i = 0; i < Math.min(5, this.config.hiddenDim); i++) {
-                    this.embeddings[token][i] += 0.1;
+                for (let hiddenIdx = 0; hiddenIdx < Math.min(5, this.config.hiddenDim); hiddenIdx++) {
+                    this.embeddings[token][hiddenIdx] += 0.1;
                 }
             }
             
             if (['big', 'small', 'large', 'little'].includes(token)) {
                 // Size adjectives get similar patterns
-                for (let i = 5; i < Math.min(10, this.config.hiddenDim); i++) {
-                    this.embeddings[token][i] += 0.1;
+                for (let hiddenIdx = 5; hiddenIdx < Math.min(10, this.config.hiddenDim); hiddenIdx++) {
+                    this.embeddings[token][hiddenIdx] += 0.1;
                 }
-            }
-        }
-    }
-    
-    initializeProjectionWeights() {
-        this.projectionWeights = [];
-        
-        // Use proper Xavier/Glorot initialization
-        const fanIn = this.config.hiddenDim;
-        const fanOut = this.config.vocab.length;
-        const scale = Math.sqrt(2.0 / (fanIn + fanOut));
-        
-        for (let v = 0; v < this.config.vocab.length; v++) {
-            this.projectionWeights[v] = [];
-            for (let h = 0; h < this.config.hiddenDim; h++) {
-                // Use proper Gaussian initialization
-                const u1 = Math.random();
-                const u2 = Math.random();
-                const gaussianSample = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-                this.projectionWeights[v][h] = gaussianSample * scale;
-            }
-        }
-        
-        // Add realistic learned patterns without explicit bias
-        for (let v = 0; v < this.config.vocab.length; v++) {
-            const token = this.config.vocab[v];
-            
-            // Special tokens get slight negative initialization
-            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
-                this.projectionWeights[v] = this.projectionWeights[v].map(w => w - 0.2);
-            }
-            
-            // Common tokens get slight positive initialization
-            const commonTokens = ['the', 'a', 'is', 'and', 'cat', 'dog', 'big', 'small'];
-            if (commonTokens.includes(token)) {
-                const boost = 0.05 * (1 + Math.sin(this.simpleHash(token) * 0.001));
-                this.projectionWeights[v] = this.projectionWeights[v].map(w => w + boost);
             }
         }
     }
@@ -1473,46 +1473,42 @@ class TransformerDemo {
     }
 
     async performTrainingStep() {
-    // Pick a random training example
-    const example = this.config.trainingExamples[Math.floor(Math.random() * this.config.trainingExamples.length)];
-    const tokens = this.tokenize(example);
-    
-    if (tokens.length < 2) return;
-    
-    // For each position, train to predict the next token
-    for (let pos = 0; pos < tokens.length - 1; pos++) {
-        const context = tokens.slice(0, pos + 1);
-        const target = tokens[pos + 1];
-        const targetIndex = this.config.vocab.indexOf(target);
+        // Pick a random training example
+        const example = this.config.trainingExamples[Math.floor(Math.random() * this.config.trainingExamples.length)];
+        const tokens = this.tokenize(example);
         
-        if (targetIndex === -1) continue;
+        if (tokens.length < 2) return;
         
-        // Forward pass (simplified)
-        const embeddings = this.generateEmbeddings(context);
-        const encoded = this.addPositionalEncoding(embeddings);
-        
-        // Simplified decoder processing
-        let hidden = encoded[encoded.length - 1]; // Last position
-        
-        // Get current logits
-        const logits = [];
-        for (let v = 0; v < this.config.vocab.length; v++) {
-            let score = 0;
-            for (let h = 0; h < this.config.hiddenDim; h++) {
-                score += hidden[h] * this.projectionWeights[v][h];
-            }
-            logits.push(score);
-        }
-        
-        // Compute gradients and update with improved method
-        const probs = this.softmaxWithTemperature(logits, 1.0);
-        const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
-        
-        // Improved gradient update with momentum and better learning rate
-        for (let v = 0; v < this.config.vocab.length; v++) {
-            const gradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
+        // For each position, train to predict the next token
+        for (let pos = 0; pos < tokens.length - 1; pos++) {
+            const context = tokens.slice(0, pos + 1);
+            const target = tokens[pos + 1];
+            const targetIndex = this.config.vocab.indexOf(target);
             
-            // Initialize momentum if not exists
+            if (targetIndex === -1) continue;
+            
+            // Forward pass (simplified)
+            const embeddings = this.generateEmbeddings(context);
+            const encoded = this.addPositionalEncoding(embeddings);
+            
+            // Simplified decoder processing
+            let hidden = encoded[encoded.length - 1]; // Last position
+            
+            // Get current logits
+            const logits = [];
+            for (let vocabIdx = 0; vocabIdx < this.config.vocab.length; vocabIdx++) {
+                let score = 0;
+                for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
+                    score += hidden[hiddenIdx] * this.projectionWeights[vocabIdx][hiddenIdx];
+                }
+                logits.push(score);
+            }
+            
+            // Compute gradients and update with improved method
+            const probs = this.softmaxWithTemperature(logits, 1.0);
+            const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
+            
+            // Initialize momentum arrays if not exists
             if (!this.momentum) {
                 this.momentum = [];
                 for (let i = 0; i < this.config.vocab.length; i++) {
@@ -1520,50 +1516,56 @@ class TransformerDemo {
                 }
             }
             
-            for (let h = 0; h < this.config.hiddenDim; h++) {
-                // Apply momentum (0.9 is typical)
-                this.momentum[v][h] = 0.9 * this.momentum[v][h] + gradient * hidden[h];
+            // Update projection weights with momentum
+            for (let vocabIdx = 0; vocabIdx < this.config.vocab.length; vocabIdx++) {
+                const gradient = (vocabIdx === targetIndex) ? (probs[vocabIdx] - 1) : probs[vocabIdx];
                 
-                // Update weights with momentum and better learning rate
-                this.projectionWeights[v][h] -= this.config.learningRate * this.momentum[v][h];
-                
-                // Add weight decay for regularization
-                this.projectionWeights[v][h] *= 0.9999;
-            }
-        }
-        
-        // Also update embeddings (this is important!)
-        for (let i = 0; i < context.length; i++) {
-            const tokenIdx = this.config.vocab.indexOf(context[i]);
-            if (tokenIdx !== -1) {
-                // Initialize embedding momentum
-                if (!this.embeddingMomentum) {
-                    this.embeddingMomentum = {};
-                }
-                if (!this.embeddingMomentum[context[i]]) {
-                    this.embeddingMomentum[context[i]] = new Array(this.config.hiddenDim).fill(0);
-                }
-                
-                // Simple gradient for embeddings
-                const embeddingGradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
-                
-                for (let h = 0; h < this.config.hiddenDim; h++) {
-                    this.embeddingMomentum[context[i]][h] = 0.9 * this.embeddingMomentum[context[i]][h] + 
-                        embeddingGradient * this.projectionWeights[targetIndex][h] * 0.1;
+                for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
+                    // Apply momentum (0.9 is typical)
+                    this.momentum[vocabIdx][hiddenIdx] = 0.9 * this.momentum[vocabIdx][hiddenIdx] + gradient * hidden[hiddenIdx];
                     
-                    this.embeddings[context[i]][h] -= this.config.learningRate * 0.1 * this.embeddingMomentum[context[i]][h];
+                    // Update weights with momentum and learning rate
+                    this.projectionWeights[vocabIdx][hiddenIdx] -= this.config.learningRate * this.momentum[vocabIdx][hiddenIdx];
+                    
+                    // Add weight decay for regularization
+                    this.projectionWeights[vocabIdx][hiddenIdx] *= 0.9999;
+                }
+            }
+            
+            // Also update embeddings (this is important!)
+            for (let ctxIdx = 0; ctxIdx < context.length; ctxIdx++) {
+                const token = context[ctxIdx];
+                const tokenIdx = this.config.vocab.indexOf(token);
+                
+                if (tokenIdx !== -1) {
+                    // Initialize embedding momentum
+                    if (!this.embeddingMomentum) {
+                        this.embeddingMomentum = {};
+                    }
+                    if (!this.embeddingMomentum[token]) {
+                        this.embeddingMomentum[token] = new Array(this.config.hiddenDim).fill(0);
+                    }
+                    
+                    // Simple gradient for embeddings
+                    const embeddingGradient = (tokenIdx === targetIndex) ? (probs[tokenIdx] - 1) : probs[tokenIdx];
+                    
+                    for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
+                        this.embeddingMomentum[token][hiddenIdx] = 0.9 * this.embeddingMomentum[token][hiddenIdx] + 
+                            embeddingGradient * this.projectionWeights[targetIndex][hiddenIdx] * 0.1;
+                        
+                        this.embeddings[token][hiddenIdx] -= this.config.learningRate * 0.1 * this.embeddingMomentum[token][hiddenIdx];
+                    }
                 }
             }
         }
     }
-}
 
     calculateAverageLoss() {
         let totalLoss = 0;
         let count = 0;
         
-        // Calculate loss on a few training examples
-        for (let i = 0; i < Math.min(5, this.config.trainingExamples.length); i++) {
+        // Calculate loss on more examples for better estimate
+        for (let i = 0; i < Math.min(10, this.config.trainingExamples.length); i++) {
             const example = this.config.trainingExamples[i];
             const tokens = this.tokenize(example);
             
@@ -1574,21 +1576,27 @@ class TransformerDemo {
                 
                 if (targetIndex === -1) continue;
                 
-                // Simplified forward pass
+                // Forward pass
                 const embeddings = this.generateEmbeddings(context);
                 const encoded = this.addPositionalEncoding(embeddings);
                 let hidden = encoded[encoded.length - 1];
                 
                 const logits = [];
-                for (let v = 0; v < this.config.vocab.length; v++) {
+                for (let vocabIdx = 0; vocabIdx < this.config.vocab.length; vocabIdx++) {
                     let score = 0;
-                    for (let h = 0; h < this.config.hiddenDim; h++) {
-                        score += hidden[h] * this.projectionWeights[v][h];
+                    for (let hiddenIdx = 0; hiddenIdx < this.config.hiddenDim; hiddenIdx++) {
+                        score += hidden[hiddenIdx] * this.projectionWeights[vocabIdx][hiddenIdx];
                     }
                     logits.push(score);
                 }
                 
-                const probs = this.softmaxWithTemperature(logits, 1.0);
+                // Better numerical stability
+                const maxLogit = Math.max(...logits);
+                const shiftedLogits = logits.map(l => l - maxLogit);
+                const expLogits = shiftedLogits.map(l => Math.exp(l));
+                const sumExp = expLogits.reduce((a, b) => a + b, 0);
+                const probs = expLogits.map(e => e / sumExp);
+                
                 const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
                 
                 totalLoss += loss;
@@ -1599,7 +1607,6 @@ class TransformerDemo {
         return count > 0 ? totalLoss / count : 0;
     }
 
-    
     findSimilarToken(word) {
         // Simple similarity check - find tokens that start with the same letters
         const candidates = this.config.vocab.filter(token => 
