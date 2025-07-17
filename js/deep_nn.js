@@ -63,7 +63,31 @@ class TransformerDemo {
             playbackSpeed: 1000,
             posEncodingBase: 10000,
             temperature: 0.8,
-            topK: 10
+            topK: 10,
+            trainingExamples: [
+            "the cat is big",
+            "the cat is small", 
+            "the cat runs fast",
+            "the cat sleeps peacefully",
+            "the dog is happy",
+            "the dog runs quickly",
+            "the dog is good",
+            "the house is big",
+            "the house is old",
+            "the car is red",
+            "the car is new",
+            "the tree is tall",
+            "the tree is green",
+            "a cat sits quietly",
+            "a dog walks slowly",
+            "a house stands tall",
+            "big cat runs",
+            "small dog sleeps",
+            "red car goes fast",
+            "old house is beautiful"
+        ],
+        trainingSteps: 50,
+        learningRate: 0.01
         };
         
         // Initialize embeddings matrix with random values
@@ -171,8 +195,21 @@ class TransformerDemo {
                     <h3>GPT-Style Decoder Transformer Demo</h3>
                     <div class="input-section">
                         <input type="text" id="transformer-input" placeholder="Enter prompt text (e.g., 'the cat')" value="the cat" maxlength="50">
-                        <button id="process-btn" class="demo-button">Start Generation</button>
+                        <button id="train-btn" class="demo-button">🎓 Train Model</button>
+                        <button id="process-btn" class="demo-button">🚀 Generate</button>
                     </div>
+                    <div class="training-status">
+                        <div id="training-progress" class="training-progress" style="display: none;">
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill"></div>
+                            </div>
+                            <span id="training-info">Training: 0/50 steps</span>
+                        </div>
+                        <div id="training-complete" class="training-complete" style="display: none;">
+                            ✅ Model trained! Loss reduced from <span id="initial-loss">--</span> to <span id="final-loss">--</span>
+                        </div>
+                    </div>
+
                     <div class="model-info">
                         <span class="info-badge">Autoregressive</span>
                         <span class="info-badge">Causal Attention</span>
@@ -322,7 +359,45 @@ class TransformerDemo {
                 cursor: not-allowed;
                 transform: none;
             }
-            
+            .training-status {
+                margin-top: 10px;
+            }
+
+            .training-progress {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .progress-bar {
+                flex: 1;
+                height: 8px;
+                background: rgba(255,255,255,0.3);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(to right, #4caf50, #45a049);
+                width: 0%;
+                transition: width 0.3s ease;
+            }
+
+            .training-complete {
+                padding: 8px 12px;
+                background: rgba(76, 175, 80, 0.2);
+                border: 1px solid rgba(76, 175, 80, 0.5);
+                border-radius: 4px;
+                color: #2e7d32;
+                font-size: 14px;
+            }
+
+            #training-info {
+                color: rgba(255,255,255,0.9);
+                font-size: 14px;
+                min-width: 120px;
+            }
             .view-tabs {
                 display: flex;
                 background: #34495e;
@@ -1012,6 +1087,12 @@ class TransformerDemo {
         const processFn = () => this.startGeneration();
         processBtn.addEventListener('click', processFn);
         this.eventCleanup.push(() => processBtn.removeEventListener('click', processFn));
+
+        // Train button
+        const trainBtn = document.getElementById('train-btn');
+        const trainFn = () => this.trainModel();
+        trainBtn.addEventListener('click', trainFn);
+        this.eventCleanup.push(() => trainBtn.removeEventListener('click', trainFn));
         
         // Enter key on input
         const input = document.getElementById('transformer-input');
@@ -1144,9 +1225,16 @@ class TransformerDemo {
     }
 
     startGeneration() {
-        const input = document.getElementById('transformer-input').value.trim();
+          const input = document.getElementById('transformer-input').value.trim();
         if (!input) {
             this.showError('Please enter some text to start generation');
+            return;
+        }
+        
+        // CHECK IF MODEL HAS BEEN TRAINED
+        const trainBtn = document.getElementById('train-btn');
+        if (trainBtn.textContent === '🎓 Train Model') {
+            this.showError('⚠️ Please train the model first! Click "🎓 Train Model" to see how training improves output quality.');
             return;
         }
         
@@ -1207,6 +1295,154 @@ class TransformerDemo {
         
         return tokens;
     }
+
+    async trainModel() {
+        const trainBtn = document.getElementById('train-btn');
+        const processBtn = document.getElementById('process-btn');
+        const progressDiv = document.getElementById('training-progress');
+        const completeDiv = document.getElementById('training-complete');
+        const progressFill = document.getElementById('progress-fill');
+        const trainingInfo = document.getElementById('training-info');
+        
+        // Disable buttons and show progress
+        trainBtn.disabled = true;
+        processBtn.disabled = true;
+        trainBtn.textContent = '🎓 Training...';
+        progressDiv.style.display = 'flex';
+        completeDiv.style.display = 'none';
+        
+        // Calculate initial loss
+        const initialLoss = this.calculateAverageLoss();
+        
+        try {
+            for (let step = 0; step < this.config.trainingSteps; step++) {
+                // Update progress
+                const progress = ((step + 1) / this.config.trainingSteps) * 100;
+                progressFill.style.width = `${progress}%`;
+                trainingInfo.textContent = `Training: ${step + 1}/${this.config.trainingSteps} steps`;
+                
+                // Training step
+                await this.performTrainingStep();
+                
+                // Small delay for visualization
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
+            
+            // Calculate final loss
+            const finalLoss = this.calculateAverageLoss();
+            
+            // Show completion
+            progressDiv.style.display = 'none';
+            completeDiv.style.display = 'block';
+            document.getElementById('initial-loss').textContent = initialLoss.toFixed(3);
+            document.getElementById('final-loss').textContent = finalLoss.toFixed(3);
+            
+            trainBtn.textContent = '✅ Trained';
+            processBtn.disabled = false;
+            
+            // Re-enable training after 3 seconds
+            setTimeout(() => {
+                trainBtn.disabled = false;
+                trainBtn.textContent = '🎓 Re-train';
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Training error:', error);
+            trainBtn.textContent = '❌ Error';
+            trainBtn.disabled = false;
+            processBtn.disabled = false;
+            progressDiv.style.display = 'none';
+        }
+    }
+
+    async performTrainingStep() {
+        // Pick a random training example
+        const example = this.config.trainingExamples[Math.floor(Math.random() * this.config.trainingExamples.length)];
+        const tokens = this.tokenize(example);
+        
+        if (tokens.length < 2) return;
+        
+        // For each position, train to predict the next token
+        for (let pos = 0; pos < tokens.length - 1; pos++) {
+            const context = tokens.slice(0, pos + 1);
+            const target = tokens[pos + 1];
+            const targetIndex = this.config.vocab.indexOf(target);
+            
+            if (targetIndex === -1) continue;
+            
+            // Forward pass (simplified)
+            const embeddings = this.generateEmbeddings(context);
+            const encoded = this.addPositionalEncoding(embeddings);
+            
+            // Simplified decoder processing
+            let hidden = encoded[encoded.length - 1]; // Last position
+            
+            // Get current logits
+            const logits = [];
+            for (let v = 0; v < this.config.vocab.length; v++) {
+                let score = 0;
+                for (let h = 0; h < this.config.hiddenDim; h++) {
+                    score += hidden[h] * this.projectionWeights[v][h];
+                }
+                logits.push(score);
+            }
+            
+            // Compute gradients and update (simplified)
+            const probs = this.softmaxWithTemperature(logits, 1.0);
+            const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
+            
+            // Simple gradient update for projection weights
+            for (let v = 0; v < this.config.vocab.length; v++) {
+                const gradient = (v === targetIndex) ? (probs[v] - 1) : probs[v];
+                
+                for (let h = 0; h < this.config.hiddenDim; h++) {
+                    this.projectionWeights[v][h] -= this.config.learningRate * gradient * hidden[h];
+                }
+            }
+        }
+    }
+
+    calculateAverageLoss() {
+        let totalLoss = 0;
+        let count = 0;
+        
+        // Calculate loss on a few training examples
+        for (let i = 0; i < Math.min(5, this.config.trainingExamples.length); i++) {
+            const example = this.config.trainingExamples[i];
+            const tokens = this.tokenize(example);
+            
+            for (let pos = 0; pos < tokens.length - 1; pos++) {
+                const context = tokens.slice(0, pos + 1);
+                const target = tokens[pos + 1];
+                const targetIndex = this.config.vocab.indexOf(target);
+                
+                if (targetIndex === -1) continue;
+                
+                // Simplified forward pass
+                const embeddings = this.generateEmbeddings(context);
+                const encoded = this.addPositionalEncoding(embeddings);
+                let hidden = encoded[encoded.length - 1];
+                
+                const logits = [];
+                for (let v = 0; v < this.config.vocab.length; v++) {
+                    let score = 0;
+                    for (let h = 0; h < this.config.hiddenDim; h++) {
+                        score += hidden[h] * this.projectionWeights[v][h];
+                    }
+                    logits.push(score);
+                }
+                
+                const probs = this.softmaxWithTemperature(logits, 1.0);
+                const loss = -Math.log(Math.max(probs[targetIndex], 1e-10));
+                
+                totalLoss += loss;
+                count++;
+            }
+        }
+        
+        return count > 0 ? totalLoss / count : 0;
+    }
+
     
     findSimilarToken(word) {
         // Simple similarity check - find tokens that start with the same letters
@@ -2365,6 +2601,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.transformerDemo = new TransformerDemo('transformer_demo');
     }
 });
+
+
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
