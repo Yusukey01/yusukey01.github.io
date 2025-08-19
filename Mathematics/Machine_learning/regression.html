@@ -188,17 +188,18 @@ uses_python: false
                                         &= \arg \min_w (Xw -y)^\top (Xw-y)+\lambda w^\top w \\\\
                                         &= \arg \min_w y^\top y -2w^\top Xy +w^\top X^\top Xw + w^\top (\lambda I)w \\\\
                                         &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\
-                                        &= \arg \min_w J(W)            
+                                        &= \arg \min_w J(w)            
                     \end{align*}
                     \]
                     Then
                     \[
                     \nabla_w J(w) = -2X^\top y +2(X^\top X + \lambda I )w = 0
                     \]
-                    Solve this equation for \(w\), we botain 
+                    Solve this equation for \(w\), we obtain 
                     \[
                     \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
                     \]
+                    where \(\lambda > 0\) is the <strong>regularization parameter</strong> that controls the strength of the penalty.
                 </p>
 
                 <p>
@@ -246,7 +247,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Here, we demonstrate how k-fold CV is used to tune the regularization parameter \(\lambda\) in Ridge Regression.
+                    Here, we demonstrate how k-fold CV is used to tune the regularization parameter \(\lambda > 0\) in Ridge Regression.
                 </p>
                
                 <p>
@@ -289,8 +290,11 @@ uses_python: false
                         + \underbrace{ \mathbb{E}_D \left[ \left( x^\top \widehat{w}_{ridge} - \mathbb{E}_D \left[  x^\top \widehat{w}_{ridge} \mid x\right] \right)^2 \mid x \right] }_{\text{Variance}} \tag{1}\\\\
                       \end{align*}
                     \]
-                    Now we assume \(X^\top X = n I\) for simplicity. (This corresponds to assuming that the columns of \(X\) are orthonormal and that we have exactly \(n\) 
-                    samples, or in practice that we've whitened the design matrix and scaled it so \(X^\top X \approx n I\).) Then 
+                    Now we assume \(X^\top X = n I\) for simplicity. This corresponds to the case where the predictors are orthogonal (uncorrelated) 
+                    and standardized, which is a common simplifying assumption in ridge regression analysis. For orthogonal covariates, the ridge estimator 
+                    takes the simple form \(\widehat{w}_{ridge} = \frac{n}{n+\lambda} \widehat{w}_{LS}\), showing pure shrinkage behavior . 
+                    While this assumption doesn't hold in general, it allows clear illustration of the bias-variance tradeoff without the complexity of 
+                    correlated predictors. Then 
                     \[
                     \begin{align*}
                      \widehat{w}_{ridge} &= (X^\top X + \lambda I)^{-1} X^\top (Xw + \epsilon) \\\\
@@ -340,7 +344,7 @@ uses_python: false
                 <h2>Lasso Regression</h2>
                 <p>
                     In ridge regression objective, squared <strong>\(\ell_2\)-norm</strong>, \( \| w \|_2^2 \) is introduced as a 
-                    regularizer. Instead, here we use the \(\ell_1\) regularizer: 
+                    regularizer. Instead, here we use the \(\ell_1\) penalty (or \(\ell_1\) regularization term):
                     \[
                     \widehat{w}_{\text{lasso}} = \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 + \lambda \|w\|_1.
                     \]
