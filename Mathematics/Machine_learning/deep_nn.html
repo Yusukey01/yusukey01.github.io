@@ -204,7 +204,7 @@ uses_python: false
                         &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
                         &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
                         &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
-                                \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i : \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
+                                \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i ; \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
                         &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
                     \end{align*}
                     \]
@@ -255,9 +255,12 @@ uses_python: false
             <section id="attention" class="section-content">
                 <h2>Attention Mechanisms</h2>
                 <p>
-                    Recurrent architectures process sequences step-by-step, which limits parallelism and makes modeling long-range dependencies challenging.  
-                    <strong>Attention mechanisms</strong> address this by computing a weighted sum of all input feature vectors, allowing the model to 
-                    “attend” to the most relevant parts of the sequence regardless of distance.
+                    Recurrent architectures process sequences step-by-step, which limits parallelism and makes modeling 
+                    long-range dependencies challenging. For example, imagine reading a sentence and trying to understand 
+                    what each word refers to. When processing the word "it," you automatically look back at previous words 
+                    to determine its meaning. <strong>Attention mechanisms</strong> formalize this intuitive process by computing 
+                    a weighted sum of all input feature vectors, enabling the model to dynamically focus on the most relevant 
+                    parts of the sequence regardless of distance.
                 </p>
 
                 <p>
@@ -306,12 +309,12 @@ uses_python: false
                     \]
                     where \(0 \leq \alpha_{ij} \leq 1\) and \(\sum_i \alpha_{ij} = 1\). This allows the model to selectively attend to relevant parts of the input.
                 </p>
-
-                 <p>
+                
+                <p>
                     A common similarity function is the inner product between query and key vectors. If 
-                    \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with zero mean and unit variance, 
+                    \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with components that have zero mean and unit variance, 
                     then their inner product \(\mathbf{q}^\top \mathbf{k}\) has zero mean and variance \(d\). 
-                    To prevent large variance from pushing the softmax into extreme regions, we normalize it:
+                    To prevent large variance from pushing the softmax into saturation regions where gradients vanish, we normalize it by \(\sqrt{d}\):
                     \[
                     a(\mathbf{q}, \mathbf{k}) = \frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}.
                     \]
@@ -343,11 +346,11 @@ uses_python: false
                 \[
                 \mathbf{y}_i = \text{Attention}(\mathbf{q}_i, (\mathbf{x}_1, \mathbf{x}_1), \cdots, (\mathbf{x}_n, \mathbf{x}_n )) \in \mathbb{R}^d
                 \]
-                where the quert is \(q_i\) and the keys and valuse are \(\mathbf{x}_1, \cdots \mathbf{x}_n\).
+                where the query is \(q_i\) and the keys and values are \(\mathbf{x}_1, \cdots \mathbf{x}_n\).
             </p>
             <p>
                 This mechanism captures contextual relationships between tokens by allowing information to flow from any position to any other in a single layer.
-                Through training, all the outputs have been known. Thus the model can evaluate \(\mathbf{y}_i\) <strong>in parallel</strong>, which 
+                During training, all the outputs are known. Thus the model can evaluate \(\mathbf{y}_i\) <strong>in parallel</strong>, which 
                 overcomes the sequential bottleneck of past DNNs. 
             </p>
 
