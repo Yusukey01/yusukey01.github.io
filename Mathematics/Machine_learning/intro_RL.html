@@ -1,0 +1,635 @@
+---
+layout: default
+title: Introduction to Reinforcement Learning
+level: detail
+description: Learn about Reinforcement Learning fundamentals from theory to algorithms including MDPs, Bellman equations, value iteration, policy iteration, temporal difference learning, Q-learning and SARSA.
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        <!-- LearningResource Schema for Content Pages -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "{{ page.title }}",
+        "description": "{{ page.description }}",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "{% if page.content contains 'Interactive Demo' or page.content contains 'demo' %}active{% else %}expositive{% endif %}",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Reinforcement Learning" },
+            { "@type": "Thing", "name": "Markov Decision Process" },
+            { "@type": "Thing", "name": "MDP" },
+            { "@type": "Thing", "name": "Value Functions" },
+            { "@type": "Thing", "name": "Policy Optimization" },
+            { "@type": "Thing", "name": "Bellman Equations" },
+            { "@type": "Thing", "name": "Value Iteration" },
+            { "@type": "Thing", "name": "Policy Iteration" },
+            { "@type": "Thing", "name": "Temporal Difference Learning" },
+            { "@type": "Thing", "name": "Q-Learning" },
+            { "@type": "Thing", "name": "SARSA" },
+            { "@type": "Thing", "name": "Dynamic Programming" },
+            { "@type": "Thing", "name": "Model-Based Reinforcement Learning" },
+            { "@type": "Thing", "name": "Model-Free Reinforcement Learning" },
+            { "@type": "Thing", "name": "Exploration vs Exploitation" }
+        ],
+        "teaches": [
+            "Markov Decision Process formulation",
+            "Bellman equations and value functions",
+            "Classical planning algorithms",
+            "Reinforcement learning algorithms",
+            "Temporal difference learning methods",
+            "Policy optimization techniques"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Machine Learning",
+            "description": "Explore machine learning ideas and applications with mathematical foundations",
+            "provider": {
+                "@type": "Organization",
+                "name": "MATH-CS COMPASS",
+                "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota",
+                "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "V",
+            "hasCourseInstance": {
+                "@type": "CourseInstance",
+                "courseMode": "online",
+                "courseWorkload": "PT5H",
+                "instructor": {
+                    "@type": "Person",
+                    "name": "Yusuke Yokota"
+                }
+            },
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD",
+                "availability": "https://schema.org/InStock",
+                "category": "free"
+            }
+        }
+        }
+        </script>
+        
+        <!-- WebApplication Schema for Interactive Content -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "{{ page.title }} Interactive Demo",
+        "description": "Interactive demonstration of reinforcement learning concepts including MDPs and algorithms",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://yusukey01.github.io{{ page.url }}",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota"
+        },
+        "applicationSubCategory": "Mathematical Visualization",
+        "featureList": [
+            "Interactive mathematical visualization",
+            "Real-time parameter adjustment",
+            "Educational demonstrations"
+        ],
+        "isAccessibleForFree": true,
+        "educationalUse": "instruction",
+        "educationalLevel": "university"
+        }
+        </script>
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Introduction to Reinforcement Learning</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#mdp">Markov Decision Process</a>
+            <a href="#value-functions">Value Functions & Bellman Equations</a>
+            <a href="#planning">Classical Planning Methods</a>
+            <a href="#VI">Value Iteration</a>
+            <a href="#PI">Policy Iteration</a>
+            <a href="#model-free-rl">Model-Free Reinforcement Learning</a>
+            <a href="#td">Temporal Difference Learning</a>
+            <a href="#qlearning">Q-Learning and SARSA</a>
+            <a href="#exploration">Exploration vs. Exploitation</a>
+        </div>
+
+        <div class="container">  
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+
+                <p>
+                    <strong>Reinforcement Learning (RL)</strong> is a machine learning framework in which an <strong>agent</strong> interacts 
+                    with an environment to learn a behavior that maximizes a scalar <strong>reward</strong> signal over time. 
+                    Formally, the environment is typically modeled as a <strong>Markov Decision Process (MDP)</strong>, defined by a tuple 
+                    \[
+                    (\mathcal{S}, \mathcal{A}, \mathcal{T}, r, \gamma)
+                    \]
+                    where \(\mathcal{S}\) is the state space, \(\mathcal{A}\) is the action space, \(\mathcal{T}\) is the transition function, 
+                    \(r\) is the reward function, and \(\gamma\) is the discount factor.
+                </p>
+
+                <p>
+                    At each time step, the agent observes a state \(s_t \in \mathcal{S}\), selects an action \(a_t \in \mathcal{A}\), receives a 
+                    reward \(r_t\), and transitions to a new state \(s_{t+1}\) according to the transition dynamics \(\mathcal{T}(s_{t+1} \mid s_t, a_t)\). 
+                    The goal of the agent is to learn a <strong>policy</strong> \(\pi(a \mid s)\) that maximizes the expected cumulative reward:
+                    \[
+                    \mathbb{E}_\pi \left[ \sum_{t=0}^\infty \gamma^t r_t \right].
+                    \]
+                </p>
+
+                <p>
+                    Reinforcement learning differs from <strong>supervised learning</strong>, where models are trained on ground-truth input-output pairs, 
+                    and from <strong>unsupervised learning</strong>, which aims to discover hidden structure or representations in unlabeled data.
+                    In RL, learning is driven by a scalar <em>reward signal</em> that provides evaluative feedback based on the agent's interaction with an environment.
+                    Unlike supervised learning, there are no correct labels for each input, and unlike unsupervised learning, the objective is not to model data structure 
+                    but to learn a policy that maximizes expected cumulative reward over time.
+                </p>
+
+                <p>
+                    RL has been successfully applied in domains such as robotics, recommendation systems, and game-playing.
+                    More recently, RL has also become integral to the training of modern <strong>large language models (LLMs)</strong>. 
+                    In particular, a method called <strong>Reinforcement Learning from Human Feedback (RLHF)</strong> is used to fine-tune LLMs 
+                    to follow <strong>human preferences</strong>, ensuring outputs are more helpful, safe, and better aligned with user intent.
+                </p>
+
+                <p>
+                    This page provides a comprehensive introduction covering both the theoretical foundations and fundamental algorithms used 
+                    to solve reinforcement learning problems.
+                </p>     
+            </section>
+
+            <section id="mdp" class="section-content">
+                <h2>Markov Decision Process (MDP)</h2>
+
+                <p>
+                    In this section, we present a probabilistic formulation of Markov Decision Processes (MDPs), where both 
+                    transitions and rewards are modeled as stochastic variables. This perspective is particularly useful for 
+                    analyzing trajectory distributions and gradient-based learning methods.
+                </p>
+
+                <p>
+                    An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> 
+                    or multiple trajectories. A trajectory of length \(T\) is defined as:
+                    \[
+                    \boldsymbol{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \cdots, s_T),
+                    \]
+                    where \(s_t\) is a state, \(a_t\) is an action, and \(r_t\) is a reward.
+                </p>
+
+                <p>
+                    The objective is to optimize the agent's action-selection policy so that the expected discounted cumulative reward
+                    is maximized:
+                    \[
+                    G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t,
+                    \]
+                    where \(\gamma \in [0, 1]\) is the <strong>discount factor</strong>. We assume the environment follows a 
+                    <strong>Markov Decision Process (MDP)</strong>, where the trajectory distribution can be factored into 
+                    single-step transition and reward models. The process of estimating an optimal policy from trajectories 
+                    is referred to as <strong>learning</strong>.
+                </p>
+
+                <p>
+                    We define the MDP as the tuple:
+                    \[
+                    \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle,
+                    \]
+                    where:
+                    <ul style="padding-left: 40px;">
+                    <li>\(\mathcal{S}\): set of environment states</li>
+                    <li>\(\mathcal{A}\): set of available actions</li>
+                    <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
+                    <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
+                    <li>\(p_0(s_0)\): initial state distribution</li>
+                    </ul>
+                </p>
+
+                <p>
+                    At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
+                    state \(s_t \in \mathcal{S}\), selects action \(a_t \sim \pi(a_t \mid s_t)\), and receives reward 
+                    \(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\), where the next state is drawn from \(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\). 
+                    The agent's decision-making is governed by a stochastic policy \(\pi(a \mid s)\).
+                </p>
+
+                <p>
+                    This interaction at each step is called a <strong>transition</strong>, represented as the tuple:
+                    \[
+                    (s_t, a_t, r_t, s_{t+1}),
+                    \]
+                    where:
+                    <ul style="padding-left: 40px;">
+                    <li>\(a_t \sim \pi(a \mid s_t)\)</li>
+                    <li>\(s_{t+1} \sim p_T(s_{t+1} \mid s_t, a_t)\)</li>
+                    <li>\(r_t \sim p_R(r \mid s_t, a_t, s_{t+1})\)</li>
+                    </ul>
+                </p>
+
+                <p>
+                    Under policy \(\pi\), the joint distribution of a trajectory \(\boldsymbol{\tau}\) of length \(T\) is given by:
+                    \[
+                    p(\boldsymbol{\tau}) = p_0(s_0) \prod_{t = 0}^{T -1} 
+                    \pi(a_t \mid s_t) \, p_T(s_{t+1} \mid s_t, a_t) \, p_R(r_t \mid s_t, a_t, s_{t+1}).
+                    \]
+                </p>
+
+                <p>
+                    We define the expected <strong>reward function</strong> from the reward model \(p_R\) as the marginal average immediate reward 
+                    for taking action \(a\) in state \(s\), integrating over possible next states:
+                    \[
+                    R(s, a) = \mathbb{E}_{p_T(s' \mid s, a)} \left[ 
+                    \mathbb{E}_{p_R(r \mid s, a, s')}[r] 
+                    \right].
+                    \]
+                </p>
+
+                <p>
+                    While classical RL literature often defines the reward function deterministically as \(r(s, a)\), 
+                    this probabilistic formulation allows us to account for uncertainty in transitions and rewards. 
+                    It is particularly useful for gradient-based RL methods, where trajectory likelihoods must be modeled explicitly.
+                </p>
+            </section>
+
+            <section id="value-functions" class="section-content">
+                <h2>Value Functions and Bellman Equations</h2>
+
+                <p>
+                    Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for continuing tasks. 
+                    The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, discounted by a factor \(\gamma \in [0, 1]\):
+                    \[
+                    \begin{align*}
+                    G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
+                        &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
+                        &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
+                    \end{align*}
+                    \]
+                    The discount factor \(\gamma\) ensures that the return remains finite even for infinite-horizon problems, and it gives higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
+                </p>
+
+                <p>
+                    Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> (or simply, <strong>value function</strong>) is defined as:
+                    \[
+                    \begin{align*}
+                    V_{\pi}(s) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s \right] \\\\
+                            &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s \right],
+                    \end{align*}
+                    \]
+                    where the expectation is over trajectories induced by the policy \(\pi\).
+                </p>
+
+                <p>
+                    The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as:
+                    \[
+                    \begin{align*}
+                    Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
+                                &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right].
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    The <strong>advantage function</strong> is defined as:
+                    \[
+                    A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s),
+                    \]
+                    which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), compared to just following \(\pi\) from the beginning.
+                </p>
+
+                <p>
+                    A policy \(\pi_*\) is called an <strong>optimal policy</strong> if it yields the highest value for every state:
+                    \[
+                    \forall s \in \mathcal{S}, \quad V_{\pi_*}(s) \geq V_{\pi}(s), \quad \forall \pi.
+                    \]
+                    Although multiple optimal policies may exist, their value functions are the same: \(V_*(s) = V_{\pi_*}(s)\) and \(Q_*(s, a) = Q_{\pi_*}(s, a)\). 
+                    Moreover, every finite MDP admits at least one deterministic optimal policy.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title"><strong>Bellman's Optimality Equations</strong>:</span>
+                    \[
+                    \begin{align*}
+                    V_*(s) &= \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right] \\\\
+                    Q_*(s, a) &= R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \max_{a'} Q_*(s', a') \right]
+                    \end{align*}
+                    \]
+                    The optimal value functions \(V_*\) and \(Q_*\) are the unique fixed points of these equations.
+                </div>
+
+                <p>
+                    The optimal policy can then be derived by:
+                    \[
+                    \begin{align*}
+                    \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
+                            &= \arg \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right].
+                    \end{align*}
+                    \]
+                    Solving for \(V_*\), \(Q_*\), or \(\pi_*\) is known as <strong>policy optimization</strong>, while computing 
+                    \(V_{\pi}\) or \(Q_{\pi}\) for a given policy \(\pi\) is called <strong>policy evaluation</strong>. 
+                </p>
+                <p>
+                   Bellman's equations for <strong>policy evaluation</strong> can be derived from the <strong>optimality equations</strong> 
+                   by replacing each maximization over actions, \(\max_a [\,\cdot\,]\), with an expectation over the policy at the corresponding 
+                   state, \(\mathbb{E}_{\pi(a \mid s)}[\,\cdot\,]\), wherever action selection occurs.
+                    <div class="theorem">
+                        <span class="theorem-title"><strong>Bellman's Expectation Equations:</strong></span>
+                        <p>
+                            For a fixed policy \(\pi\), the state-value function satisfies:
+                            </p>
+                            \[
+                            V_{\pi}(s) = \mathbb{E}_{\pi(a \mid s)} \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_{\pi}(s') \right] \right]
+                            \]
+                            <p>
+                            The action-value function satisfies:
+                            </p>
+                            \[
+                            Q_{\pi}(s, a) = R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \mathbb{E}_{\pi(a' \mid s')} \left[ Q_{\pi}(s', a') \right] \right]
+                            \]
+                    </div>
+                </p>
+            </section>
+
+            <section id="planning" class="section-content">
+                <h2>Classical Planning Methods</h2>
+                <p>
+                    When the MDP is fully known - including transition probabilities \(p(s' \mid s, a)\) and reward function \(R(s, a)\) - 
+                    we can compute optimal policies directly using dynamic programming methods. These are classical planning algorithms, 
+                    not reinforcement learning, since no learning from experience occurs.
+                </p>
+                <p>
+                    However, these same algorithms become central to <strong>model-based reinforcement learning</strong> when applied 
+                    to models learned from experience rather than given models. The key distinction is whether we know the model 
+                    (classical planning) or learn it from data (model-based RL).
+                </p>
+            </section>
+
+            <section id="VI" class="section-content">
+                <h2>Value Iteration (VI)</h2>
+                <p>
+                Let the initial estimate be \(V_0\). We update it as follows: 
+                \[
+                V_{k+1}(s) = \max_a \left[ R(s, a) + \gamma \sum_{s'} p(s' \mid s, a) V_k (s') \right].
+                \]
+                This is called <strong>Bellman backup</strong>. Each iteration reduces the maximum value function error by a 
+                constant factor: 
+                \[
+                \max_s \| V_{k+1}(s) - V_*(s) \| \leq \gamma \max_s \| V_k (s)  - V_* (s) \|.
+                \]
+                So, \(V_k\) converges to \(V_*\) as \(k \to \infty\). 
+                </p>
+                <p>
+                    For all possible states \(s\), VI computes \(V_*(s)\) and \(\pi_*(s)\), averaging over all possible 
+                    next states \(s'\) at each iteration. (Note: If we need the value and policy for only certain starting states, other methods can be used such as 
+                    real-time dynamic programming). 
+                </p>
+            </section>
+
+            <section id="PI" class="section-content">
+                <h2>Policy Iteration (PI)</h2>
+                <p>
+                Let \(\mathbf{v}(s) = V_{\pi}(s)\) be the value function encoded as a vector indexed by states \(s\). Also, 
+                the reward vector is represented by 
+                \[
+                \mathbf{r}(s) = \sum_a \pi(a \mid s) R(s, a)
+                \]
+                and the state transition matrix is written as 
+                \[
+                \mathbf{T}(s' \mid s) = \sum_a \pi(a \mid s) p(s' \mid s, a).
+                \]
+                Then Bellman's equation for policy evaluation can be represented as a linear system in \(\| \mathcal{S}\|\) unknowns:
+                \[
+                \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v}
+                \]
+                Theoretically, we can solve this by \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\), but 
+                we can compute \(\mathbf{v}_{t+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_t\) iteratively. This process is called 
+                <strong>policy evaluation</strong>. Once we have evaluated \(V_{\pi}\) for the policy \(\pi\), we need to find a better 
+                policy \(\pi'\). 
+                </p>
+                <p>
+                    Now we move on to the <strong>policy improvement</strong> step:
+                    \[
+                      \pi'(s) = \arg \max_a \{R(s, a) + \gamma \mathbb{E}[V_{\pi}(s')]\}
+                    \]
+                    This guarantees \(V_{\pi'} \geq V_{\pi}\) because: 
+                    \[
+                    \begin{align*}
+                    \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v} &\leq  \mathbf{r'} + \gamma \mathbf{T'}\mathbf{v} \\\\
+                                                                          &\leq  \mathbf{r'} + \gamma \mathbf{T'}(\mathbf{r'} + \gamma \mathbf{T'}\mathbf{v})\\\\
+                                                                          &\leq \cdots  \\\\
+                                                                          &= (\mathbf{I} + \gamma \mathbf{T'} + \gamma^2 \mathbf{T'}^2 + \cdots)\mathbf{r'} \\\\
+                                                                          &= (\mathbf{I} - \gamma \mathbf{T'})^{-1} \mathbf{r'} \\\\
+                                                                          &= \mathbf{v'}
+
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    In policy iteration algorithm, starting from an initial policy \(\pi_0\), we alternate between policy evaluation step and 
+                    policy improvement step. Within finite iterations, the algorithm will converge to optimal policy since there are at 
+                    most \(\|\mathcal{A}\|^{\|\mathcal{S}\|}\) deterministic policies and every update improves the policy. 
+                </p>
+            </section>
+
+            <section id="model-free-rl" class="section-content">
+                <h2>Model-Free Reinforcement Learning</h2>
+                <p>
+                    When the MDP is unknown, agents must learn optimal policies through direct interaction with the environment. 
+                    Model-free reinforcement learning methods bypass explicit model learning and instead approximate the Bellman 
+                    equations through sampling-based updates.
+                </p>
+                <p>
+                    These methods form the core of practical reinforcement learning, as they can learn in environments where 
+                    building accurate models is difficult or impossible. The key distinction from classical planning is that 
+                    these algorithms learn from experience rather than using known probabilities.
+                </p>
+            </section>
+
+            <section id="td" class="section-content">
+                <h2>Temporal Difference Learning</h2>
+                <p>
+                    We now transition from classical planning methods to model-free reinforcement learning. 
+                    The key difference is that we no longer assume knowledge of transition probabilities \(p(s' \mid s, a)\) or reward function \(R(s, a)\). 
+                    Instead, the agent must learn by interacting with the environment and observing actual transitions.
+                </p>
+
+                <p>
+                    <strong>Temporal Difference (TD) learning</strong> bridges the gap between Monte Carlo methods and dynamic programming. 
+                    Unlike Monte Carlo methods that wait until the end of an episode, TD methods update estimates immediately after each step 
+                    using <strong>bootstrapping</strong> - updating estimates based on other estimates.
+                </p>
+                
+                <p>
+                    The simplest TD method is <strong>TD(0)</strong>, which updates the value function using:
+                    \[
+                    V(s_t) \leftarrow V(s_t) + \alpha \left[ r_t + \gamma V(s_{t+1}) - V(s_t) \right]
+                    \]
+                    where \(\alpha\) is the learning rate and \(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is called the <strong>TD error</strong>.
+                </p>
+
+                <p>
+                    The TD error measures the difference between the current value estimate \(V(s_t)\) and a better estimate 
+                    \(r_t + \gamma V(s_{t+1})\) based on observed experience. This better estimate is called the <strong>TD target</strong>. 
+                    From Bellman's expectation equation (derived above), we know that:
+                    \[
+                    V_{\pi}(s) = \mathbb{E}_{\pi} \left[ r + \gamma V_{\pi}(s') \mid s \right]
+                    \]
+                    The TD target \(r_t + \gamma V(s_{t+1})\) is a sample-based approximation of this expectation, 
+                    using the actual observed reward and next state.
+                </p>
+
+                <p>
+                    Key properties of TD learning:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Online learning</strong>: Updates occur after each step, not requiring complete episodes</li>
+                    <li><strong>Bootstrapping</strong>: Uses current value estimates to update other estimates</li>
+                    <li><strong>Lower variance</strong>: Compared to Monte Carlo, as it doesn't depend on entire episode returns</li>
+                    <li><strong>Biased estimates</strong>: Initially biased due to bootstrapping, but converges to true values</li>
+                    </ul>
+                </p>
+
+                <p>
+                    TD methods form the foundation for many practical RL algorithms, combining the best aspects of 
+                    Monte Carlo methods (model-free learning) and dynamic programming (bootstrapping for efficiency).
+                </p>
+            </section>
+
+            <section id="qlearning" class="section-content">
+                <h2>Q-Learning and SARSA</h2>
+                <p>
+                    Moving from value functions to action-value functions, we can learn optimal policies without knowing 
+                    the environment model. Two fundamental algorithms demonstrate different approaches to this problem.
+                </p>
+
+                <h3>Q-Learning (Off-Policy)</h3>
+                <p>
+                    Q-learning learns the optimal action-value function \(Q_*(s,a)\) directly using the update rule:
+                    \[
+                    Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \right]
+                    \]
+                    The key insight is that Q-learning uses the <strong>maximum</strong> over next-state actions, making it 
+                    <strong>off-policy</strong> - it learns about the optimal policy while potentially following a different behavioral policy.
+                </p>
+
+                <h3>SARSA (On-Policy)</h3>
+                <p>
+                    SARSA (State-Action-Reward-State-Action) learns the value function for the policy it's currently following:
+                    \[
+                    Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) \right]
+                    \]
+                    where \(a_{t+1}\) is the action actually taken by the current policy. This makes SARSA <strong>on-policy</strong>.
+                </p>
+
+                <h3>Key Differences</h3>
+                <p>
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Convergence</strong>: Q-learning converges to \(Q_*\) regardless of policy followed; SARSA converges to \(Q_\pi\) for the policy being followed</li>
+                    <li><strong>Exploration</strong>: SARSA is more conservative, considering the exploration strategy in its updates</li>
+                    <li><strong>Safety</strong>: In environments with dangerous actions, SARSA may be safer as it accounts for exploration</li>
+                    </ul>
+                </p>
+
+                <p>
+                    Both algorithms require exploration to discover good actions, leading us to the fundamental challenge 
+                    of balancing exploration and exploitation.
+                </p>
+            </section>
+
+            <section id="exploration" class="section-content">
+                <h2>Exploration vs. Exploitation</h2>
+                <p>
+                    The <strong>exploration-exploitation tradeoff</strong> is fundamental to reinforcement learning. An agent must 
+                    balance between:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Exploitation</strong>: Choosing actions that yield high rewards based on current knowledge</li>
+                    <li><strong>Exploration</strong>: Trying new actions to potentially discover better strategies</li>
+                    </ul>
+                </p>
+
+                <h3>ε-Greedy Strategy</h3>
+                <p>
+                    The simplest exploration strategy chooses:
+                    \[
+                    a_t = \begin{cases}
+                    \arg\max_a Q(s_t, a) & \text{with probability } 1-\varepsilon \\
+                    \text{random action} & \text{with probability } \varepsilon
+                    \end{cases}
+                    \]
+                    where \(\varepsilon \in [0,1]\) controls the exploration rate. Often \(\varepsilon\) is decayed over time.
+                </p>
+
+                <h3>Softmax Action Selection</h3>
+                <p>
+                    A more sophisticated approach uses the Boltzmann (softmax) distribution:
+                    \[
+                    P(a_t = a \mid s_t) = \frac{\exp(Q(s_t, a)/\tau)}{\sum_{a'} \exp(Q(s_t, a')/\tau)}
+                    \]
+                    where \(\tau > 0\) is the temperature parameter. Higher temperatures lead to more exploration.
+                </p>
+
+                <h3>Optimistic Initialization</h3>
+                <p>
+                    Initializing Q-values optimistically (higher than realistic values) encourages exploration 
+                    of all actions early in learning, as the agent will be "disappointed" by actual rewards 
+                    and try other actions.
+                </p>
+
+                <p>
+                    The choice of exploration strategy significantly affects learning performance and is often 
+                    problem-dependent. More advanced methods like UCB (Upper Confidence Bound) and Thompson 
+                    sampling provide principled approaches to this tradeoff.
+                </p>
+            </section>
+
+            <section id="summary" class="section-content">
+                <h2>Summary and Next Steps</h2>
+                <p>
+                    This comprehensive introduction has covered the fundamental concepts and algorithms in reinforcement learning:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>MDP Formulation</strong>: Mathematical framework for sequential decision problems</li>
+                    <li><strong>Value Functions and Bellman Equations</strong>: Theoretical foundation for optimal policies</li>
+                    <li><strong>Classical Planning</strong>: Value and Policy Iteration for known MDPs</li>
+                    <li><strong>Model-Free RL</strong>: Temporal Difference learning, Q-learning, and SARSA for unknown environments</li>
+                    <li><strong>Exploration Strategies</strong>: Methods for balancing exploration and exploitation</li>
+                    </ul>
+                </p>
+
+                <p>
+                    These foundational concepts scale to complex problems through <strong>function approximation</strong> 
+                    (e.g., Deep Q-Networks), <strong>policy-based methods</strong> (e.g., REINFORCE, Actor-Critic), 
+                    and modern techniques like <strong>Proximal Policy Optimization (PPO)</strong> used in 
+                    <strong>Reinforcement Learning from Human Feedback (RLHF)</strong>.
+                </p>
+
+                <p>
+                    The distinction between classical planning (known MDP) and reinforcement learning (unknown environment) 
+                    is crucial for understanding how these algorithms apply to different problem settings. Model-based RL 
+                    bridges these paradigms by learning models from experience and then applying classical planning methods 
+                    to the learned models.
+                </p>
+
+            </section>
+
+        </div>
+        <script src="/js/main.js"></script>    
+    </body>
+</html>
