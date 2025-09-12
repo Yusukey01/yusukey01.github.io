@@ -45,7 +45,9 @@ uses_python: false
             { "@type": "Thing", "name": "Dynamic Programming" },
             { "@type": "Thing", "name": "Model-Based Reinforcement Learning" },
             { "@type": "Thing", "name": "Model-Free Reinforcement Learning" },
-            { "@type": "Thing", "name": "Exploration vs Exploitation" }
+            { "@type": "Thing", "name": "Exploration vs Exploitation" },
+            { "@type": "Thing", "name": "Policy Gradient Methods" },
+            { "@type": "Thing", "name": "Actor-Critic Methods" }
         ],
         "teaches": [
             "Markov Decision Process formulation",
@@ -53,7 +55,8 @@ uses_python: false
             "Classical planning algorithms",
             "Reinforcement learning algorithms",
             "Temporal difference learning methods",
-            "Policy optimization techniques"
+            "Policy optimization techniques",
+            "RL algorithm taxonomy"
         ],
         "isPartOf": {
             "@type": "Course",
@@ -124,13 +127,11 @@ uses_python: false
 
         <div class="topic-nav">
             <a href="#intro">Introduction</a>
-            <a href="#rl-types">Model-Based and Model-Free Reinforcement Learning</a>
+            <a href="#taxonomy">RL Algorithm Taxonomy</a>
             <a href="#mdp">Markov Decision Process</a>
             <a href="#value-functions">Value Functions & Bellman Equations</a>
-            <a href="#VI">Value Iteration</a>
-            <a href="#PI">Policy Iteration</a>
-            <a href="#td">Temporal Difference Learning</a>
-            <a href="#qlearning">Q-Learning and SARSA</a>
+            <a href="#model-based">Model-Based Methods</a>
+            <a href="#model-free">Model-Free Methods</a>
             <a href="#exploration">Exploration vs. Exploitation</a>
         </div>
 
@@ -160,11 +161,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    Reinforcement learning differs from <strong>supervised learning</strong>, where models are trained on ground-truth input-output pairs, 
-                    and from <strong>unsupervised learning</strong>, which aims to discover hidden structure or representations in unlabeled data.
-                    In RL, learning is driven by a scalar <em>reward signal</em> that provides evaluative feedback based on the agent's interaction with an environment.
-                    Unlike supervised learning, there are no correct labels for each input, and unlike unsupervised learning, the objective is not to model data structure 
-                    but to learn a policy that maximizes expected cumulative reward over time.
+                    Reinforcement learning differs fundamentally from other machine learning paradigms:
+                </p>
+                <p style="padding-left: 40px;">
+                    <strong>Supervised learning</strong> trains models on ground-truth input-output pairs with explicit correct labels for each input.<br>
+                    <strong>Unsupervised learning</strong> discovers hidden structure or representations in unlabeled data without any feedback signal.<br>
+                    <strong>Reinforcement learning</strong> uses only a scalar reward signal that provides evaluative feedback based on the agent's interaction with an environment.
+                </p>
+
+                <p>
+                    In RL, learning is driven by trial-and-error interaction rather than labeled examples. Unlike supervised learning, there are no correct labels for each input, 
+                    and unlike unsupervised learning, the objective is not to model data structure but to learn a policy that maximizes expected cumulative reward over time.
                 </p>
 
                 <p>
@@ -175,42 +182,98 @@ uses_python: false
                 </p>
 
                 <p>
-                    This page provides a comprehensive introduction covering both the theoretical foundations and fundamental algorithms used 
-                    to solve reinforcement learning problems.
+                    The diversity of RL applications has led to a rich classification of algorithms, each designed to address different aspects of 
+                    the learning problem. Understanding this classification is crucial for selecting appropriate methods and comprehending the 
+                    relationships between different approaches.
                 </p>     
+
             </section>
 
-            <section id="rl-types" class="section-content">
-                <h2>Model-Based and Model-Free Reinforcement Learning</h2>
+            <section id="taxonomy" class="section-content">
+                <h2>Taxonomy of Reinforcement Learning Algorithms</h2>
 
                 <p>
-                    Reinforcement Learning (RL) algorithms can be broadly categorized into two classes based on how they interact with the environment: 
-                    <strong>model-based</strong> and <strong>model-free</strong> methods.
+                    The field of reinforcement learning encompasses a diverse array of algorithms that can be classified along several 
+                    orthogonal dimensions. Unlike hierarchical taxonomies, these classification schemes are independent - an algorithm 
+                    can simultaneously belong to multiple categories across different dimensions.
+                </p>
+
+                <h3>Model-Based vs Model-Free Methods</h3>
+                <p>
+                    The most fundamental distinction in RL concerns whether the agent learns an explicit model of the environment.
                 </p>
 
                 <p>
-                    <strong>Model-based RL</strong> aims to learn an explicit model of the environment from data. This includes learning:
+                    <strong>Model-based RL</strong> methods learn an explicit model of the environment from data, including:
                     <ul style="padding-left: 40px;">
                         <li>the transition dynamics \(p_T(s' \mid s, a)\), and</li>
                         <li>the reward model \(p_R(r \mid s, a, s')\).</li>
                     </ul>
-                    <br>
-                    Once the model is learned from trajectories, classical <strong>planning</strong> algorithms such as 
-                    <em>value iteration</em> or <em>policy iteration</em> can be applied to compute an optimal policy.
+                    Once learned, the agent uses <strong>planning</strong> algorithms to compute optimal policies. Classical planning 
+                    methods include value iteration and policy iteration. The main advantage is <strong>sample efficiency</strong> - the agent 
+                    can simulate many trajectories using the learned model without additional environment interaction. However, model learning 
+                    introduces <strong>model bias</strong>: if the learned model is inaccurate, the agent may perform well in simulation but poorly 
+                    in the real environment.
                 </p>
 
                 <p>
-                    In contrast, <strong>model-free RL</strong> methods bypass explicit modeling of the environment. 
-                    Instead, they directly learn value functions (e.g., Q-learning) or policies (e.g., REINFORCE, PPO) based on sampled experience. 
-                    These methods are generally simpler to implement but may require more interaction data.
+                    <strong>Model-free RL</strong> methods bypass explicit environment modeling and directly learn value functions or policies 
+                    from experience. These methods are generally simpler to implement and more robust to model errors, but typically require 
+                    more environment interactions compared to model-based approaches.
+                </p>
+
+                <h3>Value-Based vs Policy-Based vs Actor-Critic Methods</h3>
+                <p>
+                    This taxonomy classifies algorithms based on <strong>what they learn</strong>.
                 </p>
 
                 <p>
-                    In both paradigms, the environment is formally assumed to follow a <strong>Markov Decision Process (MDP)</strong>, 
-                    which we now define in the following section.
+                    <strong>Value-based methods</strong> learn value functions and derive policies implicitly:
+                    \[
+                    \pi(s) = \arg\max_a Q(s,a)
+                    \]
+                    Examples include Q-learning, SARSA, and Deep Q-Networks (DQN).
+                </p>
+
+                <p>
+                    <strong>Policy-based methods</strong> directly parameterize and optimize policies \(\pi_\theta(a \mid s)\) using 
+                    gradient-based methods. They optimize using policy gradients and can naturally handle continuous action spaces 
+                    and stochastic policies. Examples include REINFORCE, Trust Region Policy Optimization (TRPO), and Proximal Policy Optimization (PPO).
+                </p>
+
+                <p>
+                    <strong>Actor-critic methods</strong> combine both approaches:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Actor</strong>: learns a parameterized policy \(\pi_\theta(a \mid s)\)</li>
+                        <li><strong>Critic</strong>: learns a value function \(V_\phi(s)\) or \(Q_\phi(s,a)\)</li>
+                    </ul>
+                    The critic provides lower-variance estimates for policy updates. Examples include A3C, SAC, and TD3.
+                </p>
+
+                <h3>On-Policy vs Off-Policy Methods</h3>
+                <p>
+                    This taxonomy concerns the <strong>data usage strategy</strong> during learning.
+                </p>
+
+                <p>
+                    <strong>On-policy methods</strong> use data collected by the current policy being learned. 
+                    Examples include SARSA, REINFORCE, and PPO. They provide more stable learning but lower sample efficiency.
+                </p>
+
+                <p>
+                    <strong>Off-policy methods</strong> can use data collected by any behavioral policy. 
+                    Examples include Q-learning, DQN, and SAC. They offer higher sample efficiency through data reuse but require handling distribution mismatch.
+                </p>
+
+                <p>
+                    These taxonomies are <strong>orthogonal</strong> - algorithms simultaneously belong to multiple categories:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Q-learning</strong>: Model-free, Value-based, Off-policy</li>
+                        <li><strong>PPO</strong>: Model-free, Policy-based, On-policy</li>
+                        <li><strong>SAC</strong>: Model-free, Actor-Critic, Off-policy</li>
+                    </ul>
                 </p>
             </section>
-
 
             <section id="mdp" class="section-content">
                 <h2>Markov Decision Process (MDP)</h2>
@@ -401,9 +464,16 @@ uses_python: false
                 </p>
             </section>
 
+            <section id="model-based" class="section-content">
+                <h2>Model-Based Methods</h2>
 
-            <section id="VI" class="section-content">
-                <h2>Value Iteration (VI)</h2>
+                <p>
+                    When the MDP model is fully known we can compute optimal policies directly using dynamic programming methods. 
+                    This process is called <strong>planning</strong>. Planning algorithms are central to <strong>model-based reinforcement learning</strong> when applied 
+                    to models learned from experience rather than given models.
+                </p>
+
+                <h3>Value Iteration (VI)</h3>
                 <p>
                     When the MDP model is fully known we can compute optimal policies directly using dynamic programming methods. 
                     This process is called <strong>planning</strong>. Planning algorithms are central to <strong>model-based reinforcement learning</strong> when applied 
@@ -445,10 +515,8 @@ uses_python: false
                     &emsp;&emsp;&emsp;&emsp;\(\pi_*(s) \leftarrow \arg\max_a \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V(s')\right]\)
                     <strong>end</strong>
                 </div>
-            </section>
 
-            <section id="PI" class="section-content">
-                <h2>Policy Iteration (PI)</h2>
+                <h3>Policy Iteration (PI)</h3>
                 <p>
                 Let \(\mathbf{v}(s) = V_{\pi}(s)\) be the value function encoded as a vector indexed by states \(s\). Also, 
                 the reward vector is represented by 
@@ -519,11 +587,17 @@ uses_python: false
                     policy improvement step. Within finite iterations, the algorithm will converge to optimal policy since there are at 
                     most \(\|\mathcal{A}\|^{\|\mathcal{S}\|}\) deterministic policies and every update improves the policy. 
                 </p>
+
             </section>
 
-            <section id="td" class="section-content">
-                <h2>Temporal Difference Learning</h2>
+            <section id="model-free" class="section-content">
+                <h2>Model-Free Methods</h2>
 
+                <p>
+                    Model-free reinforcement learning methods address scenarios where the MDP model is unknown and must be learned through interaction with the environment. These methods form the foundation of practical reinforcement learning, as they can operate in environments where building accurate models is difficult or computationally prohibitive.
+                </p>
+
+                <h3>Temporal Difference Learning</h3>
                 <p>
                     The planning algorithms discussed in the previous sections — value iteration and policy iteration — assume 
                     complete knowledge of the MDP model, including transition probabilities \(p_T(s' \mid s, a)\) and the 
@@ -613,10 +687,8 @@ uses_python: false
                     efficiency of bootstrapping, making it particularly suitable for the online learning scenarios that 
                     characterize modern reinforcement learning applications.
                 </p>
-            </section>
 
-            <section id="qlearning" class="section-content">
-                <h2>Q-Learning and SARSA</h2>
+                <h3>Value-Based Methods: Q-Learning and SARSA</h3>
                 <p>
                     Moving from value functions to action-value functions, we can learn optimal policies without knowing 
                     the environment model. Two fundamental algorithms demonstrate different approaches to this problem.
@@ -653,6 +725,85 @@ uses_python: false
                 <p>
                     Both algorithms require exploration to discover good actions, leading us to the fundamental challenge 
                     of balancing exploration and exploitation.
+                </p>
+
+                <h3>Policy-Based Methods</h3>
+                <p>
+                    Policy-based methods directly parameterize and optimize policies without learning value functions. These methods address some fundamental limitations of value-based approaches, particularly in continuous action spaces and when stochastic policies are desired.
+                </p>
+
+                <p>
+                    <strong>Policy Gradient Methods</strong> optimize a parameterized policy \(\pi_\theta(a \mid s)\) by following the gradient of the expected return. The policy gradient theorem provides the foundation:
+                    \[
+                    \nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta}[\nabla_\theta \log \pi_\theta(a \mid s) Q^{\pi_\theta}(s,a)]
+                    \]
+                    where \(J(\theta)\) is the expected return under policy \(\pi_\theta\).
+                </p>
+
+                <p>
+                    <strong>REINFORCE</strong> is the fundamental policy gradient algorithm that uses Monte Carlo estimation:
+                    \[
+                    \nabla_\theta J(\theta) \approx \frac{1}{m} \sum_{i=1}^m \sum_{t=0}^{T-1} \nabla_\theta \log \pi_\theta(a_t^{(i)} \mid s_t^{(i)}) G_t^{(i)}
+                    \]
+                    where \(G_t^{(i)}\) is the return from time \(t\) in episode \(i\). While unbiased, REINFORCE suffers from high variance, which can slow learning.
+                </p>
+
+                <p>
+                    Policy gradient methods offer several advantages:
+                    <ul style="padding-left: 40px;">
+                        <li>Natural handling of continuous action spaces</li>
+                        <li>Ability to learn stochastic policies</li>
+                        <li>Direct optimization of the performance objective</li>
+                        <li>Better convergence properties with function approximation</li>
+                    </ul>
+                </p>
+
+                <h3>Actor-Critic Methods</h3>
+                <p>
+                    Actor-critic methods combine the benefits of both value-based and policy-based approaches by maintaining two function approximators:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Actor</strong> \(\pi_\theta(a \mid s)\): the policy that selects actions</li>
+                        <li><strong>Critic</strong> \(V_\phi(s)\) or \(Q_\phi(s,a)\): the value function that evaluates actions</li>
+                    </ul>
+                </p>
+
+                <p>
+                    The critic provides a baseline to reduce the variance of policy gradient estimates. The advantage function is typically used:
+                    \[
+                    A^{\pi_\theta}(s,a) = Q^{\pi_\theta}(s,a) - V^{\pi_\theta}(s)
+                    \]
+                    leading to the actor-critic policy gradient:
+                    \[
+                    \nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta}[\nabla_\theta \log \pi_\theta(a \mid s) A^{\pi_\theta}(s,a)]
+                    \]
+                </p>
+
+                <p>
+                    In practice, the advantage is often estimated using temporal difference error:
+                    \[
+                    A(s_t, a_t) \approx \delta_t = r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t)
+                    \]
+                </p>
+
+                <p>
+                    Actor-critic methods offer several benefits:
+                    <ul style="padding-left: 40px;">
+                        <li>Significantly lower variance than pure policy gradient methods like REINFORCE</li>
+                        <li>More sample efficient than Monte Carlo methods through bootstrapping</li>
+                        <li>Can learn in both discrete and continuous action spaces</li>
+                        <li>Better convergence properties with function approximation compared to value-based methods</li>
+                        <li>Natural framework for incorporating domain knowledge</li>
+                    </ul>
+                </p>
+
+                <p>
+                    Key actor-critic algorithms include:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>A3C (Asynchronous Advantage Actor-Critic)</strong>: Uses multiple parallel agents</li>
+                        <li><strong>DDPG (Deep Deterministic Policy Gradient)</strong>: For continuous control</li>
+                        <li><strong>SAC (Soft Actor-Critic)</strong>: Incorporates maximum entropy principle</li>
+                        <li><strong>PPO (Proximal Policy Optimization)</strong>: Clips policy updates for stability</li>
+                    </ul>
                 </p>
             </section>
 
