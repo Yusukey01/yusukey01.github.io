@@ -697,101 +697,119 @@ uses_python: false
              </section>
 
             <section id="td-learning" class="section-content">
-            <h2>Temporal Difference Learning</h2>         
+                <h2>Temporal Difference Learning</h2>         
 
-            <p>
-                <strong>Temporal Difference (TD) learning</strong> methods address the limitations of Monte Carlo methods through 
-                <strong>bootstrapping</strong> — updating value estimates using single-step transitions plus current estimates 
-                of successor states rather than waiting for complete returns. In other words, TD methods incrementally reduce the 
-                Bellman error for sampled states by learning from individual transitions rather than complete trajectories. 
-            </p>
+                <p>
+                    <strong>Temporal Difference (TD) learning</strong> methods address the limitations of Monte Carlo methods through 
+                    <strong>bootstrapping</strong> — updating value estimates using single-step transitions plus current estimates 
+                    of successor states rather than waiting for complete returns. In other words, TD methods incrementally reduce the 
+                    Bellman error for sampled states by learning from individual transitions rather than complete trajectories. 
+                </p>
 
-            <h3>TD(0): One-Step Temporal Difference</h3>
-            <p>
-                The simplest TD method, <strong>TD(0)</strong>, updates value estimates after each single step. 
-                Suppose that the agent learns the value function \(V_{\pi}\) for a fixed policy \(\pi\).
-                Given a state transition \((s, a, r, s')\) where \(a \sim \pi(s)\), we update the estimate \(V(s)\) as follows:
-                \[
-                V(s_t) \leftarrow V(s_t) + \alpha \left[ r_t + \gamma V(s_{t+1}) - V(s_t) \right]
-                \]
-                where:
-                <ul style="padding-left: 40px;">
-                <li>\(\alpha \in (0,1]\) is the learning rate</li>
-                <li>\(r_t + \gamma V(s_{t+1})\) is the <strong>TD target</strong></li>
-                <li>\(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is the <strong>TD error</strong></li>
-                </ul>
-            </p>
+                <h3>Theoretical Foundation</h3>
+                <p>
+                    The TD target \(r_t + \gamma V(s_{t+1})\) serves as a sample-based approximation of the Bellman 
+                    expectation equation. From our earlier derivation, we know that:
+                    \[
+                    V_{\pi}(s) = \mathbb{E}_{\pi} \left[ r + \gamma V_{\pi}(s') \mid s \right]
+                    \]
+                    The TD update uses the observed reward \(r_t\) and next state \(s_{t+1}\) to approximate this expectation, 
+                    then adjusts the current estimate toward this improved target. This establishes TD learning as a method 
+                    for solving the Bellman equations through successive approximation, without requiring knowledge of 
+                    transition probabilities.
+                </p>
 
-            <h3>n-Step TD Methods</h3>
-            <p>
-                TD methods can be generalized to look ahead multiple steps. The <strong>n-step return</strong> is defined as:
-                \[
-                G_{t:t+n} = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1} R_{t+n} + \gamma^n V(S_{t+n})
-                \]
-                The corresponding n-step TD update becomes:
-                \[
-                V(S_t) \leftarrow V(S_t) + \alpha [G_{t:t+n} - V(S_t)]
-                \]
-                This bridges the gap between TD(0) (\(n=1\)) and Monte Carlo methods (\(n=\infty\)).
-            </p>
+                <p>
+                    Under appropriate conditions (bounded rewards, finite state space, and appropriate learning rate schedules), 
+                    tabular TD(0) converges to the true value function \(V_{\pi}(s)\) for the policy being followed.
+                </p>
 
-            <h3>TD(λ) and λ-returns</h3>
-            <p>
-                Rather than using a fixed n-step lookahead, <strong>TD(λ)</strong> methods use a weighted average of all n-step returns. 
-                The <strong>λ-return</strong> is defined as:
-                \[
-                G_t^{\lambda} = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_{t:t+n}
-                \]
-                where \(\lambda \in [0,1]\) controls the weighting. When \(\lambda = 0\), this reduces to the one-step return (TD(0)), 
-                and when \(\lambda = 1\), it becomes the Monte Carlo return.
-            </p>
+                <h3>TD(0): One-Step Temporal Difference</h3>
+                <p>
+                    The simplest TD method, <strong>TD(0)</strong>, updates value estimates after each single step. 
+                    Suppose that the agent learns the value function \(V_{\pi}\) for a fixed policy \(\pi\).
+                    Given a state transition \((s, a, r, s')\) where \(a \sim \pi(s)\), we update the estimate \(V(s)\) as follows:
+                    \[
+                    V(s_t) \leftarrow V(s_t) + \alpha \left[ r_t + \gamma V(s_{t+1}) - V(s_t) \right]
+                    \]
+                    where:
+                    <ul style="padding-left: 40px;">
+                    <li>\(\alpha \in (0,1]\) is the learning rate</li>
+                    <li>\(r_t + \gamma V(s_{t+1})\) is the <strong>TD target</strong></li>
+                    <li>\(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is the <strong>TD error</strong></li>
+                    </ul>
+                </p>
 
-            <p>
-                The λ-return provides a principled way to interpolate between the low variance but biased estimates of TD(0) 
-                and the high variance but unbiased estimates of Monte Carlo methods. TD(0) is thus a special case of the more general TD(λ) framework.
-            </p>
+                <h3>n-Step TD Methods</h3>
+                <p>
+                    TD methods can be generalized to look ahead multiple steps. The <strong>n-step return</strong> is defined as:
+                    \[
+                    G_{t:t+n} = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1} R_{t+n} + \gamma^n V(S_{t+n})
+                    \]
+                    The corresponding n-step TD update becomes:
+                    \[
+                    V(S_t) \leftarrow V(S_t) + \alpha [G_{t:t+n} - V(S_t)]
+                    \]
+                    This provides a spectrum of methods: \(n=1\) gives TD(0), and as \(n\) increases toward the episode length, 
+                    the method approaches Monte Carlo behavior by using longer actual return sequences.
+                </p>
 
-            <h3>Function Approximation</h3>
-            <p>
-                More generally, for function approximation where \(V_\mathbf{w}(s)\) is parameterized by weights \(\mathbf{w}\), 
-                the TD(0) update becomes:
-                \[
-                \mathbf{w} \leftarrow \mathbf{w} + \alpha [ r_t + \gamma V_{\mathbf{w}}(s_{t+1}) - V_{\mathbf{w}}(s_t)]\nabla_{\mathbf{w}}V_{\mathbf{w}}(s_t)
-                \]
-                Note that with function approximation, TD methods may not always converge, unlike the tabular case.
-            </p>
+                <h3>TD(λ) and λ-returns</h3>
+                <p>
+                    Rather than using a fixed n-step lookahead, <strong>TD(λ)</strong> methods use a weighted average of all n-step returns. 
+                    The <strong>λ-return</strong> is defined as:
+                    \[
+                    G_t^{\lambda} = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_{t:t+n}
+                    \]
+                    where \(\lambda \in [0,1]\) controls the weighting between different n-step returns.
+                </p>
 
-            <h3>Theoretical Foundation</h3>
-            <p>
-                The TD target \(r_t + \gamma V(s_{t+1})\) serves as a sample-based approximation of the Bellman 
-                expectation equation. From our earlier derivation, we know that:
-                \[
-                V_{\pi}(s) = \mathbb{E}_{\pi} \left[ r + \gamma V_{\pi}(s') \mid s \right]
-                \]
-                The TD update uses the observed reward \(r_t\) and next state \(s_{t+1}\) to approximate this expectation, 
-                then adjusts the current estimate toward this improved target. This establishes TD learning as a method 
-                for solving the Bellman equations through successive approximation, without requiring knowledge of 
-                transition probabilities.
-            </p>
+                <p>
+                    The parameter \(\lambda\) creates a different type of interpolation than n-step methods:
+                    <ul style="padding-left: 40px;">
+                    <li>When \(\lambda = 0\): Only the 1-step return is used, reducing to TD(0)</li>
+                    <li>When \(\lambda = 1\): For episodic tasks, this gives Monte Carlo behavior through full credit assignment</li>
+                    <li>For \(0 < \lambda < 1\): Creates a weighted blend that emphasizes shorter-term returns but includes longer-term effects</li>
+                    </ul>
+                </p>
 
-            <p>
-                Under appropriate conditions (bounded rewards, finite state space, and appropriate learning rate schedules), 
-                tabular TD(0) converges to the true value function \(V_{\pi}(s)\) for the policy being followed.
-            </p>
+                <p>
+                    Note that TD(λ) with \(\lambda = 1\) achieves Monte Carlo-equivalent behavior through a different mechanism than 
+                    n-step TD with large n. While n-step methods extend the lookahead horizon, TD(λ) uses eligibility traces to 
+                    distribute credit backward through time, allowing for online updates even in continuing tasks.
+                </p>
 
-            <h3>Key Advantages</h3>
-            <p>
-                TD methods offer several key advantages that make them central to modern reinforcement learning:
-                <ul style="padding-left: 40px;">
-                <li><strong>Online learning</strong>: Updates occur after each time step, enabling continuous learning without waiting for episode completion</li>
-                <li><strong>Computational efficiency</strong>: No need to store or process entire episode returns</li>
-                <li><strong>Lower variance</strong>: Compared to Monte Carlo methods, as updates depend on single-step transitions rather than entire episode outcomes</li>
-                <li><strong>Applicability to continuing tasks</strong>: Can learn in non-episodic environments where episodes never terminate</li>
-                <li><strong>Flexible bias-variance tradeoff</strong>: Through λ parameter, can interpolate between low-variance/high-bias (TD(0)) and high-variance/low-bias (MC) estimates</li>
-                </ul>
-            </p>
-            
-        </section>
+                <p>
+                    The λ-return provides a principled way to interpolate between the low variance but biased estimates of TD(0) 
+                    and the high variance but unbiased estimates of Monte Carlo methods. <strong>TD(0) is thus a special case</strong> 
+                    of the more general TD(λ) framework. Importantly, both n-step TD and TD(λ) can achieve Monte Carlo behavior, 
+                    but through different parameterizations: n-step methods by extending the lookahead horizon (large n), 
+                    and TD(λ) methods through the weighting parameter (\(\lambda = 1\)).
+                </p>
+
+                <h3>Function Approximation</h3>
+                <p>
+                    More generally, for function approximation where \(V_\mathbf{w}(s)\) is parameterized by weights \(\mathbf{w}\), 
+                    the TD(0) update becomes:
+                    \[
+                    \mathbf{w} \leftarrow \mathbf{w} + \alpha [ r_t + \gamma V_{\mathbf{w}}(s_{t+1}) - V_{\mathbf{w}}(s_t)]\nabla_{\mathbf{w}}V_{\mathbf{w}}(s_t)
+                    \]
+                    Note that with function approximation, TD methods may not always converge, unlike the tabular case.
+                </p>
+
+                <h3>Key Advantages</h3>
+                <p>
+                    TD methods offer several key advantages that make them central to modern reinforcement learning:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Online learning</strong>: Updates occur after each time step, enabling continuous learning without waiting for episode completion</li>
+                    <li><strong>Computational efficiency</strong>: No need to store or process entire episode returns</li>
+                    <li><strong>Lower variance</strong>: Compared to Monte Carlo methods, as updates depend on single-step transitions rather than entire episode outcomes</li>
+                    <li><strong>Applicability to continuing tasks</strong>: Can learn in non-episodic environments where episodes never terminate</li>
+                    <li><strong>Flexible bias-variance tradeoff</strong>: Through λ parameter, can interpolate between low-variance/high-bias (TD(0)) and high-variance/low-bias (MC) estimates</li>
+                    </ul>
+                </p>
+                
+            </section>
 
             <section id="value-based" class="section-content">
                 <h2>Value-Based Methods</h2>
