@@ -826,32 +826,35 @@ uses_python: false
                     directly (off-policy), while the other learns the policy it follows (on-policy).
                 </p>
 
+                <h3>SARSA (On-Policy TD Control)</h3>
+                <p>
+                    The agent follows a policy \(\pi\) to learn the Q-function in every step to select actions. Under a transition \((s, a, r, s')\), the TD update rule is: 
+                    \[
+                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma Q(s', a') - Q(s, a) \right]
+                    \]
+                    where \(a' \sim \pi(s')\) is the action that the agent will take in state \(s'\). This makes SARSA <strong>on-policy</strong>.
+                    <br><br>
+                    Note: SARSA is named after the augmented transition \((s, a, r, s', a')\).
+                </p>
 
                 <h3>Q-Learning (Off-Policy TD Control)</h3>
                 <p>
-                    Q-learning learns the optimal action-value function \(Q_*(s,a)\) directly using the update rule:
+                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, we use a greed action in \(s'\):
                     \[
-                    Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \right]
+                    a' = \arg \max_b Q(s', b),
                     \]
-                    The key insight is that Q-learning uses the <strong>maximum</strong> over next-state actions, making it 
-                    <strong>off-policy</strong> - it learns about the optimal policy while potentially following a different behavioral policy.
-                </p>
-
-                <h3>SARSA (On-Policy TD Control)</h3>
-                <p>
-                    SARSA (State-Action-Reward-State-Action) learns the value function for the policy it's currently following:
+                    making it <strong>off-policy</strong>. Thus the TD update rule for a transition \((s, a, r, s')\) is given by:  
                     \[
-                    Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) \right]
+                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r_t + \gamma \max_{b} Q(s', b) - Q(s, a) \right].
                     \]
-                    where \(a_{t+1}\) is the action actually taken by the current policy. This makes SARSA <strong>on-policy</strong>.
                 </p>
 
                 <h3>Key Differences</h3>
                 <p>
                     <ul style="padding-left: 40px;">
-                    <li><strong>Convergence</strong>: Q-learning converges to \(Q_*\) regardless of policy followed; SARSA converges to \(Q_\pi\) for the policy being followed</li>
-                    <li><strong>Exploration</strong>: SARSA is more conservative, considering the exploration strategy in its updates</li>
-                    <li><strong>Safety</strong>: In environments with dangerous actions, SARSA may be safer as it accounts for exploration</li>
+                    <li><strong>Convergence</strong>: Q-learning converges to \(Q_*\) (optimal action-value function) regardless of policy followed; SARSA converges to \(Q_{\pi}\) for the specific policy being followed</li>
+                    <li><strong>Policy dependence</strong>: SARSA accounts for the actual exploration policy in its updates, while Q-learning assumes optimal action selection regardless of the behavioral policy</li>
+                    <li><strong>Behavioral differences</strong>: In some environments, SARSA may learn different policies than Q-learning because it considers the exploration policy's actual behavior, while Q-learning optimizes assuming greedy action selection</li>
                     </ul>
                 </p>
 
