@@ -937,11 +937,33 @@ uses_python: false
                     \begin{align*}
                     \nabla_\theta J(\pi_\theta) 
                     &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s) \pi_{\theta}(a \mid s)} \left[ \nabla_{\theta} \log \pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right]\\\\
-                    &\approx \sum_{t=0}^{T - 1} \sum_{t=0}^{T-1} \gamma^t G_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)
+                    &\approx \sum_{t=0}^{T-1} \gamma^t G_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)
                     \end{align*}
                     \]
-                    where \(G_t^{(i)}\) is the return from time \(t\) in episode \(i\). While REINFORCE provides unbiased gradient estimates, it suffers from high variance due to the Monte Carlo sampling of returns, which can significantly slow learning and lead to unstable policy updates.
+                    where \(G_t^{(i)}\) is the return from time \(t\):
+                    \[
+                    G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \gamma^{T-r-1} r_{t-1}.
+                    \]
+                    Here, using a baseline in the gradient estimte, we obtain the REINFORCE update rule: 
+                    \[
+                    \mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha \sum_{t = 0}^{T -1} \gamma^t (G_t - b(s_t)) \nabla_\theta \log \pi_\theta (a_t \mid s_t).
+                    \]
                 </p>
+
+                <div class="pseudocode">
+                    <span class="pseudocode-title">REINFORCE</span>
+                    <strong>begin</strong>
+                    &emsp;&emsp;Set initial policy parameters \(\mathbf{\theta}\), and baseline parameters \(\mathbf{w}\)
+                    &emsp;&emsp;<strong>repeat:</strong>
+                    &emsp;&emsp;&emsp;&emsp;Sample an episode \(\tau = (s_0, a_0, r_0, s_1, cdots, s_T)\) using the policy \(\pi_\theta\)
+                    &emsp;&emsp;&emsp;&emsp;Compute \(G_t\) for all \(t \in \{0, 1, \cdots, T-1\}\)
+                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots, T-1\) <strong>do</strong>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = G_t - V_\mathbf{w}(s_t)\) 
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}(s_t)}\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha_{\mathbf{\theta}} \gamma^t \delta \nabla_{\mathbf{\theta}} \log \pi_{\mathbf{\theta}}(a_t \mid s_t) \)
+                    &emsp;&emsp;<strong>until</strong> converged
+                    <strong>end</strong>
+                </div>
 
             </section>
 
