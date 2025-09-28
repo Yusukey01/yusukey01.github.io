@@ -972,7 +972,7 @@ uses_python: false
                 <h2>Actor-Critic Methods</h2>
 
                 <p>
-                    <strong>Actor-critic methods</strong> are a class of <strong>policy-based methods</strong> that address 
+                    <strong>Actor-critic methods</strong> are also a class of policy-based methods that address 
                     the high variance problem of pure policy gradient approaches like REINFORCE. Rather than using only 
                     policy gradients or only value functions, these hybrid methods combine the benefits of both approaches 
                     by maintaining two function approximators:
@@ -980,6 +980,25 @@ uses_python: false
                         <li><strong>Actor</strong> \(\pi_\theta(a \mid s)\): the policy that selects actions (policy-based component)</li>
                         <li><strong>Critic</strong> \(V_\phi(s)\) or \(Q_\phi(s,a)\): the value function that evaluates actions (value-based component)</li>
                     </ul>
+                </p>
+
+                <p>
+                    Consider the use of the one-step TD(0) method to estimate the return in the episodic case. So, we replace 
+                    \(G_t\) with
+                    \[
+                    G_{t:t+1} = r_t + \gamma V_w (s_{t+1}).
+                    \]
+                    If we use \(V_w(s_t)\) as a baseline, the REINFORCE update becomes: 
+                    \[
+                    \begin{align*}
+                    \theta \leftarrow + \alpha \sum_{t=0}^{T-1} \gamma^t (G_{t:t+1} - V_w(s_t))\nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t)
+                    \end{align*}
+                    \]
+                    Here, \(r_t + \gamma V_w (s_{t+1}) - V_w(s_t)\) is a single sample approximation to the advantage function: 
+                    \[
+                    A(s_t, a_t) = Q(s_t, a_t) - V(s_t).
+                    \]
+                    This method is called the <strong>advantage actor-critic</strong> (or <strong>A2C</strong>). 
                 </p>
 
                  <p>
@@ -1014,7 +1033,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Key actor-critic algorithms include:
+                    Other Key actor-critic algorithms include:
                     <ul style="padding-left: 40px;">
                         <li><strong>A3C (Asynchronous Advantage Actor-Critic)</strong>: Uses multiple parallel agents</li>
                         <li><strong>DDPG (Deep Deterministic Policy Gradient)</strong>: For continuous control</li>
@@ -1022,6 +1041,22 @@ uses_python: false
                         <li><strong>PPO (Proximal Policy Optimization)</strong>: Clips policy updates for stability</li>
                     </ul>
                 </p>
+
+                <div class="pseudocode">
+                    <span class="pseudocode-title">A2C(Advantage Actor Critic)</span>
+                    <strong>begin</strong>
+                    &emsp;&emsp;Set initial policy parameters \(\mathbf{\theta}\), and baseline parameters \(\mathbf{w}\)
+                    &emsp;&emsp;<strong>repeat:</strong>
+                    &emsp;&emsp;&emsp;&emsp;Sample starting state \(s_0\) of a new episode
+                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots\) <strong>do</strong>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Sample action \(a_t \sim \pi_{\theta}(\dot \mid s_t)\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Observe next state \(s_{t+1}\) and reward \(r_t\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = r_t + \gamma V_\mathbf{w}(s_{t+1}) - V_\mathbf{w}(s_t)\) 
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}(s_t)}\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha_{\mathbf{\theta}} \gamma^t \delta \nabla_{\mathbf{\theta}} \log \pi_{\mathbf{\theta}}(a_t \mid s_t) \)
+                    &emsp;&emsp;<strong>until</strong> converged
+                    <strong>end</strong>
+                </div>
             </section>
 
             
