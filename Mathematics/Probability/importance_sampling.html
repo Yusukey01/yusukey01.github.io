@@ -136,7 +136,6 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 
-                <h3>What is Importance Sampling?</h3>
                 <p>
                     <strong>Importance sampling</strong> is a fundamental Monte Carlo technique for estimating expectations under one probability 
                     distribution by sampling from a different, more convenient distribution. This approach addresses two critical challenges in 
@@ -163,12 +162,13 @@ uses_python: false
                 </p>
                 <p>
                     However, this approach fails when:
+                    <ul style="padding-left: 40px;">
+                        <li>Sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible</li>
+                        <li>The normalizing constant of \(\pi(\mathbf{x})\) is unknown (common in Bayesian inference)</li>
+                        <li>\(\phi(\mathbf{x})\) has large values only in regions where \(\pi(\mathbf{x})\) has low probability (rare events)</li>
+                    </ul>
                 </p>
-                <ul style="padding-left: 40px;">
-                    <li>Sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible</li>
-                    <li>The normalizing constant of \(\pi(\mathbf{x})\) is unknown (common in Bayesian inference)</li>
-                    <li>\(\phi(\mathbf{x})\) has large values only in regions where \(\pi(\mathbf{x})\) has low probability (rare events)</li>
-                </ul>
+
                 <p>
                     <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
                     (or <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples 
@@ -179,7 +179,7 @@ uses_python: false
                     Importance sampling has become essential in modern AI, particularly in the following domains:
                 </p>
 
-                <h4>1. Reinforcement Learning from Human Feedback (RLHF)</h4>
+                <h4><strong>1. Reinforcement Learning from Human Feedback (RLHF)</strong></h4>
                 <p>
                     Modern large language models(LLMs) like ChatGPT, are fine-tuned using RLHF, which fundamentally relies on 
                     importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to learn 
@@ -191,27 +191,27 @@ uses_python: false
                     sampling, we would need to collect entirely new data after each policy update, making RLHF expensive.
                 </p>
 
-                <h4>2. Off-Policy Reinforcement Learning</h4>
+                <h4><strong>2. Off-Policy Reinforcement Learning</strong></h4>
                 <p>
                     In robotics, autonomous systems, and game AI, collecting on-policy data can be dangerous or expensive. Importance sampling 
                     enables learning from historical data, human demonstrations, or safer exploration policies. This is crucial for algorithms 
                     like Soft Actor-Critic (SAC), Conservative Q-Learning (CQL), and offline RL methods.
                 </p>
 
-                <h4>3. Variational Inference and Deep Generative Models</h4>
+                <h4><strong>3. Variational Inference and Deep Generative Models</strong></h4>
                 <p>
                     Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter bounds on the evidence lower bound (ELBO), 
                     leading to better generative models and more accurate uncertainty estimates in Bayesian deep learning.
                 </p>
 
-                <h4>4. Imbalanced Data and Rare Events</h4>
+                <h4><strong>4. Imbalanced Data and Rare Events</strong></h4>
                 <p>
                     In applications like fraud detection, medical diagnosis of rare diseases, and AI safety, the events we care most about 
                     are extremely rare. Importance sampling allows us to oversample these critical cases and reweight appropriately, ensuring 
                     models do not ignore rare but important scenarios.
                 </p>
 
-                <h4>5. Computing Normalizing Constants</h4>
+                <h4><strong>5. Computing Normalizing Constants</strong></h4>
                 <p>
                     Many probabilistic models in AI (Boltzmann machines, energy-based models, certain Bayesian posteriors) have intractable 
                     normalizing constants. Importance sampling, particularly <strong>annealed importance sampling</strong>, provides practical methods to 
@@ -244,7 +244,6 @@ uses_python: false
                     wherever \(\pi(\mathbf{x}) > 0\), we must have \(q(\mathbf{x}) > 0\).
                 </p>
 
-                <h3>Importance Weights</h3>
                 <p>
                     The ratio
                     \[
@@ -262,22 +261,21 @@ uses_python: false
                 <p>
                     This estimator is <strong>unbiased</strong>:
                     \[
-                    \mathbb{E}_q[\hat{I}_{\text{IS}}] = \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S w(x^{(s)})\phi(x^{(s)})\right] = \mathbb{E}_q[w(x)\phi(x)] = I
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] = \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S w(\mathbf{x}^{(s)})\phi(\mathbf{x}^{(s)})\right] = \mathbb{E}_q[w(\mathbf{x})\phi(\mathbf{x})] = I
                     \]
                 </p>
 
-                <h3>Variance and Effective Sample Size</h3>
                 <p>
                     While the estimator is unbiased, its variance depends critically on the choice of \(q\):
                     \[
-                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{S}\left(\mathbb{E}_q[w^2(x)\phi^2(x)] - I^2\right)
+                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{S}\left(\mathbb{E}_q[w^2(\mathbf{x})\phi^2(\mathbf{x})] - I^2\right)
                     \]
                 </p>
                 <p>
                     If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
                     This is quantified by the <strong>effective sample size (ESS)</strong>:
                     \[
-                    \text{ESS} = \frac{\left(\sum_{s=1}^S w(x^{(s)})\right)^2}{\sum_{s=1}^S w^2(x^{(s)})}
+                    \text{ESS} = \frac{\left(\sum_{s=1}^S w(\mathbf{x}^{(s)})\right)^2}{\sum_{s=1}^S w^2(\mathbf{x}^{(s)})}
                     \]
                 </p>
                 <p>
@@ -300,7 +298,7 @@ uses_python: false
                 <p>
                     The optimal proposal distribution (minimizing variance) is:
                     \[
-                    q^*(x) = \frac{|\phi(x)|\pi(x)}{\int |\phi(x)|\pi(x) \, dx}
+                    q^*(\mathbf{x}) = \frac{|\phi(\mathbf{x})|\pi(\mathbf{x})}{\int |\phi(\mathbf{x})|\pi(\mathbf{x}) \, d\mathbf{x}}
                     \]
                 </p>
                 <p>
@@ -309,7 +307,7 @@ uses_python: false
                 </p>
                 <ul style="padding-left: 40px;">
                     <li>Have heavier tails than \(\pi\) (to avoid infinite variance)</li>
-                    <li>Place more mass where \(|\phi(x)\pi(x)|\) is large</li>
+                    <li>Place more mass where \(|\phi(\mathbf{x})\pi(\mathbf{x})|\) is large</li>
                     <li>Be easy to sample from and evaluate</li>
                 </ul>
             </section>
@@ -322,21 +320,21 @@ uses_python: false
                     In many practical situations, especially in <a href="bayesian.html"><strong>Bayesian inference</strong></a>, we can only 
                     evaluate the target distribution up to a normalizing constant. That is, we can compute:
                     \[
-                    \tilde{\pi}(x) = Z_\pi \pi(x)
+                    \tilde{\pi}(\mathbf{x}) = Z_\pi \pi(\mathbf{x})
                     \]
-                    where \(Z_\pi = \int \tilde{\pi}(x) \, dx\) is the unknown normalizing constant (also called the 
+                    where \(Z_\pi = \int \tilde{\pi}(\mathbf{x}) \, d\mathbf{x}\) is the unknown normalizing constant (also called the 
                     <a href="expfamily.html"><strong>partition function</strong></a> or <strong>evidence</strong> in Bayesian contexts).
                 </p>
                 <p>
                     Similarly, for the proposal distribution:
                     \[
-                    \tilde{q}(x) = Z_q q(x)
+                    \tilde{q}(\mathbf{x}) = Z_q q(\mathbf{x})
                     \]
                 </p>
                 <p>
                     Direct importance sampling requires normalized distributions, so we cannot directly compute:
                     \[
-                    w(x) = \frac{\pi(x)}{q(x)} = \frac{\tilde{\pi}(x)/Z_\pi}{\tilde{q}(x)/Z_q}
+                    w(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})} = \frac{\tilde{\pi}(\mathbf{x})/Z_\pi}{\tilde{q}(\mathbf{x})/Z_q}
                     \]
                     because \(Z_\pi\) and \(Z_q\) are unknown.
                 </p>
@@ -345,25 +343,25 @@ uses_python: false
                 <p>
                     Instead, we can compute <strong>unnormalized importance weights</strong>:
                     \[
-                    \tilde{w}(x) = \frac{\tilde{\pi}(x)}{\tilde{q}(x)} = \frac{Z_\pi}{Z_q} \cdot \frac{\pi(x)}{q(x)} = \frac{Z_\pi}{Z_q} \cdot w(x)
+                    \tilde{w}(\mathbf{x}) = \frac{\tilde{\pi}(\mathbf{x})}{\tilde{q}(\mathbf{x})} = \frac{Z_\pi}{Z_q} \cdot \frac{\pi(\mathbf{x})}{q(\mathbf{x})} = \frac{Z_\pi}{Z_q} \cdot w(\mathbf{x})
                     \]
                 </p>
                 <p>
-                    Notice that \(\tilde{w}(x)\) differs from the true importance weight \(w(x)\) by the constant factor \(\frac{Z_\pi}{Z_q}\).
+                    Notice that \(\tilde{w}(\mathbf{x})\) differs from the true importance weight \(w(\mathbf{x})\) by the constant factor \(\frac{Z_\pi}{Z_q}\).
                 </p>
 
                 <h3>The Self-Normalized Estimator</h3>
                 <p>
                     The <strong>self-normalized importance sampling estimator</strong> eliminates the unknown constant by normalizing the weights:
                     \[
-                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \tilde{w}(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S \tilde{w}(x^{(s)})}, \quad \text{where } x^{(s)} \sim q(x)
+                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)})}, \quad \text{where } \mathbf{x}^{(s)} \sim q(\mathbf{x})
                     \]
                 </p>
                 <p>
                     The key observation is that the unknown ratio \(\frac{Z_\pi}{Z_q}\) appears in both numerator and denominator and cancels out:
                     \[
-                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(x^{(s)})} 
-                    = \frac{\sum_{s=1}^S w(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S w(x^{(s)})}
+                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(\mathbf{x}^{(s)}) \phi(\mathbf{x}^{(s)})}{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(\mathbf{x}^{(s)})} 
+                    = \frac{\sum_{s=1}^S w(\mathbf{x}^{(s)}) \phi(\mathbf{x}^{(s)})}{\sum_{s=1}^S w(\mathbf{x}^{(s)})}
                     \]
                 </p>
 
@@ -385,13 +383,13 @@ uses_python: false
                 <p>
                     It's common to work with normalized weights:
                     \[
-                    \bar{w}^{(s)} = \frac{\tilde{w}(x^{(s)})}{\sum_{i=1}^S \tilde{w}(x^{(i)})}
+                    \bar{w}^{(s)} = \frac{\tilde{w}(\mathbf{x}^{(s)})}{\sum_{i=1}^S \tilde{w}(\mathbf{x}^{(i)})}
                     \]
                 </p>
                 <p>
                     These satisfy \(\sum_{s=1}^S \bar{w}^{(s)} = 1\), and the self-normalized estimator becomes:
                     \[
-                    \hat{I}_{\text{SNIS}} = \sum_{s=1}^S \bar{w}^{(s)} \phi(x^{(s)})
+                    \hat{I}_{\text{SNIS}} = \sum_{s=1}^S \bar{w}^{(s)} \phi(\mathbf{x}^{(s)})
                     \]
                 </p>
                 <p>
@@ -416,7 +414,7 @@ uses_python: false
                 
                 <h3>Motivation: The Bridge Distribution Approach</h3>
                 <p>
-                    When the target distribution \(\pi(x)\) and proposal distribution \(q(x)\) are very different, direct importance sampling 
+                    When the target distribution \(\pi(\mathbf{x})\) and proposal distribution \(q(\mathbf{x})\) are very different, direct importance sampling 
                     often fails because the importance weights have extremely high variance. Most samples from \(q\) will have near-zero weight 
                     under \(\pi\), while a few rare samples will have enormous weights, leading to unreliable estimates.
                 </p>
