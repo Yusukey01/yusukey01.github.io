@@ -1,0 +1,536 @@
+---
+layout: default
+title: Importance Sampling
+level: detail
+description: Introduction to importance sampling for efficient Monte Carlo estimation with applications to modern AI and machine learning.
+uses_math: true
+uses_python: false
+---
+
+<!DOCTYPE html>
+<html>
+    <body>
+        <!-- Meta script for importance_sampling.html -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "{{ page.title }}",
+        "description": "{{ page.description }}",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "{% if page.content contains 'Interactive Demo' or page.content contains 'demo' %}active{% else %}expositive{% endif %}",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Importance Sampling" },
+            { "@type": "Thing", "name": "Direct Importance Sampling" },
+            { "@type": "Thing", "name": "Self-Normalized Importance Sampling" },
+            { "@type": "Thing", "name": "Annealed Importance Sampling" },
+            { "@type": "Thing", "name": "AIS" },
+            { "@type": "Thing", "name": "Importance Weights" },
+            { "@type": "Thing", "name": "Proposal Distribution" },
+            { "@type": "Thing", "name": "Target Distribution" },
+            { "@type": "Thing", "name": "Monte Carlo Methods" },
+            { "@type": "Thing", "name": "Variance Reduction" },
+            { "@type": "Thing", "name": "RLHF" },
+            { "@type": "Thing", "name": "Off-Policy Learning" },
+            { "@type": "Thing", "name": "Variational Inference" },
+            { "@type": "Thing", "name": "Bayesian Inference" },
+            { "@type": "Thing", "name": "Normalizing Constant" },
+            { "@type": "Thing", "name": "Partition Function" }
+        ],
+        "teaches": [
+            "Importance sampling fundamentals",
+            "Direct and self-normalized importance sampling",
+            "Annealed importance sampling",
+            "Applications to modern AI"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Probability & Statistics",
+            "description": "Explore fundamental concepts of probability and statistics essential for machine learning",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "III",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT2H30M",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <!-- WebApplication Schema for Interactive Tools -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "{{ page.title }} Interactive Tool",
+        "description": "Interactive tool for exploring {{ page.title | downcase }} concepts with real-time visualizations and computational examples",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://yusukey01.github.io{{ page.url }}",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota"
+        },
+        "applicationSubCategory": "Mathematical Computation Tool",
+        "featureList": [
+            "Interactive mathematical visualization",
+            "Real-time parameter adjustment",
+            "Educational demonstrations",
+            "Statistical computation",
+            "Importance sampling simulation",
+            "Variance comparison",
+            "AIS demonstration"
+        ],
+        "isAccessibleForFree": true,
+        "educationalUse": "instruction",
+        "educationalLevel": "university"
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name">Importance Sampling
+            </h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#direct">Direct Importance Sampling</a>
+            <a href="#selfnorm">Self-Normalized IS</a>
+            <a href="#ais">Annealed Importance Sampling</a>
+        </div> 
+
+        <div class="container">  
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+                
+                <h3>What is Importance Sampling?</h3>
+                <p>
+                    <strong>Importance sampling</strong> is a fundamental Monte Carlo technique for estimating expectations under one probability 
+                    distribution by sampling from a different, more convenient distribution. This approach addresses two critical challenges in 
+                    computational statistics and machine learning:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>When direct sampling from the target distribution is difficult or impossible</li>
+                    <li>When we want to focus computational resources on the most "important" regions of the distribution</li>
+                </ul>
+
+                <h3>Problem Setup</h3>
+                <p>
+                    Suppose we want to compute the expectation of a <strong>target function</strong> \(\phi(x)\) under a 
+                    <strong>target distribution</strong> \(\pi(x)\):
+                    \[
+                    I = \mathbb{E}_{\pi}[\phi(x)] = \int \phi(x) \pi(x) \, dx
+                    \]
+                </p>
+                <p>
+                    Standard <a href="monte_carlo.html"><strong>Monte Carlo estimation</strong></a> would draw independent samples 
+                    \(x^{(1)}, \ldots, x^{(S)} \sim \pi(x)\) and approximate:
+                    \[
+                    I \approx \hat{I}_{\text{MC}} = \frac{1}{S} \sum_{s=1}^S \phi(x^{(s)})
+                    \]
+                </p>
+                <p>
+                    However, this approach fails when:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Sampling from \(\pi(x)\) is computationally expensive or infeasible</li>
+                    <li>The normalizing constant of \(\pi(x)\) is unknown (common in Bayesian inference)</li>
+                    <li>\(\phi(x)\) has large values only in regions where \(\pi(x)\) has low probability (rare events)</li>
+                </ul>
+                <p>
+                    <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
+                    (or <strong>importance distribution</strong>) \(q(x)\) from which we can easily sample, then reweighting samples 
+                    to account for the distribution mismatch.
+                </p>
+
+                <h3>Why Importance Sampling is Critical in Modern AI</h3>
+                <p>
+                    Importance sampling has become essential in artificial intelligence, particularly in the following domains:
+                </p>
+
+                <h4>1. Reinforcement Learning from Human Feedback (RLHF)</h4>
+                <p>
+                    Modern large language models like ChatGPT, Claude, and GPT-4 are fine-tuned using RLHF, which fundamentally relies on 
+                    importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to learn 
+                    from data collected under an old policy while optimizing a new policy:
+                    \[
+                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a)\right]
+                    \]
+                    where \(\mu\) is the behavior policy (old data) and \(\pi_\theta\) is the target policy being optimized. Without importance 
+                    sampling, we would need to collect entirely new data after each policy update, making RLHF prohibitively expensive.
+                </p>
+
+                <h4>2. Off-Policy Reinforcement Learning</h4>
+                <p>
+                    In robotics, autonomous systems, and game AI, collecting on-policy data can be dangerous or expensive. Importance sampling 
+                    enables learning from historical data, human demonstrations, or safer exploration policies. This is crucial for algorithms 
+                    like Soft Actor-Critic (SAC), Conservative Q-Learning (CQL), and offline RL methods.
+                </p>
+
+                <h4>3. Variational Inference and Deep Generative Models</h4>
+                <p>
+                    Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter bounds on the evidence lower bound (ELBO), 
+                    leading to better generative models and more accurate uncertainty estimates in Bayesian deep learning.
+                </p>
+
+                <h4>4. Imbalanced Data and Rare Events</h4>
+                <p>
+                    In applications like fraud detection, medical diagnosis of rare diseases, and AI safety, the events we care most about 
+                    are extremely rare. Importance sampling allows us to oversample these critical cases and reweight appropriately, ensuring 
+                    models don't ignore rare but important scenarios.
+                </p>
+
+                <h4>5. Computing Normalizing Constants</h4>
+                <p>
+                    Many probabilistic models in AI (Boltzmann machines, energy-based models, certain Bayesian posteriors) have intractable 
+                    normalizing constants. Importance sampling, particularly annealed importance sampling, provides practical methods to 
+                    estimate these constants, which is essential for model comparison and learning.
+                </p>
+
+                <p>
+                    The critical insight is that importance sampling enables <strong>sample efficiency</strong>: in an era where data collection 
+                    and computation are expensive, the ability to reuse and reweight existing data rather than collecting new samples is invaluable. 
+                    This makes importance sampling one of the foundational techniques enabling practical, scalable AI systems.
+                </p>
+            </section>
+
+            <section id="direct" class="section-content">
+                <h2>Direct Importance Sampling</h2>
+                
+                <h3>The Fundamental Identity</h3>
+                <p>
+                    The key mathematical insight behind importance sampling is the change of measure. We can rewrite the expectation under 
+                    \(\pi(x)\) as an expectation under \(q(x)\):
+                    \[
+                    \begin{align*}
+                    I &= \int \phi(x) \pi(x) \, dx \\\\
+                      &= \int \phi(x) \frac{\pi(x)}{q(x)} q(x) \, dx \\\\
+                      &= \mathbb{E}_{q}\left[\phi(x) \frac{\pi(x)}{q(x)}\right]
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    This identity holds for any \(q(x)\) that satisfies the support condition: wherever \(\pi(x) > 0\), we must have \(q(x) > 0\).
+                </p>
+
+                <h3>Importance Weights</h3>
+                <p>
+                    The ratio
+                    \[
+                    w(x) = \frac{\pi(x)}{q(x)}
+                    \]
+                    is called the <strong>importance weight</strong>. It measures how much more (or less) likely \(x\) is under the target 
+                    distribution \(\pi\) compared to the proposal distribution \(q\).
+                </p>
+                <p>
+                    The <strong>direct importance sampling estimator</strong> is:
+                    \[
+                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S w(x^{(s)}) \phi(x^{(s)}), \quad \text{where } x^{(s)} \sim q(x)
+                    \]
+                </p>
+                <p>
+                    This estimator is <strong>unbiased</strong>:
+                    \[
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] = \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S w(x^{(s)})\phi(x^{(s)})\right] = \mathbb{E}_q[w(x)\phi(x)] = I
+                    \]
+                </p>
+
+                <h3>Variance and Effective Sample Size</h3>
+                <p>
+                    While the estimator is unbiased, its variance depends critically on the choice of \(q\):
+                    \[
+                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{S}\left(\mathbb{E}_q[w^2(x)\phi^2(x)] - I^2\right)
+                    \]
+                </p>
+                <p>
+                    If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
+                    This is quantified by the <strong>effective sample size (ESS)</strong>:
+                    \[
+                    \text{ESS} = \frac{\left(\sum_{s=1}^S w(x^{(s)})\right)^2}{\sum_{s=1}^S w^2(x^{(s)})}
+                    \]
+                </p>
+                <p>
+                    The ESS ranges from 1 (maximum degeneracy, all weight on one sample) to \(S\) (all weights equal, no degeneracy). 
+                    A good rule of thumb is that if ESS < \(S/2\), the proposal distribution should be reconsidered.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Requirements for Direct Importance Sampling</span>
+                    For direct importance sampling to be valid and practical:
+                    <ul>
+                        <li><strong>Support condition</strong>: \(q(x) > 0\) whenever \(\pi(x) > 0\) and \(\phi(x) \neq 0\)</li>
+                        <li><strong>Normalization</strong>: Both \(\pi(x)\) and \(q(x)\) must be properly normalized probability distributions</li>
+                        <li><strong>Evaluability</strong>: We must be able to evaluate \(\pi(x)\) and \(q(x)\) for any \(x\)</li>
+                        <li><strong>Sampling</strong>: We must be able to draw samples from \(q(x)\) efficiently</li>
+                    </ul>
+                </div>
+
+                <h3>Choosing a Good Proposal Distribution</h3>
+                <p>
+                    The optimal proposal distribution (minimizing variance) is:
+                    \[
+                    q^*(x) = \frac{|\phi(x)|\pi(x)}{\int |\phi(x)|\pi(x) \, dx}
+                    \]
+                </p>
+                <p>
+                    However, computing this requires knowing the integral we're trying to estimate, making it impractical. In practice, 
+                    we choose \(q\) to:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Have heavier tails than \(\pi\) (to avoid infinite variance)</li>
+                    <li>Place more mass where \(|\phi(x)\pi(x)|\) is large</li>
+                    <li>Be easy to sample from and evaluate</li>
+                </ul>
+            </section>
+
+            <section id="selfnorm" class="section-content">
+                <h2>Self-Normalized Importance Sampling</h2>
+                
+                <h3>The Problem with Unnormalized Distributions</h3>
+                <p>
+                    In many practical situations, especially in <a href="bayesian.html"><strong>Bayesian inference</strong></a>, we can only 
+                    evaluate the target distribution up to a normalizing constant. That is, we can compute:
+                    \[
+                    \tilde{\pi}(x) = Z_\pi \pi(x)
+                    \]
+                    where \(Z_\pi = \int \tilde{\pi}(x) \, dx\) is the unknown normalizing constant (also called the 
+                    <a href="expfamily.html"><strong>partition function</strong></a> or <strong>evidence</strong> in Bayesian contexts).
+                </p>
+                <p>
+                    Similarly, for the proposal distribution:
+                    \[
+                    \tilde{q}(x) = Z_q q(x)
+                    \]
+                </p>
+                <p>
+                    Direct importance sampling requires normalized distributions, so we cannot directly compute:
+                    \[
+                    w(x) = \frac{\pi(x)}{q(x)} = \frac{\tilde{\pi}(x)/Z_\pi}{\tilde{q}(x)/Z_q}
+                    \]
+                    because \(Z_\pi\) and \(Z_q\) are unknown.
+                </p>
+
+                <h3>Unnormalized Importance Weights</h3>
+                <p>
+                    Instead, we can compute <strong>unnormalized importance weights</strong>:
+                    \[
+                    \tilde{w}(x) = \frac{\tilde{\pi}(x)}{\tilde{q}(x)} = \frac{Z_\pi}{Z_q} \cdot \frac{\pi(x)}{q(x)} = \frac{Z_\pi}{Z_q} \cdot w(x)
+                    \]
+                </p>
+                <p>
+                    Notice that \(\tilde{w}(x)\) differs from the true importance weight \(w(x)\) by the constant factor \(\frac{Z_\pi}{Z_q}\).
+                </p>
+
+                <h3>The Self-Normalized Estimator</h3>
+                <p>
+                    The <strong>self-normalized importance sampling estimator</strong> eliminates the unknown constant by normalizing the weights:
+                    \[
+                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \tilde{w}(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S \tilde{w}(x^{(s)})}, \quad \text{where } x^{(s)} \sim q(x)
+                    \]
+                </p>
+                <p>
+                    The key observation is that the unknown ratio \(\frac{Z_\pi}{Z_q}\) appears in both numerator and denominator and cancels out:
+                    \[
+                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(x^{(s)})} 
+                    = \frac{\sum_{s=1}^S w(x^{(s)}) \phi(x^{(s)})}{\sum_{s=1}^S w(x^{(s)})}
+                    \]
+                </p>
+
+                <h3>Properties of Self-Normalized IS</h3>
+                <p>
+                    Unlike direct importance sampling, the self-normalized estimator is:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Biased</strong> for finite \(S\) (the denominator is random)</li>
+                    <li><strong>Consistent</strong>: as \(S \to \infty\), the bias vanishes and \(\hat{I}_{\text{SNIS}} \to I\)</li>
+                    <li><strong>Often has lower variance</strong> than direct IS, especially when the normalizing constant is very different from 1</li>
+                </ul>
+                <p>
+                    In practice, with moderately large \(S\), the bias is typically negligible compared to the variance, and self-normalized 
+                    importance sampling is the preferred method when working with unnormalized distributions.
+                </p>
+
+                <h3>Normalized Weights</h3>
+                <p>
+                    It's common to work with normalized weights:
+                    \[
+                    \bar{w}^{(s)} = \frac{\tilde{w}(x^{(s)})}{\sum_{i=1}^S \tilde{w}(x^{(i)})}
+                    \]
+                </p>
+                <p>
+                    These satisfy \(\sum_{s=1}^S \bar{w}^{(s)} = 1\), and the self-normalized estimator becomes:
+                    \[
+                    \hat{I}_{\text{SNIS}} = \sum_{s=1}^S \bar{w}^{(s)} \phi(x^{(s)})
+                    \]
+                </p>
+                <p>
+                    This form makes it clear that self-normalized importance sampling is computing a weighted average of the target function 
+                    values, where the weights reflect how much more probable each sample is under \(\pi\) compared to \(q\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Practical Advantage</span>
+                    Self-normalized importance sampling is essential in Bayesian inference because:
+                    <ul>
+                        <li>The posterior \(p(\theta|\mathcal{D}) = \frac{p(\mathcal{D}|\theta)p(\theta)}{p(\mathcal{D})}\) has an 
+                        intractable normalizing constant \(p(\mathcal{D})\)</li>
+                        <li>We can easily evaluate the unnormalized posterior \(\tilde{\pi}(\theta) = p(\mathcal{D}|\theta)p(\theta)\)</li>
+                        <li>Self-normalized IS allows us to work directly with the unnormalized posterior without computing \(p(\mathcal{D})\)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="ais" class="section-content">
+                <h2>Annealed Importance Sampling (AIS)</h2>
+                
+                <h3>Motivation: The Bridge Distribution Approach</h3>
+                <p>
+                    When the target distribution \(\pi(x)\) and proposal distribution \(q(x)\) are very different, direct importance sampling 
+                    often fails because the importance weights have extremely high variance. Most samples from \(q\) will have near-zero weight 
+                    under \(\pi\), while a few rare samples will have enormous weights, leading to unreliable estimates.
+                </p>
+                <p>
+                    <strong>Annealed importance sampling (AIS)</strong>, introduced by Neal (2001), solves this problem by introducing a sequence 
+                    of intermediate distributions that gradually "anneal" from the proposal to the target distribution. This creates a smoother 
+                    path, dramatically reducing variance.
+                </p>
+
+                <h3>The Annealing Schedule</h3>
+                <p>
+                    Define a sequence of intermediate distributions using an <strong>annealing schedule</strong> \(0 = \beta_0 < \beta_1 < \cdots < \beta_n = 1\):
+                    \[
+                    \pi_k(x) = \frac{\tilde{\pi}_k(x)}{Z_k}, \quad \text{where } \tilde{\pi}_k(x) = \tilde{q}(x)^{1-\beta_k} \tilde{\pi}(x)^{\beta_k}
+                    \]
+                </p>
+                <p>
+                    Notice that:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>At \(k=0\): \(\pi_0(x) = q(x)\) (the proposal distribution)</li>
+                    <li>At \(k=n\): \(\pi_n(x) = \pi(x)\) (the target distribution)</li>
+                    <li>For intermediate \(k\): \(\pi_k(x)\) is a geometric mixture between \(q\) and \(\pi\)</li>
+                </ul>
+                <p>
+                    Common choices for the annealing schedule include:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Linear</strong>: \(\beta_k = \frac{k}{n}\)</li>
+                    <li><strong>Geometric</strong>: \(\beta_k = \left(\frac{k}{n}\right)^\alpha\) for some \(\alpha > 0\)</li>
+                    <li><strong>Adaptive</strong>: chosen to maintain roughly constant ESS between steps</li>
+                </ul>
+
+                <h3>Sequential Importance Sampling</h3>
+                <p>
+                    AIS uses a sequence of importance sampling steps. Starting with a sample \(x^{(0)} \sim q(x)\), we:
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li>Compute the initial weight: \(w_0 = 1\)</li>
+                    <li>For each intermediate distribution \(k = 1, \ldots, n-1\):
+                        <ul>
+                            <li>Update the sample: \(x^{(k)} \sim T_k(x'|x^{(k-1)})\) using a Markov transition kernel that leaves \(\pi_k\) invariant</li>
+                            <li>Update the weight: \(w_k = w_{k-1} \cdot \frac{\tilde{\pi}_k(x^{(k)})}{\tilde{\pi}_{k-1}(x^{(k-1)})}\)</li>
+                        </ul>
+                    </li>
+                    <li>The final importance weight is: \(w = w_{n-1} \cdot \frac{\tilde{\pi}(x^{(n)})}{\tilde{\pi}_{n-1}(x^{(n-1)})}\)</li>
+                </ol>
+
+                <h3>The AIS Weight Formula</h3>
+                <p>
+                    The final importance weight can be written as a telescoping product:
+                    \[
+                    w = \frac{\tilde{\pi}(x^{(n)})}{\tilde{q}(x^{(0)})} \cdot \prod_{k=1}^{n-1} \frac{\tilde{\pi}_k(x^{(k)})}{\tilde{\pi}_{k+1}(x^{(k)})}
+                    \]
+                </p>
+                <p>
+                    More explicitly:
+                    \[
+                    w = \frac{\tilde{\pi}_1(x^{(1)})}{\tilde{q}(x^{(0)})} \cdot \frac{\tilde{\pi}_2(x^{(2)})}{\tilde{\pi}_1(x^{(1)})} \cdot \frac{\tilde{\pi}_3(x^{(3)})}{\tilde{\pi}_2(x^{(2)})} \cdots \frac{\tilde{\pi}(x^{(n)})}{\tilde{\pi}_{n-1}(x^{(n-1)})}
+                    \]
+                </p>
+                <p>
+                    Each ratio \(\frac{\tilde{\pi}_{k+1}(x^{(k)})}{\tilde{\pi}_k(x^{(k)})}\) is typically close to 1 (unlike the direct ratio 
+                    \(\frac{\tilde{\pi}(x)}{\tilde{q}(x)}\)), which keeps the weights stable and reduces variance.
+                </p>
+
+                <h3>Estimating Partition Functions</h3>
+                <p>
+                    AIS is particularly powerful for estimating normalizing constants (partition functions). Using self-normalized importance 
+                    sampling with AIS weights, we can estimate the ratio of partition functions:
+                    \[
+                    \frac{Z_\pi}{Z_q} \approx \frac{1}{S} \sum_{s=1}^S w^{(s)}
+                    \]
+                </p>
+                <p>
+                    If \(Z_q\) is known (e.g., \(q\) is a simple distribution like a Gaussian), we can estimate \(Z_\pi\). This is crucial for:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Model comparison in Bayesian inference (estimating marginal likelihoods)</li>
+                    <li>Training energy-based models and Boltzmann machines</li>
+                    <li>Evaluating the evidence in variational inference</li>
+                </ul>
+
+                <h3>Why AIS Works</h3>
+                <p>
+                    The key insight is that by breaking the difficult transition from \(q\) to \(\pi\) into many small steps, we ensure that:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>Each individual importance weight ratio is close to 1</li>
+                    <li>The product of many near-1 ratios has much lower variance than a single large ratio</li>
+                    <li>The Markov transitions allow samples to explore the support of each intermediate distribution</li>
+                </ul>
+                <p>
+                    The variance of AIS decreases as the number of intermediate distributions \(n\) increases, though computational cost increases 
+                    proportionally. In practice, choosing \(n = 100\) to \(n = 10000\) is common depending on how different \(q\) and \(\pi\) are.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Applications of AIS</span>
+                    Annealed importance sampling is used in:
+                    <ul>
+                        <li><strong>Deep learning</strong>: Estimating partition functions of restricted Boltzmann machines (RBMs) and 
+                        deep belief networks</li>
+                        <li><strong>Bayesian inference</strong>: Computing marginal likelihoods for model selection</li>
+                        <li><strong>Statistical physics</strong>: Estimating free energies in simulations (where it was originally developed)</li>
+                        <li><strong>Variational inference</strong>: Improving ELBO estimates and comparing variational approximations</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <script src="/js/main.js"></script>
+
+    </body>
+</html>
