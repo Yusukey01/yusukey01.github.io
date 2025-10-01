@@ -140,57 +140,55 @@ uses_python: false
                 <p>
                     <strong>Importance sampling</strong> is a fundamental Monte Carlo technique for estimating expectations under one probability 
                     distribution by sampling from a different, more convenient distribution. This approach addresses two critical challenges in 
-                    computational statistics and machine learning:
+                    computational statistics and machine learning when:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li>When direct sampling from the target distribution is difficult or impossible</li>
-                    <li>When we want to focus computational resources on the most "important" regions of the distribution</li>
+                    <li>direct sampling from the target distribution is difficult or impossible.</li>
+                    <li>we want to focus computational resources on the most "important" regions of the distribution.</li>
                 </ul>
 
-                <h3>Problem Setup</h3>
                 <p>
-                    Suppose we want to compute the expectation of a <strong>target function</strong> \(\phi(x)\) under a 
-                    <strong>target distribution</strong> \(\pi(x)\):
+                    Suppose we want to compute the expectation of a <strong>target function</strong> \(\phi(\mathbf{x})\) under a 
+                    <strong>target distribution</strong> \(\pi(\mathbf{x})\):
                     \[
-                    I = \mathbb{E}_{\pi}[\phi(x)] = \int \phi(x) \pi(x) \, dx
+                    I = \mathbb{E}_{\pi}[\phi(\mathbf{x})] = \int \phi(\mathbf{x}) \pi(\mathbf{x}) \, d\mathbf{x}
                     \]
                 </p>
                 <p>
                     Standard <a href="monte_carlo.html"><strong>Monte Carlo estimation</strong></a> would draw independent samples 
                     \(x^{(1)}, \ldots, x^{(S)} \sim \pi(x)\) and approximate:
                     \[
-                    I \approx \hat{I}_{\text{MC}} = \frac{1}{S} \sum_{s=1}^S \phi(x^{(s)})
+                    I \approx \hat{I}_{\text{MC}} = \frac{1}{S} \sum_{s=1}^S \phi(x^{(s)}).
                     \]
                 </p>
                 <p>
                     However, this approach fails when:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li>Sampling from \(\pi(x)\) is computationally expensive or infeasible</li>
-                    <li>The normalizing constant of \(\pi(x)\) is unknown (common in Bayesian inference)</li>
-                    <li>\(\phi(x)\) has large values only in regions where \(\pi(x)\) has low probability (rare events)</li>
+                    <li>Sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible</li>
+                    <li>The normalizing constant of \(\pi(\mathbf{x})\) is unknown (common in Bayesian inference)</li>
+                    <li>\(\phi(\mathbf{x})\) has large values only in regions where \(\pi(\mathbf{x})\) has low probability (rare events)</li>
                 </ul>
                 <p>
                     <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
-                    (or <strong>importance distribution</strong>) \(q(x)\) from which we can easily sample, then reweighting samples 
+                    (or <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples 
                     to account for the distribution mismatch.
                 </p>
 
-                <h3>Why Importance Sampling is Critical in Modern AI</h3>
                 <p>
-                    Importance sampling has become essential in artificial intelligence, particularly in the following domains:
+                    Importance sampling has become essential in modern AI, particularly in the following domains:
                 </p>
 
                 <h4>1. Reinforcement Learning from Human Feedback (RLHF)</h4>
                 <p>
-                    Modern large language models like ChatGPT, Claude, and GPT-4 are fine-tuned using RLHF, which fundamentally relies on 
+                    Modern large language models(LLMs) like ChatGPT, are fine-tuned using RLHF, which fundamentally relies on 
                     importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to learn 
                     from data collected under an old policy while optimizing a new policy:
                     \[
                     L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a)\right]
                     \]
                     where \(\mu\) is the behavior policy (old data) and \(\pi_\theta\) is the target policy being optimized. Without importance 
-                    sampling, we would need to collect entirely new data after each policy update, making RLHF prohibitively expensive.
+                    sampling, we would need to collect entirely new data after each policy update, making RLHF expensive.
                 </p>
 
                 <h4>2. Off-Policy Reinforcement Learning</h4>
@@ -210,13 +208,13 @@ uses_python: false
                 <p>
                     In applications like fraud detection, medical diagnosis of rare diseases, and AI safety, the events we care most about 
                     are extremely rare. Importance sampling allows us to oversample these critical cases and reweight appropriately, ensuring 
-                    models don't ignore rare but important scenarios.
+                    models do not ignore rare but important scenarios.
                 </p>
 
                 <h4>5. Computing Normalizing Constants</h4>
                 <p>
                     Many probabilistic models in AI (Boltzmann machines, energy-based models, certain Bayesian posteriors) have intractable 
-                    normalizing constants. Importance sampling, particularly annealed importance sampling, provides practical methods to 
+                    normalizing constants. Importance sampling, particularly <strong>annealed importance sampling</strong>, provides practical methods to 
                     estimate these constants, which is essential for model comparison and learning.
                 </p>
 
@@ -230,35 +228,35 @@ uses_python: false
             <section id="direct" class="section-content">
                 <h2>Direct Importance Sampling</h2>
                 
-                <h3>The Fundamental Identity</h3>
                 <p>
                     The key mathematical insight behind importance sampling is the change of measure. We can rewrite the expectation under 
-                    \(\pi(x)\) as an expectation under \(q(x)\):
+                    \(\pi(\mathbf{x})\) as an expectation under \(q(\mathbf{x})\):
                     \[
                     \begin{align*}
-                    I &= \int \phi(x) \pi(x) \, dx \\\\
-                      &= \int \phi(x) \frac{\pi(x)}{q(x)} q(x) \, dx \\\\
-                      &= \mathbb{E}_{q}\left[\phi(x) \frac{\pi(x)}{q(x)}\right]
+                    I &= \int \phi(\mathbf{x}) \pi(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \int \phi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})} q(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \mathbb{E}_{q}\left[\phi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})}\right]
                     \end{align*}
                     \]
                 </p>
                 <p>
-                    This identity holds for any \(q(x)\) that satisfies the support condition: wherever \(\pi(x) > 0\), we must have \(q(x) > 0\).
+                    This identity holds for any \(q(\mathbf{x})\) that satisfies the support condition: 
+                    wherever \(\pi(\mathbf{x}) > 0\), we must have \(q(\mathbf{x}) > 0\).
                 </p>
 
                 <h3>Importance Weights</h3>
                 <p>
                     The ratio
                     \[
-                    w(x) = \frac{\pi(x)}{q(x)}
+                    w(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
                     \]
-                    is called the <strong>importance weight</strong>. It measures how much more (or less) likely \(x\) is under the target 
+                    is called the <strong>importance weight</strong>. It measures how much more (or less) likely \(\mathbf{x}\) is under the target 
                     distribution \(\pi\) compared to the proposal distribution \(q\).
                 </p>
                 <p>
                     The <strong>direct importance sampling estimator</strong> is:
                     \[
-                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S w(x^{(s)}) \phi(x^{(s)}), \quad \text{where } x^{(s)} \sim q(x)
+                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S w(x^{(s)}) \phi(x^{(s)}), \quad \text{where } x^{(s)} \sim q(\mathbf{x})
                     \]
                 </p>
                 <p>
