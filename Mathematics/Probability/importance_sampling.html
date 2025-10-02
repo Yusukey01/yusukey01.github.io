@@ -247,7 +247,7 @@ uses_python: false
                 <p>
                     The ratio
                     \[
-                    w(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
+                    \tilde{w}(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
                     \]
                     is called the <strong>importance weight</strong>. It measures how much more (or less) likely \(\mathbf{x}\) is under the target 
                     distribution \(\pi\) compared to the proposal distribution \(q\).
@@ -256,13 +256,17 @@ uses_python: false
                     Assume that the normalized \(\pi (\mathbf{x})\) can be evaluated, but we are not able to sample from it. 
                     If we draw \(S\) samples, \(\mathbf{x}^{(s)} \sim q(\mathbf{x})\), the <strong>direct importance sampling estimator</strong> is:
                     \[
-                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S w(\mathbf{x}^{(s)}) \varphi(x^{(s)}).
+                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)}) \varphi(x^{(s)}).
                     \]
                 </p>
                 <p>
                     This estimator is <strong>unbiased</strong>:
                     \[
-                    \mathbb{E}_q[\hat{I}_{\text{IS}}] = \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S w(\mathbf{x}^{(s)})\varphi(\mathbf{x}^{(s)})\right] = \mathbb{E}_q[w(\mathbf{x})\varphi(\mathbf{x})] = I
+                    \begin{align*}
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)})\varphi(\mathbf{x}^{(s)})\right] \\\\
+                                                      &= \mathbb{E}_q[\tilde{w}w(\mathbf{x})\varphi(\mathbf{x})] \\\\
+                                                      &= I
+                    \end{align*}
                     \]
                 </p>
 
@@ -276,9 +280,9 @@ uses_python: false
                     If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
                     
                     This is quantified by the <strong>effective sample size (ESS)</strong>, 
-                    defined using normalized weights \(\bar{w}^{(s)} = w^{(s)}/\sum_i w^{(i)}\):
+                    defined using normalized weights \(\tilde{w}^{(s)} = w^{(s)}/\sum_i w^{(i)}\):
                     \[
-                    \text{ESS} = \frac{1}{\sum_{s=1}^S (\bar{w}^{(s)})^2}
+                    \text{ESS} = \frac{1}{\sum_{s=1}^S (\tilde{w}^{(s)})^2}
                     \]
                     The ESS ranges from 1 (maximum degeneracy, all weight on one sample) to \(S\) (all weights equal, no degeneracy). 
                     A good rule of thumb is that if ESS < \(S/2\), the proposal distribution should be reconsidered.
@@ -295,22 +299,6 @@ uses_python: false
                     </ul>
                 </div>
 
-                <h3>Choosing a Good Proposal Distribution</h3>
-                <p>
-                    The optimal proposal distribution (minimizing variance) is:
-                    \[
-                    q^*(\mathbf{x}) = \frac{|\varphi(\mathbf{x})|\pi(\mathbf{x})}{\int |\varphi(\mathbf{x})|\pi(\mathbf{x}) \, d\mathbf{x}}
-                    \]
-                </p>
-                <p>
-                    However, computing this requires knowing the integral we're trying to estimate, making it impractical. In practice, 
-                    we choose \(q\) to:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Have heavier tails than \(\pi\) (to avoid infinite variance)</li>
-                    <li>Place more mass where \(|\varphi(\mathbf{x})\pi(\mathbf{x})|\) is large</li>
-                    <li>Be easy to sample from and evaluate</li>
-                </ul>
             </section>
 
             <section id="selfnorm" class="section-content">
