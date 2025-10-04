@@ -318,49 +318,63 @@ uses_python: false
                 <h2>Self-Normalized Importance Sampling</h2>
                 
                 <p>
-                    In direct importance sampling, we need to evaluate the normalized target distribution \(\pi\), but it is simpler to 
-                    evaluate the <strong>unnormalized target distribution</strong>:
+                    In many practical applications, we can only evaluate the <strong>unnormalized target distribution</strong>:
                     \[
                     \tilde{\gamma}(\mathbf{x}) = Z \pi(\mathbf{x})
                     \]
-                    where 
+                    where the normalization constant
                     \[
-                    Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{z}
+                    Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{x}
                     \]
-                    is the normalization constant, which is also approximated. 
+                    is unknown or intractable. This situation is ubiquitous in Bayesian inference (where \(Z\) is the marginal 
+                    likelihood), energy-based models (where \(Z\) is the partition function), and many other machine learning applications.
                 </p>
+
                 <p>
-                    In the end, <strong>self-normalized importance sampling(SNIS)</strong> evaluates a 
-                    ratio of two estimates: 
+                    <strong>Self-normalized importance sampling (SNIS)</strong> addresses this by working with unnormalized weights 
+                    and normalizing them within the estimator itself. We can rewrite the expectation as a ratio of two integrals:
                     \[
                     \begin{align*}
                     \mathbb{E}[\varphi(\mathbf{x})] &= \int \varphi(\mathbf{x}) \pi(\mathbf{x})d\mathbf{x} \\\\
                                                     &= \frac{\int \varphi(\mathbf{x})\tilde{\gamma}(\mathbf{x})d\mathbf{x}}
                                                             {\int \tilde{\gamma}(\mathbf{x})d\mathbf{x}} \\\\
-                                                    &=\frac{\int \left[\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\varphi(\mathbf{x})\right]q(\mathbf{x})d\mathbf{x}}
-                                                           {\int \left[\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})} \right]q(\mathbf{x})d\mathbf{x}} \\\\
-                                                    &\approx \frac{\frac{1}{N_s} \sum_{n=1}^{N_s} \tilde{w_n}\varphi(\mathbf{x}_n)}
-                                                                    {\frac{1}{N_s}\sum_{n=1}^{N_s}\tilde{w}_n} \\\\
-                                                    &=\sum_{n=1}^{N_s} W_n \varphi(\mathbf{x}_n)
+                                                    &= \frac{\int \varphi(\mathbf{x})\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}}
+                                                            {\int \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}} \\\\
+                                                    &= \frac{\mathbb{E}_{q}\left[\varphi(\mathbf{x}) \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
+                                                            {\mathbb{E}_{q}\left[\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
                     \end{align*}
                     \]
-                    where 
-                    \[
-                    \tilde{w}_n = \frac{\tilde{\gamma}(\mathbf{x}_n)}{q(\mathbf{x}_n)}
-                    \]
-                    is the <strong>unnormalized weights</strong> and 
-                    \[
-                    W_n = \frac{\tilde{w}_n}{\sum_{n' =1}^{N_s}\tilde{w}_{n'}}
-                    \]
-                    is the <strong>normalized weights</strong>.
                 </p>
 
                 <p>
-                    This estimator is <strong>biased</strong>, but as \(N_s\) approaches \(\infty\), the bias becomes negligible. 
+                    Sampling \(\mathbf{x}_n \sim q(\mathbf{x})\) for \(n = 1, \ldots, N_s\), we define the <strong>unnormalized importance weights</strong>:
+                    \[
+                    \tilde{w}_n = \frac{\tilde{\gamma}(\mathbf{x}_n)}{q(\mathbf{x}_n)}
+                    \]
+                    The <strong>self-normalized importance sampling estimator</strong> approximates both the numerator and denominator:
+                    \[
+                    \mathbb{E}[\varphi(\mathbf{x})] \approx \hat{I}_{\text{SNIS}} = \frac{\sum_{n=1}^{N_s} \tilde{w}_n\varphi(\mathbf{x}_n)}
+                                                                                        {\sum_{n=1}^{N_s}\tilde{w}_n}
+                                                            = \sum_{n=1}^{N_s} W_n \varphi(\mathbf{x}_n)
+                    \]
+                    where \(W_n = \tilde{w}_n/\sum_{n'=1}^{N_s}\tilde{w}_{n'}\) are the normalized weights introduced in the previous section.
+                </p>
+
+                <p>
+                    This estimator is <strong>biased</strong> for finite \(N_s\) because it involves a ratio of random variables, 
+                    but it is <strong>consistent</strong>: as \(N_s \to \infty\), the bias vanishes and the estimator converges 
+                    almost surely to the true expectation.
+                </p>
+
+                <p>
                     Despite the bias, SNIS is the standard approach in practice for several important reasons. 
                     Most importantly, it only requires evaluating unnormalized densities \(\tilde{\gamma}(\mathbf{x})\) 
-                    and \(q(\mathbf{x})\), making it applicable when the normalization constant \(Z\) is intractable — a 
+                    and \(q(\mathbf{x})\), making it applicable when the normalization constant \(Z\) is intractable—a 
                     common situation in Bayesian inference, energy-based models, and many machine learning applications. 
+                    While SNIS can have a positive effect on the dispersion (variance) of the estimator in certain cases, 
+                    it does not universally reduce variance compared to direct importance sampling. The key advantage is 
+                    practical: SNIS enables estimation when direct importance sampling is impossible due to unknown 
+                    normalization constants.
                 </p>
             </section>
 
