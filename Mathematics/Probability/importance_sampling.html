@@ -278,13 +278,27 @@ uses_python: false
                 </p>
                 <p>
                     If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
-                    This is quantified by the <strong>effective sample size (ESS)</strong>, which can be computed from the 
-                    unnormalized weights as:
+                    This is quantified by the <strong>effective sample size (ESS)</strong>, which measures the number of independent 
+                    samples that would provide the same statistical efficiency as the current weighted sample. The ESS can be computed 
+                    in two equivalent ways:
+                </p>
+                <p>
+                    <strong>Using unnormalized weights \(\tilde{w}_n\):</strong>
                     \[
-                    \text{ESS} = \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} (\tilde{w}_n)^2}.
+                    \text{ESS} = \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} \tilde{w}_n^2}
                     \]
-                    The ESS ranges from 1 (maximum degeneracy, all weight on one sample) to \(N_s\) (all weights equal, no degeneracy). 
-                    A good rule of thumb is that if ESS < \(N_s /2\), the proposal distribution should be reconsidered.
+                </p>
+                <p>
+                    <strong>Using normalized weights \(W_n = \tilde{w}_n / \sum_{n'=1}^{N_s} \tilde{w}_{n'}\):</strong>
+                    \[
+                    \text{ESS} = \frac{1}{\sum_{n=1}^{N_s} W_n^2}
+                    \]
+                </p>
+                <p>
+                    These formulas are mathematically equivalent. The ESS ranges from 1 (maximum degeneracy, where all weight 
+                    concentrates on one sample) to \(N_s\) (no degeneracy, where all weights are equal). A good rule of thumb is 
+                    that if \(\text{ESS} < N_s/2\), the proposal distribution \(q(\mathbf{x})\) should be reconsidered, as this 
+                    indicates that many samples have negligible contribution to the estimate.
                 </p>
 
                 <div class="theorem">
@@ -313,7 +327,10 @@ uses_python: false
                     \[
                     Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{z}
                     \]
-                    is the normalization constant, which is also approximated. In the end, <strong>self-normalized importance sampling(SNIS)</strong> evaluates a 
+                    is the normalization constant, which is also approximated. 
+                </p>
+                <p>
+                    In the end, <strong>self-normalized importance sampling(SNIS)</strong> evaluates a 
                     ratio of two estimates: 
                     \[
                     \begin{align*}
@@ -339,7 +356,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    This estimator is <strong>biased</strong>, but as \(N_s\) approaches \(\infty\), the bias becomes negligible.
+                    This estimator is <strong>biased</strong>, but as \(N_s\) approaches \(\infty\), the bias becomes negligible. 
+                    Despite the bias, SNIS is the standard approach in practice for several important reasons. 
+                    Most importantly, it only requires evaluating unnormalized densities \(\tilde{\gamma}(\mathbf{x})\) 
+                    and \(q(\mathbf{x})\), making it applicable when the normalization constant \(Z\) is intractable — a 
+                    common situation in Bayesian inference, energy-based models, and many machine learning applications. 
                 </p>
             </section>
 
