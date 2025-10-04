@@ -246,24 +246,24 @@ uses_python: false
                 <p>
                     The ratio
                     \[
-                    \tilde{w}(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
+                    \tilde{w}_n(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
                     \]
                     is called the <strong>importance weight</strong>. It measures how much more (or less) likely \(\mathbf{x}\) is under the target 
                     distribution \(\pi\) compared to the proposal distribution \(q\). Note that while \(\pi\) and \(q\) are normalized 
-                    distributions, the weights \(\tilde{w}(\mathbf{x}^{(s)})\) do not sum to any particular value.
+                    distributions, the weights \(\tilde{w}_n(\mathbf{x}_n)\) do not sum to any particular value.
                 </p>
                 <p>
                     Assume that the normalized \(\pi (\mathbf{x})\) can be evaluated, but we are not able to sample from it. 
-                    If we draw \(S\) samples, \(\mathbf{x}^{(s)} \sim q(\mathbf{x})\), the <strong>direct importance sampling estimator</strong> is:
+                    If we draw \(N_s\) samples, \(\mathbf{x}_n \sim q(\mathbf{x})\), the <strong>direct importance sampling estimator</strong> is:
                     \[
-                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)}) \varphi(x^{(s)}).
+                    \hat{I}_{\text{IS}} = \frac{1}{S} \sum_{n=1}^{N_s} \tilde{w}(\mathbf{x}_n) \varphi(x_n).
                     \]
                 </p>
                 <p>
                     This estimator is <strong>unbiased</strong>:
                     \[
                     \begin{align*}
-                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \mathbb{E}_q\left[\frac{1}{S}\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)})\varphi(\mathbf{x}^{(s)})\right] \\\\
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \mathbb{E}_q\left[\frac{1}{N_s}\sum_{n=1}^{N_s} \tilde{w}(\mathbf{x}_n)\varphi(\mathbf{x}_n)\right] \\\\
                                                       &= \mathbb{E}_q[\tilde{w}(\mathbf{x})\varphi(\mathbf{x})] \\\\
                                                       &= I
                     \end{align*}
@@ -273,7 +273,7 @@ uses_python: false
                 <p>
                     While the estimator is unbiased, its variance depends critically on the choice of \(q\):
                     \[
-                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{S}\left(\mathbb{E}_q[w^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
+                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\left(\mathbb{E}_q[w^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
                     \]
                 </p>
                 <p>
@@ -281,10 +281,10 @@ uses_python: false
                     This is quantified by the <strong>effective sample size (ESS)</strong>, which can be computed from the 
                     unnormalized weights as:
                     \[
-                    \text{ESS} = \frac{\left(\sum_{s=1}^S \tilde{w}^{(s)}\right)^2}{\sum_{s=1}^S (\tilde{w}^{(s)})^2}.
+                    \text{ESS} = \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} (\tilde{w}_n)^2}.
                     \]
                     The ESS ranges from 1 (maximum degeneracy, all weight on one sample) to \(S\) (all weights equal, no degeneracy). 
-                    A good rule of thumb is that if ESS < \(S/2\), the proposal distribution should be reconsidered.
+                    A good rule of thumb is that if ESS < \(N_s /2\), the proposal distribution should be reconsidered.
                 </p>
 
                 <div class="theorem">
@@ -311,7 +311,7 @@ uses_python: false
                     \]
                     where 
                     \[
-                    Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{x}
+                    Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{z}
                     \]
                     is the normalization constant, which is also approximated. In the end, <strong>self-normalized importance sampling(SNIS)</strong> evaluates a 
                     ratio of two estimates: 
@@ -320,8 +320,8 @@ uses_python: false
                     \mathbb{E}[\varphi(\mathbf{x})] &= \int \varphi(\mathbf{x}) \pi(\mathbf{x})d\mathbf{x} \\\\
                                                     &= \frac{\int \varphi(\mathbf{x})\tilde{\gamma}(\mathbf{x})d\mathbf{x}}
                                                             {\int \tilde{\gamma}(\mathbf{x})d\mathbf{x}} \\\\
-                                                    &=\frac{\int [\frac{\tilde{\gamma(\mathbf{x})}}{q(\mathbf{x})}\varphi(\mathbf{x})]q(\mathbf{x})d\mathbf{x}}
-                                                           {\int [\frac{\tilde{\gamma(\mathbf{x})}}{q(\mathbf{x})}]q(\mathbf{x})d\mathbf{x}} \\\\
+                                                    &=\frac{\int [\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\varphi(\mathbf{x})]q(\mathbf{x})d\mathbf{x}}
+                                                           {\int [\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}]q(\mathbf{x})d\mathbf{x}} \\\\
                                                     &\approx \frac{\frac{1}{N_s} \sum_{n=1}^{N_s} \tilde{w_n}\varphi{\mathbf{x}_n}}
                                                                     {\frac{1}{N_s}\sum_{n=1}^{N_s}\tilde{w}_n} \\\\
                                                     &=\sum_{n=1}^{N_s} W_n \varphi(\mathbf{x}_n)
@@ -337,101 +337,10 @@ uses_python: false
                     \]
                     is the <strong>normalized weights</strong>.
                 </p>
-                <p>
-
-                </p>
-
 
                 <p>
-                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                    In many practical situations, especially in <a href="bayesian.html"><strong>Bayesian inference</strong></a>, we can only 
-                    evaluate the target distribution up to a normalizing constant. That is, we can compute:
-                    \[
-                    \tilde{\pi}(\mathbf{x}) = Z_\pi \pi(\mathbf{x})
-                    \]
-                    where \(Z_\pi = \int \tilde{\pi}(\mathbf{x}) \, d\mathbf{x}\) is the unknown normalizing constant (also called the 
-                    <a href="expfamily.html"><strong>partition function</strong></a> or <strong>evidence</strong> in Bayesian contexts).
+                    This estimator is <strong>biased</strong>, but as \(N_s\) approaches \(\infty\), the bias becomes negligible.
                 </p>
-                <p>
-                    Similarly, for the proposal distribution:
-                    \[
-                    \tilde{q}(\mathbf{x}) = Z_q q(\mathbf{x})
-                    \]
-                </p>
-                <p>
-                    Direct importance sampling requires normalized distributions, so we cannot directly compute:
-                    \[
-                    w(\mathbf{x}) = \frac{\pi(\mathbf{x})}{q(\mathbf{x})} = \frac{\tilde{\pi}(\mathbf{x})/Z_\pi}{\tilde{q}(\mathbf{x})/Z_q}
-                    \]
-                    because \(Z_\pi\) and \(Z_q\) are unknown.
-                </p>
-
-                <p>
-                    Instead, we can compute <strong>unnormalized importance weights</strong>:
-                    \[
-                    \tilde{w}(\mathbf{x}) = \frac{\tilde{\pi}(\mathbf{x})}{\tilde{q}(\mathbf{x})} = \frac{Z_\pi}{Z_q} \cdot \frac{\pi(\mathbf{x})}{q(\mathbf{x})} = \frac{Z_\pi}{Z_q} \cdot w(\mathbf{x})
-                    \]
-                </p>
-
-                <p>
-                    Notice that \(\tilde{w}(\mathbf{x})\) differs from the true importance weight \(w(\mathbf{x})\) by the constant factor \(\frac{Z_\pi}{Z_q}\).
-                </p>
-
-                <p>
-                    The <strong>self-normalized importance sampling estimator</strong> eliminates the unknown constant by normalizing the weights:
-                    \[
-                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)}) \varphi(x^{(s)})}{\sum_{s=1}^S \tilde{w}(\mathbf{x}^{(s)})}, \quad \text{where } \mathbf{x}^{(s)} \sim q(\mathbf{x})
-                    \]
-                </p>
-
-                <p>
-                    The key observation is that the unknown ratio \(\frac{Z_\pi}{Z_q}\) appears in both numerator and denominator and cancels out:
-                    \[
-                    \hat{I}_{\text{SNIS}} = \frac{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(\mathbf{x}^{(s)}) \varphi(\mathbf{x}^{(s)})}{\sum_{s=1}^S \frac{Z_\pi}{Z_q} w(\mathbf{x}^{(s)})} 
-                    = \frac{\sum_{s=1}^S w(\mathbf{x}^{(s)}) \varphi(\mathbf{x}^{(s)})}{\sum_{s=1}^S w(\mathbf{x}^{(s)})}
-                    \]
-                </p>
-
-                <p>
-                    Unlike direct importance sampling, the self-normalized estimator is:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Biased</strong> for finite \(S\) (the denominator is random)</li>
-                    <li><strong>Consistent</strong>: as \(S \to \infty\), the bias vanishes and \(\hat{I}_{\text{SNIS}} \to I\)</li>
-                    <li><strong>Often has lower variance</strong> than direct IS, especially when the normalizing constant is very different from 1</li>
-                </ul>
-                <p>
-                    In practice, with moderately large \(S\), the bias is typically negligible compared to the variance, and self-normalized 
-                    importance sampling is the preferred method when working with unnormalized distributions.
-                </p>
-
-                <p>
-                    It's common to work with normalized weights:
-                    \[
-                    \bar{w}^{(s)} = \frac{\tilde{w}(\mathbf{x}^{(s)})}{\sum_{i=1}^S \tilde{w}(\mathbf{x}^{(i)})}
-                    \]
-                </p>
-                <p>
-                    These satisfy \(\sum_{s=1}^S \bar{w}^{(s)} = 1\), and the self-normalized estimator becomes:
-                    \[
-                    \hat{I}_{\text{SNIS}} = \sum_{s=1}^S \bar{w}^{(s)} \varphi(\mathbf{x}^{(s)})
-                    \]
-                </p>
-                <p>
-                    This form makes it clear that self-normalized importance sampling is computing a weighted average of the target function 
-                    values, where the weights reflect how much more probable each sample is under \(\pi\) compared to \(q\).
-                </p>
-
-                <div class="theorem">
-                    <span class="theorem-title">Practical Advantage</span>
-                    Self-normalized importance sampling is essential in Bayesian inference because:
-                    <ul>
-                        <li>The posterior \(p(\theta|\mathcal{D}) = \frac{p(\mathcal{D}|\theta)p(\theta)}{p(\mathcal{D})}\) has an 
-                        intractable normalizing constant \(p(\mathcal{D})\)</li>
-                        <li>We can easily evaluate the unnormalized posterior \(\tilde{\pi}(\theta) = p(\mathcal{D}|\theta)p(\theta)\)</li>
-                        <li>Self-normalized IS allows us to work directly with the unnormalized posterior without computing \(p(\mathcal{D})\)</li>
-                    </ul>
-                </div>
             </section>
 
             <section id="ais" class="section-content">
