@@ -597,7 +597,7 @@ uses_python: false
                     
              </section>
 
-             <section id="ais" class="section-content">
+            <section id="ais" class="section-content">
                 <h2>Annealed Importance Sampling (AIS)</h2>
                 
                 <h3>Motivation</h3>
@@ -622,11 +622,11 @@ uses_python: false
                     where sampling is difficult because \(\pi_0\) is complicated (e.g., high-dimensional and multimodal). 
                     Suppose that we have a proposal distribution: 
                     \[
-                    \pi_n(\mathbf{x}) \propto \tilde{\pi}_n(\mathbf{x})
+                    q_n(\mathbf{x}) \propto \tilde{q}_n(\mathbf{x})
                     \]
-                    from which we can easily sample. We construct a sequence of \(n+1\) intermediate distributions from \(\pi_n\) to \(\pi_0\):
+                    from which we can easily sample. We construct a sequence of \(n+1\) intermediate distributions from \(q_n\) to \(\pi_0\):
                     \[
-                    \tilde{\pi}_j(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{\beta_j}\tilde{\pi}_n(\mathbf{x})^{1 - \beta_j}
+                    \tilde{\pi}_j(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{\beta_j}\tilde{q}_n(\mathbf{x})^{1 - \beta_j}
                     \]
                     where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong> 
                     with \(\beta_j\) serving as an inverse temperature parameter.
@@ -636,8 +636,8 @@ uses_python: false
                     Notice that:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li>At \(j=n\): \(\tilde{\pi}_n(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{0} \tilde{\pi}_n(\mathbf{x})^{1} = \tilde{\pi}_n(\mathbf{x})\) (the proposal distribution)</li>
-                    <li>At \(j=0\): \(\tilde{\pi}_0(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{1} \tilde{\pi}_n(\mathbf{x})^{0} = \tilde{\pi}_0(\mathbf{x})\) (the target distribution)</li>
+                    <li>At \(j=n\): \(\tilde{\pi}_n(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{0} \tilde{q}_n(\mathbf{x})^{1} = \tilde{q}_n(\mathbf{x})\) (the proposal distribution)</li>
+                    <li>At \(j=0\): \(\tilde{\pi}_0(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{1} \tilde{q}_n(\mathbf{x})^{0} = \tilde{\pi}_0(\mathbf{x})\) (the target distribution)</li>
                     <li>For intermediate \(j\): \(\tilde{\pi}_j(\mathbf{x})\) is a geometric interpolation between the two distributions</li>
                 </ul>
 
@@ -664,7 +664,7 @@ uses_python: false
                     Here is how we can sample \(\mathbf{x}\) from \(\pi_0\):
                 </p>
                 <ol style="padding-left: 40px;">
-                    <li>Sample \(\mathbf{v}_n \sim \pi_n\) from the proposal distribution</li>
+                    <li>Sample \(\mathbf{v}_n \sim q_n\) from the proposal distribution</li>
                     <li>Apply successive Markov transitions:
                         \[\mathbf{v}_{n-1} \sim T_{n-1}(\mathbf{v}_n, \cdot), \quad \mathbf{v}_{n-2} \sim T_{n-2}(\mathbf{v}_{n-1}, \cdot), \quad \cdots, \quad \mathbf{v}_0 \sim T_0(\mathbf{v}_1, \cdot)
                         \]
@@ -682,7 +682,7 @@ uses_python: false
 
                 <p>
                     Each ratio \(\frac{\tilde{\pi}_{j-1}(\mathbf{v}_{j-1})}{\tilde{\pi}_j(\mathbf{v}_{j-1})}\) is typically close to 1 
-                    (unlike the direct ratio \(\frac{\tilde{\pi}_0(\mathbf{x})}{\tilde{\pi}_n(\mathbf{x})}\)), which keeps the weights 
+                    (unlike the direct ratio \(\frac{\tilde{\pi}_0(\mathbf{x})}{\tilde{q}_n(\mathbf{x})}\)), which keeps the weights 
                     stable and reduces variance. The key insight is that we evaluate both densities at the <strong>same</strong> point \(\mathbf{v}_{j-1}\).
                 </p>
 
@@ -710,7 +710,7 @@ uses_python: false
                     <p>
                         Moreover, we can sample on this extended state space using the AIS procedure, which corresponds to the following proposal:
                         \[
-                        q(\mathbf{v}) \propto g(\mathbf{v}) = \tilde{\pi}_n(\mathbf{v}_n)T_{n-1}(\mathbf{v}_n, \mathbf{v}_{n-1})\cdots T_1(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0)
+                        q(\mathbf{v}) \propto g(\mathbf{v}) = \tilde{q}_n(\mathbf{v}_n)T_{n-1}(\mathbf{v}_n, \mathbf{v}_{n-1})\cdots T_1(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0)
                         \]
                     </p>
                     <p>
@@ -728,7 +728,7 @@ uses_python: false
                     AIS is particularly powerful for estimating ratios of normalizing constants. The application is to evaluate a ratio of partition functions:
                     \[
                     \begin{align*}
-                    \frac{Z_0}{Z_n} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\
+                    \frac{Z_{\pi_0}}{Z_{q_n}} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\
                                     &= \frac{\int \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}g(\mathbf{v})d\mathbf{v}} {\int g(\mathbf{v})d\mathbf{v}} \\
                                     &= \mathbb{E}_g \left[ \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}\right] \\
                                     &\approx \frac{1}{S}\sum_{s=1}^S w^{(s)}
@@ -738,9 +738,9 @@ uses_python: false
                 </p>
                 
                 <p>
-                    If \(\tilde{\pi}_0\) is a prior and \(\tilde{\pi}_n\) is the posterior, we can estimate \(Z_n = p(\mathcal{D})\) (the marginal likelihood) 
-                    using the above equation, provided the prior has a known normalization constant \(Z_0\). If \(Z_n\) is known 
-                    (e.g., the proposal is a Gaussian), we can estimate \(Z_0\). This is crucial for:
+                    If \(\tilde{\pi}_0\) is a prior and \(\tilde{q}_n\) is the posterior, we can estimate \(Z_{q_n} = p(\mathcal{D})\) (the marginal likelihood) 
+                    using the above equation, provided the prior has a known normalization constant \(Z_{\pi_0}\). If \(Z_{q_n}\) is known 
+                    (e.g., the proposal is a Gaussian), we can estimate \(Z_{\pi_0}\). This is crucial for:
                 </p>
                 <ul style="padding-left: 40px;">
                     <li>Model comparison in Bayesian inference (estimating marginal likelihoods)</li>
@@ -751,7 +751,7 @@ uses_python: false
 
                 <h3>Why AIS Works</h3>
                 <p>
-                    The key insight is that by breaking the difficult transition from \(\pi_n\) to \(\pi_0\) into many small steps:
+                    The key insight is that by breaking the difficult transition from \(q_n\) to \(\pi_0\) into many small steps:
                 </p>
                 <ul style="padding-left: 40px;">
                     <li>Each individual importance weight ratio is close to 1, avoiding extreme weights</li>
@@ -761,7 +761,7 @@ uses_python: false
                 </ul>
                 <p>
                     The variance of AIS can be reduced by increasing the number of intermediate distributions \(n\). In practice, 
-                    \(n = 100\) to \(n = 10000\) steps is common, depending on the distributional mismatch between \(\pi_0\) and \(\pi_n\). 
+                    \(n = 100\) to \(n = 10000\) steps is common, depending on the distributional mismatch between \(\pi_0\) and \(q_n\). 
                     The optimal choice balances computational cost (proportional to \(n\)) against variance reduction.
                 </p>
 
