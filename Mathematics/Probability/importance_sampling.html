@@ -181,13 +181,14 @@ uses_python: false
 
                 <h4><strong>1. Reinforcement Learning from Human Feedback (RLHF)</strong></h4>
                 <p>
-                    Modern large language models(LLMs) like ChatGPT, are fine-tuned using RLHF, which fundamentally relies on 
+                    Modern large language models (LLMs) like ChatGPT, are fine-tuned using RLHF, which fundamentally relies on 
                     importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to learn 
                     from data collected under an old policy while optimizing a new policy:
                     \[
                     L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a)\right]
                     \]
-                    where \(\mu\) is the behavior policy (old data) and \(\pi_\theta\) is the target policy being optimized. Without importance 
+                    where \(\mu\) is the behavior policy (old data) and \(\pi_\theta\) is the target policy being optimized. 
+                    In practice, PPO clips this ratio to prevent overly large policy updates. Without importance 
                     sampling, we would need to collect entirely new data after each policy update, making RLHF expensive.
                 </p>
 
@@ -376,25 +377,24 @@ uses_python: false
                     practical: SNIS enables estimation when direct importance sampling is impossible due to unknown 
                     normalization constants.
                 </p>
+
             </section>
 
             <section id="ais" class="section-content">
                 <h2>Annealed Importance Sampling (AIS)</h2>
-                
-                <h3>Motivation: The Bridge Distribution Approach</h3>
+
                 <p>
-                    When the target distribution \(\pi(\mathbf{x})\) and proposal distribution \(q(\mathbf{x})\) are very different, 
-                    direct importance sampling often fails because the importance weights have extremely high variance. Most samples 
-                    from \(q\) will have near-zero weight under \(\pi\), while a few rare samples will have enormous weights, leading 
-                    to unreliable estimates.
-                </p>
-                <p>
-                    <strong>Annealed importance sampling (AIS)</strong>, introduced by Neal (2001), solves this problem by introducing 
-                    a sequence of intermediate distributions that gradually transition from the proposal to the target distribution. 
-                    This creates a smoother path, dramatically reducing variance while maintaining unbiasedness.
+                    When the target distribution \(\pi(\mathbf{x})\) and proposal distribution \(q(\mathbf{x})\) 
+                    have substantial distributional mismatch, importance sampling often fails due to extremely high 
+                    variance in the importance weights. Most samples from \(q\) will have near-zero weight under \(\pi\), 
+                    while a few rare samples will have enormous weights—a phenomenon known as <strong>weight degeneracy</strong>. 
+                    This leads to a low effective sample size, meaning that despite drawing many samples, 
+                    few actually contribute meaningfully to the estimate, making the results unreliable. 
+                    <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
+                    of intermediate distributions that smoothly bridge the gap between \(q\) and \(\pi\), dramatically reducing 
+                    variance while maintaining unbiasedness.
                 </p>
 
-                <h3>The Annealing Schedule</h3>
                 <p>
                     We define a sequence of \(K+1\) distributions \(\pi_0, \pi_1, \ldots, \pi_K\) using an <strong>annealing schedule</strong> 
                     with parameters \(0 = \beta_0 < \beta_1 < \cdots < \beta_K = 1\). The unnormalized densities are defined as:
@@ -420,7 +420,6 @@ uses_python: false
                     <li><strong>Adaptive</strong>: chosen to maintain roughly constant ESS between steps</li>
                 </ul>
 
-                <h3>The AIS Procedure</h3>
                 <p>
                     AIS generates samples by running a sequence of Markov chain transitions, starting from 
                     the simple proposal distribution and ending at the target distribution. For each run:
@@ -435,7 +434,6 @@ uses_python: false
                     <li>The final sample \(\mathbf{x}_K\) is approximately from the target distribution \(\pi\)</li>
                 </ol>
 
-                <h3>The AIS Weight Formula</h3>
                 <p>
                     Each AIS run produces a sample and an associated importance weight. The weight for a sequence 
                     \(\mathbf{x}_0, \mathbf{x}_1, \ldots, \mathbf{x}_K\) is:
@@ -450,13 +448,13 @@ uses_python: false
                     w = \prod_{k=1}^{K} \frac{\tilde{\pi}_k(\mathbf{x}_k)}{\tilde{\pi}_{k-1}(\mathbf{x}_k)}
                     \]
                 </p>
+
                 <p>
                     Each ratio \(\frac{\tilde{\pi}_k(\mathbf{x}_k)}{\tilde{\pi}_{k-1}(\mathbf{x}_k)}\) is typically close to 1 
                     (unlike the direct ratio \(\frac{\tilde{\pi}(\mathbf{x})}{\tilde{q}(\mathbf{x})}\)), which keeps the weights 
                     stable and reduces variance. The key insight is that we evaluate both densities at the **same** point \(\mathbf{x}_k\).
                 </p>
 
-                <h3>Estimating Partition Functions</h3>
                 <p>
                     AIS is particularly powerful for estimating ratios of normalizing constants. After running \(N_s\) independent 
                     AIS chains, each producing a weight \(w^{(s)}\), the average weight estimates the ratio of partition functions:
@@ -464,6 +462,7 @@ uses_python: false
                     \frac{Z_\pi}{Z_q} \approx \frac{1}{N_s} \sum_{s=1}^{N_s} w^{(s)}
                     \]
                 </p>
+                
                 <p>
                     If \(Z_q\) is known (e.g., \(q\) is a Gaussian), we can estimate \(Z_\pi\). This is crucial for:
                 </p>
@@ -474,7 +473,6 @@ uses_python: false
                     <li>Evaluating evidence lower bounds in variational inference</li>
                 </ul>
 
-                <h3>Why AIS Works</h3>
                 <p>
                     The key insight is that by breaking the difficult transition from \(q\) to \(\pi\) into many small steps:
                 </p>
