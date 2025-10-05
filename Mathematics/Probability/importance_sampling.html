@@ -539,9 +539,61 @@ uses_python: false
                     \]
                     Then we set \(\mathbf{x} = \mathbf{x}_0\) and give it weight: 
                     \[
-                    w = \frac{f_{n-1}(\mathbf{v}_{n-1})}{f_n(\mathbf{v}_{n-1})}\frac{f_{n-2}(\mathbf{v}_{n-2})}{f_{n-1}(\mathbf{v}_{n-2})}\cdots\frac{f_1(v_1)}{f_2(\mathbf{v}_1)}\frac{f_0(v_0)}{f_1(\mathbf{v}_0)}.
+                    w = \frac{f_{n-1}(\mathbf{v}_{n-1})}{f_n(\mathbf{v}_{n-1})}\frac{f_{n-2}(\mathbf{v}_{n-2})}{f_{n-1}(\mathbf{v}_{n-2})}\cdots\frac{f_1(v_1)}{f_2(\mathbf{v}_1)}\frac{f_0(v_0)}{f_1(\mathbf{v}_0)}. \tag{1}
                     \]
                 </p>
+
+                 <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    Consider the distribution on an extended state space \(\mathbf{v} = (\mathbf{v}_0, \cdots, \mathbf{v}_n)\):
+                    \[
+                    \begin{align*}
+                    p(\mathbf{v}) &\propto \varphi(\mathbf{v}) = f_0(\mathbf{v})\tilde{T}_0 (\mathbf{v}_0, \mathbf{v}_1) \\\\
+                                  &\propto p(\mathbf{v}_0)p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}) 
+                    \end{align*}
+                    \]
+                    where \tilde{T}_j is the reversal of \(T_j\):
+                    \[
+                    \begin{align*}
+                    \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v})p_j(\mathbf{v}') / p_j(\mathbf{v}) \\\\
+                                                         &=  T_j(\mathbf{v}', \mathbf{v})f_j(\mathbf{v}') / f_j(\mathbf{v})
+                    \end{align*}
+                    \]
+                    It is clear that
+                    \[
+                    \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = f_0(\mathbf{v}_0),
+                    \]
+                    and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(p_0(\mathbf{x})\).  Moreover, we can sample 
+                    on this extended sate space using this method, which corresponds to the following proposal:
+                    \[
+                    \begin{align*}
+                    q(\mathbf{v}) &\propto g(\mathbf{v}) = f_n(\mathbf{v}_n)T_{n-1}(\mathbf{v_n}, \mathbf{v}_{n-1})\cdots T_2(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
+                                  &\propto p(\mathbf{v}_n)p(\mathbf{v}_{n-1} \mid \mathbf{v}_n)\cdots p(\mathbf{v}_1 \mid \mathbf{v}_0).
+                    \end{align*}
+                    \]
+                    One can show that importance weights:
+                    \[
+                    w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
+                    \]
+                    are given by Equation \(\tag{1}\). Since marginals of the sampled sequences from this extended model are equivalent to 
+                    samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
+                 </div>
+                 <p>
+                    Application is to evaluate a ratio of partition functions. 
+                    \[
+                    \begin{align*}
+                    \frac{Z_0}{Z_n} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\\\
+                                    &= \frac{\int \frac{\varphi(\mathbf{v})}{g(\mathbf{v})g(\mathbf{v})d\mathbf{v}}} {\int g(\mathbf{v})d\mathbf{v}} \\\\
+                                    &= \mathbb{E}_g \left[ \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}\right] \\\\
+                                    &\approx \frac{1}{S}\sum_{s=1}^S W_s.
+                    \end{align*}
+                    \]
+                    where \(W_s = \varphi(\mathbf{v}_s) / g(\mathbf{v}_S)\).
+                 </p>
+                 <p>
+                    If \(f_0\) is a prior and \(f_n\) is the posterior, we can setimate \(Z_n = p(\mathcal{D})\) using the above equation, 
+                    provided the prior has a known normalization constant \(Z_0\).
+                 </p>
                     
              </section>
             
