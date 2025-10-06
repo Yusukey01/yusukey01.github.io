@@ -383,6 +383,18 @@ uses_python: false
             <section id="ais" class="section-content">
                 <h2>Annealed Importance Sampling (AIS)</h2>
                 <p>
+                    When the target distribution and proposal distribution have substantial distributional mismatch, 
+                    importance sampling often fails due to extremely high variance in the importance weights. 
+                    Most samples from the proposal will have near-zero weight under the target, while a few rare samples 
+                    will have enormous weights — a phenomenon known as <strong>weight degeneracy</strong>. 
+                    This leads to a low effective sample size, meaning that despite drawing many samples, 
+                    few actually contribute meaningfully to the estimate, making the results unreliable. 
+                    <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
+                    of intermediate distributions that smoothly bridge the gap between the proposal and target distributions, 
+                    dramatically reducing variance while maintaining unbiasedness.
+                </p>
+
+                <p>
                     Suppose that we wish to sample from a complicated target distribution:
                     \[
                     p_0(\mathbf{x}) \propto f_0(\mathbf{x}),
@@ -447,6 +459,10 @@ uses_python: false
                     \frac{f_1(\mathbf{v}_1)}{f_2(\mathbf{v}_1)}
                     \frac{f_0(\mathbf{v}_0)}{f_1(\mathbf{v}_0)}. \tag{1}
                     \]
+                </p>
+
+                <p>
+                    Each ratio is typically close to 1, which keeps the weights stable and reduces variance. 
                 </p>
 
                  <div class="proof">
@@ -514,93 +530,6 @@ uses_python: false
             <section id="ais" class="section-content">
                 <h2>Annealed Importance Sampling (AIS)</h2>
                 
-                <h3>Motivation</h3>
-                <p>
-                    When the target distribution and proposal distribution have substantial distributional mismatch, 
-                    importance sampling often fails due to extremely high variance in the importance weights. 
-                    Most samples from the proposal will have near-zero weight under the target, while a few rare samples 
-                    will have enormous weights—a phenomenon known as <strong>weight degeneracy</strong>. 
-                    This leads to a low effective sample size, meaning that despite drawing many samples, 
-                    few actually contribute meaningfully to the estimate, making the results unreliable. 
-                    <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
-                    of intermediate distributions that smoothly bridge the gap between the proposal and target distributions, 
-                    dramatically reducing variance while maintaining unbiasedness.
-                </p>
-
-                <h3>Mathematical Framework</h3>
-                <p>
-                    Assume that we want to sample from some target distribution:
-                    \[
-                    \pi_0(\mathbf{x}) \propto \tilde{\pi}_0(\mathbf{x}),
-                    \]
-                    where sampling is difficult because \(\pi_0\) is complicated (e.g., high-dimensional and multimodal). 
-                    Suppose that we have a proposal distribution: 
-                    \[
-                    q_n(\mathbf{x}) \propto \tilde{q}_n(\mathbf{x})
-                    \]
-                    from which we can easily sample. We construct a sequence of \(n+1\) intermediate distributions from \(q_n\) to \(\pi_0\):
-                    \[
-                    \tilde{\pi}_j(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{\beta_j}\tilde{q}_n(\mathbf{x})^{1 - \beta_j}
-                    \]
-                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong> 
-                    with \(\beta_j\) serving as an inverse temperature parameter.
-                </p>
-                
-                <p>
-                    Notice that:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>At \(j=n\): \(\tilde{\pi}_n(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{0} \tilde{q}_n(\mathbf{x})^{1} = \tilde{q}_n(\mathbf{x})\) (the proposal distribution)</li>
-                    <li>At \(j=0\): \(\tilde{\pi}_0(\mathbf{x}) = \tilde{\pi}_0(\mathbf{x})^{1} \tilde{q}_n(\mathbf{x})^{0} = \tilde{\pi}_0(\mathbf{x})\) (the target distribution)</li>
-                    <li>For intermediate \(j\): \(\tilde{\pi}_j(\mathbf{x})\) is a geometric interpolation between the two distributions</li>
-                </ul>
-
-                <p>
-                    Common choices for the annealing schedule include:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Linear</strong>: \(\beta_j = \frac{n-j}{n}\)</li>
-                    <li><strong>Geometric</strong>: \(\beta_j = \left(\frac{n-j}{n}\right)^\alpha\) for some \(\alpha > 0\)</li>
-                    <li><strong>Adaptive</strong>: chosen to maintain roughly constant effective sample size between steps</li>
-                </ul>
-
-                <h3>The AIS Procedure</h3>
-                <p>
-                    To sample from each intermediate distribution \(\pi_j\), we use a <strong>Markov chain transition kernel</strong>:
-                    \[
-                    T_j(\mathbf{x}, \mathbf{x}') = \pi_j(\mathbf{x}' \mid \mathbf{x})
-                    \]
-                    which leaves \(\pi_j\) invariant. Common choices for \(T_j\) include Metropolis-Hastings or Hamiltonian Monte Carlo, 
-                    each performing a few steps to allow samples to adapt to the intermediate distribution \(\pi_j\).
-                </p>
-
-                <p>
-                    Here is how we can sample \(\mathbf{x}\) from \(\pi_0\):
-                </p>
-                <ol style="padding-left: 40px;">
-                    <li>Sample \(\mathbf{v}_n \sim q_n\) from the proposal distribution</li>
-                    <li>Apply successive Markov transitions:
-                        \[\mathbf{v}_{n-1} \sim T_{n-1}(\mathbf{v}_n, \cdot), \quad \mathbf{v}_{n-2} \sim T_{n-2}(\mathbf{v}_{n-1}, \cdot), \quad \cdots, \quad \mathbf{v}_0 \sim T_0(\mathbf{v}_1, \cdot)
-                        \]
-                    </li>
-                    <li>Set \(\mathbf{x} = \mathbf{v}_0\) as the final sample from \(\pi_0\)</li>
-                </ol>
-
-                <h3>Importance Weights</h3>
-                <p>
-                    Each AIS run produces a sequence \(\mathbf{v}_n, \mathbf{v}_{n-1}, \ldots, \mathbf{v}_0\) with an associated importance weight:
-                    \[
-                    w = \frac{\tilde{\pi}_{n-1}(\mathbf{v}_{n-1})}{\tilde{\pi}_n(\mathbf{v}_{n-1})}\frac{\tilde{\pi}_{n-2}(\mathbf{v}_{n-2})}{\tilde{\pi}_{n-1}(\mathbf{v}_{n-2})}\cdots\frac{\tilde{\pi}_1(\mathbf{v}_1)}{\tilde{\pi}_2(\mathbf{v}_1)}\frac{\tilde{\pi}_0(\mathbf{v}_0)}{\tilde{\pi}_1(\mathbf{v}_0)} \tag{1}
-                    \]
-                </p>
-
-                <p>
-                    Each ratio \(\frac{\tilde{\pi}_{j-1}(\mathbf{v}_{j-1})}{\tilde{\pi}_j(\mathbf{v}_{j-1})}\) is typically close to 1 
-                    (unlike the direct ratio \(\frac{\tilde{\pi}_0(\mathbf{x})}{\tilde{q}_n(\mathbf{x})}\)), which keeps the weights 
-                    stable and reduces variance. The key insight is that we evaluate both densities at the <strong>same</strong> point \(\mathbf{v}_{j-1}\).
-                </p>
-
-                <h3>Theoretical Foundation</h3>
                 <div class="proof">
                     <span class="proof-title">Proof of Validity</span>
                     <p>
