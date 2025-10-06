@@ -382,164 +382,70 @@ uses_python: false
 
             <section id="ais" class="section-content">
                 <h2>Annealed Importance Sampling (AIS)</h2>
-
                 <p>
-                    When the target distribution \(\pi(\mathbf{x})\) and proposal distribution \(q(\mathbf{x})\) 
-                    have substantial distributional mismatch, importance sampling often fails due to extremely high 
-                    variance in the importance weights. Most samples from \(q\) will have near-zero weight under \(\pi\), 
-                    while a few rare samples will have enormous weights—a phenomenon known as <strong>weight degeneracy</strong>. 
-                    This leads to a low effective sample size, meaning that despite drawing many samples, 
-                    few actually contribute meaningfully to the estimate, making the results unreliable. 
-                    <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
-                    of intermediate distributions that smoothly bridge the gap between \(q\) and \(\pi\), dramatically reducing 
-                    variance while maintaining unbiasedness.
-                </p>
-
-                <p>
-                    We define a sequence of \(K+1\) distributions \(\pi_0, \pi_1, \ldots, \pi_K\) using an <strong>annealing schedule</strong> 
-                    with parameters \(0 = \beta_0 < \beta_1 < \cdots < \beta_K = 1\). The unnormalized densities are defined as:
-                    \[
-                    \tilde{\pi}_k(\mathbf{x}) = \tilde{q}(\mathbf{x})^{1-\beta_k} \tilde{\pi}(\mathbf{x})^{\beta_k}
-                    \]
-                    where \(\tilde{q}\) and \(\tilde{\pi}\) are unnormalized versions of \(q\) and \(\pi\).
-                </p>
-                <p>
-                    Notice that:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>At \(k=0\): \(\pi_0(\mathbf{x}) = q(\mathbf{x})\) (the proposal distribution)</li>
-                    <li>At \(k=K\): \(\pi_K(\mathbf{x}) = \pi(\mathbf{x})\) (the target distribution)</li>
-                    <li>For intermediate \(k\): \(\pi_k(\mathbf{x})\) is a geometric interpolation between \(q\) and \(\pi\)</li>
-                </ul>
-                <p>
-                    Common choices for the annealing schedule include:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Linear</strong>: \(\beta_k = \frac{k}{K}\)</li>
-                    <li><strong>Geometric</strong>: \(\beta_k = \left(\frac{k}{K}\right)^\alpha\) for some \(\alpha > 0\)</li>
-                    <li><strong>Adaptive</strong>: chosen to maintain roughly constant ESS between steps</li>
-                </ul>
-
-                <p>
-                    AIS generates samples by running a sequence of Markov chain transitions, starting from 
-                    the simple proposal distribution and ending at the target distribution. For each run:
-                </p>
-                <ol style="padding-left: 40px;">
-                    <li>Sample \(\mathbf{x}_0 \sim q(\mathbf{x})\) from the proposal distribution</li>
-                    <li>For \(k = 1, \ldots, K\):
-                        <ul>
-                            <li>Apply Markov transition \(T_k\) that leaves \(\pi_k\) invariant: \(\mathbf{x}_k \sim T_k(\cdot|\mathbf{x}_{k-1})\)</li>
-                        </ul>
-                    </li>
-                    <li>The final sample \(\mathbf{x}_K\) is approximately from the target distribution \(\pi\)</li>
-                </ol>
-
-                <p>
-                    Each AIS run produces a sample and an associated importance weight. The weight for a sequence 
-                    \(\mathbf{x}_0, \mathbf{x}_1, \ldots, \mathbf{x}_K\) is:
-                    \[
-                    w = \frac{\tilde{\pi}_1(\mathbf{x}_1)}{\tilde{\pi}_0(\mathbf{x}_1)} \cdot 
-                        \frac{\tilde{\pi}_2(\mathbf{x}_2)}{\tilde{\pi}_1(\mathbf{x}_2)} \cdot 
-                        \frac{\tilde{\pi}_3(\mathbf{x}_3)}{\tilde{\pi}_2(\mathbf{x}_3)} \cdots 
-                        \frac{\tilde{\pi}_K(\mathbf{x}_K)}{\tilde{\pi}_{K-1}(\mathbf{x}_K)}
-                    \]
-                    which can be written more compactly as:
-                    \[
-                    w = \prod_{k=1}^{K} \frac{\tilde{\pi}_k(\mathbf{x}_k)}{\tilde{\pi}_{k-1}(\mathbf{x}_k)}
-                    \]
-                </p>
-
-                <p>
-                    Each ratio \(\frac{\tilde{\pi}_k(\mathbf{x}_k)}{\tilde{\pi}_{k-1}(\mathbf{x}_k)}\) is typically close to 1 
-                    (unlike the direct ratio \(\frac{\tilde{\pi}(\mathbf{x})}{\tilde{q}(\mathbf{x})}\)), which keeps the weights 
-                    stable and reduces variance. The key insight is that we evaluate both densities at the **same** point \(\mathbf{x}_k\).
-                </p>
-
-                <p>
-                    AIS is particularly powerful for estimating ratios of normalizing constants. After running \(N_s\) independent 
-                    AIS chains, each producing a weight \(w^{(s)}\), the average weight estimates the ratio of partition functions:
-                    \[
-                    \frac{Z_\pi}{Z_q} \approx \frac{1}{N_s} \sum_{s=1}^{N_s} w^{(s)}
-                    \]
-                </p>
-                
-                <p>
-                    If \(Z_q\) is known (e.g., \(q\) is a Gaussian), we can estimate \(Z_\pi\). This is crucial for:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Model comparison in Bayesian inference (estimating marginal likelihoods)</li>
-                    <li>Training energy-based models and restricted Boltzmann machines</li>
-                    <li>Computing partition functions in statistical physics</li>
-                    <li>Evaluating evidence lower bounds in variational inference</li>
-                </ul>
-
-                <p>
-                    The key insight is that by breaking the difficult transition from \(q\) to \(\pi\) into many small steps:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Each individual importance weight ratio is close to 1, avoiding extreme weights</li>
-                    <li>The product of many near-1 ratios has much lower variance than a single large ratio</li>
-                    <li>The Markov transitions allow samples to adapt to each intermediate distribution</li>
-                    <li>The method remains unbiased: estimates converge to correct values as the number of runs increases</li>
-                </ul>
-                <p>
-                    The variance of AIS can be reduced by increasing the number of intermediate distributions \(K\). In practice, 
-                    \(K = 100\) to \(K = 10000\) is common, depending on how different \(q\) and \(\pi\) are. The optimal choice 
-                    balances computational cost (proportional to \(K\)) against the reduction in variance.
-                </p>
-
-                <div class="theorem">
-                    <span class="theorem-title">Applications of AIS</span>
-                    Annealed importance sampling is used in:
-                    <ul>
-                        <li><strong>Deep learning</strong>: Estimating partition functions of restricted Boltzmann machines (RBMs) 
-                        and deep belief networks</li>
-                        <li><strong>Bayesian inference</strong>: Computing marginal likelihoods for model selection and comparison</li>
-                        <li><strong>Statistical physics</strong>: Estimating free energies in molecular simulations</li>
-                        <li><strong>Variational inference</strong>: Obtaining tighter bounds and comparing variational approximations</li>
-                        <li><strong>Rare event simulation</strong>: Handling multimodal distributions with isolated modes</li>
-                    </ul>
-                </div>
-            </section>
-
-             <section id="ais" class="section-content">
-                <h2>Annealed Importance Sampling (AIS)</h2>
-                <p>
-                    Assume that we want to sample from some target distribution:
+                    Suppose that we wish to sample from a complicated target distribution:
                     \[
                     p_0(\mathbf{x}) \propto f_0(\mathbf{x}),
                     \]
-                    but it's difficult if \(p_0\) is complicated (e.g., high dimensional, and multi-modal). <strong>annealed importance sampling</strong> handles 
-                    this issue. 
+                    where sampling is difficult because \(p_0\) may be high-dimensional and/or multimodal.
                 </p>
                 <p>
-                    Suppose that we have a prior distribution: 
+                    Suppose that we have a proposal distribution from which we can easily sample (e.g., prior distribution): 
                     \[
                     p_n(\mathbf{x}) \propto f_n(\mathbf{x}).
                     \]
-                    We construct a sequence of intermediate distributions from \(p_n\) to \(p_0\):
+                    We construct a sequence of \(n+1\) intermediate distributions moving from \(p_n\) to \(p_0\) as follows:
                     \[
                     f_j (\mathbf{x}) = f_0(\mathbf{x})^{\beta_j}f_n(\mathbf{x})^{1 - \beta_j}
                     \]
-                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) and \(\beta_j\) is an inverse temperature. 
-                </p>
-                <p>
-                    We sample a set of points from \(f_n, f_{n-1}, \cdots, f_0\). To sample from each \(f_j\), Given
-                    a <strong>Markov chain</strong>:
-                    \[
-                    T_j(\mathbf{x}, \mathbf{x}') = p_j(\mathbf{x}' \mid \mathbf{x})
-                    \]
-                    which leaves \(p_0\) invariant.
+                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong>.
+                    Each \(\beta_j\) acts as an inverse temperature parameter interpolating between the proposal and the target.
                 </p>
 
                 <p>
-                    Here, we can sample \(\mathbf{x}\) from \(p_0\) as follows:
-                    Sample 
-                    \[\mathbf{v}_n \sim p_n, \mathbf{v}_{n-1} \sim T_{n-1}(\mathbf{v}_n, \cdot), \cdots, \mathbf{v}_0 \sim T_0(\mathbf{v}_1, \cdot)
-                    \]
-                    Then we set \(\mathbf{x} = \mathbf{x}_0\) and give it weight: 
+                    Typical schedules include:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Linear</strong>: \(\beta_j = \frac{n - j}{n}\)</li>
+                    <li><strong>Geometric</strong>: \(\beta_j = \left( \frac{n - j}{n} \right)^{\alpha}\), for some \(\alpha > 0\)</li>
+                    <li><strong>Adaptive</strong>: chosen to maintain approximately constant effective sample size (ESS) between steps</li>
+                    </ul>
+                </p>
+                   
+                <p>
+                    To sample from each intermediate distribution \(p_j\), we use a <strong>Markov chain transition kernel</strong>:
                     \[
-                    w = \frac{f_{n-1}(\mathbf{v}_{n-1})}{f_n(\mathbf{v}_{n-1})}\frac{f_{n-2}(\mathbf{v}_{n-2})}{f_{n-1}(\mathbf{v}_{n-2})}\cdots\frac{f_1(\mathbf{v}_1)}{f_2(\mathbf{v}_1)}\frac{f_0(\mathbf{v}_0)}{f_1(\mathbf{v}_0)}. \tag{1}
+                    T_j(\mathbf{x}, \mathbf{x}') = p_j(\mathbf{x}' \mid \mathbf{x})
+                    \]
+                    which leaves \(p_j\) invariant, i.e.,
+                    \[
+                    \int p_j(\mathbf{x})T_j(\mathbf{x}, \mathbf{x}')d\mathbf{x} = p_j(\mathbf{x}').
+                    \]
+                    Common choices for \(T_j\) include Metropolis-Hastings or Hamiltonian Monte Carlo, 
+                    applied for a few iterations to adapt samples toward \(p_j\).
+                </p>
+
+                <p>
+                    The AIS procedure proceeds as follows:
+                    <ol style="padding-left: 40px;">
+                    <li>Sample \(\mathbf{v}_n \sim p_n\) from the proposal distribution.</li>
+                    <li>Apply successive Markov transitions to obtain \(\mathbf{v}_0\):
+                        \[
+                        \mathbf{v}_{n-1} \sim T_{n-1}(\mathbf{v}_n, \cdot), \quad
+                        \mathbf{v}_{n-2} \sim T_{n-2}(\mathbf{v}_{n-1}, \cdot), \; \ldots, \;
+                        \mathbf{v}_0 \sim T_0(\mathbf{v}_1, \cdot).
+                        \]
+                    </li>
+                    </ol>
+                    Each AIS run yields a trajectory 
+                    \((\mathbf{v}_n, \mathbf{v}_{n-1}, \ldots, \mathbf{v}_0)\)
+                    with an associated importance weight:
+                    \[
+                    w = 
+                    \frac{f_{n-1}(\mathbf{v}_{n-1})}{f_n(\mathbf{v}_{n-1})}
+                    \frac{f_{n-2}(\mathbf{v}_{n-2})}{f_{n-1}(\mathbf{v}_{n-2})}
+                    \cdots
+                    \frac{f_1(\mathbf{v}_1)}{f_2(\mathbf{v}_1)}
+                    \frac{f_0(\mathbf{v}_0)}{f_1(\mathbf{v}_0)}. \tag{1}
                     \]
                 </p>
 
@@ -579,7 +485,15 @@ uses_python: false
                     samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
                  </div>
                  <p>
-                    Application is to evaluate a ratio of partition functions. 
+                    Application is to evaluate a ratio of partition functions. Notice that 
+                    \[
+                    Z_0 = \int f_0 (\mathbf{x})d\mathbf{x} = \int \varphi(\mathbf{v})d\mathbf{v}
+                    \]
+                    and
+                    \[
+                    Z_n =  \int f_n (\mathbf{x})d\mathbf{x} = \int g(\mathbf{v})d\mathbf{v}
+                    \]
+                    then: 
                     \[
                     \begin{align*}
                     \frac{Z_0}{Z_n} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\\\
