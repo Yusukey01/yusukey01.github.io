@@ -467,41 +467,50 @@ uses_python: false
 
                  <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    Consider the distribution on an extended state space \(\mathbf{v} = (\mathbf{v}_0, \cdots, \mathbf{v}_n)\):
-                    \[
-                    \begin{align*}
-                    p(\mathbf{v}) &\propto \varphi(\mathbf{v}) = f_0(\mathbf{v})\tilde{T}_0 (\mathbf{v}_0, \mathbf{v}_1) \\\\
-                                  &\propto p(\mathbf{v}_0)p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}) 
-                    \end{align*}
-                    \]
-                    where \(\tilde{T}_j\) is the reversal of \(T_j\):
-                    \[
-                    \begin{align*}
-                    \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v})p_j(\mathbf{v}') / p_j(\mathbf{v}) \\\\
-                                                         &=  T_j(\mathbf{v}', \mathbf{v})f_j(\mathbf{v}') / f_j(\mathbf{v})
-                    \end{align*}
-                    \]
-                    It is clear that
-                    \[
-                    \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = f_0(\mathbf{v}_0),
-                    \]
-                    and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(p_0(\mathbf{x})\).  Moreover, we can sample 
-                    on this extended sate space using this method, which corresponds to the following proposal:
-                    \[
-                    \begin{align*}
-                    q(\mathbf{v}) &\propto g(\mathbf{v}) = f_n(\mathbf{v}_n)T_{n-1}(\mathbf{v_n}, \mathbf{v}_{n-1})\cdots T_2(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
-                                  &\propto p(\mathbf{v}_n)p(\mathbf{v}_{n-1} \mid \mathbf{v}_n)\cdots p(\mathbf{v}_1 \mid \mathbf{v}_0).
-                    \end{align*}
-                    \]
-                    One can show that importance weights:
-                    \[
-                    w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
-                    \]
-                    are given by Equation \(\tag{1}\). Since marginals of the sampled sequences from this extended model are equivalent to 
-                    samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
+                    <p>
+                        Consider the distribution on an extended state space 
+                        \(\mathbf{v} = (\mathbf{v}_0, \cdots, \mathbf{v}_n)\):
+                        \[
+                        \begin{align*}
+                        p(\mathbf{v}) &\propto \varphi(\mathbf{v}) = f_0(\mathbf{v})\tilde{T}_0 (\mathbf{v}_0, \mathbf{v}_1) \\\\
+                                    &\propto p(\mathbf{v}_0)p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}) 
+                        \end{align*}
+                        \]
+                        where \(\tilde{T}_j\) is the reversal of \(T_j\):
+                        \[
+                        \begin{align*}
+                        \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v})p_j(\mathbf{v}') / p_j(\mathbf{v}) \\\\
+                                                            &=  T_j(\mathbf{v}', \mathbf{v})f_j(\mathbf{v}') / f_j(\mathbf{v})
+                        \end{align*}
+                        \]
+                        The invariance of \(p_j\) with respect to \(T_j\) ensures that these are valid transition probabilities. 
+                        It is clear that
+                        \[
+                        \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = f_0(\mathbf{v}_0),
+                        \]
+                        and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(p_0(\mathbf{x})\). 
+                    </p>
+                    <p>
+                        Moreover, we can sample on this extended sate space using the AIS procedure, which corresponds to 
+                        the following proposal:
+                        \[
+                        \begin{align*}
+                        q(\mathbf{v}) &\propto g(\mathbf{v}) = f_n(\mathbf{v}_n)T_{n-1}(\mathbf{v_n}, \mathbf{v}_{n-1})\cdots T_2(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
+                                    &\propto p(\mathbf{v}_n)p(\mathbf{v}_{n-1} \mid \mathbf{v}_n)\cdots p(\mathbf{v}_1 \mid \mathbf{v}_0).
+                        \end{align*}
+                        \]
+                        One can show that importance weights:
+                        \[
+                        w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
+                        \]
+                        are given by Equation (1). Since marginals of the sampled sequences from this extended model are equivalent to 
+                        samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
+                    </p>
                  </div>
-                 <p>
-                    Application is to evaluate a ratio of partition functions. Notice that 
+
+                <p>
+                    AIS is particularly powerful for estimating ratios of normalizing constants. The application is to evaluate 
+                    a ratio of partition functions. Note that
                     \[
                     Z_0 = \int f_0 (\mathbf{x})d\mathbf{x} = \int \varphi(\mathbf{v})d\mathbf{v}
                     \]
@@ -518,109 +527,22 @@ uses_python: false
                                     &\approx \frac{1}{S}\sum_{s=1}^S W_s.
                     \end{align*}
                     \]
-                    where \(W_s = \varphi(\mathbf{v}_s) / g(\mathbf{v}_s)\).
-                 </p>
-                 <p>
-                    If \(f_0\) is a prior and \(f_n\) is the posterior, we can setimate \(Z_n = p(\mathcal{D})\) using the above equation, 
+                    where \(W_s = \varphi(\mathbf{v}_s) / g(\mathbf{v}_s)\), and and \(S\) is the number of independent AIS runs.
+                </p>
+
+                <p>
+                    If \(f_0\) is a prior and \(f_n\) is the posterior, we can etimate the marginal likelihood \(Z_n = p(\mathcal{D})\) using the above equation, 
                     provided the prior has a known normalization constant \(Z_0\).
-                 </p>
-                    
-             </section>
-
-            <section id="ais" class="section-content">
-                <h2>Annealed Importance Sampling (AIS)</h2>
-                
-                <div class="proof">
-                    <span class="proof-title">Proof of Validity</span>
-                    <p>
-                        Consider the distribution on an extended state space \(\mathbf{v} = (\mathbf{v}_0, \cdots, \mathbf{v}_n)\):
-                        \[
-                        p(\mathbf{v}) \propto \varphi(\mathbf{v}) = \tilde{\pi}_0(\mathbf{v}_0)\tilde{T}_0(\mathbf{v}_0, \mathbf{v}_1)\tilde{T}_1(\mathbf{v}_1, \mathbf{v}_2) \cdots \tilde{T}_{n-1}(\mathbf{v}_{n-1}, \mathbf{v}_n)
-                        \]
-                        where \(\tilde{T}_j\) is the time-reversal of \(T_j\):
-                        \[
-                        \tilde{T}_j(\mathbf{v}, \mathbf{v}') = T_j(\mathbf{v}', \mathbf{v})\frac{\pi_j(\mathbf{v}')}{\pi_j(\mathbf{v})} = T_j(\mathbf{v}', \mathbf{v})\frac{\tilde{\pi}_j(\mathbf{v}')}{\tilde{\pi}_j(\mathbf{v})}
-                        \]
-                    </p>
-                    <p>
-                        The invariance of \(\pi_j\) with respect to \(T_j\) ensures that these are valid transition probabilities. 
-                        It is clear that
-                        \[
-                        \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = \tilde{\pi}_0(\mathbf{v}_0),
-                        \]
-                        and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(\pi_0(\mathbf{x})\).
-                    </p>
-                    <p>
-                        Moreover, we can sample on this extended state space using the AIS procedure, which corresponds to the following proposal:
-                        \[
-                        q(\mathbf{v}) \propto g(\mathbf{v}) = \tilde{q}_n(\mathbf{v}_n)T_{n-1}(\mathbf{v}_n, \mathbf{v}_{n-1})\cdots T_1(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0)
-                        \]
-                    </p>
-                    <p>
-                        One can show that the importance weights:
-                        \[
-                        w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
-                        \]
-                        are given by Equation (1). Since marginals of the sampled sequences from this extended model are equivalent to 
-                        samples from \(\pi_0(\mathbf{x})\), we see that we are using the correct weights.
-                    </p>
-                </div>
-
-                <h3>Estimating Partition Functions</h3>
-                <p>
-                    AIS is particularly powerful for estimating ratios of normalizing constants. The application is to evaluate a ratio of partition functions:
-                    \[
-                    \begin{align*}
-                    \frac{Z_{\pi_0}}{Z_{q_n}} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\
-                                    &= \frac{\int \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}g(\mathbf{v})d\mathbf{v}} {\int g(\mathbf{v})d\mathbf{v}} \\
-                                    &= \mathbb{E}_g \left[ \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}\right] \\
-                                    &\approx \frac{1}{S}\sum_{s=1}^S w^{(s)}
-                    \end{align*}
-                    \]
-                    where \(w^{(s)} = \varphi(\mathbf{v}_s) / g(\mathbf{v}_s)\) and \(S\) is the number of independent AIS runs.
                 </p>
-                
-                <p>
-                    If \(\tilde{\pi}_0\) is a prior and \(\tilde{q}_n\) is the posterior, we can estimate \(Z_{q_n} = p(\mathcal{D})\) (the marginal likelihood) 
-                    using the above equation, provided the prior has a known normalization constant \(Z_{\pi_0}\). If \(Z_{q_n}\) is known 
-                    (e.g., the proposal is a Gaussian), we can estimate \(Z_{\pi_0}\). This is crucial for:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Model comparison in Bayesian inference (estimating marginal likelihoods)</li>
-                    <li>Training energy-based models and restricted Boltzmann machines</li>
-                    <li>Computing partition functions in statistical physics</li>
-                    <li>Evaluating evidence lower bounds in variational inference</li>
-                </ul>
 
-                <h3>Why AIS Works</h3>
-                <p>
-                    The key insight is that by breaking the difficult transition from \(q_n\) to \(\pi_0\) into many small steps:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Each individual importance weight ratio is close to 1, avoiding extreme weights</li>
-                    <li>The product of many near-1 ratios has much lower variance than a single large ratio</li>
-                    <li>The Markov transitions allow samples to adapt to each intermediate distribution</li>
-                    <li>The method remains unbiased: estimates converge to correct values as the number of runs increases</li>
-                </ul>
                 <p>
                     The variance of AIS can be reduced by increasing the number of intermediate distributions \(n\). In practice, 
-                    \(n = 100\) to \(n = 10000\) steps is common, depending on the distributional mismatch between \(\pi_0\) and \(q_n\). 
-                    The optimal choice balances computational cost (proportional to \(n\)) against variance reduction.
+                    \(n = 100\) to \(n = 10000\) steps is common. The optimal choice balances computational cost (proportional to \(n\)) 
+                    against variance reduction.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Applications of AIS</span>
-                    Annealed importance sampling is used in:
-                    <ul>
-                        <li><strong>Deep learning</strong>: Estimating partition functions of restricted Boltzmann machines (RBMs) 
-                        and deep belief networks</li>
-                        <li><strong>Bayesian inference</strong>: Computing marginal likelihoods for model selection and comparison</li>
-                        <li><strong>Statistical physics</strong>: Estimating free energies in molecular simulations</li>
-                        <li><strong>Variational inference</strong>: Obtaining tighter bounds and comparing variational approximations</li>
-                        <li><strong>Rare event simulation</strong>: Handling multimodal distributions with isolated modes</li>
-                    </ul>
-                </div>
-            </section>
+                    
+             </section>
             
         </div>
 
