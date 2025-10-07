@@ -93,6 +93,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
+            // Remove navigation elements before extracting content
+            const elementsToRemove = doc.querySelectorAll('.quick-jump-container, .quick-jump-menu, nav, .navigation');
+            elementsToRemove.forEach(el => el.remove());
+            
             // Extract content
             let content = '';
             const main = doc.querySelector('main');
@@ -102,13 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 content = doc.body.textContent;
             }
             
-            content = content.replace(/\\s+/g, ' ').trim();
+            content = content.replace(/\s+/g, ' ').trim();
             
             // Get meta description
             const metaDesc = doc.querySelector('meta[name="description"]');
             const description = metaDesc ? metaDesc.getAttribute('content') : '';
             
-            // Extract headings
+            // Extract headings (after removing navigation)
             const headings = Array.from(doc.querySelectorAll('h1, h2, h3'))
                 .map(h => h.textContent.trim())
                 .filter(h => h.length > 0);
