@@ -182,14 +182,16 @@ uses_python: false
                 <h4><strong>1. Reinforcement Learning from Human Feedback (RLHF)</strong></h4>
                 <p>
                     Modern large language models (LLMs) like ChatGPT are fine-tuned using RLHF, which fundamentally relies on 
-                    importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to learn 
-                    from data collected under an old policy while optimizing a new policy:
+                    importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to 
+                    enable multiple gradient updates from the same batch of collected data:
                     \[
-                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a)\right]
+                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\min\left(\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a), \text{clip}\left(\frac{\pi_\theta(a|s)}{\mu(a|s)}, 1-\epsilon, 1+\epsilon\right) A(s,a)\right)\right]
                     \]
-                    where \(\mu\) is the behavior policy (old data) and \(\pi_\theta\) is the target policy being optimized. 
-                    In practice, PPO clips this ratio to prevent overly large policy updates. Without importance 
-                    sampling, we would need to collect entirely new data after each policy update, making RLHF expensive.
+                    where \(\mu\) is the behavior policy (data collection policy) and \(\pi_\theta\) is the current policy being optimized. 
+                    The importance ratio \(\pi_\theta/\mu\) allows us to reuse data collected under \(\mu\) for multiple updates 
+                    to \(\pi_\theta\). PPO's clipping mechanism (typically with \(\epsilon = 0.2\)) prevents this ratio from becoming 
+                    too large, ensuring stable training. Without importance sampling, we would need fresh on-policy data after 
+                    every gradient step, making RLHF computationally prohibitive.
                 </p>
 
                 <h4><strong>2. Off-Policy Reinforcement Learning</strong></h4>
