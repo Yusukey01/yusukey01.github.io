@@ -112,6 +112,194 @@ uses_python: true
                     we'll explore how the Laplacian encodes connectivity patterns and enables powerful analytical techniques.
                 </p>
             </section>
+
+            <section id="sp" class="section-content">
+                <h2>Spectral Clustering</h2>
+                <p>
+                    Traditional clustering methods like K-means assume clusters are linearly separable and spherical in shape. 
+                    However, many real-world datasets exhibit complex, non-convex structures that are not well-captured by distance alone. 
+                    <strong>Spectral clustering</strong> addresses this limitation by transforming the data into a new space that reflects 
+                    the connectivity structure of the data, often represented as a <strong>graph</strong>.
+                </p>
+
+                <p>
+                    The idea is to build a <strong>similarity graph</strong> where each data point is a node, and edges encode pairwise similarities. 
+                    Let \(\mathbf{W} \in \mathbb{R}^{N \times N}\) be a symmetric <strong>weight matrix</strong> such that \(W_{ij} = W_{ji}  \geq 0\) measures 
+                    the similarity between points \(i\) and \(j\). The <strong>degree</strong> of node \(i\) is defined as:
+                    \[
+                    d_i = \sum_{j=1}^N W_{ij},
+                    \]
+                    and we define the <strong>degree matrix</strong> \(\mathbf{D} \in \mathbb{R}^{N \times N}\) as a diagonal matrix with entries \(D_{ii} = d_i\).
+                </p>
+
+                <p>
+                    The fundamental object in spectral clustering is the <strong>graph Laplacian</strong>, defined as:
+                    \[
+                    \mathbf{L} = \mathbf{D} - \mathbf{W}.
+                    \]
+                    So, the elements of \(\mathbf{L}\) are given by 
+                    \[
+                     \begin{cases}
+                        d_i &\text{if \(i = j\)} \\
+                        -W_{ij} &\text{if } i \neq j \text{ and } W_{ij} \neq 0\\
+                        0 &\text{Otherwise}.
+                    \end{cases}
+                    \]
+                    The graph Laplacian captures the structure of the graph in a way that supports clustering via <strong>eigenvector analysis</strong>.
+                </p>
+
+                <p>
+                    <div class="theorem">
+                        <span class="theorem-title">Theorem:</span>
+                        Let \(G\) be an undirected (possibly weighted) graph with Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\). Then the number of connected 
+                        components of \(G\) is equal to the multiplicity \(k\) of the eigenvalue 0 of \(\mathbf{L}\). Moreover, the eigenspace corresponding 
+                        to eigenvalue 0 is spanned by the indicator vectors \(\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_k}\), where each \(S_j\) is a 
+                        connected component of \(G\).
+                    </div>
+                    This makes spectral methods especially powerful for separating well-connected groups in a graph.
+
+                     <div class="proof">
+                        <span class="proof-title">Proof:</span>
+                        Let \(G = (V, E)\) be an undirected (possibly weighted) graph with Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\), 
+                        where \(\mathbf{W}\) is a symmetric weight matrix and \(\mathbf{D}\) is the diagonal degree matrix \(D_{ii} = \sum_j W_{ij}\).
+
+                        <br><br>
+                        For any vector \(\mathbf{f} \in \mathbb{R}^N\), the quadratic form of the Laplacian is:
+                        \[
+                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = \mathbf{f}^\top (\mathbf{D} - \mathbf{W})\mathbf{f}
+                        = \sum_i D_{ii} f_i^2 - \sum_{i,j} W_{ij} f_i f_j.
+                        \]
+
+                        Since \(D_{ii} = \sum_j W_{ij}\), we can write:
+                        \[
+                        \sum_i D_{ii} f_i^2 = \sum_{i,j} W_{ij} f_i^2.
+                        \]
+
+                        So the full expression becomes:
+                        \[
+                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = \sum_{i,j} W_{ij} f_i^2 - \sum_{i,j} W_{ij} f_i f_j \tag{1}
+                        \]
+
+                        Now, since \(W\) is symmetric, \(W_{ij} = W_{ji}\), then:
+                        \[
+                        \begin{align*}
+                        \sum_{i,j} W_{ij} f_i^2 &= \frac{1}{2} \sum_{i,j} W_{ij}f_i^2 + \frac{1}{2} \sum_{i,j} W_{ji}f_j^2 \\\\
+                                                &= \frac{1}{2} \sum_{i,j} W_{ij}(f_i^2 + f_j^2).
+                        \end{align*}
+                        \]
+
+                        Plugging this into the expression (1):
+                        \[
+                        \begin{align*}
+                        \mathbf{f}^\top \mathbf{L} \mathbf{f} &= \frac{1}{2} \sum_{i,j} W_{ij}(f_i^2 + f_j^2) - \sum_{i,j} W_{ij} f_i f_j \\\\
+                                                              &= \frac{1}{2} \sum_{i,j} W_{ij}(f_i^2 + f_j^2 - 2f_i f_j) \\\\
+                                                              &= \boxed{\frac{1}{2} \sum_{i,j} W_{ij} (f_i - f_j)^2.}
+                         \end{align*}
+                        \]
+
+                        <br>
+                        <strong>Case 1: \(k = 1\)</strong><br>
+                        Suppose \(\mathbf{f} \in \mathbb{R}^n\) is an eigenvector corresponding to eigenvalue 0, i.e., \(\mathbf{L} \mathbf{f} = 0\). Then:
+                        \[
+                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = 0 \quad \Rightarrow \quad \sum_{i,j} W_{ij}(f_i - f_j)^2 = 0.
+                        \]
+
+                        Since \(W_{ij} \geq 0\), each term \((f_i - f_j)^2\) must be zero wherever \(W_{ij} > 0\). That is, for every edge \((i,j) \in E\), we have:
+                        \[
+                        f_i = f_j.
+                        \]
+
+                        Because the graph is connected, there is a path between any two vertices. Applying the above equality recursively along paths in the graph implies that:
+                        \[
+                        f_i = f_j \quad \text{for all } i,j.
+                        \]
+
+                        Therefore, \(\mathbf{f}\) must be constant on all vertices — i.e., \(\mathbf{f} \in \text{span}\{\mathbf{1}\}\). Hence, the nullspace of \(\mathbf{L}\) 
+                        is one-dimensional and spanned by the constant vector \(\mathbf{1} = [1, 1, \dots, 1]^\top\). This confirms that the eigenvalue 0 has multiplicity 1.
+                        <br><br>
+
+                        <strong>Case 2: \(k > 1\)</strong><br>
+                        Then \(\mathbf{W}\) and \(\mathbf{L}\) can be written in block diagonal form, where each block corresponds to one connected component. 
+                        Specifically,
+                        \[
+                        \mathbf{L} = \begin{bmatrix}
+                                        L_1 & 0 & \cdots & 0 \\
+                                        0 & L_2 & \cdots & 0 \\
+                                        \vdots & \vdots & \ddots & \vdots \\
+                                        0 & 0 & \cdots & L_k
+                                    \end{bmatrix},
+                        \]
+                        where each \(L_i\) is the Laplacian of the \(i\)-th connected component. 
+                        From Case 1, each \(L_i\) has nullspace spanned by the constant vector \(\mathbf{1}_{S_i}\) 
+                        (the indicator vector on component \(S_i\)). Therefore, the full nullspace of \(\mathbf{L}\) is spanned 
+                        by \(\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_k}\), and the eigenvalue 0 has multiplicity \(k\).
+                     </div>
+                </p>
+                <p>
+                    <strong>Note:</strong> Clearly, the graph Laplacian \(\mathbf{L}\) is symmetric and positive semi-definite, since 
+                    \(\mathbf{f}^\top \mathbf{L} \mathbf{f} \geq 0\) for all \(\mathbf{f} \in \mathbb{R}^N\). This expression is called the 
+                    <strong>Laplacian quadratic form</strong>, or the <strong>Dirichlet energy</strong> of \(\mathbf{f}\):
+                    \[
+                    \mathbf{f}^\top \mathbf{L} \mathbf{f} = \frac{1}{2} \sum_{i,j} W_{ij}(f_i - f_j)^2.
+                    \]
+                    It measures the <strong>smoothness</strong> of the function \(\mathbf{f}\) on the graph: it becomes small when adjacent nodes 
+                    (i.e., those with \(W_{ij} > 0\)) have similar values. 
+                    <br><br>
+                    The Dirichlet energy plays a central role in <strong>spectral graph theory</strong>. In spectral clustering, minimizing Dirichlet 
+                    energy reveals groupings where nodes are strongly connected internally but weakly connected across clusters — 
+                    making it a powerful tool for discovering natural partitions in complex data.
+                </p>
+
+                <p>
+                    In practice, graphs are often exhibit irregular structure: 
+                    nodes may have highly varying degrees, and clusters are not perfectly block-separated. 
+                    This means the raw graph Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) can be dominated by high-degree nodes, 
+                    leading to unbalanced or misleading spectral embeddings.
+                </p>
+
+                <p>
+                    To address this, we use the <strong>normalized graph Laplacian</strong>, which compensates for 
+                    differences in node connectivity and ensures that each node contributes more equally to the 
+                    spectral structure: 
+                    \[
+                    \begin{align*}
+                    \mathbf{L}_{\text{sym}} &= \mathbf{D}^{-\frac{1}{2}} \mathbf{L} \mathbf{D}^{-\frac{1}{2}} \\\\
+                                   &= \mathbf{I} - \mathbf{D}^{-\frac{1}{2}} \mathbf{W} \mathbf{D}^{-\frac{1}{2}}
+                    \end{align*}
+                    \]
+                    where \(\mathbf{D}\) is the diagonal degree matrix and \(\mathbf{W}\) is the symmetric weight (similarity) matrix. In this case, 
+                    for the normalized graph Laplacian \(\mathbf{L}_{\text{sym}}\), the eigenspace of zero eigenvalue is spanned by 
+                    \[
+                    \mathbf{D}^{\frac{1}{2}} \mathbf{1}_{S_k}
+                    \]
+                    ,where \(\mathbf{1}_{S_k}\) are the indicator vectors of the connected components.
+                </p>
+
+                <p>
+                    This matrix \(\mathbf{L}_{\text{sym}}\) is also symmetric and positive semi-definite. 
+                    It ensures that the resulting spectral embedding is not biased toward high-degree nodes.
+                </p>
+
+                <p>
+                    The <strong>spectral clustering algorithm</strong> proceeds as follows:
+                    <div class="theorem">
+                    <ol style="padding-left: 40px;">
+                        <li>Compute the symmetric normalized Laplacian \(\mathbf{L}_{\text{sym}} = \mathbf{I} - \mathbf{D}^{-\frac{1}{2}} \mathbf{W} \mathbf{D}^{-\frac{1}{2}}\).</li>
+                        <li>Find the smallest \(K\) eigenvectors of \(\mathbf{L}_{\text{sym}}\) and stack them column-wise into a matrix \(\mathbf{U} \in \mathbb{R}^{N \times K}\).</li>
+                        <li>Normalize each row of \(\mathbf{U}\) to have unit norm, forming a matrix \(\mathbf{T} \in \mathbb{R}^{N \times K}\): 
+                            \[
+                            T_{i \cdot} = \frac{U_{i \cdot}}{\| U_{i \cdot}\|}.
+                            \]
+                        </li>
+                        <li>Apply K-means clustering to the rows of \(\mathbf{T}\).</li>
+                        <li>Assign the original data point \(x_i\) to cluster \(k\) if row \(i\) of \(\mathbf{T}\) is assigned to cluster \(k\).</li>
+                    </ol>
+                    </div>
+                </p>                            
+            </section>
+
+
+
         </div>
           
         <script src="/js/main.js"></script>
