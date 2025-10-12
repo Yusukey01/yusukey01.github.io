@@ -175,13 +175,21 @@ uses_python: true
             </section>
 
             <section id="kernel" class="section-content">
-                <h2>Kernel Functions</h2>
+                <h2>Mercer Kernels</h2>
 
                 <p>
                     The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between function values 
                     at different input points. In a Gaussian process (GP), the choice of kernel is crucial since it 
                     determines the smoothness, periodicity, and other structural properties of the functions drawn 
                     from the GP prior.
+                </p>
+
+                <p>
+                    While the kernel function intuitively measures similarity between inputs, not every function can serve 
+                    as a valid covariance function in a Gaussian process.  
+                    To ensure that the resulting covariance matrix is positive definite for any finite set of inputs — 
+                    a requirement for the GP to define a proper multivariate Gaussian distribution — 
+                    we restrict our attention to <strong>Mercer kernels</strong>.
                 </p>
 
                  <div class="theorem">
@@ -238,7 +246,7 @@ uses_python: true
                     \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
                     =  \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{1}{\ell_d^2 }r_d^2 \right)
                     \]
-                    where \(sigma^2\) is the overall variance and \(\ell_d >0\) is the characteristic length scale of dimension \(d\), 
+                    where \(\sigma^2\) is the overall variance and \(\ell_d >0\) is the characteristic length scale of dimension \(d\), 
                     controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, we can 
                     set \(\ell_d = \infty\), effectively ignoring that input. 
                 </p>
@@ -295,6 +303,32 @@ uses_python: true
                     This scaling changes the magnitude of function fluctuations but does not affect the smoothness or 
                     correlation structure of the GP.
                 </p>
+
+                <p>
+                    Some functions exhibit repeating or periodic behavior that is not captured by standard RBF or Matérn kernels.  
+                    To model such patterns, we can use a <strong>periodic kernel</strong>, which explicitly encodes periodicity into 
+                    the covariance function.
+                </p>
+
+                <p>
+                    A common choice for a one-dimensional periodic kernel is:
+                </p>
+
+                \[
+                \mathcal{K}_\text{per}(x, x') = \exp \Bigg( - \frac{2 \, \sin^2\big(\pi |x - x'| / p\big)}{\ell^2} \Bigg),
+                \]
+
+                <p>
+                    where \(p > 0\) is the period of the function and \(\ell > 0\) is the length-scale controlling how quickly 
+                    correlations decay away from exact multiples of the period.  This kernel is symmetric and positive definite, 
+                    so it is a valid Mercer kernel.  
+                </p>
+
+                <p>
+                    Periodic kernels are particularly useful in Gaussian process regression for modeling phenomena that repeat regularly over time or space, 
+                    such as seasonal time series, cyclic patterns, or physical systems with inherent periodicity.
+                </p>
+
             </section>
 
             <section id="regression" class="section-content">
