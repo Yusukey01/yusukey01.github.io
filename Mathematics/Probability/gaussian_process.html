@@ -2,9 +2,9 @@
 layout: default
 title: Gaussian Processes
 level: detail
-description: Learn about Gaussian processes as distributions over functions, kernel functions, GP regression, and applications in Bayesian optimization and uncertainty quantification.
+description: Learn about Gaussian processes as distributions over functions, kernel functions and GP regression.
 uses_math: true
-uses_python: true
+uses_python: false
 ---
 <!DOCTYPE html>
 <html>
@@ -93,11 +93,8 @@ uses_python: true
 
         <div class="topic-nav">
             <a href="#intro">Introduction</a>
-            <a href="#kernel">Kernel Functions</a>
+            <a href="#kernel">Mercer Kernels</a>
             <a href="#regression">GP Regression</a>
-            <a href="#computation">Practical Algorithms</a>
-            <a href="#applications">2025 AI Applications</a>
-            <a href="#interactive">Interactive Demo</a>
         </div> 
 
         <div class="container">
@@ -389,247 +386,9 @@ uses_python: true
                 </p>
             </section>
 
-            <section id="computation" class="section-content">
-                <h2>Practical Algorithms</h2>
-                
-                <h3>Stable Computation via Cholesky Decomposition</h3>
-                <p>
-                    Instead of directly inverting \((K + \sigma_n^2 I)\), use Cholesky decomposition:
-                    \[
-                    K + \sigma_n^2 I = LL^T
-                    \]
-                    Then solve triangular systems:
-                    <ol style="padding-left: 40px;">
-                        <li>Solve \(L\alpha = \mathbf{y}\) for \(\alpha\)</li>
-                        <li>Solve \(L^T\beta = \alpha\) for \(\beta = (K + \sigma_n^2 I)^{-1}\mathbf{y}\)</li>
-                        <li>Mean prediction: \(\bar{f}_* = k_*^T \beta\)</li>
-                        <li>Variance: solve \(Lv = k_*\), then \(\text{var}(f_*) = k(x_*, x_*) - v^Tv\)</li>
-                    </ol>
-                </p>
-
-                <h3>Sparse GP Approximations</h3>
-                <p>
-                    For large datasets, approximate methods reduce complexity from \(O(n^3)\) to \(O(nm^2)\) where \(m \ll n\):
-                </p>
-
-                <h4>Inducing Points Methods</h4>
-                <ul style="padding-left: 40px;">
-                    <li><strong>FITC (Fully Independent Training Conditional):</strong> Assumes conditional independence 
-                        given inducing points</li>
-                    <li><strong>VFE (Variational Free Energy):</strong> Variational inference framework, often most 
-                        principled</li>
-                    <li><strong>SGPR (Sparse GP Regression):</strong> Unifying framework in GPyTorch/GPflow</li>
-                </ul>
-
-                <h4>GPU Acceleration</h4>
-                <p>Modern implementations leverage:</p>
-                <ul style="padding-left: 40px;">
-                    <li>Batch matrix operations on GPU</li>
-                    <li>Structured kernel interpolation (SKI)</li>
-                    <li>Lanczos variance estimates</li>
-                    <li>Conjugate gradient solvers</li>
-                </ul>
-
-                <div class="code-container">
-                    <div class="collapsible-section">
-                        <button class="collapsible-btn">Show/Hide Code: GP Implementation from Scratch</button>
-                        <div class="collapsible-content">
-                            <pre class="python-code">
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.linalg import cholesky, solve_triangular
-
-class GaussianProcess:
-    """Simple GP implementation for educational purposes"""
-    
-    def __init__(self, kernel_func, noise_var=1e-6):
-        self.kernel = kernel_func
-        self.noise_var = noise_var
-        self.X_train = None
-        self.y_train = None
-        self.L = None  # Cholesky decomposition
-        self.alpha = None  # Precomputed weights
-    
-    @staticmethod
-    def rbf_kernel(X1, X2, length_scale=1.0, signal_var=1.0):
-        """RBF (Gaussian) kernel"""
-        # Compute pairwise squared distances
-        if X2 is None:
-            X2 = X1
-        dist = np.sum(X1**2, axis=1, keepdims=True) + \
-               np.sum(X2**2, axis=1, keepdims=True).T - \
-               2 * np.dot(X1, X2.T)
-        return signal_var * np.exp(-0.5 * dist / length_scale**2)
-    
-    def fit(self, X, y):
-        """Fit GP to training data"""
-        self.X_train = X
-        self.y_train = y
-        
-        # Compute kernel matrix with noise
-        K = self.kernel(X, X)
-        K_noise = K + self.noise_var * np.eye(len(X))
-        
-        # Cholesky decomposition for numerical stability
-        self.L = cholesky(K_noise, lower=True)
-        
-        # Precompute weights: alpha = (K + σ²I)^(-1) * y
-        self.alpha = solve_triangular(
-            self.L.T, 
-            solve_triangular(self.L, y, lower=True),
-            lower=False
-        )
-        
-    def predict(self, X_test, return_std=True):
-        """Predict mean and optionally std at test points"""
-        K_star = self.kernel(X_test, self.X_train)
-        
-        # Mean prediction
-        mean = K_star @ self.alpha
-        
-        if not return_std:
-            return mean
-        
-        # Variance prediction
-        K_star_star = self.kernel(X_test, X_test)
-        v = solve_triangular(self.L, K_star.T, lower=True)
-        var = np.diag(K_star_star) - np.sum(v**2, axis=0)
-        std = np.sqrt(np.maximum(var, 0))  # Numerical safety
-        
-        return mean, std
-    
-    def sample_prior(self, X, n_samples=5):
-        """Sample functions from GP prior"""
-        K = self.kernel(X, X)
-        L = cholesky(K + 1e-10 * np.eye(len(X)), lower=True)
-        samples = L @ np.random.randn(len(X), n_samples)
-        return samples
-
-# Example usage
-if __name__ == "__main__":
-    # Create kernel with specific hyperparameters
-    kernel = lambda X1, X2: GaussianProcess.rbf_kernel(
-        X1, X2, length_scale=0.5, signal_var=1.0
-    )
-    
-    # Initialize GP
-    gp = GaussianProcess(kernel, noise_var=0.01)
-    
-    # Generate synthetic training data
-    np.random.seed(42)
-    X_train = np.random.uniform(-3, 3, (7, 1))
-    y_train = np.sin(X_train).ravel() + 0.1 * np.random.randn(7)
-    
-    # Fit GP
-    gp.fit(X_train, y_train)
-    
-    # Make predictions
-    X_test = np.linspace(-4, 4, 100).reshape(-1, 1)
-    mean, std = gp.predict(X_test)
-    
-    # Visualization
-    plt.figure(figsize=(10, 6))
-    plt.fill_between(X_test.ravel(), 
-                     mean - 2*std, mean + 2*std, 
-                     alpha=0.3, label='95% confidence')
-    plt.plot(X_test, mean, 'b-', label='GP mean')
-    plt.plot(X_train, y_train, 'ko', markersize=8, label='Training data')
-    plt.plot(X_test, np.sin(X_test), 'r--', alpha=0.5, label='True function')
-    plt.xlabel('x')
-    plt.ylabel('f(x)')
-    plt.title('Gaussian Process Regression')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.show()
-                            </pre>
-                        </div>
-                    </div>
-                    <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
-                    <div class="python-output"></div>
-                </div>
-            </section>
-
-            <section id="applications" class="section-content">
-                <h2>Applications in 2025 AI</h2>
-                
-                <h3>Bayesian Optimization for Hyperparameter Tuning</h3>
-                <p>
-                    GPs are the backbone of modern hyperparameter optimization tools:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Optuna:</strong> Uses GPs in its TPE sampler</li>
-                    <li><strong>Ray Tune:</strong> Offers GP-based search via BoTorch</li>
-                    <li><strong>Ax/BoTorch:</strong> Facebook's Bayesian optimization framework</li>
-                    <li><strong>Google Vizier:</strong> Black-box optimization service</li>
-                </ul>
-                
-                <p>
-                    The key advantage: GPs provide uncertainty estimates, enabling intelligent exploration-exploitation 
-                    tradeoffs via acquisition functions like Expected Improvement (EI) or Upper Confidence Bound (UCB).
-                </p>
-
-                <h3>Uncertainty Quantification in Neural Networks</h3>
-                <p>
-                    GPs inspire several uncertainty quantification methods:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Deep Kernel Learning:</strong> Neural networks as feature extractors for GP kernels</li>
-                    <li><strong>Neural Tangent Kernels:</strong> Infinite-width neural networks as GPs</li>
-                    <li><strong>Spectral-normalized Neural GPs:</strong> Combining spectral normalization with GPs</li>
-                </ul>
-
-                <h3>AutoML Applications</h3>
-                <p>
-                    GPs enable efficient architecture and hyperparameter search:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Neural Architecture Search (NAS) with GP surrogate models</li>
-                    <li>Meta-learning with GP task representations</li>
-                    <li>Transfer learning via multi-task GPs</li>
-                </ul>
-
-                <h3>Time Series Modeling</h3>
-                <p>
-                    GPs excel at modeling temporal patterns with appropriate kernels:
-                </p>
-                <ul style="padding-left: 40px;">
-                    <li>Financial forecasting with non-stationary kernels</li>
-                    <li>Sensor fusion and interpolation</li>
-                    <li>Anomaly detection via GP likelihood</li>
-                </ul>
-
-                <div class="theorem">
-                    <span class="theorem-title">Industry Example: Uber's Bayesian Optimization</span>
-                    Uber uses GPs extensively for optimizing marketplace algorithms. Their internal BO platform handles 
-                    thousands of experiments daily, using GPs to model complex objective functions with constraints, 
-                    reducing A/B testing time by 50%.
-                </div>
-            </section>
-
-            <section id="interactive" class="section-content">
-                <h2>Interactive Demo</h2>
-                <p>
-                    Explore how different kernel parameters and training data affect GP predictions. This demo visualizes 
-                    the posterior mean and uncertainty bands, showing how GPs naturally quantify prediction uncertainty.
-                </p>
-                
-                <div id="gp-visualizer"></div>
-                
-                <p class="mt-3">
-                    Try adjusting the kernel hyperparameters to see their effects:
-                    <ul style="padding-left: 40px;">
-                        <li><strong>Length scale:</strong> Controls how quickly correlations decay with distance</li>
-                        <li><strong>Signal variance:</strong> Controls the amplitude of function variations</li>
-                        <li><strong>Noise variance:</strong> Models observation noise and affects interpolation</li>
-                    </ul>
-                </p>
-            </section>
-
+           
         </div>
         
         <script src="/js/main.js"></script>
-        <script src="/js/gp_visualizer.js"></script>
-        <script src="/js/runPythonCode.js"></script>
-        <script src="/js/collapsible.js"></script>
     </body>
 </html>
