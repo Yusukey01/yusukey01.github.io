@@ -329,64 +329,78 @@ uses_python: false
 
             <section id="regression" class="section-content">
                 <h2>GP Regression</h2>
+
                 <p>
-                    Given training data \(\mathcal{D} = \{(x_i, y_i)\}_{i=1}^n\) where \(y_i = f(x_i) + \epsilon_i\) 
-                    with \(\epsilon_i \sim \mathcal{N}(0, \sigma_n^2)\), we want to predict function values at test points 
-                    \(X_*\).
+                    Given training data 
+                    \(\mathcal{D} = \{(x_i, y_i)\}_{i=1}^n\), 
+                    where \(y_i = f(x_i) + \epsilon_i\) and \(\epsilon_i \sim \mathcal{N}(0, \sigma_n^2)\) represents Gaussian observation noise, 
+                    the goal of Gaussian process (GP) regression is to predict function values at a set of test points \(X_* = \{x_*^{(j)}\}_{j=1}^{n_*}\).
                 </p>
 
-                <h3>Posterior Distribution</h3>
+                <h3>Joint Distribution</h3>
                 <p>
-                    The joint distribution of training outputs \(\mathbf{y}\) and test outputs \(\mathbf{f}_*\) is:
-                    \[
-                    \begin{bmatrix} \mathbf{y} \\ \mathbf{f}_* \end{bmatrix} \sim \mathcal{N}\left(
-                    \begin{bmatrix} \mathbf{m} \\ \mathbf{m}_* \end{bmatrix},
-                    \begin{bmatrix} 
-                        K + \sigma_n^2 I & K_* \\
-                        K_*^T & K_{**}
-                    \end{bmatrix}\right)
-                    \]
+                    By the definition of a GP, the joint distribution of training outputs \(\mathbf{y}\) and test function values \(\mathbf{f}_*\) is multivariate Gaussian:
+                </p>
+                \[
+                    \begin{bmatrix} \mathbf{y} \\ \mathbf{f}_* \end{bmatrix} \sim 
+                    \mathcal{N} \Bigg(
+                        \begin{bmatrix} \mathbf{m} \\ \mathbf{m}_* \end{bmatrix},
+                        \begin{bmatrix} 
+                            K(X,X) + \sigma_n^2 I & K(X,X_*) \\
+                            K(X_*,X) & K(X_*,X_*)
+                        \end{bmatrix}
+                    \Bigg),
+                \]
+                <p>
                     where:
-                    <ul style="padding-left: 40px;">
-                        <li>\(K_{ij} = k(x_i, x_j)\) for training points</li>
-                        <li>\(K_{*i} = k(x_*, x_i)\) between test and training</li>
-                        <li>\(K_{**} = k(x_*, x_*)\) for test points</li>
+                    <ul style="padding-left:40px;">
+                        <li>\(K(X,X)_{ij} = k(x_i, x_j)\) is the covariance between training points,</li>
+                        <li>\(K(X,X_*)_{ij} = k(x_i, x_*^{(j)})\) is the covariance between training and test points,</li>
+                        <li>\(K(X_*,X_*)_{ij} = k(x_*^{(i)}, x_*^{(j)})\) is the covariance between test points,</li>
+                        <li>\(\mathbf{m}\) and \(\mathbf{m}_*\) are the mean functions evaluated at training and test points.</li>
+                    </ul>
+                </p>
+
+                <h3>Posterior Predictive Distribution</h3>
+                <p>
+                    Conditioning on the observed data \(\mathbf{y}\), the posterior distribution for \(\mathbf{f}_*\) is:
+                </p>
+                \[
+                    \mathbf{f}_* \mid X, \mathbf{y}, X_* \sim \mathcal{N}(\bar{\mathbf{f}}_*, \mathrm{Cov}[\mathbf{f}_*]),
+                \]
+                with
+                \[
+                    \bar{\mathbf{f}}_* = \mathbf{m}_* + K(X_*,X) \big(K(X,X) + \sigma_n^2 I\big)^{-1} (\mathbf{y} - \mathbf{m}),
+                \]
+                \[
+                    \mathrm{Cov}[\mathbf{f}_*] = K(X_*,X_*) - K(X_*,X) \big(K(X,X) + \sigma_n^2 I\big)^{-1} K(X,X_*).
+                \]
+
+                <h3>Noise and Hyperparameters</h3>
+                <p>
+                    The noise variance \(\sigma_n^2\) (sometimes called the "nugget") serves multiple purposes:
+                    <ul style="padding-left:40px;">
+                        <li>Models observation noise in the training data,</li>
+                        <li>Provides numerical stability by regularizing the kernel matrix,</li>
+                        <li>Can be learned from data by maximizing the marginal likelihood (also called the log-evidence).</li>
                     </ul>
                 </p>
 
                 <p>
-                    The posterior predictive distribution is:
+                    Kernel hyperparameters (e.g., length-scale \(\ell\), smoothness \(\nu\), amplitude \(\sigma^2\)) can also be optimized using the marginal likelihood:
                     \[
-                    \mathbf{f}_* | \mathbf{y}, X, X_* \sim \mathcal{N}(\bar{\mathbf{f}}_*, \text{cov}(\mathbf{f}_*))
-                    \]
-                    with:
-                    \[
-                    \begin{align*}
-                    \bar{\mathbf{f}}_* &= \mathbf{m}_* + K_*^T(K + \sigma_n^2 I)^{-1}(\mathbf{y} - \mathbf{m}) \\
-                    \text{cov}(\mathbf{f}_*) &= K_{**} - K_*^T(K + \sigma_n^2 I)^{-1}K_*
-                    \end{align*}
+                        \log p(\mathbf{y} \mid X, \theta) = -\frac{1}{2} (\mathbf{y} - \mathbf{m})^\top (K(X,X)+\sigma_n^2 I)^{-1} (\mathbf{y} - \mathbf{m})
+                        - \frac{1}{2} \log |K(X,X)+\sigma_n^2 I| - \frac{n}{2}\log 2\pi.
                     \]
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Computational Complexity</span>
-                    The main computational bottleneck is inverting \((K + \sigma_n^2 I)\), which requires \(O(n^3)\) 
-                    operations. Storage requires \(O(n^2)\) for the kernel matrix. This makes exact GP inference 
-                    challenging for datasets with more than ~10,000 points.
+                    Exact GP inference requires inverting the \(n \times n\) matrix \(K(X,X) + \sigma_n^2 I\), which costs \(O(n^3)\) time and \(O(n^2)\) memory.  
+                    For large datasets (\(n \gtrsim 10,000\)), approximate methods such as sparse GPs or inducing-point methods are typically used.
                 </div>
-
-                <h3>Noise Modeling</h3>
-                <p>
-                    The noise variance \(\sigma_n^2\) (sometimes called the "nugget") serves multiple purposes:
-                    <ul style="padding-left: 40px;">
-                        <li>Models observation noise in the data</li>
-                        <li>Provides numerical stability (regularization)</li>
-                        <li>Can be learned via marginal likelihood optimization</li>
-                    </ul>
-                </p>
-            </section>
-
-           
+             </section>
+       
         </div>
         
         <script src="/js/main.js"></script>
