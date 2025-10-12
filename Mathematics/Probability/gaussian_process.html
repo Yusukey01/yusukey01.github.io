@@ -183,7 +183,7 @@ uses_python: true
 
                  <div class="theorem">
                     <span class="theorem-title">Mercer Kernels:</span> 
-                    <strong>Mercer kernel</strong> is also called a <strong>positive definte</strong> 
+                    <strong>Mercer kernel</strong> is also called a <strong>positive definite</strong> 
                     kernel, which is any symmetric function:
                     \[
                     \mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}^+
@@ -193,7 +193,7 @@ uses_python: true
                     \sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0
                     \]
                     for any set of N input data, \(\boldsymbol{x}_i \in \mathcal{X}\), and any choice of numbers 
-                    \(c_i \in \mathbb{R}\). Note that for the equality sign, \(\forall i, c_i =0\).
+                    \(c_i \in \mathbb{R}\). Note that the equality allowed when  \(\forall i, c_i =0\).
                 </div>
 
                 <p>
@@ -205,7 +205,7 @@ uses_python: true
                     \]
                 </p>
                 <p>
-                    As we have seen, a one of the most widely used stationary kernel in practice is 
+                    As we have seen, one of the most widely used stationary kernel in practice is 
                     a <strong>radial basis function (RBF) kernel</strong>:
                     \[
                     \begin{align*}
@@ -232,8 +232,31 @@ uses_python: true
                     \]
                     where \(sigma^2\) is the overall variance and \(\ell_d\) is the characteristic length scale of dimension \(d\). If \(d\) 
                     is an irrelevant input dimension, we set \(\ell_d = \infty\), and then the corresponding dimension will be ignored. This is why 
-                    this kernel is called the <strong>automoatic relevance determination (ARD)</strong> kernel. 
+                    this kernel is called the <strong>automatic relevance determination (ARD)</strong> kernel. 
                  </p>
+
+                 <p>
+                    Furthermore, by replacing Euclidean distance with Mahalanobis distance, we obtain the generalized RBF kernel: 
+                    \[
+                    \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
+                    = \sigma^2 \exp \left( - \frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r}\right).
+                    \]
+                    When \(\boldsymbol{\Sigma}\) is diagonal with entries \(\ell_1^2, \ldots, \ell_D^2\), this can be rewritten as:
+                    \[
+                    \begin{align*}
+                    \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
+                    &= \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{r_d^2}{\ell_d^2} \right) \\
+                    &= \sigma^2 \prod_{d=1}^D \exp\left(-\frac{r_d^2}{2\ell_d^2}\right) \\
+                    &= \prod_{d=1}^D \left[\sigma^{2/D} \exp\left(-\frac{r_d^2}{2\ell_d^2}\right)\right] \\
+                    &= \prod_{d=1}^D \mathcal{K}(r_d ; \ell_d, \sigma^{2/D})
+                \end{align*}
+                    \]
+                    where we factored \(\sigma^2 = (\sigma^{2/D})^D\). This expresses the multidimensional ARD kernel as a product of 
+                    \(D\) one-dimensional RBF kernels, each with its own length scale \(\ell_d\) and variance parameter \(\sigma^{2/D}\). 
+                    Here, \(\sigma^2\) is the overall output variance and \(\ell_d\) is the characteristic length scale of dimension \(d\). 
+                    If dimension \(d\) is irrelevant to the output, we set \(\ell_d \to \infty\), which causes \(\exp(-r_d^2/(2\ell_d^2)) \to 1\), 
+                    effectively ignoring that dimension. This is why this kernel is called the <strong>automatic relevance determination (ARD) kernel</strong>.
+                </p>
 
                 <p>
                 <strong>Matérn kernels</strong> are popular in Bayesian optimization for their flexibility:</p>
@@ -255,7 +278,7 @@ uses_python: true
                     \[
                     \mathcal{K}(r; \frac{5}{2}, \ell )  = \left(1 + \frac{\sqrt{5}r}{\ell} + \frac{5r^2}{3\ell^2}\right)\exp \left(- \frac{\sqrt{5}r}{\ell}\right)
                     \]
-                    <li>Note that \(\nu \to \infty\) recovers SE kernel.</li>
+                    <li>Note that \(\nu \to \infty\) recovers RBF kernel.</li>
                 </ul>
 
             </section>
