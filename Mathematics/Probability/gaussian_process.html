@@ -176,9 +176,12 @@ uses_python: true
 
             <section id="kernel" class="section-content">
                 <h2>Kernel Functions</h2>
+
                 <p>
-                    The kernel function determines the <strong>similarity</strong> between function values at different input points. The choice of kernel is crucial 
-                    as it controls the properties of the functions in our GP prior.
+                    The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between function values 
+                    at different input points. In a Gaussian process (GP), the choice of kernel is crucial since it 
+                    determines the smoothness, periodicity, and other structural properties of the functions drawn 
+                    from the GP prior.
                 </p>
 
                  <div class="theorem">
@@ -192,25 +195,24 @@ uses_python: true
                     \[
                     \sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0
                     \]
-                    for any choice of numbers  \(c_i \in \mathbb{R}\). 
-                    <br>
-                    Note that the equality allowed when  \(\forall i, c_i =0\). 
+                    for any choice of numbers  \(c_i \in \mathbb{R}\). The equality allowed when \(\forall i, c_i =0\). 
                     <br>
                     This means that the corresponding Gram matrix 
                     \( \boldsymbol{K} = [\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)]_{i,j=1}^N \)
                     is <strong>positive semidefinite</strong>. 
-                    Note that this condition does <em>not</em> require each individual kernel value 
+                    Note that this condition does NOT require each individual kernel value 
                     \(\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\) to be nonnegative.
                 </div>
 
-                <p>
-                    Here, we focus on <strong>stationary kernels</strong>, which measure similarity between two data points only 
-                    depending on \(\boldsymbol{r} = \boldsymbol{x} - \boldsymbol{x}'\), not their location. In many situations, 
-                    only the magnitude of \(\boldsymbol{r}\) does matter:
+                 <p>
+                    We often focus on <strong>stationary kernels</strong>, which depend only on the difference between inputs,
+                    \(\boldsymbol{r} = \boldsymbol{x} - \boldsymbol{x}'\), and not on their absolute locations. 
+                    In many cases, only the Euclidean distance between inputs matters:
                     \[
-                    r = \| \boldsymbol{r} \|_2 = \| \boldsymbol{x} - \boldsymbol{x}'\|.
+                    r = \|\boldsymbol{r}\|_2 = \|\boldsymbol{x} - \boldsymbol{x}'\|.
                     \]
                 </p>
+
                 <p>
                     As we have seen, one of the most widely used stationary kernel in practice is 
                     a <strong>radial basis function (RBF) kernel</strong>:
@@ -219,8 +221,9 @@ uses_python: true
                     \mathcal{K}(r ; \ell) &= \exp \left( -\frac{r^2}{2\ell^2}\right) \\\\
                                           &= \exp \left( -\frac{\| \boldsymbol{x} - \boldsymbol{x}'\|^2}{2\ell^2}\right)
                     \end{align*}
-                    \]
-                    where \(\ell\) is the <strong>length-scale</strong> of the kernel. This is also called the <strong>Gaussian kernel</strong>.
+                    \]          
+                    where \(\ell > 0\) is the <strong>length-scale</strong> parameter controlling how quickly the correlation 
+                    between points decays with distance. This kernel is also known as the  <strong>Gaussian kernel</strong>.
                 </p>
                 
                 <p>
@@ -229,63 +232,58 @@ uses_python: true
                     \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
                     = \sigma^2 \exp \left( - \frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r}\right).
                     \]
-                    Moreover, in the case \(\boldsymbol{\Sigma}\) is diagonal, this can be rewritten as:
-                    \[
-                    \begin{align*}
-                    \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
-                    &=  \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{1}{\ell_d^2 }r_d^2 \right) \\\\
-                    &= \prod_{d=1}^D \mathcal{K}(r_d ; \ell_d, \sigma^{\frac{2}{d}})
-                   \end{align*}
-                    \]
-                    where \(sigma^2\) is the overall variance and \(\ell_d\) is the characteristic length scale of dimension \(d\). If \(d\) 
-                    is an irrelevant input dimension, we set \(\ell_d = \infty\), and then the corresponding dimension will be ignored. This is why 
-                    this kernel is called the <strong>automatic relevance determination (ARD)</strong> kernel. 
-                 </p>
-
-                 <p>
-                    Furthermore, by replacing Euclidean distance with Mahalanobis distance, we obtain the generalized RBF kernel: 
+                    In the case \(\boldsymbol{\Sigma}\) is diagonal, i.e. \(\boldsymbol{\Sigma} = \mathrm{diag}(\ell_1^2, \ldots, \ell_D^2)\),
+                    we obtain the <strong>Automatic Relevance Determination (ARD) kernel</strong>:
                     \[
                     \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
-                    = \sigma^2 \exp \left( - \frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r}\right).
+                    =  \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{1}{\ell_d^2 }r_d^2 \right)
                     \]
-                    When \(\boldsymbol{\Sigma}\) is diagonal with entries \(\ell_1^2, \ldots, \ell_D^2\), this can be rewritten as:
-                    \[
-                    \begin{align*}
-                    \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
-                    &= \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{r_d^2}{\ell_d^2} \right) \\
-                    &= \sigma^2 \prod_{d=1}^D \exp\left(-\frac{r_d^2}{2\ell_d^2}\right) \\
-                    &= \prod_{d=1}^D \left[\sigma^{2/D} \exp\left(-\frac{r_d^2}{2\ell_d^2}\right)\right] \\
-                    &= \prod_{d=1}^D \mathcal{K}(r_d ; \ell_d, \sigma^{2/D})
-                \end{align*}
-                    \]
-                    where we factored \(\sigma^2 = (\sigma^{2/D})^D\). This expresses the multidimensional ARD kernel as a product of 
-                    \(D\) one-dimensional RBF kernels, each with its own length scale \(\ell_d\) and variance parameter \(\sigma^{2/D}\). 
-                    Here, \(\sigma^2\) is the overall output variance and \(\ell_d\) is the characteristic length scale of dimension \(d\). 
-                    If dimension \(d\) is irrelevant to the output, we set \(\ell_d \to \infty\), which causes \(\exp(-r_d^2/(2\ell_d^2)) \to 1\), 
-                    effectively ignoring that dimension. This is why this kernel is called the <strong>automatic relevance determination (ARD) kernel</strong>.
+                    where \(sigma^2\) is the overall variance and \(\ell_d >0\) is the characteristic length scale of dimension \(d\), 
+                    controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, we can 
+                    set \(\ell_d = \infty\), effectively ignoring that input. 
                 </p>
 
                 <p>
-                <strong>Matérn kernels</strong> are popular in Bayesian optimization for their flexibility:</p>
-                \[
-                \mathcal{K}(r; \nu, \ell ) = \frac{2^{1-\nu}}{\Gamma(\nu)}\left(\frac{\sqrt{2\nu}r}{\ell}\right)^\nu 
-                K_\nu\left(\frac{\sqrt{2\nu}r}{\ell}\right)
-                \]
-                <p>where \(K_\nu\) is the modified Bessel function and \(\nu\) controls smoothness. Common choices:</p>
-                <ul style="padding-left: 40px;">
-                    <li>Exponential kernel (non-differentiable):</li>
+                    <strong>Matérn kernels</strong> are widely used (e.g. in Bayesian optimisation) for their flexibility
+                    in controlling function smoothness. For parameters \(\nu>0\), \(\ell>0\) (and optionally \(\sigma^2>0\)),
+                    the Matérn kernel is
+                </p>
                     \[
-                    \mathcal{K}(r; \frac{1}{2}, \ell )  = \exp \left(- \frac{r}{\ell}\right)
+                    \mathcal{K}(r; \nu, \ell ) = \frac{2^{1-\nu}}{\Gamma(\nu)}\left(\frac{\sqrt{2\nu}r}{\ell}\right)^\nu 
+                    K_\nu\left(\frac{\sqrt{2\nu}r}{\ell}\right)
                     \]
-                    <li>Once differentiable:</li>
-                    \[
-                    \mathcal{K}(r; \frac{3}{2}, \ell )  = \left(1 + \frac{\sqrt{3}r}{\ell}\right)\exp \left(- \frac{\sqrt{3}r}{\ell}\right)
-                    \]
-                    <li>Twice differentiable:</li>
-                    \[
-                    \mathcal{K}(r; \frac{5}{2}, \ell )  = \left(1 + \frac{\sqrt{5}r}{\ell} + \frac{5r^2}{3\ell^2}\right)\exp \left(- \frac{\sqrt{5}r}{\ell}\right)
-                    \]
-                    <li>Note that \(\nu \to \infty\) recovers RBF kernel.</li>
+                <p>
+                    where \(K_\nu\) denotes the modified Bessel function of the second kind.
+                    The parameter \(\nu\) controls smoothness: sample paths of the GP are
+                    \(\lfloor \nu - \tfrac{1}{2}\rfloor\)-times mean-square differentiable. Common choices
+                    (up to the variance factor \(\sigma^2\)) admit closed forms:
+                </p>
+
+                <ul style="padding-left:40px;">
+                    <li>
+                        <strong>Exponential kernel</strong> (\(\nu=\tfrac{1}{2}\), non-differentiable):
+                        \[
+                        \mathcal{K}(r;\tfrac{1}{2},\ell,\sigma^2)=\sigma^2\exp\!\left(-\frac{r}{\ell}\right).
+                        \]
+                    </li>
+                    <li>
+                        <strong>Once differentiable</strong> (\(\nu=\tfrac{3}{2}\)):
+                        \[
+                        \mathcal{K}(r;\tfrac{3}{2},\ell,\sigma^2)=\sigma^2\left(1+\frac{\sqrt{3}\,r}{\ell}\right)
+                        \exp\!\left(-\frac{\sqrt{3}\,r}{\ell}\right).
+                        \]
+                    </li>
+                    <li>
+                        <strong>Twice differentiable</strong> (\(\nu=\tfrac{5}{2}\)):
+                        \[
+                        \mathcal{K}(r;\tfrac{5}{2},\ell,\sigma^2)=\sigma^2\left(1+\frac{\sqrt{5}\,r}{\ell}
+                        +\frac{5r^2}{3\ell^2}\right)\exp\!\left(-\frac{\sqrt{5}\,r}{\ell}\right).
+                        \]
+                    </li>
+                    <li>
+                        In the limit \(\nu\to\infty\) (with \(\ell\) fixed appropriately) the Matérn family converges
+                        to the RBF kernel.
+                    </li>
                 </ul>
 
             </section>
