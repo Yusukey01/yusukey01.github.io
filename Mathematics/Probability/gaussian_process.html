@@ -327,52 +327,79 @@ uses_python: false
 
             </section>
 
-             <section id="regression" class="section-content">
+            <section id="regression" class="section-content">
                 <h2>GP Regression</h2>
                 <p>
-                    Suppose we observe a training data set \(\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N\), 
-                    where \(y_n = f(\boldsymbol{x}_n) + \epsilon_n\) and \(\epsilon_n \sim \mathcal{N}(0, \sigma_y^2)\).  
-                    Then the covariance of the noisy observations is
+                    Suppose we observe a training data set 
+                    \(\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N\),
+                    where each observation follows
+                    \[
+                    y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad 
+                    \epsilon_n \sim \mathcal{N}(0, \sigma_y^2).
+                    \]
+                    Under this model, the covariance of the noisy observations is
                     \[
                     \begin{align*}
-                    \text{Cov }[y_i, y_j] 
-                    &= \text{Cov }[f_i, f_j] + \text{Cov }[\epsilon_i, \epsilon_j] \\\\
-                    &= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \mathbb{I}(i = j).
+                    \mathrm{Cov}[y_i, y_j] 
+                    &= \mathrm{Cov}[f_i, f_j] + \mathrm{Cov}[\epsilon_i, \epsilon_j] \\\\
+                    &= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \, \mathbb{I}(i = j),
                     \end{align*}
                     \]
                     so that
                     \[
-                     \text{Cov }[\boldsymbol{y} \mid \boldsymbol{X}] = \boldsymbol{K}_{X, X} + \sigma_y^2 \boldsymbol{I}_N.
+                    \mathrm{Cov}[\boldsymbol{y} \mid \boldsymbol{X}] 
+                    = \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N.
                     \]
-                    Because a Gaussian process defines a joint distribution over any collection of inputs, we can 
-                    describe both the noisy training outputs and the underlying (noise-free) function values at the 
-                    test locations within a single multivariate normal distribution as follows:
+
+                    Because a Gaussian process defines a joint Gaussian distribution 
+                    over any collection of function values, we can express both 
+                    the noisy training outputs and the noise-free test values together as
                     \[
-                    \begin{bmatrix} \boldsymbol{y} \\ \boldsymbol{f}_* \end{bmatrix} 
+                    \begin{bmatrix} 
+                    \boldsymbol{y} \\ 
+                    \boldsymbol{f}_* 
+                    \end{bmatrix} 
                     \sim 
                     \mathcal{N} \Bigg(
-                        \begin{bmatrix} \boldsymbol{\mu}_X \\ \boldsymbol{\mu}_* \end{bmatrix},
-                        \begin{bmatrix} 
-                            \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I} & \boldsymbol{K}_{X,*} \\
-                            \boldsymbol{K}_{X,*}^\top & \boldsymbol{K}_{*, *}
-                        \end{bmatrix}
-                    \Bigg),
+                    \begin{bmatrix} 
+                        \boldsymbol{\mu}_X \\ 
+                        \boldsymbol{\mu}_* 
+                    \end{bmatrix},
+                    \begin{bmatrix} 
+                        \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N & \boldsymbol{K}_{X,*} \\\\
+                        \boldsymbol{K}_{X,*}^\top & \boldsymbol{K}_{*,*}
+                    \end{bmatrix}
+                    \Bigg).
                     \]
-                    The posterior predictive distribution at the test points \(\boldsymbol{X}_*\) is then:
+
+                    The posterior predictive distribution at the test points 
+                    \(\boldsymbol{X}_*\) is obtained by conditioning on the observed data:
                     \[
-                    p(\boldsymbol{f}_* \mid \mathcal{D}, \boldsymbol{X}_*)
-                    = \mathcal{N}(\boldsymbol{f}_* \mid \boldsymbol{\mu}_{* \mid X} \boldsymbol{\Sigma}_{* \mid X})
+                    p(\boldsymbol{f}_* \mid \mathcal{D}, \boldsymbol{X}_*) 
+                    = \mathcal{N}\big(
+                        \boldsymbol{f}_* \mid 
+                        \boldsymbol{\mu}_{* \mid X}, 
+                        \boldsymbol{\Sigma}_{* \mid X}
+                    \big),
                     \]
-                    where 
+                    where
                     \[
-                    \boldsymbol{\mu}_{* \mid X} = \boldsymbol{\mu}_* + \boldsymbol{K}_{X, *}^\top  \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I} \big)^{-1} (\boldsymbol{y} - \boldsymbol{\mu}_X),
+                    \boldsymbol{\mu}_{* \mid X} 
+                    = \boldsymbol{\mu}_* 
+                    + \boldsymbol{K}_{X,*}^\top  
+                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1} 
+                        (\boldsymbol{y} - \boldsymbol{\mu}_X),
                     \]
                     \[
-                    \boldsymbol{\Sigma}_{* \mid X} = \boldsymbol{K}_{*,*} - \boldsymbol{K}_{X, *}^\top \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}\big)^{-1} \boldsymbol{K}_{X, *}.
+                    \boldsymbol{\Sigma}_{* \mid X} 
+                    = \boldsymbol{K}_{*,*} 
+                    - \boldsymbol{K}_{X,*}^\top 
+                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1} 
+                        \boldsymbol{K}_{X,*}.
                     \]
                 </p>
-               
-             </section>
+                </section>
+
        
         </div>
         
