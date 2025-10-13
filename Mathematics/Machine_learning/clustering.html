@@ -293,9 +293,9 @@ uses_python: false
                         where \(\mathbf{W}\) is a symmetric weight matrix and \(\mathbf{D}\) is the diagonal degree matrix \(D_{ii} = \sum_j w_{ij}\).
 
                         <br><br>
-                        For any vector \(\mathbf{f} \in \mathbb{R}^N\), the quadratic form of the Laplacian is:
+                        For any vector \(\boldsymbol{f} \in \mathbb{R}^N\), the quadratic form of the Laplacian is:
                         \[
-                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = \mathbf{f}^\top (\mathbf{D} - \mathbf{W})\mathbf{f}
+                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \boldsymbol{f}^\top (\mathbf{D} - \mathbf{W})\boldsymbol{f}
                         = \sum_i D_{ii} f_i^2 - \sum_{i,j} w_{ij} f_i f_j.
                         \]
 
@@ -306,7 +306,7 @@ uses_python: false
 
                         So the full expression becomes:
                         \[
-                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = \sum_{i,j} w_{ij} f_i^2 - \sum_{i,j} w_{ij} f_i f_j \tag{1}
+                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \sum_{i,j} w_{ij} f_i^2 - \sum_{i,j} w_{ij} f_i f_j \tag{1}
                         \]
 
                         Now, since \(W\) is symmetric, \(w_{ij} = w_{ji}\), then:
@@ -320,7 +320,7 @@ uses_python: false
                         Plugging this into the expression (1):
                         \[
                         \begin{align*}
-                        \mathbf{f}^\top \mathbf{L} \mathbf{f} &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2) - \sum_{i,j} w_{ij} f_i f_j \\\\
+                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2) - \sum_{i,j} w_{ij} f_i f_j \\\\
                                                               &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2 - 2f_i f_j) \\\\
                                                               &= \boxed{\frac{1}{2} \sum_{i,j} w_{ij} (f_i - f_j)^2.}
                          \end{align*}
@@ -328,9 +328,9 @@ uses_python: false
 
                         <br>
                         <strong>Case 1: \(k = 1\)</strong><br>
-                        Suppose \(\mathbf{f} \in \mathbb{R}^n\) is an eigenvector corresponding to eigenvalue 0, i.e., \(\mathbf{L} \mathbf{f} = 0\). Then:
+                        Suppose \(\boldsymbol{f} \in \mathbb{R}^n\) is an eigenvector corresponding to eigenvalue 0, i.e., \(\mathbf{L} \boldsymbol{f} = 0\). Then:
                         \[
-                        \mathbf{f}^\top \mathbf{L} \mathbf{f} = 0 \quad \Rightarrow \quad \sum_{i,j} w_{ij}(f_i - f_j)^2 = 0.
+                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = 0 \quad \Rightarrow \quad \sum_{i,j} w_{ij}(f_i - f_j)^2 = 0.
                         \]
 
                         Since \(w_{ij} \geq 0\), each term \((f_i - f_j)^2\) must be zero wherever \(w_{ij} > 0\). That is, for every edge \((i,j) \in E\), we have:
@@ -343,7 +343,7 @@ uses_python: false
                         f_i = f_j \quad \text{for all } i,j.
                         \]
 
-                        Therefore, \(\mathbf{f}\) must be constant on all vertices — i.e., \(\mathbf{f} \in \text{span}\{\mathbf{1}\}\). Hence, the nullspace of \(\mathbf{L}\) 
+                        Therefore, \(\boldsymbol{f}\) must be constant on all vertices — i.e., \(\boldsymbol{f} \in \text{span}\{\mathbf{1}\}\). Hence, the nullspace of \(\mathbf{L}\) 
                         is one-dimensional and spanned by the constant vector \(\mathbf{1} = [1, 1, \dots, 1]^\top\). This confirms that the eigenvalue 0 has multiplicity 1.
                         <br><br>
 
@@ -364,14 +364,23 @@ uses_python: false
                         by \(\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_k}\), and the eigenvalue 0 has multiplicity \(k\).
                      </div>
                 </p>
+
                 <p>
-                    <strong>Note:</strong> Clearly, the graph Laplacian \(\mathbf{L}\) is symmetric and positive semi-definite, since 
-                    \(\mathbf{f}^\top \mathbf{L} \mathbf{f} \geq 0\) for all \(\mathbf{f} \in \mathbb{R}^N\). This expression is called the 
-                    <strong>Laplacian quadratic form</strong>, or the <strong>Dirichlet energy</strong> of \(\mathbf{f}\):
+                    We can consider the graph Laplacian as a difference operator to compute a discrete derivative of the function at a point:
                     \[
-                    \mathbf{f}^\top \mathbf{L} \mathbf{f} = \frac{1}{2} \sum_{i,j} w_{ij}(f_i - f_j)^2.
+                    (\boldsymbol{L}\boldsymbol{f})(i) = \sum_{j \in \text{nbr}_i} W_{ij} [\boldsymbol{f}_i - \boldsymbol{f}(j)]
                     \]
-                    It measures the <strong>smoothness</strong> of the function \(\mathbf{f}\) on the graph: it becomes small when adjacent nodes 
+                    where \(\text{nbr}_i\) is the set of neighbors of node \(i\).
+                </p>
+
+                <p>
+                    Clearly, the graph Laplacian \(\mathbf{L}\) is symmetric and positive semi-definite, since 
+                    \(\boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} \geq 0\) for all \(\boldsymbol{f} \in \mathbb{R}^N\). This expression is called the 
+                    <strong>Laplacian quadratic form</strong>, or the <strong>Dirichlet energy</strong> of \(\boldsymbol{f}\):
+                    \[
+                    \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \frac{1}{2} \sum_{i,j} w_{ij}(f_i - f_j)^2.
+                    \]
+                    It measures the <strong>smoothness</strong> of the function \(\boldsymbol{f}\) on the graph: it becomes small when adjacent nodes 
                     (i.e., those with \(w_{ij} > 0\)) have similar values. 
                     <br><br>
                     The Dirichlet energy plays a central role in <strong>spectral graph theory</strong>. In spectral clustering, minimizing Dirichlet 
