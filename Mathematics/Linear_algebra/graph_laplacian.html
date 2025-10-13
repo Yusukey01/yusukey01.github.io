@@ -194,8 +194,136 @@ uses_python: true
                 </p>
             </section>
 
-            <section id="" class="section-content">
-                <h2></h2>
+            <section id="F" class="section-content">
+
+            <h3>Spectral Properties and the Fiedler Vector</h3>
+            <p>
+                The eigenvalues of the graph Laplacian provide deep insights into graph structure. For the unnormalized Laplacian \(\mathbf{L}\), 
+                the eigenvalues satisfy \(0 = \lambda_0 \leq \lambda_1 \leq \cdots \leq \lambda_{n-1}\).
+            </p>
+
+            <div class="theorem">
+                <span class="theorem-title">The Fiedler Vector and Algebraic Connectivity</span>
+                The second smallest eigenvalue \(\lambda_1\) is called the <strong>algebraic connectivity</strong> or <strong>Fiedler value</strong>. 
+                Its corresponding eigenvector \(v_1\) (the <strong>Fiedler vector</strong>) has remarkable properties:
+                <ul style="padding-left: 40px;">
+                    <li>\(\lambda_1 > 0\) if and only if the graph is connected</li>
+                    <li>Larger \(\lambda_1\) indicates stronger connectivity</li>
+                    <li>The Fiedler vector provides a natural 1D embedding that tends to separate loosely connected parts</li>
+                </ul>
+            </div>
+
+            <h3>The Spectral Gap and Cheeger's Inequality</h3>
+            <p>
+                The <strong>spectral gap</strong> \(\lambda_1\) relates to how well-connected the graph is. This is formalized by Cheeger's inequality, 
+                which bounds the relationship between the spectral gap and the graph's expansion properties:
+            </p>
+
+            <div class="theorem">
+                <span class="theorem-title">Cheeger's Inequality</span>
+                For a connected graph, let \(h(G)\) be the <strong>Cheeger constant</strong> (isoperimetric number):
+                \[
+                h(G) = \min_{S \subset V, 0 < |S| \leq n/2} \frac{|\partial S|}{\min(|S|, |V \setminus S|)}
+                \]
+                where \(|\partial S|\) is the number of edges between \(S\) and its complement. Then:
+                \[
+                \frac{h(G)^2}{2d_{max}} \leq \lambda_1 \leq 2h(G)
+                \]
+                This shows that graphs with large spectral gaps have good expansion properties—there are no "bottlenecks" separating the graph into weakly connected parts.
+            </p>
+
+            <h3>Graph Signal Processing Perspective</h3>
+            <p>
+                The eigenvectors of the Laplacian form a <strong>Fourier basis</strong> for signals on the graph. For a signal \(f: V \to \mathbb{R}\) 
+                defined on vertices:
+            </p>
+
+            <div class="theorem">
+                <span class="theorem-title">Graph Fourier Transform</span>
+                If \(\mathbf{U} = [u_0, u_1, \ldots, u_{n-1}]\) contains the eigenvectors of \(\mathbf{L}\), the Graph Fourier Transform is:
+                \[
+                \hat{f} = \mathbf{U}^T f
+                \]
+                and the inverse transform:
+                \[
+                f = \mathbf{U} \hat{f}
+                \]
+                The eigenvalues \(\lambda_i\) represent "frequencies": 
+                <ul style="padding-left: 40px;">
+                    <li>Small \(\lambda_i\) ↔ low frequency (smooth over graph)</li>
+                    <li>Large \(\lambda_i\) ↔ high frequency (oscillatory over graph)</li>
+                </ul>
+            </div>
+
+            <p>
+                This perspective is crucial for Graph Neural Networks, where spectral methods like ChebNet use polynomial approximations 
+                of spectral filters:
+                \[
+                g_\theta(L) = \sum_{k=0}^K \theta_k T_k(\tilde{L})
+                \]
+                where \(T_k\) are Chebyshev polynomials and \(\tilde{L} = \frac{2}{\lambda_{max}}L - I\) is the scaled Laplacian.
+            </p>
+
+            <h3>Connection to Random Walks and Diffusion</h3>
+            <p>
+                The normalized Laplacian connects to random walks and diffusion processes on graphs:
+            </p>
+
+            <div class="theorem">
+                <span class="theorem-title">Heat Diffusion on Graphs</span>
+                The heat equation on a graph is:
+                \[
+                \frac{\partial u}{\partial t} = -\mathbf{L} u
+                \]
+                with solution:
+                \[
+                u(t) = e^{-t\mathbf{L}} u(0) = \sum_{i=0}^{n-1} e^{-t\lambda_i} \langle u(0), v_i \rangle v_i
+                \]
+                This shows how initial heat distribution \(u(0)\) diffuses over the graph, with convergence rate determined by \(\lambda_1\).
+            </div>
+
+            <h3>Computational Considerations for Large Graphs</h3>
+            <p>
+                For graphs with millions of nodes (common in 2025 applications), exact eigendecomposition is infeasible. 
+                Modern approaches include:
+            </p>
+
+            <ul style="padding-left: 40px;">
+                <li><strong>Lanczos Algorithm:</strong> Iteratively finds top-k eigenvectors in \(O(kn)\) per iteration</li>
+                <li><strong>Power Iteration:</strong> Simple method for dominant eigenvector, basis for PageRank</li>
+                <li><strong>Chebyshev Polynomial Approximation:</strong> Avoids eigendecomposition entirely:
+                    \[
+                    T_k(x) = 2xT_{k-1}(x) - T_{k-2}(x)
+                    \]
+                    Used in Graph Convolutional Networks (GCNs) for scalable spectral filtering
+                </li>
+                <li><strong>Random Projection Methods:</strong> Johnson-Lindenstrauss based approaches for approximate embeddings</li>
+            </ul>
+
+            <h3>Modern Applications Beyond Clustering</h3>
+            <p>
+                Graph Laplacians are fundamental to many 2025 AI applications:
+            </p>
+
+            <ul style="padding-left: 40px;">
+                <li><strong>Graph Neural Networks:</strong> GCN uses \(\tilde{L} = I - D^{-1/2}AD^{-1/2}\) for message passing</li>
+                <li><strong>Recommender Systems:</strong> Netflix/YouTube use spectral methods on user-item graphs</li>
+                <li><strong>Protein Structure:</strong> AlphaFold uses graph representations with Laplacian-based features</li>
+                <li><strong>Social Network Analysis:</strong> Community detection via spectral clustering at Facebook/LinkedIn scale</li>
+                <li><strong>Computer Vision:</strong> Superpixel segmentation and image denoising via graph cuts</li>
+            </ul>
+
+            <div class="theorem">
+                <span class="theorem-title">Connection to Your Previous Topics</span>
+                The graph Laplacian synthesizes concepts from across your curriculum:
+                <ul style="padding-left: 40px;">
+                    <li>From <strong>Linear Algebra:</strong> Eigendecomposition, positive semi-definite matrices, matrix norms</li>
+                    <li>From <strong>Calculus:</strong> Discrete differential operators, optimization on manifolds</li>
+                    <li>From <strong>Probability:</strong> Random walks, Markov chains (P = I - L_rw)</li>
+                    <li>From <strong>Discrete Math:</strong> Graph theory, combinatorial optimization</li>
+                </ul>
+                This makes it an ideal bridge between pure mathematics and modern machine learning applications.
+            </div>
             </section>
 
 
