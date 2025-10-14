@@ -1,0 +1,459 @@
+---
+layout: default
+title: Fourier Transform
+level: detail
+description: Learn about the Fourier transform, its properties, and applications to signal processing and machine learning.
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        <!-- LearningResource Schema for Fourier Transform -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Fourier Transform",
+        "description": "Learn about the Fourier transform, its properties, and applications to signal processing and machine learning",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator",
+            "knowsAbout": [
+            "Fourier Transform",
+            "Signal Processing",
+            "Frequency Analysis",
+            "Fast Fourier Transform",
+            "Convolution Theorem",
+            "Machine Learning",
+            "Harmonic Analysis"
+            ]
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Fourier Transform" },
+            { "@type": "Thing", "name": "Discrete Fourier Transform" },
+            { "@type": "Thing", "name": "Fast Fourier Transform" },
+            { "@type": "Thing", "name": "Convolution Theorem" },
+            { "@type": "Thing", "name": "Frequency Domain" },
+            { "@type": "Thing", "name": "Time-Frequency Analysis" },
+            { "@type": "Thing", "name": "Plancherel Theorem" },
+            { "@type": "Thing", "name": "Random Fourier Features" }
+        ],
+        "teaches": [
+            "Understanding the continuous Fourier transform",
+            "Computing discrete Fourier transforms efficiently",
+            "Applying the convolution theorem",
+            "Working in frequency domain representation",
+            "Understanding the Fast Fourier Transform algorithm",
+            "Connecting Fourier methods to machine learning",
+            "Applying Fourier analysis to signal processing"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Calculus to Optimization & Analysis",
+            "description": "Explore optimization techniques and mathematical analysis with applications",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "II",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT4H",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name">Fourier Transform
+            </h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#continuous">Continuous Fourier Transform</a>
+            <a href="#properties">Properties of Fourier Transform</a>
+            <a href="#convolution">Convolution Theorem</a>
+            <a href="#discrete">Discrete Fourier Transform</a>
+            <a href="#fft">Fast Fourier Transform</a>
+            <a href="#ml">Applications in Machine Learning</a>
+        </div>  
+
+        <div class="container">     
+            <section id="continuous" class="section-content">
+            <h2>Continuous Fourier Transform</h2>
+            <p>
+            The <strong>Fourier transform</strong> extends the ideas of <a href="fourier_series.html">Fourier series</a> 
+            from periodic functions to non-periodic functions defined on \(\mathbb{R}\). While Fourier series decompose 
+            periodic signals into discrete frequency components, the Fourier transform decomposes general signals into 
+            a continuous spectrum of frequencies.
+            <br><br>
+            For a function \(f: \mathbb{R} \to \mathbb{C}\) (or \(\mathbb{R} \to \mathbb{R}\)), the <strong>Fourier transform</strong> 
+            \(\hat{f}\) is defined by:
+            \[
+            \hat{f}(\omega) = \mathcal{F}\{f\}(\omega) = \int_{-\infty}^{\infty} f(x)e^{-i\omega x} \, dx
+            \]
+            where \(\omega \in \mathbb{R}\) is the <strong>frequency variable</strong> (or <strong>angular frequency</strong>).
+            <br><br>
+            The <strong>inverse Fourier transform</strong> recovers \(f\) from \(\hat{f}\):
+            \[
+            f(x) = \mathcal{F}^{-1}\{\hat{f}\}(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\omega)e^{i\omega x} \, d\omega
+            \]
+            <br>
+            Note: Different conventions exist for the placement of the factor \(\frac{1}{2\pi}\). Some authors place 
+            \(\frac{1}{\sqrt{2\pi}}\) in both the forward and inverse transforms to make them symmetric. The convention 
+            above is common in mathematics and engineering.
+            <br><br>
+            The Fourier transform is well-defined for functions in \(L^1(\mathbb{R})\) (absolutely integrable functions):
+            \[
+            \int_{-\infty}^{\infty} |f(x)| \, dx < \infty
+            \]
+            and can be extended to \(L^2(\mathbb{R})\) (square-integrable functions) using limiting procedures.
+            <div class="proof">
+                <span class="proof-title">Example: Gaussian Function</span>
+                Consider the Gaussian function:
+                \[
+                f(x) = e^{-\frac{x^2}{2}}
+                \]
+                Its Fourier transform is:
+                \[
+                \begin{align*}
+                \hat{f}(\omega) &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}}e^{-i\omega x} \, dx \\\\
+                &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2} - i\omega x} \, dx \\\\
+                &= e^{-\frac{\omega^2}{2}} \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx \\\\
+                &= \sqrt{2\pi} \cdot e^{-\frac{\omega^2}{2}}
+                \end{align*}
+                \]
+                This remarkable result shows that the Gaussian function is an <strong>eigenfunction</strong> of the Fourier 
+                transform: its transform is also a Gaussian (up to a constant). This property makes Gaussian functions 
+                fundamental in signal processing and probability theory.
+            </div>
+            </p>
+            </section>
+
+            <section id="properties" class="section-content">
+            <h2>Properties of Fourier Transform</h2>
+            <p>
+            The Fourier transform has several important properties that make it a powerful tool for analysis:
+            <br><br>
+            <strong>1. Linearity:</strong>
+            \[
+            \mathcal{F}\{\alpha f + \beta g\} = \alpha \mathcal{F}\{f\} + \beta \mathcal{F}\{g\}
+            \]
+            for constants \(\alpha, \beta \in \mathbb{C}\).
+            <br><br>
+            <strong>2. Translation (Shift) Property:</strong>
+            \[
+            \mathcal{F}\{f(x - a)\}(\omega) = e^{-i\omega a}\hat{f}(\omega)
+            \]
+            A shift in time corresponds to a phase shift in frequency.
+            <br><br>
+            <strong>3. Modulation Property:</strong>
+            \[
+            \mathcal{F}\{e^{i\omega_0 x}f(x)\}(\omega) = \hat{f}(\omega - \omega_0)
+            \]
+            Multiplication by a complex exponential shifts the frequency spectrum.
+            <br><br>
+            <strong>4. Scaling Property:</strong>
+            \[
+            \mathcal{F}\{f(ax)\}(\omega) = \frac{1}{|a|}\hat{f}\left(\frac{\omega}{a}\right), \quad a \neq 0
+            \]
+            Compressing a signal in time stretches its frequency spectrum, and vice versa.
+            <br><br>
+            <strong>5. Differentiation Property:</strong>
+            \[
+            \mathcal{F}\{f'(x)\}(\omega) = i\omega \hat{f}(\omega)
+            \]
+            More generally, for the \(n\)-th derivative:
+            \[
+            \mathcal{F}\{f^{(n)}(x)\}(\omega) = (i\omega)^n \hat{f}(\omega)
+            \]
+            This transforms differentiation into multiplication, which is why Fourier transforms are useful for solving 
+            differential equations.
+            <br><br>
+            <strong>6. Plancherel's Theorem (Generalized Parseval):</strong>
+            \[
+            \int_{-\infty}^{\infty} |f(x)|^2 \, dx = \frac{1}{2\pi}\int_{-\infty}^{\infty} |\hat{f}(\omega)|^2 \, d\omega
+            \]
+            This generalizes <a href="fourier_series.html#parseval">Parseval's identity</a> to the continuous case, 
+            showing energy conservation between time and frequency domains. The Fourier transform is a 
+            <strong>unitary operator</strong> on \(L^2(\mathbb{R})\).
+            <br><br>
+            <strong>7. Duality:</strong>
+            \[
+            \mathcal{F}\{\hat{f}(x)\}(\omega) = 2\pi f(-\omega)
+            \]
+            The Fourier transform of the Fourier transform (with a sign change) returns the original function, 
+            demonstrating a deep symmetry between time and frequency domains.
+            </p>
+            </section>
+
+            <section id="convolution" class="section-content">
+            <h2>Convolution Theorem</h2>
+            <p>
+            The <strong>convolution</strong> of two functions \(f\) and \(g\) is defined as:
+            \[
+            (f * g)(x) = \int_{-\infty}^{\infty} f(t)g(x-t) \, dt
+            \]
+            <br>
+            The <strong>convolution theorem</strong> states that the Fourier transform converts convolution into pointwise 
+            multiplication:
+            \[
+            \mathcal{F}\{f * g\}(\omega) = \hat{f}(\omega) \cdot \hat{g}(\omega)
+            \]
+            and conversely:
+            \[
+            \mathcal{F}\{f \cdot g\}(\omega) = \frac{1}{2\pi}(\hat{f} * \hat{g})(\omega)
+            \]
+            <br>
+            This is one of the most important properties of the Fourier transform. In many applications, computing 
+            a convolution directly is computationally expensive (\(O(n^2)\) operations for discrete signals), but 
+            using the FFT to compute the transform, multiplying in frequency domain, and transforming back can be 
+            much faster (\(O(n \log n)\) operations).
+            <br><br>
+            The convolution theorem is fundamental in:
+            <ul style="padding-left: 40px;">
+                <li><strong>Signal processing:</strong> Filtering operations are implemented as convolutions</li>
+                <li><strong>Image processing:</strong> Blurring, sharpening, and edge detection use convolution kernels</li>
+                <li><strong>Deep learning:</strong> Convolutional neural networks (CNNs) apply learned filters via convolution</li>
+                <li><strong>Probability theory:</strong> The PDF of a sum of independent random variables is the convolution 
+                of their individual PDFs</li>
+            </ul>
+            <div class="proof">
+                <span class="proof-title">Proof of Convolution Theorem:</span>
+                Starting with the definition of the Fourier transform:
+                \[
+                \begin{align*}
+                \mathcal{F}\{f * g\}(\omega) &= \int_{-\infty}^{\infty} (f * g)(x)e^{-i\omega x} \, dx \\\\
+                &= \int_{-\infty}^{\infty} \left(\int_{-\infty}^{\infty} f(t)g(x-t) \, dt\right) e^{-i\omega x} \, dx \\\\
+                &= \int_{-\infty}^{\infty} f(t) \left(\int_{-\infty}^{\infty} g(x-t)e^{-i\omega x} \, dx\right) dt
+                \end{align*}
+                \]
+                Let \(u = x - t\), then \(dx = du\) and:
+                \[
+                \begin{align*}
+                &= \int_{-\infty}^{\infty} f(t) \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega (u+t)} \, du\right) dt \\\\
+                &= \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du\right) dt \\\\
+                &= \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt \cdot \int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du \\\\
+                &= \hat{f}(\omega) \cdot \hat{g}(\omega)
+                \end{align*}
+                \]
+            </div>
+            </p>
+            </section>
+
+            <section id="discrete" class="section-content">
+            <h2>Discrete Fourier Transform (DFT)</h2>
+            <p>
+            In practice, we often work with discrete, finite sequences of data rather than continuous functions. 
+            The <strong>Discrete Fourier Transform (DFT)</strong> is the discrete analog of the continuous Fourier transform.
+            <br><br>
+            For a sequence of \(N\) complex numbers \(\{x_0, x_1, \ldots, x_{N-1}\}\), the DFT is defined as:
+            \[
+            X_k = \sum_{n=0}^{N-1} x_n e^{-\frac{2\pi i}{N}kn}, \quad k = 0, 1, \ldots, N-1
+            \]
+            <br>
+            The <strong>inverse DFT (IDFT)</strong> recovers the original sequence:
+            \[
+            x_n = \frac{1}{N}\sum_{k=0}^{N-1} X_k e^{\frac{2\pi i}{N}kn}, \quad n = 0, 1, \ldots, N-1
+            \]
+            <br>
+            The DFT can be expressed as a matrix multiplication. Define the \(N \times N\) <strong>DFT matrix</strong>:
+            \[
+            W = \begin{bmatrix}
+            1 & 1 & 1 & \cdots & 1 \\
+            1 & \omega & \omega^2 & \cdots & \omega^{N-1} \\
+            1 & \omega^2 & \omega^4 & \cdots & \omega^{2(N-1)} \\
+            \vdots & \vdots & \vdots & \ddots & \vdots \\
+            1 & \omega^{N-1} & \omega^{2(N-1)} & \cdots & \omega^{(N-1)^2}
+            \end{bmatrix}
+            \]
+            where \(\omega = e^{-\frac{2\pi i}{N}}\) is a primitive \(N\)-th root of unity.
+            <br><br>
+            Then the DFT can be written as:
+            \[
+            \mathbf{X} = W\mathbf{x}
+            \]
+            where \(\mathbf{x} = [x_0, x_1, \ldots, x_{N-1}]^T\) and \(\mathbf{X} = [X_0, X_1, \ldots, X_{N-1}]^T\).
+            <br><br>
+            The DFT matrix has remarkable properties:
+            <ul style="padding-left: 40px;">
+                <li>The columns of \(W\) are orthogonal (but not orthonormal)</li>
+                <li>\(W^*W = NI\), where \(W^*\) is the conjugate transpose</li>
+                <li>The inverse is \(W^{-1} = \frac{1}{N}W^*\)</li>
+            </ul>
+            <br>
+            Direct computation of the DFT using this matrix multiplication requires \(O(N^2)\) operations. However, 
+            the <strong>Fast Fourier Transform (FFT)</strong> algorithm reduces this to \(O(N \log N)\), making 
+            Fourier analysis practical for large datasets.
+            </p>
+            </section>
+
+            <section id="fft" class="section-content">
+            <h2>Fast Fourier Transform (FFT)</h2>
+            <p>
+            The <strong>Fast Fourier Transform (FFT)</strong> is not a different transform, but rather an efficient 
+            algorithm for computing the DFT. The most common FFT algorithm is the <strong>Cooley-Tukey algorithm</strong>, 
+            which uses a divide-and-conquer approach.
+            <br><br>
+            The key insight is that the DFT of size \(N\) can be expressed in terms of two DFTs of size \(\frac{N}{2}\) 
+            (assuming \(N\) is even). We split the sequence into even and odd indexed elements:
+            \[
+            \begin{align*}
+            X_k &= \sum_{n=0}^{N-1} x_n e^{-\frac{2\pi i}{N}kn} \\\\
+            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N}k(2m)} + \sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N}k(2m+1)} \\\\
+            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N/2}km} + e^{-\frac{2\pi i}{N}k}\sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N/2}km} \\\\
+            &= E_k + e^{-\frac{2\pi i}{N}k}O_k
+            \end{align*}
+            \]
+            where \(E_k\) and \(O_k\) are the DFTs of the even and odd subsequences, respectively.
+            <br><br>
+            This decomposition can be applied recursively when \(N\) is a power of 2, leading to the computational 
+            complexity:
+            \[
+            T(N) = 2T(N/2) + O(N) = O(N \log N)
+            \]
+            <br>
+            The FFT algorithm revolutionized signal processing when it was popularized by Cooley and Tukey in 1965 
+            (though variants had been discovered earlier by Gauss and others). It made real-time digital signal 
+            processing feasible and is now fundamental to:
+            <ul style="padding-left: 40px;">
+                <li>Audio and video compression (MP3, JPEG, MPEG)</li>
+                <li>Wireless communications (OFDM in WiFi, 4G/5G)</li>
+                <li>Medical imaging (MRI reconstruction)</li>
+                <li>Numerical solution of PDEs</li>
+                <li>Large integer multiplication</li>
+            </ul>
+            <br>
+            Modern implementations of FFT are highly optimized. Libraries like FFTW (Fastest Fourier Transform in the West) 
+            use advanced techniques including cache optimization and vectorization to achieve near-optimal performance 
+            on various hardware architectures.
+            </p>
+            </section>
+
+            <section id="ml" class="section-content">
+            <h2>Applications in Machine Learning</h2>
+            <p>
+            Fourier methods have numerous applications in modern machine learning:
+            <br><br>
+            <strong>1. Random Fourier Features:</strong>
+            <br>
+            As mentioned in the <a href="../Machine_learning/intro_classification.html">classification section</a>, 
+            <strong>random Fourier features</strong> provide an explicit approximation to kernel functions. For a 
+            shift-invariant kernel \(k(x, y) = k(x - y)\), by Bochner's theorem, there exists a probability measure 
+            \(\mu\) such that:
+            \[
+            k(x - y) = \int_{\mathbb{R}^d} e^{i\omega^T(x-y)} d\mu(\omega)
+            \]
+            <br>
+            We can approximate this integral using Monte Carlo sampling:
+            \[
+            k(x, y) \approx \frac{1}{D}\sum_{j=1}^{D} e^{i\omega_j^Tx}e^{-i\omega_j^Ty} = \langle \phi(x), \phi(y) \rangle
+            \]
+            where \(\omega_j \sim \mu\) are random frequencies and \(\phi(x) = \frac{1}{\sqrt{D}}[e^{i\omega_1^Tx}, \ldots, e^{i\omega_D^Tx}]^T\).
+            <br><br>
+            For real-valued features, we use:
+            \[
+            \phi(x) = \sqrt{\frac{2}{D}}\begin{bmatrix} \cos(\omega_1^Tx + b_1) \\ \vdots \\ \cos(\omega_D^Tx + b_D) \end{bmatrix}
+            \]
+            where \(b_j \sim \text{Uniform}[0, 2\pi]\).
+            <br><br>
+            This technique, introduced by Rahimi and Recht (2007), allows us to approximate kernel methods with 
+            explicit feature maps, enabling linear algorithms to be used for nonlinear problems efficiently.
+            <br><br>
+            <strong>2. Convolutional Neural Networks:</strong>
+            <br>
+            The convolution operations in CNNs can be implemented efficiently using FFT. For large filter sizes, 
+            computing convolutions via FFT is faster than direct spatial convolution. This is particularly important 
+            in applications like:
+            <ul style="padding-left: 40px;">
+                <li>Audio processing with CNNs</li>
+                <li>Video analysis with 3D convolutions</li>
+                <li>High-resolution image processing</li>
+            </ul>
+            <br>
+            <strong>3. Spectral Methods for Graph Neural Networks:</strong>
+            <br>
+            Spectral graph convolutional networks use the graph Fourier transform, defined via the eigendecomposition 
+            of the graph Laplacian. For a graph with Laplacian \(L = U\Lambda U^T\), the graph Fourier transform of 
+            a signal \(f\) on the graph is:
+            \[
+            \hat{f} = U^T f
+            \]
+            <br>
+            Convolution on graphs is then defined in the spectral domain as multiplication by a filter:
+            \[
+            g *_G f = U(U^T g \odot U^T f)
+            \]
+            where \(\odot\) denotes element-wise multiplication.
+            <br><br>
+            <strong>4. Time Series Analysis:</strong>
+            <br>
+            Fourier transforms are essential for analyzing temporal patterns in time series data:
+            <ul style="padding-left: 40px;">
+                <li><strong>Spectral analysis:</strong> Identifying dominant frequencies in periodic data</li>
+                <li><strong>Filtering:</strong> Removing noise or extracting specific frequency bands</li>
+                <li><strong>Forecasting:</strong> Seasonal decomposition using Fourier basis functions</li>
+            </ul>
+            <br>
+            <strong>5. Attention Mechanisms:</strong>
+            <br>
+            Recent work has shown connections between attention mechanisms in transformers and Fourier analysis. 
+            The attention operation can be viewed as a form of learnable spectral filtering, where the attention 
+            weights determine which frequency components to emphasize.
+            <br><br>
+            Some recent architectures explicitly incorporate Fourier transforms:
+            <ul style="padding-left: 40px;">
+                <li><strong>Fourier Neural Operator (FNO):</strong> Learns solution operators for PDEs in Fourier space</li>
+                <li><strong>FNet:</strong> Replaces self-attention with FFT for faster training</li>
+                <li><strong>Adaptive Fourier Neural Operators:</strong> Combines Fourier methods with neural networks 
+                for scientific computing</li>
+            </ul>
+            <br>
+            <strong>6. Data Augmentation:</strong>
+            <br>
+            Fourier-based augmentation techniques manipulate the frequency content of data:
+            <ul style="padding-left: 40px;">
+                <li>Phase manipulation for image augmentation</li>
+                <li>Frequency masking for audio data (as in SpecAugment)</li>
+                <li>Style transfer by swapping frequency components</li>
+            </ul>
+            <br><br>
+            The connection between Fourier analysis and machine learning continues to deepen, with new applications 
+            emerging regularly. Understanding Fourier methods provides valuable intuition for why certain architectures 
+            work well and suggests new directions for model design.
+            </p>
+            </section>
+        </div>
+        <script src="/js/main.js"></script>
+    </body>
+</html>
