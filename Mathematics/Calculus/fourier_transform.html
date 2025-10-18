@@ -45,7 +45,6 @@ uses_python: false
             { "@type": "Thing", "name": "Fast Fourier Transform" },
             { "@type": "Thing", "name": "Convolution Theorem" },
             { "@type": "Thing", "name": "Frequency Domain" },
-            { "@type": "Thing", "name": "Time-Frequency Analysis" },
             { "@type": "Thing", "name": "Plancherel Theorem" },
             { "@type": "Thing", "name": "Random Fourier Features" }
         ],
@@ -148,14 +147,29 @@ uses_python: false
                 \[
                 \begin{align*}
                 \hat{f}(\omega) &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}}e^{-i\omega x} \, dx \\\\
-                &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2} - i\omega x} \, dx \\\\
-                &= e^{-\frac{\omega^2}{2}} \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx \\\\
-                &= \sqrt{2\pi} \cdot e^{-\frac{\omega^2}{2}}
+                &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2} - i\omega x} \, dx
                 \end{align*}
+                \]
+                Complete the square in the exponent:
+                \[
+                -\frac{x^2}{2} - i\omega x = -\frac{1}{2}(x^2 + 2i\omega x) = -\frac{1}{2}\left((x + i\omega)^2 - (i\omega)^2\right) = -\frac{(x + i\omega)^2}{2} - \frac{\omega^2}{2}
+                \]
+                Therefore:
+                \[
+                \hat{f}(\omega) = e^{-\frac{\omega^2}{2}} \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx
+                \]
+                By Cauchy's integral theorem (contour integration in the complex plane), shifting the contour of 
+                integration does not change the value of the integral, so:
+                \[
+                \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx = \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}} \, dx = \sqrt{2\pi}
+                \]
+                Thus:
+                \[
+                \hat{f}(\omega) = \sqrt{2\pi} \cdot e^{-\frac{\omega^2}{2}}
                 \]
                 This remarkable result shows that the Gaussian function is an <strong>eigenfunction</strong> of the Fourier 
                 transform: its transform is also a Gaussian (up to a constant). This property makes Gaussian functions 
-                fundamental in signal processing and probability theory.
+                fundamental in signal processing, probability theory, and quantum mechanics.
             </div>
             </p>
             </section>
@@ -187,7 +201,8 @@ uses_python: false
             \[
             \mathcal{F}\{f(ax)\}(\omega) = \frac{1}{|a|}\hat{f}\left(\frac{\omega}{a}\right), \quad a \neq 0
             \]
-            Compressing a signal in time stretches its frequency spectrum, and vice versa.
+            Compressing a signal in time stretches its frequency spectrum, and vice versa. This is known as the 
+            <strong>uncertainty principle</strong> in signal processing.
             <br><br>
             <strong>5. Differentiation Property:</strong>
             \[
@@ -206,13 +221,13 @@ uses_python: false
             \]
             This generalizes <a href="fourier_series.html#parseval">Parseval's identity</a> to the continuous case, 
             showing energy conservation between time and frequency domains. The Fourier transform is a 
-            <strong>unitary operator</strong> on \(L^2(\mathbb{R})\).
+            <strong>unitary operator</strong> on \(L^2(\mathbb{R})\) (up to normalization).
             <br><br>
-            <strong>7. Duality:</strong>
+            <strong>7. Duality (Fourier Inversion):</strong>
             \[
-            \mathcal{F}\{\hat{f}(x)\}(\omega) = 2\pi f(-\omega)
+            \mathcal{F}\{\mathcal{F}\{f\}\}(x) = 2\pi f(-x)
             \]
-            The Fourier transform of the Fourier transform (with a sign change) returns the original function, 
+            Applying the Fourier transform twice (up to normalization and sign change) returns the original function, 
             demonstrating a deep symmetry between time and frequency domains.
             </p>
             </section>
@@ -244,7 +259,7 @@ uses_python: false
             <ul style="padding-left: 40px;">
                 <li><strong>Signal processing:</strong> Filtering operations are implemented as convolutions</li>
                 <li><strong>Image processing:</strong> Blurring, sharpening, and edge detection use convolution kernels</li>
-                <li><strong>Deep learning:</strong> Convolutional neural networks (CNNs) apply learned filters via convolution</li>
+                <li><strong>Deep learning:</strong> Convolutional neural networks (CNNs) use convolution operations</li>
                 <li><strong>Probability theory:</strong> The PDF of a sum of independent random variables is the convolution 
                 of their individual PDFs</li>
             </ul>
@@ -263,7 +278,7 @@ uses_python: false
                 \begin{align*}
                 &= \int_{-\infty}^{\infty} f(t) \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega (u+t)} \, du\right) dt \\\\
                 &= \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du\right) dt \\\\
-                &= \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt \cdot \int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du \\\\
+                &= \left(\int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt\right) \cdot \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du\right) \\\\
                 &= \hat{f}(\omega) \cdot \hat{g}(\omega)
                 \end{align*}
                 \]
@@ -326,131 +341,117 @@ uses_python: false
             which uses a divide-and-conquer approach.
             <br><br>
             The key insight is that the DFT of size \(N\) can be expressed in terms of two DFTs of size \(\frac{N}{2}\) 
-            (assuming \(N\) is even). We split the sequence into even and odd indexed elements:
+            (assuming \(N\) is a power of 2). We split the sequence into even and odd indexed elements:
             \[
             \begin{align*}
             X_k &= \sum_{n=0}^{N-1} x_n e^{-\frac{2\pi i}{N}kn} \\\\
             &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N}k(2m)} + \sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N}k(2m+1)} \\\\
-            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N/2}km} + e^{-\frac{2\pi i}{N}k}\sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N/2}km} \\\\
-            &= E_k + e^{-\frac{2\pi i}{N}k}O_k
+            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N/2}km} + e^{-\frac{2\pi i}{N}k}\sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N/2}km}
             \end{align*}
             \]
-            where \(E_k\) and \(O_k\) are the DFTs of the even and odd subsequences, respectively.
-            <br><br>
-            This decomposition can be applied recursively when \(N\) is a power of 2, leading to the computational 
-            complexity:
+            Define \(E_k\) as the \(k\)-th element of the DFT of the even-indexed subsequence and \(O_k\) as the \(k\)-th 
+            element of the DFT of the odd-indexed subsequence. Then for \(k = 0, 1, \ldots, N/2-1\):
             \[
-            T(N) = 2T(N/2) + O(N) = O(N \log N)
+            X_k = E_k + e^{-\frac{2\pi i}{N}k}O_k
+            \]
+            and using the periodicity of DFT, for \(k = N/2, \ldots, N-1\):
+            \[
+            X_k = E_{k-N/2} - e^{-\frac{2\pi i}{N}(k-N/2)}O_{k-N/2}
             \]
             <br>
-            The FFT algorithm revolutionized signal processing when it was popularized by Cooley and Tukey in 1965 
-            (though variants had been discovered earlier by Gauss and others). It made real-time digital signal 
-            processing feasible and is now fundamental to:
+            This decomposition can be applied recursively when \(N\) is a power of 2. The recurrence relation is:
+            \[
+            T(N) = 2T(N/2) + O(N)
+            \]
+            which gives:
+            \[
+            T(N) = O(N \log N)
+            \]
+            <br>
+            The FFT algorithm revolutionized signal processing when it was popularized by Cooley and Tukey in 1965. 
+            It made real-time digital signal processing feasible and is now fundamental to:
             <ul style="padding-left: 40px;">
                 <li>Audio and video compression (MP3, JPEG, MPEG)</li>
                 <li>Wireless communications (OFDM in WiFi, 4G/5G)</li>
                 <li>Medical imaging (MRI reconstruction)</li>
                 <li>Numerical solution of PDEs</li>
-                <li>Large integer multiplication</li>
             </ul>
             <br>
-            Modern implementations of FFT are highly optimized. Libraries like FFTW (Fastest Fourier Transform in the West) 
-            use advanced techniques including cache optimization and vectorization to achieve near-optimal performance 
-            on various hardware architectures.
+            Modern implementations like FFTW (Fastest Fourier Transform in the West) use advanced techniques 
+            to achieve near-optimal performance on various hardware architectures.
             </p>
             </section>
 
             <section id="ml" class="section-content">
             <h2>Applications in Machine Learning</h2>
             <p>
-            Fourier methods have numerous applications in modern machine learning:
+            Fourier methods have numerous applications in modern machine learning and data science:
             <br><br>
             <strong>1. Random Fourier Features:</strong>
             <br>
             As mentioned in the <a href="../Machine_learning/intro_classification.html">classification section</a>, 
-            <strong>random Fourier features</strong> provide an explicit approximation to kernel functions. For a 
-            shift-invariant kernel \(k(x, y) = k(x - y)\), by Bochner's theorem, there exists a probability measure 
+            <strong>random Fourier features</strong> provide an explicit approximation to shift-invariant kernel functions. 
+            For a shift-invariant kernel \(k(x, y) = k(x - y)\), <strong>Bochner's theorem</strong> states that \(k\) 
+            can be represented as the Fourier transform of a non-negative measure. Specifically, if \(k\) is a continuous, 
+            positive definite, shift-invariant kernel on \(\mathbb{R}^d\), then there exists a non-negative finite measure 
             \(\mu\) such that:
             \[
-            k(x - y) = \int_{\mathbb{R}^d} e^{i\omega^T(x-y)} d\mu(\omega)
+            k(\delta) = \int_{\mathbb{R}^d} e^{i\omega^T\delta} d\mu(\omega)
             \]
             <br>
-            We can approximate this integral using Monte Carlo sampling:
-            \[
-            k(x, y) \approx \frac{1}{D}\sum_{j=1}^{D} e^{i\omega_j^Tx}e^{-i\omega_j^Ty} = \langle \phi(x), \phi(y) \rangle
-            \]
-            where \(\omega_j \sim \mu\) are random frequencies and \(\phi(x) = \frac{1}{\sqrt{D}}[e^{i\omega_1^Tx}, \ldots, e^{i\omega_D^Tx}]^T\).
+            For the RBF (Gaussian) kernel \(k(\delta) = e^{-\frac{\|\delta\|^2}{2\sigma^2}}\), the measure corresponds to 
+            \(\mu \sim \mathcal{N}(0, \sigma^{-2}I)\).
             <br><br>
-            For real-valued features, we use:
+            We can approximate the kernel using Monte Carlo sampling. For real-valued features:
+            \[
+            z_\omega(x) = \sqrt{2}\cos(\omega^Tx + b)
+            \]
+            where \(\omega\) is sampled from \(\mu\) and \(b \sim \text{Uniform}[0, 2\pi]\). The feature map is:
             \[
             \phi(x) = \sqrt{\frac{2}{D}}\begin{bmatrix} \cos(\omega_1^Tx + b_1) \\ \vdots \\ \cos(\omega_D^Tx + b_D) \end{bmatrix}
             \]
-            where \(b_j \sim \text{Uniform}[0, 2\pi]\).
+            which satisfies \(\mathbb{E}_{\omega, b}[z_\omega(x)z_\omega(y)] = k(x-y)\).
             <br><br>
-            This technique, introduced by Rahimi and Recht (2007), allows us to approximate kernel methods with 
-            explicit feature maps, enabling linear algorithms to be used for nonlinear problems efficiently.
+            This technique, introduced by Rahimi and Recht (2007), allows kernel methods to scale to large datasets by 
+            converting them into linear methods with complexity \(O(nD)\) instead of \(O(n^2)\).
             <br><br>
-            <strong>2. Convolutional Neural Networks:</strong>
+            <strong>2. Time Series Analysis:</strong>
             <br>
-            The convolution operations in CNNs can be implemented efficiently using FFT. For large filter sizes, 
-            computing convolutions via FFT is faster than direct spatial convolution. This is particularly important 
-            in applications like:
+            Fourier transforms are essential for analyzing temporal patterns:
             <ul style="padding-left: 40px;">
-                <li>Audio processing with CNNs</li>
-                <li>Video analysis with 3D convolutions</li>
-                <li>High-resolution image processing</li>
-            </ul>
-            <br>
-            <strong>3. Spectral Methods for Graph Neural Networks:</strong>
-            <br>
-            Spectral graph convolutional networks use the graph Fourier transform, defined via the eigendecomposition 
-            of the graph Laplacian. For a graph with Laplacian \(L = U\Lambda U^T\), the graph Fourier transform of 
-            a signal \(f\) on the graph is:
-            \[
-            \hat{f} = U^T f
-            \]
-            <br>
-            Convolution on graphs is then defined in the spectral domain as multiplication by a filter:
-            \[
-            g *_G f = U(U^T g \odot U^T f)
-            \]
-            where \(\odot\) denotes element-wise multiplication.
-            <br><br>
-            <strong>4. Time Series Analysis:</strong>
-            <br>
-            Fourier transforms are essential for analyzing temporal patterns in time series data:
-            <ul style="padding-left: 40px;">
-                <li><strong>Spectral analysis:</strong> Identifying dominant frequencies in periodic data</li>
+                <li><strong>Spectral analysis:</strong> Identifying dominant frequencies and periodicities in data 
+                (used in finance, climate science, neuroscience)</li>
+                <li><strong>Seasonal decomposition:</strong> Separating trend, seasonal, and residual components 
+                using Fourier basis functions</li>
                 <li><strong>Filtering:</strong> Removing noise or extracting specific frequency bands</li>
-                <li><strong>Forecasting:</strong> Seasonal decomposition using Fourier basis functions</li>
+                <li><strong>Forecasting:</strong> Using Fourier features as inputs to ML models for capturing periodic patterns</li>
             </ul>
             <br>
-            <strong>5. Attention Mechanisms:</strong>
+            <strong>3. Signal and Image Processing:</strong>
             <br>
-            Recent work has shown connections between attention mechanisms in transformers and Fourier analysis. 
-            The attention operation can be viewed as a form of learnable spectral filtering, where the attention 
-            weights determine which frequency components to emphasize.
-            <br><br>
-            Some recent architectures explicitly incorporate Fourier transforms:
+            FFT-based methods are ubiquitous in modern data processing:
             <ul style="padding-left: 40px;">
-                <li><strong>Fourier Neural Operator (FNO):</strong> Learns solution operators for PDEs in Fourier space</li>
-                <li><strong>FNet:</strong> Replaces self-attention with FFT for faster training</li>
-                <li><strong>Adaptive Fourier Neural Operators:</strong> Combines Fourier methods with neural networks 
-                for scientific computing</li>
+                <li><strong>Audio processing:</strong> Speech recognition systems convert audio to spectrograms 
+                (frequency representations over time) using Short-Time Fourier Transform (STFT)</li>
+                <li><strong>Image compression:</strong> JPEG uses the Discrete Cosine Transform (DCT), closely related 
+                to the DFT, to compress images</li>
+                <li><strong>Data augmentation:</strong> Manipulating frequency components for augmenting training data 
+                (e.g., SpecAugment for speech)</li>
             </ul>
             <br>
-            <strong>6. Data Augmentation:</strong>
+            <strong>4. Efficient Computation in Neural Networks:</strong>
             <br>
-            Fourier-based augmentation techniques manipulate the frequency content of data:
+            While direct application of FFT in neural networks is uncommon in practice, understanding the Fourier 
+            perspective provides valuable intuition:
             <ul style="padding-left: 40px;">
-                <li>Phase manipulation for image augmentation</li>
-                <li>Frequency masking for audio data (as in SpecAugment)</li>
-                <li>Style transfer by swapping frequency components</li>
+                <li>Convolution operations in CNNs can theoretically be computed via FFT for very large kernels</li>
+                <li>Spectral analysis helps understand which frequencies neural networks learn to represent</li>
+                <li>Frequency-domain data augmentation (phase/amplitude manipulation) improves model robustness</li>
             </ul>
             <br><br>
-            The connection between Fourier analysis and machine learning continues to deepen, with new applications 
-            emerging regularly. Understanding Fourier methods provides valuable intuition for why certain architectures 
-            work well and suggests new directions for model design.
+            Understanding Fourier methods provides essential intuition for signal processing, time series analysis, 
+            and frequency-domain thinking—skills that are invaluable across machine learning, data science, and 
+            computational applications.
             </p>
             </section>
         </div>
