@@ -4,7 +4,7 @@ title: Fourier Transform
 level: detail
 description: Learn about the Fourier transform, its properties, and applications to signal processing and machine learning.
 uses_math: true
-uses_python: false
+uses_python: true
 ---
 <!DOCTYPE html>
 <html>
@@ -116,60 +116,78 @@ uses_python: false
             periodic signals into discrete frequency components, the Fourier transform decomposes general signals into 
             a continuous spectrum of frequencies.
             <br><br>
-            For a function \(f: \mathbb{R} \to \mathbb{C}\) (or \(\mathbb{R} \to \mathbb{R}\)), the <strong>Fourier transform</strong> 
-            \(\hat{f}\) is defined by:
+            <strong>Motivation from Fourier Series:</strong> Consider a function \(f_L\) that is periodic with period \(2L\). 
+            As shown in <a href="fourier_series.html#complex">Part 14</a>, it has the complex Fourier series:
             \[
-            \hat{f}(\omega) = \mathcal{F}\{f\}(\omega) = \int_{-\infty}^{\infty} f(x)e^{-i\omega x} \, dx
+            f_L(x) = \sum_{n=-\infty}^{\infty} c_n e^{-i\frac{n\pi x}{L}}, \quad c_n = \frac{1}{2L}\int_{-L}^{L} f_L(x)e^{i\frac{n\pi x}{L}} \, dx
             \]
-            where \(\omega \in \mathbb{R}\) is the <strong>frequency variable</strong> (or <strong>angular frequency</strong>).
+            As \(L \to \infty\), the discrete frequencies \(\omega_n = \frac{n\pi}{L}\) become densely packed with spacing 
+            \(\Delta\omega = \frac{\pi}{L} \to 0\), and the sum approaches an integral. This limiting process yields the 
+            Fourier transform.
+            <br><br>
+            <strong>Definition (Mathematical Convention):</strong> For a function \(f: \mathbb{R} \to \mathbb{C}\), following 
+            the same sign convention as in <a href="fourier_series.html#convention">Part 14</a>, we define:
+            \[
+            \boxed{
+            \hat{f}(\xi) = \mathcal{F}\{f\}(\xi) = \int_{-\infty}^{\infty} f(x)e^{i x\xi} \, dx
+            }
+            \]
+            where \(\xi \in \mathbb{R}\) is the <strong>frequency variable</strong>.
             <br><br>
             The <strong>inverse Fourier transform</strong> recovers \(f\) from \(\hat{f}\):
             \[
-            f(x) = \mathcal{F}^{-1}\{\hat{f}\}(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\omega)e^{i\omega x} \, d\omega
+            \boxed{
+            f(x) = \mathcal{F}^{-1}\{\hat{f}\}(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\xi)e^{-i x\xi} \, d\xi
+            }
             \]
             <br>
-            Note: Different conventions exist for the placement of the factor \(\frac{1}{2\pi}\). Some authors place 
-            \(\frac{1}{\sqrt{2\pi}}\) in both the forward and inverse transforms to make them symmetric. The convention 
-            above is common in mathematics and engineering.
+            <strong>Note on Conventions:</strong> As discussed in <a href="fourier_series.html#convention">Part 14</a>, we use 
+            the mathematical/PDE convention with positive sign in the forward transform and negative in the inverse. Engineering 
+            and physics often use the opposite convention: \(\hat{f}(\omega) = \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt\).
+            Both are mathematically equivalent—just be consistent within your work.
             <br><br>
-            The Fourier transform is well-defined for functions in \(L^1(\mathbb{R})\) (absolutely integrable functions):
-            \[
-            \int_{-\infty}^{\infty} |f(x)| \, dx < \infty
-            \]
-            and can be extended to \(L^2(\mathbb{R})\) (square-integrable functions) using limiting procedures.
+            <strong>Function Spaces:</strong> The Fourier transform is well-defined for different function classes:
+            <ul style="padding-left: 40px;">
+                <li><strong>For \(f \in L^1(\mathbb{R})\)</strong> (absolutely integrable): The integral defining \(\hat{f}\) 
+                converges absolutely, and \(\hat{f}\) is bounded and continuous with \(|\hat{f}(\xi)| \leq \|f\|_{L^1}\)</li>
+                <li><strong>For \(f \in L^2(\mathbb{R})\)</strong> (square-integrable): The transform is defined via limiting 
+                procedures (e.g., truncating \(f\) to compact support, then taking limits). The result satisfies Plancherel's 
+                theorem (see Properties section)</li>
+                <li><strong>For tempered distributions:</strong> The theory extends to generalized functions, allowing transforms 
+                of \(\delta\)-functions, polynomials, and other non-integrable functions important in applications</li>
+            </ul>
             <div class="proof">
                 <span class="proof-title">Example: Gaussian Function</span>
                 Consider the Gaussian function:
                 \[
-                f(x) = e^{-\frac{x^2}{2}}
+                f(x) = e^{-\frac{x^2}{2\sigma^2}}
                 \]
-                Its Fourier transform is:
+                Its Fourier transform (using the mathematical convention) is:
                 \[
                 \begin{align*}
-                \hat{f}(\omega) &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}}e^{-i\omega x} \, dx \\\\
-                &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2} - i\omega x} \, dx
+                \hat{f}(\xi) &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2\sigma^2}}e^{i\xi x} \, dx \\\\
+                &= \int_{-\infty}^{\infty} e^{-\frac{x^2}{2\sigma^2} + i\xi x} \, dx
                 \end{align*}
                 \]
                 Complete the square in the exponent:
                 \[
-                -\frac{x^2}{2} - i\omega x = -\frac{1}{2}(x^2 + 2i\omega x) = -\frac{1}{2}\left((x + i\omega)^2 - (i\omega)^2\right) = -\frac{(x + i\omega)^2}{2} - \frac{\omega^2}{2}
+                -\frac{x^2}{2\sigma^2} + i\xi x = -\frac{1}{2\sigma^2}(x^2 - 2i\sigma^2\xi x) = -\frac{1}{2\sigma^2}((x - i\sigma^2\xi)^2 + \sigma^4\xi^2)
                 \]
                 Therefore:
                 \[
-                \hat{f}(\omega) = e^{-\frac{\omega^2}{2}} \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx
+                \hat{f}(\xi) = e^{-\frac{\sigma^2\xi^2}{2}} \int_{-\infty}^{\infty} e^{-\frac{(x-i\sigma^2\xi)^2}{2\sigma^2}} \, dx
                 \]
-                By Cauchy's integral theorem (contour integration in the complex plane), shifting the contour of 
-                integration does not change the value of the integral, so:
+                By contour integration (the integrand is analytic and decays exponentially), shifting the path doesn't change the value:
                 \[
-                \int_{-\infty}^{\infty} e^{-\frac{(x+i\omega)^2}{2}} \, dx = \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}} \, dx = \sqrt{2\pi}
+                \int_{-\infty}^{\infty} e^{-\frac{(x-i\sigma^2\xi)^2}{2\sigma^2}} \, dx = \int_{-\infty}^{\infty} e^{-\frac{u^2}{2\sigma^2}} \, du = \sigma\sqrt{2\pi}
                 \]
                 Thus:
                 \[
-                \hat{f}(\omega) = \sqrt{2\pi} \cdot e^{-\frac{\omega^2}{2}}
+                \boxed{\hat{f}(\xi) = \sigma\sqrt{2\pi} \cdot e^{-\frac{\sigma^2\xi^2}{2}}}
                 \]
-                This remarkable result shows that the Gaussian function is an <strong>eigenfunction</strong> of the Fourier 
-                transform: its transform is also a Gaussian (up to a constant). This property makes Gaussian functions 
-                fundamental in signal processing, probability theory, and quantum mechanics.
+                This shows that the Gaussian is essentially an eigenfunction of the Fourier transform: its transform is also 
+                Gaussian, with inverse width (narrow in space ↔ wide in frequency). This property makes Gaussians fundamental 
+                in uncertainty principles, quantum mechanics, and signal processing.
             </div>
             </p>
             </section>
@@ -177,7 +195,8 @@ uses_python: false
             <section id="properties" class="section-content">
             <h2>Properties of Fourier Transform</h2>
             <p>
-            The Fourier transform has several important properties that make it a powerful tool for analysis:
+            The Fourier transform has several important properties that make it a powerful tool for analysis. 
+            We state these using the mathematical convention \(\hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)e^{ix\xi} \, dx\):
             <br><br>
             <strong>1. Linearity:</strong>
             \[
@@ -187,101 +206,138 @@ uses_python: false
             <br><br>
             <strong>2. Translation (Shift) Property:</strong>
             \[
-            \mathcal{F}\{f(x - a)\}(\omega) = e^{-i\omega a}\hat{f}(\omega)
+            \mathcal{F}\{f(x - a)\}(\xi) = e^{-ia\xi}\hat{f}(\xi)
             \]
-            A shift in time corresponds to a phase shift in frequency.
+            A shift in space corresponds to a phase shift in frequency.
             <br><br>
             <strong>3. Modulation Property:</strong>
             \[
-            \mathcal{F}\{e^{i\omega_0 x}f(x)\}(\omega) = \hat{f}(\omega - \omega_0)
+            \mathcal{F}\{e^{i\xi_0 x}f(x)\}(\xi) = \hat{f}(\xi - \xi_0)
             \]
             Multiplication by a complex exponential shifts the frequency spectrum.
             <br><br>
             <strong>4. Scaling Property:</strong>
             \[
-            \mathcal{F}\{f(ax)\}(\omega) = \frac{1}{|a|}\hat{f}\left(\frac{\omega}{a}\right), \quad a \neq 0
+            \mathcal{F}\{f(ax)\}(\xi) = \frac{1}{|a|}\hat{f}\left(\frac{\xi}{a}\right), \quad a \neq 0
             \]
-            Compressing a signal in time stretches its frequency spectrum, and vice versa. This is known as the 
-            <strong>uncertainty principle</strong> in signal processing.
+            This embodies the <strong>uncertainty principle</strong>: compressing a signal in time stretches its frequency 
+            spectrum, and vice versa. One cannot localize a signal arbitrarily well in both time and frequency simultaneously.
             <br><br>
             <strong>5. Differentiation Property:</strong>
             \[
-            \mathcal{F}\{f'(x)\}(\omega) = i\omega \hat{f}(\omega)
+            \mathcal{F}\{f'(x)\}(\xi) = -i\xi \hat{f}(\xi)
             \]
             More generally, for the \(n\)-th derivative:
             \[
-            \mathcal{F}\{f^{(n)}(x)\}(\omega) = (i\omega)^n \hat{f}(\omega)
+            \mathcal{F}\{f^{(n)}(x)\}(\xi) = (-i\xi)^n \hat{f}(\xi)
             \]
-            This transforms differentiation into multiplication, which is why Fourier transforms are useful for solving 
-            differential equations.
+            This transforms differentiation into algebraic multiplication, which is why Fourier methods are powerful for 
+            solving differential equations. Note the sign difference from the engineering convention.
             <br><br>
-            <strong>6. Plancherel's Theorem (Generalized Parseval):</strong>
+            <strong>6. Multiplication by \(x^n\) Property:</strong>
             \[
-            \int_{-\infty}^{\infty} |f(x)|^2 \, dx = \frac{1}{2\pi}\int_{-\infty}^{\infty} |\hat{f}(\omega)|^2 \, d\omega
+            \mathcal{F}\{x^n f(x)\}(\xi) = i^n \frac{d^n}{d\xi^n}\hat{f}(\xi)
             \]
-            This generalizes <a href="fourier_series.html#parseval">Parseval's identity</a> to the continuous case, 
-            showing energy conservation between time and frequency domains. The Fourier transform is a 
-            <strong>unitary operator</strong> on \(L^2(\mathbb{R})\) (up to normalization).
+            Multiplication by powers of \(x\) becomes differentiation in frequency domain.
             <br><br>
-            <strong>7. Duality (Fourier Inversion):</strong>
+            <strong>7. Plancherel's Theorem (Parseval for Non-periodic Functions):</strong>
+            <br>
+            For \(f, g \in L^2(\mathbb{R})\):
             \[
-            \mathcal{F}\{\mathcal{F}\{f\}\}(x) = 2\pi f(-x)
+            \int_{-\infty}^{\infty} f(x)\overline{g(x)} \, dx = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\xi)\overline{\hat{g}(\xi)} \, d\xi
             \]
-            Applying the Fourier transform twice (up to normalization and sign change) returns the original function, 
-            demonstrating a deep symmetry between time and frequency domains.
+            In particular, setting \(f = g\):
+            \[
+            \boxed{\|f\|_{L^2}^2 = \int_{-\infty}^{\infty} |f(x)|^2 \, dx = \frac{1}{2\pi}\int_{-\infty}^{\infty} |\hat{f}(\xi)|^2 \, d\xi = \frac{1}{2\pi}\|\hat{f}\|_{L^2}^2}
+            \]
+            This generalizes <a href="fourier_series.html#parseval">Parseval's identity</a> and shows that the Fourier 
+            transform preserves energy (up to the factor \(2\pi\)). The map \(f \mapsto \frac{1}{\sqrt{2\pi}}\hat{f}\) 
+            is a unitary operator on \(L^2(\mathbb{R})\).
+            <br><br>
+            <strong>8. Fourier Inversion Theorem:</strong>
+            <br>
+            For suitable functions (e.g., \(f \in L^1(\mathbb{R})\) with \(\hat{f} \in L^1(\mathbb{R})\)):
+            \[
+            \mathcal{F}\{\mathcal{F}\{f\}(\xi)\}(x) = 2\pi f(-x)
+            \]
+            Applying the Fourier transform twice (up to normalization) gives a reflection of the original function, 
+            demonstrating deep symmetry between spatial and frequency domains.
+            <br><br>
+            <strong>9. Riemann-Lebesgue Lemma:</strong>
+            <br>
+            For \(f \in L^1(\mathbb{R})\):
+            \[
+            \lim_{|\xi| \to \infty} \hat{f}(\xi) = 0
+            \]
+            The Fourier transform of an integrable function vanishes at infinity. This has important implications for 
+            the smoothness-decay duality: smoother functions have faster-decaying transforms.
             </p>
             </section>
 
             <section id="convolution" class="section-content">
             <h2>Convolution Theorem</h2>
             <p>
-            The <strong>convolution</strong> of two functions \(f\) and \(g\) is defined as:
+            The <strong>convolution</strong> of two functions \(f, g: \mathbb{R} \to \mathbb{C}\) is defined as:
             \[
-            (f * g)(x) = \int_{-\infty}^{\infty} f(t)g(x-t) \, dt
+            (f * g)(x) = \int_{-\infty}^{\infty} f(y)g(x-y) \, dy = \int_{-\infty}^{\infty} f(x-y)g(y) \, dy
             \]
-            <br>
+            (The second equality shows convolution is commutative.)
+            <br><br>
             The <strong>convolution theorem</strong> states that the Fourier transform converts convolution into pointwise 
             multiplication:
             \[
-            \mathcal{F}\{f * g\}(\omega) = \hat{f}(\omega) \cdot \hat{g}(\omega)
+            \boxed{\mathcal{F}\{f * g\}(\xi) = \hat{f}(\xi) \cdot \hat{g}(\xi)}
             \]
-            and conversely:
+            and conversely, the Fourier transform of a product is a (scaled) convolution:
             \[
-            \mathcal{F}\{f \cdot g\}(\omega) = \frac{1}{2\pi}(\hat{f} * \hat{g})(\omega)
+            \boxed{\mathcal{F}\{f \cdot g\}(\xi) = \frac{1}{2\pi}(\hat{f} * \hat{g})(\xi)}
             \]
             <br>
-            This is one of the most important properties of the Fourier transform. In many applications, computing 
-            a convolution directly is computationally expensive (\(O(n^2)\) operations for discrete signals), but 
-            using the FFT to compute the transform, multiplying in frequency domain, and transforming back can be 
-            much faster (\(O(n \log n)\) operations).
-            <br><br>
-            The convolution theorem is fundamental in:
+            This is one of the most important results in applied mathematics. It allows us to:
             <ul style="padding-left: 40px;">
-                <li><strong>Signal processing:</strong> Filtering operations are implemented as convolutions</li>
-                <li><strong>Image processing:</strong> Blurring, sharpening, and edge detection use convolution kernels</li>
-                <li><strong>Deep learning:</strong> Convolutional neural networks (CNNs) use convolution operations</li>
-                <li><strong>Probability theory:</strong> The PDF of a sum of independent random variables is the convolution 
-                of their individual PDFs</li>
+                <li>Replace expensive convolution operations (\(O(n^2)\) for discrete signals) with multiplication after 
+                FFT (\(O(n \log n)\))</li>
+                <li>Understand filtering as multiplication in frequency domain</li>
+                <li>Analyze linear time-invariant systems through their frequency response</li>
+            </ul>
+            <br>
+            <strong>Applications in Computer Science and ML:</strong>
+            <ul style="padding-left: 40px;">
+                <li><strong>Signal filtering:</strong> Low-pass, high-pass, and band-pass filters are convolutions in time 
+                domain but simple multiplications in frequency domain</li>
+                <li><strong>Image processing:</strong> Gaussian blur, edge detection (Sobel, Canny), and sharpening are 
+                convolution operations efficiently computed via FFT for large kernels</li>
+                <li><strong>Deep learning:</strong> While CNNs typically use small kernels (3×3, 5×5) where direct convolution 
+                is efficient, FFT-based convolution is useful for:
+                    <ul style="padding-left: 40px;">
+                        <li>Large kernels in certain architectures</li>
+                        <li>Global convolutions in some vision transformers</li>
+                        <li>Efficient implementation of depthwise separable convolutions</li>
+                    </ul>
+                </li>
+                <li><strong>Probability:</strong> The PDF of \(X + Y\) for independent random variables is 
+                \(f_{X+Y} = f_X * f_Y\), computed efficiently via FFT</li>
             </ul>
             <div class="proof">
                 <span class="proof-title">Proof of Convolution Theorem:</span>
-                Starting with the definition of the Fourier transform:
+                Using the mathematical convention with \(\hat{f}(\xi) = \int f(x)e^{ix\xi} \, dx\):
                 \[
                 \begin{align*}
-                \mathcal{F}\{f * g\}(\omega) &= \int_{-\infty}^{\infty} (f * g)(x)e^{-i\omega x} \, dx \\\\
-                &= \int_{-\infty}^{\infty} \left(\int_{-\infty}^{\infty} f(t)g(x-t) \, dt\right) e^{-i\omega x} \, dx \\\\
-                &= \int_{-\infty}^{\infty} f(t) \left(\int_{-\infty}^{\infty} g(x-t)e^{-i\omega x} \, dx\right) dt
+                \mathcal{F}\{f * g\}(\xi) &= \int_{-\infty}^{\infty} (f * g)(x)e^{ix\xi} \, dx \\\\
+                &= \int_{-\infty}^{\infty} \left(\int_{-\infty}^{\infty} f(y)g(x-y) \, dy\right) e^{ix\xi} \, dx \\\\
+                &= \int_{-\infty}^{\infty} f(y) \left(\int_{-\infty}^{\infty} g(x-y)e^{ix\xi} \, dx\right) dy
                 \end{align*}
                 \]
-                Let \(u = x - t\), then \(dx = du\) and:
+                Substituting \(u = x - y\) (so \(x = u + y\) and \(dx = du\)):
                 \[
                 \begin{align*}
-                &= \int_{-\infty}^{\infty} f(t) \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega (u+t)} \, du\right) dt \\\\
-                &= \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du\right) dt \\\\
-                &= \left(\int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt\right) \cdot \left(\int_{-\infty}^{\infty} g(u)e^{-i\omega u} \, du\right) \\\\
-                &= \hat{f}(\omega) \cdot \hat{g}(\omega)
+                &= \int_{-\infty}^{\infty} f(y) \left(\int_{-\infty}^{\infty} g(u)e^{i(u+y)\xi} \, du\right) dy \\\\
+                &= \int_{-\infty}^{\infty} f(y)e^{iy\xi} \left(\int_{-\infty}^{\infty} g(u)e^{iu\xi} \, du\right) dy \\\\
+                &= \left(\int_{-\infty}^{\infty} f(y)e^{iy\xi} \, dy\right) \cdot \left(\int_{-\infty}^{\infty} g(u)e^{iu\xi} \, du\right) \\\\
+                &= \hat{f}(\xi) \cdot \hat{g}(\xi)
                 \end{align*}
                 \]
+                The interchange of integration order is justified by Fubini's theorem when \(f, g \in L^1(\mathbb{R})\).
             </div>
             </p>
             </section>
@@ -289,20 +345,27 @@ uses_python: false
             <section id="discrete" class="section-content">
             <h2>Discrete Fourier Transform (DFT)</h2>
             <p>
-            In practice, we often work with discrete, finite sequences of data rather than continuous functions. 
+            In computational applications, we work with discrete, finite sequences rather than continuous functions. 
             The <strong>Discrete Fourier Transform (DFT)</strong> is the discrete analog of the continuous Fourier transform.
             <br><br>
-            For a sequence of \(N\) complex numbers \(\{x_0, x_1, \ldots, x_{N-1}\}\), the DFT is defined as:
+            <strong>Definition:</strong> For a sequence \(\{x_0, x_1, \ldots, x_{N-1}\}\) of \(N\) complex numbers, the DFT is:
             \[
             X_k = \sum_{n=0}^{N-1} x_n e^{-\frac{2\pi i}{N}kn}, \quad k = 0, 1, \ldots, N-1
             \]
-            <br>
-            The <strong>inverse DFT (IDFT)</strong> recovers the original sequence:
+            The <strong>inverse DFT (IDFT)</strong> is:
             \[
             x_n = \frac{1}{N}\sum_{k=0}^{N-1} X_k e^{\frac{2\pi i}{N}kn}, \quad n = 0, 1, \ldots, N-1
             \]
             <br>
-            The DFT can be expressed as a matrix multiplication. Define the \(N \times N\) <strong>DFT matrix</strong>:
+            <strong>Connection to Continuous Transform:</strong> The DFT can be viewed as:
+            <ul style="padding-left: 40px;">
+                <li>Sampling a periodic function at \(N\) equally spaced points</li>
+                <li>Computing Fourier series coefficients for the periodized version</li>
+                <li>Approximating the continuous Fourier transform for band-limited signals (via sampling theorem)</li>
+            </ul>
+            <br>
+            <strong>Matrix Formulation:</strong> Define \(\omega = e^{-\frac{2\pi i}{N}}\), a primitive \(N\)-th root of unity 
+            (so \(\omega^N = 1\)). The DFT matrix is:
             \[
             W = \begin{bmatrix}
             1 & 1 & 1 & \cdots & 1 \\
@@ -312,146 +375,286 @@ uses_python: false
             1 & \omega^{N-1} & \omega^{2(N-1)} & \cdots & \omega^{(N-1)^2}
             \end{bmatrix}
             \]
-            where \(\omega = e^{-\frac{2\pi i}{N}}\) is a primitive \(N\)-th root of unity.
-            <br><br>
-            Then the DFT can be written as:
+            where \(W_{kn} = \omega^{kn}\). Then:
             \[
-            \mathbf{X} = W\mathbf{x}
+            \mathbf{X} = W\mathbf{x}, \quad \mathbf{x} = \frac{1}{N}W^*\mathbf{X}
             \]
-            where \(\mathbf{x} = [x_0, x_1, \ldots, x_{N-1}]^T\) and \(\mathbf{X} = [X_0, X_1, \ldots, X_{N-1}]^T\).
+            where \(W^*\) is the conjugate transpose (note \(W^* = \overline{W}\) with \(\overline{\omega^{kn}} = \omega^{-kn}\)).
             <br><br>
-            The DFT matrix has remarkable properties:
+            <strong>Properties of the DFT Matrix:</strong>
             <ul style="padding-left: 40px;">
-                <li>The columns of \(W\) are orthogonal (but not orthonormal)</li>
-                <li>\(W^*W = NI\), where \(W^*\) is the conjugate transpose</li>
-                <li>The inverse is \(W^{-1} = \frac{1}{N}W^*\)</li>
+                <li><strong>Orthogonality:</strong> \(W^*W = NI\), so \(W^{-1} = \frac{1}{N}W^*\)</li>
+                <li><strong>Symmetry:</strong> \(W\) is symmetric (not Hermitian): \(W^T = W\)</li>
+                <li><strong>Eigenvalues:</strong> The eigenvalues of \(W\) are \(\{1, -1, i, -i\}\) with specific multiplicities 
+                depending on \(N\)</li>
+                <li><strong>Vandermonde structure:</strong> \(W\) is a Vandermonde matrix with nodes at roots of unity</li>
             </ul>
             <br>
-            Direct computation of the DFT using this matrix multiplication requires \(O(N^2)\) operations. However, 
-            the <strong>Fast Fourier Transform (FFT)</strong> algorithm reduces this to \(O(N \log N)\), making 
-            Fourier analysis practical for large datasets.
+            <strong>Computational Complexity:</strong>
+            <ul style="padding-left: 40px;">
+                <li><strong>Direct computation:</strong> \(O(N^2)\) complex multiplications and additions</li>
+                <li><strong>Fast Fourier Transform:</strong> \(O(N \log N)\) operations (see next section)</li>
+            </ul>
+            <br>
+            <strong>Practical Considerations for CS/ML:</strong>
+            <ul style="padding-left: 40px;">
+                <li><strong>Zero-padding:</strong> Padding sequences to powers of 2 enables efficient FFT algorithms</li>
+                <li><strong>Windowing:</strong> Applying window functions (Hamming, Hanning, Blackman) reduces spectral leakage</li>
+                <li><strong>Real-valued signals:</strong> For real inputs, \(X_{N-k} = \overline{X_k}\) (conjugate symmetry), 
+                allowing optimization to compute only half the spectrum</li>
+                <li><strong>Normalization:</strong> Different software uses different conventions for the \(\frac{1}{N}\) factor; 
+                always check documentation</li>
+            </ul>
             </p>
             </section>
 
             <section id="fft" class="section-content">
             <h2>Fast Fourier Transform (FFT)</h2>
             <p>
-            The <strong>Fast Fourier Transform (FFT)</strong> is not a different transform, but rather an efficient 
-            algorithm for computing the DFT. The most common FFT algorithm is the <strong>Cooley-Tukey algorithm</strong>, 
-            which uses a divide-and-conquer approach.
+            The <strong>Fast Fourier Transform (FFT)</strong> is not a different transform but an efficient algorithm for 
+            computing the DFT, reducing complexity from \(O(N^2)\) to \(O(N \log N)\).
             <br><br>
-            The key insight is that the DFT of size \(N\) can be expressed in terms of two DFTs of size \(\frac{N}{2}\) 
-            (assuming \(N\) is a power of 2). We split the sequence into even and odd indexed elements:
+            <strong>Cooley-Tukey Algorithm (Radix-2 FFT):</strong>
+            <br>
+            The key insight is to exploit the structure of the DFT matrix using divide-and-conquer. For \(N = 2^m\), 
+            split the input into even and odd indices:
             \[
             \begin{align*}
-            X_k &= \sum_{n=0}^{N-1} x_n e^{-\frac{2\pi i}{N}kn} \\\\
-            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N}k(2m)} + \sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N}k(2m+1)} \\\\
-            &= \sum_{m=0}^{N/2-1} x_{2m} e^{-\frac{2\pi i}{N/2}km} + e^{-\frac{2\pi i}{N}k}\sum_{m=0}^{N/2-1} x_{2m+1} e^{-\frac{2\pi i}{N/2}km}
+            X_k &= \sum_{n=0}^{N-1} x_n \omega^{kn} \\\\
+            &= \sum_{j=0}^{N/2-1} x_{2j} \omega^{k(2j)} + \sum_{j=0}^{N/2-1} x_{2j+1} \omega^{k(2j+1)} \\\\
+            &= \sum_{j=0}^{N/2-1} x_{2j} (\omega^2)^{kj} + \omega^k \sum_{j=0}^{N/2-1} x_{2j+1} (\omega^2)^{kj}
             \end{align*}
             \]
-            Define \(E_k\) as the \(k\)-th element of the DFT of the even-indexed subsequence and \(O_k\) as the \(k\)-th 
-            element of the DFT of the odd-indexed subsequence. Then for \(k = 0, 1, \ldots, N/2-1\):
+            Note that \(\omega^2 = e^{-\frac{4\pi i}{N}} = e^{-\frac{2\pi i}{N/2}}\) is a primitive \((N/2)\)-th root of unity.
+            <br><br>
+            Let \(E_k\) be the DFT of the even-indexed subsequence and \(O_k\) the DFT of odd-indexed subsequence. 
+            Then for \(k = 0, 1, \ldots, N/2-1\):
             \[
-            X_k = E_k + e^{-\frac{2\pi i}{N}k}O_k
+            X_k = E_k + \omega^k O_k
             \]
-            and using the periodicity of DFT, for \(k = N/2, \ldots, N-1\):
             \[
-            X_k = E_{k-N/2} - e^{-\frac{2\pi i}{N}(k-N/2)}O_{k-N/2}
+            X_{k+N/2} = E_k - \omega^k O_k
             \]
-            <br>
-            This decomposition can be applied recursively when \(N\) is a power of 2. The recurrence relation is:
-            \[
-            T(N) = 2T(N/2) + O(N)
-            \]
-            which gives:
-            \[
-            T(N) = O(N \log N)
-            \]
-            <br>
-            The FFT algorithm revolutionized signal processing when it was popularized by Cooley and Tukey in 1965. 
-            It made real-time digital signal processing feasible and is now fundamental to:
+            (using the fact that \(\omega^{k+N/2} = -\omega^k\) and the periodicity of DFT).
+            <br><br>
+            This gives the recurrence \(T(N) = 2T(N/2) + O(N)\), yielding \(T(N) = O(N \log N)\).
+            <br><br>
+            <strong>Other FFT Algorithms:</strong>
             <ul style="padding-left: 40px;">
-                <li>Audio and video compression (MP3, JPEG, MPEG)</li>
-                <li>Wireless communications (OFDM in WiFi, 4G/5G)</li>
-                <li>Medical imaging (MRI reconstruction)</li>
-                <li>Numerical solution of PDEs</li>
+                <li><strong>Radix-4, Radix-8:</strong> Reduce the number of complex multiplications further</li>
+                <li><strong>Mixed-radix FFT:</strong> Handle arbitrary sizes \(N = p_1^{a_1} \cdots p_k^{a_k}\)</li>
+                <li><strong>Prime-factor algorithm:</strong> For \(N = N_1 N_2\) with \(\gcd(N_1, N_2) = 1\)</li>
+                <li><strong>Bluestein's algorithm:</strong> Computes DFT of any size using convolution</li>
             </ul>
             <br>
-            Modern implementations like FFTW (Fastest Fourier Transform in the West) use advanced techniques 
-            to achieve near-optimal performance on various hardware architectures.
+            <strong>Implementation Considerations:</strong>
+            <ul style="padding-left: 40px;">
+                <li><strong>Bit-reversal:</strong> Input/output reordering required for in-place computation</li>
+                <li><strong>Twiddle factors:</strong> Precomputing \(\omega^k\) values improves performance</li>
+                <li><strong>Cache optimization:</strong> Modern implementations (FFTW) auto-tune for cache hierarchies</li>
+                <li><strong>Parallelization:</strong> FFT naturally parallelizes (used in GPU implementations)</li>
+                <li><strong>Numerical stability:</strong> Careful ordering minimizes roundoff error accumulation</li>
+            </ul>
+            <br>
+            <strong>Python Example:</strong>
+            <div class="code-block">
+                <pre><code class="language-python">
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate a signal with multiple frequency components
+fs = 1000  # Sampling frequency
+t = np.linspace(0, 1, fs, endpoint=False)
+signal = (np.sin(2*np.pi*50*t) +           # 50 Hz
+          0.5*np.sin(2*np.pi*120*t) +      # 120 Hz  
+          0.3*np.cos(2*np.pi*200*t))       # 200 Hz
+
+# Add some noise
+signal += 0.3 * np.random.randn(len(t))
+
+# Compute FFT
+fft_vals = np.fft.fft(signal)
+fft_freq = np.fft.fftfreq(len(signal), 1/fs)
+
+# Only plot positive frequencies (due to conjugate symmetry)
+pos_mask = fft_freq >= 0
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(t[:100], signal[:100])
+plt.xlabel('Time (s)')
+plt.ylabel('Amplitude')
+plt.title('Signal (first 100 samples)')
+
+plt.subplot(1, 2, 2)
+plt.plot(fft_freq[pos_mask], np.abs(fft_vals[pos_mask]))
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Magnitude')
+plt.title('Frequency Spectrum')
+plt.xlim(0, 300)
+plt.show()
+
+# Verify Parseval's theorem
+energy_time = np.sum(np.abs(signal)**2)
+energy_freq = np.sum(np.abs(fft_vals)**2) / len(signal)
+print(f"Energy in time domain: {energy_time:.2f}")
+print(f"Energy in frequency domain: {energy_freq:.2f}")
+print(f"Relative error: {abs(energy_time - energy_freq)/energy_time:.2e}")
+                </code></pre>
+            </div>
             </p>
             </section>
 
             <section id="ml" class="section-content">
             <h2>Applications in Machine Learning</h2>
             <p>
-            Fourier methods have numerous applications in modern machine learning and data science:
+            Fourier methods are fundamental to many modern ML techniques, providing both theoretical insights and 
+            practical algorithms.
             <br><br>
-            <strong>1. Random Fourier Features:</strong>
+            <strong>1. Random Fourier Features (RFF) for Kernel Approximation:</strong>
             <br>
-            As mentioned in the <a href="../Machine_learning/intro_classification.html">classification section</a>, 
-            <strong>random Fourier features</strong> provide an explicit approximation to shift-invariant kernel functions. 
-            For a shift-invariant kernel \(k(x, y) = k(x - y)\), <strong>Bochner's theorem</strong> states that \(k\) 
-            can be represented as the Fourier transform of a non-negative measure. Specifically, if \(k\) is a continuous, 
-            positive definite, shift-invariant kernel on \(\mathbb{R}^d\), then there exists a non-negative finite measure 
-            \(\mu\) such that:
+            As introduced by Rahimi and Recht (2007), RFF provide an explicit finite-dimensional approximation to 
+            shift-invariant kernels, making kernel methods scalable to large datasets.
+            <br><br>
+            <strong>Theoretical Foundation (Bochner's Theorem):</strong> A continuous, shift-invariant kernel 
+            \(k(x, y) = k(x - y)\) is positive definite if and only if it is the Fourier transform of a non-negative 
+            finite measure \(\mu\):
             \[
-            k(\delta) = \int_{\mathbb{R}^d} e^{i\omega^T\delta} d\mu(\omega)
+            k(x - y) = \int_{\mathbb{R}^d} e^{i\omega^T(x-y)} d\mu(\omega)
             \]
             <br>
-            For the RBF (Gaussian) kernel \(k(\delta) = e^{-\frac{\|\delta\|^2}{2\sigma^2}}\), the measure corresponds to 
-            \(\mu \sim \mathcal{N}(0, \sigma^{-2}I)\).
+            For the RBF kernel \(k(x - y) = \exp\left(-\frac{\|x - y\|^2}{2\sigma^2}\right)\), we have 
+            \(\mu = \mathcal{N}(0, \sigma^{-2}I)\).
             <br><br>
-            We can approximate the kernel using Monte Carlo sampling. For real-valued features:
-            \[
-            z_\omega(x) = \sqrt{2}\cos(\omega^Tx + b)
-            \]
-            where \(\omega\) is sampled from \(\mu\) and \(b \sim \text{Uniform}[0, 2\pi]\). The feature map is:
-            \[
-            \phi(x) = \sqrt{\frac{2}{D}}\begin{bmatrix} \cos(\omega_1^Tx + b_1) \\ \vdots \\ \cos(\omega_D^Tx + b_D) \end{bmatrix}
-            \]
-            which satisfies \(\mathbb{E}_{\omega, b}[z_\omega(x)z_\omega(y)] = k(x-y)\).
-            <br><br>
-            This technique, introduced by Rahimi and Recht (2007), allows kernel methods to scale to large datasets by 
-            converting them into linear methods with complexity \(O(nD)\) instead of \(O(n^2)\).
-            <br><br>
-            <strong>2. Time Series Analysis:</strong>
+            <strong>Algorithm:</strong> To approximate the kernel:
+            <ol style="padding-left: 40px;">
+                <li>Sample \(\omega_1, \ldots, \omega_D \sim p(\omega)\) where \(p\) is the density of \(\mu\)</li>
+                <li>Sample \(b_1, \ldots, b_D \sim \text{Uniform}[0, 2\pi]\)</li>
+                <li>Define the feature map:
+                    \[
+                    z(x) = \sqrt{\frac{2}{D}}\begin{bmatrix} 
+                    \cos(\omega_1^Tx + b_1) \\ 
+                    \vdots \\ 
+                    \cos(\omega_D^Tx + b_D) 
+                    \end{bmatrix}
+                    \]
+                </li>
+                <li>Then \(\mathbb{E}[z(x)^Tz(y)] = k(x - y)\) and by concentration of measure, 
+                    \(z(x)^Tz(y) \approx k(x - y)\) with high probability for large \(D\)</li>
+            </ol>
             <br>
-            Fourier transforms are essential for analyzing temporal patterns:
+            <strong>Python Implementation:</strong>
+            <div class="code-block">
+                <pre><code class="language-python">
+import numpy as np
+from sklearn.kernel_approximation import RBFSampler
+from sklearn.linear_model import SGDClassifier
+from sklearn.datasets import make_classification
+
+# Generate synthetic data
+X, y = make_classification(n_samples=10000, n_features=20, 
+                          n_informative=15, random_state=42)
+
+# Random Fourier Features approximation
+n_components = 500  # Number of random features
+rbf_feature = RBFSampler(gamma=0.1, n_components=n_components, random_state=42)
+X_features = rbf_feature.fit_transform(X)
+
+# Now we can use linear methods on the transformed features
+clf = SGDClassifier(max_iter=100, tol=1e-3)
+clf.fit(X_features[:8000], y[:8000])
+score = clf.score(X_features[8000:], y[8000:])
+print(f"Test accuracy with RFF: {score:.3f}")
+
+# Manual implementation to show the mechanics
+class ManualRFF:
+    def __init__(self, n_components, gamma):
+        self.n_components = n_components
+        self.gamma = gamma
+        
+    def fit_transform(self, X):
+        n_samples, n_features = X.shape
+        # Sample frequencies from Gaussian (Fourier dual of RBF)
+        self.omega = np.random.randn(n_components, n_features) * np.sqrt(2 * self.gamma)
+        self.b = np.random.uniform(0, 2*np.pi, n_components)
+        
+        # Compute features
+        projection = X @ self.omega.T + self.b
+        return np.sqrt(2.0 / n_components) * np.cos(projection)
+
+manual_rff = ManualRFF(n_components=500, gamma=0.1)
+X_manual = manual_rff.fit_transform(X)
+print(f"Feature similarity: {np.allclose(X_features, X_manual, rtol=0.1)}")
+                </code></pre>
+            </div>
+            <br>
+            <strong>2. Spectral Methods in Deep Learning:</strong>
             <ul style="padding-left: 40px;">
-                <li><strong>Spectral analysis:</strong> Identifying dominant frequencies and periodicities in data 
-                (used in finance, climate science, neuroscience)</li>
-                <li><strong>Seasonal decomposition:</strong> Separating trend, seasonal, and residual components 
-                using Fourier basis functions</li>
-                <li><strong>Filtering:</strong> Removing noise or extracting specific frequency bands</li>
-                <li><strong>Forecasting:</strong> Using Fourier features as inputs to ML models for capturing periodic patterns</li>
+                <li><strong>Spectral normalization:</strong> Controls Lipschitz constant of neural network layers by 
+                normalizing weight matrices by their largest singular value (computed via power iteration)</li>
+                <li><strong>Fourier Neural Operators (FNO):</strong> Learn mappings between function spaces by 
+                parameterizing integral kernels in Fourier space, achieving state-of-the-art results for PDEs</li>
+                <li><strong>Frequency-domain analysis:</strong> Understanding what frequencies neural networks learn 
+                helps explain phenomena like texture bias in CNNs</li>
             </ul>
             <br>
-            <strong>3. Signal and Image Processing:</strong>
+            <strong>3. Time Series Analysis and Forecasting:</strong>
+            <div class="code-block">
+                <pre><code class="language-python">
+# Fourier features for seasonal patterns in time series
+def fourier_features(t, period, n_harmonics):
+    """Generate Fourier features for seasonal patterns."""
+    features = []
+    for k in range(1, n_harmonics + 1):
+        features.append(np.sin(2 * np.pi * k * t / period))
+        features.append(np.cos(2 * np.pi * k * t / period))
+    return np.column_stack(features)
+
+# Example: capturing daily and weekly seasonality
+t = np.arange(365 * 2)  # 2 years of daily data
+daily_features = fourier_features(t, period=7, n_harmonics=3)    # Weekly pattern
+yearly_features = fourier_features(t, period=365, n_harmonics=5)  # Yearly pattern
+X_seasonal = np.hstack([daily_features, yearly_features])
+
+# Use in any regression model
+from sklearn.linear_model import Ridge
+# y = your_time_series_data
+# model = Ridge().fit(X_seasonal, y)
+                </code></pre>
+            </div>
             <br>
-            FFT-based methods are ubiquitous in modern data processing:
+            <strong>4. Signal Processing in ML Pipelines:</strong>
             <ul style="padding-left: 40px;">
-                <li><strong>Audio processing:</strong> Speech recognition systems convert audio to spectrograms 
-                (frequency representations over time) using Short-Time Fourier Transform (STFT)</li>
-                <li><strong>Image compression:</strong> JPEG uses the Discrete Cosine Transform (DCT), closely related 
-                to the DFT, to compress images</li>
-                <li><strong>Data augmentation:</strong> Manipulating frequency components for augmenting training data 
-                (e.g., SpecAugment for speech)</li>
+                <li><strong>Audio/Speech:</strong> Converting waveforms to spectrograms via STFT (Short-Time Fourier 
+                Transform) for input to neural networks</li>
+                <li><strong>Data augmentation:</strong> SpecAugment masks frequency bands in spectrograms to improve 
+                robustness of speech recognition models</li>
+                <li><strong>Anomaly detection:</strong> Analyzing frequency signatures to detect equipment failures 
+                or unusual patterns</li>
             </ul>
             <br>
-            <strong>4. Efficient Computation in Neural Networks:</strong>
-            <br>
-            While direct application of FFT in neural networks is uncommon in practice, understanding the Fourier 
-            perspective provides valuable intuition:
+            <strong>5. Efficient Convolutions and Attention:</strong>
             <ul style="padding-left: 40px;">
-                <li>Convolution operations in CNNs can theoretically be computed via FFT for very large kernels</li>
-                <li>Spectral analysis helps understand which frequencies neural networks learn to represent</li>
-                <li>Frequency-domain data augmentation (phase/amplitude manipulation) improves model robustness</li>
+                <li><strong>Long convolutions:</strong> For sequence modeling with very long contexts, FFT-based 
+                convolution is more efficient than direct computation</li>
+                <li><strong>Linear attention:</strong> Some efficient transformer variants use FFT to compute 
+                attention in \(O(N \log N)\) instead of \(O(N^2)\)</li>
+                <li><strong>Butterfly transforms:</strong> Structured matrices inspired by FFT butterfly diagrams 
+                reduce model parameters while maintaining expressiveness</li>
+            </ul>
+            <br>
+            <strong>6. Theoretical Insights:</strong>
+            <ul style="padding-left: 40px;">
+                <li><strong>Neural Tangent Kernels:</strong> In the infinite-width limit, neural networks correspond 
+                to kernel methods; Fourier analysis helps understand these kernels</li>
+                <li><strong>Spectral bias:</strong> Neural networks learn low-frequency functions first, explaining 
+                their generalization properties</li>
+                <li><strong>Double descent:</strong> Fourier analysis helps explain the bias-variance tradeoff in 
+                overparameterized models</li>
             </ul>
             <br><br>
-            Understanding Fourier methods provides essential intuition for signal processing, time series analysis, 
-            and frequency-domain thinking—skills that are invaluable across machine learning, data science, and 
-            computational applications.
+            The Fourier transform remains one of the most powerful mathematical tools in the ML practitioner's toolkit, 
+            providing both computational efficiency and deep theoretical insights into learning algorithms.
             </p>
             </section>
         </div>
