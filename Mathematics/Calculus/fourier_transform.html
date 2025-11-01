@@ -507,155 +507,366 @@ print(f"Relative error: {abs(energy_time - energy_freq)/energy_time:.2e}")
             <section id="ml" class="section-content">
             <h2>Applications in Machine Learning</h2>
             <p>
-            Fourier methods are fundamental to many modern ML techniques, providing both theoretical insights and 
-            practical algorithms.
+            Fourier methods are fundamental to modern machine learning, particularly in areas requiring efficient computation, 
+            signal processing, and function approximation. Here we focus on the most significant and current applications.
             <br><br>
-            <strong>1. Random Fourier Features (RFF) for Kernel Approximation:</strong>
+            <strong>1. Fourier Neural Operators (FNO) for Scientific Computing:</strong>
             <br>
-            As introduced by Rahimi and Recht (2007), RFF provide an explicit finite-dimensional approximation to 
-            shift-invariant kernels, making kernel methods scalable to large datasets.
+            Introduced by Li et al. (2021), FNOs have revolutionized neural PDE solvers and are actively used in weather 
+            prediction (FourCastNet by NVIDIA, 2022), fluid dynamics, and climate modeling. They achieve 1000× speedup 
+            over traditional solvers while maintaining accuracy.
             <br><br>
-            <strong>Theoretical Foundation (Bochner's Theorem):</strong> A continuous, shift-invariant kernel 
-            \(k(x, y) = k(x - y)\) is positive definite if and only if it is the Fourier transform of a non-negative 
-            finite measure \(\mu\):
+            <strong>Key Innovation:</strong> FNOs learn integral operators directly in Fourier space:
             \[
-            k(x - y) = \int_{\mathbb{R}^d} e^{i\omega^T(x-y)} d\mu(\omega)
+            (\mathcal{K}\varphi)(x) = \int k(x, y)\varphi(y) \, dy \quad \xrightarrow{\text{Fourier}} \quad 
+            \widehat{(\mathcal{K}\varphi)}(\xi) = \hat{k}(\xi) \cdot \hat{\varphi}(\xi)
             \]
-            <br>
-            For the RBF kernel \(k(x - y) = \exp\left(-\frac{\|x - y\|^2}{2\sigma^2}\right)\), we have 
-            \(\mu = \mathcal{N}(0, \sigma^{-2}I)\).
-            <br><br>
-            <strong>Algorithm:</strong> To approximate the kernel:
-            <ol style="padding-left: 40px;">
-                <li>Sample \(\omega_1, \ldots, \omega_D \sim p(\omega)\) where \(p\) is the density of \(\mu\)</li>
-                <li>Sample \(b_1, \ldots, b_D \sim \text{Uniform}[0, 2\pi]\)</li>
-                <li>Define the feature map:
-                    \[
-                    z(x) = \sqrt{\frac{2}{D}}\begin{bmatrix} 
-                    \cos(\omega_1^Tx + b_1) \\ 
-                    \vdots \\ 
-                    \cos(\omega_D^Tx + b_D) 
-                    \end{bmatrix}
-                    \]
-                </li>
-                <li>Then \(\mathbb{E}[z(x)^Tz(y)] = k(x - y)\) and by concentration of measure, 
-                    \(z(x)^Tz(y) \approx k(x - y)\) with high probability for large \(D\)</li>
-            </ol>
-            <br>
-            <strong>Python Implementation:</strong>
+            By parameterizing \(\hat{k}(\xi)\) with neural networks in frequency domain, FNOs efficiently learn 
+            resolution-invariant operators.
             <div class="code-block">
                 <pre><code class="language-python">
-import numpy as np
-from sklearn.kernel_approximation import RBFSampler
-from sklearn.linear_model import SGDClassifier
-from sklearn.datasets import make_classification
+import torch
+import torch.nn as nn
+import torch.fft
 
-# Generate synthetic data
-X, y = make_classification(n_samples=10000, n_features=20, 
-                          n_informative=15, random_state=42)
-
-# Random Fourier Features approximation
-n_components = 500  # Number of random features
-rbf_feature = RBFSampler(gamma=0.1, n_components=n_components, random_state=42)
-X_features = rbf_feature.fit_transform(X)
-
-# Now we can use linear methods on the transformed features
-clf = SGDClassifier(max_iter=100, tol=1e-3)
-clf.fit(X_features[:8000], y[:8000])
-score = clf.score(X_features[8000:], y[8000:])
-print(f"Test accuracy with RFF: {score:.3f}")
-
-# Manual implementation to show the mechanics
-class ManualRFF:
-    def __init__(self, n_components, gamma):
-        self.n_components = n_components
-        self.gamma = gamma
+class SpectralConv2d(nn.Module):
+    """2D Fourier layer used in FNO. Efficient for learning PDEs."""
+    def __init__(self, in_channels, out_channels, modes1, modes2):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.modes1 = modes1  # Number of Fourier modes to keep
+        self.modes2 = modes2
         
-    def fit_transform(self, X):
-        n_samples, n_features = X.shape
-        # Sample frequencies from Gaussian (Fourier dual of RBF)
-        self.omega = np.random.randn(n_components, n_features) * np.sqrt(2 * self.gamma)
-        self.b = np.random.uniform(0, 2*np.pi, n_components)
+        # Complex weights for Fourier coefficients
+        scale = 1 / (in_channels * out_channels)
+        self.weights1 = nn.Parameter(scale * torch.rand(
+            in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
+        self.weights2 = nn.Parameter(scale * torch.rand(
+            in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
+    
+    def forward(self, x):
+        batch, channels, height, width = x.shape
         
-        # Compute features
-        projection = X @ self.omega.T + self.b
-        return np.sqrt(2.0 / n_components) * np.cos(projection)
+        # Compute FFT
+        x_ft = torch.fft.rfft2(x)
+        
+        # Multiply relevant Fourier modes with learnable weights
+        out_ft = torch.zeros(batch, self.out_channels, height, width // 2 + 1,
+                           dtype=torch.cfloat, device=x.device)
+        
+        # Low frequencies (top-left corner)
+        out_ft[:, :, :self.modes1, :self.modes2] = torch.einsum(
+            "bixy,ioxy->boxy",
+            x_ft[:, :, :self.modes1, :self.modes2],
+            self.weights1)
+        
+        # High frequencies (bottom-left corner)  
+        out_ft[:, :, -self.modes1:, :self.modes2] = torch.einsum(
+            "bixy,ioxy->boxy",
+            x_ft[:, :, -self.modes1:, :self.modes2],
+            self.weights2)
+        
+        # Inverse FFT
+        x = torch.fft.irfft2(out_ft, s=(height, width))
+        return x
 
-manual_rff = ManualRFF(n_components=500, gamma=0.1)
-X_manual = manual_rff.fit_transform(X)
-print(f"Feature similarity: {np.allclose(X_features, X_manual, rtol=0.1)}")
+# Example: Using FNO layer in a model for solving Navier-Stokes equations
+class FNO2d(nn.Module):
+    def __init__(self, modes=12, width=64):
+        super().__init__()
+        self.conv0 = SpectralConv2d(3, width, modes, modes)
+        self.conv1 = SpectralConv2d(width, width, modes, modes)
+        self.conv2 = SpectralConv2d(width, width, modes, modes)
+        self.conv3 = SpectralConv2d(width, width, modes, modes)
+        self.fc = nn.Linear(width, 1)
+        
+    def forward(self, x):
+        x = self.conv0(x)
+        x = torch.nn.functional.gelu(x)
+        x = self.conv1(x)
+        x = torch.nn.functional.gelu(x)
+        x = self.conv2(x)
+        x = torch.nn.functional.gelu(x)
+        x = self.conv3(x)
+        x = self.fc(x.permute(0, 2, 3, 1))
+        return x
                 </code></pre>
             </div>
             <br>
-            <strong>2. Spectral Methods in Deep Learning:</strong>
-            <ul style="padding-left: 40px;">
-                <li><strong>Spectral normalization:</strong> Controls Lipschitz constant of neural network layers by 
-                normalizing weight matrices by their largest singular value (computed via power iteration)</li>
-                <li><strong>Fourier Neural Operators (FNO):</strong> Learn mappings between function spaces by 
-                parameterizing integral kernels in Fourier space, achieving state-of-the-art results for PDEs</li>
-                <li><strong>Frequency-domain analysis:</strong> Understanding what frequencies neural networks learn 
-                helps explain phenomena like texture bias in CNNs</li>
-            </ul>
+            <strong>2. State Space Models and Long-Range Sequence Modeling:</strong>
             <br>
-            <strong>3. Time Series Analysis and Forecasting:</strong>
+            Recent breakthroughs like <strong>S4 (Structured State Spaces)</strong> by Gu et al. (2022) and 
+            <strong>Hyena Hierarchy</strong> (2023) use FFT-based convolutions to model sequences with million-token 
+            context lengths efficiently. These models compete with Transformers while using \(O(N \log N)\) complexity 
+            instead of \(O(N^2)\).
+            <br><br>
+            <strong>Key Insight:</strong> Long convolutions via FFT enable efficient computation of state space models:
+            \[
+            y = K * u \quad \text{where} \quad K \in \mathbb{R}^L \text{ is a learned kernel}
+            \]
+            For sequence length \(L\), direct convolution costs \(O(L^2)\) but FFT reduces this to \(O(L \log L)\):
             <div class="code-block">
                 <pre><code class="language-python">
-# Fourier features for seasonal patterns in time series
-def fourier_features(t, period, n_harmonics):
-    """Generate Fourier features for seasonal patterns."""
-    features = []
-    for k in range(1, n_harmonics + 1):
-        features.append(np.sin(2 * np.pi * k * t / period))
-        features.append(np.cos(2 * np.pi * k * t / period))
-    return np.column_stack(features)
+def fft_conv(u, k):
+    """Compute convolution u * k using FFT for efficiency.
+    Used in S4, Hyena, and other long-range sequence models."""
+    
+    # Pad kernel to match sequence length
+    L = len(u)
+    k_padded = np.pad(k, (0, L - len(k)))
+    
+    # FFT → multiply → inverse FFT
+    u_f = np.fft.rfft(u, n=2*L)
+    k_f = np.fft.rfft(k_padded, n=2*L)
+    y_f = u_f * k_f
+    y = np.fft.irfft(y_f)[:L]
+    
+    return y
 
-# Example: capturing daily and weekly seasonality
-t = np.arange(365 * 2)  # 2 years of daily data
-daily_features = fourier_features(t, period=7, n_harmonics=3)    # Weekly pattern
-yearly_features = fourier_features(t, period=365, n_harmonics=5)  # Yearly pattern
-X_seasonal = np.hstack([daily_features, yearly_features])
-
-# Use in any regression model
-from sklearn.linear_model import Ridge
-# y = your_time_series_data
-# model = Ridge().fit(X_seasonal, y)
+# Example: S4 kernel parameterization (simplified)
+class S4Kernel(nn.Module):
+    def __init__(self, d_model, l_max=1024):
+        super().__init__()
+        self.l_max = l_max
+        
+        # HiPPO matrix initialization for long-range memory
+        self.A = nn.Parameter(torch.randn(d_model, d_model))
+        self.B = nn.Parameter(torch.randn(d_model, 1))
+        self.C = nn.Parameter(torch.randn(1, d_model))
+        
+    def forward(self, L):
+        # Generate convolution kernel from state space parameters
+        # This is computed once and cached
+        k = self.compute_kernel(L)
+        return k
+    
+    def compute_kernel(self, L):
+        # Discretize continuous state space
+        # Details omitted for brevity
+        pass
                 </code></pre>
             </div>
             <br>
-            <strong>4. Signal Processing in ML Pipelines:</strong>
-            <ul style="padding-left: 40px;">
-                <li><strong>Audio/Speech:</strong> Converting waveforms to spectrograms via STFT (Short-Time Fourier 
-                Transform) for input to neural networks</li>
-                <li><strong>Data augmentation:</strong> SpecAugment masks frequency bands in spectrograms to improve 
-                robustness of speech recognition models</li>
-                <li><strong>Anomaly detection:</strong> Analyzing frequency signatures to detect equipment failures 
-                or unusual patterns</li>
-            </ul>
+            <strong>3. Audio and Speech Processing Foundation Models:</strong>
             <br>
-            <strong>5. Efficient Convolutions and Attention:</strong>
+            Modern speech models like <strong>Whisper (OpenAI, 2022)</strong>, <strong>AudioLM (Google, 2022)</strong>, 
+            and <strong>MusicLM (2023)</strong> fundamentally rely on Fourier transforms for feature extraction:
             <ul style="padding-left: 40px;">
-                <li><strong>Long convolutions:</strong> For sequence modeling with very long contexts, FFT-based 
-                convolution is more efficient than direct computation</li>
-                <li><strong>Linear attention:</strong> Some efficient transformer variants use FFT to compute 
-                attention in \(O(N \log N)\) instead of \(O(N^2)\)</li>
-                <li><strong>Butterfly transforms:</strong> Structured matrices inspired by FFT butterfly diagrams 
-                reduce model parameters while maintaining expressiveness</li>
+                <li><strong>Mel-spectrograms:</strong> Log-scaled STFT with mel-frequency bins matching human auditory perception</li>
+                <li><strong>Learned Fourier features:</strong> Models like HiFi-GAN and WaveGrad learn to generate audio 
+                directly from Fourier features</li>
+                <li><strong>Phase reconstruction:</strong> Griffin-Lim algorithm and neural vocoders reconstruct phase from magnitude spectrograms</li>
             </ul>
+            <div class="code-block">
+                <pre><code class="language-python">
+import librosa
+import torch
+import torchaudio.transforms as T
+
+# Modern audio processing pipeline used in Whisper, etc.
+class AudioProcessor:
+    def __init__(self, sample_rate=16000, n_fft=400, n_mels=80):
+        self.sample_rate = sample_rate
+        self.mel_transform = T.MelSpectrogram(
+            sample_rate=sample_rate,
+            n_fft=n_fft,
+            hop_length=160,
+            n_mels=n_mels,
+            f_min=0,
+            f_max=8000
+        )
+        
+    def process(self, waveform):
+        # Convert to mel-spectrogram (used by Whisper, Wav2Vec2, etc.)
+        mel_spec = self.mel_transform(waveform)
+        
+        # Log-scale for better neural network training
+        log_mel = torch.log10(torch.clamp(mel_spec, min=1e-10))
+        
+        # Normalize (crucial for training stability)
+        log_mel = (log_mel + 4.0) / 4.0
+        
+        return log_mel
+
+# Example: extracting features for speech recognition
+processor = AudioProcessor()
+# waveform = torch.randn(1, 16000)  # 1 second of audio
+# features = processor.process(waveform)
+# Now feed 'features' to transformer model (e.g., Whisper encoder)
+                </code></pre>
+            </div>
             <br>
-            <strong>6. Theoretical Insights:</strong>
+            <strong>4. Vision Transformers and Frequency-Aware Architectures:</strong>
+            <br>
+            Recent vision models leverage frequency domain insights:
             <ul style="padding-left: 40px;">
-                <li><strong>Neural Tangent Kernels:</strong> In the infinite-width limit, neural networks correspond 
-                to kernel methods; Fourier analysis helps understand these kernels</li>
-                <li><strong>Spectral bias:</strong> Neural networks learn low-frequency functions first, explaining 
-                their generalization properties</li>
-                <li><strong>Double descent:</strong> Fourier analysis helps explain the bias-variance tradeoff in 
-                overparameterized models</li>
+                <li><strong>FNet (Google, 2021):</strong> Replaces attention with FFT, achieving 92% of BERT's accuracy 
+                at 7× training speed</li>
+                <li><strong>GFNet (Global Filter Networks, 2021):</strong> Learns filters in frequency domain for vision tasks</li>
+                <li><strong>Focal Frequency Loss (2020):</strong> Improves image synthesis by matching frequency spectra</li>
             </ul>
+            <div class="code-block">
+                <pre><code class="language-python">
+# FNet: Replacing attention with FFT (simplified)
+class FNetBlock(nn.Module):
+    """FNet block: FFT mixing instead of self-attention"""
+    def __init__(self, d_model):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.GELU(),
+            nn.Linear(4 * d_model, d_model)
+        )
+        
+    def forward(self, x):
+        # x shape: (batch, sequence_length, d_model)
+        
+        # FFT mixing (replaces self-attention)
+        x_complex = torch.fft.fft2(x)  # 2D FFT over sequence and hidden dims
+        x_real = x_complex.real
+        x = x + self.norm1(x_real)
+        
+        # Feed-forward network
+        x = x + self.norm2(self.ffn(x))
+        return x
+
+# Focal Frequency Loss for better image generation
+def focal_frequency_loss(pred, target, alpha=1.0):
+    """Compute loss in frequency domain for better texture synthesis"""
+    pred_fft = torch.fft.rfft2(pred)
+    target_fft = torch.fft.rfft2(target)
+    
+    # Weight matrix emphasizing different frequencies
+    h, w = pred_fft.shape[-2:]
+    weight = torch.ones_like(pred_fft)
+    # Emphasize high frequencies (details)
+    weight[..., h//4:, w//4:] *= alpha
+    
+    loss = torch.mean(weight * torch.abs(pred_fft - target_fft))
+    return loss
+                </code></pre>
+            </div>
+            <br>
+            <strong>5. Positional Encodings and Implicit Neural Representations:</strong>
+            <br>
+            Fourier features are crucial for modern neural representations:
+            <ul style="padding-left: 40px;">
+                <li><strong>NeRF (Neural Radiance Fields, 2020):</strong> Uses Fourier positional encoding to capture 
+                high-frequency details in 3D scene reconstruction</li>
+                <li><strong>SIREN (2020):</strong> Sinusoidal activation functions act as Fourier basis</li>
+                <li><strong>Transformer positional encodings:</strong> Sinusoidal encodings are Fourier features enabling 
+                position awareness</li>
+            </ul>
+            <div class="code-block">
+                <pre><code class="language-python">
+# Fourier positional encoding (used in NeRF, Transformers)
+def fourier_encoding(x, L=10):
+    """
+    Maps coordinates to higher dimensional space using Fourier features.
+    Essential for learning high-frequency functions in neural fields.
+    """
+    freqs = 2.0 ** torch.linspace(0, L-1, L)
+    
+    # Apply sinusoidal functions at multiple frequencies
+    encoded = []
+    for freq in freqs:
+        encoded.append(torch.sin(2 * np.pi * freq * x))
+        encoded.append(torch.cos(2 * np.pi * freq * x))
+    
+    return torch.cat(encoded, dim=-1)
+
+# Example: NeRF-style positional encoding
+class NeRFEncoder(nn.Module):
+    def __init__(self, input_dim=3, L_pos=10, L_dir=4):
+        super().__init__()
+        self.L_pos = L_pos
+        self.L_dir = L_dir
+        
+        # MLPs for processing encoded features
+        pos_dim = input_dim * (2 * L_pos + 1)
+        dir_dim = 3 * (2 * L_dir + 1)
+        
+        self.pos_net = nn.Sequential(
+            nn.Linear(pos_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256)
+        )
+        
+    def forward(self, pos, direction):
+        # Encode position with more frequencies (fine details)
+        pos_encoded = fourier_encoding(pos, self.L_pos)
+        
+        # Encode viewing direction with fewer frequencies
+        dir_encoded = fourier_encoding(direction, self.L_dir)
+        
+        features = self.pos_net(pos_encoded)
+        return features
+
+# RoPE (Rotary Positional Encoding) - used in modern LLMs like LLaMA
+def apply_rotary_pos_emb(q, k, cos, sin):
+    """
+    Apply rotary positional encoding (Fourier-based) to query and key.
+    More efficient than traditional positional encodings.
+    """
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
+
+def rotate_half(x):
+    x1, x2 = x.chunk(2, dim=-1)
+    return torch.cat((-x2, x1), dim=-1)
+                </code></pre>
+            </div>
+            <br>
+            <strong>6. Time Series Foundation Models:</strong>
+            <br>
+            Modern time series models like <strong>TimeGPT (2023)</strong>, <strong>Lag-Llama (2024)</strong>, and 
+            <strong>PatchTST (2023)</strong> use Fourier features for capturing multi-scale seasonality:
+            <div class="code-block">
+                <pre><code class="language-python">
+# Modern time series feature extraction
+class TimeSeriesFoundationEncoder:
+    def __init__(self, periods=[24, 168, 8760]):  # hour, week, year
+        self.periods = periods
+        
+    def extract_fourier_features(self, timestamps, n_features=10):
+        """Extract Fourier features for multiple periodicities"""
+        features = []
+        
+        for period in self.periods:
+            for k in range(1, n_features // 2 + 1):
+                features.append(np.sin(2 * np.pi * k * timestamps / period))
+                features.append(np.cos(2 * np.pi * k * timestamps / period))
+        
+        return np.column_stack(features)
+    
+    def extract_spectral_features(self, series):
+        """Extract frequency domain statistics used in foundation models"""
+        fft = np.fft.rfft(series)
+        magnitude = np.abs(fft)
+        phase = np.angle(fft)
+        
+        # Key spectral features
+        features = {
+            'spectral_entropy': -np.sum(magnitude * np.log(magnitude + 1e-10)),
+            'spectral_centroid': np.sum(np.arange(len(magnitude)) * magnitude) / np.sum(magnitude),
+            'dominant_frequency': np.argmax(magnitude),
+            'spectral_rolloff': np.percentile(magnitude, 85)
+        }
+        return features
+                </code></pre>
+            </div>
             <br><br>
-            The Fourier transform remains one of the most powerful mathematical tools in the ML practitioner's toolkit, 
-            providing both computational efficiency and deep theoretical insights into learning algorithms.
+            These applications demonstrate that Fourier methods are not just theoretical tools but are actively driving 
+            state-of-the-art performance in modern ML systems. From enabling million-token context windows to solving 
+            PDEs at unprecedented speeds, Fourier transforms remain essential for pushing the boundaries of what neural 
+            networks can achieve.
             </p>
             </section>
+            
         </div>
         <script src="/js/main.js"></script>
     </body>
