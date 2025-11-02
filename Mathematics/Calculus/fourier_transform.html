@@ -760,66 +760,73 @@ def focal_frequency_loss(pred, target, alpha=1.0):
                 <li><strong>Transformer positional encodings:</strong> Sinusoidal encodings are Fourier features enabling 
                 position awareness</li>
             </ul>
-            <div class="code-block">
-                <pre><code class="language-python">
-# Fourier positional encoding (used in NeRF, Transformers)
-def fourier_encoding(x, L=10):
-    """
-    Maps coordinates to higher dimensional space using Fourier features.
-    Essential for learning high-frequency functions in neural fields.
-    """
-    freqs = 2.0 ** torch.linspace(0, L-1, L)
-    
-    # Apply sinusoidal functions at multiple frequencies
-    encoded = []
-    for freq in freqs:
-        encoded.append(torch.sin(2 * np.pi * freq * x))
-        encoded.append(torch.cos(2 * np.pi * freq * x))
-    
-    return torch.cat(encoded, dim=-1)
 
-# Example: NeRF-style positional encoding
-class NeRFEncoder(nn.Module):
-    def __init__(self, input_dim=3, L_pos=10, L_dir=4):
-        super().__init__()
-        self.L_pos = L_pos
-        self.L_dir = L_dir
-        
-        # MLPs for processing encoded features
-        pos_dim = input_dim * (2 * L_pos + 1)
-        dir_dim = 3 * (2 * L_dir + 1)
-        
-        self.pos_net = nn.Sequential(
-            nn.Linear(pos_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256)
-        )
-        
-    def forward(self, pos, direction):
-        # Encode position with more frequencies (fine details)
-        pos_encoded = fourier_encoding(pos, self.L_pos)
-        
-        # Encode viewing direction with fewer frequencies
-        dir_encoded = fourier_encoding(direction, self.L_dir)
-        
-        features = self.pos_net(pos_encoded)
-        return features
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            # Fourier positional encoding (used in NeRF, Transformers)
+                            def fourier_encoding(x, L=10):
+                                """
+                                Maps coordinates to higher dimensional space using Fourier features.
+                                Essential for learning high-frequency functions in neural fields.
+                                """
+                                freqs = 2.0 ** torch.linspace(0, L-1, L)
+                                
+                                # Apply sinusoidal functions at multiple frequencies
+                                encoded = []
+                                for freq in freqs:
+                                    encoded.append(torch.sin(2 * np.pi * freq * x))
+                                    encoded.append(torch.cos(2 * np.pi * freq * x))
+                                
+                                return torch.cat(encoded, dim=-1)
 
-# RoPE (Rotary Positional Encoding) - used in modern LLMs like LLaMA
-def apply_rotary_pos_emb(q, k, cos, sin):
-    """
-    Apply rotary positional encoding (Fourier-based) to query and key.
-    More efficient than traditional positional encodings.
-    """
-    q_embed = (q * cos) + (rotate_half(q) * sin)
-    k_embed = (k * cos) + (rotate_half(k) * sin)
-    return q_embed, k_embed
+                            # Example: NeRF-style positional encoding
+                            class NeRFEncoder(nn.Module):
+                                def __init__(self, input_dim=3, L_pos=10, L_dir=4):
+                                    super().__init__()
+                                    self.L_pos = L_pos
+                                    self.L_dir = L_dir
+                                    
+                                    # MLPs for processing encoded features
+                                    pos_dim = input_dim * (2 * L_pos + 1)
+                                    dir_dim = 3 * (2 * L_dir + 1)
+                                    
+                                    self.pos_net = nn.Sequential(
+                                        nn.Linear(pos_dim, 256),
+                                        nn.ReLU(),
+                                        nn.Linear(256, 256)
+                                    )
+                                    
+                                def forward(self, pos, direction):
+                                    # Encode position with more frequencies (fine details)
+                                    pos_encoded = fourier_encoding(pos, self.L_pos)
+                                    
+                                    # Encode viewing direction with fewer frequencies
+                                    dir_encoded = fourier_encoding(direction, self.L_dir)
+                                    
+                                    features = self.pos_net(pos_encoded)
+                                    return features
 
-def rotate_half(x):
-    x1, x2 = x.chunk(2, dim=-1)
-    return torch.cat((-x2, x1), dim=-1)
-                </code></pre>
+                            # RoPE (Rotary Positional Encoding) - used in modern LLMs like LLaMA
+                            def apply_rotary_pos_emb(q, k, cos, sin):
+                                """
+                                Apply rotary positional encoding (Fourier-based) to query and key.
+                                More efficient than traditional positional encodings.
+                                """
+                                q_embed = (q * cos) + (rotate_half(q) * sin)
+                                k_embed = (k * cos) + (rotate_half(k) * sin)
+                                return q_embed, k_embed
+
+                            def rotate_half(x):
+                                x1, x2 = x.chunk(2, dim=-1)
+                                return torch.cat((-x2, x1), dim=-1)                              
+                        </pre>
+                    </div>
+                </div>
             </div>
+           
             <br>
             <strong>6. Time Series Foundation Models:</strong>
             <br>
@@ -886,8 +893,7 @@ def rotate_half(x):
                 <div class="collapsible-content">
                     <pre class="python-code">
                 
-                    
-                    
+                              
                     </pre>
                 </div>
             </div>
