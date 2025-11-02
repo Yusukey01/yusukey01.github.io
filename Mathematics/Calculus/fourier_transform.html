@@ -455,52 +455,59 @@ uses_python: true
                 <li><strong>Numerical stability:</strong> Careful ordering minimizes roundoff error accumulation</li>
             </ul>
             <br>
+
             <strong>Python Example:</strong>
-            <div class="code-block">
-                <pre><code class="language-python">
-import numpy as np
-import matplotlib.pyplot as plt
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            import numpy as np
+                            import matplotlib.pyplot as plt
 
-# Generate a signal with multiple frequency components
-fs = 1000  # Sampling frequency
-t = np.linspace(0, 1, fs, endpoint=False)
-signal = (np.sin(2*np.pi*50*t) +           # 50 Hz
-          0.5*np.sin(2*np.pi*120*t) +      # 120 Hz  
-          0.3*np.cos(2*np.pi*200*t))       # 200 Hz
+                            # Generate a signal with multiple frequency components
+                            fs = 1000  # Sampling frequency
+                            t = np.linspace(0, 1, fs, endpoint=False)
+                            signal = (np.sin(2*np.pi*50*t) +           # 50 Hz
+                                    0.5*np.sin(2*np.pi*120*t) +      # 120 Hz  
+                                    0.3*np.cos(2*np.pi*200*t))       # 200 Hz
 
-# Add some noise
-signal += 0.3 * np.random.randn(len(t))
+                            # Add some noise
+                            signal += 0.3 * np.random.randn(len(t))
 
-# Compute FFT
-fft_vals = np.fft.fft(signal)
-fft_freq = np.fft.fftfreq(len(signal), 1/fs)
+                            # Compute FFT
+                            fft_vals = np.fft.fft(signal)
+                            fft_freq = np.fft.fftfreq(len(signal), 1/fs)
 
-# Only plot positive frequencies (due to conjugate symmetry)
-pos_mask = fft_freq >= 0
-plt.figure(figsize=(12, 4))
+                            # Only plot positive frequencies (due to conjugate symmetry)
+                            pos_mask = fft_freq >= 0
+                            plt.figure(figsize=(12, 4))
 
-plt.subplot(1, 2, 1)
-plt.plot(t[:100], signal[:100])
-plt.xlabel('Time (s)')
-plt.ylabel('Amplitude')
-plt.title('Signal (first 100 samples)')
+                            plt.subplot(1, 2, 1)
+                            plt.plot(t[:100], signal[:100])
+                            plt.xlabel('Time (s)')
+                            plt.ylabel('Amplitude')
+                            plt.title('Signal (first 100 samples)')
 
-plt.subplot(1, 2, 2)
-plt.plot(fft_freq[pos_mask], np.abs(fft_vals[pos_mask]))
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Magnitude')
-plt.title('Frequency Spectrum')
-plt.xlim(0, 300)
-plt.show()
+                            plt.subplot(1, 2, 2)
+                            plt.plot(fft_freq[pos_mask], np.abs(fft_vals[pos_mask]))
+                            plt.xlabel('Frequency (Hz)')
+                            plt.ylabel('Magnitude')
+                            plt.title('Frequency Spectrum')
+                            plt.xlim(0, 300)
+                            plt.show()
 
-# Verify Parseval's theorem
-energy_time = np.sum(np.abs(signal)**2)
-energy_freq = np.sum(np.abs(fft_vals)**2) / len(signal)
-print(f"Energy in time domain: {energy_time:.2f}")
-print(f"Energy in frequency domain: {energy_freq:.2f}")
-print(f"Relative error: {abs(energy_time - energy_freq)/energy_time:.2e}")
-                </code></pre>
+                            # Verify Parseval's theorem
+                            energy_time = np.sum(np.abs(signal)**2)
+                            energy_freq = np.sum(np.abs(fft_vals)**2) / len(signal)
+                            print(f"Energy in time domain: {energy_time:.2f}")
+                            print(f"Energy in frequency domain: {energy_freq:.2f}")
+                            print(f"Relative error: {abs(energy_time - energy_freq)/energy_time:.2e}")                 
+                        </pre>
+                    </div>
+                </div>
             </div>
+
             </p>
             </section>
 
@@ -523,76 +530,83 @@ print(f"Relative error: {abs(energy_time - energy_freq)/energy_time:.2e}")
             \]
             By parameterizing \(\hat{k}(\xi)\) with neural networks in frequency domain, FNOs efficiently learn 
             resolution-invariant operators.
-            <div class="code-block">
-                <pre><code class="language-python">
-import torch
-import torch.nn as nn
-import torch.fft
 
-class SpectralConv2d(nn.Module):
-    """2D Fourier layer used in FNO. Efficient for learning PDEs."""
-    def __init__(self, in_channels, out_channels, modes1, modes2):
-        super().__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.modes1 = modes1  # Number of Fourier modes to keep
-        self.modes2 = modes2
-        
-        # Complex weights for Fourier coefficients
-        scale = 1 / (in_channels * out_channels)
-        self.weights1 = nn.Parameter(scale * torch.rand(
-            in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
-        self.weights2 = nn.Parameter(scale * torch.rand(
-            in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
-    
-    def forward(self, x):
-        batch, channels, height, width = x.shape
-        
-        # Compute FFT
-        x_ft = torch.fft.rfft2(x)
-        
-        # Multiply relevant Fourier modes with learnable weights
-        out_ft = torch.zeros(batch, self.out_channels, height, width // 2 + 1,
-                           dtype=torch.cfloat, device=x.device)
-        
-        # Low frequencies (top-left corner)
-        out_ft[:, :, :self.modes1, :self.modes2] = torch.einsum(
-            "bixy,ioxy->boxy",
-            x_ft[:, :, :self.modes1, :self.modes2],
-            self.weights1)
-        
-        # High frequencies (bottom-left corner)  
-        out_ft[:, :, -self.modes1:, :self.modes2] = torch.einsum(
-            "bixy,ioxy->boxy",
-            x_ft[:, :, -self.modes1:, :self.modes2],
-            self.weights2)
-        
-        # Inverse FFT
-        x = torch.fft.irfft2(out_ft, s=(height, width))
-        return x
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            import torch
+                            import torch.nn as nn
+                            import torch.fft
 
-# Example: Using FNO layer in a model for solving Navier-Stokes equations
-class FNO2d(nn.Module):
-    def __init__(self, modes=12, width=64):
-        super().__init__()
-        self.conv0 = SpectralConv2d(3, width, modes, modes)
-        self.conv1 = SpectralConv2d(width, width, modes, modes)
-        self.conv2 = SpectralConv2d(width, width, modes, modes)
-        self.conv3 = SpectralConv2d(width, width, modes, modes)
-        self.fc = nn.Linear(width, 1)
-        
-    def forward(self, x):
-        x = self.conv0(x)
-        x = torch.nn.functional.gelu(x)
-        x = self.conv1(x)
-        x = torch.nn.functional.gelu(x)
-        x = self.conv2(x)
-        x = torch.nn.functional.gelu(x)
-        x = self.conv3(x)
-        x = self.fc(x.permute(0, 2, 3, 1))
-        return x
-                </code></pre>
+                            class SpectralConv2d(nn.Module):
+                                """2D Fourier layer used in FNO. Efficient for learning PDEs."""
+                                def __init__(self, in_channels, out_channels, modes1, modes2):
+                                    super().__init__()
+                                    self.in_channels = in_channels
+                                    self.out_channels = out_channels
+                                    self.modes1 = modes1  # Number of Fourier modes to keep
+                                    self.modes2 = modes2
+                                    
+                                    # Complex weights for Fourier coefficients
+                                    scale = 1 / (in_channels * out_channels)
+                                    self.weights1 = nn.Parameter(scale * torch.rand(
+                                        in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
+                                    self.weights2 = nn.Parameter(scale * torch.rand(
+                                        in_channels, out_channels, modes1, modes2, dtype=torch.cfloat))
+                                
+                                def forward(self, x):
+                                    batch, channels, height, width = x.shape
+                                    
+                                    # Compute FFT
+                                    x_ft = torch.fft.rfft2(x)
+                                    
+                                    # Multiply relevant Fourier modes with learnable weights
+                                    out_ft = torch.zeros(batch, self.out_channels, height, width // 2 + 1,
+                                                    dtype=torch.cfloat, device=x.device)
+                                    
+                                    # Low frequencies (top-left corner)
+                                    out_ft[:, :, :self.modes1, :self.modes2] = torch.einsum(
+                                        "bixy,ioxy->boxy",
+                                        x_ft[:, :, :self.modes1, :self.modes2],
+                                        self.weights1)
+                                    
+                                    # High frequencies (bottom-left corner)  
+                                    out_ft[:, :, -self.modes1:, :self.modes2] = torch.einsum(
+                                        "bixy,ioxy->boxy",
+                                        x_ft[:, :, -self.modes1:, :self.modes2],
+                                        self.weights2)
+                                    
+                                    # Inverse FFT
+                                    x = torch.fft.irfft2(out_ft, s=(height, width))
+                                    return x
+
+                            # Example: Using FNO layer in a model for solving Navier-Stokes equations
+                            class FNO2d(nn.Module):
+                                def __init__(self, modes=12, width=64):
+                                    super().__init__()
+                                    self.conv0 = SpectralConv2d(3, width, modes, modes)
+                                    self.conv1 = SpectralConv2d(width, width, modes, modes)
+                                    self.conv2 = SpectralConv2d(width, width, modes, modes)
+                                    self.conv3 = SpectralConv2d(width, width, modes, modes)
+                                    self.fc = nn.Linear(width, 1)
+                                    
+                                def forward(self, x):
+                                    x = self.conv0(x)
+                                    x = torch.nn.functional.gelu(x)
+                                    x = self.conv1(x)
+                                    x = torch.nn.functional.gelu(x)
+                                    x = self.conv2(x)
+                                    x = torch.nn.functional.gelu(x)
+                                    x = self.conv3(x)
+                                    x = self.fc(x.permute(0, 2, 3, 1))
+                                    return x                     
+                        </pre>
+                    </div>
+                </div>
             </div>
+              
             <br>
             <strong>2. State Space Models and Long-Range Sequence Modeling:</strong>
             <br>
@@ -606,47 +620,54 @@ class FNO2d(nn.Module):
             y = K * u \quad \text{where} \quad K \in \mathbb{R}^L \text{ is a learned kernel}
             \]
             For sequence length \(L\), direct convolution costs \(O(L^2)\) but FFT reduces this to \(O(L \log L)\):
-            <div class="code-block">
-                <pre><code class="language-python">
-def fft_conv(u, k):
-    """Compute convolution u * k using FFT for efficiency.
-    Used in S4, Hyena, and other long-range sequence models."""
-    
-    # Pad kernel to match sequence length
-    L = len(u)
-    k_padded = np.pad(k, (0, L - len(k)))
-    
-    # FFT → multiply → inverse FFT
-    u_f = np.fft.rfft(u, n=2*L)
-    k_f = np.fft.rfft(k_padded, n=2*L)
-    y_f = u_f * k_f
-    y = np.fft.irfft(y_f)[:L]
-    
-    return y
 
-# Example: S4 kernel parameterization (simplified)
-class S4Kernel(nn.Module):
-    def __init__(self, d_model, l_max=1024):
-        super().__init__()
-        self.l_max = l_max
-        
-        # HiPPO matrix initialization for long-range memory
-        self.A = nn.Parameter(torch.randn(d_model, d_model))
-        self.B = nn.Parameter(torch.randn(d_model, 1))
-        self.C = nn.Parameter(torch.randn(1, d_model))
-        
-    def forward(self, L):
-        # Generate convolution kernel from state space parameters
-        # This is computed once and cached
-        k = self.compute_kernel(L)
-        return k
-    
-    def compute_kernel(self, L):
-        # Discretize continuous state space
-        # Details omitted for brevity
-        pass
-                </code></pre>
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            def fft_conv(u, k):
+                            """Compute convolution u * k using FFT for efficiency.
+                            Used in S4, Hyena, and other long-range sequence models."""
+                            
+                            # Pad kernel to match sequence length
+                            L = len(u)
+                            k_padded = np.pad(k, (0, L - len(k)))
+                            
+                            # FFT → multiply → inverse FFT
+                            u_f = np.fft.rfft(u, n=2*L)
+                            k_f = np.fft.rfft(k_padded, n=2*L)
+                            y_f = u_f * k_f
+                            y = np.fft.irfft(y_f)[:L]
+                            
+                            return y
+
+                        # Example: S4 kernel parameterization (simplified)
+                        class S4Kernel(nn.Module):
+                            def __init__(self, d_model, l_max=1024):
+                                super().__init__()
+                                self.l_max = l_max
+                                
+                                # HiPPO matrix initialization for long-range memory
+                                self.A = nn.Parameter(torch.randn(d_model, d_model))
+                                self.B = nn.Parameter(torch.randn(d_model, 1))
+                                self.C = nn.Parameter(torch.randn(1, d_model))
+                                
+                            def forward(self, L):
+                                # Generate convolution kernel from state space parameters
+                                # This is computed once and cached
+                                k = self.compute_kernel(L)
+                                return k
+                            
+                            def compute_kernel(self, L):
+                                # Discretize continuous state space
+                                # Details omitted for brevity
+                                pass                                   
+                        </pre>
+                    </div>
+                </div>
             </div>
+                
             <br>
             <strong>3. Audio and Speech Processing Foundation Models:</strong>
             <br>
@@ -658,44 +679,51 @@ class S4Kernel(nn.Module):
                 directly from Fourier features</li>
                 <li><strong>Phase reconstruction:</strong> Griffin-Lim algorithm and neural vocoders reconstruct phase from magnitude spectrograms</li>
             </ul>
-            <div class="code-block">
-                <pre><code class="language-python">
-import librosa
-import torch
-import torchaudio.transforms as T
 
-# Modern audio processing pipeline used in Whisper, etc.
-class AudioProcessor:
-    def __init__(self, sample_rate=16000, n_fft=400, n_mels=80):
-        self.sample_rate = sample_rate
-        self.mel_transform = T.MelSpectrogram(
-            sample_rate=sample_rate,
-            n_fft=n_fft,
-            hop_length=160,
-            n_mels=n_mels,
-            f_min=0,
-            f_max=8000
-        )
-        
-    def process(self, waveform):
-        # Convert to mel-spectrogram (used by Whisper, Wav2Vec2, etc.)
-        mel_spec = self.mel_transform(waveform)
-        
-        # Log-scale for better neural network training
-        log_mel = torch.log10(torch.clamp(mel_spec, min=1e-10))
-        
-        # Normalize (crucial for training stability)
-        log_mel = (log_mel + 4.0) / 4.0
-        
-        return log_mel
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            import librosa
+                            import torch
+                            import torchaudio.transforms as T
 
-# Example: extracting features for speech recognition
-processor = AudioProcessor()
-# waveform = torch.randn(1, 16000)  # 1 second of audio
-# features = processor.process(waveform)
-# Now feed 'features' to transformer model (e.g., Whisper encoder)
-                </code></pre>
+                            # Modern audio processing pipeline used in Whisper, etc.
+                            class AudioProcessor:
+                                def __init__(self, sample_rate=16000, n_fft=400, n_mels=80):
+                                    self.sample_rate = sample_rate
+                                    self.mel_transform = T.MelSpectrogram(
+                                        sample_rate=sample_rate,
+                                        n_fft=n_fft,
+                                        hop_length=160,
+                                        n_mels=n_mels,
+                                        f_min=0,
+                                        f_max=8000
+                                    )
+                                    
+                                def process(self, waveform):
+                                    # Convert to mel-spectrogram (used by Whisper, Wav2Vec2, etc.)
+                                    mel_spec = self.mel_transform(waveform)
+                                    
+                                    # Log-scale for better neural network training
+                                    log_mel = torch.log10(torch.clamp(mel_spec, min=1e-10))
+                                    
+                                    # Normalize (crucial for training stability)
+                                    log_mel = (log_mel + 4.0) / 4.0
+                                    
+                                    return log_mel
+
+                            # Example: extracting features for speech recognition
+                            processor = AudioProcessor()
+                            # waveform = torch.randn(1, 16000)  # 1 second of audio
+                            # features = processor.process(waveform)
+                            # Now feed 'features' to transformer model (e.g., Whisper encoder)         
+                        </pre>
+                    </div>
+                </div>
             </div>
+            
             <br>
             <strong>4. Vision Transformers and Frequency-Aware Architectures:</strong>
             <br>
@@ -706,49 +734,56 @@ processor = AudioProcessor()
                 <li><strong>GFNet (Global Filter Networks, 2021):</strong> Learns filters in frequency domain for vision tasks</li>
                 <li><strong>Focal Frequency Loss (2020):</strong> Improves image synthesis by matching frequency spectra</li>
             </ul>
-            <div class="code-block">
-                <pre><code class="language-python">
-# FNet: Replacing attention with FFT (simplified)
-class FNetBlock(nn.Module):
-    """FNet block: FFT mixing instead of self-attention"""
-    def __init__(self, d_model):
-        super().__init__()
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.ffn = nn.Sequential(
-            nn.Linear(d_model, 4 * d_model),
-            nn.GELU(),
-            nn.Linear(4 * d_model, d_model)
-        )
-        
-    def forward(self, x):
-        # x shape: (batch, sequence_length, d_model)
-        
-        # FFT mixing (replaces self-attention)
-        x_complex = torch.fft.fft2(x)  # 2D FFT over sequence and hidden dims
-        x_real = x_complex.real
-        x = x + self.norm1(x_real)
-        
-        # Feed-forward network
-        x = x + self.norm2(self.ffn(x))
-        return x
 
-# Focal Frequency Loss for better image generation
-def focal_frequency_loss(pred, target, alpha=1.0):
-    """Compute loss in frequency domain for better texture synthesis"""
-    pred_fft = torch.fft.rfft2(pred)
-    target_fft = torch.fft.rfft2(target)
-    
-    # Weight matrix emphasizing different frequencies
-    h, w = pred_fft.shape[-2:]
-    weight = torch.ones_like(pred_fft)
-    # Emphasize high frequencies (details)
-    weight[..., h//4:, w//4:] *= alpha
-    
-    loss = torch.mean(weight * torch.abs(pred_fft - target_fft))
-    return loss
-                </code></pre>
+            <div class="code-container">
+                <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                        <pre class="python-code">
+                            # FNet: Replacing attention with FFT (simplified)
+                            class FNetBlock(nn.Module):
+                                """FNet block: FFT mixing instead of self-attention"""
+                                def __init__(self, d_model):
+                                    super().__init__()
+                                    self.norm1 = nn.LayerNorm(d_model)
+                                    self.norm2 = nn.LayerNorm(d_model)
+                                    self.ffn = nn.Sequential(
+                                        nn.Linear(d_model, 4 * d_model),
+                                        nn.GELU(),
+                                        nn.Linear(4 * d_model, d_model)
+                                    )
+                                    
+                                def forward(self, x):
+                                    # x shape: (batch, sequence_length, d_model)
+                                    
+                                    # FFT mixing (replaces self-attention)
+                                    x_complex = torch.fft.fft2(x)  # 2D FFT over sequence and hidden dims
+                                    x_real = x_complex.real
+                                    x = x + self.norm1(x_real)
+                                    
+                                    # Feed-forward network
+                                    x = x + self.norm2(self.ffn(x))
+                                    return x
+
+                            # Focal Frequency Loss for better image generation
+                            def focal_frequency_loss(pred, target, alpha=1.0):
+                                """Compute loss in frequency domain for better texture synthesis"""
+                                pred_fft = torch.fft.rfft2(pred)
+                                target_fft = torch.fft.rfft2(target)
+                                
+                                # Weight matrix emphasizing different frequencies
+                                h, w = pred_fft.shape[-2:]
+                                weight = torch.ones_like(pred_fft)
+                                # Emphasize high frequencies (details)
+                                weight[..., h//4:, w//4:] *= alpha
+                                
+                                loss = torch.mean(weight * torch.abs(pred_fft - target_fft))
+                                return loss                        
+                        </pre>
+                    </div>
+                </div>
             </div>
+
             <br>
             <strong>5. Positional Encodings and Implicit Neural Representations:</strong>
             <br>
@@ -885,16 +920,3 @@ def focal_frequency_loss(pred, target, alpha=1.0):
         <script src="/js/main.js"></script>
     </body>
 </html>
-
-
-        <div class="code-container">
-            <div class="collapsible-section">
-                <button class="collapsible-btn">Show/Hide Code</button>
-                <div class="collapsible-content">
-                    <pre class="python-code">
-                
-                              
-                    </pre>
-                </div>
-            </div>
-        </div>
