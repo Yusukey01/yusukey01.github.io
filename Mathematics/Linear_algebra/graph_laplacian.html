@@ -426,34 +426,78 @@ uses_python: true
                     first-order approximation (\(K=1\)) of this process.
                 </p>
 
-                <h3>Diffusion and Random Walks</h3>
-                <p>
-                    The Laplacian governs diffusion processes on graphs. The
-                    <strong>heat equation</strong> on a graph, which describes how
-                    a "heat" signal \(u(t)\) diffuses over time, is:
-                </p>
-                <div class="theorem">
-                    <span class="theorem-title">Heat Diffusion on Graphs</span>
-                    \[
-                    \frac{\partial \boldsymbol{u}}{\partial t} = -\boldsymbol{L} \boldsymbol{u}
-                    \]
-                    The solution to this differential equation is:
-                    \[
-                    \boldsymbol{u}(t) = e^{-t\boldsymbol{L}} \boldsymbol{u}(0) = \sum_{k=0}^{n-1} e^{-t\lambda_k} \langle \boldsymbol{u}(0), \boldsymbol{v}_k \rangle \boldsymbol{v}_k
-                    \]
-                    This shows that high-frequency components (large \(\lambda_k\))
-                    decay very quickly, while the signal converges to its steady
-                    state (the average value, \(\boldsymbol{v}_0\)) at a rate
-                    determined by the Fiedler value \(\lambda_1\).
-                </div>
+                <h3>Diffusion, Label Propagation, and GNNs</h3>
+            <p>
+                The Laplacian is the "generator" of diffusion processes on graphs. 
+                This isn't just a theoretical curiosity from physics; it's the
+                mathematical foundation for many GNN architectures and semi-supervised 
+                learning algorithms.
+            </p>
+            <p>
+                For example, the classic <strong>Label Propagation</strong> algorithm for
+                semi-supervised learning is a direct application of this. You can imagine 
+                "clamping" the "heat" of labeled nodes (e.g., 1 for Class A, 0 for Class B) 
+                and letting that heat diffuse through the graph to unlabeled nodes. The final
+                "temperature" of a node is its classification.
+            </p>
+            <p>
+                The formal continuous-time model for this is the 
+                <strong>graph heat equation</strong>:
+            </p>
+            <div class="theorem">
+                <span class="theorem-title">Heat Diffusion on Graphs</span>
+                \[
+                \frac{\partial \boldsymbol{u}}{\partial t} = -\boldsymbol{L} \boldsymbol{u}
+                \]
+                The solution, which describes how an initial heat distribution 
+                \(\boldsymbol{u}(0)\) spreads over the graph, is given by:
+                \[
+                \boldsymbol{u}(t) = e^{-t\boldsymbol{L}} \boldsymbol{u}(0)
+                \]
+                Where \(e^{-t\boldsymbol{L}} = \sum_{k=0}^{\infty} \frac{(-t\boldsymbol{L})^k}{k!} = 
+                \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^T\).
+            </div>
+            <p>
+                This solution, \(e^{-t\boldsymbol{L}}\), is known as the 
+                <strong>graph heat kernel</strong>. It's a powerful low-pass filter
+                (since high-frequency components \(e^{-t\lambda_k}\) with large \(\lambda_k\) 
+                decay fastest). This process of diffusion is the formal explanation
+                for the <strong>over-smoothing</strong> problem in deep GNNs [2].
+            </p>
+            <p>
+                Many GNNs, like the standard GCN, are computationally efficient approximations 
+                (e.g., a simple, first-order polynomial) of this spectral filtering [1].
+                More advanced models take this connection to its logical conclusion,
+                explicitly modeling GNNs as continuous-time graph differential equations [3].
+                This links the abstract math of DEs directly
+                to the design of modern AI models.
+            </p>
 
-                <h3>Other Applications</h3>
-                <ul style="padding-left: 40px;">
-                    <li><strong>Recommender Systems:</strong> Used by companies like Netflix and YouTube to model user-item interactions as a graph and use diffusion or embeddings.</li>
-                    <li><strong>Protein Structure:</strong> AlphaFold uses GNNs and Laplacian-based features to model the 3D structure of proteins.</li>
-                    <li><strong>Social Network Analysis:</strong> Community detection (spectral clustering) at scale.</li>
-                    <li><strong>Computer Vision:</strong> Image segmentation and denoising by treating pixels as graph nodes.</li>
-                </ul>
+            <h3>Other Applications</h3>
+            <ul style="padding-left: 40px;">
+                <li><strong>Recommender Systems:</strong> Used extensively in industry to model user-item interactions as a graph, often leveraging **matrix factorization on the Laplacian** or **graph-based diffusion models** to predict preferences.</li>
+                <li><strong>Protein Structure:</strong> Foundational to bioinformatics, where GNNs (like those used by AlphaFold) model the 3D structure of proteins by treating amino acids as nodes and using **Laplacian-based graph convolutions** to capture bond geometry.</li>
+                <li><strong>Social Network Analysis:</strong> Continues to be the primary method for **community detection** (spectral clustering) and identifying network bottlenecks (algebraic connectivity $\lambda_1$) at scale.</li>
+                <li><strong>Computer Vision:</strong> Historically used for **image segmentation** and denoising via graph cuts (minimum cut problems, which are directly related to the Laplacian quadratic form).</li>
+            </ul>
+
+            <div class="references" style="margin-top: 25px; padding: 15px; border-top: 1px solid #eee;">
+                <h4>Core Papers for this Section</h4>
+                <ol style="padding-left: 40px; font-size: 0.9em; line-height: 1.6;">
+                    <li>
+                        Kipf, T. N., & Welling, M. (2017). <strong>Semi-Supervised Classification with Graph Convolutional Networks.</strong> 
+                        <em>International Conference on Learning Representations (ICLR).</em>
+                    </li>
+                    <li>
+                        Li, Q., Han, Z., & Wu, X. M. (2018). <strong>Deeper Insights into Graph Convolutional Networks.</strong> 
+                        <em>Proceedings of the AAAI Conference on Artificial Intelligence.</em>
+                    </li>
+                    <li>
+                        Poli, M., Massaroli, S., et al. (2020). <strong>Graph Neural Ordinary Differential Equations (GRAND).</strong> 
+                        <em>Advances in Neural Information Processing Systems (NeurIPS).</em>
+                    </li>
+                </ol>
+            </div>
 
             </section>
             
