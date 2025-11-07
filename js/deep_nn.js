@@ -1,4 +1,4 @@
-// deep_nn.js - Interactive Transformer Architecture Demo (GPT-style Decoder)
+// deep_nn.js - (Revised) Interactive Transformer Architecture Demo
 
 class TransformerDemo {
     constructor(containerId) {
@@ -66,9 +66,13 @@ class TransformerDemo {
             topK: 10
         };
         
-        // Initialize embeddings matrix with random values
+        // Initialize embeddings and projection weights/biases
         this.initializeEmbeddings();
         this.initializeProjectionWeights();
+        
+        // Caches
+        this.posEncodingCache = new Map();
+        this.maskCache = new Map();
         
         // State
         this.state = {
@@ -105,29 +109,29 @@ class TransformerDemo {
     }
     
     initializeProjectionWeights() {
-        // Create projection weights for output layer
+        // Create projection weights for output layer (logits)
         this.projectionWeights = [];
+        // **NEW: Create a separate bias vector**
+        this.projectionBiases = new Array(this.config.vocab.length).fill(0);
         
-        // Initialize with Xavier/Glorot initialization
+        // Initialize weights with Xavier/Glorot initialization
         const scale = Math.sqrt(2.0 / (this.config.hiddenDim + this.config.vocab.length));
         
         for (let v = 0; v < this.config.vocab.length; v++) {
             this.projectionWeights[v] = [];
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale * 0.1; // Smaller weights
+                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale;
             }
         }
         
-        // Create more realistic biases based on token type
-        // This simulates what a trained model might learn
+        // **REVISED: Apply linguistic biases to the BIAS vector, not the weights**
         
         // Severely penalize special tokens
         ['<PAD>', '<START>', '<END>', '<UNK>'].forEach(token => {
             const idx = this.config.vocab.indexOf(token);
             if (idx !== -1) {
-                this.projectionWeights[idx].forEach((_, i) => {
-                    this.projectionWeights[idx][i] -= 1.0;
-                });
+                // This is a bias, so it's a single value added to the logit
+                this.projectionBiases[idx] -= 5.0; 
             }
         });
         
@@ -148,9 +152,7 @@ class TransformerDemo {
                 const idx = this.config.vocab.indexOf(token);
                 if (idx !== -1) {
                     // Small positive bias for common words
-                    this.projectionWeights[idx].forEach((_, i) => {
-                        this.projectionWeights[idx][i] += Math.random() * 0.1;
-                    });
+                    this.projectionBiases[idx] += 0.2; 
                 }
             });
         });
@@ -1079,21 +1081,17 @@ class TransformerDemo {
                 </linearGradient>
             </defs>
             
-            <!-- Title -->
             <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">GPT-Style Decoder Architecture</text>
             
-            <!-- Input -->
             <rect class="component-box" id="token-embed" x="320" y="520" width="160" height="40" rx="5" />
             <text class="component-text" x="400" y="545">Token Embedding</text>
             
             <rect class="component-box" id="pos-encoding" x="320" y="460" width="160" height="40" rx="5" />
             <text class="component-text" x="400" y="485">Positional Encoding</text>
             
-            <!-- Decoder Stack -->
             <g id="decoder-stack">
                 <rect x="220" y="120" width="360" height="320" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
                 
-                <!-- Layer 1 -->
                 <g id="decoder-layer-1">
                     <rect class="component-box" id="dec-masked-attn-1" x="260" y="370" width="280" height="40" rx="5" />
                     <text class="component-text" x="400" y="385">Masked Multi-Head</text>
@@ -1109,16 +1107,13 @@ class TransformerDemo {
                     <text class="component-text" x="400" y="215">Add & Layer Norm</text>
                 </g>
                 
-                <!-- Layer 2 (simplified) -->
                 <rect class="component-box" id="dec-layer-2" x="260" y="140" width="280" height="35" rx="5" />
                 <text class="component-text" x="400" y="162">Decoder Layer 2</text>
             </g>
             
-            <!-- Output Head -->
             <rect class="component-box" id="output-projection" x="320" y="70" width="160" height="40" rx="5" />
             <text class="component-text" x="400" y="95">Output Projection</text>
             
-            <!-- Connections -->
             <line class="connection-line" id="conn-1" x1="400" y1="520" x2="400" y2="500" stroke-dasharray="5,5" />
             <line class="connection-line" id="conn-2" x1="400" y1="460" x2="400" y2="410" stroke-dasharray="5,5" />
             <line class="connection-line" id="conn-3" x1="400" y1="370" x2="400" y2="350" stroke-dasharray="5,5" />
@@ -1127,15 +1122,12 @@ class TransformerDemo {
             <line class="connection-line" id="conn-6" x1="400" y1="190" x2="400" y2="175" stroke-dasharray="5,5" />
             <line class="connection-line" id="conn-7" x1="400" y1="140" x2="400" y2="110" stroke-dasharray="5,5" />
             
-            <!-- Skip connections -->
             <path class="connection-line" d="M 240 390 Q 210 330 240 330" stroke-dasharray="3,3" opacity="0.5" />
             <path class="connection-line" d="M 240 270 Q 210 210 240 210" stroke-dasharray="3,3" opacity="0.5" />
             
-            <!-- Labels -->
             <text x="200" y="360" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
             <text x="200" y="240" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
             
-            <!-- Causal mask indicator -->
             <g transform="translate(550, 380)">
                 <rect x="0" y="-15" width="30" height="30" fill="#ff9800" rx="3" />
                 <text x="15" y="5" text-anchor="middle" fill="white" font-size="20">🔒</text>
@@ -1350,16 +1342,11 @@ class TransformerDemo {
         const seqLen = embeddings.length;
         const cacheKey = `pos_encoding_${seqLen}_${this.config.hiddenDim}`;
         
-        // Check cache first (ADD this caching logic)
-        if (!this.posEncodingCache) {
-            this.posEncodingCache = new Map();
-        }
-        
         let posEncodings;
         if (this.posEncodingCache.has(cacheKey)) {
             posEncodings = this.posEncodingCache.get(cacheKey);
         } else {
-            // Compute positional encoding (KEEP existing logic below)
+            // Compute positional encoding
             posEncodings = [];
             const C = this.config.posEncodingBase;
             
@@ -1381,7 +1368,7 @@ class TransformerDemo {
             this.posEncodingCache.set(cacheKey, posEncodings);
         }
         
-        // Add to embeddings (KEEP existing logic)
+        // Add to embeddings
         const encoded = [];
         for (let pos = 0; pos < embeddings.length; pos++) {
             encoded[pos] = embeddings[pos].map((val, idx) => val + posEncodings[pos][idx] * 0.1);
@@ -1555,17 +1542,12 @@ class TransformerDemo {
     }
 
     createCausalMask(seqLen) {
-        // ADD caching
-        if (!this.maskCache) {
-            this.maskCache = new Map();
-        }
-        
         const cacheKey = `causal_mask_${seqLen}`;
         if (this.maskCache.has(cacheKey)) {
             return this.maskCache.get(cacheKey);
         }
         
-        // KEEP existing logic but optimize
+        // Create mask
         const mask = [];
         for (let i = 0; i < seqLen; i++) {
             const row = new Array(seqLen); // Pre-allocate
@@ -1625,8 +1607,10 @@ class TransformerDemo {
         });
     }
     
+    // =================================================================
+    // == REVISED FUNCTION
+    // =================================================================
     projectToVocab(hiddenState, currentSequence) {
-        // Use pre-initialized projection weights
         const logits = [];
         
         // Base projection
@@ -1638,85 +1622,79 @@ class TransformerDemo {
                 score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
+            // **NEW: Add the separate, pre-computed bias**
+            score += this.projectionBiases[v];
+            
             logits.push(score);
         }
         
-        // Normalize logits to reasonable range FIRST
+        // Normalize logits to a reasonable range *before* applying rules
+        // This prevents the rules from having wildly different impacts
         const meanLogit = logits.reduce((a, b) => a + b, 0) / logits.length;
         const stdLogit = Math.sqrt(logits.reduce((a, b) => a + Math.pow(b - meanLogit, 2), 0) / logits.length);
         
-        // Standardize and scale to smaller range
         for (let v = 0; v < logits.length; v++) {
-            logits[v] = (logits[v] - meanLogit) / (stdLogit + 1e-5) * 1.0; // Reduced from 2.0
+            logits[v] = (logits[v] - meanLogit) / (stdLogit + 1e-5);
         }
         
-        // Apply context-aware adjustments with SMALLER, CONTROLLED BOOSTS
+        // **REVISED: Apply context-aware adjustments with MUCH GENTLER boosts**
         const token = currentSequence[currentSequence.length - 1] || '';
         
         for (let v = 0; v < this.config.vocab.length; v++) {
             const candidateToken = this.config.vocab[v];
             
-            // Strong penalties for special tokens (keep this)
+            // We already penalized special tokens in the bias, but a small extra
+            // check here doesn't hurt.
             if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(candidateToken)) {
-                logits[v] -= 5.0; // Reduced from 10.0
+                logits[v] -= 2.0; 
                 continue;
             }
             
-            // MUCH SMALLER context-based boosts to prevent domination
+            // **GENTLER (NUDGE) boosts**
             if (token === 'the' || token === 'a' || token === 'an') {
                 // After articles, boost nouns and adjectives
-                if (['cat', 'dog', 'house', 'car', 'tree', 'bird', 'man', 'woman', 'boy', 'girl'].includes(candidateToken)) {
-                    logits[v] += 1.0; // Reduced from 3.0
-                } else if (['big', 'small', 'red', 'blue', 'happy', 'old', 'new', 'good', 'little', 'great'].includes(candidateToken)) {
-                    logits[v] += 0.8; // Reduced from 2.5
+                if (['cat', 'dog', 'house', 'car', 'tree', 'man', 'woman'].includes(candidateToken)) {
+                    logits[v] += 0.5; // Was 1.0
+                } else if (['big', 'small', 'red', 'happy', 'old', 'new', 'good'].includes(candidateToken)) {
+                    logits[v] += 0.4; // Was 0.8
                 }
                 // Penalize another article or verb immediately after
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
-                    logits[v] -= 2.0; // Reduced from 4.0
+                    logits[v] -= 1.0; // Was 2.0
                 }
-            } else if (['cat', 'dog', 'bird', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree'].includes(token)) {
+            } else if (['cat', 'dog', 'man', 'woman', 'car', 'house'].includes(token)) {
                 // After nouns, boost verbs
-                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays', 'eats', 'likes', 'loves'].includes(candidateToken)) {
-                    logits[v] += 1.5; // Reduced from 4.0
+                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
+                    logits[v] += 0.6; // Was 1.5
                 } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
-                    logits[v] += 0.8; // Reduced from 2.0
+                    logits[v] += 0.3; // Was 0.8
                 }
             } else if (['is', 'was', 'are', 'were'].includes(token)) {
                 // After be-verbs, boost adjectives
-                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new', 'fast', 'slow', 'beautiful', 'nice'].includes(candidateToken)) {
-                    logits[v] += 1.2; // Reduced from 4.0
+                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new'].includes(candidateToken)) {
+                    logits[v] += 0.6; // Was 1.2
                 } else if (['a', 'an', 'the'].includes(candidateToken)) {
-                    logits[v] += 0.8; // Reduced from 2.0
-                }
-            } else if (['happy', 'sad', 'big', 'small', 'fast', 'slow'].includes(token)) {
-                // After adjectives, SMALL boost for conjunctions
-                if (['and', 'but', 'or'].includes(candidateToken)) {
-                    logits[v] += 0.5; // Reduced from 2.0 - THIS WAS THE MAIN PROBLEM
+                    logits[v] += 0.4; // Was 0.8
                 }
             }
             
-            // Prevent repetition with MODERATE penalty
-            const recentTokens = currentSequence.slice(-3);
-            if (recentTokens.includes(candidateToken)) {
-                logits[v] -= 1.0; // Reduced from 2.0
-            }
-            
-            // Small boost for common patterns
+            // **REMOVED repetition penalty from logits.** // This is a sampling strategy, so we'll handle it in sampleToken.
+
+            // Small boost for common bigrams
             const commonBigrams = {
                 'the': ['cat', 'dog', 'house', 'car'],
                 'cat': ['is', 'was', 'runs', 'sleeps'],
                 'is': ['big', 'small', 'happy', 'running'],
                 'was': ['big', 'small', 'happy', 'running'],
-                'and': ['the', 'a', 'it'],
                 'a': ['cat', 'dog', 'big', 'small']
             };
             
             if (commonBigrams[token] && commonBigrams[token].includes(candidateToken)) {
-                logits[v] += 0.3; // Very small boost
+                logits[v] += 0.2; // Was 0.3 (keep it small)
             }
         }
         
-        // CLAMP logits to prevent extreme values
+        // CLAMP logits to prevent extreme values (this is good practice)
         const maxAllowedLogit = 5.0;
         const minAllowedLogit = -5.0;
         
@@ -1746,8 +1724,14 @@ class TransformerDemo {
         
         // Handle edge cases
         if (sumExp === 0 || !isFinite(sumExp)) {
+            // This can happen if all logits are -Infinity
             console.warn('Numerical instability in softmax, using uniform distribution');
-            return new Array(logits.length).fill(1.0 / logits.length);
+            const validTokens = logits.filter(l => l > -Infinity).length;
+            if (validTokens === 0) {
+                 return new Array(logits.length).fill(1.0 / logits.length);
+            }
+            const prob = 1.0 / validTokens;
+            return logits.map(l => l > -Infinity ? prob : 0);
         }
         
         const probs = expLogits.map(e => e / sumExp);
@@ -1755,26 +1739,17 @@ class TransformerDemo {
         // Verify probabilities sum to 1
         const probSum = probs.reduce((a, b) => a + b, 0);
         if (Math.abs(probSum - 1.0) > 1e-6) {
+            // Renormalize just in case of floating point errors
             return probs.map(p => p / probSum);
-        }
-        
-        // DIAGNOSTIC: Log if any probability is too high
-        const maxProb = Math.max(...probs);
-        if (maxProb > 0.9) {
-            console.warn(`High probability detected: ${maxProb.toFixed(3)} for temperature ${temperature}`);
-            console.log('Top 3 logits:', 
-                logits.map((l, i) => ({token: this.config.vocab[i], logit: l.toFixed(2)}))
-                    .sort((a, b) => b.logit - a.logit)
-                    .slice(0, 3)
-            );
         }
         
         return probs;
     }
     
+    // =================================================================
+    // == REVISED FUNCTION
+    // =================================================================
     sampleToken(probs, currentSequence) {
-        // Get the last token for context
-        const lastToken = currentSequence[currentSequence.length - 1] || '';
         
         // Get top K indices with their probabilities
         const indexed = probs.map((p, i) => ({ 
@@ -1784,64 +1759,58 @@ class TransformerDemo {
         }));
         indexed.sort((a, b) => b.prob - a.prob);
         
-        // Filter out invalid choices based on context
-        const filtered = indexed.filter((item) => {
-            const token = item.token;
+        // --- Filtering Stage ---
+        // We will filter the *probabilities* themselves before Top-K
+        // This is a common sampling technique (e.g., repetition penalty)
+        
+        const recentTokens = currentSequence.slice(-3); // Look at last 3 tokens
+        
+        for (let i = 0; i < indexed.length; i++) {
+            const token = indexed[i].token;
             
-            // Always exclude special tokens unless extremely likely
+            // 1. Penalize special tokens (should already have low prob, but good to ensure)
             if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
-                return item.prob > 0.8;
+                indexed[i].prob = 0;
             }
             
-            // Prevent immediate repetition
-            if (token === lastToken) {
-                return false;
-            }
-            
-            // Prevent repetition of recent words
-            const recentTokens = currentSequence.slice(-3);
+            // 2. Apply repetition penalty
             if (recentTokens.includes(token)) {
-                return false;
+                // Penalize by dividing probability (a common technique)
+                // A penalty of 1.2 means it's 1.2x less likely
+                indexed[i].prob /= 1.5; 
             }
-            
-            // Grammar-based filtering
-            if (lastToken === 'and' || lastToken === 'or' || lastToken === 'but') {
-                // After conjunctions, don't allow adjectives without articles
-                if (['big', 'small', 'happy', 'sad', 'new', 'old', 'fast', 'slow'].includes(token)) {
-                    return false;
-                }
-            }
-            
-            if (lastToken === 'the' || lastToken === 'a' || lastToken === 'an') {
-                // After articles, don't allow verbs or other articles
-                if (['is', 'was', 'are', 'were', 'the', 'a', 'an'].includes(token)) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-        
-        // Take top-k from filtered list
-        let topIndices = filtered.slice(0, Math.min(this.config.topK, filtered.length));
-        
-        // If we filtered out too many options, be less strict
-        if (topIndices.length < 3) {
-            // Just exclude special tokens and exact repetition
-            topIndices = indexed
-                .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token) && item.token !== lastToken)
-                .slice(0, this.config.topK);
         }
         
-        // If still no options, use original top-k
+        // Re-sort after applying penalties
+        indexed.sort((a, b) => b.prob - a.prob);
+        
+        // --- Top-K Stage ---
+        // Now take the top-k from the *penalized* and *re-sorted* list
+        let topIndices = indexed.slice(0, this.config.topK);
+
+        // Filter out any that became 0
+        topIndices = topIndices.filter(item => item.prob > 0);
+        
+        // If we have no options left (e.g., all top-k were penalized to 0)
         if (topIndices.length === 0) {
-            topIndices = indexed.slice(0, this.config.topK);
+            // Fallback: just take the original Top-K, excluding special tokens
+            topIndices = indexed
+                .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token))
+                .slice(0, Math.max(1, this.config.topK)); // Ensure at least one option
+            
+             if (topIndices.length === 0) {
+                // Absolute fallback (should never happen)
+                return 'the';
+             }
         }
         
-        // Renormalize probabilities
+        // --- Sampling Stage ---
+        
+        // Renormalize probabilities among the Top-K
         const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
+        
         if (sumTopK === 0) {
-            // Uniform distribution as fallback
+            // Uniform distribution as fallback if all probs are 0
             topIndices.forEach(item => item.prob = 1.0 / topIndices.length);
         } else {
             topIndices.forEach(item => item.prob = item.prob / sumTopK);
@@ -1912,8 +1881,8 @@ class TransformerDemo {
         
         // Continue playback if playing
         if (this.state.isPlaying) {
+            this.state.currentStep++;
             setTimeout(() => {
-                this.state.currentStep++;
                 this.updateVisualization();
             }, this.config.playbackSpeed);
         }
@@ -2021,7 +1990,7 @@ class TransformerDemo {
                     tokenClass += ' prompt';
                 } else if (idx < promptLength + generationStep) {
                     tokenClass += ' generated';
-                } else if (idx === promptLength + generationStep && step.phase === 'output') {
+                } else if (idx === promptLength + generationStep && (step.phase === 'output' || step.isGenerating)) {
                     tokenClass += ' generating';
                 }
                 
@@ -2044,16 +2013,21 @@ class TransformerDemo {
         }
         
         // Show probability distribution for output phase
-        if (step.phase === 'output' && step.data && Array.isArray(step.data)) {
-            html += `
-                <div class="probability-chart">
-                    <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
-                    <p style="color: #666; margin-bottom: 15px;">
-                        Predicting token to follow: "${(step.tokens || []).join(' ')}"
-                    </p>
-                    ${this.renderProbabilityChart(step.data, step.selectedIndex)}
-                </div>
-            `;
+        if ((step.phase === 'output' || step.phase === 'selection') && step.data) {
+            const probs = Array.isArray(step.data) ? step.data : (step.data.probs || null);
+            const selectedIndex = step.selectedIndex || (step.data.token ? this.config.vocab.indexOf(step.data.token) : -1);
+            
+            if (probs) {
+                 html += `
+                    <div class="probability-chart">
+                        <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            Predicting token to follow: "${(step.tokens || []).slice(0, step.lastPosition + 1).join(' ')}"
+                        </p>
+                        ${this.renderProbabilityChart(probs, selectedIndex)}
+                    </div>
+                `;
+            }
         }
         
         // Show details for attention phase
@@ -2071,7 +2045,7 @@ class TransformerDemo {
         container.innerHTML = html;
         
         // Animate probability bars
-        if (step.phase === 'output') {
+        if (step.phase === 'output' || step.phase === 'selection') {
             setTimeout(() => {
                 document.querySelectorAll('.prob-fill').forEach(fill => {
                     const width = fill.dataset.width;
@@ -2187,10 +2161,12 @@ class TransformerDemo {
                         cell.title = `Masked: ${tokens[i]} cannot attend to future token ${tokens[j]}`;
                     } else {
                         // Color based on weight intensity
-                        const intensity = Math.floor(weight * 255);
-                        const color = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
-                        cell.style.background = color;
-                        cell.style.color = intensity < 128 ? 'black' : 'white';
+                        const intensity = Math.min(weight * 5.0, 1.0); // Amplify for visibility
+                        const r = 255 - Math.floor(intensity * 200);
+                        const g = 255 - Math.floor(intensity * 200);
+                        const b = 255;
+                        cell.style.background = `rgb(${r}, ${g}, ${b})`;
+                        cell.style.color = intensity > 0.5 ? 'black' : 'black';
                         cell.textContent = weight.toFixed(2);
                         cell.title = `${tokens[i]} → ${tokens[j]}: ${weight.toFixed(4)}`;
                     }
@@ -2244,18 +2220,26 @@ class TransformerDemo {
         if (!data || (Array.isArray(data) && data.length === 0)) {
             return '<div class="loading">No data available</div>';
         }
-        
-        // Handle 1D array (probability distribution)
+
+        // Handle 1D array (probability distribution) or object from selection step
+        let probs = null;
         if (Array.isArray(data) && typeof data[0] === 'number') {
+            probs = data;
+        } else if (data.probs) {
+            probs = data.probs;
+        }
+
+        if (probs) {
             let html = '';
             const maxShow = 20;
             
             // Sort by probability to show most likely tokens
-            const indexed = data.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
+            const indexed = probs.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
             indexed.sort((a, b) => b.prob - a.prob);
             
             for (let i = 0; i < Math.min(indexed.length, maxShow); i++) {
                 const item = indexed[i];
+                if (!item.token) continue; // Skip if vocab is mismatched
                 const value = item.prob.toFixed(4);
                 const percent = (item.prob * 100).toFixed(1);
                 const intensity = Math.min(item.prob * 5, 1); // Scale for visibility
@@ -2277,31 +2261,35 @@ class TransformerDemo {
         }
         
         // Handle 2D array (embeddings, hidden states)
-        let html = '';
-        const maxRows = 3;
-        const maxCols = 10;
-        
-        for (let i = 0; i < Math.min(data.length, maxRows); i++) {
-            for (let j = 0; j < Math.min(data[i].length, maxCols); j++) {
-                const value = data[i][j].toFixed(3);
-                const intensity = Math.min(Math.abs(data[i][j]), 1);
-                const color = data[i][j] >= 0 ? 
-                    `rgba(52, 152, 219, ${intensity})` : 
-                    `rgba(231, 76, 60, ${intensity})`;
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+            let html = '';
+            const maxRows = 3;
+            const maxCols = 10;
+            
+            for (let i = 0; i < Math.min(data.length, maxRows); i++) {
+                for (let j = 0; j < Math.min(data[i].length, maxCols); j++) {
+                    const value = data[i][j].toFixed(3);
+                    const intensity = Math.min(Math.abs(data[i][j]), 1);
+                    const color = data[i][j] >= 0 ? 
+                        `rgba(52, 152, 219, ${intensity})` : 
+                        `rgba(231, 76, 60, ${intensity})`;
+                    
+                    html += `<div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">${value}</div>`;
+                }
                 
-                html += `<div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">${value}</div>`;
+                if (data[i].length > maxCols) {
+                    html += `<div class="tensor-value">...</div>`;
+                }
             }
             
-            if (data[i].length > maxCols) {
-                html += `<div class="tensor-value">...</div>`;
+            if (data.length > maxRows) {
+                html += `<div class="tensor-value" style="grid-column: 1 / -1; text-align: center;">... ${data.length - maxRows} more rows ...</div>`;
             }
+            return html;
         }
-        
-        if (data.length > maxRows) {
-            html += `<div class="tensor-value" style="grid-column: 1 / -1; text-align: center;">... ${data.length - maxRows} more rows ...</div>`;
-        }
-        
-        return html;
+
+        // Fallback for unknown data structures
+        return '<div class="loading">Cannot render data</div>';
     }
     
     renderProbabilityChart(probs, selectedIndex) {
@@ -2315,10 +2303,13 @@ class TransformerDemo {
         return topIndices.map(({ prob, idx }) => {
             const percent = (prob * 100).toFixed(1);
             const isSelected = idx === selectedIndex;
+            const token = this.config.vocab[idx];
+            
+            if (!token) return ''; // Safety check
             
             return `
                 <div class="prob-bar ${isSelected ? 'selected' : ''}">
-                    <div class="prob-label">${this.config.vocab[idx]}</div>
+                    <div class="prob-label">${token}</div>
                     <div class="prob-value">
                         <div class="prob-fill" data-width="${percent}%" style="width: 0"></div>
                     </div>
@@ -2353,14 +2344,18 @@ class TransformerDemo {
         playBtn.textContent = this.state.isPlaying ? '⏸️ Pause' : '▶️ Play';
         
         if (this.state.isPlaying) {
-            if (this.state.currentStep >= this.state.processingSteps.length) {
+            if (this.state.currentStep >= this.state.processingSteps.length -1) {
                 this.state.currentStep = 0;
+            } else {
+                 this.state.currentStep++;
             }
             this.updateVisualization();
         }
     }
     
     stepForward() {
+        this.state.isPlaying = false;
+        document.getElementById('play-btn').textContent = '▶️ Play';
         if (this.state.currentStep < this.state.processingSteps.length - 1) {
             this.state.currentStep++;
             this.updateVisualization();
@@ -2368,6 +2363,8 @@ class TransformerDemo {
     }
     
     goToStep(step) {
+        this.state.isPlaying = false;
+        document.getElementById('play-btn').textContent = '▶️ Play';
         this.state.currentStep = Math.min(step, this.state.processingSteps.length - 1);
         this.updateVisualization();
     }
@@ -2385,6 +2382,7 @@ class TransformerDemo {
         document.getElementById('step-title').textContent = 'Ready';
         document.getElementById('step-description').textContent = 'Click "Start Generation" to begin autoregressive text generation';
         document.getElementById('step-slider').value = 0;
+        document.getElementById('step-slider').max = 0;
         document.getElementById('step-details').classList.remove('active');
         
         this.highlightComponent(null, null);
@@ -2408,16 +2406,19 @@ class TransformerDemo {
     }
     
     destroy() {
-        // Clean up event listeners (KEEP existing code)
+        // Clean up event listeners
         this.eventCleanup.forEach(cleanup => cleanup());
         this.eventCleanup = [];
         
-        // ADD: Clear caches
+        // Clear caches
         if (this.posEncodingCache) {
             this.posEncodingCache.clear();
         }
+        if (this.maskCache) {
+            this.maskCache.clear();
+        }
         
-        // Clear container (KEEP existing code)
+        // Clear container
         if (this.container) {
             this.container.innerHTML = '';
         }
