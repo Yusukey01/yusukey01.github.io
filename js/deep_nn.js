@@ -1662,7 +1662,7 @@ class TransformerDemo {
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
                     logits[v] -= 1.0; // Was 2.0
                 }
-            } else if (['cat', 'dog', 'man', 'woman', 'car', 'house'].includes(token)) {
+            } else if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(token)) {
                 // After nouns, boost verbs
                 if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
                     logits[v] += 0.6; // Was 1.5
@@ -2012,10 +2012,19 @@ class TransformerDemo {
             html += this.renderCausalMask(step.causalMask, step.tokens);
         }
         
-        // Show probability distribution for output phase
+        // Show probability distribution for output/selection phase
         if ((step.phase === 'output' || step.phase === 'selection') && step.data) {
             const probs = Array.isArray(step.data) ? step.data : (step.data.probs || null);
             const selectedIndex = step.selectedIndex || (step.data.token ? this.config.vocab.indexOf(step.data.token) : -1);
+
+            let predictionContext = "";
+            if (step.phase === 'output' && step.tokens) {
+                // 'output' step: get context from tokens and lastPosition
+                predictionContext = (step.tokens || []).slice(0, step.lastPosition + 1).join(' ');
+            } else if (step.phase === 'selection' && step.data.sequenceBefore) {
+                // 'selection' step: get context from data.sequenceBefore
+                predictionContext = step.data.sequenceBefore.join(' ');
+            }
             
             if (probs) {
                  html += `
