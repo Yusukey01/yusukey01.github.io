@@ -1607,9 +1607,6 @@ class TransformerDemo {
         });
     }
     
-    // =================================================================
-    // == REVISED FUNCTION
-    // =================================================================
     projectToVocab(hiddenState, currentSequence) {
         const logits = [];
         
@@ -1662,23 +1659,35 @@ class TransformerDemo {
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
                     logits[v] -= 1.0; // Was 2.0
                 }
+            // FIX 1 (from last time): Added 'boy' and 'girl' to this list
             } else if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(token)) {
                 // After nouns, boost verbs
                 if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
-                    logits[v] += 0.6; // Was 1.5
+                    logits[v] += 0.6; 
                 } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
-                    logits[v] += 0.3; // Was 0.8
+                    logits[v] += 0.3;
                 }
             } else if (['is', 'was', 'are', 'were'].includes(token)) {
                 // After be-verbs, boost adjectives
                 if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new'].includes(candidateToken)) {
-                    logits[v] += 0.6; // Was 1.2
+                    logits[v] += 0.6;
                 } else if (['a', 'an', 'the'].includes(candidateToken)) {
-                    logits[v] += 0.4; // Was 0.8
+                    logits[v] += 0.4;
                 }
-            }
-            
-            // **REMOVED repetition penalty from logits.** // This is a sampling strategy, so we'll handle it in sampleToken.
+            } else if (['big', 'small', 'good', 'bad', 'happy', 'sad', 'red', 'new', 'old', 'rapid', 'quick', 'slow'].includes(token)) {
+                // After adjectives, boost nouns
+                if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree', 'sky', 'sun'].includes(candidateToken)) {
+                    logits[v] += 0.7; // Boost nouns strongly
+                }
+                // Also boost conjunctions
+                else if (['and', 'or', 'but'].includes(candidateToken)) {
+                    logits[v] += 0.3;
+                }
+                // Penalize verbs immediately after
+                else if (['is', 'was', 'runs', 'jumps', 'sleeps'].includes(candidateToken)) {
+                    logits[v] -= 1.0;
+                }
+            }            
 
             // Small boost for common bigrams
             const commonBigrams = {
@@ -2011,18 +2020,17 @@ class TransformerDemo {
         if (step.causalMask && step.tokens && step.tokens.length <= 8) {
             html += this.renderCausalMask(step.causalMask, step.tokens);
         }
-        
+
         // Show probability distribution for output/selection phase
         if ((step.phase === 'output' || step.phase === 'selection') && step.data) {
             const probs = Array.isArray(step.data) ? step.data : (step.data.probs || null);
             const selectedIndex = step.selectedIndex || (step.data.token ? this.config.vocab.indexOf(step.data.token) : -1);
 
+            // This logic correctly gets the context string for *both* steps
             let predictionContext = "";
             if (step.phase === 'output' && step.tokens) {
-                // 'output' step: get context from tokens and lastPosition
                 predictionContext = (step.tokens || []).slice(0, step.lastPosition + 1).join(' ');
             } else if (step.phase === 'selection' && step.data.sequenceBefore) {
-                // 'selection' step: get context from data.sequenceBefore
                 predictionContext = step.data.sequenceBefore.join(' ');
             }
             
@@ -2031,13 +2039,14 @@ class TransformerDemo {
                     <div class="probability-chart">
                         <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
                         <p style="color: #666; margin-bottom: 15px;">
-                            Predicting token to follow: "${(step.tokens || []).slice(0, step.lastPosition + 1).join(' ')}"
+                            Predicting token to follow: "${predictionContext}"
                         </p>
                         ${this.renderProbabilityChart(probs, selectedIndex)}
                     </div>
                 `;
             }
         }
+        
         
         // Show details for attention phase
         if (step.phase === 'attention' && step.currentPosition !== undefined) {
