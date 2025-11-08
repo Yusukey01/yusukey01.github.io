@@ -1,4 +1,4 @@
-// deep_nn.js - (Revised) Interactive Transformer Architecture Demo (GPT-style Decoder)
+// deep_nn.js - Interactive Transformer Architecture Demo (GPT-style Decoder)
 
 class TransformerDemo {
     constructor(containerId) {
@@ -8,7 +8,7 @@ class TransformerDemo {
             return;
         }
         
-        // Configuration with expanded vocabulary (as per existing file)
+        // Configuration with expanded vocabulary (KEEP existing config)
         this.config = {
             vocab: [
                 '<PAD>', '<START>', '<END>', '<UNK>',
@@ -35,42 +35,43 @@ class TransformerDemo {
         };
 
         // State variables
-        this.inputSequence = ['<START>']; // Start with the <START> token
+        this.inputSequence = ['<START>'];
         this.eventCleanup = [];
         this.posEncodingCache = new Map();
         this.maskCache = new Map();
 
-        // Initialize the UI and event listeners
+        // Inject styles first, then initialize UI
+        this.injectStyles();
         this.initializeUI();
     }
 
     // =========================================================================
-    // CORE TRANSFORMER ARCHITECTURE METHODS (Existing Code - Omitted for brevity)
+    // CORE TRANSFORMER ARCHITECTURE METHODS (PLACE YOUR ORIGINAL CODE HERE)
     // =========================================================================
     
-    // Example placeholder for existing core logic
+    // NOTE: Replace these placeholders with your original, complex implementation!
+    
     _performEmbedding(token) { 
-        // Logic for converting token to a vector (omitted)
-        return `Embedding(${token})`; 
+        // YOUR ORIGINAL LOGIC FOR EMBEDDING
+        return null; // Replace with actual vector
     }
 
     _applyPositionalEncoding(vector, position) {
-        // Logic for adding positional encoding (omitted)
-        return `Vector + POS(${position})`;
+        // YOUR ORIGINAL LOGIC FOR POSITIONAL ENCODING
+        return null; // Replace with actual vector
     }
 
     _runDecoderStack(inputVector) {
-        // Logic for running vectors through N decoder blocks (omitted)
-        return 'DecoderOutput';
+        // YOUR ORIGINAL LOGIC FOR THE DECODER BLOCKS (Attention, Feed-Forward, etc.)
+        return null; // Replace with final decoder output
     }
 
     _runLinearProjection(decoderOutput) {
-        // Logic for projecting to vocabulary size (omitted)
-        return 'Logits';
+        // YOUR ORIGINAL LOGIC FOR LINEAR PROJECTION (Logits calculation)
+        return null; // Replace with Logits vector
     }
     
-    // Your existing createCausalMask method would go here
-    // createCausalMask(size) { ... }
+    // createCausalMask(size) { ... } // Your masking function
 
     // =========================================================================
     // NEW: SOFTMAX SIMULATION AND DISPLAY LOGIC (Replaces Grammar Rules)
@@ -78,44 +79,33 @@ class TransformerDemo {
 
     /**
      * @method simulateSoftmaxOutput
-     * @description Simulates the output of the final Softmax layer by assigning random, normalized probabilities
-     * to a small subset of the vocabulary. This accurately demonstrates the mechanism 
-     * (probabilistic prediction) without needing a trained model.
-     * @param {Array<string>} vocab The vocabulary list from this.config.vocab.
-     * @returns {Array<{token: string, probability: number}>} A list of top predicted tokens and their probabilities.
+     * @description Simulates the output of the final Softmax layer.
      */
     simulateSoftmaxOutput(vocab) {
         const numPredictions = 5;
         const tokens = [...vocab]; 
 
-        // Filter out special tokens
         const filteredTokens = tokens.filter(t => !['<UNK>', '<PAD>', '<START>', '<END>'].includes(t));
 
-        // Simple random selection of 5 tokens
         const selectedTokens = [];
         const tokensToSelect = Math.min(filteredTokens.length, numPredictions); 
         
-        // Randomly select tokens without replacement
         for (let i = 0; i < tokensToSelect; i++) {
             const randomIndex = Math.floor(Math.random() * filteredTokens.length);
             selectedTokens.push(filteredTokens.splice(randomIndex, 1)[0]);
         }
         
-        // 1. Assign random "logits" (scores)
         let logits = selectedTokens.map(() => Math.random() * 10); 
         
-        // 2. Apply Softmax: e^x / sum(e^x)
-        // Softmax converts logits into a probability distribution.
+        // Apply Softmax: e^x / sum(e^x)
         const exponentials = logits.map(l => Math.exp(l));
         const sumExp = exponentials.reduce((a, b) => a + b, 0);
         
         const predictions = selectedTokens.map((token, index) => ({
             token: token,
-            // Round probability to 3 decimal places for clean display
             probability: parseFloat((exponentials[index] / sumExp).toFixed(3))
         }));
         
-        // 3. Sort by probability (highest first) and return
         predictions.sort((a, b) => b.probability - a.probability);
         
         return predictions;
@@ -124,29 +114,37 @@ class TransformerDemo {
     /**
      * @method displaySoftmaxResults
      * @description Updates the UI to show the probabilistic output.
-     * @param {Array<{token: string, probability: number}>} predictions The list of top tokens and probabilities.
      */
     displaySoftmaxResults(predictions) {
-        const container = document.querySelector('.generation-container'); // Assuming you have a generation output area
-        
-        let html = '<h3>Softmax Output (Simulated)</h3>';
-        html += '<p class="note">A trained model generates these probabilities based on context. In this **untrained demo**, they are random, but illustrate the final prediction mechanism.</p>';
-        html += '<table>';
-        html += '<tr><th>Token</th><th>Probability</th><th>Visual</th></tr>';
+        const container = document.querySelector('.generation-container'); 
+        if (!container) {
+            this.showError("Could not find the '.generation-container' element to display results.");
+            return;
+        }
 
-        // Calculate total for visual bar (optional, but good for demo)
-        const maxProb = predictions[0] ? predictions[0].probability : 1; 
+        let html = '<h3>Softmax Output (Simulated)</h3>';
+        html += '<p class="note">A trained model generates these probabilities based on context. In this **untrained demo**, they are random, but accurately illustrate the final **Softmax** mechanism.</p>';
+        html += '<table class="softmax-table">';
+        html += '<thead><tr><th>Token</th><th>Probability</th><th>Visual Representation</th></tr></thead>';
+        html += '<tbody>';
+
+        const maxProb = predictions.length > 0 ? predictions[0].probability : 1; 
 
         predictions.forEach(p => {
-            const width = (p.probability / maxProb) * 100; // Relative width for bar
+            const width = (p.probability / maxProb) * 100; 
+            
             html += `<tr>
                 <td><strong>${p.token}</strong></td>
                 <td>${(p.probability * 100).toFixed(1)}%</td>
-                <td><div style="height: 15px; width: ${width}%; background-color: #6495ED; border-radius: 3px;"></div></td>
+                <td>
+                    <div class="softmax-bar-container">
+                        <div class="softmax-bar" style="width: ${width}%;"></div>
+                    </div>
+                </td>
             </tr>`;
         });
 
-        html += '</table>';
+        html += '</tbody></table>';
         container.innerHTML = html;
     }
 
@@ -157,69 +155,148 @@ class TransformerDemo {
 
     /**
      * @method runNextTokenPrediction
-     * @description The main function to run the Transformer and generate the next token.
-     * NOTE: This is the function that must be updated to replace old grammar logic.
+     * @description Runs the Transformer inference to predict the next token.
      */
     runNextTokenPrediction() {
-        // --- STEP 1: Process Input (Keep your existing logic) ---
-        // 1. Get current sequence (this.inputSequence)
-        // 2. Run through Embedding + Positional Encoding (omitted placeholder)
+        // --- STEP 1: Run Transformer Pipeline (Uses your existing logic) ---
+        
         const embeddings = this.inputSequence.map((token, i) => this._applyPositionalEncoding(this._performEmbedding(token), i));
         
-        // 3. Run through Decoder Stack (omitted placeholder)
         const decoderOutput = this._runDecoderStack(embeddings);
         
-        // 4. Run through Linear Projection to get Logits (omitted placeholder)
-        const logits = this._runLinearProjection(decoderOutput);
+        // This calculates the logits but is NOT used to pick the next word, 
+        // fulfilling the pedagogical requirement of the untrained demo.
+        const logits = this._runLinearProjection(decoderOutput); 
 
-        // --- STEP 2: Softmax and Display (NEW LOGIC) ---
+        // --- STEP 2: Softmax Simulation (NEW LOGIC replaces old grammar rules) ---
         
-        // OLD LOGIC REMOVED: 
-        // const nextWord = this.applyGrammarRules(currentSentence); 
-        
-        // NEW LOGIC: Simulate the probabilistic Softmax output
         const softmaxPredictions = this.simulateSoftmaxOutput(this.config.vocab);
         
-        // Display the results honestly, as a probability distribution
         this.displaySoftmaxResults(softmaxPredictions);
-
-        // --- STEP 3: Auto-continue (Optional for demo) ---
-        // If you want the demo to auto-continue, you could choose the top token here:
-        // const nextToken = softmaxPredictions[0].token;
-        // this.inputSequence.push(nextToken);
-        // this.updateDataflow(nextToken); // Update the visual flow
     }
     
     // =========================================================================
-    // UTILITY AND UI METHODS (Existing Code - Simplified)
+    // UTILITY AND UI METHODS (KEEP/ADD utility functions)
     // =========================================================================
+    
+    /**
+     * @method injectStyles
+     * @description Injects the necessary CSS for the new Softmax visualization into the document head.
+     */
+    injectStyles() {
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = `
+            /* --- Styles for Utility Elements (Used by showError) --- */
+            .error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+                padding: 10px 20px;
+                margin-bottom: 20px;
+                border-radius: 6px;
+                font-weight: bold;
+            }
+
+            /* --- Softmax Prediction Display Styles (NEW VISUALIZATION) --- */
+            .generation-container {
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-top: 20px;
+                background-color: #f9f9f9;
+            }
+
+            .generation-container .note {
+                font-size: 0.9em;
+                color: #666;
+                margin-bottom: 15px;
+                border-left: 4px solid #6495ED; 
+                padding-left: 12px;
+            }
+
+            .softmax-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 1.05em;
+            }
+
+            .softmax-table th, .softmax-table td {
+                padding: 10px 15px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+            }
+
+            .softmax-table th {
+                background-color: #f1f1f1;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+
+            .softmax-bar-container {
+                width: 100%;
+                height: 20px;
+                background-color: #e9e9e9;
+                border-radius: 4px;
+                overflow: hidden; 
+            }
+
+            .softmax-bar {
+                height: 100%; 
+                background-color: #6495ED; 
+                transition: width 0.5s ease-out; 
+            }
+        `;
+        document.head.appendChild(style);
+    }
     
     initializeUI() {
-        // Your logic to set up buttons, input fields, and containers goes here.
-        // Make sure you have a button that calls this.runNextTokenPrediction()
+        // YOUR ORIGINAL UI INITIALIZATION CODE GOES HERE (buttons, input fields, etc.)
     }
-
-    // Your existing showError method would go here
-    showError(message) { /* ... */ }
-
-    // Your existing destroy method would go here
-    destroy() { 
+    
+    clearDisplay() {
+        document.querySelector('.generation-container').innerHTML = '';
+        document.querySelector('.attention-container').innerHTML = '';
+        document.querySelector('.dataflow-container').innerHTML = '';
+    }
+    
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = message;
+        
+        this.container.insertBefore(errorDiv, this.container.firstChild);
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
+    
+    destroy() {
         this.eventCleanup.forEach(cleanup => cleanup());
         this.eventCleanup = [];
-        if (this.posEncodingCache) { this.posEncodingCache.clear(); }
-        if (this.maskCache) { this.maskCache.clear(); }
-        if (this.container) { this.container.innerHTML = ''; }
+        
+        if (this.posEncodingCache) {
+            this.posEncodingCache.clear();
+        }
+        if (this.maskCache) {
+            this.maskCache.clear();
+        }
+        
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
     }
 }
 
-// Initialize the demo when the page loads (as per existing file)
+// Initialize the demo when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('transformer_demo')) {
         window.transformerDemo = new TransformerDemo('transformer_demo');
     }
 });
 
-// Clean up on page unload (as per existing file)
+// Clean up on page unload
 window.addEventListener('beforeunload', () => {
     if (window.transformerDemo && typeof window.transformerDemo.destroy === 'function') {
         window.transformerDemo.destroy();
