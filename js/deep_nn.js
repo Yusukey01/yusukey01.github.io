@@ -1441,7 +1441,7 @@ class TransformerDemo {
         });
         
         // Feed-forward
-        const ffOutput = this.feedForward(norm1);
+        const ffOutput = this.feedForward(norm1, layerNum);
         steps.push({
             name: `Feed Forward (Layer ${layerNum + 1})`,
             description: 'Position-wise feed-forward network',
@@ -1591,28 +1591,34 @@ class TransformerDemo {
         return mask;
     }
     
-    feedForward(input) {
-        const hiddenSize = this.config.hiddenDim * 4; // Typical expansion factor
+    feedForward(input, layerNum) { 
+        const hiddenSize = this.config.hiddenDim * 4;
+        const weights = this.ffWeights[layerNum]; // Get persistent weights
+
+        if (!weights) {
+            console.error(`No FF weights for layer ${layerNum}`);
+            return input; // Failsafe
+        }
         
         return input.map(vec => {
-            // First linear layer with ReLU
+            // First linear layer with ReLU (using w1)
             const hidden = [];
             for (let h = 0; h < hiddenSize; h++) {
                 let value = 0;
                 for (let i = 0; i < vec.length; i++) {
-                    // Simulate random weights
-                    value += vec[i] * (Math.sin((h + 1) * (i + 1) * 0.1) * 0.5);
+                    // Use the persistent, initialized weights
+                    value += vec[i] * weights.w1[h][i]; 
                 }
                 hidden.push(Math.max(0, value)); // ReLU
             }
             
-            // Second linear layer (projection back)
+            // Second linear layer (projection back, using w2)
             const output = [];
             for (let i = 0; i < this.config.hiddenDim; i++) {
                 let value = 0;
                 for (let h = 0; h < hiddenSize; h++) {
-                    // Simulate random weights
-                    value += hidden[h] * (Math.cos((i + 1) * (h + 1) * 0.1) * 0.3);
+                    // Use the persistent, initialized weights
+                    value += hidden[h] * weights.w2[i][h];
                 }
                 output.push(value);
             }
@@ -1651,27 +1657,31 @@ class TransformerDemo {
             logits.push(score);
         }
         
-        // Normalize raw projection scores to reasonable range
-        // This stabilizes the values from random initialization
-        const maxLogit = Math.max(...logits);
-        const minLogit = Math.min(...logits);
-        const range = maxLogit - minLogit;
-        
-        if (range > 0) {
-            // Scale to [-2, 2] range approximately
-            for (let v = 0; v < logits.length; v++) {
-                logits[v] = ((logits[v] - minLogit) / range - 0.5) * 4;
-            }
-        }
-        
-        // NOW add biases AFTER normalization so they have effect!
-        for (let v = 0; v < logits.length; v++) {
-            logits[v] += this.projectionBiases[v];
-        }
-        
-        // **REVISED: Apply context-aware adjustments with MUCH GENTLER boosts**
         const token = currentSequence[currentSequence.length - 1] || '';
         
+        // **NEW:** Define our verb list for the new rule
+        const allActionVerbs = [
+            'go', 'goes', 'went', 'gone', 'going',
+            'run', 'runs', 'ran', 'running',
+            'walk', 'walks', 'walked', 'walking',
+            'eat', 'eats', 'ate', 'eating',
+            'sleep', 'sleeps', 'slept', 'sleeping',
+            'sit', 'sits', 'sat', 'sitting',
+            'stand', 'stands', 'stood', 'standing',
+            'play', 'plays', 'played', 'playing',
+            'jump', 'jumps', 'jumped', 'jumping',
+            'talk', 'talks', 'talked', 'talking',
+            'see', 'sees', 'saw', 'seen', 'seeing',
+            'look', 'looks', 'looked', 'looking',
+            'make', 'makes', 'made', 'making',
+            'think', 'thinks', 'thought', 'thinking',
+            'know', 'knows', 'knew', 'knowing',
+            'want', 'wants', 'wanted', 'wanting',
+            'like', 'likes', 'liked', 'liking',
+            'love', 'loves', 'loved', 'loving',
+            'need', 'needs', 'needed', 'needing'
+        ];
+
         for (let v = 0; v < this.config.vocab.length; v++) {
             const candidateToken = this.config.vocab[v];
             
@@ -1694,7 +1704,6 @@ class TransformerDemo {
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
                     logits[v] -= 1.0; // Was 2.0
                 }
-            // FIX 1 (from last time): Added 'boy' and 'girl' to this list
             } else if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(token)) {
                 // After nouns, boost verbs
                 if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
@@ -1722,7 +1731,27 @@ class TransformerDemo {
                 else if (['is', 'was', 'runs', 'jumps', 'sleeps'].includes(candidateToken)) {
                     logits[v] -= 1.0;
                 }
-            }            
+            } else if (allActionVerbs.includes(token)) {
+            // After an action verb, boost nouns (objects)
+            if (['cat', 'dog', 'house', 'car', 'tree', 'food', 'bread', 'milk', 'apple', 'person'].includes(candidateToken)) {
+                logits[v] += 0.8; 
+            }
+            // Boost prepositions
+            else if (['in', 'on', 'at', 'to', 'for', 'with', 'from', 'up', 'about'].includes(candidateToken)) {
+                logits[v] += 0.5;
+            }
+            // Boost conjunctions
+            else if (['and', 'or', 'but'].includes(candidateToken)) {
+                logits[v] += 0.4;
+            }
+            // HEAVILY PENALIZE another verb immediately after (e.g., "eat loves")
+            else if (allActionVerbs.includes(candidateToken) || ['is', 'was', 'are', 'were'].includes(candidateToken)) {
+                // Allow "to"
+                if (token !== 'to') {
+                    logits[v] -= 2.0; 
+                }
+            }
+        }
 
             // Small boost for common bigrams
             const commonBigrams = {
@@ -1738,9 +1767,9 @@ class TransformerDemo {
             }
         }
         
-        // CLAMP logits to prevent extreme values (this is good practice)
-        const maxAllowedLogit = 5.0;
-        const minAllowedLogit = -5.0;
+        // CLAMP logits to prevent extreme values
+        const maxAllowedLogit = 10.0; // Allow a bit more range
+        const minAllowedLogit = -10.0;
         
         for (let v = 0; v < logits.length; v++) {
             logits[v] = Math.max(minAllowedLogit, Math.min(maxAllowedLogit, logits[v]));
