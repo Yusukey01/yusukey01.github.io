@@ -23,116 +23,265 @@ class TransformerDemo {
         this.precomputedExamples = {
             'the cat': {
                 continuations: [
-                    { tokens: ['sat', 'on', 'the'], description: "Common continuation (high probability)" },
-                    { tokens: ['is', 'sleeping', 'peacefully'], description: "Present tense variation" },
-                    { tokens: ['walked', 'across', 'the'], description: "Past tense action" }
-                ],
-                primaryExample: {
-                    tokens: ['sat', 'on', 'the'],
-                    probabilities: [
-                        { 'sat': 0.42, 'is': 0.28, 'was': 0.15, 'runs': 0.08, 'and': 0.04, 'jumped': 0.03 },
-                        { 'on': 0.55, 'by': 0.18, 'near': 0.12, 'under': 0.08, 'beside': 0.07 },
-                        { 'the': 0.65, 'a': 0.20, 'my': 0.10, 'her': 0.05 }
-                    ],
-                    attentionPatterns: {
-                        'sat': { 'the': 0.35, 'cat': 0.65 },
-                        'on': { 'the': 0.20, 'cat': 0.30, 'sat': 0.50 },
-                        'the': { 'the': 0.15, 'cat': 0.25, 'sat': 0.35, 'on': 0.25 }
+                    { 
+                        tokens: ['sat', 'on', 'the'], 
+                        description: "Common continuation (high probability)",
+                        exampleData: {
+                            probabilities: [
+                                { 'sat': 0.42, 'is': 0.28, 'was': 0.15, 'runs': 0.08, 'and': 0.04, 'jumped': 0.03 },
+                                { 'on': 0.55, 'by': 0.18, 'near': 0.12, 'under': 0.08, 'beside': 0.07 },
+                                { 'the': 0.65, 'a': 0.20, 'my': 0.10, 'her': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['is', 'sleeping', 'peacefully'], 
+                        description: "Present tense variation",
+                        exampleData: {
+                            probabilities: [
+                                { 'is': 0.35, 'was': 0.25, 'sat': 0.20, 'runs': 0.12, 'and': 0.08 },
+                                { 'sleeping': 0.40, 'eating': 0.25, 'running': 0.20, 'sitting': 0.10, 'playing': 0.05 },
+                                { 'peacefully': 0.45, 'quietly': 0.25, 'soundly': 0.15, 'here': 0.10, 'now': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['walked', 'across', 'the'], 
+                        description: "Past tense action",
+                        exampleData: {
+                            probabilities: [
+                                { 'walked': 0.30, 'ran': 0.25, 'jumped': 0.20, 'was': 0.15, 'sat': 0.10 },
+                                { 'across': 0.35, 'through': 0.25, 'over': 0.20, 'along': 0.12, 'toward': 0.08 },
+                                { 'the': 0.60, 'a': 0.20, 'my': 0.10, 'our': 0.05, 'this': 0.05 }
+                            ]
+                        }
                     }
-                }
+                ]
             },
             'the dog': {
                 continuations: [
-                    { tokens: ['barked', 'at', 'the'], description: "Action sequence" },
-                    { tokens: ['is', 'playing', 'outside'], description: "Present continuous" },
-                    { tokens: ['ran', 'quickly', 'away'], description: "Movement action" }
-                ],
-                primaryExample: {
-                    tokens: ['barked', 'at', 'the'],
-                    probabilities: [
-                        { 'barked': 0.35, 'is': 0.25, 'was': 0.20, 'ran': 0.12, 'and': 0.08 },
-                        { 'at': 0.48, 'loudly': 0.22, 'and': 0.15, 'when': 0.10, 'as': 0.05 },
-                        { 'the': 0.58, 'a': 0.18, 'every': 0.12, 'my': 0.08, 'his': 0.04 }
-                    ]
-                }
+                    { 
+                        tokens: ['barked', 'at', 'the'], 
+                        description: "Action sequence",
+                        exampleData: {
+                            probabilities: [
+                                { 'barked': 0.35, 'is': 0.25, 'was': 0.20, 'ran': 0.12, 'and': 0.08 },
+                                { 'at': 0.48, 'loudly': 0.22, 'and': 0.15, 'when': 0.10, 'as': 0.05 },
+                                { 'the': 0.58, 'a': 0.18, 'every': 0.12, 'my': 0.08, 'his': 0.04 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['is', 'playing', 'outside'], 
+                        description: "Present continuous",
+                        exampleData: {
+                            probabilities: [
+                                { 'is': 0.40, 'was': 0.25, 'barked': 0.20, 'runs': 0.10, 'sits': 0.05 },
+                                { 'playing': 0.35, 'running': 0.30, 'barking': 0.20, 'sleeping': 0.10, 'eating': 0.05 },
+                                { 'outside': 0.45, 'happily': 0.25, 'with': 0.15, 'now': 0.10, 'here': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['ran', 'quickly', 'away'], 
+                        description: "Movement action",
+                        exampleData: {
+                            probabilities: [
+                                { 'ran': 0.32, 'jumped': 0.28, 'walked': 0.20, 'moved': 0.12, 'went': 0.08 },
+                                { 'quickly': 0.40, 'away': 0.25, 'fast': 0.20, 'home': 0.10, 'forward': 0.05 },
+                                { 'away': 0.35, 'home': 0.25, 'fast': 0.20, 'today': 0.12, 'now': 0.08 }
+                            ]
+                        }
+                    }
+                ]
             },
             'a beautiful': {
                 continuations: [
-                    { tokens: ['day', 'for', 'walking'], description: "Weather context" },
-                    { tokens: ['sunset', 'over', 'the'], description: "Natural scenery" },
-                    { tokens: ['garden', 'full', 'of'], description: "Descriptive setting" }
-                ],
-                primaryExample: {
-                    tokens: ['day', 'for', 'walking'],
-                    probabilities: [
-                        { 'day': 0.38, 'sunset': 0.22, 'morning': 0.18, 'flower': 0.12, 'view': 0.10 },
-                        { 'for': 0.45, 'in': 0.25, 'with': 0.15, 'to': 0.10, 'at': 0.05 },
-                        { 'walking': 0.40, 'a': 0.30, 'everyone': 0.15, 'swimming': 0.10, 'us': 0.05 }
-                    ]
-                }
+                    { 
+                        tokens: ['day', 'for', 'walking'], 
+                        description: "Weather context",
+                        exampleData: {
+                            probabilities: [
+                                { 'day': 0.38, 'sunset': 0.22, 'morning': 0.18, 'flower': 0.12, 'view': 0.10 },
+                                { 'for': 0.45, 'in': 0.25, 'with': 0.15, 'to': 0.10, 'at': 0.05 },
+                                { 'walking': 0.40, 'a': 0.30, 'everyone': 0.15, 'swimming': 0.10, 'us': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['sunset', 'over', 'the'], 
+                        description: "Natural scenery",
+                        exampleData: {
+                            probabilities: [
+                                { 'sunset': 0.35, 'sunrise': 0.25, 'view': 0.20, 'day': 0.12, 'scene': 0.08 },
+                                { 'over': 0.42, 'by': 0.22, 'near': 0.18, 'at': 0.10, 'with': 0.08 },
+                                { 'the': 0.55, 'a': 0.20, 'our': 0.12, 'this': 0.08, 'my': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['garden', 'full', 'of'], 
+                        description: "Descriptive setting",
+                        exampleData: {
+                            probabilities: [
+                                { 'garden': 0.30, 'place': 0.25, 'park': 0.20, 'home': 0.15, 'room': 0.10 },
+                                { 'full': 0.35, 'with': 0.28, 'filled': 0.20, 'near': 0.10, 'by': 0.07 },
+                                { 'of': 0.48, 'with': 0.25, 'flowers': 0.15, 'plants': 0.08, 'trees': 0.04 }
+                            ]
+                        }
+                    }
+                ]
             },
             'the sun': {
                 continuations: [
-                    { tokens: ['is', 'shining', 'brightly'], description: "Common weather description" },
-                    { tokens: ['sets', 'behind', 'the'], description: "Time of day context" },
-                    { tokens: ['rose', 'early', 'today'], description: "Morning context" }
-                ],
-                primaryExample: {
-                    tokens: ['is', 'shining', 'brightly'],
-                    probabilities: [
-                        { 'is': 0.45, 'was': 0.22, 'shines': 0.18, 'sets': 0.10, 'rises': 0.05 },
-                        { 'shining': 0.52, 'setting': 0.20, 'rising': 0.15, 'bright': 0.08, 'warm': 0.05 },
-                        { 'brightly': 0.48, 'today': 0.22, 'overhead': 0.15, 'outside': 0.10, 'now': 0.05 }
-                    ]
-                }
+                    { 
+                        tokens: ['is', 'shining', 'brightly'], 
+                        description: "Common weather description",
+                        exampleData: {
+                            probabilities: [
+                                { 'is': 0.45, 'was': 0.22, 'shines': 0.18, 'sets': 0.10, 'rises': 0.05 },
+                                { 'shining': 0.52, 'setting': 0.20, 'rising': 0.15, 'bright': 0.08, 'warm': 0.05 },
+                                { 'brightly': 0.48, 'today': 0.22, 'overhead': 0.15, 'outside': 0.10, 'now': 0.05 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['sets', 'behind', 'the'], 
+                        description: "Time of day context",
+                        exampleData: {
+                            probabilities: [
+                                { 'sets': 0.38, 'set': 0.25, 'was': 0.18, 'is': 0.12, 'went': 0.07 },
+                                { 'behind': 0.45, 'over': 0.22, 'beyond': 0.18, 'in': 0.10, 'at': 0.05 },
+                                { 'the': 0.60, 'a': 0.15, 'those': 0.10, 'our': 0.08, 'distant': 0.07 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['rose', 'early', 'today'], 
+                        description: "Morning context",
+                        exampleData: {
+                            probabilities: [
+                                { 'rose': 0.35, 'rises': 0.30, 'came': 0.15, 'appeared': 0.12, 'was': 0.08 },
+                                { 'early': 0.42, 'slowly': 0.25, 'quickly': 0.18, 'above': 0.10, 'over': 0.05 },
+                                { 'today': 0.38, 'morning': 0.28, 'here': 0.18, 'again': 0.10, 'now': 0.06 }
+                            ]
+                        }
+                    }
+                ]
             },
             'i love': {
                 continuations: [
-                    { tokens: ['to', 'learn', 'new'], description: "Learning context" },
-                    { tokens: ['you', 'so', 'much'], description: "Emotional expression" },
-                    { tokens: ['coding', 'in', 'python'], description: "Technical interest" }
-                ],
-                primaryExample: {
-                    tokens: ['to', 'learn', 'new'],
-                    probabilities: [
-                        { 'to': 0.35, 'you': 0.25, 'this': 0.20, 'learning': 0.12, 'it': 0.08 },
-                        { 'learn': 0.40, 'read': 0.25, 'code': 0.20, 'travel': 0.10, 'play': 0.05 },
-                        { 'new': 0.38, 'about': 0.28, 'and': 0.18, 'with': 0.10, 'from': 0.06 }
-                    ]
-                }
+                    { 
+                        tokens: ['to', 'learn', 'new'], 
+                        description: "Learning context",
+                        exampleData: {
+                            probabilities: [
+                                { 'to': 0.35, 'you': 0.25, 'this': 0.20, 'learning': 0.12, 'it': 0.08 },
+                                { 'learn': 0.40, 'read': 0.25, 'code': 0.20, 'travel': 0.10, 'play': 0.05 },
+                                { 'new': 0.38, 'about': 0.28, 'and': 0.18, 'things': 0.10, 'languages': 0.06 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['you', 'so', 'much'], 
+                        description: "Emotional expression",
+                        exampleData: {
+                            probabilities: [
+                                { 'you': 0.45, 'this': 0.20, 'it': 0.15, 'that': 0.12, 'to': 0.08 },
+                                { 'so': 0.55, 'very': 0.20, 'too': 0.12, 'and': 0.08, 'more': 0.05 },
+                                { 'much': 0.65, 'dearly': 0.15, 'always': 0.10, 'forever': 0.07, 'truly': 0.03 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['coding', 'in', 'python'], 
+                        description: "Technical interest",
+                        exampleData: {
+                            probabilities: [
+                                { 'coding': 0.32, 'programming': 0.28, 'working': 0.20, 'to': 0.12, 'this': 0.08 },
+                                { 'in': 0.48, 'with': 0.22, 'and': 0.15, 'using': 0.10, 'for': 0.05 },
+                                { 'python': 0.35, 'javascript': 0.25, 'java': 0.20, 'code': 0.12, 'projects': 0.08 }
+                            ]
+                        }
+                    }
+                ]
             },
             'machine learning': {
                 continuations: [
-                    { tokens: ['models', 'can', 'predict'], description: "Capability description" },
-                    { tokens: ['is', 'transforming', 'industries'], description: "Impact statement" },
-                    { tokens: ['algorithms', 'process', 'data'], description: "Technical description" }
-                ],
-                primaryExample: {
-                    tokens: ['models', 'can', 'predict'],
-                    probabilities: [
-                        { 'models': 0.45, 'is': 0.25, 'algorithms': 0.20, 'and': 0.10 },
-                        { 'can': 0.50, 'are': 0.25, 'will': 0.15, 'may': 0.10 },
-                        { 'predict': 0.40, 'analyze': 0.30, 'process': 0.20, 'understand': 0.10 }
-                    ]
-                }
+                    { 
+                        tokens: ['models', 'can', 'predict'], 
+                        description: "Capability description",
+                        exampleData: {
+                            probabilities: [
+                                { 'models': 0.45, 'is': 0.25, 'algorithms': 0.20, 'and': 0.10 },
+                                { 'can': 0.50, 'are': 0.25, 'will': 0.15, 'may': 0.10 },
+                                { 'predict': 0.40, 'analyze': 0.30, 'process': 0.20, 'understand': 0.10 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['is', 'transforming', 'industries'], 
+                        description: "Impact statement",
+                        exampleData: {
+                            probabilities: [
+                                { 'is': 0.42, 'has': 0.28, 'will': 0.18, 'can': 0.12 },
+                                { 'transforming': 0.35, 'changing': 0.30, 'revolutionizing': 0.20, 'improving': 0.15 },
+                                { 'industries': 0.45, 'business': 0.25, 'society': 0.18, 'everything': 0.12 }
+                            ]
+                        }
+                    },
+                    { 
+                        tokens: ['algorithms', 'process', 'data'], 
+                        description: "Technical description",
+                        exampleData: {
+                            probabilities: [
+                                { 'algorithms': 0.38, 'techniques': 0.32, 'methods': 0.20, 'systems': 0.10 },
+                                { 'process': 0.40, 'analyze': 0.30, 'use': 0.18, 'require': 0.12 },
+                                { 'data': 0.55, 'information': 0.20, 'patterns': 0.15, 'inputs': 0.10 }
+                            ]
+                        }
+                    }
+                ]
             }
         };
         
         // Default fallback for unknown inputs
         this.defaultExample = {
             continuations: [
-                { tokens: ['is', 'a', 'good'], description: "Generic continuation" },
-                { tokens: ['and', 'the', 'next'], description: "Conjunction pattern" },
-                { tokens: ['can', 'be', 'used'], description: "Possibility expression" }
-            ],
-            primaryExample: {
-                tokens: ['is', 'a', 'good'],
-                probabilities: [
-                    { 'is': 0.30, 'was': 0.25, 'and': 0.20, 'with': 0.15, 'has': 0.10 },
-                    { 'a': 0.35, 'the': 0.25, 'very': 0.20, 'quite': 0.12, 'really': 0.08 },
-                    { 'good': 0.28, 'great': 0.22, 'nice': 0.20, 'interesting': 0.18, 'example': 0.12 }
-                ]
-            }
+                { 
+                    tokens: ['is', 'a', 'good'], 
+                    description: "Generic continuation",
+                    exampleData: {
+                        probabilities: [
+                            { 'is': 0.30, 'was': 0.25, 'and': 0.20, 'with': 0.15, 'has': 0.10 },
+                            { 'a': 0.35, 'the': 0.25, 'very': 0.20, 'quite': 0.12, 'really': 0.08 },
+                            { 'good': 0.28, 'great': 0.22, 'nice': 0.20, 'interesting': 0.18, 'example': 0.12 }
+                        ]
+                    }
+                },
+                { 
+                    tokens: ['and', 'the', 'next'], 
+                    description: "Conjunction pattern",
+                    exampleData: {
+                        probabilities: [
+                            { 'and': 0.35, 'with': 0.25, 'or': 0.20, 'but': 0.12, 'so': 0.08 },
+                            { 'the': 0.40, 'a': 0.25, 'this': 0.20, 'that': 0.10, 'my': 0.05 },
+                            { 'next': 0.30, 'other': 0.25, 'new': 0.20, 'first': 0.15, 'last': 0.10 }
+                        ]
+                    }
+                },
+                { 
+                    tokens: ['can', 'be', 'used'], 
+                    description: "Possibility expression",
+                    exampleData: {
+                        probabilities: [
+                            { 'can': 0.35, 'will': 0.25, 'may': 0.20, 'could': 0.12, 'should': 0.08 },
+                            { 'be': 0.45, 'help': 0.20, 'make': 0.15, 'do': 0.12, 'have': 0.08 },
+                            { 'used': 0.38, 'done': 0.25, 'helpful': 0.20, 'important': 0.10, 'useful': 0.07 }
+                        ]
+                    }
+                }
+            ]
         };
         
         // State
@@ -911,7 +1060,10 @@ class TransformerDemo {
         this.reset();
         
         const continuation = example.continuations[continuationIndex];
-        const primaryExample = example.primaryExample;
+        
+        // Get the specific example data for this continuation
+        // If we have specific data for this continuation, use it; otherwise use primary
+        const exampleData = continuation.exampleData || example.primaryExample;
         
         // Create processing steps
         this.state.processingSteps = [];
@@ -941,7 +1093,11 @@ class TransformerDemo {
         // Step 3: Process each generated token
         continuation.tokens.forEach((token, idx) => {
             const currentTokens = [...inputTokens, ...continuation.tokens.slice(0, idx + 1)];
-            const probs = primaryExample.probabilities[idx] || {};
+            const probs = exampleData.probabilities ? exampleData.probabilities[idx] || {} : {};
+            
+            // Create attention pattern for this step
+            // Generate a realistic attention pattern based on position
+            const attentionPattern = this.generateAttentionPattern(currentTokens.slice(0, -1), token);
             
             // Self-Attention
             this.state.processingSteps.push({
@@ -951,7 +1107,7 @@ class TransformerDemo {
                 connection: 'conn-3',
                 tokens: currentTokens.slice(0, -1),
                 newToken: token,
-                attentionPattern: primaryExample.attentionPatterns ? primaryExample.attentionPatterns[token] : null,
+                attentionPattern: attentionPattern,
                 explanation: 'Each token attends to all previous tokens. The model learns what to pay attention to.'
             });
             
@@ -1115,12 +1271,15 @@ class TransformerDemo {
         
         let html = '<h3>Attention Patterns</h3>';
         
-        if (step.attentionPattern) {
+        if (step.attentionPattern && Object.keys(step.attentionPattern).length > 0) {
             html += '<div class="attention-matrix">';
-            html += '<h4>Attention weights for current token:</h4>';
-            html += '<p>These values show how much the model "pays attention" to each previous token.</p>';
+            html += `<h4>Attention weights for "${step.newToken || 'current token'}":</h4>`;
+            html += '<p>These values show how much the model "pays attention" to each previous token when generating the next one.</p>';
             
-            Object.entries(step.attentionPattern).forEach(([token, weight]) => {
+            // Sort by attention weight for better visualization
+            const sortedAttention = Object.entries(step.attentionPattern).sort((a, b) => b[1] - a[1]);
+            
+            sortedAttention.forEach(([token, weight]) => {
                 const percentage = (weight * 100).toFixed(0);
                 html += `
                     <div class="prob-bar">
@@ -1133,9 +1292,22 @@ class TransformerDemo {
                 `;
             });
             
+            html += `
+                <div class="explanation-box" style="margin-top: 20px;">
+                    <h5>Understanding Attention:</h5>
+                    <p>In transformers, attention allows the model to focus on relevant parts of the input. 
+                    Higher weights indicate stronger relationships. The model learns these patterns during training.</p>
+                </div>
+            `;
+            
+            html += '</div>';
+        } else if (step.name && step.name.includes('Self-Attention')) {
+            // We're in an attention step but pattern hasn't been generated yet
+            html += '<div class="attention-matrix">';
+            html += '<p style="text-align: center; color: #6c757d;">Computing attention patterns...</p>';
             html += '</div>';
         } else {
-            html += '<p style="text-align: center; color: #6c757d;">Attention patterns will be shown when processing tokens</p>';
+            html += '<p style="text-align: center; color: #6c757d;">Attention patterns will be shown during self-attention steps</p>';
         }
         
         container.innerHTML = html;
@@ -1258,6 +1430,60 @@ class TransformerDemo {
         document.querySelector('.processing-container').innerHTML = '';
         document.querySelector('.attention-container').innerHTML = '';
         document.querySelector('.probabilities-container').innerHTML = '';
+    }
+    
+    generateAttentionPattern(previousTokens, currentToken) {
+        // Generate realistic attention pattern based on linguistic principles
+        const pattern = {};
+        const numTokens = previousTokens.length;
+        
+        if (numTokens === 0) return pattern;
+        
+        // Create weights that typically focus more on recent tokens and content words
+        let weights = [];
+        let totalWeight = 0;
+        
+        previousTokens.forEach((token, idx) => {
+            // Base weight decreases with distance (recency bias)
+            let weight = Math.exp(-0.3 * (numTokens - idx - 1));
+            
+            // Boost weight for content words (nouns, verbs) vs function words
+            const contentWords = ['cat', 'dog', 'sat', 'runs', 'walked', 'sleeping', 'jumped', 'playing', 
+                                  'house', 'tree', 'sun', 'beautiful', 'quickly', 'slowly'];
+            const functionWords = ['the', 'a', 'an', 'is', 'was', 'on', 'in', 'at', 'to', 'for', 'and', 'or', 'but'];
+            
+            if (contentWords.some(w => token.toLowerCase().includes(w))) {
+                weight *= 1.5; // Boost content words
+            } else if (functionWords.includes(token.toLowerCase())) {
+                weight *= 0.7; // Reduce function words
+            }
+            
+            // Special relationships
+            if (currentToken === 'sat' && token === 'cat') weight *= 2; // Subject-verb
+            if (currentToken === 'on' && token === 'sat') weight *= 1.8; // Verb-preposition
+            if (currentToken === 'the' && previousTokens[idx - 1] === 'on') weight *= 1.5; // Preposition-article
+            
+            weights.push(weight);
+            totalWeight += weight;
+        });
+        
+        // Normalize weights to sum to 1
+        previousTokens.forEach((token, idx) => {
+            pattern[token] = Math.round((weights[idx] / totalWeight) * 100) / 100;
+        });
+        
+        return pattern;
+    }
+    
+    destroy() {
+        // Clean up event listeners
+        this.eventCleanup.forEach(cleanup => cleanup());
+        this.eventCleanup = [];
+        
+        // Clear container
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
     }
 }
 
