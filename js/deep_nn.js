@@ -1,4 +1,4 @@
-// deep_nn.js - (FIXED) Interactive Transformer Architecture Demo
+// deep_nn.js - (Revised) Interactive Transformer Architecture Demo
 
 class TransformerDemo {
     constructor(containerId) {
@@ -69,6 +69,7 @@ class TransformerDemo {
         // Initialize embeddings and projection weights/biases
         this.initializeEmbeddings();
         this.initializeProjectionWeights();
+        this.initializeFeedForwardWeights();
         
         // Caches
         this.posEncodingCache = new Map();
@@ -97,15 +98,13 @@ class TransformerDemo {
     }
     
     initializeEmbeddings() {
-        // Create random embedding matrix with better initialization
+        // Create random embedding matrix
         this.embeddings = {};
-        const scale = Math.sqrt(1.0 / this.config.hiddenDim);
-        
         for (const token of this.config.vocab) {
             this.embeddings[token] = [];
             for (let i = 0; i < this.config.hiddenDim; i++) {
-                // Initialize with scaled random values
-                this.embeddings[token].push((Math.random() - 0.5) * 2 * scale);
+                // Initialize with small random values
+                this.embeddings[token].push((Math.random() - 0.5) * 0.2);
             }
         }
     }
@@ -113,7 +112,7 @@ class TransformerDemo {
     initializeProjectionWeights() {
         // Create projection weights for output layer (logits)
         this.projectionWeights = [];
-        // Create a separate bias vector
+        // **NEW: Create a separate bias vector**
         this.projectionBiases = new Array(this.config.vocab.length).fill(0);
         
         // Initialize weights with Xavier/Glorot initialization
@@ -122,17 +121,18 @@ class TransformerDemo {
         for (let v = 0; v < this.config.vocab.length; v++) {
             this.projectionWeights[v] = [];
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                this.projectionWeights[v][h] = (Math.random() - 0.5) * 2 * scale;
+                this.projectionWeights[v][h] = (Math.random() - 0.5) * scale;
             }
         }
         
-        // Apply linguistic biases to the BIAS vector
+        // **REVISED: Apply linguistic biases to the BIAS vector, not the weights**
         
         // Severely penalize special tokens
         ['<PAD>', '<START>', '<END>', '<UNK>'].forEach(token => {
             const idx = this.config.vocab.indexOf(token);
             if (idx !== -1) {
-                this.projectionBiases[idx] -= 10.0; // Stronger penalty
+                // Much stronger penalty to prevent these from appearing
+                this.projectionBiases[idx] -= 15.0; 
             }
         });
         
@@ -147,31 +147,44 @@ class TransformerDemo {
             prepositions: ['in', 'on', 'at', 'with', 'by', 'for', 'to']
         };
         
-        // Apply category-based biases more carefully
+        // Apply category-based biases
         Object.entries(tokenCategories).forEach(([category, tokens]) => {
             tokens.forEach(token => {
                 const idx = this.config.vocab.indexOf(token);
                 if (idx !== -1) {
-                    // More moderate positive bias for common words
-                    this.projectionBiases[idx] += 0.5; 
+                    // Small positive bias for common words
+                    this.projectionBiases[idx] += 0.2; 
                 }
             });
         });
     }
     
-    // Add layer normalization helper
-    layerNorm(tensor) {
-        if (!tensor || tensor.length === 0) return tensor;
+    initializeFeedForwardWeights() {
+        // Initialize feed-forward network weights for each layer
+        this.ffWeights = [];
+        const hiddenSize = this.config.hiddenDim * 4; // Expansion factor
         
-        // Calculate mean
-        const mean = tensor.reduce((sum, val) => sum + val, 0) / tensor.length;
-        
-        // Calculate variance
-        const variance = tensor.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / tensor.length;
-        
-        // Normalize
-        const std = Math.sqrt(variance + 1e-5); // Add small epsilon for stability
-        return tensor.map(val => (val - mean) / std);
+        for (let layer = 0; layer < this.config.numLayers; layer++) {
+            // First layer: hiddenDim -> hiddenSize
+            const w1 = [];
+            for (let h = 0; h < hiddenSize; h++) {
+                w1[h] = [];
+                for (let i = 0; i < this.config.hiddenDim; i++) {
+                    w1[h][i] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.config.hiddenDim);
+                }
+            }
+            
+            // Second layer: hiddenSize -> hiddenDim  
+            const w2 = [];
+            for (let i = 0; i < this.config.hiddenDim; i++) {
+                w2[i] = [];
+                for (let h = 0; h < hiddenSize; h++) {
+                    w2[i][h] = (Math.random() - 0.5) * Math.sqrt(2.0 / hiddenSize);
+                }
+            }
+            
+            this.ffWeights.push({ w1, w2 });
+        }
     }
     
     init() {
@@ -209,36 +222,47 @@ class TransformerDemo {
                     <button class="view-tab" data-view="dataflow">Data Flow</button>
                 </div>
                 
-                <div class="view-content architecture-view active" id="architecture-view">
-                    <svg id="architecture-svg" viewBox="0 0 800 600"></svg>
+                <div class="playback-controls">
+                    <button id="play-btn" class="control-btn" title="Play/Pause">▶️ Play</button>
+                    <button id="step-btn" class="control-btn" title="Step Forward">Step ➡️</button>
+                    <button id="reset-btn" class="control-btn" title="Reset">Reset</button>
+                    <input type="range" id="step-slider" min="0" max="100" value="0">
+                    <span id="step-info">Step: 0/0</span>
+                    <label for="speed-control" style="margin-left: 20px;">Speed:</label>
+                    <select id="speed-control">
+                        <option value="2000">0.5x</option>
+                        <option value="1000" selected>1x</option>
+                        <option value="500">2x</option>
+                        <option value="250">4x</option>
+                    </select>
+                    <label for="temperature-control" style="margin-left: 20px;">Temperature:</label>
+                    <select id="temperature-control">
+                        <option value="0.5">0.5 (focused)</option>
+                        <option value="0.8" selected>0.8 (balanced)</option>
+                        <option value="1.0">1.0 (creative)</option>
+                        <option value="1.2">1.2 (very creative)</option>
+                    </select>
                 </div>
                 
-                <div class="view-content generation-view" id="generation-view">
-                    <div class="generation-container"></div>
-                </div>
-                
-                <div class="view-content attention-view" id="attention-view">
-                    <div class="attention-container"></div>
-                </div>
-                
-                <div class="view-content dataflow-view" id="dataflow-view">
-                    <div class="dataflow-container"></div>
-                </div>
-                
-                <div class="controls-section">
-                    <div class="playback-controls">
-                        <button id="play-btn" class="control-btn">▶️ Play</button>
-                        <button id="step-btn" class="control-btn">⏭️ Step</button>
-                        <button id="reset-btn" class="control-btn">🔄 Reset</button>
-                        <span id="step-info">Step: 0/0</span>
+                <div class="demo-content">
+                    <div id="architecture-view" class="view-content active">
+                        <svg id="transformer-svg" width="800" height="600" viewBox="0 0 800 600" style="max-width: 100%; height: auto;"></svg>
                     </div>
-                    <div class="step-slider-container">
-                        <input type="range" id="step-slider" min="0" max="0" value="0">
+                    <div id="generation-view" class="view-content">
+                        <div class="generation-container"></div>
                     </div>
-                    <div id="step-details" class="step-details">
-                        <h4 id="step-title">Ready</h4>
-                        <p id="step-description">Enter text and click "Start Generation" to begin</p>
+                    <div id="attention-view" class="view-content">
+                        <div class="attention-container"></div>
                     </div>
+                    <div id="dataflow-view" class="view-content">
+                        <div class="dataflow-container"></div>
+                    </div>
+                </div>
+                
+                <div class="info-panel">
+                    <h4>Current Step: <span id="step-title">Ready</span></h4>
+                    <p id="step-description">Click "Start Generation" to begin autoregressive text generation</p>
+                    <div id="step-details" class="step-details"></div>
                 </div>
             </div>
         `;
@@ -249,459 +273,768 @@ class TransformerDemo {
         style.id = 'transformer-demo-styles';
         style.textContent = `
             .transformer-demo {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                max-width: 1200px;
-                margin: 20px auto;
-                padding: 20px;
-                background: #f8f9fa;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                max-width: 1000px;
+                margin: 0 auto;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                border: 1px solid #e0e0e0;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
             
             .demo-header {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 2px solid #e0e0e0;
+                background: #2c3e50;
+                color: white;
+                padding: 20px;
             }
             
             .demo-header h3 {
                 margin: 0 0 15px 0;
-                color: #2c3e50;
                 font-size: 24px;
             }
             
             .input-section {
                 display: flex;
                 gap: 10px;
-                margin-bottom: 15px;
-            }
-            
-            #transformer-input {
-                flex: 1;
-                padding: 10px;
-                font-size: 16px;
-                border: 2px solid #ddd;
-                border-radius: 6px;
-                transition: border-color 0.3s;
-            }
-            
-            #transformer-input:focus {
-                outline: none;
-                border-color: #3498db;
-            }
-            
-            .demo-button {
-                padding: 10px 20px;
-                font-size: 16px;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: background 0.3s;
-            }
-            
-            .demo-button:hover:not(:disabled) {
-                background: #2980b9;
-            }
-            
-            .demo-button:disabled {
-                background: #95a5a6;
-                cursor: not-allowed;
+                margin-top: 15px;
             }
             
             .model-info {
+                margin-top: 15px;
                 display: flex;
-                gap: 8px;
+                gap: 10px;
                 flex-wrap: wrap;
             }
             
             .info-badge {
-                padding: 4px 10px;
-                background: #ecf0f1;
-                color: #34495e;
-                border-radius: 12px;
+                background: rgba(255,255,255,0.2);
+                padding: 5px 10px;
+                border-radius: 15px;
                 font-size: 12px;
                 font-weight: 500;
+            }
+
+            #transformer-svg {
+                width: 100%;
+                height: auto;
+                max-width: 800px;
+            }
+                        
+            #transformer-input {
+                flex: 1;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                font-size: 16px;
+                background: rgba(255,255,255,0.9);
+            }
+            
+            .demo-button, .control-btn {
+                padding: 10px 20px;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: all 0.3s;
+            }
+            
+            .demo-button:hover, .control-btn:hover {
+                background: #2980b9;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            
+            .demo-button:active, .control-btn:active {
+                transform: translateY(0);
+                box-shadow: none;
+            }
+            
+            .demo-button:disabled, .control-btn:disabled {
+                background: #95a5a6;
+                cursor: not-allowed;
+                transform: none;
             }
             
             .view-tabs {
                 display: flex;
-                gap: 5px;
-                margin-bottom: 20px;
-                background: #ecf0f1;
-                padding: 5px;
-                border-radius: 8px;
+                background: #34495e;
             }
             
             .view-tab {
-                padding: 8px 16px;
-                background: transparent;
+                flex: 1;
+                padding: 15px;
+                background: none;
                 border: none;
-                border-radius: 6px;
+                color: #bdc3c7;
                 cursor: pointer;
+                font-size: 14px;
                 transition: all 0.3s;
-                font-weight: 500;
-                color: #7f8c8d;
+                position: relative;
             }
             
             .view-tab:hover {
-                background: rgba(52, 152, 219, 0.1);
+                background: rgba(255,255,255,0.1);
             }
             
             .view-tab.active {
-                background: white;
+                background: #fff;
                 color: #2c3e50;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                font-weight: 600;
+            }
+            
+            .view-tab.active::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: #3498db;
+            }
+            
+            .playback-controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 15px;
+                background: #ecf0f1;
+                border-bottom: 1px solid #bdc3c7;
+                flex-wrap: wrap;
+            }
+            
+            .control-btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+            
+            #step-slider {
+                flex: 1;
+                min-width: 200px;
+                margin: 0 10px;
+                cursor: pointer;
+            }
+            
+            #speed-control, #temperature-control {
+                padding: 5px;
+                border: 1px solid #bdc3c7;
+                border-radius: 3px;
+                background: white;
+            }
+            
+            .demo-content {
+                min-height: 600px;
+                background: white;
+                position: relative;
+                overflow: auto;
             }
             
             .view-content {
                 display: none;
-                min-height: 400px;
-                background: white;
-                border-radius: 8px;
                 padding: 20px;
-                margin-bottom: 20px;
+                animation: fadeIn 0.3s ease-in-out;
             }
             
             .view-content.active {
                 display: block;
             }
             
-            .architecture-view svg {
-                width: 100%;
-                height: auto;
-                min-height: 500px;
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
             
-            .component {
+            .info-panel {
+                background: #ecf0f1;
+                padding: 20px;
+                border-top: 1px solid #bdc3c7;
+            }
+            
+            .info-panel h4 {
+                margin: 0 0 10px 0;
+                color: #2c3e50;
+            }
+            
+            #step-title {
+                color: #3498db;
+            }
+            
+            #step-description {
+                margin: 0 0 10px 0;
+                color: #555;
+                line-height: 1.6;
+            }
+            
+            .step-details {
+                margin-top: 15px;
+                padding: 10px;
+                background: rgba(52, 152, 219, 0.1);
+                border-radius: 5px;
+                font-family: monospace;
+                font-size: 14px;
+                display: none;
+            }
+            
+            .step-details.active {
+                display: block;
+            }
+            
+            /* Architecture SVG styles */
+            .component-box {
+                fill: #3498db;
+                stroke: #2980b9;
+                stroke-width: 2;
                 cursor: pointer;
                 transition: all 0.3s;
             }
             
-            .component:hover .component-rect {
+            .component-box:hover {
+                fill: #2980b9;
                 filter: brightness(1.1);
             }
             
-            .component.highlighted .component-rect {
+            .component-box.active {
+                fill: #e74c3c;
+                stroke: #c0392b;
+                animation: pulse 1s ease-in-out infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            
+            .component-text {
+                fill: white;
+                font-size: 14px;
+                text-anchor: middle;
+                pointer-events: none;
+                font-weight: 500;
+            }
+            
+            .connection-line {
+                stroke: #34495e;
+                stroke-width: 2;
+                fill: none;
+                marker-end: url(#arrowhead);
+                transition: all 0.3s;
+            }
+            
+            .connection-line.active {
                 stroke: #e74c3c;
                 stroke-width: 3;
-                filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));
+                animation: flowAnimation 1s linear infinite;
             }
             
-            .controls-section {
-                background: white;
+            @keyframes flowAnimation {
+                0% { stroke-dashoffset: 0; }
+                100% { stroke-dashoffset: -20; }
+            }
+            
+            /* Generation view styles */
+            .generation-sequence {
+                background: #f8f9fa;
                 border-radius: 8px;
                 padding: 20px;
+                margin-bottom: 20px;
             }
             
-            .playback-controls {
-                display: flex;
-                gap: 10px;
-                align-items: center;
-                margin-bottom: 15px;
-            }
-            
-            .control-btn {
-                padding: 8px 16px;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: background 0.3s;
-            }
-            
-            .control-btn:hover:not(:disabled) {
-                background: #2980b9;
-            }
-            
-            .control-btn:disabled {
-                background: #95a5a6;
-                cursor: not-allowed;
-            }
-            
-            #step-info {
-                margin-left: 10px;
-                font-weight: 500;
-                color: #34495e;
-            }
-            
-            .step-slider-container {
-                margin-bottom: 15px;
-            }
-            
-            #step-slider {
-                width: 100%;
-                height: 6px;
-                border-radius: 3px;
-                background: #ecf0f1;
-                outline: none;
-                -webkit-appearance: none;
-            }
-            
-            #step-slider::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #3498db;
-                cursor: pointer;
-                transition: background 0.3s;
-            }
-            
-            #step-slider::-webkit-slider-thumb:hover {
-                background: #2980b9;
-            }
-            
-            .step-details {
-                background: #f8f9fa;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #3498db;
-            }
-            
-            .step-details.active {
-                background: #fff9e6;
-                border-left-color: #f39c12;
-            }
-            
-            .step-details h4 {
-                margin: 0 0 10px 0;
+            .generation-sequence h4 {
+                margin: 0 0 15px 0;
                 color: #2c3e50;
-                font-size: 18px;
-            }
-            
-            .step-details p {
-                margin: 0;
-                color: #7f8c8d;
-                line-height: 1.5;
-            }
-            
-            .generation-container {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
             }
             
             .token-sequence {
                 display: flex;
-                gap: 10px;
                 flex-wrap: wrap;
-                padding: 15px;
-                background: #f8f9fa;
-                border-radius: 8px;
+                gap: 10px;
+                margin-bottom: 20px;
             }
             
-            .token {
-                padding: 8px 12px;
+            .sequence-token {
                 background: white;
-                border: 2px solid #3498db;
-                border-radius: 6px;
-                font-family: 'Courier New', monospace;
-                font-weight: bold;
+                border: 2px solid #dee2e6;
+                border-radius: 5px;
+                padding: 10px 15px;
+                font-size: 16px;
+                font-weight: 500;
+                transition: all 0.3s;
                 position: relative;
+                min-width: 60px;
+                text-align: center;
             }
             
-            .token.new {
-                background: #e8f6ff;
-                border-color: #2980b9;
-                animation: tokenAppear 0.5s ease;
+            .sequence-token.prompt {
+                background: #e3f2fd;
+                border-color: #2196f3;
             }
             
-            .token.generated {
-                background: #d4edda;
-                border-color: #27ae60;
+            .sequence-token.generated {
+                background: #e8f5e9;
+                border-color: #4caf50;
+                animation: tokenAppear 0.5s ease-in-out;
             }
             
-            .token-index {
-                position: absolute;
-                top: -8px;
-                right: -8px;
-                background: #e74c3c;
-                color: white;
-                font-size: 10px;
-                padding: 2px 6px;
-                border-radius: 10px;
+            .sequence-token.generating {
+                background: #fff3e0;
+                border-color: #ff9800;
+                animation: tokenPulse 1s ease-in-out infinite;
             }
             
             @keyframes tokenAppear {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); opacity: 1; }
             }
             
-            .prob-chart {
-                padding: 15px;
-                background: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
+            @keyframes tokenPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
             }
             
-            .prob-bar {
-                display: grid;
-                grid-template-columns: 100px 1fr 60px;
-                gap: 10px;
-                align-items: center;
-                margin-bottom: 8px;
-                padding: 4px;
-                border-radius: 4px;
-                transition: background 0.3s;
-            }
-            
-            .prob-bar:hover {
-                background: #f0f0f0;
-            }
-            
-            .prob-bar.selected {
-                background: #e8f6ff;
-                border: 1px solid #3498db;
-            }
-            
-            .prob-label {
-                font-family: 'Courier New', monospace;
-                font-weight: bold;
-                text-align: right;
-            }
-            
-            .prob-value {
-                background: #f0f0f0;
-                height: 24px;
-                border-radius: 12px;
-                overflow: hidden;
-                position: relative;
-            }
-            
-            .prob-fill {
-                height: 100%;
-                background: linear-gradient(90deg, #3498db, #2980b9);
-                border-radius: 12px;
-                transition: width 0.5s ease;
-            }
-            
-            .prob-bar.selected .prob-fill {
-                background: linear-gradient(90deg, #27ae60, #229954);
-            }
-            
-            .prob-percent {
-                font-size: 12px;
-                font-weight: bold;
-                color: #34495e;
-            }
-            
-            .attention-container {
-                padding: 20px;
-            }
-            
-            .attention-matrix {
-                display: grid;
-                gap: 2px;
-                margin: 20px 0;
-                max-width: 600px;
-                margin: 0 auto;
-            }
-            
-            .attention-cell {
-                aspect-ratio: 1;
+            .token-position {
+                position: absolute;
+                top: -10px;
+                right: -10px;
+                background: #3498db;
+                color: white;
+                font-size: 10px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 10px;
+                font-weight: normal;
+            }
+            
+            /* Causal attention mask visualization */
+            .causal-mask-demo {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .mask-grid {
+                display: grid;
+                gap: 2px;
+                margin-top: 15px;
+                justify-content: center;
+            }
+            
+            .mask-cell {
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                transition: all 0.3s;
+            }
+            
+            .mask-cell.allowed {
+                background: #4caf50;
                 color: white;
-                border-radius: 4px;
+            }
+            
+            .mask-cell.masked {
+                background: #f44336;
+                color: white;
+            }
+            
+            .mask-cell.current {
+                background: #ff9800;
+                color: white;
+                animation: pulse 1s ease-in-out infinite;
+            }
+            
+            /* Attention heatmap styles */
+            .attention-heatmap {
+                display: inline-block;
+                margin: 10px;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                overflow: hidden;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            
+            .attention-heatmap h4 {
+                margin: 0;
+                padding: 10px;
+                background: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .attention-grid {
+                display: grid;
+                padding: 5px;
+                background: white;
+            }
+            
+            .attention-cell {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                font-size: 11px;
+                transition: all 0.3s;
                 cursor: pointer;
-                transition: transform 0.2s;
+                position: relative;
             }
             
             .attention-cell:hover {
                 transform: scale(1.1);
                 z-index: 10;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             }
             
-            .matrix-labels {
-                display: grid;
-                gap: 2px;
+            .attention-cell.masked-attention {
+                background: #ffebee !important;
+                color: #c62828 !important;
+                opacity: 0.3;
             }
             
-            .matrix-label {
-                padding: 4px;
-                text-align: center;
-                font-size: 12px;
-                font-weight: bold;
-                background: #ecf0f1;
-                border-radius: 4px;
-            }
-            
-            .dataflow-container {
-                padding: 20px;
-            }
-            
-            .dataflow-stage {
+            .attention-label {
                 background: #f8f9fa;
+                font-weight: bold;
+                font-size: 10px;
+            }
+            
+            /* Data flow styles */
+            .tensor-view {
+                background: #f8f9fa;
+                border: 2px solid #dee2e6;
                 border-radius: 8px;
                 padding: 15px;
-                margin-bottom: 15px;
+                margin: 10px 0;
+                transition: all 0.3s;
             }
             
-            .dataflow-stage h4 {
-                margin: 0 0 10px 0;
-                color: #2c3e50;
+            .tensor-view:hover {
+                border-color: #3498db;
+                box-shadow: 0 2px 10px rgba(52, 152, 219, 0.2);
             }
             
-            .tensor-view {
+            .tensor-shape {
+                font-family: 'Courier New', monospace;
+                color: #495057;
+                margin-bottom: 10px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            
+            .tensor-preview {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                gap: 5px;
+                max-height: 300px;
+                overflow-y: auto;
                 padding: 10px;
                 background: white;
-                border-radius: 6px;
-                max-height: 200px;
-                overflow-y: auto;
+                border-radius: 5px;
             }
             
             .tensor-value {
+                background: #e9ecef;
                 padding: 8px;
                 text-align: center;
-                font-size: 11px;
-                font-family: 'Courier New', monospace;
-                border-radius: 4px;
-                white-space: nowrap;
+                border-radius: 3px;
+                font-size: 12px;
+                font-family: monospace;
+                transition: all 0.2s;
+            }
+            
+            .tensor-value:hover {
+                background: #dee2e6;
+                transform: scale(1.05);
+            }
+            
+            /* Probability distribution */
+            .probability-chart {
+                margin: 20px 0;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+            }
+            
+            .probability-chart h4 {
+                margin: 0 0 15px 0;
+                color: #2c3e50;
+            }
+            
+            .prob-bar {
+                display: flex;
+                align-items: center;
+                margin: 8px 0;
+                transition: all 0.2s;
+            }
+            
+            .prob-bar:hover {
+                transform: translateX(5px);
+            }
+            
+            .prob-bar.selected {
+                background: #e3f2fd;
+                padding: 5px;
+                margin-left: -5px;
+                border-radius: 5px;
+            }
+            
+            .prob-label {
+                width: 120px;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .prob-value {
+                flex: 1;
+                height: 24px;
+                background: #e9ecef;
+                border-radius: 12px;
+                position: relative;
                 overflow: hidden;
-                text-overflow: ellipsis;
             }
             
-            .error {
-                background: #fee;
-                color: #c00;
-                padding: 10px;
-                border-radius: 6px;
-                margin-bottom: 10px;
-                border-left: 4px solid #c00;
+            .prob-fill {
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                background: linear-gradient(to right, #3498db, #2980b9);
+                transition: width 0.5s ease-in-out;
+                border-radius: 12px;
             }
             
+            .prob-bar.selected .prob-fill {
+                background: linear-gradient(to right, #4caf50, #388e3c);
+            }
+            
+            .prob-percent {
+                margin-left: 10px;
+                font-size: 13px;
+                color: #495057;
+                width: 60px;
+                text-align: right;
+                font-weight: 600;
+            }
+            
+            /* Loading and error states */
             .loading {
                 text-align: center;
                 padding: 40px;
-                color: #95a5a6;
+                color: #6c757d;
             }
             
-            .loading::after {
-                content: '...';
-                display: inline-block;
-                animation: dots 1.5s steps(4, end) infinite;
+            .error {
+                color: #e74c3c;
+                background: #ffe5e5;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 10px;
             }
             
-            @keyframes dots {
-                0%, 20% { content: ''; }
-                40% { content: '.'; }
-                60% { content: '..'; }
-                80%, 100% { content: '...'; }
+            /* Debug info */
+            .debug-info {
+                background: #f0f0f0;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+                font-family: monospace;
+                font-size: 12px;
+            }
+            
+            /* Responsive design */
+            @media (max-width: 768px) {
+                .transformer-demo {
+                    max-width: 100%;
+                    margin: 0;
+                    border-radius: 0;
+                }
+                
+                #transformer-svg {
+                    width: 100%;
+                    height: auto;
+                }
+                
+                .view-tab {
+                    font-size: 12px;
+                    padding: 10px 5px;
+                }
+                
+                .playback-controls {
+                    flex-wrap: wrap;
+                }
+                
+                #step-slider {
+                    width: 100%;
+                    margin: 10px 0;
+                }
+                
+                .mask-cell {
+                    width: 25px;
+                    height: 25px;
+                    font-size: 10px;
+                }
+                
+                .tensor-preview {
+                    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                }
+            }
+            @media (max-width: 768px) {
+                .transformer-demo {
+                    max-width: 100%;
+                    margin: 0;
+                    border-radius: 0;
+                }
+                
+                .demo-header {
+                    padding: 15px 10px; /* Reduce padding */
+                }
+                
+                .demo-header h3 {
+                    font-size: 18px; /* Smaller title */
+                    margin-bottom: 10px;
+                }
+                
+                .input-section {
+                    flex-direction: column; /* Stack vertically */
+                    gap: 8px;
+                }
+                
+                #transformer-input {
+                    font-size: 16px; /* Prevent zoom on iOS */
+                    padding: 12px; /* Larger touch target */
+                }
+                
+                .demo-button, .control-btn {
+                    padding: 12px 15px; /* Larger touch targets */
+                    font-size: 16px;
+                    width: 100%;
+                    margin-bottom: 8px;
+                }
+                
+                .view-tab {
+                    font-size: 12px;
+                    padding: 10px 5px;
+                    min-height: 44px; /* Minimum touch target */
+                }
+                
+                .playback-controls {
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+                
+                .control-btn {
+                    flex: 1;
+                    min-width: 80px;
+                }
+                
+                #step-slider {
+                    width: 100%;
+                    margin: 10px 0;
+                    order: 10; /* Move to bottom */
+                }
+                
+                .visualization-grid {
+                    grid-template-columns: 1fr; /* Single column */
+                    gap: 10px;
+                }
+                
+                .viz-panel canvas {
+                    max-width: 100%;
+                    height: auto;
+                }
+                
+                /* Make probability bars stack better */
+                .prob-bar {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    margin: 5px 0;
+                }
+                
+                .prob-label {
+                    width: 100%;
+                    margin-bottom: 5px;
+                }
+                
+                .prob-value {
+                    width: 100%;
+                }
+                
+                /* Adjust token sequence for mobile */
+                .token-sequence {
+                    gap: 5px;
+                }
+                
+                .sequence-token {
+                    min-width: 50px;
+                    padding: 8px 10px;
+                    font-size: 14px;
+                }
+                
+                /* Make attention heatmap scrollable */
+                .attention-container {
+                    overflow-x: auto;
+                }
+                
+                .attention-heatmap {
+                    min-width: 300px;
+                }
+                
+                /* Adjust causal mask for mobile */
+                .mask-cell {
+                    width: 25px;
+                    height: 25px;
+                    font-size: 10px;
+                }
+                
+                /* Stack tensor previews */
+                .tensor-preview {
+                    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                }
+                
+                /* Responsive info panel */
+                .info-panel {
+                    padding: 15px 10px;
+                }
+                
+                .step-details {
+                    font-size: 12px;
+                    padding: 8px;
+                }
+            }
+            @media (max-width: 480px) {
+                .demo-header h3 {
+                    font-size: 16px;
+                }
+                
+                .view-tab {
+                    font-size: 11px;
+                    padding: 8px 3px;
+                }
+                
+                .sequence-token {
+                    min-width: 40px;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                }
+                
+                .mask-cell {
+                    width: 20px;
+                    height: 20px;
+                    font-size: 9px;
+                }
+                
+                .attention-cell {
+                    width: 30px;
+                    height: 30px;
+                    font-size: 9px;
+                }
             }
         `;
         document.head.appendChild(style);
@@ -710,594 +1043,874 @@ class TransformerDemo {
     setupEventListeners() {
         // Process button
         const processBtn = document.getElementById('process-btn');
-        const processBtnHandler = () => this.processInput();
-        processBtn.addEventListener('click', processBtnHandler);
-        this.eventCleanup.push(() => processBtn.removeEventListener('click', processBtnHandler));
+        const processFn = () => this.startGeneration();
+        processBtn.addEventListener('click', processFn);
+        this.eventCleanup.push(() => processBtn.removeEventListener('click', processFn));
         
-        // View tabs
-        document.querySelectorAll('.view-tab').forEach(tab => {
-            const tabHandler = (e) => this.switchView(e.target.dataset.view);
-            tab.addEventListener('click', tabHandler);
-            this.eventCleanup.push(() => tab.removeEventListener('click', tabHandler));
-        });
+        // Enter key on input
+        const input = document.getElementById('transformer-input');
+        const enterFn = (e) => { if (e.key === 'Enter') this.startGeneration(); };
+        input.addEventListener('keypress', enterFn);
+        this.eventCleanup.push(() => input.removeEventListener('keypress', enterFn));
         
         // Playback controls
         const playBtn = document.getElementById('play-btn');
-        const playBtnHandler = () => this.togglePlayback();
-        playBtn.addEventListener('click', playBtnHandler);
-        this.eventCleanup.push(() => playBtn.removeEventListener('click', playBtnHandler));
+        const playFn = () => this.togglePlayback();
+        playBtn.addEventListener('click', playFn);
+        this.eventCleanup.push(() => playBtn.removeEventListener('click', playFn));
         
         const stepBtn = document.getElementById('step-btn');
-        const stepBtnHandler = () => this.stepForward();
-        stepBtn.addEventListener('click', stepBtnHandler);
-        this.eventCleanup.push(() => stepBtn.removeEventListener('click', stepBtnHandler));
+        const stepFn = () => this.stepForward();
+        stepBtn.addEventListener('click', stepFn);
+        this.eventCleanup.push(() => stepBtn.removeEventListener('click', stepFn));
         
         const resetBtn = document.getElementById('reset-btn');
-        const resetBtnHandler = () => this.reset();
-        resetBtn.addEventListener('click', resetBtnHandler);
-        this.eventCleanup.push(() => resetBtn.removeEventListener('click', resetBtnHandler));
+        const resetFn = () => this.reset();
+        resetBtn.addEventListener('click', resetFn);
+        this.eventCleanup.push(() => resetBtn.removeEventListener('click', resetFn));
         
-        // Step slider
-        const stepSlider = document.getElementById('step-slider');
-        const sliderHandler = (e) => this.goToStep(parseInt(e.target.value));
-        stepSlider.addEventListener('input', sliderHandler);
-        this.eventCleanup.push(() => stepSlider.removeEventListener('input', sliderHandler));
+        // Slider
+        const slider = document.getElementById('step-slider');
+        const sliderFn = (e) => this.goToStep(parseInt(e.target.value));
+        slider.addEventListener('input', sliderFn);
+        this.eventCleanup.push(() => slider.removeEventListener('input', sliderFn));
         
-        // Enter key on input
-        const inputField = document.getElementById('transformer-input');
-        const inputHandler = (e) => {
-            if (e.key === 'Enter') this.processInput();
-        };
-        inputField.addEventListener('keypress', inputHandler);
-        this.eventCleanup.push(() => inputField.removeEventListener('keypress', inputHandler));
+        // Speed control
+        const speedControl = document.getElementById('speed-control');
+        const speedFn = (e) => { this.config.playbackSpeed = parseInt(e.target.value); };
+        speedControl.addEventListener('change', speedFn);
+        this.eventCleanup.push(() => speedControl.removeEventListener('change', speedFn));
+        
+        // Temperature control
+        const tempControl = document.getElementById('temperature-control');
+        const tempFn = (e) => { this.config.temperature = parseFloat(e.target.value); };
+        tempControl.addEventListener('change', tempFn);
+        this.eventCleanup.push(() => tempControl.removeEventListener('change', tempFn));
+        
+        // View tabs
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            const tabFn = (e) => this.switchView(e.target.dataset.view);
+            tab.addEventListener('click', tabFn);
+            this.eventCleanup.push(() => tab.removeEventListener('click', tabFn));
+        });
     }
     
     drawArchitecture() {
-        const svg = document.getElementById('architecture-svg');
+        const svg = document.getElementById('transformer-svg');
         if (!svg) return;
         
-        // Clear existing content
-        svg.innerHTML = '';
-        
-        // Create component groups
-        const components = [
-            { id: 'input', x: 50, y: 500, width: 120, height: 40, label: 'Input Tokens', color: '#3498db' },
-            { id: 'embedding', x: 50, y: 420, width: 120, height: 40, label: 'Embeddings', color: '#9b59b6' },
-            { id: 'pos-encoding', x: 200, y: 420, width: 120, height: 40, label: 'Positional\nEncoding', color: '#e67e22' },
-            { id: 'transformer-1', x: 125, y: 320, width: 120, height: 60, label: 'Transformer\nLayer 1', color: '#27ae60' },
-            { id: 'transformer-2', x: 125, y: 220, width: 120, height: 60, label: 'Transformer\nLayer 2', color: '#27ae60' },
-            { id: 'output', x: 125, y: 120, width: 120, height: 40, label: 'Output\nProjection', color: '#e74c3c' },
-            { id: 'vocab', x: 125, y: 40, width: 120, height: 40, label: 'Vocab Logits', color: '#34495e' }
-        ];
-        
-        // Create attention detail boxes
-        const attentionDetails = [
-            { x: 350, y: 300, width: 180, height: 100, label: 'Multi-Head\nCausal Attention' },
-            { x: 550, y: 300, width: 150, height: 100, label: 'Feed-Forward\nNetwork' }
-        ];
-        
-        // Draw connections
-        const connections = [
-            { from: 'input', to: 'embedding' },
-            { from: 'embedding', to: 'transformer-1', type: 'merge' },
-            { from: 'pos-encoding', to: 'transformer-1', type: 'merge' },
-            { from: 'transformer-1', to: 'transformer-2' },
-            { from: 'transformer-2', to: 'output' },
-            { from: 'output', to: 'vocab' }
-        ];
-        
-        connections.forEach(conn => {
-            const fromComp = components.find(c => c.id === conn.from);
-            const toComp = components.find(c => c.id === conn.to);
+        svg.innerHTML = `
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#34495e" />
+                </marker>
+                <linearGradient id="componentGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#2980b9;stop-opacity:1" />
+                </linearGradient>
+            </defs>
             
-            if (fromComp && toComp) {
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', fromComp.x + fromComp.width / 2);
-                line.setAttribute('y1', fromComp.y);
-                line.setAttribute('x2', toComp.x + toComp.width / 2);
-                line.setAttribute('y2', toComp.y + toComp.height);
-                line.setAttribute('stroke', '#bdc3c7');
-                line.setAttribute('stroke-width', '2');
-                line.setAttribute('marker-end', 'url(#arrowhead)');
-                svg.appendChild(line);
-            }
-        });
-        
-        // Draw components
-        components.forEach(comp => {
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            g.classList.add('component');
-            g.setAttribute('data-component', comp.id);
+            <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">GPT-Style Decoder Architecture</text>
             
-            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.classList.add('component-rect');
-            rect.setAttribute('x', comp.x);
-            rect.setAttribute('y', comp.y);
-            rect.setAttribute('width', comp.width);
-            rect.setAttribute('height', comp.height);
-            rect.setAttribute('fill', comp.color);
-            rect.setAttribute('rx', '6');
-            rect.setAttribute('stroke', '#2c3e50');
-            rect.setAttribute('stroke-width', '1');
+            <rect class="component-box" id="token-embed" x="320" y="520" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="545">Token Embedding</text>
             
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', comp.x + comp.width / 2);
-            text.setAttribute('y', comp.y + comp.height / 2);
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('fill', 'white');
-            text.setAttribute('font-size', '14');
-            text.setAttribute('font-weight', 'bold');
+            <rect class="component-box" id="pos-encoding" x="320" y="460" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="485">Positional Encoding</text>
             
-            // Handle multi-line labels
-            const lines = comp.label.split('\n');
-            if (lines.length > 1) {
-                lines.forEach((line, i) => {
-                    const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-                    tspan.textContent = line;
-                    tspan.setAttribute('x', comp.x + comp.width / 2);
-                    tspan.setAttribute('dy', i === 0 ? -(lines.length - 1) * 6 : 12);
-                    text.appendChild(tspan);
-                });
-            } else {
-                text.textContent = comp.label;
-            }
+            <g id="decoder-stack">
+                <rect x="220" y="120" width="360" height="320" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
+                
+                <g id="decoder-layer-1">
+                    <rect class="component-box" id="dec-masked-attn-1" x="260" y="370" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="385">Masked Multi-Head</text>
+                    <text class="component-text" x="400" y="400" font-size="12">Self-Attention</text>
+                    
+                    <rect class="component-box" id="dec-norm-1" x="260" y="310" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="335">Add & Layer Norm</text>
+                    
+                    <rect class="component-box" id="dec-ff-1" x="260" y="250" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="275">Feed Forward</text>
+                    
+                    <rect class="component-box" id="dec-norm-2" x="260" y="190" width="280" height="40" rx="5" />
+                    <text class="component-text" x="400" y="215">Add & Layer Norm</text>
+                </g>
+                
+                <rect class="component-box" id="dec-layer-2" x="260" y="140" width="280" height="35" rx="5" />
+                <text class="component-text" x="400" y="162">Decoder Layer 2</text>
+            </g>
             
-            g.appendChild(rect);
-            g.appendChild(text);
-            svg.appendChild(g);
-        });
-        
-        // Draw attention details
-        attentionDetails.forEach(detail => {
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            <rect class="component-box" id="output-projection" x="320" y="70" width="160" height="40" rx="5" />
+            <text class="component-text" x="400" y="95">Output Projection</text>
             
-            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('x', detail.x);
-            rect.setAttribute('y', detail.y);
-            rect.setAttribute('width', detail.width);
-            rect.setAttribute('height', detail.height);
-            rect.setAttribute('fill', '#ecf0f1');
-            rect.setAttribute('stroke', '#95a5a6');
-            rect.setAttribute('stroke-width', '1');
-            rect.setAttribute('stroke-dasharray', '5,5');
-            rect.setAttribute('rx', '4');
+            <line class="connection-line" id="conn-1" x1="400" y1="520" x2="400" y2="500" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-2" x1="400" y1="460" x2="400" y2="410" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-3" x1="400" y1="370" x2="400" y2="350" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-4" x1="400" y1="310" x2="400" y2="290" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-5" x1="400" y1="250" x2="400" y2="230" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-6" x1="400" y1="190" x2="400" y2="175" stroke-dasharray="5,5" />
+            <line class="connection-line" id="conn-7" x1="400" y1="140" x2="400" y2="110" stroke-dasharray="5,5" />
             
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', detail.x + detail.width / 2);
-            text.setAttribute('y', detail.y + detail.height / 2);
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('fill', '#7f8c8d');
-            text.setAttribute('font-size', '12');
+            <path class="connection-line" d="M 240 390 Q 210 330 240 330" stroke-dasharray="3,3" opacity="0.5" />
+            <path class="connection-line" d="M 240 270 Q 210 210 240 210" stroke-dasharray="3,3" opacity="0.5" />
             
-            const lines = detail.label.split('\n');
-            lines.forEach((line, i) => {
-                const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-                tspan.textContent = line;
-                tspan.setAttribute('x', detail.x + detail.width / 2);
-                tspan.setAttribute('dy', i === 0 ? -(lines.length - 1) * 6 : 12);
-                text.appendChild(tspan);
-            });
+            <text x="200" y="360" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
+            <text x="200" y="240" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
             
-            g.appendChild(rect);
-            g.appendChild(text);
-            svg.appendChild(g);
-        });
-        
-        // Add arrow marker definition
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', 'arrowhead');
-        marker.setAttribute('markerWidth', '10');
-        marker.setAttribute('markerHeight', '7');
-        marker.setAttribute('refX', '9');
-        marker.setAttribute('refY', '3.5');
-        marker.setAttribute('orient', 'auto');
-        
-        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-        polygon.setAttribute('fill', '#bdc3c7');
-        
-        marker.appendChild(polygon);
-        defs.appendChild(marker);
-        svg.appendChild(defs);
-        
-        // Add connecting lines from transformer layers to detail boxes
-        const detailLines = [
-            { from: { x: 245, y: 350 }, to: { x: 350, y: 350 } },
-            { from: { x: 245, y: 250 }, to: { x: 350, y: 320 } },
-            { from: { x: 530, y: 350 }, to: { x: 550, y: 350 } }
-        ];
-        
-        detailLines.forEach(line => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            path.setAttribute('x1', line.from.x);
-            path.setAttribute('y1', line.from.y);
-            path.setAttribute('x2', line.to.x);
-            path.setAttribute('y2', line.to.y);
-            path.setAttribute('stroke', '#95a5a6');
-            path.setAttribute('stroke-width', '1');
-            path.setAttribute('stroke-dasharray', '3,3');
-            svg.appendChild(path);
-        });
+            <g transform="translate(550, 380)">
+                <rect x="0" y="-15" width="30" height="30" fill="#ff9800" rx="3" />
+                <text x="15" y="5" text-anchor="middle" fill="white" font-size="20">🔒</text>
+                <text x="15" y="30" text-anchor="middle" font-size="10" fill="#7f8c8d">Causal</text>
+                <text x="15" y="42" text-anchor="middle" font-size="10" fill="#7f8c8d">Mask</text>
+            </g>
+        `;
     }
-    
-    async processInput() {
+
+    startGeneration() {
         const input = document.getElementById('transformer-input').value.trim();
         if (!input) {
-            this.showError('Please enter some text');
+            this.showError('Please enter some text to start generation');
             return;
         }
         
-        // Disable button during processing
+        // Disable process button during processing
         const processBtn = document.getElementById('process-btn');
         processBtn.disabled = true;
         processBtn.textContent = 'Generating...';
         
         try {
-            // Reset state
             this.reset();
             
             // Tokenize input
-            const tokens = this.tokenize(input);
+            const promptTokens = this.tokenize(input);
+            if (promptTokens.length === 0) {
+                throw new Error('Failed to tokenize input');
+            }
             
-            // Generate tokens autoregressively
-            await this.generateTokens(tokens);
+            this.state.generatedTokens = [...promptTokens];
+            
+            // Initialize generation steps
+            this.initializeGenerationSteps(promptTokens);
+            
+            if (this.state.processingSteps.length === 0) {
+                throw new Error('Failed to generate processing steps');
+            }
+            
+            // Start visualization
+            this.state.currentStep = 0;
+            this.updateVisualization();
+            
+            // Switch to generation view
+            this.switchView('generation');
+            
+            processBtn.textContent = 'Start Generation';
+            processBtn.disabled = false;
             
         } catch (error) {
-            console.error('Error processing input:', error);
-            this.showError('An error occurred during processing');
-        } finally {
-            processBtn.disabled = false;
+            console.error('Error starting generation:', error);
+            this.showError(`Error starting generation: ${error.message}`);
             processBtn.textContent = 'Start Generation';
+            processBtn.disabled = false;
         }
     }
     
     tokenize(text) {
-        // Simple whitespace tokenization
-        const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+        const words = text.toLowerCase().split(/\s+/);
+        const tokens = [];
         
-        // Map words to vocabulary
-        return words.map(word => {
+        for (const word of words) {
             if (this.config.vocab.includes(word)) {
-                return word;
-            }
-            return '<UNK>';
-        });
-    }
-    
-    async generateTokens(initialTokens) {
-        this.state.isGenerating = true;
-        let currentTokens = [...initialTokens];
-        const maxGeneratedTokens = 5; // Generate up to 5 new tokens
-        
-        for (let step = 0; step < maxGeneratedTokens; step++) {
-            // Create processing steps for this generation
-            const genSteps = [];
-            
-            // Step 1: Show current sequence
-            genSteps.push({
-                type: 'sequence',
-                title: `Token Generation - Step ${step + 1}`,
-                description: `Generating token ${step + 1} of ${maxGeneratedTokens}`,
-                data: {
-                    tokens: currentTokens,
-                    highlight: currentTokens.length - 1
-                }
-            });
-            
-            // Step 2: Forward pass through transformer
-            const { logits, attentionMaps } = this.forwardPass(currentTokens);
-            
-            genSteps.push({
-                type: 'forward',
-                title: 'Forward Pass',
-                description: 'Processing sequence through transformer layers',
-                data: {
-                    tokens: currentTokens,
-                    logits: logits,
-                    attention: attentionMaps
-                }
-            });
-            
-            // Step 3: Sample next token
-            const probs = this.softmax(logits[logits.length - 1], this.config.temperature);
-            const nextTokenIdx = this.sampleFromDistribution(probs);
-            const nextToken = this.config.vocab[nextTokenIdx];
-            
-            genSteps.push({
-                type: 'sampling',
-                title: 'Token Selection',
-                description: `Selected "${nextToken}" with probability ${(probs[nextTokenIdx] * 100).toFixed(1)}%`,
-                data: {
-                    probs: probs,
-                    selected: nextTokenIdx,
-                    token: nextToken
-                }
-            });
-            
-            // Add token to sequence
-            currentTokens.push(nextToken);
-            this.state.generatedTokens.push(nextToken);
-            
-            // Add steps to global state
-            this.state.processingSteps.push(...genSteps);
-            
-            // Update visualization for immediate feedback
-            this.updateVisualization();
-            
-            // Small delay for visual effect
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Stop if we hit END token or max length
-            if (nextToken === '<END>' || currentTokens.length >= this.config.maxLength) {
-                break;
+                tokens.push(word);
+            } else {
+                // For unknown words, try to find a similar one or use <UNK>
+                const similar = this.findSimilarToken(word);
+                tokens.push(similar || '<UNK>');
             }
         }
         
-        this.state.isGenerating = false;
+        return tokens;
+    }
+    
+    findSimilarToken(word) {
+        // Simple similarity check - find tokens that start with the same letters
+        const candidates = this.config.vocab.filter(token => 
+            token.startsWith(word.substring(0, 2)) && token !== '<PAD>' && token !== '<START>' && token !== '<END>' && token !== '<UNK>'
+        );
         
-        // Update slider range
+        if (candidates.length > 0) {
+            // Return the shortest matching candidate
+            return candidates.sort((a, b) => a.length - b.length)[0];
+        }
+        
+        return null;
+    }
+    
+    initializeGenerationSteps(promptTokens) {
+        this.state.processingSteps = [];
+        this.state.generatedTokens = [];
+        
+        // Store the sequence as it builds
+        let currentSequence = [...promptTokens];
+        
+        // Generate tokens one by one (autoregressive)
+        const numTokensToGenerate = 3;
+        
+        for (let genStep = 0; genStep < numTokensToGenerate; genStep++) {
+            // Process the ENTIRE sequence up to this point
+            const sequenceSoFar = [...currentSequence];
+            
+            // Step 1: Token Embedding for entire sequence
+            const embeddings = this.generateEmbeddings(sequenceSoFar);
+            this.state.processingSteps.push({
+                name: `Token Embedding (Step ${genStep + 1})`,
+                description: `Embedding ${sequenceSoFar.length} tokens: "${sequenceSoFar.join(' ')}"`,
+                component: 'token-embed',
+                connection: 'conn-1',
+                data: embeddings,
+                shape: `[${sequenceSoFar.length}, ${this.config.hiddenDim}]`,
+                tokens: sequenceSoFar,
+                generationStep: genStep,
+                phase: 'embedding',
+                promptLength: promptTokens.length,
+                isGenerating: true
+            });
+            
+            // Step 2: Positional Encoding
+            const posEncoded = this.addPositionalEncoding(embeddings);
+            this.state.processingSteps.push({
+                name: `Positional Encoding (Step ${genStep + 1})`,
+                description: `Adding position information for ${sequenceSoFar.length} positions`,
+                component: 'pos-encoding',
+                connection: 'conn-2',
+                data: posEncoded,
+                shape: `[${sequenceSoFar.length}, ${this.config.hiddenDim}]`,
+                tokens: sequenceSoFar,
+                generationStep: genStep,
+                phase: 'encoding',
+                promptLength: promptTokens.length
+            });
+            
+            // Step 3-6: Decoder Layers with Causal Masking
+            let decoderOutput = posEncoded;
+            for (let layer = 0; layer < this.config.numLayers; layer++) {
+                const layerSteps = this.processDecoderLayer(decoderOutput, sequenceSoFar, layer, genStep);
+                layerSteps.forEach(step => {
+                    step.promptLength = promptTokens.length;
+                    step.currentPosition = sequenceSoFar.length - 1; // Focus on last position
+                });
+                this.state.processingSteps.push(...layerSteps);
+                decoderOutput = layerSteps[layerSteps.length - 1].data;
+            }
+            
+            // Step 7: Output Projection - ONLY from the LAST position
+            const lastPositionHidden = decoderOutput[decoderOutput.length - 1];
+            const logits = this.projectToVocab(lastPositionHidden, sequenceSoFar);
+            const probs = this.softmaxWithTemperature(logits, this.config.temperature);
+            
+            this.state.processingSteps.push({
+                name: `Output Projection (Step ${genStep + 1})`,
+                description: `Predicting next token after: "${sequenceSoFar.join(' ')}"`,
+                component: 'output-projection',
+                connection: 'conn-7',
+                data: probs,
+                shape: `[${this.config.vocab.length}]`,
+                tokens: sequenceSoFar,
+                generationStep: genStep,
+                phase: 'output',
+                logits: logits,
+                promptLength: promptTokens.length,
+                lastPosition: sequenceSoFar.length - 1
+            });
+            
+            // Step 8: Sample next token
+            const nextToken = this.sampleToken(probs, sequenceSoFar);
+            const nextTokenProb = probs[this.config.vocab.indexOf(nextToken)];
+            
+            // Add the new token to our sequence
+            currentSequence.push(nextToken);
+            this.state.generatedTokens.push(nextToken);
+            
+            this.state.processingSteps.push({
+                name: `Token Selection (Step ${genStep + 1})`,
+                description: `Selected "${nextToken}" (${(nextTokenProb * 100).toFixed(1)}% probability)`,
+                component: 'output-projection',
+                data: { 
+                    token: nextToken, 
+                    probs: probs,
+                    probability: nextTokenProb,
+                    sequenceBefore: [...sequenceSoFar],
+                    sequenceAfter: [...currentSequence]
+                },
+                tokens: [...currentSequence], // Full sequence including new token
+                generationStep: genStep,
+                phase: 'selection',
+                isNewToken: true,
+                selectedIndex: this.config.vocab.indexOf(nextToken),
+                promptLength: promptTokens.length
+            });
+        }
+        
+        // Update slider
         const slider = document.getElementById('step-slider');
         slider.max = this.state.processingSteps.length - 1;
     }
     
-    forwardPass(tokens) {
-        // Convert tokens to embeddings
-        const embeddings = tokens.map(token => [...this.embeddings[token]]);
-        
-        // Add positional encoding
-        const posEncoded = this.addPositionalEncoding(embeddings);
-        
-        // Process through transformer layers
-        let hidden = posEncoded;
-        const attentionMaps = [];
-        
-        for (let layer = 0; layer < this.config.numLayers; layer++) {
-            const { output, attention } = this.transformerLayer(hidden, layer);
-            hidden = output;
-            attentionMaps.push(attention);
-        }
-        
-        // Apply layer normalization to the final hidden states
-        const normalized = hidden.map(h => this.layerNorm(h));
-        
-        // Project to vocabulary
-        const logits = normalized.map(h => this.projectToVocab(h));
-        
-        return { logits, attentionMaps };
+    generateEmbeddings(tokens) {
+        // Use pre-initialized embeddings
+        return tokens.map(token => {
+            if (this.embeddings[token]) {
+                return [...this.embeddings[token]]; // Return copy
+            } else {
+                // Fallback for unknown tokens
+                return this.embeddings['<UNK>'] || new Array(this.config.hiddenDim).fill(0).map(() => (Math.random() - 0.5) * 0.1);
+            }
+        });
     }
     
     addPositionalEncoding(embeddings) {
-        return embeddings.map((emb, pos) => {
-            const encoded = [...emb];
-            for (let i = 0; i < this.config.hiddenDim; i++) {
-                const angle = pos / Math.pow(this.config.posEncodingBase, (2 * i) / this.config.hiddenDim);
-                if (i % 2 === 0) {
-                    encoded[i] += Math.sin(angle) * 0.1; // Scale down position encoding
-                } else {
-                    encoded[i] += Math.cos(angle) * 0.1;
+        const seqLen = embeddings.length;
+        const cacheKey = `pos_encoding_${seqLen}_${this.config.hiddenDim}`;
+        
+        let posEncodings;
+        if (this.posEncodingCache.has(cacheKey)) {
+            posEncodings = this.posEncodingCache.get(cacheKey);
+        } else {
+            // Compute positional encoding
+            posEncodings = [];
+            const C = this.config.posEncodingBase;
+            
+            for (let pos = 0; pos < seqLen; pos++) {
+                const posEncoding = [];
+                
+                for (let i = 0; i < this.config.hiddenDim; i++) {
+                    if (i % 2 === 0) {
+                        posEncoding[i] = Math.sin(pos / Math.pow(C, i / this.config.hiddenDim));
+                    } else {
+                        posEncoding[i] = Math.cos(pos / Math.pow(C, (i - 1) / this.config.hiddenDim));
+                    }
                 }
+                
+                posEncodings.push(posEncoding);
             }
-            return encoded;
-        });
+            
+            // Cache the result
+            this.posEncodingCache.set(cacheKey, posEncodings);
+        }
+        
+        // Add to embeddings
+        const encoded = [];
+        for (let pos = 0; pos < embeddings.length; pos++) {
+            encoded[pos] = embeddings[pos].map((val, idx) => val + posEncodings[pos][idx] * 0.1);
+        }
+        
+        return encoded;
     }
     
-    transformerLayer(input, layerIdx) {
-        // Multi-head causal attention
-        const { output: attnOutput, weights } = this.multiHeadAttention(input);
+    
+    processDecoderLayer(input, tokens, layerNum, genStep) {
+        const steps = [];
+        const connectionBase = layerNum === 0 ? 3 : 6;
         
-        // Residual connection and layer norm
-        const attnNormed = input.map((inp, i) => {
-            const residual = inp.map((val, j) => val + attnOutput[i][j]);
-            return this.layerNorm(residual);
+        // Masked Multi-head attention
+        const attention = this.maskedMultiHeadAttention(input, tokens);
+        steps.push({
+            name: `Masked Self-Attention (Layer ${layerNum + 1})`,
+            description: `Computing causal self-attention with ${this.config.numHeads} heads`,
+            component: layerNum === 0 ? 'dec-masked-attn-1' : 'dec-layer-2',
+            connection: `conn-${connectionBase}`,
+            data: attention.output,
+            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
+            attentionWeights: attention.weights,
+            causalMask: attention.mask,
+            details: `Causal mask prevents attending to future tokens`,
+            generationStep: genStep,
+            phase: 'attention'
         });
         
-        // Feed-forward network
-        const ffOutput = this.feedForward(attnNormed);
-        
-        // Residual connection and layer norm
-        const output = attnNormed.map((inp, i) => {
-            const residual = inp.map((val, j) => val + ffOutput[i][j]);
-            return this.layerNorm(residual);
+        // Add & Norm
+        const norm1 = this.layerNorm(this.residualAdd(input, attention.output));
+        steps.push({
+            name: `Add & Norm (Layer ${layerNum + 1})`,
+            description: 'Residual connection and layer normalization',
+            component: layerNum === 0 ? 'dec-norm-1' : 'dec-layer-2',
+            connection: `conn-${connectionBase + 1}`,
+            data: norm1,
+            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
+            generationStep: genStep,
+            phase: 'norm'
         });
         
-        return { output, attention: weights };
+        // Feed-forward
+        const ffOutput = this.feedForward(norm1);
+        steps.push({
+            name: `Feed Forward (Layer ${layerNum + 1})`,
+            description: 'Position-wise feed-forward network',
+            component: layerNum === 0 ? 'dec-ff-1' : 'dec-layer-2',
+            connection: `conn-${connectionBase + 2}`,
+            data: ffOutput,
+            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
+            details: 'Two linear transformations with ReLU',
+            generationStep: genStep,
+            phase: 'feedforward'
+        });
+        
+        // Add & Norm
+        const norm2 = this.layerNorm(this.residualAdd(norm1, ffOutput));
+        steps.push({
+            name: `Add & Norm 2 (Layer ${layerNum + 1})`,
+            description: 'Second residual connection and layer normalization',
+            component: layerNum === 0 ? 'dec-norm-2' : 'dec-layer-2',
+            connection: layerNum === 0 ? 'conn-6' : 'conn-7',
+            data: norm2,
+            shape: `[${tokens.length}, ${this.config.hiddenDim}]`,
+            generationStep: genStep,
+            phase: 'norm2'
+        });
+        
+        return steps;
     }
     
-    multiHeadAttention(input) {
+    maskedMultiHeadAttention(input, tokens) {
         const seqLen = input.length;
         const headDim = Math.floor(this.config.hiddenDim / this.config.numHeads);
+        const weights = [];
+        const outputs = [];
         
-        // Initialize attention weights
-        const attentionWeights = Array(seqLen).fill(null).map(() => Array(seqLen).fill(0));
+        // Create causal mask
+        const mask = this.createCausalMask(seqLen);
         
-        // Process each head
-        const headOutputs = [];
-        for (let head = 0; head < this.config.numHeads; head++) {
-            const startIdx = head * headDim;
-            const endIdx = startIdx + headDim;
+        // Simulate attention for each head
+        for (let h = 0; h < this.config.numHeads; h++) {
+            const headWeights = [];
             
-            // Extract head dimensions
-            const headInput = input.map(vec => vec.slice(startIdx, endIdx));
+            // Generate deterministic Q, K, V projections
+            const Q = this.generateQKV(input, h, 'query');
+            const K = this.generateQKV(input, h, 'key');
+            const V = this.generateQKV(input, h, 'value');
             
-            // Compute attention for this head
-            const scores = [];
             for (let i = 0; i < seqLen; i++) {
-                const queryVec = headInput[i];
-                const rowScores = [];
+                const scores = [];
                 
+                // Compute scaled dot-product attention scores
                 for (let j = 0; j < seqLen; j++) {
-                    if (j > i) {
-                        // Causal masking
-                        rowScores.push(-Infinity);
+                    if (mask[i][j]) {
+                        // Proper scaled dot-product: Q_i · K_j / sqrt(d_k)
+                        let score = 0;
+                        for (let d = 0; d < headDim; d++) {
+                            score += Q[i][d] * K[j][d];
+                        }
+                        score = score / Math.sqrt(headDim);
+                        scores.push(score);
                     } else {
-                        const keyVec = headInput[j];
-                        const score = this.dotProduct(queryVec, keyVec) / Math.sqrt(headDim);
-                        rowScores.push(score);
+                        // Masked position
+                        scores.push(-Infinity);
                     }
                 }
-                scores.push(rowScores);
+                
+                // Apply softmax with numerical stability
+                const maxScore = Math.max(...scores.filter(s => isFinite(s)));
+                const expScores = scores.map(s => s === -Infinity ? 0 : Math.exp(s - maxScore));
+                const sumExp = expScores.reduce((a, b) => a + b, 0);
+                const attentionWeights = expScores.map(e => sumExp > 0 ? e / sumExp : 0);
+                
+                headWeights.push(attentionWeights);
             }
             
-            // Apply softmax to get attention weights
-            const weights = scores.map(row => this.softmax(row, 1.0));
-            
-            // Accumulate attention weights
-            for (let i = 0; i < seqLen; i++) {
-                for (let j = 0; j < seqLen; j++) {
-                    attentionWeights[i][j] += weights[i][j] / this.config.numHeads;
-                }
-            }
-            
-            // Apply attention
-            const headOutput = [];
-            for (let i = 0; i < seqLen; i++) {
-                const weighted = Array(headDim).fill(0);
-                for (let j = 0; j <= i; j++) {
-                    const valueVec = headInput[j];
-                    for (let k = 0; k < headDim; k++) {
-                        weighted[k] += weights[i][j] * valueVec[k];
-                    }
-                }
-                headOutput.push(weighted);
-            }
-            
-            headOutputs.push(headOutput);
+            weights.push(headWeights);
         }
         
-        // Concatenate head outputs
-        const output = [];
+        // Combine outputs from all heads using attention-weighted values
         for (let i = 0; i < seqLen; i++) {
-            const concatenated = [];
-            for (let head = 0; head < this.config.numHeads; head++) {
-                concatenated.push(...headOutputs[head][i]);
+            const combined = new Array(this.config.hiddenDim).fill(0);
+            
+            for (let h = 0; h < this.config.numHeads; h++) {
+                for (let j = 0; j < seqLen; j++) {
+                    const weight = weights[h][i][j];
+                    if (weight > 0) {
+                        for (let d = 0; d < Math.floor(this.config.hiddenDim / this.config.numHeads); d++) {
+                            const dimIdx = h * Math.floor(this.config.hiddenDim / this.config.numHeads) + d;
+                            if (dimIdx < this.config.hiddenDim) {
+                                combined[dimIdx] += input[j][dimIdx] * weight;
+                            }
+                        }
+                    }
+                }
             }
-            output.push(concatenated);
+            
+            outputs.push(combined);
         }
         
-        return { output, weights: attentionWeights };
+        return { output: outputs, weights: weights, mask: mask };
+    }
+
+    generateQKV(input, headIndex, projectionType) {
+        const headDim = Math.floor(this.config.hiddenDim / this.config.numHeads);
+        const projection = [];
+        
+        for (let i = 0; i < input.length; i++) {
+            const projectedVector = [];
+            for (let d = 0; d < headDim; d++) {
+                // Create deterministic but head-specific transformation
+                let value = 0;
+                for (let j = 0; j < input[i].length; j++) {
+                    // Deterministic projection matrix
+                    const weight = Math.sin((headIndex + 1) * (d + 1) * (j + 1) * 0.1) * 0.5;
+                    value += input[i][j] * weight;
+                }
+                // Add projection-type specific bias for educational variety
+                if (projectionType === 'query') value += 0.1;
+                else if (projectionType === 'key') value += 0.05;
+                else value += 0.02; // value projection
+                
+                projectedVector.push(value);
+            }
+            projection.push(projectedVector);
+        }
+        
+        return projection;
+    }
+
+    createCausalMask(seqLen) {
+        const cacheKey = `causal_mask_${seqLen}`;
+        if (this.maskCache.has(cacheKey)) {
+            return this.maskCache.get(cacheKey);
+        }
+        
+        // Create mask
+        const mask = [];
+        for (let i = 0; i < seqLen; i++) {
+            const row = new Array(seqLen); // Pre-allocate
+            for (let j = 0; j < seqLen; j++) {
+                row[j] = j <= i; // Causal mask
+            }
+            mask.push(row);
+        }
+        
+        // Cache result
+        this.maskCache.set(cacheKey, mask);
+        return mask;
     }
     
     feedForward(input) {
+        const hiddenSize = this.config.hiddenDim * 4; // Typical expansion factor
+        
         return input.map(vec => {
-            // Simple 2-layer FFN with ReLU
-            const hidden = vec.map(val => Math.max(0, val * 0.5 + 0.1)); // First layer with ReLU
-            return hidden.map(val => val * 0.5); // Second layer
+            // First linear layer with ReLU
+            const hidden = [];
+            for (let h = 0; h < hiddenSize; h++) {
+                let value = 0;
+                for (let i = 0; i < vec.length; i++) {
+                    // Simulate random weights
+                    value += vec[i] * (Math.sin((h + 1) * (i + 1) * 0.1) * 0.5);
+                }
+                hidden.push(Math.max(0, value)); // ReLU
+            }
+            
+            // Second linear layer (projection back)
+            const output = [];
+            for (let i = 0; i < this.config.hiddenDim; i++) {
+                let value = 0;
+                for (let h = 0; h < hiddenSize; h++) {
+                    // Simulate random weights
+                    value += hidden[h] * (Math.cos((i + 1) * (h + 1) * 0.1) * 0.3);
+                }
+                output.push(value);
+            }
+            
+            return output;
         });
     }
     
-    projectToVocab(hiddenState) {
+    residualAdd(input1, input2) {
+        return input1.map((vec, i) => 
+            vec.map((val, j) => val + input2[i][j])
+        );
+    }
+    
+    layerNorm(input) {
+        return input.map(vec => {
+            const mean = vec.reduce((a, b) => a + b, 0) / vec.length;
+            const variance = vec.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / vec.length;
+            const std = Math.sqrt(variance + 1e-5);
+            return vec.map(v => (v - mean) / std);
+        });
+    }
+    
+    projectToVocab(hiddenState, currentSequence) {
         const logits = [];
         
+        // Base projection (WITHOUT bias first)
         for (let v = 0; v < this.config.vocab.length; v++) {
-            let logit = this.projectionBiases[v]; // Start with bias
+            let score = 0;
             
-            // Add weighted sum of hidden state
+            // Dot product with projection weights
             for (let h = 0; h < this.config.hiddenDim; h++) {
-                logit += hiddenState[h] * this.projectionWeights[v][h];
+                score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
-            logits.push(logit);
+            logits.push(score);
         }
         
-        // Apply a small amount of regularization to prevent extreme values
+        // Normalize raw projection scores to reasonable range
+        // This stabilizes the values from random initialization
         const maxLogit = Math.max(...logits);
         const minLogit = Math.min(...logits);
         const range = maxLogit - minLogit;
         
-        if (range > 20) {
-            // Clip extreme values
-            return logits.map(l => {
-                if (l > maxLogit - range * 0.1) return maxLogit - range * 0.1;
-                if (l < minLogit + range * 0.1) return minLogit + range * 0.1;
-                return l;
-            });
+        if (range > 0) {
+            // Scale to [-2, 2] range approximately
+            for (let v = 0; v < logits.length; v++) {
+                logits[v] = ((logits[v] - minLogit) / range - 0.5) * 4;
+            }
+        }
+        
+        // NOW add biases AFTER normalization so they have effect!
+        for (let v = 0; v < logits.length; v++) {
+            logits[v] += this.projectionBiases[v];
+        }
+        
+        // **REVISED: Apply context-aware adjustments with MUCH GENTLER boosts**
+        const token = currentSequence[currentSequence.length - 1] || '';
+        
+        for (let v = 0; v < this.config.vocab.length; v++) {
+            const candidateToken = this.config.vocab[v];
+            
+            // We already penalized special tokens in the bias, but a small extra
+            // check here doesn't hurt.
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(candidateToken)) {
+                logits[v] -= 2.0; 
+                continue;
+            }
+            
+            // **GENTLER (NUDGE) boosts**
+            if (token === 'the' || token === 'a' || token === 'an') {
+                // After articles, boost nouns and adjectives
+                if (['cat', 'dog', 'house', 'car', 'tree', 'man', 'woman'].includes(candidateToken)) {
+                    logits[v] += 0.5; // Was 1.0
+                } else if (['big', 'small', 'red', 'happy', 'old', 'new', 'good'].includes(candidateToken)) {
+                    logits[v] += 0.4; // Was 0.8
+                }
+                // Penalize another article or verb immediately after
+                if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
+                    logits[v] -= 1.0; // Was 2.0
+                }
+            // FIX 1 (from last time): Added 'boy' and 'girl' to this list
+            } else if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(token)) {
+                // After nouns, boost verbs
+                if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
+                    logits[v] += 0.6; 
+                } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
+                    logits[v] += 0.3;
+                }
+            } else if (['is', 'was', 'are', 'were'].includes(token)) {
+                // After be-verbs, boost adjectives
+                if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new'].includes(candidateToken)) {
+                    logits[v] += 0.6;
+                } else if (['a', 'an', 'the'].includes(candidateToken)) {
+                    logits[v] += 0.4;
+                }
+            } else if (['big', 'small', 'good', 'bad', 'happy', 'sad', 'red', 'new', 'old', 'rapid', 'quick', 'slow'].includes(token)) {
+                // After adjectives, boost nouns
+                if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree', 'sky', 'sun'].includes(candidateToken)) {
+                    logits[v] += 0.7; // Boost nouns strongly
+                }
+                // Also boost conjunctions
+                else if (['and', 'or', 'but'].includes(candidateToken)) {
+                    logits[v] += 0.3;
+                }
+                // Penalize verbs immediately after
+                else if (['is', 'was', 'runs', 'jumps', 'sleeps'].includes(candidateToken)) {
+                    logits[v] -= 1.0;
+                }
+            }            
+
+            // Small boost for common bigrams
+            const commonBigrams = {
+                'the': ['cat', 'dog', 'house', 'car'],
+                'cat': ['is', 'was', 'runs', 'sleeps'],
+                'is': ['big', 'small', 'happy', 'running'],
+                'was': ['big', 'small', 'happy', 'running'],
+                'a': ['cat', 'dog', 'big', 'small']
+            };
+            
+            if (commonBigrams[token] && commonBigrams[token].includes(candidateToken)) {
+                logits[v] += 0.2; // Was 0.3 (keep it small)
+            }
+        }
+        
+        // CLAMP logits to prevent extreme values (this is good practice)
+        const maxAllowedLogit = 5.0;
+        const minAllowedLogit = -5.0;
+        
+        for (let v = 0; v < logits.length; v++) {
+            logits[v] = Math.max(minAllowedLogit, Math.min(maxAllowedLogit, logits[v]));
         }
         
         return logits;
     }
     
-    softmax(logits, temperature = 1.0) {
-        // Adjust logits with temperature
+    softmaxWithTemperature(logits, temperature) {
+        if (temperature <= 0) {
+            console.warn('Invalid temperature, using 0.8');
+            temperature = 0.8;
+        }
+        
+        // Apply temperature scaling
         const scaledLogits = logits.map(l => l / temperature);
         
-        // Compute stable softmax
-        const maxLogit = Math.max(...scaledLogits.filter(l => l !== -Infinity));
-        const expValues = scaledLogits.map(l => {
-            if (l === -Infinity) return 0;
-            return Math.exp(l - maxLogit);
-        });
+        // For numerical stability, subtract max
+        const maxLogit = Math.max(...scaledLogits);
+        const shiftedLogits = scaledLogits.map(l => l - maxLogit);
         
-        const sumExp = expValues.reduce((sum, val) => sum + val, 0);
+        // Compute softmax
+        const expLogits = shiftedLogits.map(l => Math.exp(l));
+        const sumExp = expLogits.reduce((a, b) => a + b, 0);
         
-        // Avoid division by zero
-        if (sumExp === 0) {
-            // Return uniform distribution
-            return logits.map(() => 1 / logits.length);
-        }
-        
-        return expValues.map(val => val / sumExp);
-    }
-    
-    sampleFromDistribution(probs) {
-        const random = Math.random();
-        let cumSum = 0;
-        
-        for (let i = 0; i < probs.length; i++) {
-            cumSum += probs[i];
-            if (random < cumSum) {
-                return i;
+        // Handle edge cases
+        if (sumExp === 0 || !isFinite(sumExp)) {
+            // This can happen if all logits are -Infinity
+            console.warn('Numerical instability in softmax, using uniform distribution');
+            const validTokens = logits.filter(l => l > -Infinity).length;
+            if (validTokens === 0) {
+                 return new Array(logits.length).fill(1.0 / logits.length);
             }
+            const prob = 1.0 / validTokens;
+            return logits.map(l => l > -Infinity ? prob : 0);
         }
         
-        // Fallback to last index
-        return probs.length - 1;
-    }
-    
-    dotProduct(vec1, vec2) {
-        return vec1.reduce((sum, val, idx) => sum + val * vec2[idx], 0);
-    }
-    
-    highlightComponent(layerType, layerIndex) {
-        // Remove existing highlights
-        document.querySelectorAll('.component').forEach(comp => {
-            comp.classList.remove('highlighted');
-        });
+        const probs = expLogits.map(e => e / sumExp);
         
-        // Add new highlight
-        if (layerType) {
-            const componentMap = {
-                'input': 'input',
-                'embedding': 'embedding',
-                'positional': 'pos-encoding',
-                'transformer': layerIndex !== undefined ? `transformer-${layerIndex + 1}` : 'transformer-1',
-                'output': 'output',
-                'vocab': 'vocab'
-            };
+        // Verify probabilities sum to 1
+        const probSum = probs.reduce((a, b) => a + b, 0);
+        if (Math.abs(probSum - 1.0) > 1e-6) {
+            // Renormalize just in case of floating point errors
+            return probs.map(p => p / probSum);
+        }
+        
+        return probs;
+    }
+    
+    // =================================================================
+    // == REVISED FUNCTION
+    // =================================================================
+    sampleToken(probs, currentSequence) {
+        
+        // Get top K indices with their probabilities
+        const indexed = probs.map((p, i) => ({ 
+            prob: p, 
+            idx: i, 
+            token: this.config.vocab[i] 
+        }));
+        indexed.sort((a, b) => b.prob - a.prob);
+        
+        // --- Filtering Stage ---
+        // We will filter the *probabilities* themselves before Top-K
+        // This is a common sampling technique (e.g., repetition penalty)
+        
+        const recentTokens = currentSequence.slice(-3); // Look at last 3 tokens
+        
+        for (let i = 0; i < indexed.length; i++) {
+            const token = indexed[i].token;
             
-            const componentId = componentMap[layerType];
-            const component = document.querySelector(`[data-component="${componentId}"]`);
-            if (component) {
-                component.classList.add('highlighted');
+            // 1. Penalize special tokens (should already have low prob, but good to ensure)
+            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
+                indexed[i].prob = 0;
+            }
+            
+            // 2. Apply repetition penalty
+            if (recentTokens.includes(token)) {
+                // Penalize by dividing probability (a common technique)
+                // A penalty of 1.2 means it's 1.2x less likely
+                indexed[i].prob /= 1.5; 
             }
         }
+        
+        // Re-sort after applying penalties
+        indexed.sort((a, b) => b.prob - a.prob);
+        
+        // --- Top-K Stage ---
+        // Now take the top-k from the *penalized* and *re-sorted* list
+        let topIndices = indexed.slice(0, this.config.topK);
+
+        // Filter out any that became 0
+        topIndices = topIndices.filter(item => item.prob > 0);
+        
+        // If we have no options left (e.g., all top-k were penalized to 0)
+        if (topIndices.length === 0) {
+            // Fallback: just take the original Top-K, excluding special tokens
+            topIndices = indexed
+                .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token))
+                .slice(0, Math.max(1, this.config.topK)); // Ensure at least one option
+            
+             if (topIndices.length === 0) {
+                // Absolute fallback (should never happen)
+                return 'the';
+             }
+        }
+        
+        // --- Sampling Stage ---
+        
+        // Renormalize probabilities among the Top-K
+        const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
+        
+        if (sumTopK === 0) {
+            // Uniform distribution as fallback if all probs are 0
+            topIndices.forEach(item => item.prob = 1.0 / topIndices.length);
+        } else {
+            topIndices.forEach(item => item.prob = item.prob / sumTopK);
+        }
+        
+        // Temperature-adjusted sampling
+        const temp = this.config.temperature;
+        if (temp < 0.1) {
+            // Greedy: pick the most likely
+            return topIndices[0].token;
+        }
+        
+        // Sample from distribution
+        const random = Math.random();
+        let cumsum = 0;
+        
+        for (let i = 0; i < topIndices.length; i++) {
+            cumsum += topIndices[i].prob;
+            if (random < cumsum) {
+                return topIndices[i].token;
+            }
+        }
+        
+        // Fallback
+        return topIndices[0].token;
     }
     
     updateVisualization() {
+        if (this.state.currentStep >= this.state.processingSteps.length) {
+            this.state.isPlaying = false;
+            document.getElementById('play-btn').textContent = '▶️ Play';
+            return;
+        }
+        
         const step = this.state.processingSteps[this.state.currentStep];
-        if (!step) return;
         
         // Update step info
         document.getElementById('step-info').textContent = 
             `Step: ${this.state.currentStep + 1}/${this.state.processingSteps.length}`;
-        document.getElementById('step-title').textContent = step.title || 'Processing';
-        document.getElementById('step-description').textContent = step.description || '';
+        document.getElementById('step-title').textContent = step.name;
+        document.getElementById('step-description').textContent = step.description;
         document.getElementById('step-slider').value = this.state.currentStep;
-        document.getElementById('step-details').classList.add('active');
         
-        // Update view-specific content
+        // Show step details if available
+        const detailsDiv = document.getElementById('step-details');
+        if (step.details) {
+            detailsDiv.textContent = step.details;
+            detailsDiv.classList.add('active');
+        } else {
+            detailsDiv.classList.remove('active');
+        }
+        
+        // Update architecture highlighting
+        this.highlightComponent(step.component, step.connection);
+        
+        // Update current view
         switch (this.state.currentView) {
             case 'generation':
                 this.updateGenerationView(step);
@@ -1306,312 +1919,395 @@ class TransformerDemo {
                 this.updateAttentionView(step);
                 break;
             case 'dataflow':
-                this.updateDataflowView(step);
+                this.updateDataFlowView(step);
                 break;
         }
         
-        // Highlight architecture component
-        if (step.type === 'embedding') {
-            this.highlightComponent('embedding');
-        } else if (step.type === 'positional') {
-            this.highlightComponent('positional');
-        } else if (step.type === 'forward') {
-            this.highlightComponent('transformer', 0);
-        } else if (step.type === 'sampling') {
-            this.highlightComponent('vocab');
+        // Continue playback if playing
+        if (this.state.isPlaying) {
+            this.state.currentStep++;
+            setTimeout(() => {
+                this.updateVisualization();
+            }, this.config.playbackSpeed);
+        }
+    }
+    
+    highlightComponent(componentId, connectionId) {
+        // Clear all highlights
+        document.querySelectorAll('.component-box').forEach(box => {
+            box.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.connection-line').forEach(line => {
+            line.classList.remove('active');
+        });
+        
+        // Highlight current component
+        if (componentId) {
+            const component = document.getElementById(componentId);
+            if (component) {
+                component.classList.add('active');
+            }
         }
         
-        // Continue playback if playing
-        if (this.state.isPlaying && this.state.currentStep < this.state.processingSteps.length - 1) {
-            setTimeout(() => {
-                if (this.state.isPlaying) {
-                    this.state.currentStep++;
-                    this.updateVisualization();
-                }
-            }, this.config.playbackSpeed);
-        } else if (this.state.isPlaying) {
-            this.state.isPlaying = false;
-            document.getElementById('play-btn').textContent = '▶️ Play';
+        // Highlight current connection
+        if (connectionId) {
+            const connection = document.getElementById(connectionId);
+            if (connection) {
+                connection.classList.add('active');
+            }
         }
     }
     
     updateGenerationView(step) {
         const container = document.querySelector('.generation-container');
-        if (!container) return;
         
-        let html = '';
+        const promptLength = step.promptLength || this.tokenize(document.getElementById('transformer-input').value).length;
+        const generationStep = step.generationStep || 0;
         
-        if (step.type === 'sequence' || step.type === 'forward' || step.type === 'sampling') {
-            // Show token sequence
-            const tokens = step.data.tokens || [];
-            html += '<div class="generation-step">';
-            html += '<h4>Sequence before generation:</h4>';
+        let html = `
+            <div class="generation-sequence">
+                <h4>Token Generation - Step ${generationStep + 1}</h4>
+        `;
+        
+        // For selection phase, show before and after sequences
+        if (step.phase === 'selection' && step.data && step.data.sequenceBefore && step.data.sequenceAfter) {
+            // Show sequence before selection
+            html += '<p style="color: #666; margin: 10px 0;">Sequence before generation:</p>';
             html += '<div class="token-sequence">';
             
-            tokens.forEach((token, idx) => {
-                const isNew = idx === tokens.length - 1 && step.type === 'sampling';
-                const isGenerated = idx >= (tokens.length - this.state.generatedTokens.length);
+            step.data.sequenceBefore.forEach((token, idx) => {
+                const tokenClass = idx < promptLength ? 'sequence-token prompt' : 'sequence-token generated';
                 html += `
-                    <div class="token ${isNew ? 'new' : ''} ${isGenerated ? 'generated' : ''}">
+                    <div class="${tokenClass}">
                         ${token}
-                        <span class="token-index">${idx}</span>
+                        <div class="token-position">${idx}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            // Show newly generated token
+            html += '<p style="color: #666; margin: 20px 0 10px 0;">Newly generated token:</p>';
+            html += '<div class="token-sequence">';
+            html += `
+                <div class="sequence-token generating">
+                    ${step.data.token}
+                    <div style="margin-top: 5px; font-size: 12px;">
+                        ${(step.data.probability * 100).toFixed(1)}%
+                    </div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Show complete sequence
+            html += '<p style="color: #666; margin: 20px 0 10px 0;">Complete sequence:</p>';
+            html += '<div class="token-sequence">';
+            
+            step.data.sequenceAfter.forEach((token, idx) => {
+                let tokenClass = 'sequence-token';
+                if (idx < promptLength) {
+                    tokenClass += ' prompt';
+                } else if (idx === step.data.sequenceAfter.length - 1) {
+                    tokenClass += ' generating';
+                } else {
+                    tokenClass += ' generated';
+                }
+                
+                html += `
+                    <div class="${tokenClass}">
+                        ${token}
+                        <div class="token-position">${idx}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+        } else {
+            // For other phases, show current sequence
+            html += '<div class="token-sequence">';
+            
+            const tokens = step.tokens || [];
+            tokens.forEach((token, idx) => {
+                let tokenClass = 'sequence-token';
+                if (idx < promptLength) {
+                    tokenClass += ' prompt';
+                } else if (idx < promptLength + generationStep) {
+                    tokenClass += ' generated';
+                } else if (idx === promptLength + generationStep && (step.phase === 'output' || step.isGenerating)) {
+                    tokenClass += ' generating';
+                }
+                
+                html += `
+                    <div class="${tokenClass}">
+                        ${token}
+                        <div class="token-position">${idx}</div>
                     </div>
                 `;
             });
             
             html += '</div>';
+        }
+        
+        html += '</div>';
+        
+        // Show causal mask for attention steps (only for small sequences)
+        if (step.causalMask && step.tokens && step.tokens.length <= 8) {
+            html += this.renderCausalMask(step.causalMask, step.tokens);
+        }
+
+        // Show probability distribution for output/selection phase
+        if ((step.phase === 'output' || step.phase === 'selection') && step.data) {
+            const probs = Array.isArray(step.data) ? step.data : (step.data.probs || null);
+            const selectedIndex = step.selectedIndex || (step.data.token ? this.config.vocab.indexOf(step.data.token) : -1);
+
+            // This logic correctly gets the context string for *both* steps
+            let predictionContext = "";
+            if (step.phase === 'output' && step.tokens) {
+                predictionContext = (step.tokens || []).slice(0, step.lastPosition + 1).join(' ');
+            } else if (step.phase === 'selection' && step.data.sequenceBefore) {
+                predictionContext = step.data.sequenceBefore.join(' ');
+            }
             
-            // Show newly generated token if in sampling step
-            if (step.type === 'sampling' && step.data.token) {
-                html += '<h4>Newly generated token:</h4>';
-                html += '<div class="token-sequence">';
-                html += `
-                    <div class="token new">
-                        ${step.data.token}
-                        <div style="font-size: 12px; margin-top: 4px;">
-                            ${(step.data.probs[step.data.selected] * 100).toFixed(1)}%
-                        </div>
+            if (probs) {
+                 html += `
+                    <div class="probability-chart">
+                        <h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            Predicting token to follow: "${predictionContext}"
+                        </p>
+                        ${this.renderProbabilityChart(probs, selectedIndex)}
                     </div>
                 `;
-                html += '</div>';
             }
-            
-            // Show complete sequence if we have generated tokens
-            if (this.state.generatedTokens.length > 0) {
-                html += '<h4>Complete sequence:</h4>';
-                html += '<div class="token-sequence">';
-                
-                const allTokens = [...tokens];
-                allTokens.forEach((token, idx) => {
-                    const isGenerated = this.state.generatedTokens.includes(token) && 
-                                      idx >= (allTokens.length - this.state.generatedTokens.length);
-                    html += `
-                        <div class="token ${isGenerated ? 'generated' : ''}">
-                            ${token}
-                            <span class="token-index">${idx}</span>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-            }
-            
-            // Show probability distribution for next token
-            if (step.data.probs) {
-                const tokens = step.data.tokens || [];
-                const contextTokens = tokens.slice(-4).join(' ');
-                
-                html += '<div class="prob-chart">';
-                html += `<h4>Next Token Probabilities (Temperature: ${this.config.temperature})</h4>`;
-                html += `<p style="font-size: 14px; color: #7f8c8d;">Predicting token to follow: "${contextTokens}"</p>`;
-                html += this.renderProbabilityChart(step.data.probs, step.data.selected);
-                html += '</div>';
-            }
-            
-            html += '<div style="margin-top: 20px; padding: 15px; background: #e8f6ff; border-radius: 8px;">';
-            html += `<strong>Current Step:</strong> ${step.title} (Step ${this.state.currentStep + 1})`;
-            if (step.data.token) {
-                html += `<br><strong>Selected "${step.data.token}"</strong> (${(step.data.probs[step.data.selected] * 100).toFixed(1)}% probability)`;
-            }
-            html += '</div>';
-            
-            html += '</div>';
+        }
+        
+        
+        // Show details for attention phase
+        if (step.phase === 'attention' && step.currentPosition !== undefined) {
+            const currentToken = step.tokens && step.tokens[step.currentPosition] ? step.tokens[step.currentPosition] : '';
+            html += `
+                <div class="debug-info">
+                    <strong>Processing position:</strong> ${step.currentPosition} (last token: "${currentToken}")
+                    <br>
+                    <strong>Attention:</strong> This position can attend to positions 0-${step.currentPosition}
+                </div>
+            `;
         }
         
         container.innerHTML = html;
         
         // Animate probability bars
-        setTimeout(() => {
-            document.querySelectorAll('.prob-fill').forEach(fill => {
-                const width = fill.dataset.width;
-                fill.style.width = width;
+        if (step.phase === 'output' || step.phase === 'selection') {
+            setTimeout(() => {
+                document.querySelectorAll('.prob-fill').forEach(fill => {
+                    const width = fill.dataset.width;
+                    if (width) {
+                        fill.style.width = width;
+                    }
+                });
+            }, 100);
+        }
+    }
+    
+    renderCausalMask(mask, tokens) {
+        let html = `
+            <div class="causal-mask-demo">
+                <h4>Causal Attention Mask</h4>
+                <p style="margin: 10px 0; color: #666;">Each token can only attend to previous tokens (autoregressive)</p>
+                <div class="mask-grid" style="grid-template-columns: repeat(${tokens.length + 1}, 30px);">
+        `;
+        
+        // Header row
+        html += '<div class="mask-cell"></div>';
+        tokens.forEach((token, idx) => {
+            html += `<div class="mask-cell attention-label" title="${token}">${idx}</div>`;
+        });
+        
+        // Mask rows
+        mask.forEach((row, i) => {
+            html += `<div class="mask-cell attention-label" title="${tokens[i]}">${i}</div>`;
+            row.forEach((allowed, j) => {
+                const cellClass = allowed ? 'allowed' : 'masked';
+                const title = allowed ? 
+                    `Token ${i} (${tokens[i]}) CAN attend to token ${j} (${tokens[j]})` :
+                    `Token ${i} (${tokens[i]}) CANNOT attend to token ${j} (${tokens[j]})`;
+                html += `<div class="mask-cell ${cellClass}" title="${title}">${allowed ? '✓' : '✗'}</div>`;
             });
-        }, 50);
+        });
+        
+        html += '</div></div>';
+        return html;
     }
     
     updateAttentionView(step) {
         const container = document.querySelector('.attention-container');
-        if (!container) return;
         
-        let html = '<div class="attention-view">';
-        
-        if (step.data && step.data.attention && step.data.attention.length > 0) {
-            const tokens = step.data.tokens || [];
-            const attention = step.data.attention[step.data.attention.length - 1]; // Show last layer
-            
-            html += '<h4>Causal Attention Weights (Last Layer)</h4>';
-            html += '<p style="color: #7f8c8d; margin-bottom: 20px;">Showing how each token attends to previous tokens (darker = stronger attention)</p>';
-            
-            // Create attention matrix visualization
-            const size = Math.min(tokens.length, 10); // Limit size for display
-            html += `<div class="attention-matrix" style="grid-template-columns: repeat(${size + 1}, 1fr);">`;
-            
-            // Header row
-            html += '<div></div>'; // Empty corner
-            for (let j = 0; j < size; j++) {
-                html += `<div class="matrix-label">${tokens[j]}</div>`;
-            }
-            
-            // Matrix rows
-            for (let i = 0; i < size; i++) {
-                html += `<div class="matrix-label">${tokens[i]}</div>`;
-                for (let j = 0; j < size; j++) {
-                    if (j > i) {
-                        // Masked (future) positions
-                        html += '<div class="attention-cell" style="background: #ecf0f1; cursor: not-allowed;">-</div>';
-                    } else {
-                        const weight = attention[i][j];
-                        const intensity = Math.min(weight, 1);
-                        const color = `rgba(52, 152, 219, ${intensity})`;
-                        html += `
-                            <div class="attention-cell" 
-                                 style="background: ${color};"
-                                 title="${tokens[i]} → ${tokens[j]}: ${(weight * 100).toFixed(1)}%">
-                                ${(weight * 100).toFixed(0)}%
-                            </div>
-                        `;
-                    }
-                }
-            }
-            
-            html += '</div>';
-            
-            // Explanation
-            html += '<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">';
-            html += '<h5 style="margin-top: 0;">Understanding Causal Attention:</h5>';
-            html += '<ul style="margin: 10px 0; padding-left: 20px;">';
-            html += '<li>Each row shows what a token "looks at"</li>';
-            html += '<li>Gray cells are masked (can\'t see future tokens)</li>';
-            html += '<li>Darker blue = stronger attention weight</li>';
-            html += '<li>Each row sums to 100% (softmax normalization)</li>';
-            html += '</ul>';
-            html += '</div>';
-        } else {
-            html += '<p class="loading">No attention data available for this step</p>';
+        if (!step.attentionWeights) {
+            container.innerHTML = '<p style="text-align: center; color: #6c757d;">No attention weights for this step</p>';
+            return;
         }
         
-        html += '</div>';
-        container.innerHTML = html;
-    }
-    
-    updateDataflowView(step) {
-        const container = document.querySelector('.dataflow-container');
-        if (!container) return;
+        const tokens = step.tokens || [];
+        const mask = step.causalMask;
         
-        let html = '<div class="dataflow-view">';
+        container.innerHTML = '<h3>Causal Self-Attention Patterns</h3>';
         
-        if (step.data) {
-            // Show different data based on step type
-            if (step.data.tokens) {
-                html += '<div class="dataflow-stage">';
-                html += '<h4>Input Tokens</h4>';
-                html += '<div class="tensor-view">';
-                step.data.tokens.forEach((token, idx) => {
-                    html += `<div class="tensor-value" style="background: #3498db; color: white;">${token}</div>`;
-                });
-                html += '</div>';
-                html += '</div>';
-            }
-            
-            if (step.data.embeddings) {
-                html += '<div class="dataflow-stage">';
-                html += '<h4>Token Embeddings</h4>';
-                html += '<p style="font-size: 12px; color: #7f8c8d;">Hidden dimension: ${this.config.hiddenDim}</p>';
-                html += '<div class="tensor-view">';
-                html += this.renderTensor(step.data.embeddings);
-                html += '</div>';
-                html += '</div>';
-            }
-            
-            if (step.data.hidden) {
-                html += '<div class="dataflow-stage">';
-                html += '<h4>Hidden States</h4>';
-                html += '<div class="tensor-view">';
-                html += this.renderTensor(step.data.hidden);
-                html += '</div>';
-                html += '</div>';
-            }
-            
-            if (step.data.logits) {
-                html += '<div class="dataflow-stage">';
-                html += '<h4>Output Logits (Last Token)</h4>';
-                html += '<p style="font-size: 12px; color: #7f8c8d;">Raw scores before softmax</p>';
-                html += '<div class="tensor-view">';
-                const lastLogits = step.data.logits[step.data.logits.length - 1];
-                html += this.renderTensor(lastLogits, true);
-                html += '</div>';
-                html += '</div>';
-            }
-            
-            if (step.data.probs) {
-                html += '<div class="dataflow-stage">';
-                html += '<h4>Probability Distribution</h4>';
-                html += '<p style="font-size: 12px; color: #7f8c8d;">After softmax with temperature=${this.config.temperature}</p>';
-                html += '<div class="tensor-view">';
-                html += this.renderTensor(step.data.probs, true);
-                html += '</div>';
-                html += '</div>';
-            }
+        if (mask) {
+            container.innerHTML += '<p style="color: #666; margin-bottom: 20px;">Red cells indicate masked positions (cannot attend to future tokens)</p>';
         }
         
-        html += '</div>';
-        container.innerHTML = html;
-    }
-    
-    renderTensor(data, showTokens = false) {
-        if (!data) return '<div class="loading">No data</div>';
+        // Create container for attention heads
+        const headsContainer = document.createElement('div');
+        headsContainer.style.display = 'flex';
+        headsContainer.style.flexWrap = 'wrap';
+        headsContainer.style.gap = '20px';
+        headsContainer.style.justifyContent = 'center';
         
-        // Handle 1D array (logits, probabilities)
-        if (Array.isArray(data) && !Array.isArray(data[0])) {
-            let html = '';
+        // Show attention weights for each head
+        step.attentionWeights.forEach((headWeights, h) => {
+            const heatmap = document.createElement('div');
+            heatmap.className = 'attention-heatmap';
             
-            // If showing tokens, sort by value and show top entries
-            if (showTokens) {
-                const indexed = data.map((val, idx) => ({
-                    value: val,
-                    token: this.config.vocab[idx],
-                    index: idx
-                }));
-                indexed.sort((a, b) => b.value - a.value);
+            const title = document.createElement('h4');
+            title.textContent = `Head ${h + 1}`;
+            heatmap.appendChild(title);
+            
+            const grid = document.createElement('div');
+            grid.className = 'attention-grid';
+            grid.style.gridTemplateColumns = `repeat(${tokens.length + 1}, 40px)`;
+            
+            // Add corner cell
+            const corner = document.createElement('div');
+            corner.className = 'attention-cell attention-label';
+            grid.appendChild(corner);
+            
+            // Add column labels
+            tokens.forEach((token, idx) => {
+                const label = document.createElement('div');
+                label.className = 'attention-cell attention-label';
+                label.textContent = idx;
+                label.title = token;
+                grid.appendChild(label);
+            });
+            
+            // Add rows
+            headWeights.forEach((row, i) => {
+                // Row label
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'attention-cell attention-label';
+                rowLabel.textContent = i;
+                rowLabel.title = tokens[i];
+                grid.appendChild(rowLabel);
                 
-                const maxShow = 20;
-                for (let i = 0; i < Math.min(indexed.length, maxShow); i++) {
-                    const item = indexed[i];
-                    const percent = (item.value * 100).toFixed(1);
-                    const intensity = Math.min(Math.abs(item.value), 1);
-                    const color = item.value >= 0 ? 
-                        `rgba(52, 152, 219, ${intensity})` : 
-                        `rgba(231, 76, 60, ${intensity})`;
+                // Weight cells
+                row.forEach((weight, j) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'attention-cell';
                     
-                    html += `
-                        <div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">
-                            <div style="font-size: 10px; opacity: 0.7;">${item.token}</div>
-                            <div>${percent}%</div>
-                        </div>
-                    `;
-                }
+                    // Check if this position is masked
+                    const isMasked = mask && !mask[i][j];
+                    
+                    if (isMasked) {
+                        cell.className += ' masked-attention';
+                        cell.textContent = '—';
+                        cell.title = `Masked: ${tokens[i]} cannot attend to future token ${tokens[j]}`;
+                    } else {
+                        // Color based on weight intensity
+                        const intensity = Math.min(weight * 5.0, 1.0); // Amplify for visibility
+                        const r = 255 - Math.floor(intensity * 200);
+                        const g = 255 - Math.floor(intensity * 200);
+                        const b = 255;
+                        cell.style.background = `rgb(${r}, ${g}, ${b})`;
+                        cell.style.color = intensity > 0.5 ? 'black' : 'black';
+                        cell.textContent = weight.toFixed(2);
+                        cell.title = `${tokens[i]} → ${tokens[j]}: ${weight.toFixed(4)}`;
+                    }
+                    
+                    grid.appendChild(cell);
+                });
+            });
+            
+            heatmap.appendChild(grid);
+            headsContainer.appendChild(heatmap);
+        });
+        
+        container.appendChild(headsContainer);
+    }
+    
+    updateDataFlowView(step) {
+        const container = document.querySelector('.dataflow-container');
+        
+        let html = `
+            <h3>${step.name}</h3>
+            <div class="tensor-view">
+                <div class="tensor-shape">Shape: ${step.shape}</div>
+        `;
+        
+        if (step.tokens && step.phase === 'embedding') {
+            html += `
+                <div style="margin: 10px 0;">
+                    <strong>Tokens:</strong> ${step.tokens.map((t, i) => 
+                        `<span style="background: ${i < this.tokenize(document.getElementById('transformer-input').value).length ? '#e3f2fd' : '#e8f5e9'}; 
+                        padding: 2px 6px; border-radius: 3px; margin: 0 2px;">${t}</span>`
+                    ).join('')}
+                </div>
+            `;
+        }
+        
+        if (step.phase === 'output' && step.logits) {
+            html += '<div style="margin: 10px 0;"><strong>Output Type:</strong> Logits → Probabilities (via softmax)</div>';
+        }
+        
+        html += `
+                <div class="tensor-preview">
+                    ${this.renderTensorPreview(step.data)}
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    }
+    
+    renderTensorPreview(data) {
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+            return '<div class="loading">No data available</div>';
+        }
+
+        // Handle 1D array (probability distribution) or object from selection step
+        let probs = null;
+        if (Array.isArray(data) && typeof data[0] === 'number') {
+            probs = data;
+        } else if (data.probs) {
+            probs = data.probs;
+        }
+
+        if (probs) {
+            let html = '';
+            const maxShow = 20;
+            
+            // Sort by probability to show most likely tokens
+            const indexed = probs.map((p, i) => ({ prob: p, idx: i, token: this.config.vocab[i] }));
+            indexed.sort((a, b) => b.prob - a.prob);
+            
+            for (let i = 0; i < Math.min(indexed.length, maxShow); i++) {
+                const item = indexed[i];
+                if (!item.token) continue; // Skip if vocab is mismatched
+                const value = item.prob.toFixed(4);
+                const percent = (item.prob * 100).toFixed(1);
+                const intensity = Math.min(item.prob * 5, 1); // Scale for visibility
+                const color = `rgba(52, 152, 219, ${intensity})`;
                 
-                if (indexed.length > maxShow) {
-                    html += `<div class="tensor-value">... ${indexed.length - maxShow} more</div>`;
-                }
-                
-                return html;
+                html += `
+                    <div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">
+                        <div style="font-size: 10px; opacity: 0.7;">${item.token}</div>
+                        <div>${percent}%</div>
+                    </div>
+                `;
             }
             
-            // Regular tensor display
-            const maxVals = 20;
-            for (let i = 0; i < Math.min(data.length, maxVals); i++) {
-                const value = data[i].toFixed(3);
-                const intensity = Math.min(Math.abs(data[i]), 1);
-                const color = data[i] >= 0 ? 
-                    `rgba(52, 152, 219, ${intensity})` : 
-                    `rgba(231, 76, 60, ${intensity})`;
-                
-                html += `<div class="tensor-value" style="background: ${color}; color: ${intensity > 0.5 ? 'white' : 'black'}">${value}</div>`;
-            }
-            
-            if (data.length > maxVals) {
-                html += `<div class="tensor-value">... ${data.length - maxVals} more</div>`;
+            if (indexed.length > maxShow) {
+                html += `<div class="tensor-value">... ${indexed.length - maxShow} more</div>`;
             }
             
             return html;
