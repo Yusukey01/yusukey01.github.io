@@ -63,7 +63,9 @@ class TransformerDemo {
             playbackSpeed: 1000,
             posEncodingBase: 10000,
             temperature: 0.8,
-            topK: 10
+            topK: 10,
+            repetitionPenalty: 2.5, // Make penalty configurable
+            repetitionLookback: 5   // Look back 5 tokens
         };
         
         // Initialize embeddings and projection weights/biases
@@ -200,7 +202,7 @@ class TransformerDemo {
     
     getTemplate() {
         return `
-            <div class="transformer-demo">
+            <div class.transformer-demo">
                 <div class="demo-header">
                     <h3>GPT-Style Decoder Transformer Demo</h3>
                     <div class="input-section">
@@ -1441,7 +1443,7 @@ class TransformerDemo {
         });
         
         // Feed-forward
-        const ffOutput = this.feedForward(norm1, layerNum);
+        const ffOutput = this.feedForward(norm1, layerNum); // Pass layerNum
         steps.push({
             name: `Feed Forward (Layer ${layerNum + 1})`,
             description: 'Position-wise feed-forward network',
@@ -1642,10 +1644,34 @@ class TransformerDemo {
         });
     }
     
+    // =================================================================
+    // == REVISED FUNCTION: projectToVocab
+    // =================================================================
     projectToVocab(hiddenState, currentSequence) {
         const logits = [];
+        const token = currentSequence[currentSequence.length - 1] || '';
+        const recentTokens = currentSequence.slice(-this.config.repetitionLookback);
         
-        // Base projection (WITHOUT bias first)
+        // **NEW:** Define verb lists for grammar rules
+        const allActionVerbs = [
+            'go', 'goes', 'went', 'gone', 'going', 'run', 'runs', 'ran', 'running',
+            'walk', 'walks', 'walked', 'walking', 'eat', 'eats', 'ate', 'eating',
+            'sleep', 'sleeps', 'slept', 'sleeping', 'sit', 'sits', 'sat', 'sitting',
+            'stand', 'stands', 'stood', 'standing', 'play', 'plays', 'played', 'playing',
+            'jump', 'jumps', 'jumped', 'jumping', 'talk', 'talks', 'talked', 'talking',
+            'see', 'sees', 'saw', 'seen', 'seeing', 'look', 'looks', 'looked', 'looking',
+            'make', 'makes', 'made', 'making', 'think', 'thinks', 'thought', 'thinking',
+            'know', 'knows', 'knew', 'knowing', 'want', 'wants', 'wanted', 'wanting',
+            'like', 'likes', 'liked', 'liking', 'love', 'loves', 'loved', 'loving',
+            'need', 'needs', 'needed', 'needing'
+        ];
+        const ingVerbs = [
+            'going', 'running', 'walking', 'eating', 'sleeping', 'sitting', 'standing',
+            'playing', 'jumping', 'talking', 'seeing', 'looking', 'making', 'thinking',
+            'knowing', 'wanting', 'liking', 'loving', 'needing'
+        ];
+        
+        // --- Step 1: Calculate Base Logits (Weights * x + Bias) ---
         for (let v = 0; v < this.config.vocab.length; v++) {
             let score = 0;
             
@@ -1654,121 +1680,103 @@ class TransformerDemo {
                 score += hiddenState[h] * this.projectionWeights[v][h];
             }
             
+            // **CRITICAL FIX: Add the bias!**
+            // This adds the baseline preferences (e.g., penalizing <UNK>)
+            score += this.projectionBiases[v];
+            
             logits.push(score);
         }
         
-        const token = currentSequence[currentSequence.length - 1] || '';
-        
-        // **NEW:** Define our verb list for the new rule
-        const allActionVerbs = [
-            'go', 'goes', 'went', 'gone', 'going',
-            'run', 'runs', 'ran', 'running',
-            'walk', 'walks', 'walked', 'walking',
-            'eat', 'eats', 'ate', 'eating',
-            'sleep', 'sleeps', 'slept', 'sleeping',
-            'sit', 'sits', 'sat', 'sitting',
-            'stand', 'stands', 'stood', 'standing',
-            'play', 'plays', 'played', 'playing',
-            'jump', 'jumps', 'jumped', 'jumping',
-            'talk', 'talks', 'talked', 'talking',
-            'see', 'sees', 'saw', 'seen', 'seeing',
-            'look', 'looks', 'looked', 'looking',
-            'make', 'makes', 'made', 'making',
-            'think', 'thinks', 'thought', 'thinking',
-            'know', 'knows', 'knew', 'knowing',
-            'want', 'wants', 'wanted', 'wanting',
-            'like', 'likes', 'liked', 'liking',
-            'love', 'loves', 'loved', 'loving',
-            'need', 'needs', 'needed', 'needing'
-        ];
-
+        // --- Step 2: Apply Grammar Rules & Repetition Penalty ---
         for (let v = 0; v < this.config.vocab.length; v++) {
             const candidateToken = this.config.vocab[v];
             
-            // We already penalized special tokens in the bias, but a small extra
-            // check here doesn't hurt.
+            // **NEW: Strong Repetition Penalty (applied to logits)**
+            if (recentTokens.includes(candidateToken)) {
+                logits[v] -= this.config.repetitionPenalty;
+            }
+
+            // Skip special tokens (already heavily penalized by bias, but good to be sure)
             if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(candidateToken)) {
-                logits[v] -= 2.0; 
                 continue;
             }
             
-            // **GENTLER (NUDGE) boosts**
+            // --- Hand-crafted Grammar Rules ---
             if (token === 'the' || token === 'a' || token === 'an') {
                 // After articles, boost nouns and adjectives
                 if (['cat', 'dog', 'house', 'car', 'tree', 'man', 'woman'].includes(candidateToken)) {
-                    logits[v] += 0.5; // Was 1.0
+                    logits[v] += 0.5;
                 } else if (['big', 'small', 'red', 'happy', 'old', 'new', 'good'].includes(candidateToken)) {
-                    logits[v] += 0.4; // Was 0.8
+                    logits[v] += 0.4;
                 }
                 // Penalize another article or verb immediately after
                 if (['the', 'a', 'an', 'is', 'was', 'are'].includes(candidateToken)) {
-                    logits[v] -= 1.0; // Was 2.0
+                    logits[v] -= 1.0;
                 }
             } else if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house'].includes(token)) {
-                // After nouns, boost verbs
+                // After nouns, boost verbs and conjunctions
                 if (['is', 'was', 'runs', 'walks', 'jumps', 'sits', 'sleeps', 'plays'].includes(candidateToken)) {
                     logits[v] += 0.6; 
                 } else if (['and', 'or', 'but', 'with'].includes(candidateToken)) {
                     logits[v] += 0.3;
                 }
             } else if (['is', 'was', 'are', 'were'].includes(token)) {
-                // After be-verbs, boost adjectives
+                // After be-verbs, boost adjectives, articles, and -ing verbs
                 if (['happy', 'sad', 'big', 'small', 'good', 'bad', 'old', 'new'].includes(candidateToken)) {
                     logits[v] += 0.6;
                 } else if (['a', 'an', 'the'].includes(candidateToken)) {
                     logits[v] += 0.4;
+                } else if (ingVerbs.includes(candidateToken)) {
+                    // **NEW RULE**
+                    logits[v] += 0.8; // Boost -ing verbs
                 }
             } else if (['big', 'small', 'good', 'bad', 'happy', 'sad', 'red', 'new', 'old', 'rapid', 'quick', 'slow'].includes(token)) {
                 // After adjectives, boost nouns
                 if (['cat', 'dog', 'man', 'woman', 'boy', 'girl', 'car', 'house', 'tree', 'sky', 'sun'].includes(candidateToken)) {
                     logits[v] += 0.7; // Boost nouns strongly
                 }
-                // Also boost conjunctions
                 else if (['and', 'or', 'but'].includes(candidateToken)) {
                     logits[v] += 0.3;
                 }
-                // Penalize verbs immediately after
                 else if (['is', 'was', 'runs', 'jumps', 'sleeps'].includes(candidateToken)) {
-                    logits[v] -= 1.0;
+                    logits[v] -= 1.0; // Penalize verbs
                 }
             } else if (allActionVerbs.includes(token)) {
-            // After an action verb, boost nouns (objects)
-            if (['cat', 'dog', 'house', 'car', 'tree', 'food', 'bread', 'milk', 'apple', 'person'].includes(candidateToken)) {
-                logits[v] += 0.8; 
-            }
-            // Boost prepositions
-            else if (['in', 'on', 'at', 'to', 'for', 'with', 'from', 'up', 'about'].includes(candidateToken)) {
-                logits[v] += 0.5;
-            }
-            // Boost conjunctions
-            else if (['and', 'or', 'but'].includes(candidateToken)) {
-                logits[v] += 0.4;
-            }
-            // HEAVILY PENALIZE another verb immediately after (e.g., "eat loves")
-            else if (allActionVerbs.includes(candidateToken) || ['is', 'was', 'are', 'were'].includes(candidateToken)) {
-                // Allow "to"
-                if (token !== 'to') {
-                    logits[v] -= 2.0; 
+                // After an action verb, boost nouns (objects), prepositions, or conjunctions
+                if (['cat', 'dog', 'house', 'car', 'tree', 'food', 'bread', 'milk', 'apple', 'person'].includes(candidateToken)) {
+                    logits[v] += 0.8; 
+                }
+                else if (['in', 'on', 'at', 'to', 'for', 'with', 'from', 'up', 'about'].includes(candidateToken)) {
+                    logits[v] += 0.5;
+                }
+                else if (['and', 'or', 'but'].includes(candidateToken)) {
+                    logits[v] += 0.4;
+                }
+                // HEAVILY PENALIZE another verb immediately after (e.g., "eat loves")
+                else if (allActionVerbs.includes(candidateToken) || ['is', 'was', 'are', 'were'].includes(candidateToken)) {
+                    if (token !== 'to') { // Allow "to"
+                        logits[v] -= 2.0; 
+                    }
                 }
             }
-        }
 
             // Small boost for common bigrams
             const commonBigrams = {
                 'the': ['cat', 'dog', 'house', 'car'],
                 'cat': ['is', 'was', 'runs', 'sleeps'],
-                'is': ['big', 'small', 'happy', 'running'],
-                'was': ['big', 'small', 'happy', 'running'],
+                'is': ['big', 'small', 'happy', 'running', 'walking'],
+                'was': ['big', 'small', 'happy', 'running', 'walking'],
                 'a': ['cat', 'dog', 'big', 'small']
             };
             
             if (commonBigrams[token] && commonBigrams[token].includes(candidateToken)) {
-                logits[v] += 0.2; // Was 0.3 (keep it small)
+                logits[v] += 0.2; 
             }
         }
         
-        // CLAMP logits to prevent extreme values
-        const maxAllowedLogit = 10.0; // Allow a bit more range
+        // --- Step 3: Clamp Logits ---
+        // CLAMP logits to prevent extreme values from overpowering softmax
+        const maxAllowedLogit = 10.0;
         const minAllowedLogit = -10.0;
         
         for (let v = 0; v < logits.length; v++) {
@@ -1820,7 +1828,7 @@ class TransformerDemo {
     }
     
     // =================================================================
-    // == REVISED FUNCTION
+    // == REVISED FUNCTION: sampleToken
     // =================================================================
     sampleToken(probs, currentSequence) {
         
@@ -1833,48 +1841,17 @@ class TransformerDemo {
         indexed.sort((a, b) => b.prob - a.prob);
         
         // --- Filtering Stage ---
-        // We will filter the *probabilities* themselves before Top-K
-        // This is a common sampling technique (e.g., repetition penalty)
+        // Repetition penalty is NOW DONE IN projectToVocab (before softmax)
+        // We just need to filter out special tokens
         
-        const recentTokens = currentSequence.slice(-3); // Look at last 3 tokens
+        let topIndices = indexed
+            .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token))
+            .slice(0, this.config.topK);
         
-        for (let i = 0; i < indexed.length; i++) {
-            const token = indexed[i].token;
-            
-            // 1. Penalize special tokens (should already have low prob, but good to ensure)
-            if (['<PAD>', '<START>', '<END>', '<UNK>'].includes(token)) {
-                indexed[i].prob = 0;
-            }
-            
-            // 2. Apply repetition penalty
-            if (recentTokens.includes(token)) {
-                // Penalize by dividing probability (a common technique)
-                // A penalty of 1.2 means it's 1.2x less likely
-                indexed[i].prob /= 1.5; 
-            }
-        }
-        
-        // Re-sort after applying penalties
-        indexed.sort((a, b) => b.prob - a.prob);
-        
-        // --- Top-K Stage ---
-        // Now take the top-k from the *penalized* and *re-sorted* list
-        let topIndices = indexed.slice(0, this.config.topK);
-
-        // Filter out any that became 0
-        topIndices = topIndices.filter(item => item.prob > 0);
-        
-        // If we have no options left (e.g., all top-k were penalized to 0)
+        // If we have no options left (e.g., all top-k were special tokens)
         if (topIndices.length === 0) {
-            // Fallback: just take the original Top-K, excluding special tokens
-            topIndices = indexed
-                .filter(item => !['<PAD>', '<START>', '<END>', '<UNK>'].includes(item.token))
-                .slice(0, Math.max(1, this.config.topK)); // Ensure at least one option
-            
-             if (topIndices.length === 0) {
-                // Absolute fallback (should never happen)
-                return 'the';
-             }
+            // Absolute fallback
+            return 'the';
         }
         
         // --- Sampling Stage ---
@@ -1882,7 +1859,7 @@ class TransformerDemo {
         // Renormalize probabilities among the Top-K
         const sumTopK = topIndices.reduce((sum, item) => sum + item.prob, 0);
         
-        if (sumTopK === 0) {
+        if (sumTopK === 0 || !isFinite(sumTopK)) {
             // Uniform distribution as fallback if all probs are 0
             topIndices.forEach(item => item.prob = 1.0 / topIndices.length);
         } else {
