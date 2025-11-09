@@ -332,7 +332,6 @@ class TransformerDemo {
                             <option value="the sun">the sun</option>
                             <option value="i love">i love</option>
                             <option value="machine learning">machine learning</option>
-                            <option value="custom">Custom input...</option>
                         </select>
                         <input type="text" id="transformer-input" placeholder="or enter custom text" style="display: none;" maxlength="50">
                         <button id="process-btn" class="demo-button">Visualize Processing</button>
@@ -887,13 +886,8 @@ class TransformerDemo {
         const input = document.getElementById('transformer-input');
         
         selector.addEventListener('change', (e) => {
-            if (e.target.value === 'custom') {
-                input.style.display = 'block';
-                input.focus();
-            } else {
                 input.style.display = 'none';
                 input.value = e.target.value;
-            }
         });
         
         // Process button
@@ -1003,7 +997,7 @@ class TransformerDemo {
         let text = selector.value === 'custom' ? input.value.trim() : selector.value;
         
         if (!text) {
-            alert('Please select an example or enter custom text');
+            alert('Please select an example');
             return;
         }
         
