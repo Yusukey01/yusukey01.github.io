@@ -125,6 +125,7 @@ uses_python: false
             <a href="#sym">Symmetric Matrices</a>
             <a href="#qf">Quadratic Forms</a>
             <a href="#svd">Singular Value Decomposition(SVD)</a>
+            <a href="#pinv_svd">Pseudo-inverse via SVD</a>
             <a href="#f_sub">SVD with Fundamental Subspaces</a>
             <a href="#svd-demo">Interactive SVD Visualization</a>
         </div> 
@@ -376,6 +377,52 @@ uses_python: false
                     For nonzero singular values, compute \(u_k = \frac{1}{\sigma_k}Av_k\).<br>
                     If there are not enough nonzero singular values, extend the orthonormal basis. 
             </ol>
+            </p>
+            </section>
+
+            <section id="pinv_svd" class="section-content">
+            <h2>Pseudo-inverse via SVD</h2>
+            <p>
+            The <strong>Moore-Penrose Pseudo-inverse (\(A^\dagger\))</strong> is most stably defined and computed using the Singular Value Decomposition (SVD).
+            <br><br>
+            Given the SVD of \(A = U\Sigma V^T\), where \(U\) is \(m \times m\), \(\Sigma\) is \(m \times n\), and \(V\) is \(n \times n\), the pseudo-inverse is:
+            \[
+            A^\dagger = V\Sigma^\dagger U^T
+            \]
+            Here, \(\Sigma^\dagger\) is an \(n \times m\) matrix formed by:
+            <ol style="padding-left: 40px;">
+                <li>Transposing \(\Sigma\) to get \(\Sigma^T\) (which is \(n \times m\)).</li>
+                <li>Inverting every <strong>nonzero</strong> singular value \(\sigma_i\) on the diagonal to get \(1/\sigma_i\).</li>
+            </ol>
+            <br>
+            If \(\Sigma\) has diagonal entries \(\sigma_1, \dots, \sigma_r > 0\), then \(\Sigma^\dagger\) will have diagonal entries \(1/\sigma_1, \dots, 1/\sigma_r\). All other entries are zero.
+            </p>
+
+            <h3>SVD, Pseudo-inverse, and Fundamental Subspaces</h3>
+            <p>
+            This definition has a beautiful geometric interpretation. Recall that \(\hat{x} = A^\dagger b\) is the minimum-norm least-squares solution.
+            </p>
+            <ul style="padding-left: 40px;">
+                <li>A least-squares solution \(\hat{x}\) must map to the projection of \(b\) onto \(\text{Col}(A)\).</li>
+                <li>The minimum-norm requirement forces the solution \(\hat{x}\) to lie <em>entirely</em> within the <strong>Row Space</strong> of \(A\), i.e., \(\hat{x} \in \text{Row}(A)\). (Any component in \(\text{Nul}(A)\) would be orthogonal to \(\text{Row}(A)\), adding to the norm of \(\hat{x}\) without changing the result \(A\hat{x}\).)</li>
+            </ul>
+            <p>
+            The SVD beautifully handles this. It decomposes \(A\) into its fundamental subspaces. The pseudo-inverse essentially "inverts" the mapping from \(\text{Row}(A)\) to \(\text{Col}(A)\) and ignores the \(\text{Nul}(A)\).
+            <br><br>
+            You can also see that \(A^\dagger A = V\Sigma^\dagger U^T U\Sigma V^T = V\Sigma^\dagger\Sigma V^T\). The matrix \(\Sigma^\dagger\Sigma\) is an \(n \times n\) diagonal matrix with 1s for the first \(r\) entries and 0s after. This makes \(A^\dagger A = V \begin{bmatrix} I_r & 0 \\ 0 & 0 \end{bmatrix} V^T\), which is the <strong>orthogonal projection matrix onto the Row Space of \(A\)</strong>. Similarly, \(A A^\dagger\) is the orthogonal projection matrix onto the <strong>Column Space of \(A\)</strong>.
+            </p>
+            
+            <h3>Practical Note: Truncation and Regularization</h3>
+            <p>
+            In real-world applications (CS/ML), we rarely have singular values that are exactly zero. Instead, we have a spectrum of values, some of which are very small.
+            \[ \sigma_1 \geq \sigma_2 \geq \dots \gg \dots \geq \sigma_n \approx 0 \]
+            Inverting these tiny singular values (\(1/\sigma_i\)) would introduce massive instability, as we'd be amplifying components related to noise.
+            <br><br>
+            The practical computation of the pseudo-inverse involves setting a <strong>tolerance</strong> \(\epsilon\). We treat any \(\sigma_i < \epsilon\) as zero.
+            \[
+            (\sigma_i^\dagger) = \begin{cases} 1/\sigma_i & \text{if } \sigma_i \geq \epsilon \\ 0 & \text{if } \sigma_i < \epsilon \end{cases}
+            \]
+            This <strong>truncated SVD</strong> is the basis for <strong>Principal Component Regression (PCR)</strong> and is a powerful form of regularization. It explicitly discards the "directions" (singular vectors) that contribute least to the transformation and are most likely to be noise, building a more robust, lower-rank model.
             </p>
             </section>
 

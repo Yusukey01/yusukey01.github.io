@@ -124,6 +124,7 @@ uses_python: false
 
         <div class="topic-nav">
             <a href="#lsp">Least-Squares Problems</a>
+            <a href="#pinv">Moore-Penrose Pseudo-inverse</a>
             <a href="#lr">Linear Regression</a>
             <a href="#demo">Interactive Linear Regression Demo</a>
         </div> 
@@ -198,7 +199,48 @@ uses_python: false
             </p>
             </section>
 
-             <section id="lr" class="section-content">
+            <section id="pinv" class="section-content">
+            <h2>Moore-Penrose Pseudo-inverse (\(A^\dagger\))</h2>
+            <p>
+            In the previous section, we derived the normal equations \(A^TA\hat{x} = A^Tb\). If \(A^TA\) is invertible, the unique least-squares solution is \(\hat{x} = (A^TA)^{-1}A^Tb\).
+            <br><br>
+            However, this approach has two major problems in practice:
+            <ol style="padding-left: 40px;">
+                <li><strong>Theoretical Failure:</strong> If the columns of \(A\) are linearly dependent (e.g., in an underdetermined system where \(n > m\), or due to collinear features), \(A^TA\) is singular and \((A^TA)^{-1}\) does not exist.</li>
+                <li><strong>Practical Failure:</strong> Even if \(A^TA\) is technically invertible, it can be <strong>ill-conditioned</strong>. The condition number \(\kappa(A^TA)\) is \(\kappa(A)^2\). This squaring can turn a manageable problem into a numerically unstable one, where small errors in \(b\) are magnified into large errors in \(\hat{x}\). Computing \((A^TA)^{-1}\) directly is almost always a bad idea.</li>
+            </ol>
+            <br>
+            The <strong>Moore-Penrose Pseudo-inverse</strong>, denoted \(A^\dagger\), is the generalized solution that resolves both issues.
+            </p>
+            
+            <h3>The Minimum-Norm Least-Squares Solution</h3>
+            <p>
+            The vector \(\hat{x} = A^\dagger b\) is, for <em>any</em> matrix \(A\), the <strong>unique minimum-norm least-squares solution</strong>.
+            <br><br>
+            This means \(\hat{x}\) simultaneously satisfies two conditions:
+            <ul style="padding-left: 40px;">
+                <li><strong>Least-Squares:</strong> It minimizes the error \(\|Ax - b\|^2\). \(\hat{x}\) is a minimizer, \(\|A\hat{x} - b\| \leq \|Ax - b\|\) for all \(x\).</li>
+                <li><strong>Minimum-Norm:</strong> If there are multiple solutions that minimize this error (i.e., the system is underdetermined), \(\hat{x}\) is the <em>only</em> solution that also has the smallest Euclidean norm \(\|\hat{x}\|\).</li>
+            </ul>
+            <br>
+            In machine learning, this is incredibly powerful. For an underdetermined system (e.g., more features than data points), the minimum-norm solution is the "simplest" one, which is a form of implicit regularization.
+            <br><br>
+            While this page already discusses <strong>QR factorization</strong> as a stable method, the pseudo-inverse is the most general theoretical tool, and it is computed using the <strong>Singular Value Decomposition (SVD)</strong>, as we will see in <a href="symmetry.html#pinv_svd">Part 9</a>.
+            </p>
+            
+            <h3>The Four Penrose Conditions</h3>
+            <p>
+            Formally, \(A^\dagger\) is the unique matrix that satisfies the four Moore-Penrose conditions:
+            <ol style="padding-left: 40px;">
+                <li>\(A A^\dagger A = A\) &nbsp;&nbsp;&nbsp; (P-inverse-P is like P)</li>
+                <li>\(A^\dagger A A^\dagger = A^\dagger\) &nbsp;&nbsp;&nbsp; (Inverse-P-Inverse is like Inverse)</li>
+                <li>\((A A^\dagger)^T = A A^\dagger\) &nbsp;&nbsp;&nbsp; (The projection onto Col(A) is symmetric)</li>
+                <li>\((A^\dagger A)^T = A^\dagger A\) &nbsp;&nbsp;&nbsp; (The projection onto Row(A) is symmetric)</li>
+            </ol>
+            </p>
+            </section>
+
+            <section id="lr" class="section-content">
             <h2>Linear Regression</h2>
             <p>
             Given a set of observed data points \(\{(x_i, y_i)\}_{i = 1}^{n}\) where \(x_i \in \mathbb{R}^d, \quad y_i \in \mathbb{R}\),
