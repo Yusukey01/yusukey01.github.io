@@ -1,11 +1,3 @@
-/**
- * fft.js
- * * Unified script for 1D and 2D Fourier Transform visualizers.
- * * Consolidates common FFT logic into 'FFTUtils'.
- * * Provides two classes: 'FourierVisualizer1D' and 'FourierVisualizer2D'.
- * * Original files: fourier_transform_visualizer.js, FT2_visualizer.js
- * * Merged & Refactored by: Gemini
- */
 
 //======================================================================
 // 1. Common FFT Utilities
