@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>Fisher Information Matrix - MATH-CS COMPASS</title>
+    
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff" as="font" type="font/woff2" crossorigin>
+    
+    
+    
+
+    <link rel="stylesheet" href="../../../css/styles.css?v=1.0.2">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Learn about Fisher information matrices, natural gradient descent, and Jeffreys prior.">
+    <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color for Chrome, Android, and other browsers -->
+    <meta name="theme-color" content="#007bff">
+  
+    <!-- iOS specific tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MATH-CS COMPASS">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icon references -->
+    <link rel="icon" type="image/png" sizes="1280x1280" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images//maskable_icon_x512.png?v=1.0.2">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x512.png?v=1.0.2">
+
+    <!-- For Windows -->
+    <meta name="msapplication-TileImage" content="/images/test1.png?v=1.0.2">
+    <meta name="msapplication-TileColor" content="#007bff">
+
+    <!-- Schema.org Structured Data for AI Optimization -->
+    
+
+    <!-- Article Schema for content pages -->
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Fisher Information Matrix",
+      "description": "Learn about Fisher information matrices, natural gradient descent, and Jeffreys prior.",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "author": {
+        "@type": "Person",
+        "name": "Yusuke Yokota",
+        "jobTitle": "Mathematics & Computer Science Educator",
+        "knowsAbout": [
+          "Linear Algebra",
+          "Machine Learning",
+          "Computer Science",
+          "Mathematics"
+        ]
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MATH-CS COMPASS",
+        "url": "https://yusukey01.github.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yusukey01.github.io/images/maskable_icon_x512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yusukey01.github.io/Mathematics/Probability/fisher_info.html"
+      },
+      "about": [
+        
+        { "@type": "Thing", "name": "Probability" },
+        { "@type": "Thing", "name": "Statistics" }
+        
+      ],
+      "educationalLevel": "university",
+      "learningResourceType": "tutorial",
+      "educationalUse": "instruction"
+    }
+    </script>
+    
+</head>
+
+<body>
+    <header>
+    <nav class="navbar">
+        <!-- Logo as Home Button -->
+        <div class="logo-home">
+            <a href="../../../index.html" 
+               class="logo-link " 
+               title="Home - Math-CS Compass">
+                <img src="../../images/icon_x512.png" 
+                     alt="Math-CS Compass Logo" 
+                     class="nav-logo">
+            </a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search keywords...">
+            <button id="search-button" aria-label="Search" title="Search website"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="../Linear_algebra/linear_algebra.html" >I - Linear Algebra to Algebraic Foundations</a></li>
+            
+            <li><a href="../Calculus/calculus.html" >II - Calculus to Optimization & Analysis</a></li>
+            
+            <li><a href="../Probability/probability.html" class="active">III - Probability & Statistics</a></li>
+            
+            <li><a href="../Discrete/discrete_math.html" >IV - Discrete Mathematics & Algorithms</a></li>
+            
+            <li><a href="../Machine_learning/ml.html" >V - Machine Learning</a></li>
+        </ul>
+    </nav>
+</header>
+    
+    <!DOCTYPE html>
+<html>
+    <body>
+        <!-- Meta script for fisher_info.html -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Fisher Information Matrix",
+        "description": "Learn about Fisher information matrices, natural gradient descent, and Jeffreys prior.",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Fisher Information Matrix" },
+            { "@type": "Thing", "name": "FIM" },
+            { "@type": "Thing", "name": "Score Function" },
+            { "@type": "Thing", "name": "Curvature of Log Likelihood" },
+            { "@type": "Thing", "name": "Natural Gradient Descent" },
+            { "@type": "Thing", "name": "NGD" },
+            { "@type": "Thing", "name": "Jeffreys Prior" },
+            { "@type": "Thing", "name": "Uninformative Prior" },
+            { "@type": "Thing", "name": "Reference Prior" },
+            { "@type": "Thing", "name": "Reparameterization Invariance" },
+            { "@type": "Thing", "name": "Second Order Optimization" },
+            { "@type": "Thing", "name": "Preconditioning Matrix" },
+            { "@type": "Thing", "name": "Natural Gradient" },
+            { "@type": "Thing", "name": "Cumulants" },
+            { "@type": "Thing", "name": "Covariance of Sufficient Statistics" },
+            { "@type": "Thing", "name": "Maximum Likelihood Estimation" },
+            { "@type": "Thing", "name": "Jacobian Matrix" }
+        ],
+        "teaches": [
+            "Fisher information matrix theory",
+            "Natural gradient descent optimization",
+            "Jeffreys prior construction",
+            "Invariant statistical methods"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Probability & Statistics",
+            "description": "Explore fundamental concepts of probability and statistics essential for machine learning",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "III",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT2H30M",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name">Fisher Information Matrix
+            </h1>
+        </div>
+
+        
+  <div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section III Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>Probability & Statistics</h3>
+      <div class="quick-jump-links">
+
+         
+        <a href="probability.html">← Back to Section III Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        
+        
+        <a href="basic.html" >Part 1: Basic Probability Ideas</a>
+        <a href="random_variables.html" >Part 2: Random Variables</a>
+        <a href="gamma.html" >Part 3: Gamma & Beta Distribution</a>
+        <a href="gaussian.html" >Part 4: Normal (Gaussian) Distribution</a>
+        <a href="student.html" >Part 5: Student's t-Distribution</a>
+        <a href="covariance.html" >Part 6: Covariance</a>
+        <a href="correlation.html" >Part 7: Correlation</a>
+        <a href="mvn.html" >Part 8: Multivariate Distributions</a>
+        <a href="mle.html" >Part 9: Maximum Likelihood Estimation</a>
+        <a href="hypothesis_testing.html" >Part 10: Statistical Inference & Hypothesis Testing</a>
+        <a href="linear_regression.html" >Part 11: Linear Regression</a>
+        <a href="entropy.html" >Part 12: Entropy</a>
+        <a href="convergence.html" >Part 13: Convergence</a>
+        <a href="bayesian.html" >Part 14: Intro to Bayesian Statistics</a>
+        <a href="expfamily.html" >Part 15: The Exponential Family</a>
+        <a href="fisher_info.html" class="current-page">Part 16: Fisher Information Matrix</a>
+        <a href="decision_theory.html" >Part 17: Bayesian Decision Theory</a>
+        <a href="markov.html" >Part 18: Markov Chains</a>
+        <a href="monte_carlo.html" >Part 19: Monte Carlo Methods</a>
+        <a href="importance_sampling.html" >Part 20: Importance Sampling</a>
+        <a href="gaussian_process.html" >Part 21: Gaussian Processes</a>
+      </div>
+    </div>
+</div>
+
+
+        <div class="topic-nav">
+            <a href="#fim">Fisher Information Matrix</a>
+            <a href="#exp">FIM for the Exponential Family</a>
+            <a href="#ngd">Natural Gradient Descent</a>
+            <a href="#jeffrey">Jeffreys Prior</a>
+        </div> 
+
+        <div class="container">  
+           
+            <section id="fim" class="section-content">
+            <h2>Fisher Information Matrix</h2>
+            <p>
+            The <strong>Fisher information matrix</strong> is related to the <strong>curvature</strong> of log 
+            likelihood functions. In frequentist statistics, it characterizes the sampling distribution of the MLE. 
+            <br><br>
+            First, we define a <strong>score function</strong> as the gradient of the log likelihood with respect 
+            to the parameter vector \(\theta\):
+            \[
+            s(\theta) = \nabla_{\theta} \log p(x | \theta).
+            \]
+            The <strong>Fisher information matrix (FIM)</strong> is defined to be the <a href="covariance.html"><strong>covariance </strong></a> of the 
+            score function:
+            \[
+            F(\theta) = \mathbb{E }_{x \sim p(x|\theta)} [s(\theta)s(\theta)^T].
+            \]
+            <div class="theorem">
+                <span class="theorem-title">Theorem 1:</span>
+                If \( \log p(x |\theta)\) is twice differentiable, and under certain regularity conditions, the
+                the Fisher information matrix equals the expected Hessian of the negative log likelihood (NLL):
+                \[
+                F(\theta) = - \mathbb{E }_{x \sim \theta} [\nabla_{\theta}^2 \log p(x |\theta)].
+                \]
+            </div>
+            <div class="proof">
+                <span class="proof-title">Proof:</span>
+                First, the expected value of the score function \(s(\theta)\) is zero. In scalar case, assuming that \(p(x | \theta)\) is differentiable and 
+                the bounds of the integral do not depend on \(\theta\), we have 
+                \[
+                \begin{align*}
+                &\int p(x | \theta) dx = 1  \\\\
+                &\Longrightarrow \frac{\partial}{\partial \theta} \int p(x | \theta) dx = 0 \\\\
+                &\Longrightarrow \int \Big[\frac{\partial}{\partial \theta} \log p(x | \theta)\Big] p(x | \theta) dx = 0  \tag{1} \\\\
+                &\Longrightarrow \mathbb{E }[s(\theta)] = 0
+                \end{align*}
+                \]
+                where \(\frac{\partial}{\partial \theta} \log p(x | \theta) = s(\theta)\).
+                <br><br>
+                Taking derivatives of Equation (1), by the product rule, we obtain 
+                \[
+                \begin{align*}
+                0 &= \frac{\partial}{\partial \theta} \int \Big[\frac{\partial}{\partial \theta} \log p(x | \theta)\Big] p(x | \theta) dx \\\\
+                  &= \int \Big[\frac{\partial^2}{\partial \theta^2} \log p(x | \theta)\Big] p(x | \theta) dx 
+                        + \int \Big[\frac{\partial}{\partial \theta} \log p(x | \theta)\Big] \frac{\partial}{\partial \theta} p(x | \theta) dx  \\\\
+                  &= \int \Big[\frac{\partial^2}{\partial \theta^2} \log p(x | \theta)\Big] p(x | \theta) dx 
+                     + \int \Big[\frac{\partial}{\partial \theta} \log p(x | \theta)\Big]^2 p(x | \theta) dx.  \\\\
+                \end{align*}
+                \]
+                Therefore, 
+                \[
+                 - \mathbb{E }_{x \sim \theta } \Big[\frac{\partial^2}{\partial \theta^2} \log p(x | \theta)\Big] 
+                    = \mathbb{E }_{x \sim \theta } \Big[ \Big(\frac{\partial}{\partial \theta} \log p(x | \theta)\Big)^2 \Big].
+                \]
+            </div>
+            </p>
+            </section>
+
+            <section id="exp" class="section-content">
+            <h2>FIM for the Exponential Family</h2>
+            <p>
+            Consider an <a href="expfamily.html">exponential family</a> distribution with natural parameter vector \(\eta \in \mathbb{R}^K\):
+            \[
+            p(x | \eta) = h(x) \exp \{\eta^\top \mathcal{T}(x) - A(\eta)\}.
+            \]
+            Remember that the gradient of the <strong>log partition function</strong> \(A(\eta)\) is the 
+            expected <strong>sufficient statistics</strong> \(\mathcal{T}(\eta)\), which is called the moment parameters \(m\): 
+            \[
+            \nabla_{\eta} A(\eta) = \mathbb{E }[\mathcal{T}(\eta)] = m.
+            \]
+            Also, the gradient of the log likelihood is the sufficient statistics minus their expected value: 
+            \[
+            \begin{align*}
+            &\log p(x | \eta) = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta) \\\\
+            &\Longrightarrow \nabla_{\eta} \log p(x | \eta) = \mathcal{T}(x) - \mathbb{E }[\mathcal{T}(x)] = \mathcal{T}(x) - m.
+            \end{align*}
+            \]
+            Therefore, the Hessian of the log partition function is the same as the FIM, which is the same as the
+            covariance of the sufficient statistics: 
+            \[
+            \begin{align*}
+            F(\eta) &= - \mathbb{E }_{p(x|\eta)} \Big[\nabla_{\eta}^2 (\eta^\top \mathcal{T}(x) - A(\eta))\Big] \\\\
+                    &= \nabla_{\eta}^2 A(\eta) \\\\
+                    &= \text{Cov }[\mathcal{T}(x)].
+            \end{align*}
+            \]
+            So, the FIM is indeed the <strong>second cumulant</strong> of the sufficient statistics. 
+            <br>
+            Note: Sometimes, we need FIM with respect to the moment parameters \(m\): 
+            \[
+            m = \nabla_{\eta} A(\eta) \Longrightarrow \frac {dm}{d\eta} = \nabla_{\eta}^2 A(\eta) = F(\eta)
+            \] 
+            Here, \(F(\eta)\) is the Jacobian matrix and thus:
+            \[
+            F(m) = \frac{d\eta}{dm} = \Big(\frac{dm}{d\eta}\Big)^{-1} = F(\eta)^{-1}.
+            \]
+            </p>
+            </section>
+
+            <section id="ngd" class="section-content">
+            <h2>Natural Gradient Descent</h2>
+            <p>
+            The FIM can be used in optimization. 
+            The <strong>natural gradient descent (NGD)</strong> is the second order optimization method for the parameters 
+            of (conditional) probability distributions \(p_{\theta}(y | x)\). 
+            <br>
+            (Check: <a href="../Calculus/gradient.html">Gradient Descent</a> for basic ideas of optimization problems.)
+            <br><br>
+            In NGD, we measure the difference between two probability distributions by the <a href="entropy.html"><strong>KL divergence</strong></a>.
+            For any inputs \(x \in \mathbb{R}^n\), we can approximate the KL divergence in terms of the FIM by the 
+            second order Taylor series expansion: 
+            \[
+            \begin{align*}
+            D_{\mathbb{KL}}(p_{\theta}(y | x) \, \| \, p_{\theta + \delta} (y|x)) 
+            &\approx -\delta^\top \mathbb{E }_{p_{\theta}(y | x)} [\nabla \log p_{\theta}(y | x) ] - \frac{1}{2}\delta^\top \mathbb{E }_{p_{\theta}(y | x)}[\nabla^2 \log p_{\theta}(y | x) ]  \delta \\\\
+            &= 0 -  \frac{1}{2}\delta^\top F_x(\theta) \delta \\\\
+            &= \frac{1}{2}\delta^\top F_x \delta
+            \end{align*}
+            \]
+            where \(\delta\) represents the change in the parameters.        
+            <br>
+            We compute average KL divergence between updated distribution and previous one using 
+            \[
+            \frac{1}{2}\delta^\top F  \delta
+            \]
+            where \(F\) is the averaged FIM:
+            \[
+            F(\theta) = \mathbb{E }_{p\mathcal{D}(x)}[F_x(\theta)].
+            \]
+            In NGD, we use the inverse FIM as a preconditioning matrix and update parameters: 
+            \[
+            \theta_{t+1} = \theta_{t} - \eta_{t} F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t)
+            \]
+            Here, we define the <strong>natural gradient</strong>:
+            \[
+            \widetilde{\nabla} \mathcal{L}(\theta_t) = F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t) = F^{-1}g_t
+            \]
+            Note: \(F\) is always positive definite and is relatively easier to compute and approximate compared to the Hessian matrix. 
+            </p>
+            </section>
+
+            <section id="jeffrey" class="section-content">
+            <h2>Jeffreys Prior</h2>
+            <p>
+            In <a href="bayesian.html">Bayesian statistics</a>, the FIM is used to derive <strong>Jeffreys prior</strong>, which is a widely used <strong>uninformative prior</strong>. 
+            It allows the posterior to be driven primarily by the data itself. Given a prior \(p_{\theta}(\theta)\) and a transformation \(\phi = f(\theta)\), 
+            We seek a prior that is <strong>invariant</strong> under reparameterization. This ensures that inference remains consistent regardless of the choice 
+            of parameterization. The prior should transform as:
+            \[
+            p_{\phi}(\phi) =  p_{\theta}(\theta) \Big| \frac{d\theta}{d\phi} \Big|
+            \]
+            or in multiple dimensions,
+            \[
+            p_{\phi}(\phi) =  p_{\theta}(\theta) | \det J |
+            \]
+            where \(J\) is the Jacobian matrix with entries \(J_{ij} = \frac{\partial\theta_i}{\partial\phi_j}\).
+            <br><br>
+            The <strong>Jeffreys prior</strong> is defined as 
+            \[
+            p(\theta) \propto \sqrt{F(\theta)} 
+            \]
+            where \(F\) is the Fisher information.
+            <br>
+            Or, in multiple dimensions, it has the form 
+            \[
+            p(\theta) \propto \sqrt{\det F(\theta)} 
+            \]
+            where \(F\) is the Fisher information matrix.
+            <br><br>
+            In 1d case, suppose \(p_{\theta}(\theta) \propto \sqrt{F(\theta)}\). We can derive a prior for \(\phi\) in terms of \(\theta\) as follows:
+            \[
+            \begin{align*}
+            p_{\phi}(\phi) &=  p_{\theta}(\theta) \Big| \frac{d\theta}{d\phi} \Big| \\\\
+                            &\propto \sqrt{F(\theta)\Big(\frac{d\theta}{d\phi}\Big)^2} \\\\
+                            &= \sqrt{\mathbb{E }\Big[\Big(\frac{d \log p(x|\theta)}{d\theta}\Big )^2\Big] \Big(\frac{d\theta}{d\phi}\Big)^2}\\\\
+                            &= \sqrt{\mathbb{E }\Big[\Big(\frac{d \log p(x|\theta)}{d\theta}\frac{d\theta}{d\phi}\Big)^2\Big] }\\\\
+                            &= \sqrt{\mathbb{E }\Big[\Big(\frac{d \log p(x|\phi)}{d\phi}\Big)^2\Big] }\\\\
+                            &= \sqrt{F(\phi)}
+            \end{align*}
+            \]
+            So, the Jeffreys prior is invariant to reparameterizations. 
+            <br>
+            Note: The KL divergence is indeed invariant to reparameterizations.
+            <br>
+            <div class="proof">
+                <span class="proof-title">Example:</span>
+                Consider the Binomial distribution:
+                \[
+                X \sim \text{Bin }(n, \theta), \, 0 \leq \theta \leq 1 
+                \]
+                \[
+                p(x | \theta) = \binom{n}{x} \theta^x (1-\theta)^{n-x}
+                \]
+                Ignoring \(\binom{n}{x}\), its log likelihood is given by 
+                \[
+                l(\theta | x) \propto  x\log \theta + (n-x)\log(1-\theta).
+                \]
+                The Fisher information is given by 
+                \[
+                \begin{align*}
+                F(\theta) &= -\mathbb{E }_{x \sim \theta}\left[\frac{d^2 l}{d \theta^2}\right] \\\\
+                          &= -\mathbb{E }_{x \sim \theta}\left[-\frac{x}{\theta^2}-\frac{n-x}{(1-\theta)^2}\right]  \\\\
+                          &= \frac{n\theta}{\theta^2} + \frac{n(1-\theta)}{(1-\theta)^2} \\\\
+                          &= \frac{n}{\theta(1-\theta)} \\\\
+                          &\propto \theta^{-1}(1-\theta)^{-1}.
+                \end{align*}
+                \]
+                Thus, the Jeffreys prior for the parameter \(\theta\) is given by 
+                \[
+                \begin{align*}
+                p_{\theta} (\theta) = \sqrt{F(\theta)} &\propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}} \\\\
+                \end{align*}
+                \]
+                Now, consider the parameterization by \(\phi = \frac{\theta}{1 - \theta}\). 
+                <br>
+                Solving this expression for \(\theta\), we get 
+                \[
+                \theta = \frac{\phi}{\phi+1}.
+                \]
+                Then we have
+                \[
+                \begin{align*}
+                p(x|\phi) &\propto  \left(\frac{\phi}{\phi+1}\right)^x \left(1 - \frac{\phi}{\phi + 1}\right)^{n-x} \\\\
+                            &= \phi^x (\phi +1)^{-x} (\phi +1)^{-n +x} \\\\
+                            &= \phi^x (\phi + 1)^{-n}
+                \end{align*}
+                \]
+                and the log likelihood is given by 
+                \[
+                l(\phi | x) = x\log \phi -n\log(\phi + 1).
+                \]
+                The Fisher information is given by 
+                \[
+                \begin{align*}
+                F(\phi) &= -\mathbb{E }_{x \sim \phi}\left[\frac{d^2 l}{d \phi^2}\right] \\\\
+                        &= -\mathbb{E }_{x \sim \phi}\left[-\frac{x}{\phi^2}+\frac{n}{(\phi + 1)^2}\right]  \\\\
+                        &= \frac{n\phi}{\phi + 1} \cdot \frac{1}{\phi^2} - \frac{n}{(\phi + 1)^2} \\\\
+                        &= \frac{n(\phi+1)-n\phi}{\phi(\phi+1)^2} \\\\
+                        &= \frac{n}{\phi(\phi+1)^2} \\\\
+                        &\propto \phi^{-1} (\phi+1)^{-2}
+                \end{align*}
+                \]
+                Thus, the Jeffreys prior for the reparameterized variable \(\phi\) is given by: 
+                \[
+                p_{\phi}(\phi) = \sqrt{F(\phi)} \propto \phi^{-\frac{1}{2}}(\phi +1)^{-1}.
+                \]
+            </div>
+            <br>
+            Note: In 1d, the Jeffreys prior is the same as the <strong>reference prior</strong>, which maximizes 
+            the expected KL divergence between posterior and prior. In other words, it maximizes the information 
+            provided by the "data" relative to the prior. For multidimensional parameters, they are not the same.
+            <br><br>
+            Also, finding a reference prior is equivalent to finding the prior that maximizes <a href="entropy.html"><strong>mutual information</strong></a> 
+            between \(\theta\) and \(\mathcal{D}\).
+            \[
+            \begin{align*}
+            p^*(\theta) &= \arg \max_{p(\theta)} \mathbb{E }_{\mathcal{D}}[D_{\mathbb{KL}}(p(\theta | \mathcal{D}) \,\|\, p(\theta) )] \\\\
+                        &= \arg \max_{p(\theta)}\, \mathbb{I }(\theta ; \mathcal{D})
+            \end{align*}
+            \]
+            For example, in continuous case, 
+            \[
+            \begin{align*}
+            \mathbb{I }(\theta \, ; \mathcal{D}) &= \int_{\mathcal{D}} p(\mathcal{D}) D_{\mathbb{KL}}(p(\theta | \mathcal{D}) \,\|\, p(\theta) )  d\mathcal{D} \\\\
+                                                 &= \int p(\mathcal{D}) \left( \int p(\theta | \mathcal{D}) \log \frac{p(\theta | \mathcal{D})}{p(\theta)}d\theta \right) d\mathcal{D} \\\\
+                                                 &= \int \int p(\theta|\mathcal{D})p(\mathcal{D}) \log \frac{p(\theta|\mathcal{D})}{p(\theta)} d\theta d\mathcal{D} \\\\
+                                                 &= \int \int p(\theta, \mathcal{D}) \log \frac{p(\theta, \mathcal{D})}{p(\theta)p(\mathcal{D})}d\theta d\mathcal{D}
+            \end{align*}
+            \]
+            where \(p(\mathcal{D})\) is the marginal likelihood:
+            \[
+            p(\mathcal{D}) = \int p(\mathcal{D} | \theta)p(\theta)d\theta
+            \]
+            and \(p(\theta, \mathcal{D})\) represents the joint probability distribution between \(\theta\) and \(\mathcal{D}\):
+            \[
+            p(\theta, \mathcal{D}) = p(\theta|\mathcal{D})p(\mathcal{D}).
+            \]
+            Note: Remember, the mutual information itself is invariant under reparameterization.
+            </p>
+            </section>
+        </div>   
+        <script src="/js/main.js"></script> 
+    </body>
+</html>
+    
+    <footer>
+    <div class="footer-content">
+        <div class="footer-about">
+            <h3>About MATH-CS COMPASS</h3>
+            <p>Bridging the gap between pure mathematics and computer science applications.</p>
+            <div class="contact-section">
+                <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3_RNkegREvfCEIQznn6SCaf-iB5c-Doxn7Ymuu78Uf-PBjg/viewform" target="_blank">
+                    Submit Your Questions & Feedback <i class="fas fa-external-link-alt"></i>
+                </a></strong>
+            </div>
+        </div>
+        <div class="footer-links">
+            <h3>Quick Links</h3>
+            <ul>
+                
+                <li><a href="../../../index.html">Home</a></li>
+                <li>
+                <a href="../Linear_algebra/linear_algebra.html">
+                    <span class="nav-number">I</span>
+                    <span>Linear Algebra to Algebraic Foundations</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Calculus/calculus.html">
+                    <span class="nav-number">II</span>
+                    <span>Calculus to Optimization & Analysis</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Probability/probability.html">
+                    <span class="nav-number">III</span>
+                    <span>Probability & Statistics</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Discrete/discrete_math.html">
+                    <span class="nav-number">IV</span>
+                    <span>Discrete Mathematics & Algorithms</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Machine_learning/ml.html">
+                    <span class="nav-number">V</span>
+                    <span>Machine Learning</span>
+                </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-social">
+            <h3>Connect With Me</h3>
+            <p>
+                <a href="https://x.com/MathCSCompass?t=Zi8nyfzszeFw8QizbJwnNg&s=09" target="_blank">
+                    <i class="fab fa-x-twitter"></i> X (Twitter)
+                </a>
+            </p>
+            <p>
+                <a href="https://www.facebook.com/share/15uPaBWgQN/" target="_blank">
+                    <i class="fab fa-facebook"></i> Facebook
+                </a>
+            </p>
+      
+            <h3>MATH-CS COMPASS App</h3>
+            <div class="app-download-footer">
+                <a href="https://play.google.com/store/apps/details?id=io.github.yusukey01.twa" target="_blank" rel="noopener">
+                    <img src="../../../images/google-play-badge.png" 
+                        alt="Get it on Google Play" 
+                        class="google-play-badge">
+                </a>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024-2025 MATH-CS COMPASS. All rights reserved.</p>
+    </div>
+</footer>
+    <script src="../../../js/main.js?v=1.0.2"></script>
+    <script src="../../../js/search.js?v=1.0.2"></script>
+    
+
+    <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/js/service-worker.js')
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
+</body>
+</html>

@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>Importance Sampling - MATH-CS COMPASS</title>
+    
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff" as="font" type="font/woff2" crossorigin>
+    
+    
+    
+
+    <link rel="stylesheet" href="../../../css/styles.css?v=1.0.2">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Introduction to importance sampling for efficient Monte Carlo estimation with applications in modern AI and machine learning.">
+    <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color for Chrome, Android, and other browsers -->
+    <meta name="theme-color" content="#007bff">
+  
+    <!-- iOS specific tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MATH-CS COMPASS">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icon references -->
+    <link rel="icon" type="image/png" sizes="1280x1280" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images//maskable_icon_x512.png?v=1.0.2">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x512.png?v=1.0.2">
+
+    <!-- For Windows -->
+    <meta name="msapplication-TileImage" content="/images/test1.png?v=1.0.2">
+    <meta name="msapplication-TileColor" content="#007bff">
+
+    <!-- Schema.org Structured Data for AI Optimization -->
+    
+
+    <!-- Article Schema for content pages -->
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Importance Sampling",
+      "description": "Introduction to importance sampling for efficient Monte Carlo estimation with applications in modern AI and machine learning.",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "author": {
+        "@type": "Person",
+        "name": "Yusuke Yokota",
+        "jobTitle": "Mathematics & Computer Science Educator",
+        "knowsAbout": [
+          "Linear Algebra",
+          "Machine Learning",
+          "Computer Science",
+          "Mathematics"
+        ]
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MATH-CS COMPASS",
+        "url": "https://yusukey01.github.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yusukey01.github.io/images/maskable_icon_x512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yusukey01.github.io/Mathematics/Probability/importance_sampling.html"
+      },
+      "about": [
+        
+        { "@type": "Thing", "name": "Probability" },
+        { "@type": "Thing", "name": "Statistics" }
+        
+      ],
+      "educationalLevel": "university",
+      "learningResourceType": "tutorial",
+      "educationalUse": "instruction"
+    }
+    </script>
+    
+</head>
+
+<body>
+    <header>
+    <nav class="navbar">
+        <!-- Logo as Home Button -->
+        <div class="logo-home">
+            <a href="../../../index.html" 
+               class="logo-link " 
+               title="Home - Math-CS Compass">
+                <img src="../../images/icon_x512.png" 
+                     alt="Math-CS Compass Logo" 
+                     class="nav-logo">
+            </a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search keywords...">
+            <button id="search-button" aria-label="Search" title="Search website"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="../Linear_algebra/linear_algebra.html" >I - Linear Algebra to Algebraic Foundations</a></li>
+            
+            <li><a href="../Calculus/calculus.html" >II - Calculus to Optimization & Analysis</a></li>
+            
+            <li><a href="../Probability/probability.html" class="active">III - Probability & Statistics</a></li>
+            
+            <li><a href="../Discrete/discrete_math.html" >IV - Discrete Mathematics & Algorithms</a></li>
+            
+            <li><a href="../Machine_learning/ml.html" >V - Machine Learning</a></li>
+        </ul>
+    </nav>
+</header>
+    
+    <!DOCTYPE html>
+<html>
+    <body>
+        <!-- Meta script for importance_sampling.html -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Importance Sampling",
+        "description": "Introduction to importance sampling for efficient Monte Carlo estimation with applications in modern AI and machine learning.",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Importance Sampling" },
+            { "@type": "Thing", "name": "Direct Importance Sampling" },
+            { "@type": "Thing", "name": "Self-Normalized Importance Sampling" },
+            { "@type": "Thing", "name": "Annealed Importance Sampling" },
+            { "@type": "Thing", "name": "AIS" },
+            { "@type": "Thing", "name": "Importance Weights" },
+            { "@type": "Thing", "name": "Proposal Distribution" },
+            { "@type": "Thing", "name": "Target Distribution" },
+            { "@type": "Thing", "name": "Monte Carlo Methods" },
+            { "@type": "Thing", "name": "Variance Reduction" },
+            { "@type": "Thing", "name": "RLHF" },
+            { "@type": "Thing", "name": "Off-Policy Learning" },
+            { "@type": "Thing", "name": "Variational Inference" },
+            { "@type": "Thing", "name": "Bayesian Inference" },
+            { "@type": "Thing", "name": "Normalizing Constant" },
+            { "@type": "Thing", "name": "Partition Function" }
+        ],
+        "teaches": [
+            "Importance sampling fundamentals",
+            "Direct and self-normalized importance sampling",
+            "Annealed importance sampling",
+            "Applications to modern AI"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Probability & Statistics",
+            "description": "Explore fundamental concepts of probability and statistics essential for machine learning",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "III",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT2H30M",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <!-- WebApplication Schema for Interactive Tools -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Importance Sampling Interactive Tool",
+        "description": "Interactive tool for exploring importance sampling concepts with real-time visualizations and computational examples",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://yusukey01.github.io/Mathematics/Probability/importance_sampling.html",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota"
+        },
+        "applicationSubCategory": "Mathematical Computation Tool",
+        "featureList": [
+            "Interactive mathematical visualization",
+            "Real-time parameter adjustment",
+            "Educational demonstrations",
+            "Statistical computation",
+            "Importance sampling simulation",
+            "Variance comparison",
+            "AIS demonstration"
+        ],
+        "isAccessibleForFree": true,
+        "educationalUse": "instruction",
+        "educationalLevel": "university"
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name">Importance Sampling
+            </h1>
+        </div>
+
+        
+  <div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section III Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>Probability & Statistics</h3>
+      <div class="quick-jump-links">
+
+         
+        <a href="probability.html">← Back to Section III Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        
+        
+        <a href="basic.html" >Part 1: Basic Probability Ideas</a>
+        <a href="random_variables.html" >Part 2: Random Variables</a>
+        <a href="gamma.html" >Part 3: Gamma & Beta Distribution</a>
+        <a href="gaussian.html" >Part 4: Normal (Gaussian) Distribution</a>
+        <a href="student.html" >Part 5: Student's t-Distribution</a>
+        <a href="covariance.html" >Part 6: Covariance</a>
+        <a href="correlation.html" >Part 7: Correlation</a>
+        <a href="mvn.html" >Part 8: Multivariate Distributions</a>
+        <a href="mle.html" >Part 9: Maximum Likelihood Estimation</a>
+        <a href="hypothesis_testing.html" >Part 10: Statistical Inference & Hypothesis Testing</a>
+        <a href="linear_regression.html" >Part 11: Linear Regression</a>
+        <a href="entropy.html" >Part 12: Entropy</a>
+        <a href="convergence.html" >Part 13: Convergence</a>
+        <a href="bayesian.html" >Part 14: Intro to Bayesian Statistics</a>
+        <a href="expfamily.html" >Part 15: The Exponential Family</a>
+        <a href="fisher_info.html" >Part 16: Fisher Information Matrix</a>
+        <a href="decision_theory.html" >Part 17: Bayesian Decision Theory</a>
+        <a href="markov.html" >Part 18: Markov Chains</a>
+        <a href="monte_carlo.html" >Part 19: Monte Carlo Methods</a>
+        <a href="importance_sampling.html" >Part 20: Importance Sampling</a>
+        <a href="gaussian_process.html" >Part 21: Gaussian Processes</a>
+      </div>
+    </div>
+</div>
+
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#direct">Direct Importance Sampling</a>
+            <a href="#selfnorm">Self-Normalized IS</a>
+            <a href="#ais">Annealed Importance Sampling</a>
+            <a href="#diagnostics">Diagnostics and Debugging</a>
+        </div> 
+
+        <div class="container">  
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+                
+                <p>
+                    <strong>Importance sampling</strong> is a fundamental Monte Carlo technique for estimating expectations under one probability 
+                    distribution by sampling from a different, more convenient distribution. This approach addresses two critical challenges in 
+                    computational statistics and machine learning when:
+                    <ul style="padding-left: 40px;">
+                        <li>direct sampling from the target distribution is difficult or impossible.</li>
+                        <li>we want to focus computational resources on the most "important" regions of the distribution.</li>
+                    </ul>
+                </p>
+
+                <p>
+                    Suppose we want to compute the expectation of a <strong>target function</strong> \(\varphi(\mathbf{x})\) under a 
+                    <strong>target distribution</strong> \(\pi(\mathbf{x})\):
+                    \[
+                    I = \mathbb{E}_{\pi}[\varphi(\mathbf{x})] = \int \varphi(\mathbf{x}) \pi(\mathbf{x}) \, d\mathbf{x}
+                    \]
+                </p>
+                <p>
+                    Standard <a href="monte_carlo.html"><strong>Monte Carlo estimation</strong></a> would draw independent samples 
+                    \(\mathbf{x}_1, \ldots, \mathbf{x}_n \sim \pi(\mathbf{x})\) and approximate:
+                    \[
+                    I \approx \hat{I}_{\text{MC}} = \frac{1}{N_s} \sum_{n=1}^{N_s} \varphi(\mathbf{x}_n).
+                    \]
+                </p>
+                <p>
+                    However, this approach fails when:
+                    <ul style="padding-left: 40px;">
+                        <li>Sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible</li>
+                        <li>The normalizing constant of \(\pi(\mathbf{x})\) is unknown (common in <a href="bayesian.html"><strong>Bayesian inference</strong></a>)</li>
+                        <li>\(\varphi(\mathbf{x})\) has large values only in regions where \(\pi(\mathbf{x})\) has low probability (rare events)</li>
+                    </ul>
+                </p>
+
+                <p>
+                    <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
+                    (or <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples 
+                    to account for the distribution mismatch.
+                </p>
+
+                <p>
+                    Importance sampling has become essential in modern AI, particularly in the following domains:
+                </p>
+
+                <h4><strong>1. <a href="..\Machine_learning\intro_RL.html"><strong>Reinforcement Learning</strong></a> from Human Feedback (RLHF)</strong></h4>
+                <p>
+                    Modern large language models (LLMs) like ChatGPT are fine-tuned using RLHF, which fundamentally relies on 
+                    importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to 
+                    enable multiple gradient updates from the same batch of collected data:
+                    \[
+                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\min\left(\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a), \text{clip}\left(\frac{\pi_\theta(a|s)}{\mu(a|s)}, 1-\epsilon, 1+\epsilon\right) A(s,a)\right)\right]
+                    \]
+                    where \(\mu\) is the behavior policy (data collection policy) and \(\pi_\theta\) is the current policy being optimized. 
+                    The importance ratio \(\pi_\theta/\mu\) allows us to reuse data collected under \(\mu\) for multiple updates 
+                    to \(\pi_\theta\). PPO's clipping mechanism (typically with \(\epsilon = 0.2\)) prevents this ratio from becoming 
+                    too large, ensuring stable training. Without importance sampling, we would need fresh on-policy data after 
+                    every gradient step, making RLHF computationally prohibitive.
+                </p>
+
+                <h4><strong>2. Off-Policy Reinforcement Learning</strong></h4>
+                <p>
+                    In robotics, autonomous systems, and game AI, collecting on-policy data can be dangerous or expensive. Importance sampling 
+                    enables learning from historical data, human demonstrations, or safer exploration policies. This is crucial for algorithms 
+                    like Soft Actor-Critic (SAC), Conservative Q-Learning (CQL), and offline RL methods.
+                </p>
+
+                <h4><strong>3. Variational Inference and Deep Generative Models</strong></h4>
+                <p>
+                    Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter bounds on the evidence lower bound (ELBO), 
+                    leading to better generative models and more accurate uncertainty estimates in Bayesian deep learning.
+                </p>
+
+                <h4><strong>4. Imbalanced Data and Rare Events</strong></h4>
+                <p>
+                    In applications like fraud detection, medical diagnosis of rare diseases, and AI safety, the events we care most about 
+                    are extremely rare. Importance sampling allows us to oversample these critical cases and reweight appropriately, ensuring 
+                    models do not ignore rare but important scenarios.
+                </p>
+
+                <h4><strong>5. Computing Normalizing Constants</strong></h4>
+                <p>
+                    Many probabilistic models in AI (Boltzmann machines, energy-based models, certain Bayesian posteriors) have intractable 
+                    normalizing constants. Importance sampling, particularly <strong>annealed importance sampling</strong>, provides practical methods to 
+                    estimate these constants, which is essential for model comparison and learning.
+                </p>
+
+                <p>
+                    The critical insight is that importance sampling enables <strong>sample efficiency</strong>: in an era where data collection 
+                    and computation are expensive, the ability to reuse and reweight existing data rather than collecting new samples is invaluable. 
+                    This makes importance sampling one of the foundational techniques enabling practical, scalable AI systems.
+                </p>
+            </section>
+
+            <section id="direct" class="section-content">
+                <h2>Direct Importance Sampling</h2>
+                
+                <p>
+                    The key mathematical insight behind importance sampling is the change of measure. We can rewrite the expectation under 
+                    the target distribution \(\pi(\mathbf{x})\) as an expectation under some proposal distribution \(q(\mathbf{x})\):
+                    \[
+                    \begin{align*}
+                    I &= \int \varphi(\mathbf{x}) \pi(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \int \varphi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})} q(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \mathbb{E}_{q}\left[\varphi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})}\right]
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    This identity holds for any \(q(\mathbf{x})\) that satisfies the support condition: 
+                    \(q(\mathbf{x}) > 0\) whenever \(\pi(\mathbf{x}) \neq 0\).
+                </p>
+                <p>
+                    The ratio
+                    \[
+                    \tilde{w}_n = \frac{\pi(\mathbf{x})}{q(\mathbf{x})}
+                    \]
+                    is called the <strong>importance weights</strong>. It measures how much more (or less) likely \(\mathbf{x}\) is under the target 
+                    distribution \(\pi\) compared to the proposal distribution \(q\). Note that while \(\pi\) and \(q\) are normalized 
+                    distributions, the weights \(\tilde{w}_n\) do not sum to any particular value.
+                </p>
+                <p>
+                    Assume that the normalized \(\pi (\mathbf{x})\) can be evaluated, but we are not able to sample from it. 
+                    If we draw \(N_s\) samples, \(\mathbf{x}_n \sim q(\mathbf{x})\), the <strong>direct importance sampling estimator</strong> is:
+                    \[
+                    \mathbb{E}[\varphi(\mathbf{x})] \approx \hat{I}_{\text{IS}} = \frac{1}{N_s} \sum_{n=1}^{N_s} \tilde{w}_n \varphi(x_n).
+                    \]
+                </p>
+                <p>
+                    This estimator is <strong>unbiased</strong>:
+                    \[
+                    \begin{align*}
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \mathbb{E}_q\left[\frac{1}{N_s}\sum_{n=1}^{N_s} \tilde{w}_n(\mathbf{x}_n)\varphi(\mathbf{x}_n)\right] \\\\
+                                                      &= \mathbb{E}_q[\tilde{w}_n(\mathbf{x})\varphi(\mathbf{x})] \\\\
+                                                      &= I
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    While the estimator is unbiased, its variance depends critically on the choice of \(q\):
+                    \[
+                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\left(\mathbb{E}_q[\tilde{w}_n^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
+                    \]
+                </p>
+                <p>
+                    If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
+                    This is quantified by the <strong>effective sample size (ESS)</strong>, which measures the number of independent 
+                    samples that would provide the same statistical efficiency as the current weighted sample. The ESS can be computed 
+                    in two equivalent ways:
+                </p>
+                <p>
+                    <strong>Using unnormalized weights \(\tilde{w}_n\):</strong>
+                    \[
+                    \text{ESS} = \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} \tilde{w}_n^2}
+                    \]
+                </p>
+                <p>
+                    <strong>Using normalized weights \(W_n = \tilde{w}_n / \sum_{n'=1}^{N_s} \tilde{w}_{n'}\):</strong>
+                    \[
+                    \text{ESS} = \frac{1}{\sum_{n=1}^{N_s} W_n^2}
+                    \]
+                </p>
+                <p>
+                    These formulas are mathematically equivalent. The ESS ranges from 1 (maximum degeneracy, where all weight 
+                    concentrates on one sample) to \(N_s\) (no degeneracy, where all weights are equal). A good rule of thumb is 
+                    that if \(\text{ESS} < N_s/2\), the proposal distribution \(q(\mathbf{x})\) should be reconsidered, as this 
+                    indicates that many samples have negligible contribution to the estimate.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Requirements for Direct Importance Sampling</span>
+                    For direct importance sampling to be valid and practical:
+                     <ul>
+                        <li><strong>Support condition</strong>: \(q(\mathbf{x}) > 0\) whenever \(\pi(\mathbf{x}) > 0\)</li>
+                        <li><strong>Normalization</strong>: Both \(\pi(\mathbf{x})\) and \(q(\mathbf{x})\) must be properly normalized probability distributions</li>
+                        <li><strong>Evaluability</strong>: We must be able to evaluate \(\pi(\mathbf{x})\) and \(q(\mathbf{x})\) for any \(\mathbf{x}\)</li>
+                        <li><strong>Sampling</strong>: We must be able to draw samples from \(q(\mathbf{x})\) efficiently</li>
+                    </ul>
+                </div>
+
+            </section>
+
+            <section id="selfnorm" class="section-content">
+                <h2>Self-Normalized Importance Sampling</h2>
+                
+                <p>
+                    In many practical applications, we can only evaluate the <strong>unnormalized target distribution</strong>:
+                    \[
+                    \tilde{\gamma}(\mathbf{x}) = Z \pi(\mathbf{x})
+                    \]
+                    where the normalization constant
+                    \[
+                    Z = \int \tilde{\gamma}(\mathbf{x})d\mathbf{x}
+                    \]
+                    is unknown or intractable. This situation is ubiquitous in Bayesian inference (where \(Z\) is the marginal 
+                    likelihood), energy-based models (where \(Z\) is the partition function), and many other machine learning applications.
+                </p>
+
+                <p>
+                    <strong>Self-normalized importance sampling (SNIS)</strong> addresses this by working with unnormalized weights 
+                    and normalizing them within the estimator itself. We can rewrite the expectation as a ratio of two integrals:
+                    \[
+                    \begin{align*}
+                    \mathbb{E}[\varphi(\mathbf{x})] &= \int \varphi(\mathbf{x}) \pi(\mathbf{x})d\mathbf{x} \\\\
+                                                    &= \frac{\int \varphi(\mathbf{x})\tilde{\gamma}(\mathbf{x})d\mathbf{x}}
+                                                            {\int \tilde{\gamma}(\mathbf{x})d\mathbf{x}} \\\\
+                                                    &= \frac{\int \varphi(\mathbf{x})\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}}
+                                                            {\int \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}} \\\\
+                                                    &= \frac{\mathbb{E}_{q}\left[\varphi(\mathbf{x}) \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
+                                                            {\mathbb{E}_{q}\left[\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    Sampling \(\mathbf{x}_n \sim q(\mathbf{x})\) for \(n = 1, \ldots, N_s\), we define the <strong>unnormalized importance weights</strong>:
+                    \[
+                    \tilde{w}_n = \frac{\tilde{\gamma}(\mathbf{x}_n)}{q(\mathbf{x}_n)}
+                    \]
+                    The <strong>self-normalized importance sampling estimator</strong> approximates both the numerator and denominator:
+                    \[
+                    \mathbb{E}[\varphi(\mathbf{x})] \approx \hat{I}_{\text{SNIS}} = \frac{\sum_{n=1}^{N_s} \tilde{w}_n\varphi(\mathbf{x}_n)}
+                                                                                        {\sum_{n=1}^{N_s}\tilde{w}_n}
+                                                            = \sum_{n=1}^{N_s} W_n \varphi(\mathbf{x}_n)
+                    \]
+                    where \(W_n = \tilde{w}_n/\sum_{n'=1}^{N_s}\tilde{w}_{n'}\) are the normalized weights introduced in the previous section.
+                </p>
+
+                <p>
+                    This estimator is <strong>biased</strong> for finite \(N_s\) because it involves a ratio of random variables, 
+                    but it is <strong>consistent</strong>: as \(N_s \to \infty\), the bias vanishes and the estimator converges 
+                    almost surely to the true expectation.
+                </p>
+
+                <p>
+                    Despite the bias, SNIS is the standard approach in practice for several important reasons. 
+                    Most importantly, it only requires evaluating unnormalized densities \(\tilde{\gamma}(\mathbf{x})\) 
+                    and \(q(\mathbf{x})\), making it applicable when the normalization constant \(Z\) is intractable—a 
+                    common situation in Bayesian inference, energy-based models, and many machine learning applications. 
+                    While SNIS can have a positive effect on the dispersion (variance) of the estimator in certain cases, 
+                    it does not universally reduce variance compared to direct importance sampling. The key advantage is 
+                    practical: SNIS enables estimation when direct importance sampling is impossible due to unknown 
+                    normalization constants.
+                </p>
+
+            </section>
+
+            <section id="ais" class="section-content">
+                <h2>Annealed Importance Sampling (AIS)</h2>
+                <p>
+                    When the target distribution and proposal distribution have substantial distributional mismatch, 
+                    importance sampling often fails due to extremely high variance in the importance weights. 
+                    Most samples from the proposal will have near-zero weight under the target, while a few rare samples 
+                    will have enormous weights — a phenomenon known as <strong>weight degeneracy</strong>. 
+                    This leads to a low effective sample size, meaning that despite drawing many samples, 
+                    few actually contribute meaningfully to the estimate, making the results unreliable. 
+                    <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
+                    of intermediate distributions that smoothly bridge the gap between the proposal and target distributions, 
+                    dramatically reducing variance while maintaining unbiasedness.
+                </p>
+
+                <p>
+                    Suppose we wish to sample from a complicated target distribution:
+                    \[
+                    p_0(\mathbf{x}) \propto f_0(\mathbf{x}),
+                    \]
+                    where sampling is difficult because \(p_0\) may be high-dimensional and/or multimodal.
+                </p>
+                <p>
+                    Suppose that we have a proposal distribution from which we can easily sample (e.g., prior distribution): 
+                    \[
+                    p_n(\mathbf{x}) \propto f_n(\mathbf{x}).
+                    \]
+                    We construct a sequence of \(n+1\) intermediate distributions moving from \(p_n\) to \(p_0\) as follows:
+                    \[
+                    f_j (\mathbf{x}) = f_0(\mathbf{x})^{\beta_j}f_n(\mathbf{x})^{1 - \beta_j}
+                    \]
+                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong>.
+                    Each \(\beta_j\) acts as an inverse temperature parameter interpolating between the proposal and the target.
+                </p>
+
+                <p>
+                    Typical schedules include:
+                    <ul style="padding-left: 40px;">
+                    <li><strong>Linear</strong>: \(\beta_j = \frac{n - j}{n}\)</li>
+                    <li><strong>Geometric</strong>: \(\beta_j = \left( \frac{n - j}{n} \right)^{\alpha}\), for some \(\alpha > 0\)</li>
+                    <li><strong>Adaptive</strong>: chosen to maintain approximately constant effective sample size (ESS) between steps</li>
+                    </ul>
+                </p>
+                   
+                <p>
+                    To sample from each intermediate distribution \(p_j\), we use a <a href="markov.html"><strong>Markov chain transition kernel</strong></a>:
+                    \[
+                    T_j(\mathbf{x}, \mathbf{x}') = p_j(\mathbf{x}' \mid \mathbf{x})
+                    \]
+                    which leaves \(p_j\) invariant, i.e.,
+                    \[
+                    \int p_j(\mathbf{x})T_j(\mathbf{x}, \mathbf{x}')d\mathbf{x} = p_j(\mathbf{x}').
+                    \]
+                    Common choices for \(T_j\) include Metropolis-Hastings or Hamiltonian Monte Carlo, 
+                    applied for a few iterations to adapt samples toward \(p_j\).
+                </p>
+
+                <p>
+                    The AIS procedure proceeds as follows:
+                    <ol style="padding-left: 40px;">
+                    <li>Sample \(\mathbf{v}_n \sim p_n\) from the proposal distribution.</li>
+                    <li>Apply successive Markov transitions to obtain \(\mathbf{v}_0\):
+                        \[
+                        \mathbf{v}_{n-1} \sim T_{n-1}(\mathbf{v}_n, \cdot), \quad
+                        \mathbf{v}_{n-2} \sim T_{n-2}(\mathbf{v}_{n-1}, \cdot), \; \ldots, \;
+                        \mathbf{v}_0 \sim T_0(\mathbf{v}_1, \cdot).
+                        \]
+                    </li>
+                    </ol>
+                    Each AIS run yields a trajectory 
+                    \((\mathbf{v}_n, \mathbf{v}_{n-1}, \ldots, \mathbf{v}_0)\)
+                    with an associated importance weight:
+                    \[
+                    w = 
+                    \frac{f_{n-1}(\mathbf{v}_{n-1})}{f_n(\mathbf{v}_{n-1})}
+                    \frac{f_{n-2}(\mathbf{v}_{n-2})}{f_{n-1}(\mathbf{v}_{n-2})}
+                    \cdots
+                    \frac{f_1(\mathbf{v}_1)}{f_2(\mathbf{v}_1)}
+                    \frac{f_0(\mathbf{v}_0)}{f_1(\mathbf{v}_0)}. \tag{1}
+                    \]
+                </p>
+
+                <p>
+                    Each ratio is typically close to 1, which keeps the weights stable and reduces variance. 
+                </p>
+
+                 <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Consider the distribution on an extended state space 
+                        \(\mathbf{v} = (\mathbf{v}_0, \ldots, \mathbf{v}_n)\):
+                        \[
+                        \begin{align*}
+                        p(\mathbf{v}) &\propto \varphi(\mathbf{v}) = f_0(\mathbf{v})\tilde{T}_0 (\mathbf{v}_0, \mathbf{v}_1) \\\\
+                                    &\propto p(\mathbf{v}_0)p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}) 
+                        \end{align*}
+                        \]
+                        where \(\tilde{T}_j\) is the reversal of \(T_j\):
+                        \[
+                        \begin{align*}
+                        \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v})p_j(\mathbf{v}') / p_j(\mathbf{v}) \\\\
+                                                            &=  T_j(\mathbf{v}', \mathbf{v})f_j(\mathbf{v}') / f_j(\mathbf{v})
+                        \end{align*}
+                        \]
+                        The invariance of \(p_j\) with respect to \(T_j\) ensures that these are valid transition probabilities. 
+                        It is clear that
+                        \[
+                        \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = f_0(\mathbf{v}_0),
+                        \]
+                        and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(p_0(\mathbf{x})\). 
+                    </p>
+                    <p>
+                        Moreover, we can sample on this extended state space using the AIS procedure, which corresponds to 
+                        the following proposal:
+                        \[
+                        \begin{align*}
+                        q(\mathbf{v}) &\propto g(\mathbf{v}) = f_n(\mathbf{v}_n)T_{n-1}(\mathbf{v_n}, \mathbf{v}_{n-1})\cdots T_2(\mathbf{v}_2, \mathbf{v}_1)T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
+                                    &\propto p(\mathbf{v}_n)p(\mathbf{v}_{n-1} \mid \mathbf{v}_n)\cdots p(\mathbf{v}_1 \mid \mathbf{v}_0).
+                        \end{align*}
+                        \]
+                        One can show that importance weights:
+                        \[
+                        w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
+                        \]
+                        are given by Equation (1). Since marginals of the sampled sequences from this extended model are equivalent to 
+                        samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
+                    </p>
+                 </div>
+
+                <p>
+                     A key application of AIS is to estimate the ratio of partition functions. Since
+                    \[
+                    Z_0 = \int f_0 (\mathbf{x})d\mathbf{x} = \int \varphi(\mathbf{v})d\mathbf{v}
+                    \]
+                    and
+                    \[
+                    Z_n =  \int f_n (\mathbf{x})d\mathbf{x} = \int g(\mathbf{v})d\mathbf{v}
+                    \]
+                    we have: 
+                    \[
+                    \begin{align*}
+                    \frac{Z_0}{Z_n} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\\\
+                                    &= \frac{\int \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}g(\mathbf{v})d\mathbf{v}} {\int g(\mathbf{v})d\mathbf{v}} \\\\
+                                    &= \mathbb{E}_g \left[ \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}\right] \\\\
+                                    &\approx \frac{1}{S}\sum_{s=1}^S W_s.
+                    \end{align*}
+                    \]
+                    where \(W_s = \varphi(\mathbf{v}_s) / g(\mathbf{v}_s)\), and and \(S\) is the number of independent AIS runs.
+                </p>
+
+                <p>
+                    If \(f_0\) represents a prior and \(f_n\) the posterior, we can estimate the model evidence (marginal likelihood) \(Z_n = p(\mathcal{D})\) using the above equation, 
+                    provided the normalization constant \(Z_0\) of the prior is known.
+                </p>
+
+                <p>
+                    The variance of AIS can be reduced by increasing the number of intermediate distributions \(n\). In practice, 
+                    \(n = 100\) to \(n = 10000\) steps is common. The optimal choice balances computational cost (proportional to \(n\)) 
+                    against variance reduction. For example, <strong>TensorFlow Probability</strong> uses 1000 steps as default.
+                </p>
+
+                <p>
+                    When implementing AIS in practice, several considerations can dramatically impact performance:
+                </p>
+
+                <h4><strong>1. Choosing the Annealing Schedule</strong></h4>
+                <p>
+                    The choice of \(\{\beta_j\}\) is crucial. Recent research suggests:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Moment matching</strong>: Choose \(\beta_j\) such that the second moments of successive distributions are approximately equal</li>
+                        <li><strong>Constant ESS</strong>: Adapt \(\beta_j\) to maintain ESS \(\approx 0.8 \times N_s\) between steps</li>
+                        <li><strong>Sigmoid schedules</strong>: \(\beta_j = \sigma(a(2j/n - 1))\) where \(\sigma\) is the sigmoid function and \(a\) controls steepness</li>
+                    </ul>
+                </p>
+
+                <h4><strong>2. Transition Kernels</strong></h4>
+                <p>
+                    The choice and tuning of \(T_j\) significantly affects efficiency:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Hamiltonian Monte Carlo (HMC)</strong>: Often most effective for continuous distributions, especially in high dimensions</li>
+                        <li><strong>Number of MCMC steps</strong>: Usually 1-10 steps per temperature is sufficient; more steps increase cost with diminishing returns</li>
+                        <li><strong>Step size adaptation</strong>: Crucial for HMC; can be adapted based on acceptance rate at each temperature</li>
+                    </ul>
+                </p>
+
+                <h4><strong>3. Modern Applications in Deep Learning</strong></h4>
+                <p>
+                    AIS has become particularly important in deep learning for:
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Evaluating generative models</strong>: Estimating log-likelihoods of VAEs, normalizing flows, and energy-based models</li>
+                        <li><strong>Bayesian deep learning</strong>: Computing model evidence for neural network architectures</li>
+                        <li><strong>Differentiable AIS</strong>: Recent work enables gradient-based optimization through AIS estimates using techniques like the reparameterization trick</li>
+                    </ul>
+                </p>
+
+                    
+             </section>
+
+             <section id="diagnostics" class="section-content">
+            <h2>Diagnostics and Debugging</h2>
+            
+            <p>
+                Importance sampling can fail silently, producing estimates with high bias or variance. 
+                Here are essential diagnostics to monitor:
+            </p>
+            
+            <h3>1. Weight Diagnostics</h3>
+            <div class="theorem">
+                <span class="theorem-title">Key Diagnostic Metrics</span>
+                <ul>
+                    <li><strong>Effective Sample Size (ESS)</strong>: Should be \(> N_s/2\) for reliable estimates</li>
+                    <li><strong>Maximum weight ratio</strong>: \(\max_i W_i\) should be \(< 0.1\) to avoid single-sample domination</li>
+                    <li><strong>Coefficient of variation</strong>: \(\text{CV} = \frac{\text{std}(\tilde{w})}{\text{mean}(\tilde{w})}\) should be \(< 1\) for stable estimation</li>
+                    <li><strong>Weight entropy</strong>: \(H(W) = -\sum_i W_i \log W_i\) measures weight uniformity (higher is better)</li>
+                </ul>
+            </div>
+            
+            <h3>2. Common Failure Modes and Solutions</h3>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Symptom</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Likely Cause</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Solution</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">ESS ≪ \(N_s\)</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Poor proposal choice</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Use heavier-tailed proposal or AIS</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">High variance across runs</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Weight degeneracy</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Increase samples or improve proposal</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Biased estimates</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Violated support condition</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Ensure \(q(\mathbf{x}) > 0\) wherever \(\pi(\mathbf{x}) > 0\)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Numerical instability</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Extreme weight ratios</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Work in log-space; use log-sum-exp trick</td>
+                </tr>
+            </table>
+            
+            <h3>3. Validation Techniques</h3>
+            <p>
+                To verify your importance sampling implementation:
+            </p>
+            <ul style="padding-left: 40px;">
+                <li><strong>Known ground truth</strong>: Test on problems with analytical solutions</li>
+                <li><strong>Convergence check</strong>: Estimate should stabilize as \(N_s\) increases</li>
+                <li><strong>Multiple proposals</strong>: Different valid proposals should give consistent estimates</li>
+                <li><strong>Bootstrap confidence intervals</strong>: Resample weights to assess uncertainty</li>
+            </ul>
+        </section>
+            
+        </div>
+
+        <script src="/js/main.js"></script>
+
+    </body>
+</html>
+    
+    <footer>
+    <div class="footer-content">
+        <div class="footer-about">
+            <h3>About MATH-CS COMPASS</h3>
+            <p>Bridging the gap between pure mathematics and computer science applications.</p>
+            <div class="contact-section">
+                <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3_RNkegREvfCEIQznn6SCaf-iB5c-Doxn7Ymuu78Uf-PBjg/viewform" target="_blank">
+                    Submit Your Questions & Feedback <i class="fas fa-external-link-alt"></i>
+                </a></strong>
+            </div>
+        </div>
+        <div class="footer-links">
+            <h3>Quick Links</h3>
+            <ul>
+                
+                <li><a href="../../../index.html">Home</a></li>
+                <li>
+                <a href="../Linear_algebra/linear_algebra.html">
+                    <span class="nav-number">I</span>
+                    <span>Linear Algebra to Algebraic Foundations</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Calculus/calculus.html">
+                    <span class="nav-number">II</span>
+                    <span>Calculus to Optimization & Analysis</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Probability/probability.html">
+                    <span class="nav-number">III</span>
+                    <span>Probability & Statistics</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Discrete/discrete_math.html">
+                    <span class="nav-number">IV</span>
+                    <span>Discrete Mathematics & Algorithms</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Machine_learning/ml.html">
+                    <span class="nav-number">V</span>
+                    <span>Machine Learning</span>
+                </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-social">
+            <h3>Connect With Me</h3>
+            <p>
+                <a href="https://x.com/MathCSCompass?t=Zi8nyfzszeFw8QizbJwnNg&s=09" target="_blank">
+                    <i class="fab fa-x-twitter"></i> X (Twitter)
+                </a>
+            </p>
+            <p>
+                <a href="https://www.facebook.com/share/15uPaBWgQN/" target="_blank">
+                    <i class="fab fa-facebook"></i> Facebook
+                </a>
+            </p>
+      
+            <h3>MATH-CS COMPASS App</h3>
+            <div class="app-download-footer">
+                <a href="https://play.google.com/store/apps/details?id=io.github.yusukey01.twa" target="_blank" rel="noopener">
+                    <img src="../../../images/google-play-badge.png" 
+                        alt="Get it on Google Play" 
+                        class="google-play-badge">
+                </a>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024-2025 MATH-CS COMPASS. All rights reserved.</p>
+    </div>
+</footer>
+    <script src="../../../js/main.js?v=1.0.2"></script>
+    <script src="../../../js/search.js?v=1.0.2"></script>
+    
+
+    <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/js/service-worker.js')
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
+</body>
+</html>

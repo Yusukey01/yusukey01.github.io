@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>Automatic Differentiation - MATH-CS COMPASS</title>
+    
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff" as="font" type="font/woff2" crossorigin>
+    
+    
+    
+
+    <link rel="stylesheet" href="../../../css/styles.css?v=1.0.2">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Learn about the automatic differentiation with analytic examples.">
+    <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color for Chrome, Android, and other browsers -->
+    <meta name="theme-color" content="#007bff">
+  
+    <!-- iOS specific tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MATH-CS COMPASS">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icon references -->
+    <link rel="icon" type="image/png" sizes="1280x1280" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images//maskable_icon_x512.png?v=1.0.2">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x512.png?v=1.0.2">
+
+    <!-- For Windows -->
+    <meta name="msapplication-TileImage" content="/images/test1.png?v=1.0.2">
+    <meta name="msapplication-TileColor" content="#007bff">
+
+    <!-- Schema.org Structured Data for AI Optimization -->
+    
+
+    <!-- Article Schema for content pages -->
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Automatic Differentiation",
+      "description": "Learn about the automatic differentiation with analytic examples.",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "author": {
+        "@type": "Person",
+        "name": "Yusuke Yokota",
+        "jobTitle": "Mathematics & Computer Science Educator",
+        "knowsAbout": [
+          "Linear Algebra",
+          "Machine Learning",
+          "Computer Science",
+          "Mathematics"
+        ]
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MATH-CS COMPASS",
+        "url": "https://yusukey01.github.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yusukey01.github.io/images/maskable_icon_x512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yusukey01.github.io/Mathematics/Machine_learning/autodiff.html"
+      },
+      "about": [
+        
+        { "@type": "Thing", "name": "Machine Learning" },
+        { "@type": "Thing", "name": "Artificial Intelligence" }
+        
+      ],
+      "educationalLevel": "university",
+      "learningResourceType": "tutorial",
+      "educationalUse": "instruction"
+    }
+    </script>
+    
+</head>
+
+<body>
+    <header>
+    <nav class="navbar">
+        <!-- Logo as Home Button -->
+        <div class="logo-home">
+            <a href="../../../index.html" 
+               class="logo-link " 
+               title="Home - Math-CS Compass">
+                <img src="../../images/icon_x512.png" 
+                     alt="Math-CS Compass Logo" 
+                     class="nav-logo">
+            </a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search keywords...">
+            <button id="search-button" aria-label="Search" title="Search website"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="../Linear_algebra/linear_algebra.html" >I - Linear Algebra to Algebraic Foundations</a></li>
+            
+            <li><a href="../Calculus/calculus.html" >II - Calculus to Optimization & Analysis</a></li>
+            
+            <li><a href="../Probability/probability.html" >III - Probability & Statistics</a></li>
+            
+            <li><a href="../Discrete/discrete_math.html" >IV - Discrete Mathematics & Algorithms</a></li>
+            
+            <li><a href="../Machine_learning/ml.html" class="active">V - Machine Learning</a></li>
+        </ul>
+    </nav>
+</header>
+    
+    <!DOCTYPE html>
+<html>
+    <body> 
+        <!-- LearningResource Schema for Content Pages -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Automatic Differentiation",
+        "description": "Learn about the automatic differentiation with analytic examples.",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            
+            { "@type": "Thing", "name": "Automatic Differentiation" },
+            { "@type": "Thing", "name": "Backpropagation" },
+            { "@type": "Thing", "name": "Computational Graphs" },
+            { "@type": "Thing", "name": "Chain Rule" },
+            { "@type": "Thing", "name": "Reverse-Mode AD" },
+            { "@type": "Thing", "name": "Neural Networks" }
+            
+        ],
+        "teaches": [
+            "Mathematical concepts",
+            "Practical applications",
+            "Problem-solving techniques"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Machine Learning",
+            "description": "Explore machine learning ideas and applications with mathematical foundations",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "V",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT5H",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <!-- WebApplication Schema for Interactive Demos -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Automatic Differentiation Interactive Demo",
+        "description": "Interactive demonstration of automatic differentiation concepts",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://yusukey01.github.io/Mathematics/Machine_learning/autodiff.html",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota"
+        },
+        "applicationSubCategory": "Mathematical Visualization",
+        "featureList": [
+            "Interactive mathematical visualization",
+            "Real-time parameter adjustment",
+            "Educational demonstrations"
+        ],
+        "isAccessibleForFree": true,
+        "educationalUse": "instruction",
+        "educationalLevel": "university"
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name"> Automatic Differentiation</h1>
+        </div>
+
+        
+  <div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section V Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>Machine Learning</h3>
+      <div class="quick-jump-links">
+
+        
+        <a href="ml.html">← Back to Section V Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        
+        
+        <a href="intro_ml.html" >Part 1: Intro to Machine Learning</a>
+        <a href="regression.html" >Part 2: Regularized Regression</a>
+        <a href="intro_classification.html" >Part 3: Intro to Classification</a>
+        <a href="neural_networks.html" >Part 4: Neural Networks Basics</a>
+        <a href="autodiff.html" class="current-page">Part 5: Automatic Differentiation</a>
+        <a href="svm.html" >Part 6: Support Vector Machine (SVM)</a>
+        <a href="pca.html" >Part 7: Principal Component Analysis (PCA) & Autoencoders</a>
+        <a href="clustering.html" >Part 8: Clustering</a>
+        <a href="deep_nn.html" >Part 9: Intro to Deep Neural Networks</a>
+        <a href="intro_RL.html" >Part 10: Intro to Reinforcement Learning</a>
+        
+      </div>
+    </div>
+</div>
+
+
+        <div class="topic-nav">
+            <a href="#AD">Automatic Differentiation</a>
+            <a href="#eg">Analytic Example of Reverse-Mode AD</a>
+            <a href="#app">Applications of AD</a> 
+            <a href="#code">Sample Code</a>   
+        </div> 
+
+        <div class="container">  
+
+            <section id="AD" class="section-content">
+                <h2>Automatic Differentiation</h2>
+                <p>
+                    In multilayer perceptrons (MLPs), <strong>backpropagation</strong> is an efficient application of the chain rule to compute gradients layer by layer. 
+                    More generally, this technique is known as <strong>automatic differentiation (AD)</strong>. AD is not limited to sequential layers. It applies to arbitrary 
+                    <strong>computational graphs</strong>, which are directed acyclic graphs (DAGs) that represent how variables are computed from inputs to outputs.
+                </p>
+
+                <p>
+                    Automatic differentiation systematically applies the chain rule over this graph structure to compute exact derivatives. 
+                    In <strong>reverse-mode AD</strong> — which underlies backpropagation — we begin at the output node and work backwards, 
+                    accumulating gradients with respect to each variable.
+                </p>
+            </section>
+
+            <section id="eg" class="section-content">
+                <h2>Analytic Example of Reverse-Mode AD</h2>
+                <p>
+                    To make the process of automatic differentiation concrete, let's walk through an analytic example using a 
+                    composite scalar-valued function of two variables. We'll decompose the function into primitive operations, 
+                    represent it as a computational graph, and compute its gradients using <strong>reverse-mode automatic differentiation</strong> 
+                    (i.e., backpropagation).
+                </p>
+
+                
+                <p>
+                    <strong>Note:</strong> Backpropagation is the application of reverse-mode automatic differentiation to neural networks. While 
+                    the terms are often used interchangeably, "backpropagation" typically refers to the context of training neural networks with 
+                    scalar loss functions, whereas "reverse-mode AD" is the more general algorithmic framework that can handle vector-valued functions 
+                    as well.
+                </p>
+
+                <p>
+                    Consider the following function
+                    \[
+                    f(x_1, x_2) = \log \left((x_1 + x_2)^2 + \sin(x_1 x_2) \right).
+                    \]
+                    We decompose this into primitive operations:
+                    \[
+                    \begin{align*}
+                    &x_3 = x_1 + x_2 \\\\
+                    &x_4 = x_3^2 \\\\
+                    &x_5 = x_1 x_2 \\\\
+                    &x_6 = \sin(x_5) \\\\
+                    &x_7 = x_4 + x_6 \\\\
+                    &x_8 = \log(x_7) = f \\\\
+                    \end{align*}
+                    \]
+                </p>
+
+                <div style="max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <svg viewBox="0 0 800 650" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <!-- Arrow marker for forward pass -->
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#333" />
+                        </marker>
+                        
+                        <!-- Arrow marker for backward pass -->
+                        <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#e74c3c" />
+                        </marker>
+                        
+                        <!-- Gradient for nodes -->
+                        <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
+                        </linearGradient>
+                        
+                        <linearGradient id="inputGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#5cb85c;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#449d44;stop-opacity:1" />
+                        </linearGradient>
+                        
+                        <linearGradient id="outputGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#d9534f;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#c9302c;stop-opacity:1" />
+                        </linearGradient>
+                      </defs>
+                      
+                      <!-- Title -->
+                      <text x="400" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">
+                        Computational Graph for f(x₁, x₂) = log((x₁ + x₂)² + sin(x₁x₂))
+                      </text>
+                      
+                      <!-- Input nodes -->
+                      <g id="input-nodes">
+                        <circle cx="200" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="200" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₁</text>
+                        
+                        <circle cx="600" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="600" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₂</text>
+                      </g>
+                      
+                      <!-- Intermediate nodes -->
+                      <g id="intermediate-nodes">
+                        <!-- x3 = x1 + x2 -->
+                        <circle cx="400" cy="200" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="207" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₃</text>
+                        <text x="405" y="240" text-anchor="middle" font-size="14" fill="#333">x₁ + x₂</text>
+                        
+                        <!-- x5 = x1 * x2 -->
+                        <circle cx="400" cy="300" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="307" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₅</text>
+                        <text x="400" y="345" text-anchor="middle" font-size="14" fill="#333">x₁ × x₂</text>
+                        
+                        <!-- x4 = x3^2 -->
+                        <circle cx="300" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="300" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₄</text>
+                        <text x="295" y="445" text-anchor="middle" font-size="14" fill="#333">x₃²</text>
+                        
+                        <!-- x6 = sin(x5) -->
+                        <circle cx="500" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="500" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₆</text>
+                        <text x="500" y="445" text-anchor="middle" font-size="14" fill="#333">sin(x₅)</text>
+                        
+                        <!-- x7 = x4 + x6 -->
+                        <circle cx="400" cy="480" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="487" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₇</text>
+                        <text x="435" y="487" text-anchor="start" font-size="14" fill="#333">x₄ + x₆</text>
+                      </g>
+                      
+                      <!-- Output node -->
+                      <g id="output-node">
+                        <circle cx="400" cy="580" r="30" fill="url(#outputGradient)" stroke="#333" stroke-width="2"/>
+                        <text x="400" y="587" text-anchor="middle" font-size="16" font-weight="bold" fill="white">x₈ = f</text>
+                        <text x="400" y="625" text-anchor="middle" font-size="14" fill="#333">log(x₇)</text>
+                      </g>
+                      
+                      <!-- Forward edges (black) -->
+                      <g id="forward-edges" fill="none" stroke="#333" stroke-width="2">
+                        <!-- x1 to x3 -->
+                        <path d="M 220 120 Q 300 150 380 180" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x2 to x3 -->
+                        <path d="M 580 120 Q 500 150 420 180" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x1 to x5 -->
+                        <path d="M 200 130 Q 200 250 370 285" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x2 to x5 -->
+                        <path d="M 600 130 Q 600 250 430 285" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x3 to x4 -->
+                        <path d="M 380 220 Q 340 300 315 375" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x5 to x6 -->
+                        <path d="M 420 320 Q 460 350 485 375" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x4 to x7 -->
+                        <path d="M 320 420 Q 360 440 380 460" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x6 to x7 -->
+                        <path d="M 480 420 Q 440 440 420 460" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- x7 to f -->
+                        <path d="M 400 510 L 400 550" marker-end="url(#arrowhead)"/>
+                      </g>
+                      
+                      <!-- Backward edges (red) - gradient flow -->
+                      <g id="backward-edges" fill="none" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" opacity="0.8">
+                        <!-- f to x7 -->
+                        <path d="M 415 555 L 415 515" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x7 to x4 -->
+                        <path d="M 385 465 Q 345 445 325 425" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x7 to x6 -->
+                        <path d="M 415 465 Q 455 445 475 425" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x4 to x3 -->
+                        <path d="M 285 375 Q 325 295 385 225" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x6 to x5 -->
+                        <path d="M 485 380 Q 445 350 415 325" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x3 to x1 -->
+                        <path d="M 385 185 Q 305 155 225 125" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x3 to x2 -->
+                        <path d="M 415 185 Q 495 155 575 125" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x5 to x1 -->
+                        <path d="M 385 280 Q 230 200 215 135" marker-end="url(#arrowhead-red)"/>
+                        
+                        <!-- x5 to x2 -->
+                        <path d="M 415 280 Q 570 200 585 135" marker-end="url(#arrowhead-red)"/>
+                      </g>
+                      
+                      <!-- Legend -->
+                      <g id="legend" transform="translate(20, 480)">
+                        <rect x="0" y="0" width="250" height="140" fill="#f8f8f8" stroke="#ddd" stroke-width="1" rx="5"/>
+                        <text x="100" y="20" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Legend</text>
+                        
+                        <circle cx="20" cy="40" r="10" fill="url(#inputGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="45" font-size="14" fill="#333">Input variables</text>
+                        
+                        <circle cx="20" cy="65" r="10" fill="url(#nodeGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="70" font-size="14" fill="#333">Intermediate values</text>
+                        
+                        <circle cx="20" cy="90" r="10" fill="url(#outputGradient)" stroke="#333" stroke-width="1"/>
+                        <text x="40" y="95" font-size="14" fill="#333">Output</text>
+                        
+                        <path d="M 10 115 L 30 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <text x="40" y="120" font-size="14" fill="#333">Forward pass</text>
+                        
+                        <path d="M 130 115 L 150 115" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead-red)"/>
+                        <text x="160" y="120" font-size="14" fill="#333">Gradient flow</text>
+                      </g>
+                      
+                       <!-- Gradient annotations with white background for visibility -->
+                      <g id="gradient-annotations" font-size="11" fill="#e74c3c" font-weight="bold">
+                        <!-- Add white rectangles behind text for better visibility -->
+                       
+                        <text x="440" y="535">∂f/∂x₇ = 1/x₇</text>
+                        
+                       
+                        <text x="200" y="410">∂f/∂x₄ = 1/x₇</text>
+                        
+                       
+                        <text x="530" y="410">∂f/∂x₆ = 1/x₇</text>
+                        
+                      
+                        <text x="285" y="210">∂f/∂x₃ = 2x₃/x₇</text>
+                        
+                        
+                        <text x="460" y="310">∂f/∂x₅ = cos(x₅)/x₇</text>
+                      </g>
+
+                    </svg>
+                </div>
+
+
+                <p style="margin-top: 20px;">
+                    This computational graph clearly shows the DAG (Directed Acyclic Graph) structure. Notice how:
+                    <ul  style="padding-left: 40px;">
+                        <li>Each input variable (x₁ and x₂) has <strong>multiple outgoing edges</strong>, contributing to different intermediate computations</li>
+                        <li>The graph flows from inputs at the top to the output at the bottom</li>
+                        <li>During backpropagation, gradients flow in the <strong>reverse direction</strong> (from f back to x₁ and x₂)</li>
+                    </ul>
+                </p>
+
+                <p>
+                    Starting from the output and working backwards:
+                    \[
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_8} &= 1  \\\\
+
+                    \frac{\partial f}{\partial x_7} &= \frac{\partial f}{\partial x_8} \cdot \frac{\partial x_8}{\partial x_7} \\\\
+                                                    &= 1 \cdot \frac{1}{x_7} = \frac{1}{x_7} \\\\
+
+                    \frac{\partial f}{\partial x_4} &=  \frac{\partial f}{\partial x_7} \cdot \frac{\partial x_7}{\partial x_4} \\\\
+                                                    &=  \frac{1}{x_7} \cdot 1 = \frac{1}{x_7} \\\\
+
+                    \frac{\partial f}{\partial x_6} &=  \frac{\partial f}{\partial x_7} \cdot \frac{\partial x_7}{\partial x_6} \\\\
+                                                    &=  \frac{1}{x_7} \cdot 1 = \frac{1}{x_7} \\\\
+
+                    \frac{\partial f}{\partial x_3} &=  \frac{\partial f}{\partial x_4} \cdot \frac{\partial x_4}{\partial x_3} \\\\
+                                                    &=  \frac{1}{x_7}  \cdot 2 x_3\\\\
+
+                    \frac{\partial f}{\partial x_5} &=  \frac{\partial f}{\partial x_6} \cdot \frac{\partial x_6}{\partial x_5} \\\\
+                                                    &=  \frac{1}{x_7} \cdot \cos(x_5)\\\\                               
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    Notice that the input variables \(x_1\) and \(x_2\) each contribute to multiple intermediate nodes:
+                    <ul style="padding-left: 40px;">
+                        <li>\(x_1\) influences both \(x_3\) (via addition) and \(x_5\) (via multiplication)</li>
+                        <li>\(x_2\) influences both \(x_3\) (via addition) and \(x_5\) (via multiplication)</li>
+                    </ul>
+                    This means we need to <strong>sum the gradients</strong> from all paths when computing the final derivatives.
+                </p>
+
+                <p>
+                    To find the gradients with respect to the input variables, we sum contributions from all paths:
+                </p>
+                
+                <p>
+                    For \(\frac{\partial f}{\partial x_1}\):
+                    \[
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_1} &= \frac{\partial f}{\partial x_3} \cdot \frac{\partial x_3}{\partial x_1} + \frac{\partial f}{\partial x_5} \cdot \frac{\partial x_5}{\partial x_1} \\\\
+                                                    &= \frac{2x_3}{x_7} \cdot 1 + \frac{\cos(x_5)}{x_7} \cdot x_2 \\\\
+                                                    &= \frac{1}{x_7} \left[2x_3 + x_2 \cos(x_5)\right]
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    For \(\frac{\partial f}{\partial x_2}\):
+                    \[
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_2} &= \frac{\partial f}{\partial x_3} \cdot \frac{\partial x_3}{\partial x_2} + \frac{\partial f}{\partial x_5} \cdot \frac{\partial x_5}{\partial x_2} \\\\
+                                                    &= \frac{2x_3}{x_7} \cdot 1 + \frac{\cos(x_5)}{x_7} \cdot x_1 \\\\
+                                                    &= \frac{1}{x_7} \left[2x_3 + x_1 \cos(x_5)\right]
+                    \end{align*}
+                    \]
+                </p>
+
+                 <p>
+                    Replacing the intermediate variables with their expressions in terms of \(x_1\) and \(x_2\):
+                    <ul style="padding-left: 40px;">
+                        <li>\(x_3 = x_1 + x_2\)</li>
+                        <li>\(x_5 = x_1 x_2\)</li>
+                        <li>\(x_7 = (x_1 + x_2)^2 + \sin(x_1 x_2)\)</li>
+                    </ul>
+                    
+                    Finally, we get the derivatives:
+                    \[
+                    \boxed{
+                    \begin{align*}
+                    \frac{\partial f}{\partial x_1} &= \frac{2(x_1 + x_2) + x_2 \cos(x_1 x_2)}{(x_1 + x_2)^2 + \sin(x_1 x_2)} \\\\
+                    \frac{\partial f}{\partial x_2} &= \frac{2(x_1 + x_2) + x_1 \cos(x_1 x_2)}{(x_1 + x_2)^2 + \sin(x_1 x_2)}
+                    \end{align*}
+                    }
+                    \]
+                </p>
+
+                 <p>
+                    The power of automatic differentiation lies in its systematic approach:
+                    <ol style="padding-left: 40px;">
+                        <li>Decompose complex functions into simple primitive operations</li>
+                        <li>Apply the chain rule mechanically through the computational graph</li>
+                        <li>Sum gradients when variables contribute through multiple paths</li>
+                    </ol>
+                    This process can be fully automated, making it the backbone of modern deep learning frameworks.
+                </p>
+            </section>
+
+              
+
+            <section id="app" class="section-content">
+                <h2>Applications of AD</h2>
+
+                <p>
+                    Automatic differentiation is a core component in modern computational systems that require efficient and 
+                    accurate derivatives. In particular, it powers nearly all deep learning frameworks such as:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>PyTorch</strong> — dynamic computational graphs with reverse-mode AD via <code>autograd</code></li>
+                    <li><strong>TensorFlow</strong> — supports both eager and static (graph) modes of AD with <code>tf.GradientTape</code></li>
+                    <li><strong>JAX</strong> — composable transformations like <code>grad</code>, <code>vmap</code>, <code>jit</code> based on function tracing and XLA compilation</li>
+                    <li><strong>Diffrax</strong>, <strong>SciML</strong> — scientific computing libraries for differentiable differential equations (ODEs, PDEs)</li>
+                </ul>
+
+                <p>
+                These systems rely on automatic differentiation to:
+                <ol style="padding-left: 40px;">
+                    <li>Train neural networks by computing gradients of loss functions with respect to millions (or billions) of parameters</li>
+                    <li>Optimize black-box functions in physics simulation, robotics, and finance</li>
+                    <li>Perform end-to-end differentiation through control flow, dynamic loops, and even solver calls (e.g., differentiable physics)</li>
+                    </ol>
+                </p>
+            </section>
+
+            <section id="code" class="section-content">
+                <h2>Sample Code</h2>
+                <div class="code-container">
+                    <div class="collapsible-section">
+                        <button class="collapsible-btn">Show/Hide Code</button>
+                        <div class="collapsible-content">
+                            <pre class="python-code">
+                                import numpy as np
+
+                                class AutoDiffNode:
+                                    """Node in the computational graph for automatic differentiation"""
+                                    def __init__(self, value, grad=0.0):
+                                        self.value = value
+                                        self.grad = grad
+                                        self.children = []  # Nodes that depend on this node
+                                        self.local_gradients = []  # Local gradients to children
+
+                                def manual_autodiff_example(x1_val, x2_val):
+                                    """
+                                    Manual implementation of automatic differentiation for:
+                                    f(x1, x2) = log((x1 + x2)^2 + sin(x1 * x2))
+                                    
+                                    This demonstrates the forward and backward pass explicitly.
+                                    """
+                                    print(f"Computing f({x1_val}, {x2_val}) = log((x1 + x2)² + sin(x1 * x2))")
+                                    print("="*60)
+                                    
+                                    # Forward Pass - Compute function value
+                                    print("FORWARD PASS:")
+                                    x1 = x1_val
+                                    x2 = x2_val
+                                    print(f"x1 = {x1}")
+                                    print(f"x2 = {x2}")
+                                    
+                                    x3 = x1 + x2
+                                    print(f"x3 = x1 + x2 = {x3}")
+                                    
+                                    x4 = x3**2
+                                    print(f"x4 = x3² = {x4}")
+                                    
+                                    x5 = x1 * x2
+                                    print(f"x5 = x1 * x2 = {x5}")
+                                    
+                                    x6 = np.sin(x5)
+                                    print(f"x6 = sin(x5) = {x6}")
+                                    
+                                    x7 = x4 + x6
+                                    print(f"x7 = x4 + x6 = {x7}")
+                                    
+                                    x8 = np.log(x7)
+                                    f = x8
+                                    print(f"x8 = log(x7) = {f}")
+                                    print(f"\nFunction value: f = {f}")
+                                    
+                                    # Backward Pass - Compute gradients
+                                    print("\n" + "="*60)
+                                    print("BACKWARD PASS:")
+                                    
+                                    # Initialize gradient
+                                    df_dx8 = 1.0
+                                    print(f"∂f/∂x8 = {df_dx8}")
+                                    
+                                    # x8 = log(x7)
+                                    df_dx7 = df_dx8 * (1.0 / x7)
+                                    print(f"∂f/∂x7 = ∂f/∂x8 * ∂x8/∂x7 = {df_dx8} * (1/{x7}) = {df_dx7}")
+                                    
+                                    # x7 = x4 + x6
+                                    df_dx4 = df_dx7 * 1.0
+                                    df_dx6 = df_dx7 * 1.0
+                                    print(f"∂f/∂x4 = ∂f/∂x7 * ∂x7/∂x4 = {df_dx7} * 1 = {df_dx4}")
+                                    print(f"∂f/∂x6 = ∂f/∂x7 * ∂x7/∂x6 = {df_dx7} * 1 = {df_dx6}")
+                                    
+                                    # x4 = x3²
+                                    df_dx3 = df_dx4 * (2 * x3)
+                                    print(f"∂f/∂x3 = ∂f/∂x4 * ∂x4/∂x3 = {df_dx4} * 2*{x3} = {df_dx3}")
+                                    
+                                    # x6 = sin(x5)
+                                    df_dx5 = df_dx6 * np.cos(x5)
+                                    print(f"∂f/∂x5 = ∂f/∂x6 * ∂x6/∂x5 = {df_dx6} * cos({x5}) = {df_dx5}")
+                                    
+                                    # Now accumulate gradients for x1 and x2
+                                    # x3 = x1 + x2
+                                    df_dx1_from_x3 = df_dx3 * 1.0
+                                    df_dx2_from_x3 = df_dx3 * 1.0
+                                    
+                                    # x5 = x1 * x2
+                                    df_dx1_from_x5 = df_dx5 * x2
+                                    df_dx2_from_x5 = df_dx5 * x1
+                                    
+                                    # Sum gradients from all paths
+                                    df_dx1 = df_dx1_from_x3 + df_dx1_from_x5
+                                    df_dx2 = df_dx2_from_x3 + df_dx2_from_x5
+                                    
+                                    print(f"\n∂f/∂x1 = ∂f/∂x3 * ∂x3/∂x1 + ∂f/∂x5 * ∂x5/∂x1")
+                                    print(f"       = {df_dx3} * 1 + {df_dx5} * {x2}")
+                                    print(f"       = {df_dx1_from_x3} + {df_dx1_from_x5}")
+                                    print(f"       = {df_dx1}")
+                                    
+                                    print(f"\n∂f/∂x2 = ∂f/∂x3 * ∂x3/∂x2 + ∂f/∂x5 * ∂x5/∂x2")
+                                    print(f"       = {df_dx3} * 1 + {df_dx5} * {x1}")
+                                    print(f"       = {df_dx2_from_x3} + {df_dx2_from_x5}")
+                                    print(f"       = {df_dx2}")
+                                    
+                                    # Verify with the closed form
+                                    print("\n" + "="*60)
+                                    print("VERIFICATION WITH CLOSED FORM:")
+                                    expected_df_dx1 = (2*(x1 + x2) + x2*np.cos(x1*x2)) / ((x1 + x2)**2 + np.sin(x1*x2))
+                                    expected_df_dx2 = (2*(x1 + x2) + x1*np.cos(x1*x2)) / ((x1 + x2)**2 + np.sin(x1*x2))
+                                    
+                                    print(f"Expected ∂f/∂x1 = {expected_df_dx1}")
+                                    print(f"Expected ∂f/∂x2 = {expected_df_dx2}")
+                                    print(f"Error in ∂f/∂x1: {abs(df_dx1 - expected_df_dx1)}")
+                                    print(f"Error in ∂f/∂x2: {abs(df_dx2 - expected_df_dx2)}")
+                                    
+                                    return f, df_dx1, df_dx2
+
+
+                                def pytorch_autodiff_example(x1_val, x2_val):
+                                    """
+                                    PyTorch implementation showing how modern autodiff frameworks handle this
+                                    """
+                                    import torch
+                                    
+                                    print("\n" + "="*60)
+                                    print("PYTORCH AUTOMATIC DIFFERENTIATION:")
+                                    
+                                    # Create tensors with gradient tracking
+                                    x1 = torch.tensor(x1_val, requires_grad=True, dtype=torch.float32)
+                                    x2 = torch.tensor(x2_val, requires_grad=True, dtype=torch.float32)
+                                    
+                                    # Define the function
+                                    f = torch.log((x1 + x2)**2 + torch.sin(x1 * x2))
+                                    
+                                    # Compute gradients
+                                    f.backward()
+                                    
+                                    print(f"f({x1_val}, {x2_val}) = {f.item()}")
+                                    print(f"∂f/∂x1 = {x1.grad.item()}")
+                                    print(f"∂f/∂x2 = {x2.grad.item()}")
+                                    
+                                    return f.item(), x1.grad.item(), x2.grad.item()
+
+
+                                def gradient_check(f, x1, x2, epsilon=1e-7):
+                                    """
+                                    Numerical gradient checking using finite differences
+                                    """
+                                    # Compute analytical gradients
+                                    df_dx1, df_dx2 = manual_autodiff_example(x1, x2)
+                                    
+                                    print("\n" + "="*60)
+                                    print("NUMERICAL GRADIENT CHECK:")
+                                    
+                                    # Numerical gradient for x1
+                                    def eval_f(x1_val, x2_val):
+                                        return np.log((x1_val + x2_val)**2 + np.sin(x1_val * x2_val))
+                                    
+                                    f_plus_x1 = eval_f(x1 + epsilon, x2)
+                                    f_minus_x1 = eval_f(x1 - epsilon, x2)
+                                    numerical_df_dx1 = (f_plus_x1 - f_minus_x1) / (2 * epsilon)
+                                    
+                                    # Numerical gradient for x2
+                                    f_plus_x2 = eval_f(x1, x2 + epsilon)
+                                    f_minus_x2 = eval_f(x1, x2 - epsilon)
+                                    numerical_df_dx2 = (f_plus_x2 - f_minus_x2) / (2 * epsilon)
+                                    
+                                    print(f"Analytical ∂f/∂x1: {df_dx1}")
+                                    print(f"Numerical  ∂f/∂x1: {numerical_df_dx1}")
+                                    print(f"Difference: {abs(df_dx1 - numerical_df_dx1)}")
+                                    
+                                    print(f"\nAnalytical ∂f/∂x2: {df_dx2}")
+                                    print(f"Numerical  ∂f/∂x2: {numerical_df_dx2}")
+                                    print(f"Difference: {abs(df_dx2 - numerical_df_dx2)}")
+
+
+                                if __name__ == "__main__":
+                                    # Test with specific values
+                                    x1 = 1.0
+                                    x2 = 0.5
+                                    
+                                    # Manual implementation
+                                    f_manual, grad_x1_manual, grad_x2_manual = manual_autodiff_example(x1, x2)
+                                    
+                                    # PyTorch implementation 
+                                    f_pytorch, grad_x1_pytorch, grad_x2_pytorch = pytorch_autodiff_example(x1, x2)
+                                
+                                    # Numerical gradient check
+                                    gradient_check(None, x1, x2)
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        <script src="/js/main.js"></script> 
+        <script src="/js/collapsible.js"></script>
+    </body>
+</html>
+    
+    <footer>
+    <div class="footer-content">
+        <div class="footer-about">
+            <h3>About MATH-CS COMPASS</h3>
+            <p>Bridging the gap between pure mathematics and computer science applications.</p>
+            <div class="contact-section">
+                <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3_RNkegREvfCEIQznn6SCaf-iB5c-Doxn7Ymuu78Uf-PBjg/viewform" target="_blank">
+                    Submit Your Questions & Feedback <i class="fas fa-external-link-alt"></i>
+                </a></strong>
+            </div>
+        </div>
+        <div class="footer-links">
+            <h3>Quick Links</h3>
+            <ul>
+                
+                <li><a href="../../../index.html">Home</a></li>
+                <li>
+                <a href="../Linear_algebra/linear_algebra.html">
+                    <span class="nav-number">I</span>
+                    <span>Linear Algebra to Algebraic Foundations</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Calculus/calculus.html">
+                    <span class="nav-number">II</span>
+                    <span>Calculus to Optimization & Analysis</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Probability/probability.html">
+                    <span class="nav-number">III</span>
+                    <span>Probability & Statistics</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Discrete/discrete_math.html">
+                    <span class="nav-number">IV</span>
+                    <span>Discrete Mathematics & Algorithms</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Machine_learning/ml.html">
+                    <span class="nav-number">V</span>
+                    <span>Machine Learning</span>
+                </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-social">
+            <h3>Connect With Me</h3>
+            <p>
+                <a href="https://x.com/MathCSCompass?t=Zi8nyfzszeFw8QizbJwnNg&s=09" target="_blank">
+                    <i class="fab fa-x-twitter"></i> X (Twitter)
+                </a>
+            </p>
+            <p>
+                <a href="https://www.facebook.com/share/15uPaBWgQN/" target="_blank">
+                    <i class="fab fa-facebook"></i> Facebook
+                </a>
+            </p>
+      
+            <h3>MATH-CS COMPASS App</h3>
+            <div class="app-download-footer">
+                <a href="https://play.google.com/store/apps/details?id=io.github.yusukey01.twa" target="_blank" rel="noopener">
+                    <img src="../../../images/google-play-badge.png" 
+                        alt="Get it on Google Play" 
+                        class="google-play-badge">
+                </a>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024-2025 MATH-CS COMPASS. All rights reserved.</p>
+    </div>
+</footer>
+    <script src="../../../js/main.js?v=1.0.2"></script>
+    <script src="../../../js/search.js?v=1.0.2"></script>
+    
+
+    <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/js/service-worker.js')
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
+</body>
+</html>

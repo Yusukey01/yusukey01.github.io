@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>Markov Chains - MATH-CS COMPASS</title>
+    
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff" as="font" type="font/woff2" crossorigin>
+    
+    
+    
+
+    <link rel="stylesheet" href="../../../css/styles.css?v=1.0.2">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Intro to language models and learn about Markov chains, and Dirichlet prior.">
+    <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color for Chrome, Android, and other browsers -->
+    <meta name="theme-color" content="#007bff">
+  
+    <!-- iOS specific tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MATH-CS COMPASS">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icon references -->
+    <link rel="icon" type="image/png" sizes="1280x1280" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images//maskable_icon_x512.png?v=1.0.2">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x512.png?v=1.0.2">
+
+    <!-- For Windows -->
+    <meta name="msapplication-TileImage" content="/images/test1.png?v=1.0.2">
+    <meta name="msapplication-TileColor" content="#007bff">
+
+    <!-- Schema.org Structured Data for AI Optimization -->
+    
+
+    <!-- Article Schema for content pages -->
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Markov Chains",
+      "description": "Intro to language models and learn about Markov chains, and Dirichlet prior.",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "author": {
+        "@type": "Person",
+        "name": "Yusuke Yokota",
+        "jobTitle": "Mathematics & Computer Science Educator",
+        "knowsAbout": [
+          "Linear Algebra",
+          "Machine Learning",
+          "Computer Science",
+          "Mathematics"
+        ]
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MATH-CS COMPASS",
+        "url": "https://yusukey01.github.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yusukey01.github.io/images/maskable_icon_x512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yusukey01.github.io/Mathematics/Probability/markov.html"
+      },
+      "about": [
+        
+        { "@type": "Thing", "name": "Probability" },
+        { "@type": "Thing", "name": "Statistics" }
+        
+      ],
+      "educationalLevel": "university",
+      "learningResourceType": "tutorial",
+      "educationalUse": "instruction"
+    }
+    </script>
+    
+</head>
+
+<body>
+    <header>
+    <nav class="navbar">
+        <!-- Logo as Home Button -->
+        <div class="logo-home">
+            <a href="../../../index.html" 
+               class="logo-link " 
+               title="Home - Math-CS Compass">
+                <img src="../../images/icon_x512.png" 
+                     alt="Math-CS Compass Logo" 
+                     class="nav-logo">
+            </a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search keywords...">
+            <button id="search-button" aria-label="Search" title="Search website"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="../Linear_algebra/linear_algebra.html" >I - Linear Algebra to Algebraic Foundations</a></li>
+            
+            <li><a href="../Calculus/calculus.html" >II - Calculus to Optimization & Analysis</a></li>
+            
+            <li><a href="../Probability/probability.html" class="active">III - Probability & Statistics</a></li>
+            
+            <li><a href="../Discrete/discrete_math.html" >IV - Discrete Mathematics & Algorithms</a></li>
+            
+            <li><a href="../Machine_learning/ml.html" >V - Machine Learning</a></li>
+        </ul>
+    </nav>
+</header>
+    
+    <!DOCTYPE html>
+<html>
+    <body>
+        <!-- Meta script for markov.html -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Markov Chains",
+        "description": "Intro to language models and learn about Markov chains, and Dirichlet prior.",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            { "@type": "Thing", "name": "Markov Chains" },
+            { "@type": "Thing", "name": "Probabilistic Graphical Models" },
+            { "@type": "Thing", "name": "PGMs" },
+            { "@type": "Thing", "name": "Language Models" },
+            { "@type": "Thing", "name": "Bayesian Networks" },
+            { "@type": "Thing", "name": "Sequential Data" },
+            { "@type": "Thing", "name": "Markov Assumption" },
+            { "@type": "Thing", "name": "Transition Matrix" },
+            { "@type": "Thing", "name": "Stochastic Matrix" },
+            { "@type": "Thing", "name": "Memoryless Property" },
+            { "@type": "Thing", "name": "First-Order Markov" },
+            { "@type": "Thing", "name": "Higher-Order Markov" },
+            { "@type": "Thing", "name": "N-gram Models" },
+            { "@type": "Thing", "name": "Parameter Estimation" },
+            { "@type": "Thing", "name": "Maximum Likelihood Estimation" },
+            { "@type": "Thing", "name": "Dirichlet Prior" },
+            { "@type": "Thing", "name": "Add-One Smoothing" },
+            { "@type": "Thing", "name": "Sparse Data Problem" },
+            { "@type": "Thing", "name": "MAP Estimation" },
+            { "@type": "Thing", "name": "Hierarchical Bayesian Methods" },
+            { "@type": "Thing", "name": "Conditional Independence" },
+            { "@type": "Thing", "name": "Chain Rule of Probability" }
+        ],
+        "teaches": [
+            "Markov chain theory and applications",
+            "Language modeling fundamentals",
+            "Probabilistic graphical models",
+            "Bayesian parameter estimation"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Probability & Statistics",
+            "description": "Explore fundamental concepts of probability and statistics essential for machine learning",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "III",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT2H30M",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Markov Chains
+            </h1>
+        </div>
+
+        
+  <div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section III Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>Probability & Statistics</h3>
+      <div class="quick-jump-links">
+
+         
+        <a href="probability.html">← Back to Section III Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        
+        
+        <a href="basic.html" >Part 1: Basic Probability Ideas</a>
+        <a href="random_variables.html" >Part 2: Random Variables</a>
+        <a href="gamma.html" >Part 3: Gamma & Beta Distribution</a>
+        <a href="gaussian.html" >Part 4: Normal (Gaussian) Distribution</a>
+        <a href="student.html" >Part 5: Student's t-Distribution</a>
+        <a href="covariance.html" >Part 6: Covariance</a>
+        <a href="correlation.html" >Part 7: Correlation</a>
+        <a href="mvn.html" >Part 8: Multivariate Distributions</a>
+        <a href="mle.html" >Part 9: Maximum Likelihood Estimation</a>
+        <a href="hypothesis_testing.html" >Part 10: Statistical Inference & Hypothesis Testing</a>
+        <a href="linear_regression.html" >Part 11: Linear Regression</a>
+        <a href="entropy.html" >Part 12: Entropy</a>
+        <a href="convergence.html" >Part 13: Convergence</a>
+        <a href="bayesian.html" >Part 14: Intro to Bayesian Statistics</a>
+        <a href="expfamily.html" >Part 15: The Exponential Family</a>
+        <a href="fisher_info.html" >Part 16: Fisher Information Matrix</a>
+        <a href="decision_theory.html" >Part 17: Bayesian Decision Theory</a>
+        <a href="markov.html" class="current-page">Part 18: Markov Chains</a>
+        <a href="monte_carlo.html" >Part 19: Monte Carlo Methods</a>
+        <a href="importance_sampling.html" >Part 20: Importance Sampling</a>
+        <a href="gaussian_process.html" >Part 21: Gaussian Processes</a>
+      </div>
+    </div>
+</div>
+
+
+        <div class="topic-nav">
+            <a href="#pgm">Probabilistic Graphical Models</a>
+            <a href="#lm">Language Models</a>
+            <a href="#MLE">Parameter Estimation of Markov Models</a>
+            <a href="#sample">A Code Sample (MLE in Markov Models)</a>
+            <a href="#sparse">Sparse Data & Dirichlet Prior</a>
+        </div> 
+
+        <div class="container">  
+            <section id="pgm" class="section-content">
+                <h2>Probabilistic Graphical Models</h2>
+                <p>
+                    A <strong>graphical model</strong> is a graph-based representation of a set of variables and their relationships (typically dependencies 
+                    or interactions). The <a href="../Discrete/intro_graph.html"><strong>graph</strong></a> helps visualize and reason about the structure of a 
+                    system composed of many interrelated parts. Here, we focus on a specific graphical model as known as a <strong>probabilistic graphical models(PGMs)</strong> 
+                    whose the vertices represent random variables, and the edges represent probabilistic dependencies among these variables. In the case where 
+                    the graph is a <strong>directed</strong> acyclic graph (DAG), the model is often called a <strong>Bayesian network</strong>. An important assumption is 
+                    is that each vertex(r.v.) \(X_i\) is <strong>conditionally independent</strong> of its non-descendants given its parents. Thus, the joint distribution 
+                    is given by: 
+                    \[
+                    P(X_1, X_2, \cdots, X_n) = \prod_{i = 1}^n P(X_i | \text{ Parents(X_i)})
+                    \]
+                    where \(n\) is the number of random variables(vertices) in the model(graph). The vertices are in <strong>topological order</strong>: 
+                    For every directed edge \(u \to v\), vertex \(u\) comes before vertex \(v\). Each term \(P(X_i | \text{ Parents}(X_i))\) is the 
+                    <strong>conditional probability distribution</strong> for vertex \(i\). 
+                </p>
+            </section>
+
+            <section id="lm" class="section-content">
+            <h2>Language Models</h2>
+            <p>
+            For modeling <strong>sequential data</strong>, we introduce a linear-chain Bayesian network with a particular type of conditional independence. 
+            This is called a <strong>Markov chain</strong>. The concept of the Markov chain is fundamental in various fields. while the core idea remains 
+            the same, its applications and methods of analysis can differ depending on the field. Here, we'll explore a specific application in 
+            the context of <strong>language modeling</strong>.
+            </p>
+            
+            <p>
+            Suppose our goal is to model a joint probability distribution over variable-length sequences: \(P(y_{1:T})\), where each 
+            \(y_t \in \{1, \cdots, K\}\) represents a <strong>word</strong> from a <strong>vocabulary</strong> of size \(K\).
+            A language model assigns probabilities to possible sentences (sequences) of length \(T\).
+            <br><br>
+            By the chain rule of probability, 
+            \[
+            \begin{align*}
+            P(y_{1:T}) = P(y_1)P(y_2 | y_1)P(y_3 | y_2, y_1)\cdots  \\\\
+                       = \prod_{t = 1}^{T} P(y_t | y_{1 : t-1}).
+            \end{align*}
+            \]
+            However, as \(T\) increases, this formulation becomes computationally expensive due to the need to condition on the 
+            entire history. To address this, we make the <strong>Markov assumption</strong>: the next state depends "only" on the 
+            current state.
+            <br><br>
+            Under the <strong>first-order Markov assumption</strong>,
+            \[
+            \begin{align*}
+            P(y_{1:T}) &= P(y_1)P(y_2 | y_1)P(y_3 | y_2)P(y_4 | y_3)\cdots  \\\\
+                       &=  P(y_1)\prod_{t = 2}^{T} P(y_t | y_{t-1}).
+            \end{align*}
+            \]
+            This <strong>memoryless property</strong> simplifies both analysis and computation of probabilities. 
+            The function \(P(y_t | y_{t-1})\) is called the <strong>transition function</strong> or <strong>transition kernel</strong>, 
+            and it satisfies:
+            <ul style="padding-left: 40px;">
+                <li>\(P(y_t | y_{t-1}) \geq 0\)</li>
+                <li>\(\sum_{k=1}^K P(y_t = k | y_{t-1} = j) = 1\) for each \(j\)</li>
+            </ul>
+            <br>
+            We can represent the transition probabilities using a
+            <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrix</strong></a>:
+            \[
+            A_{jk} = P(y_t = k | y_{t-1} = j),
+            \]
+            where each row of \(A\) sums to 1. This matrix is considered as the conditional probability Table (CPT). 
+            Since we assume the same transition probabilities at all time steps, the model is said to be <strong>time-invariant</strong>. 
+            <br><br>
+            The Markov assumption can be extended to consider the last \(M\) states( or memory length):
+            \[
+            P(y_{1:T}) = P(y_{1 : M}) \prod_{t = M + 1}^T P(y_t | y_{t - M : t - 1}).
+            \]
+            This is known as an <strong>M'th order Markov model</strong>. In language modeling, this is equivalent to an \(M+1\)-gram model.
+            For example, if \(M = 2\), 
+            each word depends on the two preceding words, leading to a <strong>trigram model</strong>:
+            \[
+            P(y_t | y_{t-1}, y_{t-2}).
+            \] 
+            <br>
+            Any Higher-order Markov model can be converted into the first-order Markov model by redefining the state to include the past \(M\) observations. 
+            For \(M = 2\), define \(\tilde{y}_t = (y_{t-1}, y_t)\), then:
+            \[
+            \begin{align*}
+            P(\tilde{y}_{1:T}) &= P(\tilde{y}_2) \prod_{t = 3}^T P(\tilde{y}_t | \tilde{y}_{t-1}) \\\\
+                               &= P(y_1, y_2) \prod_{t = 3}^T P(y_t | y_{t-1}, y_{t-2}).
+            \end{align*}
+            \]
+            <br>
+            In practice, with large vocabularies, modeling all possible transitions becomes infeasible, and we need additional techniques such as 
+            <strong>neural language models</strong> to approximate the distribution efficiently. Not only language modeling, <strong>Markov chains</strong> 
+            are widely used in <strong>sequential data modeling</strong>. Additionally, <strong>Markov Chain Monte Carlo (MCMC)</strong> methods are crucial 
+            in Bayesian statistics for performing approximate inference when direct sampling is challenging.
+            </p>
+            </section>
+
+            <section id="MLE" class="section-content">
+            <h2>Parameter Estimation of Markov Models</h2>
+            <p>
+            The probability of any particular sequence of length \(T\) is given by 
+            \[
+            \begin{align*}
+            P(x_{1:T} | \boldsymbol\theta) &= \pi (x_1)A(x_1, x_2)\cdots A(x_{T-1}, x_T) \\\\
+                                &= \prod_{j=1}^K (\pi_j)^{\mathbb{I}(x_1 =j)} \prod_{t=2}^T \prod_{j=1}^K \prod_{k=1}^K 
+                                (A_{jk})^{\mathbb{I}(x_t=k,\, x_{t-1}=j)}, \tag{1}
+            \end{align*}
+            \]
+            where \(\pi_j\) is probabilty that the first symbol is \(j\), and \(A_{jk}\) is probability of going from symbol 
+            \(j\) to symbol \(k\). This is the transition probability matrix. In addition, \(\mathbb{I}(\cdot)\) is the 
+            <strong>indicator function</strong>. For example, 
+            \[
+            \mathbb{I}(x_1 =j) =  \begin{cases}
+                                    1 &\text{if \(x_1 = j\)} \\
+                                    0 &\text{otherwise}
+                                    \end{cases}.
+            \]
+            This lets us convert sums and products into counts. In Equation 1, only one transition happens at a time, so only 
+            one term contributes in each time step.
+            <br><br>
+            The <strong>log-likelihood</strong> of a set of sequences \(\mathcal{D} = (x_1, \cdots, x_N)\), where 
+            \(x_i = (x_{i\,1}, \cdots, x_{i \, T_{i}})\) is a sequence of length \(T_i\) is given by 
+            \[
+            \begin{align*}
+            \log P(\mathcal{D} | \boldsymbol\theta) &= \sum_{i=1}^N \log P(x_i | \boldsymbol\theta) \\\\
+                                         &= \sum_j  N_j^1 \log \pi_j + \sum_j \sum_k N_{jk} \log A_{jk}.
+            \end{align*}
+            \]
+            Define the following counts: 
+            <ul style="padding-left: 40px;">
+                <li>How often symbol \(j\) is seen at the "start" of a sequence:</li>
+                \[N_j^1 = \sum_{i=1}^N \mathbb{I}(x_{i,1} = j)\]
+                <li> How often symbol \(j\) is seen "anywhere" in a sequence:</li>
+                \[N_j = \sum_k N_{jk}\]
+                <li>Count of transitions from \(j\) to \(k\):</li>
+                \[N_{jk}  = \sum_{i=1}^N \sum_{t=1} ^{T_i -1} \mathbb{I}(x_{i,t}  = j, x_{i, t+1} = k)\]   
+            </ul>
+            We want to obtain \(\hat{\pi}_j\) and \( \hat{A}_{jk}\) that are <strong>MLE</strong> under the constraints: 
+            \[
+            \begin{align*}
+            &\sum_j \pi_j = 1  \\\\
+            &\sum_k A_{jk} = 1 \text{ for each } j
+            \end{align*}
+            \]
+            For \(\pi_i\), we introduce Lagrange multiplier \(\lambda\) and define 
+            \[
+            \mathcal{L}_{\pi} = \sum_j  N_j^1 \log \pi_i + \lambda \left( 1 - \sum_j \pi_j \right).
+            \]
+            Then
+            \[
+            \frac{\partial  \mathcal{L}_{\pi}}{\partial \pi_j} = \frac{ N_j^1}{\pi_j} - \lambda = 0 
+            \Longrightarrow \pi_j = \frac{N_j^1}{\lambda}.
+            \]
+            Plug into the constraint \(\sum_j \pi_j = 1\), we have
+            \[
+            \sum_j \frac{N_j^1}{\lambda} = 1 \Longrightarrow \lambda = \sum_j N_j^1.
+            \]
+            Thus, 
+            \[
+            \hat{\pi}_j = \frac{N_j^1}{\sum_{j^{\prime}} {N_{j^{\prime}}^1}}.
+            \]
+            For \(A_{jk}\), we introduce Lagrange multiplier \(\mu\) and define 
+            \[
+            \mathcal{L_A} = \sum_j \sum_k N_{jk} \log A_{jk} + \sum_j \mu_j \left(1 - \sum_k A_{jk} \right).
+            \]
+            Then
+            \[
+            \frac{\partial  \mathcal{L}_{A}}{\partial A_{jk}} = \frac{ N_{jk}}{A_{jk}} - \mu_j = 0 
+            \Longrightarrow A_{jk} = \frac{N_{jk}}{\mu_j}.
+            \]
+            Plug into the constraint \(\sum_k A_{jk} = 1 \text{ for each } j\), we have
+            \[
+            \sum_k \frac{N_{jk}}{\mu_j} = 1 \Longrightarrow \mu_j = \sum_k N_{jk} = N_j.
+            \]
+            Thus, 
+            \[
+             \hat{A}_{jk} = \frac{N_{jk}}{N_j}.
+            \]
+            </p>
+            </section>
+
+            <section id="sample" class="section-content">
+            <h2>A Code Sample (MLE in Markov Models)</h2>
+            <p>
+            Let's pretend we observed 14 days of weather in 10 cities (i.e., 10 sequences, each of length 14).
+            We compute MLE estimates for start probabilities \(\pi\) and transition matrix \(A\).
+            <br>
+            (Note: You can use pandas DataFrame tables for printing results.)
+            <div class="code-container"> 
+                <div class="collapsible-section"> 
+                    <button class="collapsible-btn">Show/Hide Code</button> 
+                    <div class="collapsible-content"> 
+                        <pre class="python-code">      
+                            import numpy as np
+                            import random
+                            
+                            # --- Constants ---
+                            # Define states 
+                            STATES = ['Sunny', 'Rainy', 'Cloudy', 'Stormy', 'Foggy']
+                            STATE_TO_INDEX = {state: i for i, state in enumerate(STATES)}
+                            INDEX_TO_STATE = {i: state for i, state in enumerate(STATES)}
+                            # Observed 14 days of weather in 10 cities (i.e., 10 sequences, each of length 14).
+                            DAYS = 14
+                            CITIES = 10
+                            
+                            # Define the true transition matrix (for data generation only)
+                            TRUE_TRANSITION_MATRIX = np.array([
+                                [0.5, 0.2, 0.2, 0.05, 0.05],   # From Sunny
+                                [0.3, 0.4, 0.2, 0.1, 0.0],     # From Rainy
+                                [0.4, 0.2, 0.3, 0.05, 0.05],   # From Cloudy
+                                [0.1, 0.4, 0.2, 0.3, 0.0],     # From Stormy
+                                [0.3, 0.1, 0.4, 0.0, 0.2],     # From Foggy
+                            ])
+                            
+                            # --- Sequence Generation ---
+                            # Generate a sequence of weather states
+                            def generate_sequence(length, transition_matrix, states, state_to_index, start_state=None):
+                                if start_state is None:
+                                    start_state = random.choice(states)
+                                seq = [start_state]
+                                for _ in range(length - 1):
+                                    current_index = state_to_index[seq[-1]]
+                                    next_state = np.random.choice(states, p=transition_matrix[current_index])
+                                    seq.append(next_state)
+                                return seq
+                            
+                            # --- MLE Estimation ---
+                            def estimate_mle(sequences, states, state_to_index):
+                                num_states = len(states)
+                                N1 = np.zeros(num_states) # Start state counts
+                                N_jk = np.zeros((num_states, num_states)) # Transition counts
+                            
+                                for seq in sequences:
+                                    first_idx = state_to_index[seq[0]]
+                                    N1[first_idx] += 1
+                                    for t in range(len(seq) - 1):
+                                        j = state_to_index[seq[t]]
+                                        k = state_to_index[seq[t + 1]]
+                                        N_jk[j, k] += 1
+                            
+                                pi_hat = N1 / np.sum(N1) # Estimate start probabilities π̂
+                                row_sums = np.sum(N_jk, axis=1, keepdims=True)
+                                A_hat = np.divide(N_jk, row_sums, out=np.zeros_like(N_jk), where=row_sums != 0) # Estimate transition matrix Â
+                            
+                                return pi_hat, A_hat
+                            
+                            # --- Display Functions ---
+                            def print_sequences(sequences):
+                                print("Sequences:")
+                                for i, seq in enumerate(sequences):
+                                    print(f"City {i+1}:\n {' → '.join(seq)}")
+                            
+                            def print_start_probabilities(pi_hat, states):
+                                print("\nEstimated Start Probabilities (π̂ ):")
+                                for state, prob in zip(states, pi_hat):
+                                    print(f"{state:>6}: {prob:.3f}")
+                            
+                            def print_transition_matrix(A_hat, states):
+                                # Determine column width based on the longest state name + padding
+                                max_len = max(len(state) for state in states)
+                                col_width = max_len + 2
+                            
+                                # Create header dynamically with calculated column width
+                                header = "From \\ To".rjust(col_width) + " | " + " | ".join(f"{s:^{col_width}}" for s in states)
+                                print(header)
+                                print("-" * len(header))
+                                # Print each row, formatting numbers with dynamic width
+                                for j, row in enumerate(A_hat):
+                                    row_str = " | ".join(f"{p:{col_width}.3f}" for p in row)
+                                    print(f"{states[j]:>{col_width}} | {row_str}")
+                            
+                            if __name__ == "__main__":
+                                sequences = [generate_sequence(DAYS, TRUE_TRANSITION_MATRIX, STATES, STATE_TO_INDEX) for _ in range(CITIES)]
+                                pi_hat, A_hat = estimate_mle(sequences, STATES, STATE_TO_INDEX)
+                                print_sequences(sequences)
+                                print_start_probabilities(pi_hat, STATES)
+                                print("\nEstimated Transition Matrix (Â):")
+                                print_transition_matrix(A_hat, STATES)
+                                print("\nTrue Transition Matrix (A):")
+                                print_transition_matrix(TRUE_TRANSITION_MATRIX, STATES)
+                        </pre> 
+                    </div>
+                </div> 
+                <button class="run-button" onclick="runPythonCode(this)">Run Code</button> 
+                <div class="python-output"></div> 
+            </div> 
+            </p>
+            </section>
+
+            <section id="sparse" class="section-content">
+            <h2>Sparse Data & Dirichlet Prior</h2>
+            <p>
+            When we have a limited number of sequences (or sequence steps), many possible transitions might never be observed 
+            at all, or be observed just once or twice. This situation leads to having fewer observations relative to the number of parameters (transitions). 
+            The <strong>sparse data problem</strong> in Markov chain models is a key issue, especially when working with many possible states. 
+            The sparse data lead to unreliable MLE estimates (overfitting, zero estimates, biased predictions, inaccurate long-term behavior). 
+            To address these issues, we often need <strong>smoothing</strong> or <strong>Bayesian approaches</strong> to generalize better. 
+            However, only smooth what we should — don't violate known structure (like true zeros).
+            <br><br>
+            A simple smoothing technique is <strong>add-one smoothing</strong>  is a method used to avoid zero 
+            estimates in cases where some transitions are never observed. In the Bayesian framework, add-one smoothing is equivalent to using a 
+            <strong>Dirichlet prior</strong> with \(\alpha_j = 1 , \forall j\). 
+            <div class="theorem">
+                <span class="theorem-title">Uniform Dirichlet Prior </span>
+                The \(j\)-th row of the transition matrix \(A\) (which represents the probabilities of transitioning from state 
+                \(j\) to each of the \(K\) possible states) follows a <a href="mvn.html"><strong>Dirichlet distribution</strong></a> with parameters \(\alpha\):
+                \[
+                A_{j:} \sim \text{ Dir }(\alpha \: \boldsymbol{1}).
+                \]
+                In this case, the <strong>MAP(Maximum A Posteriori) estimate</strong>(which is the mode of the posterior distribution) becomes 
+                \[
+                \hat{A}_{jk} = \frac{N_{jk}+\alpha}{N_j + K \alpha}.
+                \]
+                If \(\alpha = 1\), this is called <strong>add-one smoothing</strong>. Note that every state is treated "equally" 
+                in the prior.(\(\alpha_1 = \alpha_2 = \cdots = \alpha_K\))
+            </div> 
+            Assume that for the \(j\)ith row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). The total number of transitions from state \(j\) is 
+            \[
+            N_j = \sum_{k=1}^K N_{jk}
+            \]  
+            The likelihood under a multinomial model is: 
+            \[
+            P(\{N_{jk} | A_{j:}\}) \propto  \prod_{k=1}^K (A_{jk})^{N_{jk}}.
+            \]
+            Now, with the uniform Dirichlet prior, we have:
+            \[
+            P(A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{\alpha -1}.
+            \]
+            (The prior adds the same amount to each transition probability.)
+            <br>
+            By Bayes's rule, the posterior is proportional to the product of the likelihood and the prior:
+            \[
+            \begin{align*}
+            P(A_{j:} | \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
+                                   &=  \prod_{k=1}^K (A_{jk})^{N_{jk} + \alpha -1}.
+            \end{align*}
+            \]
+            Thus, the posterior distribution for \(A_{j:}\) is a Dirichlet distribution:
+            \[
+            A_{j:} | \{N_jk\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots \, N_{jK} + \alpha).
+            \]
+            There are two common choices for an estimator from a posterior distribution: the posterior mean and the mode (MAP estimate). For a Dirichlet 
+            distribution, the posterior <strong>mean</strong> is given by:
+            \[
+            \begin{align*}
+            E [A_{jk} | \{N_{jk}\}] &= \frac{N_{jk}+\alpha}{\sum_{i=1}^K (N_{ji}+\alpha)} \\\\
+                                    &= \frac{N_{jk}+\alpha}{N_j + K \alpha}.
+            \end{align*}
+            \]
+            This estimator is often used in practice because it is always defined. The <strong>mode</strong> (the "actual" MAP estimate) is given by
+            \[
+            \text{mode }(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
+            \]
+            However, this is not well-defined when \(\alpha =1 \). Also, in the large-sample regime, the posterior mean and the mode of the 
+            Dirichlet distribution are nearly identical. That's why the estimator based on the posterior mean is commonly used and, 
+            for \(\alpha =1 \), is referred to as add-one smoothing. 
+            <br><br>
+            Again, note that this method assums <strong>uniform prior</strong>(each outcome is "equally" likely a priori), which is NOT realistic in complicated models. 
+            For more complex, structured problems where capturing group-level variations is important, <strong>hierarchical Bayesian methods</strong> generally 
+            provide a better approach, despite their increased computational cost. Hierarchical Bayesian models share statistical strength across sequences (e.g., 
+            cities). Assume each sequence (e.g., city) has its own transition matrix, drawn from a common hyper-distribution.
+            </p>
+            </section>
+        </div>
+        <script src="/js/main.js"></script>
+        <script src="/js/runPythonCode.js"></script>
+        <script src="/js/collapsible.js"></script>  
+    </body>
+</html>
+    
+    <footer>
+    <div class="footer-content">
+        <div class="footer-about">
+            <h3>About MATH-CS COMPASS</h3>
+            <p>Bridging the gap between pure mathematics and computer science applications.</p>
+            <div class="contact-section">
+                <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3_RNkegREvfCEIQznn6SCaf-iB5c-Doxn7Ymuu78Uf-PBjg/viewform" target="_blank">
+                    Submit Your Questions & Feedback <i class="fas fa-external-link-alt"></i>
+                </a></strong>
+            </div>
+        </div>
+        <div class="footer-links">
+            <h3>Quick Links</h3>
+            <ul>
+                
+                <li><a href="../../../index.html">Home</a></li>
+                <li>
+                <a href="../Linear_algebra/linear_algebra.html">
+                    <span class="nav-number">I</span>
+                    <span>Linear Algebra to Algebraic Foundations</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Calculus/calculus.html">
+                    <span class="nav-number">II</span>
+                    <span>Calculus to Optimization & Analysis</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Probability/probability.html">
+                    <span class="nav-number">III</span>
+                    <span>Probability & Statistics</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Discrete/discrete_math.html">
+                    <span class="nav-number">IV</span>
+                    <span>Discrete Mathematics & Algorithms</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Machine_learning/ml.html">
+                    <span class="nav-number">V</span>
+                    <span>Machine Learning</span>
+                </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-social">
+            <h3>Connect With Me</h3>
+            <p>
+                <a href="https://x.com/MathCSCompass?t=Zi8nyfzszeFw8QizbJwnNg&s=09" target="_blank">
+                    <i class="fab fa-x-twitter"></i> X (Twitter)
+                </a>
+            </p>
+            <p>
+                <a href="https://www.facebook.com/share/15uPaBWgQN/" target="_blank">
+                    <i class="fab fa-facebook"></i> Facebook
+                </a>
+            </p>
+      
+            <h3>MATH-CS COMPASS App</h3>
+            <div class="app-download-footer">
+                <a href="https://play.google.com/store/apps/details?id=io.github.yusukey01.twa" target="_blank" rel="noopener">
+                    <img src="../../../images/google-play-badge.png" 
+                        alt="Get it on Google Play" 
+                        class="google-play-badge">
+                </a>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024-2025 MATH-CS COMPASS. All rights reserved.</p>
+    </div>
+</footer>
+    <script src="../../../js/main.js?v=1.0.2"></script>
+    <script src="../../../js/search.js?v=1.0.2"></script>
+    
+
+    <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/js/service-worker.js')
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
+</body>
+</html>

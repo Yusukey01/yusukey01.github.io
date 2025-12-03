@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>Principal Component Analysis (PCA) & Autoenocoders - MATH-CS COMPASS</title>
+    
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff" as="font" type="font/woff2" crossorigin>
+    
+    
+    
+
+    <link rel="stylesheet" href="../../../css/styles.css?v=1.0.2">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Learn about unsupervised learning basics from PCA and Autoencoders.">
+    <meta name="google-site-verification" content="IieEujypYW38caEVe8ymjczouNl56yxAy27iPztcfRA" />
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color for Chrome, Android, and other browsers -->
+    <meta name="theme-color" content="#007bff">
+  
+    <!-- iOS specific tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MATH-CS COMPASS">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icon references -->
+    <link rel="icon" type="image/png" sizes="1280x1280" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images//maskable_icon_x512.png?v=1.0.2">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x1280.png?v=1.0.2">
+    <link rel="apple-touch-icon" href="/images/maskable_icon_x512.png?v=1.0.2">
+
+    <!-- For Windows -->
+    <meta name="msapplication-TileImage" content="/images/test1.png?v=1.0.2">
+    <meta name="msapplication-TileColor" content="#007bff">
+
+    <!-- Schema.org Structured Data for AI Optimization -->
+    
+
+    <!-- Article Schema for content pages -->
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Principal Component Analysis (PCA) & Autoenocoders",
+      "description": "Learn about unsupervised learning basics from PCA and Autoencoders.",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "author": {
+        "@type": "Person",
+        "name": "Yusuke Yokota",
+        "jobTitle": "Mathematics & Computer Science Educator",
+        "knowsAbout": [
+          "Linear Algebra",
+          "Machine Learning",
+          "Computer Science",
+          "Mathematics"
+        ]
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MATH-CS COMPASS",
+        "url": "https://yusukey01.github.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yusukey01.github.io/images/maskable_icon_x512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yusukey01.github.io/Mathematics/Machine_learning/pca.html"
+      },
+      "about": [
+        
+        { "@type": "Thing", "name": "Machine Learning" },
+        { "@type": "Thing", "name": "Artificial Intelligence" }
+        
+      ],
+      "educationalLevel": "university",
+      "learningResourceType": "tutorial",
+      "educationalUse": "instruction"
+    }
+    </script>
+    
+</head>
+
+<body>
+    <header>
+    <nav class="navbar">
+        <!-- Logo as Home Button -->
+        <div class="logo-home">
+            <a href="../../../index.html" 
+               class="logo-link " 
+               title="Home - Math-CS Compass">
+                <img src="../../images/icon_x512.png" 
+                     alt="Math-CS Compass Logo" 
+                     class="nav-logo">
+            </a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search keywords...">
+            <button id="search-button" aria-label="Search" title="Search website"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="../Linear_algebra/linear_algebra.html" >I - Linear Algebra to Algebraic Foundations</a></li>
+            
+            <li><a href="../Calculus/calculus.html" >II - Calculus to Optimization & Analysis</a></li>
+            
+            <li><a href="../Probability/probability.html" >III - Probability & Statistics</a></li>
+            
+            <li><a href="../Discrete/discrete_math.html" >IV - Discrete Mathematics & Algorithms</a></li>
+            
+            <li><a href="../Machine_learning/ml.html" class="active">V - Machine Learning</a></li>
+        </ul>
+    </nav>
+</header>
+    
+    <!DOCTYPE html>
+<html>
+    <body> 
+        <!-- LearningResource Schema for Content Pages -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "Principal Component Analysis (PCA) & Autoenocoders",
+        "description": "Learn about unsupervised learning basics from PCA and Autoencoders.",
+        "learningResourceType": "lesson",
+        "educationalUse": "instruction",
+        "educationalLevel": "university",
+        "interactivityType": "active",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+        },
+        "about": [
+            
+            { "@type": "Thing", "name": "Principal Component Analysis" },
+            { "@type": "Thing", "name": "Dimensionality Reduction" },
+            { "@type": "Thing", "name": "Autoencoders" },
+            { "@type": "Thing", "name": "Kernel PCA" },
+            { "@type": "Thing", "name": "Unsupervised Learning" }
+            
+        ],
+        "teaches": [
+            "Mathematical concepts",
+            "Practical applications",
+            "Problem-solving techniques"
+        ],
+        "isPartOf": {
+            "@type": "Course",
+            "name": "Machine Learning",
+            "description": "Explore machine learning ideas and applications with mathematical foundations",
+            "provider": {
+            "@type": "Organization",
+            "name": "MATH-CS COMPASS",
+            "url": "https://yusukey01.github.io"
+            },
+            "instructor": {
+            "@type": "Person",
+            "name": "Yusuke Yokota",
+            "jobTitle": "Mathematics & Computer Science Educator"
+            },
+            "courseCode": "V",
+            "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT5H",
+            "instructor": {
+                "@type": "Person",
+                "name": "Yusuke Yokota"
+            }
+            },
+            "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "category": "free"
+            }
+        }
+        }
+        </script>
+        <!-- WebApplication Schema for Interactive Demos -->
+        <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Principal Component Analysis (PCA) & Autoenocoders Interactive Demo",
+        "description": "Interactive demonstration of principal component analysis (pca) & autoenocoders concepts",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://yusukey01.github.io/Mathematics/Machine_learning/pca.html",
+        "author": {
+            "@type": "Person",
+            "name": "Yusuke Yokota"
+        },
+        "applicationSubCategory": "Mathematical Visualization",
+        "featureList": [
+            "Interactive mathematical visualization",
+            "Real-time parameter adjustment",
+            "Educational demonstrations"
+        ],
+        "isAccessibleForFree": true,
+        "educationalUse": "instruction",
+        "educationalLevel": "university"
+        }
+        </script>
+        <div class="hero-section">
+            <h1 class="webpage-name">Principal Component Analysis (PCA) & Autoenocoders</h1>
+        </div>
+
+        
+  <div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section V Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>Machine Learning</h3>
+      <div class="quick-jump-links">
+
+        
+        <a href="ml.html">← Back to Section V Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        
+        
+        <a href="intro_ml.html" >Part 1: Intro to Machine Learning</a>
+        <a href="regression.html" >Part 2: Regularized Regression</a>
+        <a href="intro_classification.html" >Part 3: Intro to Classification</a>
+        <a href="neural_networks.html" >Part 4: Neural Networks Basics</a>
+        <a href="autodiff.html" >Part 5: Automatic Differentiation</a>
+        <a href="svm.html" >Part 6: Support Vector Machine (SVM)</a>
+        <a href="pca.html" class="current-page">Part 7: Principal Component Analysis (PCA) & Autoencoders</a>
+        <a href="clustering.html" >Part 8: Clustering</a>
+        <a href="deep_nn.html" >Part 9: Intro to Deep Neural Networks</a>
+        <a href="intro_RL.html" >Part 10: Intro to Reinforcement Learning</a>
+        
+      </div>
+    </div>
+</div>
+
+
+        <div class="topic-nav">
+            <a href="#intro">Recap & Introduction</a>
+            <a href="#kernel-pca">Kernel PCA</a>
+            <a href="#auto">Autoencoders</a>
+            <a href="#demo">Demo</a>
+            <a href="#noise">Denoising Autoencoders</a>
+            <a href="#manifolds">Manifolds</a>
+        </div> 
+
+        <div class="container">  
+
+            <section id="intro" class="section-content">
+                <h2>Recap & Introduction</h2>
+                    <p>
+                    <a href="../Probability/covariance.html"><strong>Principal Component Analysis (PCA)</strong></a> is one of the most fundamental 
+                    techniques in machine learning and statistics for <strong>dimensionality reduction</strong>. It provides a method to reduce the number of 
+                    variables in high-dimensional datasets while retaining the most meaningful structure and variation present in the original data.
+                    </p>
+
+                    <p>
+                    PCA begins by analyzing the <strong>covariance structure</strong> of the data. Given a dataset, we compute the covariance matrix to 
+                    understand how different features co-vary. Since the covariance matrix is always symmetric and positive semi-definite, it can be 
+                    <a href="../Linear_algebra/symmetry.html"><strong>orthogonally diagonalized</strong></a>. The resulting eigenvectors, called 
+                    <strong>principal components (PCs)</strong>, form an orthonormal basis that captures the directions of maximum variance. The corresponding 
+                    eigenvalues indicate how much of the total variance is captured by each component.
+                    </p>
+
+                    <p>
+                    By projecting the data onto the subspace spanned by the top \(k\) principal components (those associated with the largest eigenvalues), PCA 
+                    identifies a lower-dimensional representation that retains as much variance as possible. This allows us to reduce dimensionality by discarding 
+                    less informative directions (i.e., those with small variance), thereby simplifying the dataset while minimizing information loss.
+                    </p>
+
+                    <p>
+                    For example, if a dataset in \(\mathbb{R}^{10}\) has 3 principal components capturing 95% of the total variance, we can project the original data onto a 
+                    3D subspace. This projection preserves the dominant patterns and relationships in the data and filters out noise and redundancy. The transformed vectors 
+                    in the low-dimensional space are known as <strong>latent representations</strong>.
+                    </p>
+
+                    <p>
+                    While PCA is a powerful tool, it identifies directions of maximum variance using <strong>linear combinations</strong> of the 
+                    original features. As a result, it may fail to uncover complex, <em>nonlinear</em> structures in the data. 
+                    </p>
+                
+            </section>
+
+            <section id="kernel-pca" class="section-content">
+                <h2>Kernel PCA</h2>
+                <p> 
+                    Given the \(N \times D\) data matrix. PCA is a problem of determining the eigenvectors of the \(D\times D\) 
+                    covariance matrix \(X^\top X\). If \(D >> N\), working with the \(N \times N\) <strong>Gram matrix</strong> 
+                    \(K = XX^\top\) is much efficient. The Gram matrix is just a matrix of inner products \(x_i^\top x_j\).
+                </p>
+                <p>
+                    <strong>Kernel PCA (KPCA)</strong> is a nonlinear generalization of classical PCA that uses the 
+                    <a href="intro_classification.html"><strong>kernel trick</strong></a>, which allows us to replace 
+                    inner products \(x_i^\top x_j\) with a kernel function \(K_{ij} = \mathcal{K}(x_i, x_j)\).
+                </p>
+
+                <p>   
+                    The kPCA implicitly replaces \(x_i\) with \(\phi(x_i) = \phi_i\). Let \(\Phi\) be the corresponding 
+                    design matrix.
+                    Assuming the features are centered, the covariance matrix in feature space is represented by:
+                    \[
+                    S_{\phi} = \frac{1}{N} \sum_i \phi_i \phi_i^T.
+                    \]
+                    The normalized eigenvectors of \(S\) are give by:
+                    \[
+                    V_{kPCA} = \Phi^\top U \Lambda^{-\frac{1}{2}}
+                    \]
+                    where \(U\) is an orthogonal matrix containing the eigenvectors of the Gramm matrix \(K = XX^\top\) with 
+                    corresponding eigenvalues in \(\Lambda\).
+                </p>
+                <p>
+                    Since \(\phi_i\) can be infinite dimensional, we cannot compute \(V_{kPCA}\). Instead, we compute the projection 
+                    of a test vector \(x_*\) onto the feature space:
+                    \[
+                    \phi_*^\top V_{kPCA} = \phi_*^\top \Phi^\top U \Lambda^{-\frac{1}{2}} = k_*^\top U \Lambda^{-\frac{1}{2}}
+                    \]
+                    where \(k_* = \left[\mathcal{K}(x_* , x_1), \cdots, \mathcal{K}(x_* , x_N) \right]\).
+                </p>
+
+                <p>
+                    Note that using \(K = \Phi \Phi^\top\) is valid only if \(\mathbb{E}[\phi_i] = 0\). However, the feature space can be 
+                    infinite dimensional, so we cannot subtract off the mean. Here, we introduce the <strong>double centering trick</strong>. 
+                    Let the centered feature vector be 
+                    \[
+                    \tilde{\phi}_i = \phi(x_i) - \frac{1}{N} \sum_{j =1}^N \phi(x_j).
+                    \]
+                    Its Gram matrix is give by
+                    \[
+                    \tilde{K}_{ij} =  \tilde{\phi}_i^\top \tilde{\phi}_j.
+                    \]
+                    By the double centering trick, 
+                    \[
+                    \begin{align*}
+                    \tilde{K} &= C_N K C_N  \\\\
+                              &= K - \frac{1}{N}JK - \frac{1}{N}KJ + \frac{1}{N^2}1^\top K 1
+                     \end{align*}
+                    \]
+                    where 
+                    \[
+                    C_N = I_N - \frac{1}{N}1_N 1_N^\top
+                    \]
+                    is the centering matrix. 
+                    <br>
+                    Note: \(J\) denotes the \(N \times N\) all-ones matrix: \(J = 1_N 1_N^\top\).
+                </p>
+                <div class="proof">
+                Note: To verify the double centering trick, consider the scalar form:
+                \[
+                \begin{align*}
+                \tilde{K}_{ij} &= \tilde{x}_i^\top \tilde{x}_j \\\\
+                                &= \left(x_i - \frac{1}{N} \sum_{k=1}^N x_k \right)\left(x_j - \frac{1}{N} \sum_{l=1}^N x_l \right) \\\\
+                                &= x_i^\top x_j - \frac{1}{N} \sum_{l=1}^N x_i^\top x_l - \frac{1}{N} \sum_{l=1}^N x_j^\top x_k 
+                                    + \frac{1}{N^2} \sum_{k=1}^N \sum_{l =1}^N x_k^\top x_l.
+                \end{align*}
+                \]
+                </div>
+
+            </section>
+
+            <section id="auto" class="section-content">
+                 <h2>Autoencoders</h2>
+                 <p>
+                    <strong>Data reconstruction</strong> serves as the primary quality control mechanism for dimensionality reduction. 
+                    When we compress data from the original high-dimensional feature space \(\mathbb{R}^D\) to low-dimensional space 
+                    \(\mathbb{R}^L\) (where \(L < D\)), we need to ensure that the essential structure and information of the original 
+                    data is preserved. The reconstruction error provides a quantitative measure of information loss. If reconstruction is poor, 
+                    the learned representation is inadequate for the task at hand.
+                 </p>
+
+                 <p>
+                    Reconstruction ensures that the learned latent representation \(z = f_e(x)\) captures the 
+                    most relevant and meaningful features of the data. The fuction \(f_e : x \to z\) is called 
+                    the <strong>encoder</strong>. If the <strong>decoder</strong> \(f_d : z \to x\) 
+                    can successfully reconstruct the original input \(x\) from \(z\), it demonstrates that \(z\) contains 
+                    sufficient information about the underlying data structure.
+                 </p>
+
+                <p>
+                    We can consider PCA as the process of learning linear mappings such as \(f_e\) and \(f_d\). 
+                    Then the <strong>reconstruction function</strong> can be represented as \(r(x) = f_d \left(f_e(x) \right)\), 
+                    which is trained to minimize \(\mathcal{L}(\theta) = -\log p(x | r(x))\). 
+                </p>
+                <p>
+                    We can implement \(f_e\) and \(f_e\) by <strong>neural networks</strong>. This is called <strong>autoencoder</strong>. 
+                    Especially, A linear autoencoder is equivalent to PCA:
+                    <ul style="padding-left: 40px;">
+                        <li>Input: \(x \in \mathbb{R}^D\)</li>
+                        <li>Hidden units: \(z = W_1 x, \quad W_1 \in \mathbb{R}^{L \times D}, \quad L < D\) </li>
+                        <li>Output: \(\hat{x} = W_2 z = W_2 W_1 x = Wx, \quad W_2 \in \mathbb{R}^{D \times L}\)</li>
+                    </ul>
+                    This model is trained by minimizing the squared reconstruction error: 
+                    \[
+                    \mathcal{L}(W) = \sum_{n=1}^N \| x_n - W x_n\|_2^2 
+                    \]
+                    Then we obtain \(\hat{W}\), an orthgonal projection onto the first L eigenvectors of empirical covariance matrix of the data. 
+                    In general, it is known that if we introduce nonlinearities into the autoencoder, the model becomes strictly more powerful than PCA. 
+                    Moreover, autoencoders designed with deep learning architectures handle large datasets and complex structures much better than Kernel PCA, so 
+                    autoencoders have generally become more popular than Kernel PCA for nonlinear mapping in practical applications.
+                </p> 
+            </section>
+
+            <section id="demo" class="section-content">
+                <h2>Demo: Kernel PCA and Autoencoders</h2>
+                <p>
+                    This interactive demo allows you to explore and compare different dimensionality reduction techniques:
+                </p>
+                
+                <h3>PCA Comparison Tab</h3>
+                <p>
+                    Compare how <strong>standard PCA</strong> and <strong>Kernel PCA</strong> handle non-linear datasets. 
+                    Standard PCA finds linear projections, while Kernel PCA can "unfold" complex structures like circles and spirals 
+                    using the kernel trick. Try different kernels (RBF, polynomial) and adjust parameters to see their effects.
+                </p>
+                
+                <h3>Autoencoder Tab</h3>
+                <p>
+                    Explore how a <strong>neural network autoencoder</strong> with a 1D bottleneck learns to compress and reconstruct 
+                    2D data. Unlike PCA which finds linear subspaces, the autoencoder learns non-linear mappings through its hidden layers. 
+                    The 1D latent space visualization shows how the network arranges data points along a single dimension, effectively 
+                    finding the principal curve through the data.
+                </p>
+                
+                <p style="background-color: #f0f4f8; padding: 10px; border-radius: 5px; margin-top: 15px;">
+                    <strong>💡 Tip:</strong> Start with the "circles" dataset to see how each method handles non-linear structure. 
+                    PCA will struggle, Kernel PCA (with RBF kernel) will separate the circles, and the autoencoder will "unfold" 
+                    them into a line.
+                </p>
+
+                <div id="kernel_pca_visualizer"></div>
+                         
+            </section>
+
+            <section id="noise" class="section-content">
+                <h2>Denoising Autoencoders</h2>
+
+                <p>
+                    <strong>Denoising autoencoders (DAE)</strong> are a more regularized variant of standard autoencoders that 
+                    add noise to the input during training, then learn to reconstruct the original, uncorrupted data. 
+                    This seemingly simple modification has profound theoretical implications.
+                </p>
+                <p>
+                    The training process involves corrupting the input \(x\) to produce \(\tilde{x}\), typically using 
+                    Gaussian noise:
+                    \[
+                    p_c (\tilde{x} | x) = \mathcal{N}(\tilde{x} | x, \sigma^2 I)
+                    \]
+                    The model then minimizes the reconstruction error between its output \(r(\tilde{x})\) and the 
+                    clean input \(x\):
+                    \[
+                    \ell (x, r(\tilde{x})) = \| e \|_2^2 
+                    \]
+                    where \(e(x) = r(\tilde{x}) - x \) is the residual error for a sample \(x\). 
+                </p>
+            
+                <p>
+                   A remarkable result is that, as \(\sigma \to 0\), the optimal denoising function satisfies:
+                    \[
+                    e(x) = r(\tilde{x}) - x \approx \nabla_{x} \log p(x).
+                    \]
+                    This means the denoising autoencoder implicitly learns the <strong>score function</strong> 
+                    (gradient of log-density), which forms a <strong>vector field</strong> over the entire feature space. 
+                    At each point, this vector field indicates the direction and magnitude to move toward regions 
+                    of higher data density. The reconstruction process follows these vectors, effectively "flowing" 
+                    corrupted points back to the <strong>data manifold</strong> along the steepest ascent of the probability landscape.
+                </p>
+
+                <p>
+                    <h3> <strong>Data Manifolds in Our Demo:</strong></h3>
+                    The autoencoder tab in our demo visualizes data manifolds. When the 2D data is compressed 
+                    through a 1D bottleneck, the network must learn the underlying <strong>1-D manifold (curve)</strong> 
+                    that best represents the data. The "Reconstructed" visualization shows points projected onto this learned 
+                    manifold This is the autoencoder discovering and representing the intrinsic lower-dimensional structure of the data.
+                </p>
+
+                <p>
+                    <br><strong>Note:</strong>
+                    <a href="../Calculus/duality.html"><strong>Lipschitz continuity</strong></a> is a common regularity condition that ensures a function does not change too rapidly. 
+                    <div class="theorem">
+                    <span class="theorem-title">Definition:</span> 
+                        Given two <a href="../Linear_algebra/trace.html"><strong>metric spaces</strong></a> \((X, d_X)\) and \((Y, d_Y)\). A function \(f : X \to Y\) is called <strong>Lipschitz continuous</strong> 
+                        if there exists a constant \(L > 0\) such that:
+                        \[
+                        \forall \, x_1, x_2 \in X \quad d_Y (f(x_1), f(x_2))\leq L d_X(x_1, x_2)
+                        \]
+                        where \(L\) is called a <strong>Lipschitz constant</strong>.
+                    </div>
+                    This means the function's output changes at most linearly with respect to the input. 
+                    In autoencoders, Lipschitz continuity in the reconstruction map \(r(x)\) ensures stability — small changes in 
+                    input lead to small changes in reconstruction.
+                </p>
+
+                <p>
+                    In the context of <strong>denoising autoencoders</strong>, enforcing or assuming Lipschitz continuity makes the 
+                    learned vector field well-behaved. It guarantees smooth flows along the data manifold and avoids sharp or unstable 
+                    reconstructions, which is essential when approximating the gradient \(\nabla_x \log p(x)\).
+                </p>
+            </section>
+
+            <section id="manifolds" class="section-content">
+                <h2>Manifolds</h2>
+                <p>
+                Intuitively, <strong>manifold</strong> is a topological space that locally resembles Euclidean space near each point. 
+                Imagine a curved surface like a sphere—zooming in on any small patch makes it look flat, like \(\mathbb{R}^2\). In 
+                machine learning, we often assume data lies on a low-dimensional manifold embedded in high-dimensional space.
+                </p>
+                
+                <div class="theorem">
+                <span class="theorem-title">Definition:</span> 
+                An <strong>\(n\)-dimensional manifold \(\mathcal{M}\)</strong> is a topological space where every point 
+                \(p \in \mathcal{M}\) has an open neighborhood \(U\) that is homeomorphic to \(\mathbb{R}^n\). 
+                That is, there exists a continuous bijection \(\phi : U \to \mathbb{R}^n \) with continuous inverse.
+                <br><br>
+                Note: Two topological spaces \(X\) and \(Y\) are <strong>homeomorphic</strong> if there exists a function \(f: X \to Y\) 
+                such that: \(f\) is bijection, continuous, and its inverse \(f^{-1}: Y \to X \) is also continuous.
+                </div>
+
+                <p>
+                <strong>The Manifold Hypothesis:</strong> Real-world high-dimensional data (e.g., images, speech) tends to lie on or near a 
+                low-dimensional manifold embedded in the ambient space. For example, each \(64 \times 64\) grayscale face image can be represented 
+                as a point in \(\mathbb{R}^{4096}\), but the set of "realistic" face images occupies only a small, structured region of this space — 
+                likely a nonlinear manifold of much lower dimension, governed by factors such as pose, lighting, expression, and identity.
+                </p>
+
+                
+            </section>
+
+
+        </div>
+        <script src="/js/main.js"></script>  
+        <script src="/js/kernel_pca.js"></script>  
+    </body>
+</html>
+    
+    <footer>
+    <div class="footer-content">
+        <div class="footer-about">
+            <h3>About MATH-CS COMPASS</h3>
+            <p>Bridging the gap between pure mathematics and computer science applications.</p>
+            <div class="contact-section">
+                <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3_RNkegREvfCEIQznn6SCaf-iB5c-Doxn7Ymuu78Uf-PBjg/viewform" target="_blank">
+                    Submit Your Questions & Feedback <i class="fas fa-external-link-alt"></i>
+                </a></strong>
+            </div>
+        </div>
+        <div class="footer-links">
+            <h3>Quick Links</h3>
+            <ul>
+                
+                <li><a href="../../../index.html">Home</a></li>
+                <li>
+                <a href="../Linear_algebra/linear_algebra.html">
+                    <span class="nav-number">I</span>
+                    <span>Linear Algebra to Algebraic Foundations</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Calculus/calculus.html">
+                    <span class="nav-number">II</span>
+                    <span>Calculus to Optimization & Analysis</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Probability/probability.html">
+                    <span class="nav-number">III</span>
+                    <span>Probability & Statistics</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Discrete/discrete_math.html">
+                    <span class="nav-number">IV</span>
+                    <span>Discrete Mathematics & Algorithms</span>
+                </a>
+                </li>
+                <li>
+                <a href="../Machine_learning/ml.html">
+                    <span class="nav-number">V</span>
+                    <span>Machine Learning</span>
+                </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-social">
+            <h3>Connect With Me</h3>
+            <p>
+                <a href="https://x.com/MathCSCompass?t=Zi8nyfzszeFw8QizbJwnNg&s=09" target="_blank">
+                    <i class="fab fa-x-twitter"></i> X (Twitter)
+                </a>
+            </p>
+            <p>
+                <a href="https://www.facebook.com/share/15uPaBWgQN/" target="_blank">
+                    <i class="fab fa-facebook"></i> Facebook
+                </a>
+            </p>
+      
+            <h3>MATH-CS COMPASS App</h3>
+            <div class="app-download-footer">
+                <a href="https://play.google.com/store/apps/details?id=io.github.yusukey01.twa" target="_blank" rel="noopener">
+                    <img src="../../../images/google-play-badge.png" 
+                        alt="Get it on Google Play" 
+                        class="google-play-badge">
+                </a>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024-2025 MATH-CS COMPASS. All rights reserved.</p>
+    </div>
+</footer>
+    <script src="../../../js/main.js?v=1.0.2"></script>
+    <script src="../../../js/search.js?v=1.0.2"></script>
+    
+
+    <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/js/service-worker.js')
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
+</body>
+</html>
