@@ -86,7 +86,7 @@ uses_python: false
 
         <div class="topic-nav">
             <a href="#cosets">Cosets</a>
-            <a href="#"></a>
+            <a href="#Lagrange">Lagrange's Theorem</a>
             <a href="# "></a>
             <a href="# "></a>
             <a href="# "></a>
@@ -190,19 +190,122 @@ uses_python: false
 
             </section>
 
-            <section id=" " class="section-content">
-                <h2> </h2>
+            <section id="Lagrange" class="section-content">
+                <h2>Lagrange's Theorem</h2>
                 
                 <p>
-                  
+                    The properties of cosets we have just explored lead to one of the most fundamental results in finite group theory. 
+                    If cosets partition a group into disjoint blocks of equal size, then the total number of elements in the group must 
+                    be a simple multiple of the size of any of its subgroups. 
+                </p>
+
+                <p>
+                    Named after Joseph-Louis Lagrange, this theorem imposes a rigid "divisibility constraint" on the structure of finite groups: 
+                    a subgroup cannot just be any size; its order must be a divisor of the parent group's order.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title"> </span>  
+                    <span class="theorem-title">Lagrange's Theorem</span>  
+                    <p>
+                        If \(H\) is a subgroup of a finite group \(G\), then \(|H|\) divides \(|G|\). Moreover, 
+                        the number of distinct left (or right) cosets of \(H\) in \(G\) is \(|G| / |H|\).
+                    </p>
                 </div>   
 
                 <div class="proof">
-                    <span class="proof-title"> </span>
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(a_1 H, \, a_2 H, \, \ldots, \, a_r H\) denote the distinct left cosets of \(H\) in \(G\).
+                        For any \(a \in G\), Property 1 guarantees that \(a \in aH\). Since the cosets \(a_1 H, \ldots, a_r H\) 
+                        exhaust all distinct cosets, we have \(aH = a_i H\) for some \(i\), which means \(a \in a_i H\). 
+                        Therefore, every element of \(G\) belongs to one of these cosets:
+                        \[
+                        G = a_1 H \cup \cdots \cup a_r H.
+                        \]
+                        By Property 4, this union is disjoint, so:
+                        \[
+                        |G| = |a_1 H| + |a_2 H| + \cdots + |a_r H|.
+                        \]
+                        Since \(\forall i, \, |a_i H| = |H|\) by Property 6, we have \(|G| = r |H|\).
+                        Therefore, 
+                        \[
+                        r = \frac{|G|}{|H|}.
+                        \]
+                    </p>
+                </div>
+
+                <div class="example">
+                    <span class="example-title">Example: Subgroup Attacks and the Pohlig-Hellman Algorithm</span>
+                    <p>
+                        In the Diffie-Hellman key exchange, two parties agree on a shared secret by 
+                        exchanging values in a cyclic group \(G = \langle g \rangle\) of order \(n\). 
+                        The security relies on the <strong>discrete logarithm problem (DLP)</strong>: 
+                        given \(g\) and \(h = g^x\), find the exponent \(x\).
+                    </p>
+                    <p>
+                        Lagrange's Theorem reveals a critical vulnerability when \(n\) is composite. 
+                        The <strong>Pohlig-Hellman algorithm</strong> exploits the subgroup structure 
+                        guaranteed by Lagrange's Theorem to reduce the DLP in \(G\) to smaller DLPs in 
+                        subgroups of prime-power order.
+                    </p>
+
+                    <p><strong>The Key Insight:</strong></p>
+                    <p>
+                        Suppose \(n = p_1^{e_1} p_2^{e_2} \cdots p_k^{e_k}\). For each prime power \(p_i^{e_i}\) 
+                        dividing \(n\), consider the element
+                        \[
+                        g_i = g^{n / p_i^{e_i}}.
+                        \]
+                        By Lagrange's Theorem, \(g_i\) has order exactly \(p_i^{e_i}\) since
+                        \[
+                        (g_i)^{p_i^{e_i}} = g^n = e \quad \text{and} \quad (g_i)^{p_i^{e_i - 1}} = g^{n/p_i} \neq e.
+                        \]
+                        Similarly, define \(h_i = h^{n / p_i^{e_i}}\). Then
+                        \[
+                        h_i = (g^x)^{n / p_i^{e_i}} = (g_i)^x,
+                        \]
+                        so solving \(h_i = (g_i)^{x_i}\) for \(x_i\) is a DLP in a subgroup of order \(p_i^{e_i}\), 
+                        which yields \(x_i \equiv x \pmod{p_i^{e_i}}\).
+                    </p>
+
+                    <p><strong>Reconstructing the Solution:</strong></p>
+                    <p>
+                        Once we have all \(k\) congruences
+                        \[
+                        x \equiv x_1 \pmod{p_1^{e_1}}, \quad x \equiv x_2 \pmod{p_2^{e_2}}, \quad \ldots, \quad x \equiv x_k \pmod{p_k^{e_k}},
+                        \]
+                        the Chinese Remainder Theorem guarantees a unique solution modulo \(n\).
+                    </p>
+
+                    <p><strong>Complexity Implication:</strong></p>
+                    <p>
+                        The complexity of the Pohlig-Hellman algorithm is 
+                        \[
+                        O\left(\sum_{i=1}^{k} e_i \left(\log n + \sqrt{p_i}\right)\right)
+                        \]
+                        group operations. When all prime factors \(p_i\) are small (i.e., \(n\) is <em>smooth</em>), 
+                        this is dramatically faster than the \(O(\sqrt{n})\) complexity of generic algorithms like 
+                        baby-step giant-step. For example, if \(n = 2^{20}\), the DLP can be solved in roughly 
+                        \(O(20 \cdot (\log n + \sqrt{2})) \approx O(20 \cdot 21.4)\) operations instead of 
+                        \(O(\sqrt{2^{20}}) = O(1024)\) operations.
+                    </p>
+
+                    <p><strong>The Defense:</strong></p>
+                    <p>
+                        This is precisely why cryptographic protocols choose groups of <strong>prime order \(p\)</strong>. 
+                        By Lagrange's Theorem, such groups have no nontrivial proper subgroups, rendering 
+                        Pohlig-Hellman inapplicable and forcing attackers to confront the full difficulty of the DLP.
+                    </p>
+
+                    <p class="reference" style="font-size: 0.9em; color: #555; margin-top: 1em;">
+                        <strong>References:</strong><br>
+                        A. Menezes, P. van Oorschot, and S. Vanstone, <strong>Handbook of Applied Cryptography</strong>, 
+                        CRC Press, 1997, pp. 107-109.
+                        <br><br>
+                        S. Pohlig and M. Hellman, "An Improved Algorithm for Computing Logarithms over GF(p) 
+                        and Its Cryptographic Significance,"  <strong>IEEE Trans. Inf. Theory</strong>, vol. 24, no. 1, 
+                        pp. 106-110, 1978.
+                    </p>
                 </div>
 
             </section>
