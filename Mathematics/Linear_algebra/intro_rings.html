@@ -564,10 +564,107 @@ noindex: true
                         Therefore, \(a^{i-j-1}\) is the inverse of \(a\).
                     </p>
                 </div>
+
+                <p>
+                    This theorem is the theoretical bedrock of public-key cryptography. It guarantees that as long as we work with 
+                    integers modulo a <strong>prime</strong> \(p\) (denoted as \(\mathbb{Z}_p\)), we are working in a field. 
+                    In practical terms, this means:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Guaranteed Inverses:</strong> Every nonzero element \(a \in \mathbb{Z}_p\) has a unique modular inverse \(a^{-1}\).</li>
+                    <li><strong>Solvability:</strong> We can solve linear equations like \(ax \equiv b \pmod p\) simply by computing \(x \equiv a^{-1}b \pmod p\).</li>
+                    <li><strong>Algorithmic Reliability:</strong> Without these properties, algorithms like <strong>RSA</strong> (which relies on the multiplicative group of units) and <strong>Elliptic Curve Cryptography</strong> (defined over finite fields) would not function.</li>
+                </ul>
+                <p>
+                    By ensuring the modulus is prime, we transform a simple set of remainders into a fully functional <strong>Field</strong>, 
+                    providing the mathematical precision required for modern security.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof: \(\mathbb{Z}_p\) is a Field</span>
+
+                    <p>
+                        The set \(\mathbb{Z}_p = \{0, 1, \dots, p-1\}\) contains exactly \(p\) elements. Since \(p\) is a fixed prime, 
+                        the ring \(\mathbb{Z}_p\) of integers modulo a prime \(p\) is <strong>finite</strong>.  
+                        Now we must show that \(\mathbb{Z}_p\) has no zero-divisors. 
+                        Suppose that \(a, b \in \mathbb{Z}_p\) and \(ab = 0\). 
+                        This implies that \(ab = pk\) for some integer \(k\).
+                        By Euclid's Lemma, since the prime \(p\) divides the product \(ab\), it must divide \(a\) or \(p\) must divide \(b\).
+                        In the context of \(\mathbb{Z}_p\), this means \(a = 0\) or \(b = 0\).
+                        Since \(\mathbb{Z}_p\) is a <strong>finite integral domain</strong>, it follows immediately that \(\mathbb{Z}_p\) is a field.
+                    </p>
+                </div>
+
+                <p>
+                    Let's verify the field properties of \(\mathbb{Z}_5 = \{0, 1, 2, 3, 4\}\). 
+                    According to our theorem, since \(5\) is prime, every non-zero element must have a multiplicative inverse.
+                </p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0; text-align: center; border: 1px solid #ddd;">
+                    <caption style="padding: 10px; font-weight: bold;">Multiplicative Inverses in \(\mathbb{Z}_5\)</caption>
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px;">Element (\(a\))</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Calculation (\(a \cdot x \equiv 1 \pmod 5\))</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Inverse (\(a^{-1}\))</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;">1</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">\(1 \cdot 1 = 1\)</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">1</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;">2</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">\(2 \cdot 3 = 6 \equiv 1\)</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">3</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;">3</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">\(3 \cdot 2 = 6 \equiv 1\)</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">2</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;">4</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">\(4 \cdot 4 = 16 \equiv 1\)</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">4</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>
+                    Because we found a unique inverse for every non-zero element, \(\mathbb{Z}_5\) behaves as a field. 
+                    In a computer program, this means we can perform "division" by \(3\) simply by 
+                    multiplying by \(2\).
+                </p>
+
+                <p>
+                    In a standard program, dividing \(4\) by \(3\) would result in a floating-point number (\(1.333...\)), introducing potential rounding errors. 
+                    However, in the field \(\mathbb{Z}_5\), "dividing by \(3\)" is equivalent to "multiplying by the inverse of \(3\)," which is \(2\). 
+                    Thus, we calculate:
+                    \[ 
+                    4 \div 3 \equiv 4 \cdot 3^{-1} \equiv 4 \cdot 2 = 8 \equiv 3 \pmod 5 
+                    \]
+                    This allows algorithms to remain purely integer-based and 100% precise, which is the fundamental reason why finite fields are used in 
+                    cryptography and error-correction codes.
+                </p>
+                
             </section>
 
             <section id="characteristic" class="section-content">
                 <h2>Characteristic of a Ring</h2>
+
+                <p>
+                    We have seen that in standard number systems like \(\mathbb{Z}\) or \(\mathbb{R}\), adding the unity element \(1\) 
+                    to itself repeatedly (\(1 + 1 + 1 + \dots\)) never results in zero. However, in modular arithmetic rings 
+                    like \(\mathbb{Z}_n\), repeated addition eventually cycles back to zero (e.g., in \(\mathbb{Z}_5\), \(1+1+1+1+1 = 5 \equiv 0\)).
+                </p>
+
+                <p>
+                    This distinction—whether a ring behaves like "integers" (infinite growth) or "clock arithmetic" (cyclic)
+                    —is captured by the concept of the <strong>characteristic</strong>.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Characteristic of a Ring</span>
@@ -587,7 +684,55 @@ noindex: true
                       * char(Q) = char(R) = char(C) = 0
                     - Theorem: The characteristic of an integral domain is either 0 or prime
                     - CS application: char(GF(2^n)) = 2, important for binary arithmetic
+
+                    【TODO: 例 (char Z = 0, char Z_n = n) や定理をここに記述してください
                 -->
+            </section>
+
+            <section id="perspective" class="section-content">
+                <h2>Perspective: Two Roads from a Field</h2>
+
+                <p>
+                    With the definitions of fields and characteristics in place, we have reached a major summit in algebra. 
+                    From here, the landscape of mathematics diverges into two distinct paths based on the <strong>characteristic</strong> of the field.
+                </p>
+
+                <div class="row" style="display: flex; gap: 20px; margin-top: 20px;">
+                    <div style="flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <h3>Route A: The Discrete World</h3>
+                        <p><strong>Characteristic \(p\) (Finite Fields)</strong></p>
+                        <p>
+                            Entering the realm of <strong>Discrete Mathematics</strong>.
+                        </p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Landscape:</strong> Finite elements. No notion of "approaching" a limit.</li>
+                            <li><strong>CS Focus:</strong> Exact arithmetic, Error-correcting codes, and Cryptography.</li>
+                        </ul>
+                    </div>
+
+                    <div style="flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <h3>Route B: The Continuous World</h3>
+                        <p><strong>Characteristic 0 (Infinite Fields)</strong></p>
+                        <p>
+                            Entering the realm of <strong>Analysis and Topology</strong>.
+                        </p>
+                        <ul style="padding-left: 40px;">
+                            <li><strong>Landscape:</strong> Infinite elements. Requires <strong>Metrics</strong> (distance) and <strong>Topology</strong> (nearness).</li>
+                            <li><strong>CS Focus:</strong> Machine Learning optimization, Physics engines, and Signal Processing.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                
+                <p style="margin-top: 40px;">
+                    While \(\mathbb{Q}\) and \(\mathbb{R}\) both have characteristic 0, \(\mathbb{R}\) is unique because it is <strong>complete</strong> (no holes). 
+                    This allows for the calculus we use in gradients and simulations. When algebraic operations are compatible with this "nearness," we call it a 
+                    <strong>Topological Field</strong>.
+                </p>
+
+                <p>
+                    In the next chapter, we will follow <strong>Route A</strong> to explore <strong>Finite Fields</strong> in depth.
+                </p>
             </section>
 
         </div>
