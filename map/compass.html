@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Math-CS Compass | Hexagonal Knowledge Map</title>
+    <title>Math-CS Compass | Map Navigation</title>
     <style>
-        :root {
-            --bg-color: #0b0e14;
-            --text-color: #e0e0e0;
-            --sec-1: #1a237e; /* Algebra */
-            --sec-2: #004d40; /* Analysis */
-            --sec-3: #006064; /* Probability */
-            --sec-4: #4a148c; /* Discrete */
-            --sec-5: #ff6f00; /* ML */
-        }
-        body { margin: 0; background: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        :root { --bg-color: #0b0e14; --text-color: #e0e0e0; }
+        body { margin: 0; background: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         canvas { display: block; cursor: crosshair; touch-action: none; }
         #ui-layer { position: absolute; top: 20px; left: 20px; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        .legend { margin-top: 10px; font-size: 0.8rem; opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -25,123 +16,90 @@
 <div id="ui-layer">
     <h1 style="margin:0; font-size: 1.5rem;">MATH-CS COMPASS</h1>
     <div id="status">Explore the connections between Math & CS</div>
-    <div class="legend">
-        [1st Click: Focus & Ghost Tiles] | [2nd Click: Navigate]
-    </div>
 </div>
 
 <canvas id="mapCanvas"></canvas>
 
 <script>
 /**
- * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
- * @version 2.1.0 (High-DPI & Text-Wrap Edition)
- * All comments in English as requested.
+ * MATH-CS COMPASS: MAP NAVIGATION ENGINE v2.2
+ * - High-DPI & Text-Wrap support
+ * - Ghost Portal Navigation (Click to Warp)
+ * - Target Tile Blinking Effect
  */
 
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- Configuration & State ---
-let scale = 70; // Base hexagon size (radius)
+let scale = 70;
 const minScale = 15;
 const maxScale = 150;
 let offsetX = 0;
 let offsetY = 0;
 let activeTileId = null;
+let blinkTileId = null; // ID of the tile to be highlighted
+let blinkStartTime = 0;
 
-// Color Palette Mapping
-const SECTION_COLORS = {
-    "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00", "ghost": "#ffffff"
-};
+const SECTION_COLORS = { "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00" };
 
-// --- Knowledge Dataset ---
+// Knowledge Dataset
 const knowledgeData = [
     { id: "0-00", section: "I", title: "Logic & Bits", q: 0, r: 0, url: "/index.html" },
     { id: "I-15", section: "I", title: "Groups", q: 2, r: -2, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
     { id: "I-16", section: "I", title: "Subgroups", q: 3, r: -3, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
     { id: "I-20", section: "I", title: "Rings", q: 4, r: -4, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
     { id: "I-21", section: "I", title: "Polynomial Rings", q: 5, r: -5, seqGroup: "algebra", prereqs: ["IV-05"], url: "/Mathematics/Linear_algebra/polynomial_rings.html" },
-    { id: "IV-05", section: "IV", title: "Discrete Logic", q: -2, r: 3, url: "/Mathematics/Discrete_math/logic.html" }
+    { id: "IV-05", section: "IV", title: "Discrete Logic", q: -4, r: 6, url: "/Mathematics/Discrete_math/logic.html" } // Moved further for warp test
 ];
 
-/**
- * High-DPI Display Support
- * Fixes blurriness on screens like Surface Pro by scaling canvas pixels.
- */
 function setup() {
     const dpr = window.devicePixelRatio || 1;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    if (offsetX === 0) offsetX = w / 2;
-    if (offsetY === 0) offsetY = h / 2;
+    if (offsetX === 0) { offsetX = window.innerWidth / 2; offsetY = window.innerHeight / 2; }
 }
 
-/**
- * Intelligent Text Wrapping
- * Draws text inside the hexagon boundaries.
- */
+function getPixelCoords(q, r) {
+    return { x: scale * (3/2 * q) + offsetX, y: scale * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) + offsetY };
+}
+
 function wrapText(text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
-    let line = '';
-    let lines = [];
-
+    let line = '', lines = [];
     for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-            lines.push(line);
-            line = words[n] + ' ';
-        } else {
-            line = testLine;
-        }
+        if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + ' '; }
+        else { line = testLine; }
     }
     lines.push(line);
-
     const startY = y - ((lines.length - 1) * lineHeight) / 2;
-    lines.forEach((l, i) => {
-        ctx.fillText(l.trim(), x, startY + (i * lineHeight));
-    });
+    lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + (i * lineHeight)));
 }
 
-/**
- * Coordinate Conversion
- * Cube/Axial coordinates to Screen Pixels.
- */
-function getPixelCoords(q, r) {
-    return {
-        x: scale * (3/2 * q) + offsetX,
-        y: scale * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) + offsetY
-    };
-}
-
-/**
- * Draw Hexagon Geometry
- */
-function drawHexagon(x, y, size, color, alpha = 1, isGlow = false) {
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false) {
     ctx.save();
-    ctx.globalAlpha = alpha;
+    let finalAlpha = alpha;
+    if (isBlinking) {
+        // Sine wave for blinking effect
+        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 200)) * 0.7;
+    }
+    ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = i * Math.PI / 3;
         ctx.lineTo(x + size * Math.cos(angle), y + size * Math.sin(angle));
     }
     ctx.closePath();
-    
     ctx.fillStyle = color;
     ctx.fill();
     
-    if (isGlow) {
+    if (isGlow || isBlinking) {
         ctx.strokeStyle = "white";
         ctx.lineWidth = 3;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.shadowColor = "white";
         ctx.stroke();
     } else {
@@ -151,115 +109,110 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false) {
     ctx.restore();
 }
 
-/**
- * Core Rendering Loop
- */
 function render() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     const activeTile = knowledgeData.find(t => t.id === activeTileId);
 
+    // Stop blinking after 3 seconds
+    if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
+
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
-        let alpha = 1.0;
-        let glow = false;
+        let alpha = 1.0, glow = false;
 
-        // Selection Logic (Graying out unrelated items)
         if (activeTileId) {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
-            
-            if (isSelf || isSeq || isPrereq) {
-                alpha = 1.0;
-                if (isSeq || isSelf) glow = true;
-            } else {
-                alpha = 0.15;
-            }
+            alpha = (isSelf || isSeq || isPrereq) ? 1.0 : 0.15;
+            glow = isSeq || isSelf;
         }
 
-        drawHexagon(x, y, scale * 0.9, SECTION_COLORS[tile.section], alpha, glow);
+        const isBlinking = (tile.id === blinkTileId);
+        drawHexagon(x, y, scale * 0.9, SECTION_COLORS[tile.section], alpha, glow, isBlinking);
 
-        // LOD (Level of Detail) & Text Rendering
-        if (scale > 30 && alpha > 0.5) {
+        if (scale > 30 && (alpha > 0.5 || isBlinking)) {
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             const fontSize = Math.max(scale / 5.5, 11);
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
-            // Only Title is rendered. ID is kept internal.
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
         }
     });
 
-    // Portal Logic (Ghost Tiles for distant dependencies)
+    // Render Portals
     if (activeTile && activeTile.prereqs) {
-        activeTile.prereqs.forEach(prereqId => {
+        activeTile.prereqs.forEach((prereqId, idx) => {
             const p = knowledgeData.find(t => t.id === prereqId);
             if (p) {
                 const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-                const gx = x + scale * 1.7, gy = y;
+                // Position portal slightly away to avoid overlap
+                const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
                 
-                // Connection line to ghost
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = "rgba(255,255,255,0.5)";
                 ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke();
                 ctx.setLineDash([]);
 
-                drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[p.section], 0.8, true);
+                drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[p.section], 0.9, true);
                 ctx.fillStyle = "white";
-                ctx.font = "bold 10px sans-serif";
-                ctx.fillText("Portal: " + p.title, gx, gy + 4);
+                ctx.font = "bold 11px sans-serif";
+                ctx.fillText("Portal to:", gx, gy - 12);
+                ctx.fillText(p.title, gx, gy + 15);
             }
         });
     }
-
     requestAnimationFrame(render);
 }
 
-// --- Interaction Handlers ---
-
+// Interaction
 canvas.addEventListener('mousedown', (e) => {
-    let clickedTile = null;
+    const mouseX = e.clientX, mouseY = e.clientY;
+    let found = false;
+
+    // Check Portals First
+    const activeTile = knowledgeData.find(t => t.id === activeTileId);
+    if (activeTile && activeTile.prereqs) {
+        activeTile.prereqs.forEach((prereqId, idx) => {
+            const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
+            const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
+            if (Math.hypot(gx - mouseX, gy - mouseY) < scale * 0.6) {
+                // WARP LOGIC
+                const target = knowledgeData.find(t => t.id === prereqId);
+                // Calculate target offset to center the tile
+                offsetX = window.innerWidth / 2 - (scale * (3/2 * target.q));
+                offsetY = window.innerHeight / 2 - (scale * (Math.sqrt(3)/2 * target.q + Math.sqrt(3) * target.r));
+                activeTileId = target.id;
+                blinkTileId = target.id;
+                blinkStartTime = Date.now();
+                found = true;
+            }
+        });
+    }
+    if (found) return;
+
+    // Check Main Tiles
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
-        if (Math.hypot(x - e.clientX, y - e.clientY) < scale * 0.8) {
-            clickedTile = tile;
+        if (Math.hypot(x - mouseX, y - mouseY) < scale * 0.8) {
+            if (activeTileId === tile.id) window.location.href = tile.url;
+            else activeTileId = tile.id;
+            found = true;
         }
     });
-
-    if (clickedTile) {
-        if (activeTileId === clickedTile.id) {
-            // Second click: Navigate to the article
-            window.location.href = clickedTile.url;
-        } else {
-            // First click: Focus
-            activeTileId = clickedTile.id;
-            document.getElementById('status').innerText = `Path Focus: ${clickedTile.title}`;
-        }
-    } else {
-        activeTileId = null;
-        document.getElementById('status').innerText = "Explore the connections between Math & CS";
-    }
+    if (!found) activeTileId = null;
 });
 
-// Basic Navigation Support (Panning & Zooming)
+// Navigation Support
 let isDragging = false;
 canvas.addEventListener('mousedown', () => isDragging = true);
 window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', (e) => {
-    if (isDragging && !activeTileId) {
-        offsetX += e.movementX;
-        offsetY += e.movementY;
-    }
-});
-window.addEventListener('wheel', (e) => {
-    scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale);
-});
+window.addEventListener('mousemove', (e) => { if (isDragging && !activeTileId) { offsetX += e.movementX; offsetY += e.movementY; } });
+window.addEventListener('wheel', (e) => { scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale); });
 
-// Initialization
 setup();
 window.addEventListener('resize', setup);
 render();
-
 </script>
 </body>
 </html>
