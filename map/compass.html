@@ -9,6 +9,7 @@
         body { margin: 0; background: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         canvas { display: block; cursor: crosshair; touch-action: none; }
         #ui-layer { position: absolute; top: 20px; left: 20px; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .legend { margin-top: 10px; font-size: 0.8rem; opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -22,24 +23,33 @@
 
 <script>
 /**
- * MATH-CS COMPASS: MAP NAVIGATION ENGINE v2.4
- * - Essential Fix: Full Reset on Backdrop Click
- * - Fixed Selection Logic
+ * MATH-CS COMPASS: UNIVERSAL MAP ENGINE v3.0
+ * - High-DPI (Surface Pro Support)
+ * - Intelligent Text Wrap (Title only)
+ * - Ghost Portal Navigation (Warp & Blink)
+ * - Full Touch Support (Pinch Zoom & Pan)
+ * - Backdrop Click Reset
  */
 
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
+// --- Global State ---
 let scale = 70;
-const minScale = 15;
-const maxScale = 150;
+const minScale = 15, maxScale = 150;
 let offsetX = 0, offsetY = 0;
 let activeTileId = null;
 let blinkTileId = null;
 let blinkStartTime = 0;
 
+// --- Touch State ---
+let touchStartX = 0, touchStartY = 0;
+let initialPinchDist = 0, initialScale = 0;
+let isDragging = false;
+
 const SECTION_COLORS = { "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00" };
 
+// --- Master Dataset (Placeholders for now) ---
 const knowledgeData = [
     { id: "0-00", section: "I", title: "Logic & Bits", q: 0, r: 0, url: "/index.html" },
     { id: "I-15", section: "I", title: "Groups", q: 2, r: -2, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
@@ -49,6 +59,7 @@ const knowledgeData = [
     { id: "IV-05", section: "IV", title: "Discrete Logic", q: -4, r: 6, url: "/Mathematics/Discrete_math/logic.html" }
 ];
 
+// --- Initialization ---
 function setup() {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
@@ -59,10 +70,12 @@ function setup() {
     if (offsetX === 0) { offsetX = window.innerWidth / 2; offsetY = window.innerHeight / 2; }
 }
 
+// --- Coordinate Systems ---
 function getPixelCoords(q, r) {
     return { x: scale * (3/2 * q) + offsetX, y: scale * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) + offsetY };
 }
 
+// --- Drawing Functions ---
 function wrapText(text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '', lines = [];
@@ -79,9 +92,7 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
 function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false) {
     ctx.save();
     let finalAlpha = alpha;
-    if (isBlinking) {
-        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 250)) * 0.7;
-    }
+    if (isBlinking) finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 250)) * 0.7;
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -91,75 +102,50 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
-    
     if (isGlow || isBlinking) {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = "white";
-        ctx.stroke();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.stroke();
     } else {
-        ctx.strokeStyle = "rgba(255,255,255,0.1)";
-        ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.stroke();
     }
     ctx.restore();
 }
 
+// --- Main Render Loop ---
 function render() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    
-    // Find active tile for focus logic
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
-
-    // Reset blink after 3s
     if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
 
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
-        let alpha = 1.0;
-        let glow = false;
-
-        // SELECTION LOGIC
+        let alpha = 1.0, glow = false;
+        
         if (activeTile) {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
-            
-            // If active, highlight related tiles and dim others
-            if (isSelf || isSeq || isPrereq) {
-                alpha = 1.0;
-                if (isSeq || isSelf) glow = true;
-            } else {
-                alpha = 0.15;
-            }
-        } else {
-            // NO ACTIVE TILE: All tiles are 100% visible
-            alpha = 1.0;
-            glow = false;
+            alpha = (isSelf || isSeq || isPrereq) ? 1.0 : 0.15;
+            glow = isSeq || isSelf;
         }
 
-        const isBlinking = (tile.id === blinkTileId);
-        drawHexagon(x, y, scale * 0.9, SECTION_COLORS[tile.section], alpha, glow, isBlinking);
+        drawHexagon(x, y, scale * 0.9, SECTION_COLORS[tile.section], alpha, glow, tile.id === blinkTileId);
 
-        if (scale > 30 && (alpha > 0.5 || isBlinking)) {
-            ctx.fillStyle = "white";
-            ctx.textAlign = "center";
+        if (scale > 30 && (alpha > 0.5 || tile.id === blinkTileId)) {
+            ctx.fillStyle = "white"; ctx.textAlign = "center";
             const fontSize = Math.max(scale / 5.5, 11);
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
         }
     });
 
-    // Portal Rendering (Only when a tile is focused)
     if (activeTile && activeTile.prereqs) {
         activeTile.prereqs.forEach((prereqId, idx) => {
             const p = knowledgeData.find(t => t.id === prereqId);
             if (p) {
                 const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-                const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
+                const gx = x + scale * 2.0, gy = y + (idx * scale * 1.2);
                 ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,255,255,0.5)";
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke();
-                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke(); ctx.setLineDash([]);
                 drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[p.section], 0.9, true);
                 ctx.fillStyle = "white"; ctx.font = "bold 11px sans-serif";
                 ctx.fillText("Portal to:", gx, gy - 12); ctx.fillText(p.title, gx, gy + 15);
@@ -169,59 +155,72 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// INTERACTION HANDLERS
-canvas.addEventListener('mousedown', (e) => {
-    const mouseX = e.clientX, mouseY = e.clientY;
+// --- Core Logic: Select & Warp ---
+function handleAction(clientX, clientY) {
     let clickedSomething = false;
-
-    // 1. Ghost Portals
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
+
+    // Portal Click Check
     if (activeTile && activeTile.prereqs) {
         activeTile.prereqs.forEach((prereqId, idx) => {
             const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-            const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
-            if (Math.hypot(gx - mouseX, gy - mouseY) < scale * 0.6) {
+            const gx = x + scale * 2.0, gy = y + (idx * scale * 1.2);
+            if (Math.hypot(gx - clientX, gy - clientY) < scale * 0.6) {
                 const target = knowledgeData.find(t => t.id === prereqId);
                 offsetX = window.innerWidth / 2 - (scale * (3/2 * target.q));
                 offsetY = window.innerHeight / 2 - (scale * (Math.sqrt(3)/2 * target.q + Math.sqrt(3) * target.r));
-                activeTileId = target.id;
-                blinkTileId = target.id;
-                blinkStartTime = Date.now();
+                activeTileId = target.id; blinkTileId = target.id; blinkStartTime = Date.now();
                 clickedSomething = true;
             }
         });
     }
     if (clickedSomething) return;
 
-    // 2. Main Tiles
+    // Tile Click Check
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
-        if (Math.hypot(x - mouseX, y - mouseY) < scale * 0.8) {
-            if (activeTileId === tile.id) {
-                window.location.href = tile.url;
-            } else {
-                activeTileId = tile.id;
-                document.getElementById('status').innerText = `Path Focus: ${tile.title}`;
-            }
+        if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
+            if (activeTileId === tile.id) window.location.href = tile.url;
+            else activeTileId = tile.id;
             clickedSomething = true;
         }
     });
 
-    // 3. FULL RESET: If clicking empty space
-    if (!clickedSomething) {
-        activeTileId = null; // Clearing this triggers the 'else' in render() selection logic
-        blinkTileId = null;
-        document.getElementById('status').innerText = "Explore the connections between Math & CS";
+    if (!clickedSomething) { activeTileId = null; blinkTileId = null; }
+}
+
+// --- Desktop & Touch Handlers ---
+canvas.addEventListener('mousedown', (e) => { isDragging = false; touchStartX = e.clientX; touchStartY = e.clientY; });
+canvas.addEventListener('mousemove', (e) => {
+    if (e.buttons === 1 && Math.hypot(e.clientX - touchStartX, e.clientY - touchStartY) > 5) {
+        if (!activeTileId) { offsetX += e.movementX; offsetY += e.movementY; }
+        isDragging = true;
     }
 });
+canvas.addEventListener('mouseup', (e) => { if (!isDragging) handleAction(e.clientX, e.clientY); });
+canvas.addEventListener('wheel', (e) => { scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale); });
 
-let isDragging = false;
-canvas.addEventListener('mousedown', () => isDragging = true);
-window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', (e) => { 
-    if (isDragging && !activeTileId) { offsetX += e.movementX; offsetY += e.movementY; } 
-});
-window.addEventListener('wheel', (e) => { scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale); });
+canvas.addEventListener('touchstart', (e) => {
+    isDragging = false;
+    if (e.touches.length === 1) { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }
+    else if (e.touches.length === 2) {
+        initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        initialScale = scale;
+    }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && !activeTileId) {
+        const dx = e.touches[0].clientX - touchStartX, dy = e.touches[0].clientY - touchStartY;
+        if (Math.hypot(dx, dy) > 5) { offsetX += dx; offsetY += dy; touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; isDragging = true; }
+    } else if (e.touches.length === 2) {
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        scale = Math.min(Math.max(minScale, initialScale * (dist / initialPinchDist)), maxScale);
+    }
+}, {passive: false});
+
+canvas.addEventListener('touchend', (e) => { if (!isDragging && e.changedTouches.length === 1) handleAction(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
 
 setup();
 window.addEventListener('resize', setup);
