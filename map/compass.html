@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Math-CS Compass | Hexagonal Knowledge Map</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --text-color: #e0e0e0;
+            --sec-1: #1a237e; /* Algebra */
+            --sec-2: #004d40; /* Analysis */
+            --sec-3: #006064; /* Probability */
+            --sec-4: #4a148c; /* Discrete */
+            --sec-5: #ff6f00; /* ML */
+        }
+        body { margin: 0; background: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        canvas { display: block; cursor: crosshair; }
+        #ui-layer { position: absolute; top: 20px; left: 20px; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .legend { margin-top: 10px; font-size: 0.8rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <h1 style="margin:0; font-size: 1.5rem;">MATH-CS COMPASS</h1>
+    <div id="status">Explore the connections between Math & CS</div>
+    <div class="legend">
+        [1st Click: Focus & Ghost Tiles] | [2nd Click: Navigate]
+    </div>
+</div>
+
+<canvas id="mapCanvas"></canvas>
+
+<script>
+/**
+ * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
+ * @author Yusuke Yokota / Gemini Partner
+ * @version 2.0.0 (January 2026)
+ * * Technical Specs:
+ * - Cube Coordinates (q, r, s) where q+r+s=0
+ * - LOD (Level of Detail) rendering
+ * - Sequential Path Highlighting (Glow effect)
+ * - Ghost Tile (Portal) generation for distant dependencies
+ */
+
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Configuration ---
+let scale = 50;
+const minScale = 15;
+const maxScale = 120;
+let offsetX = window.innerWidth / 2;
+let offsetY = window.innerHeight / 2;
+let activeTileId = null;
+
+// Color Palette Mapping
+const SECTION_COLORS = {
+    "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00", "ghost": "#ffffff"
+};
+
+// --- Mock Dataset based on user files ---
+const knowledgeData = [
+    { id: "0-00", section: "I", title: "Logic & Bits", q: 0, r: 0, url: "/index.html" },
+    { id: "I-15", section: "I", title: "Groups", q: 2, r: -2, seqGroup: "abstract-algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
+    { id: "I-16", section: "I", title: "Subgroups", q: 3, r: -3, seqGroup: "abstract-algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
+    { id: "I-20", section: "I", title: "Rings", q: 4, r: -4, seqGroup: "abstract-algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
+    { id: "I-21", section: "I", title: "Polynomial Rings", q: 5, r: -5, seqGroup: "abstract-algebra", prereqs: ["IV-05"], url: "/Mathematics/Linear_algebra/polynomial_rings.html" },
+    { id: "IV-05", section: "IV", title: "Discrete Logic", q: -2, r: 3, url: "/Mathematics/Discrete_math/logic.html" }
+];
+
+// --- Core Math Functions ---
+
+function getPixelCoords(q, r) {
+    const x = scale * (3/2 * q);
+    const y = scale * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+    return { x: x + offsetX, y: y + offsetY };
+}
+
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = i * Math.PI / 3;
+        ctx.lineTo(x + size * Math.cos(angle), y + size * Math.sin(angle));
+    }
+    ctx.closePath();
+    
+    ctx.fillStyle = color;
+    ctx.fill();
+    
+    if (isGlow) {
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "white";
+        ctx.stroke();
+    } else {
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// --- Main Loop ---
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const activeTile = knowledgeData.find(t => t.id === activeTileId);
+    
+    // 1. Draw Edges First (Behind Tiles)
+    renderEdges(activeTile);
+
+    // 2. Draw Main Tiles
+    knowledgeData.forEach(tile => {
+        const { x, y } = getPixelCoords(tile.q, tile.r);
+        let alpha = 1.0;
+        let glow = false;
+
+        if (activeTileId) {
+            const isSelf = tile.id === activeTileId;
+            const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
+            const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
+            
+            if (isSelf || isSeq || isPrereq) {
+                alpha = 1.0;
+                if (isSeq || isSelf) glow = true;
+            } else {
+                alpha = 0.15; // Gray out unrelated topics
+            }
+        }
+
+        drawHexagon(x, y, scale * 0.9, SECTION_COLORS[tile.section], alpha, glow);
+
+        // LOD: Only show text if zoomed in and not faded
+        if (scale > 30 && alpha > 0.5) {
+            renderText(tile, x, y);
+        }
+    });
+
+    // 3. Render Ghost Tile (Portal) if focused
+    if (activeTile && activeTile.prereqs) {
+        renderGhostTiles(activeTile);
+    }
+
+    requestAnimationFrame(render);
+}
+
+function renderEdges(activeTile) {
+    // Only logic for sequence paths
+    knowledgeData.forEach(tile => {
+        if (tile.seqGroup && activeTile && tile.seqGroup === activeTile.seqGroup) {
+            // Find next in sequence logic here (omitted for brevity)
+        }
+    });
+}
+
+function renderText(tile, x, y) {
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.font = `${scale/4}px sans-serif`;
+    ctx.fillText(tile.id, x, y - scale/5);
+    ctx.font = `bold ${scale/3.5}px sans-serif`;
+    ctx.fillText(tile.title, x, y + scale/4);
+}
+
+function renderGhostTiles(tile) {
+    const { x, y } = getPixelCoords(tile.q, tile.r);
+    tile.prereqs.forEach((prereqId, idx) => {
+        const prereqTile = knowledgeData.find(t => t.id === prereqId);
+        if (prereqTile) {
+            // Place ghost tile at neighbor position (offset)
+            const gx = x + scale * 1.6; 
+            const gy = y - scale * 0.5;
+            
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "rgba(255,255,255,0.5)";
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke();
+            ctx.setLineDash([]);
+            
+            drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[prereqTile.section], 0.8, true);
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText("Portal: " + prereqId, gx, gy + 4);
+        }
+    });
+}
+
+// --- Event Handlers ---
+
+canvas.addEventListener('mousedown', (e) => {
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    let found = false;
+
+    knowledgeData.forEach(tile => {
+        const { x, y } = getPixelCoords(tile.q, tile.r);
+        const dist = Math.hypot(x - mouseX, y - mouseY);
+        if (dist < scale * 0.8) {
+            if (activeTileId === tile.id) {
+                // Second Click: Navigate
+                window.location.href = tile.url;
+            } else {
+                // First Click: Select
+                activeTileId = tile.id;
+                document.getElementById('status').innerText = `Focus: ${tile.title} (Click again to read)`;
+            }
+            found = true;
+        }
+    });
+
+    if (!found) {
+        activeTileId = null;
+        document.getElementById('status').innerText = "Explore the connections between Math & CS";
+    }
+});
+
+// Basic Pan and Zoom logic for Surface Pro
+let isDragging = false;
+canvas.addEventListener('mousedown', () => isDragging = true);
+window.addEventListener('mouseup', () => isDragging = false);
+window.addEventListener('mousemove', (e) => {
+    if (isDragging && !activeTileId) { // Drag only when not focused on a tile
+        offsetX += e.movementX;
+        offsetY += e.movementY;
+    }
+});
+window.addEventListener('wheel', (e) => {
+    const oldScale = scale;
+    scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.1), maxScale);
+});
+
+function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    render();
+}
+
+window.addEventListener('resize', init);
+init();
+
+</script>
+</body>
+</html>
