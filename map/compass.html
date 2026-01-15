@@ -22,10 +22,11 @@
 
 <script>
 /**
- * MATH-CS COMPASS: MAP NAVIGATION ENGINE v2.2
+ * MATH-CS COMPASS: MAP NAVIGATION ENGINE v2.3
  * - High-DPI & Text-Wrap support
  * - Ghost Portal Navigation (Click to Warp)
  * - Target Tile Blinking Effect
+ * - Backdrop Click Reset (Essential Fix)
  */
 
 const canvas = document.getElementById('mapCanvas');
@@ -37,7 +38,7 @@ const maxScale = 150;
 let offsetX = 0;
 let offsetY = 0;
 let activeTileId = null;
-let blinkTileId = null; // ID of the tile to be highlighted
+let blinkTileId = null;
 let blinkStartTime = 0;
 
 const SECTION_COLORS = { "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00" };
@@ -49,7 +50,7 @@ const knowledgeData = [
     { id: "I-16", section: "I", title: "Subgroups", q: 3, r: -3, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
     { id: "I-20", section: "I", title: "Rings", q: 4, r: -4, seqGroup: "algebra", url: "/Mathematics/Linear_algebra/abstract_algebra.html" },
     { id: "I-21", section: "I", title: "Polynomial Rings", q: 5, r: -5, seqGroup: "algebra", prereqs: ["IV-05"], url: "/Mathematics/Linear_algebra/polynomial_rings.html" },
-    { id: "IV-05", section: "IV", title: "Discrete Logic", q: -4, r: 6, url: "/Mathematics/Discrete_math/logic.html" } // Moved further for warp test
+    { id: "IV-05", section: "IV", title: "Discrete Logic", q: -4, r: 6, url: "/Mathematics/Discrete_math/logic.html" }
 ];
 
 function setup() {
@@ -83,7 +84,6 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     ctx.save();
     let finalAlpha = alpha;
     if (isBlinking) {
-        // Sine wave for blinking effect
         finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 200)) * 0.7;
     }
     ctx.globalAlpha = finalAlpha;
@@ -113,7 +113,6 @@ function render() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     const activeTile = knowledgeData.find(t => t.id === activeTileId);
 
-    // Stop blinking after 3 seconds
     if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
 
     knowledgeData.forEach(tile => {
@@ -140,20 +139,16 @@ function render() {
         }
     });
 
-    // Render Portals
     if (activeTile && activeTile.prereqs) {
         activeTile.prereqs.forEach((prereqId, idx) => {
             const p = knowledgeData.find(t => t.id === prereqId);
             if (p) {
                 const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-                // Position portal slightly away to avoid overlap
                 const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
-                
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = "rgba(255,255,255,0.5)";
                 ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke();
                 ctx.setLineDash([]);
-
                 drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[p.section], 0.9, true);
                 ctx.fillStyle = "white";
                 ctx.font = "bold 11px sans-serif";
@@ -165,49 +160,63 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// Interaction
+// Updated Interaction Handling
 canvas.addEventListener('mousedown', (e) => {
     const mouseX = e.clientX, mouseY = e.clientY;
-    let found = false;
+    let clickedSomething = false;
 
-    // Check Portals First
+    // 1. Check Ghost Portals
     const activeTile = knowledgeData.find(t => t.id === activeTileId);
     if (activeTile && activeTile.prereqs) {
         activeTile.prereqs.forEach((prereqId, idx) => {
             const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
             const gx = x + scale * 1.8, gy = y + (idx * scale * 1.2);
             if (Math.hypot(gx - mouseX, gy - mouseY) < scale * 0.6) {
-                // WARP LOGIC
                 const target = knowledgeData.find(t => t.id === prereqId);
-                // Calculate target offset to center the tile
                 offsetX = window.innerWidth / 2 - (scale * (3/2 * target.q));
                 offsetY = window.innerHeight / 2 - (scale * (Math.sqrt(3)/2 * target.q + Math.sqrt(3) * target.r));
                 activeTileId = target.id;
                 blinkTileId = target.id;
                 blinkStartTime = Date.now();
-                found = true;
+                document.getElementById('status').innerText = `Jumped to: ${target.title}`;
+                clickedSomething = true;
             }
         });
     }
-    if (found) return;
+    if (clickedSomething) return;
 
-    // Check Main Tiles
+    // 2. Check Main Tiles
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         if (Math.hypot(x - mouseX, y - mouseY) < scale * 0.8) {
-            if (activeTileId === tile.id) window.location.href = tile.url;
-            else activeTileId = tile.id;
-            found = true;
+            if (activeTileId === tile.id) {
+                window.location.href = tile.url;
+            } else {
+                activeTileId = tile.id;
+                document.getElementById('status').innerText = `Path Focus: ${tile.title}`;
+            }
+            clickedSomething = true;
         }
     });
-    if (!found) activeTileId = null;
+
+    // 3. ESSENTIAL FIX: If nothing was clicked, reset everything
+    if (!clickedSomething) {
+        activeTileId = null;
+        blinkTileId = null;
+        document.getElementById('status').innerText = "Explore the connections between Math & CS";
+    }
 });
 
-// Navigation Support
 let isDragging = false;
 canvas.addEventListener('mousedown', () => isDragging = true);
 window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', (e) => { if (isDragging && !activeTileId) { offsetX += e.movementX; offsetY += e.movementY; } });
+window.addEventListener('mousemove', (e) => { 
+    // Only drag when NO active tile is selected or dragging the background
+    if (isDragging && !activeTileId) { 
+        offsetX += e.movementX; 
+        offsetY += e.movementY; 
+    } 
+});
 window.addEventListener('wheel', (e) => { scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale); });
 
 setup();
