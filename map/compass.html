@@ -57,9 +57,14 @@
 
 <script>
 /**
- * MATH-CS COMPASS: FINAL COMPLETE BUILD v4.2
- * - Fix: Code truncation resolved.
- * - Logic: Pointy-topped hexagons, Smooth Touch, Double-tap navigation.
+ * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
+ * @author Yusuke Yokota / Gemini Partner
+ * @version 4.3.0 (January 2026)
+ * * Technical Specs:
+ * - Cube Coordinates (q, r, s) where q+r+s=0
+ * - LOD (Level of Detail) rendering
+ * - Sequential Path Highlighting (Glow effect)
+ * - Ghost Tile (Portal) generation for distant dependencies
  */
 
 const canvas = document.getElementById('mapCanvas');
@@ -76,6 +81,11 @@ let blinkStartTime = 0;
 let isTouchInteraction = false;
 
 const SECTION_COLORS = { "I": "#1a237e", "II": "#004d40", "III": "#006064", "IV": "#4a148c", "V": "#ff6f00" };
+
+// --- Animation settings ---
+const IDLE_BLINK_DURATION = 2000; 
+const IDLE_BLINK_CHANCE = 0.005;  
+const idleBlinkState = {}; // Tracks when each tile started its idle blink
 
 // Data
 const knowledgeData = [
@@ -104,7 +114,16 @@ function getPixelCoords(q, r) {
 function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false) {
     ctx.save();
     let finalAlpha = alpha;
-    if (isBlinking) finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 200)) * 0.7;
+
+    if (isBlinking) {
+        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 200)) * 0.7;
+    } else if (isIdleBlinking) {
+        // Subtle oscillation for idle tiles
+        const elapsed = Date.now() - idleBlinkState[isIdleBlinking];
+        const progress = elapsed / IDLE_BLINK_DURATION;
+        finalAlpha = 0.8 + 0.2 * Math.sin(progress * Math.PI * 2 - Math.PI / 2);
+    }
+
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -114,8 +133,13 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
-    if (isGlow || isBlinking) {
-        ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.stroke();
+
+    if (isGlow || isBlinking || isIdleBlinking) {
+        ctx.strokeStyle = isIdleBlinking ? "rgba(255,255,255,0.5)" : "white"; 
+        ctx.lineWidth = isIdleBlinking ? 2 : 3; 
+        ctx.shadowBlur = isIdleBlinking ? 5 : 15; 
+        ctx.shadowColor = "white"; 
+        ctx.stroke();
     } else {
         ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 1; ctx.stroke();
     }
@@ -136,21 +160,53 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
 }
 
 function render() {
+    // --- 1. Background Pulse (globalAlphaFactor) ---
+    // Apply a very subtle overall pulsing effect to the system
+    const time = Date.now();
+    const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.globalAlpha = globalAlphaFactor;
+
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
     if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
+
+    // Check if the map is in an "idle" state (no active selection or warp blinking)
+    const isSystemIdle = !activeTileId && !blinkTileId;
 
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         let alpha = activeTile ? 0.15 : 1.0;
         let glow = false;
+        
+        // --- 3. Inactive Tile Blinking Logic ---
+        let isIdleBlinking = false;
+        if (isSystemIdle) {
+            if (idleBlinkState[tile.id]) {
+                const elapsed = time - idleBlinkState[tile.id];
+                if (elapsed < IDLE_BLINK_DURATION) {
+                    isIdleBlinking = true;
+                } else {
+                    delete idleBlinkState[tile.id];
+                }
+            } else if (Math.random() < IDLE_BLINK_CHANCE) {
+                idleBlinkState[tile.id] = time;
+            }
+        } else {
+            // Stop idle animations during interaction
+            delete idleBlinkState[tile.id];
+        }
+
         if (activeTile) {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
             if (isSelf || isSeq || isPrereq) { alpha = 1.0; glow = isSelf || isSeq; }
         }
-        drawHexagon(x, y, scale * 0.95, SECTION_COLORS[tile.section], alpha, glow, tile.id === blinkTileId);
+
+        // Call the updated draw function with the new parameter
+        drawHexagon(x, y, scale * 0.95, SECTION_COLORS[tile.section], alpha, glow, tile.id === blinkTileId, isIdleBlinking ? tile.id : false);
+        
+        // (Text rendering code follows here...)
         if (scale > 30 && (alpha > 0.5 || tile.id === blinkTileId)) {
             ctx.fillStyle = "white"; ctx.textAlign = "center";
             const fontSize = Math.max(scale / 4.5, 12);
