@@ -195,7 +195,7 @@ let isDragging = false;
 let startX = 0, startY = 0;
 let lastX = 0, lastY = 0;
 let initialPinchDist = 0;
-let initialScale = 80;
+let initialScale = 0;
 
 // Data (loaded from curriculum.json)
 let knowledgeData = [];
@@ -480,11 +480,13 @@ function render() {
         const color = SECTION_COLORS[tile.section] || '#888888';
         drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
         
-        // --- 4. Draw Text  ---
-        // Calculate visibility based on zoom: starts at scale 45, full at 65
-        const zoomFade = Math.max(0, Math.min(1, (scale - 45) / 20));
+        // --- 4. Draw Text (Final Optimized Version) ---
+        // 1. Calculate zoom-based opacity independently.
+        // Starts fading in at scale 40, reaches full opacity at scale 60.
+        const zoomOpacity = Math.max(0, Math.min(1, (scale - 40) / (60 - 40)));
 
-        if (zoomFade > 0) {
+        // 2. Only proceed if text is actually visible (eliminates magic if-statements).
+        if (zoomOpacity > 0) {
             ctx.save();
             
             ctx.fillStyle = "white"; 
@@ -492,12 +494,13 @@ function render() {
             const fontSize = scale / 5.5; 
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
 
-            // CRITICAL FIX: Decouple text opacity from tile alpha (0.15)
-            // Use high base alpha (0.8 for unselected, 1.0 for selected)
-            const textBaseAlpha = (alpha > 0.5) ? 1.0 : 0.8;
+            // 3. Fix the "Original Density" problem.
+            // We ignore the tile's low alpha (0.15) and use a dedicated text visibility base.
+            // Selected/Related tiles: 1.0, Others: 0.7 (still readable).
+            const textBaseAlpha = (alpha > 0.5) ? 1.0 : 0.7;
 
-            // Final Alpha = Visibility * Global Breathing * Zoom Factor
-            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomFade;
+            // 4. Combine factors: Base Visibility * Breathing * Zoom Fade
+            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity;
 
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
             
@@ -613,21 +616,16 @@ window.addEventListener('wheel', e => {
     scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale);
 }, { passive: false });
 
-// --- Touch Handlers  ---
+// Touch Handlers
 canvas.addEventListener('touchstart', e => {
-    isTouchInteraction = true;
-    isPanning = false; // Stop auto-pan on touch
-    
+    isTouchInteraction = true; 
     if (e.touches.length === 1) {
         isDragging = false;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        lastX = startX;
-        lastY = startY;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        lastX = startX; lastY = startY;
     } else if (e.touches.length === 2) {
-        // Initialize pinch zoom
         initialPinchDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
         );
         initialScale = scale;
@@ -637,37 +635,29 @@ canvas.addEventListener('touchstart', e => {
 canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     if (e.touches.length === 1) {
-        // Panning logic
         const x = e.touches[0].clientX;
         const y = e.touches[0].clientY;
         if (Math.hypot(x - startX, y - startY) > 5) isDragging = true;
-        offsetX += x - lastX;
-        offsetY += y - lastY;
-        lastX = x;
-        lastY = y;
+        offsetX += x - lastX; offsetY += y - lastY;
+        lastX = x; lastY = y;
     } else if (e.touches.length === 2) {
-        // Pinch Zoom logic
-        const currentDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
+        const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
         );
         if (initialPinchDist > 0) {
-            // Smoothly update scale based on pinch ratio
-            const zoomFactor = currentDist / initialPinchDist;
-            scale = Math.min(Math.max(minScale, initialScale * zoomFactor), maxScale);
+            scale = Math.min(Math.max(minScale, initialScale * (dist / initialPinchDist)), maxScale);
         }
     }
 }, { passive: false });
 
 canvas.addEventListener('touchend', e => {
-    e.preventDefault();
-    if (!isDragging && e.changedTouches.length === 1 && e.touches.length === 0) {
+    e.preventDefault(); 
+    if (!isDragging && e.changedTouches.length === 1) {
         handleInteraction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
     }
-    // Reset pinch distance
-    if (e.touches.length < 2) initialPinchDist = 0;
-    setTimeout(() => isTouchInteraction = false, 500);
-}, { passive: false });
+    setTimeout(() => isTouchInteraction = false, 500); 
+});
 
 // Keyboard navigation
 window.addEventListener('keydown', e => {
