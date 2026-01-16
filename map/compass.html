@@ -184,7 +184,7 @@ let offsetY = window.innerHeight / 2;
 // Camera animation state
 let targetOffsetX = offsetX;
 let targetOffsetY = offsetY;
-let isPanning = false;  // True when camera is auto-moving
+let isPanning = false;        // True when camera is auto-moving
 
 // Tile animation
 let activeTileId = null;
@@ -262,6 +262,23 @@ async function loadCurriculumData() {
                     prereqs: part.prereqs || []
                 });
             });
+            
+            // Add reserved slots (Coming Soon tiles)
+            if (section.reservedSlots) {
+                section.reservedSlots.forEach((slot, index) => {
+                    knowledgeData.push({
+                        id: `${sectionId}-reserved-${index}`,
+                        section: sectionId,
+                        title: 'Coming Soon',
+                        url: null,  // No URL for reserved slots
+                        q: slot.q,
+                        r: slot.r,
+                        seqGroup: sectionId,
+                        prereqs: [],
+                        isReserved: true  // Flag to identify reserved slots
+                    });
+                });
+            }
         });
         
         console.log(`Loaded ${knowledgeData.length} tiles from curriculum data`);
@@ -294,7 +311,7 @@ function getPixelCoords(q, r) {
     return { x: x + offsetX, y: y + offsetY };
 }
 
-function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false) {
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, isReserved = false) {
     ctx.save();
     let finalAlpha = alpha;
 
@@ -307,6 +324,11 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
             finalAlpha = 0.8 + 0.2 * Math.sin(progress * Math.PI * 2 - Math.PI / 2);
         }
     }
+    
+    // Reserved slots are always dimmed
+    if (isReserved) {
+        finalAlpha = 0.25;
+    }
 
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
@@ -318,7 +340,14 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     ctx.fillStyle = color;
     ctx.fill();
 
-    if (isGlow || isBlinking || isIdleBlinking) {
+    if (isReserved) {
+        // Dashed border for reserved slots
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+    } else if (isGlow || isBlinking || isIdleBlinking) {
         ctx.strokeStyle = isIdleBlinking ? "rgba(255,255,255,0.5)" : "white"; 
         ctx.lineWidth = isIdleBlinking ? 2 : 3; 
         ctx.shadowBlur = isIdleBlinking ? 5 : 15; 
@@ -444,8 +473,8 @@ function render() {
         const timeSinceLastBlink = time - lastBlinkTime;
         
         if (currentBlinkCount < MAX_CONCURRENT_BLINKS && timeSinceLastBlink > IDLE_BLINK_INTERVAL) {
-            // Pick a random tile that isn't already blinking
-            const availableTiles = knowledgeData.filter(t => !idleBlinkState[t.id]);
+            // Pick a random tile that isn't already blinking and isn't reserved
+            const availableTiles = knowledgeData.filter(t => !idleBlinkState[t.id] && !t.isReserved);
             if (availableTiles.length > 0) {
                 const randomTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
                 idleBlinkState[randomTile.id] = time;
@@ -467,9 +496,12 @@ function render() {
         let alpha = activeTile ? 0.15 : 1.0; // Dim non-selected tiles
         let glow = false;
         let isIdleBlinking = false;
+        
+        // Reserved slots don't participate in idle blinking
+        const isReserved = tile.isReserved === true;
 
         // Handle random idle blinking (The "Pulse" of the system)
-        if (isSystemIdle) {
+        if (isSystemIdle && !isReserved) {
             if (idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
                 if (elapsed < IDLE_BLINK_DURATION) {
@@ -482,8 +514,8 @@ function render() {
             delete idleBlinkState[tile.id];
         }
 
-        // Highlight logic for active/related tiles
-        if (activeTile) {
+        // Highlight logic for active/related tiles (reserved slots don't highlight)
+        if (activeTile && !isReserved) {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
@@ -495,7 +527,7 @@ function render() {
         }
 
         const color = SECTION_COLORS[tile.section] || '#888888';
-        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved);
         
         // --- 4. Draw Text (Final Optimized Version) ---
         // 1. Calculate zoom-based opacity independently.
@@ -506,14 +538,15 @@ function render() {
         if (zoomOpacity > 0) {
             ctx.save();
             
-            ctx.fillStyle = "white"; 
+            ctx.fillStyle = isReserved ? "rgba(255,255,255,0.5)" : "white"; 
             ctx.textAlign = "center";
             const fontSize = scale / 5.5; 
-            ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+            ctx.font = isReserved ? `italic ${fontSize}px 'Segoe UI', sans-serif` : `bold ${fontSize}px 'Segoe UI', sans-serif`;
 
+            // 3. Fix the "Original Density" problem.
             // We ignore the tile's low alpha (0.15) and use a dedicated text visibility base.
-            // Selected/Related tiles: 1.0, Others: 0.7 (still readable).
-            const textBaseAlpha = (alpha > 0.5) ? 1.0 : 0.7;
+            // Selected/Related tiles: 1.0, Others: 0.7 (still readable). Reserved: 0.5
+            const textBaseAlpha = isReserved ? 0.5 : (alpha > 0.5) ? 1.0 : 0.7;
 
             // 4. Combine factors: Base Visibility * Breathing * Zoom Fade
             ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity;
@@ -577,9 +610,19 @@ function handleInteraction(clientX, clientY) {
         if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
             hit = true;
             
+            // Handle reserved (Coming Soon) tiles
+            if (tile.isReserved) {
+                activeTileId = tile.id;
+                document.getElementById('status').innerText = `Coming Soon - New content planned for this section`;
+                panToTile(tile);
+                break;
+            }
+            
             if (activeTileId === tile.id) {
                 // Second tap on the same tile: Navigate to the content page
-                window.location.assign(tile.url);
+                if (tile.url) {
+                    window.location.assign(tile.url);
+                }
             } else {
                 // First tap: Select the tile and trigger auto-panning
                 activeTileId = tile.id;
