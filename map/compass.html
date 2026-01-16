@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Math-CS Compass | Map Navigation</title>
+    <title>Math-CS Compass | Knowledge Map</title>
     <style>
         :root { 
             --bg-color: #0b0e14; 
@@ -19,15 +19,12 @@
             background: var(--bg-color); 
             color: var(--text-color); 
             font-family: 'Segoe UI', sans-serif; 
-            
-            /* Prevent unwanted browser behaviors on mobile */
             overflow: hidden; 
             touch-action: none; 
             -webkit-text-size-adjust: 100%; 
             position: fixed; 
         }
 
-        /* Canvas Mapping Engine */
         canvas { 
             display: block; 
             width: 100vw; 
@@ -44,6 +41,83 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
             z-index: 10; 
         }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: env(safe-area-inset-bottom, 20px);
+            left: 20px;
+            background: rgba(11, 14, 20, 0.9);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        #legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.85rem;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* Loading indicator */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: var(--text-color);
+        }
+
+        /* Home button */
+        #home-btn {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            right: 20px;
+            background: rgba(11, 14, 20, 0.9);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 10;
+            transition: all 0.2s;
+        }
+
+        #home-btn:hover {
+            background: rgba(52, 152, 219, 0.3);
+            border-color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            #legend {
+                font-size: 0.7rem;
+                padding: 8px 12px;
+            }
+            #legend h4 {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -53,145 +127,153 @@
     <div id="status" style="font-size: 0.9rem; opacity: 0.8;">Explore the Knowledge Map</div>
 </div>
 
+<a id="home-btn" href="/index.html">← Back to Home</a>
+
+<div id="legend">
+    <h4>Sections</h4>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #1565c0;"></div>
+        <span>I - Linear Algebra</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #2e7d32;"></div>
+        <span>II - Calculus</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #c62828;"></div>
+        <span>III - Probability</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #6a1b9a;"></div>
+        <span>IV - Discrete Math</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #ef6c00;"></div>
+        <span>V - Machine Learning</span>
+    </div>
+</div>
+
+<div id="loading">Loading curriculum data...</div>
+
 <canvas id="mapCanvas"></canvas>
 
 <script>
 /**
  * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
- * @author Yusuke Yokota / Gemini Partner
- * @version 4.4. (January 2026)
- * * Technical Specs:
+ * @author Yusuke Yokota
+ * @version 5.0.0 (January 2026)
+ * 
+ * Now imports from centralized curriculum.json for single source of truth.
+ * 
+ * Technical Specs:
  * - Cube Coordinates (q, r, s) where q+r+s=0
  * - LOD (Level of Detail) rendering
- * - Sequential Path Highlighting (Glow effect)
- * - Ghost Tile (Portal) generation for distant dependencies
+ * - Sequential Path Highlighting with prerequisite connections
+ * - Dynamic data loading from curriculum.json
  */
 
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
+// State
 let scale = 60;
 const minScale = 20, maxScale = 150;
 let offsetX = 0, offsetY = 0;
 let activeTileId = null;
 let blinkTileId = null; 
 let blinkStartTime = 0;
-
-// Flag to distinguish touch from mouse
 let isTouchInteraction = false;
+let isDragging = false;
+let startX = 0, startY = 0;
+let lastX = 0, lastY = 0;
+let initialPinchDist = 0;
+let initialScale = 0;
 
-const SECTION_COLORS = { 
-    "I": "#1565c0",   // Blue
-    "II": "#2e7d32",  // Green
-    "III": "#c62828", // Crimson (Red)
-    "IV": "#6a1b9a",  // Purple
-    "V": "#ef6c00"    // Orange
-};
+// Data (loaded from curriculum.json)
+let knowledgeData = [];
+let SECTION_COLORS = {};
 
-// --- Animation settings ---
+// Animation settings
 const IDLE_BLINK_DURATION = 5000; 
 const IDLE_BLINK_CHANCE = 0.005;  
-const idleBlinkState = {}; // Tracks when each tile started its idle blink
+const idleBlinkState = {};
 
-// Data
-
-const knowledgeData = [
-    { id: "home", section: "HOME", title: "Home", url: "/index.html", q: 0, r: 0 },
-
-    // --- Section I: Linear Algebra (South-West Cluster) ---
-    { id: "linalg-1", section: "I", title: "Linear Equations", url: "../Mathematics/Linear_algebra/linear_equations.html", q: -1, r: 1, seqGroup: "I" },
-    { id: "linalg-2", section: "I", title: "Linear Transformation", url: "../Mathematics/Linear_algebra/linear_transformation.html", q: -1, r: 2, seqGroup: "I" },
-    { id: "linalg-3", section: "I", title: "Matrix Algebra", url: "../Mathematics/Linear_algebra/matrix_algebra.html", q: -2, r: 1, seqGroup: "I" },
-    { id: "linalg-4", section: "I", title: "Determinants", url: "../Mathematics/Linear_algebra/determinants.html", q: -2, r: 2, seqGroup: "I" },
-    { id: "linalg-5", section: "I", title: "Vector Spaces", url: "../Mathematics/Linear_algebra/vectorspaces.html", q: -2, r: 3, seqGroup: "I" },
-    { id: "linalg-6", section: "I", title: "Eigenvalues & Eigenvectors", url: "../Mathematics/Linear_algebra/eigenvectors.html", q: -3, r: 2, seqGroup: "I" },
-    { id: "linalg-7", section: "I", title: "Orthogonality", url: "../Mathematics/Linear_algebra/orthogonality.html", q: -3, r: 3, seqGroup: "I" },
-    { id: "linalg-8", section: "I", title: "Least-Squares Problems", url: "../Mathematics/Linear_algebra/leastsquares.html", q: -3, r: 4, seqGroup: "I" },
-    { id: "linalg-9", section: "I", title: "Symmetry", url: "../Mathematics/Linear_algebra/symmetry.html", q: -4, r: 3, seqGroup: "I" },
-    { id: "linalg-10", section: "I", title: "Trace and Norms", url: "../Mathematics/Linear_algebra/trace.html", q: -4, r: 4, seqGroup: "I" },
-    { id: "linalg-11", section: "I", title: "Kronecker Product & Tensor", url: "../Mathematics/Linear_algebra/kronecker.html", q: -4, r: 5, seqGroup: "I" },
-    { id: "linalg-12", section: "I", title: "Woodbury Matrix Identity", url: "../Mathematics/Linear_algebra/woodbury.html", q: -5, r: 4, seqGroup: "I" },
-    { id: "linalg-13", section: "I", title: "Stochastic Matrix", url: "../Mathematics/Linear_algebra/stochastic.html", q: -5, r: 5, seqGroup: "I" },
-    { id: "linalg-14", section: "I", title: "Graph Laplacians", url: "../Mathematics/Linear_algebra/graph_laplacian.html", q: -5, r: 6, seqGroup: "I", prereqs: ["disc-1"] },
-    { id: "linalg-15", section: "I", title: "Intro to Abstract Algebra", url: "../Mathematics/Linear_algebra/intro_groups.html", q: -6, r: 5, seqGroup: "I" },
-    { id: "linalg-16", section: "I", title: "More Finite Groups", url: "../Mathematics/Linear_algebra/cyclic_groups.html", q: -6, r: 6, seqGroup: "I" },
-    { id: "linalg-17", section: "I", title: "Structural Group Theory", url: "../Mathematics/Linear_algebra/group_isomorphism.html", q: -6, r: 7, seqGroup: "I" },
-    { id: "linalg-18", section: "I", title: "Classification of Finite Abelian Groups", url: "../Mathematics/Linear_algebra/group_classification.html", q: -7, r: 6, seqGroup: "I" },
-    { id: "linalg-19", section: "I", title: "Architecture of Rings", url: "../Mathematics/Linear_algebra/intro_rings.html", q: -7, r: 7, seqGroup: "I" },
-    { id: "linalg-20", section: "I", title: "Ideals and Factor Rings", url: "../Mathematics/Linear_algebra/ideals.html", q: -7, r: 8, seqGroup: "I" },
-    { id: "linalg-21", section: "I", title: "Polynomial Rings", url: "../Mathematics/Linear_algebra/polynomial_rings.html", q: -8, r: 7, seqGroup: "I", prereqs: ["disc-4"] },
-
-    // --- Section II: Calculus (North-West Cluster) ---
-    { id: "calc-1", section: "II", title: "The Derivative (v->s)", url: "../Mathematics/Calculus/linear_approximation.html", q: -1, r: 0, seqGroup: "II" },
-    { id: "calc-2", section: "II", title: "The Derivative (v->v)", url: "../Mathematics/Calculus/jacobian.html", q: -1, r: -1, seqGroup: "II" },
-    { id: "calc-3", section: "II", title: "Derivative (m->m)", url: "../Mathematics/Calculus/matrix_cal.html", q: -2, r: 0, seqGroup: "II" },
-    { id: "calc-4", section: "II", title: "Numerical Computation", url: "../Mathematics/Calculus/numerical_example1.html", q: -2, r: -1, seqGroup: "II" },
-    { id: "calc-5", section: "II", title: "Scalar Functions of Matrices", url: "../Mathematics/Calculus/det.html", q: -2, r: -2, seqGroup: "II" },
-    { id: "calc-6", section: "II", title: "Mean Value Theorem", url: "../Mathematics/Calculus/mvt.html", q: -3, r: -1, seqGroup: "II" },
-    { id: "calc-7", section: "II", title: "Gradient Descent", url: "../Mathematics/Calculus/gradient.html", q: -3, r: -2, seqGroup: "II", prereqs: ["ml-1"] },
-    { id: "calc-8", section: "II", title: "Constrained Opt", url: "../Mathematics/Calculus/constrained_opt.html", q: -3, r: 0, seqGroup: "II" },
-    { id: "calc-9", section: "II", title: "Newton's Method", url: "../Mathematics/Calculus/newton.html", q: -4, r: -1, seqGroup: "II" },
-    { id: "calc-10", section: "II", title: "Riemann Integration", url: "../Mathematics/Calculus/riemann.html", q: -4, r: -2, seqGroup: "II" },
-    { id: "calc-11", section: "II", title: "Measure Theory", url: "../Mathematics/Calculus/measure.html", q: -4, r: 0, seqGroup: "II", prereqs: ["prob-1"] },
-    { id: "calc-12", section: "II", title: "Lebesgue integration", url: "../Mathematics/Calculus/lebesgue.html", q: -5, r: -1, seqGroup: "II" },
-    { id: "calc-13", section: "II", title: "Duality in Opt", url: "../Mathematics/Calculus/duality.html", q: -5, r: -2, seqGroup: "II" },
-    { id: "calc-14", section: "II", title: "Fourier Series", url: "../Mathematics/Calculus/fourier_series.html", q: -5, r: 0, seqGroup: "II" },
-    { id: "calc-15", section: "II", title: "Fourier Transform", url: "../Mathematics/Calculus/fourier_transform.html", q: -6, r: -1, seqGroup: "II" },
-
-    // --- Section III: Probability (North-East Cluster) ---
-    { id: "prob-1", section: "III", title: "Basic Probability", url: "../Mathematics/Probability/basic.html", q: 0, r: -1, seqGroup: "III" },
-    { id: "prob-2", section: "III", title: "Random Variables", url: "../Mathematics/Probability/random_variables.html", q: 1, r: -1, seqGroup: "III" },
-    { id: "prob-3", section: "III", title: "Gamma & Beta", url: "../Mathematics/Probability/gamma.html", q: 0, r: -2, seqGroup: "III" },
-    { id: "prob-4", section: "III", title: "Normal Distribution", url: "../Mathematics/Probability/gaussian.html", q: 1, r: -2, seqGroup: "III" },
-    { id: "prob-5", section: "III", title: "Student's t", url: "../Mathematics/Probability/student.html", q: 2, r: -2, seqGroup: "III" },
-    { id: "prob-6", section: "III", title: "Covariance", url: "../Mathematics/Probability/covariance.html", q: 0, r: -3, seqGroup: "III" },
-    { id: "prob-7", section: "III", title: "Correlation", url: "../Mathematics/Probability/correlation.html", q: 1, r: -3, seqGroup: "III" },
-    { id: "prob-8", section: "III", title: "Multivariate Dist", url: "../Mathematics/Probability/mvn.html", q: 2, r: -3, seqGroup: "III", prereqs: ["linalg-6"] },
-    { id: "prob-9", section: "III", title: "MLE", url: "../Mathematics/Probability/mle.html", q: 0, r: -4, seqGroup: "III" },
-    { id: "prob-10", section: "III", title: "Hypothesis Testing", url: "../Mathematics/Probability/hypothesis_testing.html", q: 1, r: -4, seqGroup: "III" },
-    { id: "prob-11", section: "III", title: "Linear Regression", url: "../Mathematics/Probability/linear_regression.html", q: 2, r: -4, seqGroup: "III", prereqs: ["ml-2"] },
-    { id: "prob-12", section: "III", title: "Entropy", url: "../Mathematics/Probability/entropy.html", q: 3, r: -3, seqGroup: "III" },
-    { id: "prob-13", section: "III", title: "Convergence", url: "../Mathematics/Probability/convergence.html", q: 3, r: -4, seqGroup: "III" },
-    { id: "prob-14", section: "III", title: "Bayesian Stats", url: "../Mathematics/Probability/bayesian.html", q: 3, r: -2, seqGroup: "III" },
-    { id: "prob-15", section: "III", title: "Exponential Family", url: "../Mathematics/Probability/expfamily.html", q: 4, r: -2, seqGroup: "III" },
-    { id: "prob-16", section: "III", title: "Fisher Information", url: "../Mathematics/Probability/fisher_info.html", q: 4, r: -3, seqGroup: "III" },
-    { id: "prob-17", section: "III", title: "Decision Theory", url: "../Mathematics/Probability/decision_theory.html", q: 4, r: -4, seqGroup: "III" },
-    { id: "prob-18", section: "III", title: "Markov Chains", url: "../Mathematics/Probability/markov.html", q: 5, r: -3, seqGroup: "III", prereqs: ["linalg-13"] },
-    { id: "prob-19", section: "III", title: "Monte Carlo", url: "../Mathematics/Probability/monte_carlo.html", q: 5, r: -4, seqGroup: "III" },
-    { id: "prob-20", section: "III", title: "Importance Sampling", url: "../Mathematics/Probability/importance_sampling.html", q: 5, r: -2, seqGroup: "III" },
-    { id: "prob-21", section: "III", title: "Gaussian Processes", url: "../Mathematics/Probability/gaussian_process.html", q: 6, r: -3, seqGroup: "III" },
-
-    // --- Section IV: Discrete (South Cluster) ---
-    { id: "disc-1", section: "IV", title: "Graph Theory", url: "../Mathematics/Discrete/intro_graph.html", q: 0, r: 1, seqGroup: "IV" },
-    { id: "disc-2", section: "IV", title: "Combinatorics", url: "../Mathematics/Discrete/intro_combinatorics.html", q: 2, r: 2, seqGroup: "IV" }, // Positioned east of disc-4
-    { id: "disc-3", section: "IV", title: "Theory of Computation", url: "../Mathematics/Discrete/intro_automata.html", q: 0, r: 2, seqGroup: "IV" },
-    { id: "disc-4", section: "IV", title: "Boolean Logic", url: "../Mathematics/Discrete/boolean.html", q: 1, r: 2, seqGroup: "IV" },
-    { id: "disc-5", section: "IV", title: "Context-Free", url: "../Mathematics/Discrete/context_free.html", q: -1, r: 3, seqGroup: "IV" },
-    { id: "disc-6", section: "IV", title: "Turing Machines", url: "../Mathematics/Discrete/turing_machine.html", q: 0, r: 3, seqGroup: "IV" },
-    { id: "disc-7", section: "IV", title: "Time Complexity", url: "../Mathematics/Discrete/time_complexity.html", q: 1, r: 3, seqGroup: "IV" },
-    { id: "disc-8", section: "IV", title: "Eulerian & Hamiltonian", url: "../Mathematics/Discrete/Eulerian.html", q: 0, r: 4, seqGroup: "IV" },
-    { id: "disc-9", section: "IV", title: "Class NP", url: "../Mathematics/Discrete/p_vs_np.html", q: 1, r: 4, seqGroup: "IV" },
-
-    // --- Section V: Machine Learning (East Cluster) ---
-    { id: "ml-1", section: "V", title: "Intro to ML", url: "../Mathematics/Machine_learning/intro_ml.html", q: 1, r: 0, seqGroup: "V", prereqs: ["calc-7", "prob-1"] },
-    { id: "ml-2", section: "V", title: "Regularized Regression", url: "../Mathematics/Machine_learning/regression.html", q: 1, r: 1, seqGroup: "V" },
-    { id: "ml-3", section: "V", title: "Intro to Classification", url: "../Mathematics/Machine_learning/intro_classification.html", q: 2, r: 0, seqGroup: "V" },
-    { id: "ml-4", section: "V", title: "Neural Networks Basics", url: "../Mathematics/Machine_learning/neural_networks.html", q: 2, r: -1, seqGroup: "V" },
-    { id: "ml-5", section: "V", title: "Automatic Differentiation", url: "../Mathematics/Machine_learning/autodiff.html", q: 2, r: 1, seqGroup: "V", prereqs: ["calc-2"] },
-    { id: "ml-6", section: "V", title: "SVM", url: "../Mathematics/Machine_learning/svm.html", q: 3, r: 0, seqGroup: "V" },
-    { id: "ml-7", section: "V", title: "PCA & Autoencoders", url: "../Mathematics/Machine_learning/pca.html", q: 3, r: -1, seqGroup: "V", prereqs: ["linalg-12"] },
-    { id: "ml-8", section: "V", title: "Clustering", url: "../Mathematics/Machine_learning/clustering.html", q: 3, r: 1, seqGroup: "V" },
-    { id: "ml-9", section: "V", title: "Deep Neural Networks", url: "../Mathematics/Machine_learning/deep_nn.html", q: 4, r: 0, seqGroup: "V" },
-    { id: "ml-10", section: "V", title: "Intro to RL", url: "../Mathematics/Machine_learning/intro_RL.html", q: 4, r: -1, seqGroup: "V" }
-];
-
+/**
+ * Load curriculum data from JSON file
+ */
+async function loadCurriculumData() {
+    try {
+        // Try relative path first (for local testing), then absolute
+        let response;
+        try {
+            response = await fetch('../data/curriculum.json');
+            if (!response.ok) throw new Error('Relative path failed');
+        } catch {
+            response = await fetch('/data/curriculum.json');
+        }
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        // Extract section colors
+        SECTION_COLORS = data.sectionColors || {};
+        SECTION_COLORS['HOME'] = '#888888'; // Gray for home
+        
+        // Build knowledge data array
+        knowledgeData = [];
+        
+        // Add home node
+        if (data.homeNode) {
+            knowledgeData.push({
+                id: data.homeNode.id,
+                section: 'HOME',
+                title: data.homeNode.title,
+                url: data.homeNode.url,
+                q: data.homeNode.mapCoords.q,
+                r: data.homeNode.mapCoords.r,
+                prereqs: []
+            });
+        }
+        
+        // Add all parts from all sections
+        Object.entries(data.sections).forEach(([sectionId, section]) => {
+            section.parts.forEach(part => {
+                knowledgeData.push({
+                    id: part.id,
+                    section: sectionId,
+                    title: part.title,
+                    // URL relative to map folder
+                    url: '../' + section.baseUrl + part.url,
+                    q: part.mapCoords.q,
+                    r: part.mapCoords.r,
+                    seqGroup: sectionId,
+                    prereqs: part.prereqs || []
+                });
+            });
+        });
+        
+        console.log(`Loaded ${knowledgeData.length} tiles from curriculum data`);
+        
+        // Hide loading indicator
+        document.getElementById('loading').style.display = 'none';
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to load curriculum data:', error);
+        document.getElementById('loading').textContent = 'Error loading data. Please refresh.';
+        return false;
+    }
+}
 
 function setup() {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    if (offsetX === 0) { offsetX = window.innerWidth / 2; offsetY = window.innerHeight / 2; }
+    if (offsetX === 0) { 
+        offsetX = window.innerWidth / 2; 
+        offsetY = window.innerHeight / 2; 
+    }
 }
 
 function getPixelCoords(q, r) {
@@ -207,8 +289,6 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     if (isBlinking) {
         finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 800)) * 0.7;
     } else if (isIdleBlinking) {
-        // isIdleBlinking contains the tile.id when truthy
-        // Check if this tile has an active idle blink animation
         if (idleBlinkState[isIdleBlinking] !== undefined) {
             const elapsed = Date.now() - idleBlinkState[isIdleBlinking];
             const progress = elapsed / IDLE_BLINK_DURATION;
@@ -233,7 +313,9 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
         ctx.shadowColor = "white"; 
         ctx.stroke();
     } else {
-        ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.15)"; 
+        ctx.lineWidth = 1; 
+        ctx.stroke();
     }
     ctx.restore();
 }
@@ -243,17 +325,78 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
     let line = '', lines = [];
     for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + ' '; }
-        else { line = testLine; }
+        if (ctx.measureText(testLine).width > maxWidth && n > 0) { 
+            lines.push(line); 
+            line = words[n] + ' '; 
+        } else { 
+            line = testLine; 
+        }
     }
     lines.push(line);
     const startY = y - ((lines.length - 1) * lineHeight) / 2;
     lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + (i * lineHeight)));
 }
 
+/**
+ * Draw prerequisite connections as curved lines
+ */
+function drawPrerequisiteConnections(activeTile) {
+    if (!activeTile || !activeTile.prereqs || activeTile.prereqs.length === 0) return;
+    
+    const activeCoords = getPixelCoords(activeTile.q, activeTile.r);
+    
+    activeTile.prereqs.forEach(prereqId => {
+        const prereq = knowledgeData.find(t => t.id === prereqId);
+        if (!prereq) return;
+        
+        const prereqCoords = getPixelCoords(prereq.q, prereq.r);
+        
+        // Draw curved connection line
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        
+        // Calculate control point for curve
+        const midX = (activeCoords.x + prereqCoords.x) / 2;
+        const midY = (activeCoords.y + prereqCoords.y) / 2;
+        const dx = activeCoords.x - prereqCoords.x;
+        const dy = activeCoords.y - prereqCoords.y;
+        const perpX = -dy * 0.2;
+        const perpY = dx * 0.2;
+        
+        ctx.beginPath();
+        ctx.moveTo(prereqCoords.x, prereqCoords.y);
+        ctx.quadraticCurveTo(midX + perpX, midY + perpY, activeCoords.x, activeCoords.y);
+        ctx.stroke();
+        
+        // Draw arrow head
+        const angle = Math.atan2(activeCoords.y - (midY + perpY), activeCoords.x - (midX + perpX));
+        const arrowSize = 10;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(activeCoords.x, activeCoords.y);
+        ctx.lineTo(
+            activeCoords.x - arrowSize * Math.cos(angle - Math.PI/6),
+            activeCoords.y - arrowSize * Math.sin(angle - Math.PI/6)
+        );
+        ctx.moveTo(activeCoords.x, activeCoords.y);
+        ctx.lineTo(
+            activeCoords.x - arrowSize * Math.cos(angle + Math.PI/6),
+            activeCoords.y - arrowSize * Math.sin(angle + Math.PI/6)
+        );
+        ctx.stroke();
+        
+        ctx.restore();
+    });
+}
+
 function render() {
-    // --- 1. Background Pulse (globalAlphaFactor) ---
-    // Apply a very subtle overall pulsing effect to the system
+    if (knowledgeData.length === 0) {
+        requestAnimationFrame(render);
+        return;
+    }
+    
     const time = Date.now();
     const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -262,21 +405,25 @@ function render() {
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
     if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
 
-    // Check if the map is in an "idle" state (no active selection or warp blinking)
     const isSystemIdle = !activeTileId && !blinkTileId;
 
+    // Draw prerequisite connections first (behind tiles)
+    if (activeTile) {
+        drawPrerequisiteConnections(activeTile);
+    }
+
+    // Draw tiles
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         let alpha = activeTile ? 0.15 : 1.0;
         let glow = false;
         
-        // --- 3. Inactive Tile Blinking Logic ---
         let isIdleBlinking = false;
         if (isSystemIdle) {
             if (idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
                 if (elapsed < IDLE_BLINK_DURATION) {
-                    isIdleBlinking = tile.id; // Pass the tile ID
+                    isIdleBlinking = tile.id;
                 } else {
                     delete idleBlinkState[tile.id];
                 }
@@ -284,7 +431,6 @@ function render() {
                 idleBlinkState[tile.id] = time;
             }
         } else {
-            // Stop idle animations during interaction
             delete idleBlinkState[tile.id];
         }
 
@@ -292,89 +438,62 @@ function render() {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
-            if (isSelf || isSeq || isPrereq) { alpha = 1.0; glow = isSelf || isSeq; }
+            
+            if (isSelf || isSeq || isPrereq) { 
+                alpha = 1.0; 
+                glow = isSelf || isPrereq; 
+            }
         }
 
-        // Call the updated draw function with the new parameter
-        drawHexagon(x, y, scale * 0.95, SECTION_COLORS[tile.section], alpha, glow, tile.id === blinkTileId, isIdleBlinking);
+        const color = SECTION_COLORS[tile.section] || '#888888';
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
         
-        // (Text rendering code follows here...)
+        // Draw text
         if (scale > 30 && (alpha > 0.5 || tile.id === blinkTileId)) {
-            ctx.fillStyle = "white"; ctx.textAlign = "center";
+            ctx.fillStyle = "white"; 
+            ctx.textAlign = "center";
             const fontSize = Math.max(scale / 4.5, 12);
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
             wrapText(tile.title, x, y, scale * 1.5, fontSize * 1.2);
         }
     });
     
-    // UI Hint for Mobile
+    // UI Hint for selected tile
     if (activeTile) {
         const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
         ctx.fillStyle = "#ffffff";
         ctx.font = "12px sans-serif";
         ctx.fillText("▼ Tap again to Open", x, y + scale * 0.85);
+        
+        // Show prerequisite count
+        if (activeTile.prereqs && activeTile.prereqs.length > 0) {
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            ctx.fillText(`Prerequisites: ${activeTile.prereqs.length}`, x, y - scale * 0.85);
+        }
     }
 
-    if (activeTile && activeTile.prereqs) {
-        activeTile.prereqs.forEach((prereqId, idx) => {
-            const p = knowledgeData.find(t => t.id === prereqId);
-            if (p) {
-                const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-                const gx = x + scale * 2.2, gy = y + (idx * scale * 1.5);
-                ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,255,255,0.4)";
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(gx, gy); ctx.stroke(); ctx.setLineDash([]);
-                drawHexagon(gx, gy, scale * 0.6, SECTION_COLORS[p.section], 0.9, true);
-                ctx.fillStyle = "white"; ctx.font = "bold 10px sans-serif";
-                ctx.fillText("Portal", gx, gy - 8); ctx.fillText(p.title, gx, gy + 8);
-            }
-        });
-    }
     requestAnimationFrame(render);
 }
 
 // --- INTERACTION LOGIC ---
 
-let isDragging = false;
-let startX = 0, startY = 0;
-let lastX = 0, lastY = 0;
-let initialPinchDist = 0;
-let initialScale = 0;
-
 function handleInteraction(clientX, clientY) {
     if (isDragging) return;
 
-    // Check Portals
-    const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
-    if (activeTile && activeTile.prereqs) {
-        for(let i=0; i<activeTile.prereqs.length; i++) {
-            const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-            const gx = x + scale * 2.2, gy = y + (i * scale * 1.5);
-            if (Math.hypot(gx - clientX, gy - clientY) < scale * 0.6) {
-                const target = knowledgeData.find(t => t.id === activeTile.prereqs[i]);
-                activeTileId = target.id; blinkTileId = target.id; blinkStartTime = Date.now();
-                const tx = scale * Math.sqrt(3) * (target.q + target.r/2);
-                const ty = scale * (3/2 * target.r);
-                offsetX = window.innerWidth/2 - tx;
-                offsetY = window.innerHeight/2 - ty;
-                document.getElementById('status').innerText = "Warped to " + target.title;
-                return;
-            }
-        }
-    }
-
-    // Check Tiles
     let hit = false;
     for (const tile of knowledgeData) {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
             hit = true;
             if (activeTileId === tile.id) {
-                // SECOND TAP: Go to URL
+                // Second tap: navigate
                 window.location.assign(tile.url);
             } else {
-                // FIRST TAP: Select
+                // First tap: select
                 activeTileId = tile.id;
-                document.getElementById('status').innerText = "Selected: " + tile.title;
+                const prereqCount = tile.prereqs?.length || 0;
+                const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
+                document.getElementById('status').innerText = `Selected: ${tile.title}${prereqText}`;
             }
             break;
         }
@@ -385,30 +504,36 @@ function handleInteraction(clientX, clientY) {
     }
 }
 
-// 1. Mouse Handlers
+// Mouse Handlers
 window.addEventListener('mousedown', e => { 
     if (isTouchInteraction) return; 
     isDragging = false; 
     startX = e.clientX; startY = e.clientY; 
     lastX = e.clientX; lastY = e.clientY;
 });
+
 window.addEventListener('mousemove', e => {
     if (isTouchInteraction) return;
     if (e.buttons === 1) {
         if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) isDragging = true;
-        if (isDragging) { offsetX += e.clientX - lastX; offsetY += e.clientY - lastY; }
+        if (isDragging) { 
+            offsetX += e.clientX - lastX; 
+            offsetY += e.clientY - lastY; 
+        }
         lastX = e.clientX; lastY = e.clientY;
     }
 });
+
 window.addEventListener('mouseup', e => {
     if (isTouchInteraction) return;
     if (!isDragging) handleInteraction(e.clientX, e.clientY);
 });
+
 window.addEventListener('wheel', e => {
     scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale);
 }, { passive: false });
 
-// 2. Touch Handlers (Mobile)
+// Touch Handlers
 canvas.addEventListener('touchstart', e => {
     isTouchInteraction = true; 
     if (e.touches.length === 1) {
@@ -416,7 +541,10 @@ canvas.addEventListener('touchstart', e => {
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         lastX = startX; lastY = startY;
     } else if (e.touches.length === 2) {
-        initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        initialPinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX, 
+            e.touches[0].clientY - e.touches[1].clientY
+        );
         initialScale = scale;
     }
 }, { passive: false });
@@ -430,8 +558,13 @@ canvas.addEventListener('touchmove', e => {
         offsetX += x - lastX; offsetY += y - lastY;
         lastX = x; lastY = y;
     } else if (e.touches.length === 2) {
-        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        if (initialPinchDist > 0) scale = Math.min(Math.max(minScale, initialScale * (dist / initialPinchDist)), maxScale);
+        const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX, 
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (initialPinchDist > 0) {
+            scale = Math.min(Math.max(minScale, initialScale * (dist / initialPinchDist)), maxScale);
+        }
     }
 }, { passive: false });
 
@@ -443,9 +576,30 @@ canvas.addEventListener('touchend', e => {
     setTimeout(() => isTouchInteraction = false, 500); 
 });
 
+// Keyboard navigation
+window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        activeTileId = null;
+        document.getElementById('status').innerText = "Explore the Knowledge Map";
+    }
+    if (e.key === 'Enter' && activeTileId) {
+        const tile = knowledgeData.find(t => t.id === activeTileId);
+        if (tile) window.location.assign(tile.url);
+    }
+});
+
+// Initialize
 window.addEventListener('resize', setup);
-setup();
-render();
+
+async function init() {
+    setup();
+    const loaded = await loadCurriculumData();
+    if (loaded) {
+        render();
+    }
+}
+
+init();
 </script>
 </body>
 </html>
