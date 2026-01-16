@@ -184,7 +184,7 @@ let offsetY = window.innerHeight / 2;
 // Camera animation state
 let targetOffsetX = offsetX;
 let targetOffsetY = offsetY;
-let isPanning = false;        // True when camera is auto-moving
+let isPanning = false;  // True when camera is auto-moving
 
 // Tile animation
 let activeTileId = null;
@@ -202,9 +202,11 @@ let knowledgeData = [];
 let SECTION_COLORS = {};
 
 // Animation settings
-const IDLE_BLINK_DURATION = 5000; 
-const IDLE_BLINK_CHANCE = 0.005;  
+const IDLE_BLINK_DURATION = 4000;      // How long each blink animation lasts
+const IDLE_BLINK_INTERVAL = 2500;      // Minimum ms between starting new blinks
+const MAX_CONCURRENT_BLINKS = 2;       // Maximum tiles blinking simultaneously
 const idleBlinkState = {};
+let lastBlinkTime = 0;
 
 const panSpeed = 0.1; // Easing factor (0.1 = smooth, 0.5 = snappy)
 
@@ -435,6 +437,23 @@ function render() {
 
     const isSystemIdle = !activeTileId && !blinkTileId;
 
+    // --- Controlled Idle Blink Scheduling ---
+    // Only trigger new blinks when idle, respecting interval and max concurrent limits
+    if (isSystemIdle && knowledgeData.length > 0) {
+        const currentBlinkCount = Object.keys(idleBlinkState).length;
+        const timeSinceLastBlink = time - lastBlinkTime;
+        
+        if (currentBlinkCount < MAX_CONCURRENT_BLINKS && timeSinceLastBlink > IDLE_BLINK_INTERVAL) {
+            // Pick a random tile that isn't already blinking
+            const availableTiles = knowledgeData.filter(t => !idleBlinkState[t.id]);
+            if (availableTiles.length > 0) {
+                const randomTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
+                idleBlinkState[randomTile.id] = time;
+                lastBlinkTime = time;
+            }
+        }
+    }
+
     // --- 2. Draw Prerequisite Connections (Behind Tiles) ---
     if (activeTile) {
         drawPrerequisiteConnections(activeTile);
@@ -458,8 +477,6 @@ function render() {
                 } else {
                     delete idleBlinkState[tile.id];
                 }
-            } else if (Math.random() < IDLE_BLINK_CHANCE) {
-                idleBlinkState[tile.id] = time;
             }
         } else {
             delete idleBlinkState[tile.id];
@@ -494,7 +511,6 @@ function render() {
             const fontSize = scale / 5.5; 
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
 
-            // 3. Fix the "Original Density" problem.
             // We ignore the tile's low alpha (0.15) and use a dedicated text visibility base.
             // Selected/Related tiles: 1.0, Others: 0.7 (still readable).
             const textBaseAlpha = (alpha > 0.5) ? 1.0 : 0.7;
