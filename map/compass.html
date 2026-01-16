@@ -297,14 +297,15 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     let finalAlpha = alpha;
 
     if (isBlinking) {
-        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 4000)) * 0.7; 
-    } else if (idleBlinkId) {
-        const elapsed = Date.now() - idleBlinkState[idleBlinkId];
+        // Active pulse for specific highlighted tile
+        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 4000)) * 0.7;
+    } else if (idleBlinkTargetId) {
+        // Survival pulse logic using the passed ID
+        const elapsed = Date.now() - idleBlinkState[idleBlinkTargetId];
         const progress = elapsed / IDLE_BLINK_DURATION;
-        // Smooth pulse from 0.8 to 1.0
         finalAlpha = 0.8 + 0.2 * Math.sin(progress * Math.PI - Math.PI / 2);
     }
-
+    
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -440,18 +441,18 @@ function render() {
     }
 
     // --- 3. Draw Tiles (Hexagons) ---
-    knowledgeData.forEach(tile => {
-        const { x, y } = getPixelCoords(tile.q, tile.r);
+        knowledgeData.forEach(tile => {
+            const { x, y } = getPixelCoords(tile.q, tile.r);
             
             let alpha = activeTile ? 0.15 : 1.0; 
             let glow = false;
-            let currentTileIdleBlink = false; // Local flag for this specific tile
+            let currentTileBlinkId = false; // Flag to pass to drawHexagon
 
-            // --- Corrected Idle Blink Logic ---
+            // Check if this specific tile should be pulsing (Survival Pulse)
             if (isSystemIdle && idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
                 if (elapsed < IDLE_BLINK_DURATION) {
-                    currentTileIdleBlink = true; // Tell drawHexagon to light up THIS tile
+                    currentTileBlinkId = tile.id; // Set the ID to trigger animation
                 } else {
                     delete idleBlinkState[tile.id];
                 }
@@ -468,8 +469,13 @@ function render() {
             }
 
             const color = SECTION_COLORS[tile.section] || '#888888';
-            // Use currentTileIdleBlink (boolean) and tile.id for the ID reference
-            drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, currentTileIdleBlink ? tile.id : false);
+            
+            // Pass the parameters correctly
+            drawHexagon(
+                x, y, scale * 0.95, color, alpha, glow, 
+                tile.id === blinkTileId, // isBlinking (Active)
+                currentTileBlinkId       // idleBlinkTargetId (Survival)
+            );
         
         // --- 4. Draw Text (Final Optimized Version) ---
         // 1. Calculate zoom-based opacity independently.
