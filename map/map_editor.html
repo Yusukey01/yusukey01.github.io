@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATH-CS COMPASS - Map Layout Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #111827;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container { padding: 16px; max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 1.25rem; margin-bottom: 12px; }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        .controls label { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; cursor: pointer; }
+        .controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .filter-group { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
+        .filter-label { font-size: 0.75rem; color: #9ca3af; }
+        .filter-btn { 
+            padding: 4px 8px; font-size: 0.75rem; border: none; border-radius: 4px; 
+            cursor: pointer; transition: all 0.15s;
+        }
+        .filter-btn.active { background: #fff; color: #000; }
+        .filter-btn:not(.active) { background: #374151; color: #fff; opacity: 0.7; }
+        .filter-btn:hover { opacity: 1; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.75rem; margin-bottom: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+        .main-content { display: flex; gap: 16px; }
+        .map-container { 
+            flex: 1; background: #030712; border-radius: 8px; 
+            overflow: auto; max-height: 65vh; min-height: 400px;
+        }
+        .map-container svg { width: 100%; min-height: 400px; }
+        .info-panel { width: 220px; flex-shrink: 0; }
+        .info-box { background: #1f2937; padding: 12px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 12px; }
+        .info-box h3 { font-size: 0.875rem; margin-bottom: 8px; }
+        .info-box p { margin-bottom: 4px; }
+        .info-box .label { color: #9ca3af; }
+        .info-box .available { color: #4ade80; margin-top: 8px; font-weight: 500; }
+        .info-box .reserved { color: #facc15; margin-top: 8px; }
+        .stats { font-size: 0.75rem; color: #9ca3af; }
+        .section-stats { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .section-stats .count-reserved { color: #6b7280; }
+        svg text { user-select: none; pointer-events: none; }
+        svg g { cursor: pointer; }
+        svg g:hover path { filter: brightness(1.2); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // ========== TILE DATA - UPDATE THIS WHEN YOU ADD NEW CONTENT ==========
+        const EXISTING_TILES = [
+            // Home
+            { id: 'home', q: 0, r: 0, section: 'HOME', title: 'Home' },
+            
+            // Section I - Linear Algebra (blue)
+            { id: 'linalg-1', q: -1, r: 1, section: 'I', title: 'Linear Equations' },
+            { id: 'linalg-2', q: -1, r: 2, section: 'I', title: 'Linear Transformation' },
+            { id: 'linalg-3', q: -2, r: 1, section: 'I', title: 'Matrix Algebra' },
+            { id: 'linalg-4', q: -2, r: 2, section: 'I', title: 'Determinants' },
+            { id: 'linalg-5', q: -2, r: 3, section: 'I', title: 'Vector Spaces' },
+            { id: 'linalg-6', q: -3, r: 2, section: 'I', title: 'Eigenvalues' },
+            { id: 'linalg-7', q: -3, r: 3, section: 'I', title: 'Orthogonality' },
+            { id: 'linalg-8', q: -3, r: 4, section: 'I', title: 'Least-Squares' },
+            { id: 'linalg-9', q: -4, r: 3, section: 'I', title: 'Symmetry' },
+            { id: 'linalg-10', q: -4, r: 4, section: 'I', title: 'Trace & Norms' },
+            { id: 'linalg-11', q: -4, r: 5, section: 'I', title: 'Kronecker' },
+            { id: 'linalg-12', q: -5, r: 4, section: 'I', title: 'Woodbury' },
+            { id: 'linalg-13', q: -5, r: 5, section: 'I', title: 'Stochastic' },
+            { id: 'linalg-14', q: -5, r: 6, section: 'I', title: 'Graph Laplacian' },
+            { id: 'linalg-15', q: -6, r: 5, section: 'I', title: 'Abstract Algebra' },
+            { id: 'linalg-16', q: -6, r: 6, section: 'I', title: 'Finite Groups' },
+            { id: 'linalg-17', q: -6, r: 7, section: 'I', title: 'Structural Groups' },
+            { id: 'linalg-18', q: -7, r: 6, section: 'I', title: 'Abelian Classification' },
+            { id: 'linalg-19', q: -7, r: 7, section: 'I', title: 'Rings & Fields' },
+            { id: 'linalg-20', q: -7, r: 8, section: 'I', title: 'Ideals' },
+            { id: 'linalg-21', q: -8, r: 7, section: 'I', title: 'Polynomial Rings' },
+            { id: 'I-reserved-0', q: -9, r: 7, section: 'I', title: 'Coming Soon', isReserved: true },
+            { id: 'I-reserved-1', q: -8, r: 8, section: 'I', title: 'Coming Soon', isReserved: true },
+            { id: 'I-reserved-2', q: -9, r: 8, section: 'I', title: 'Coming Soon', isReserved: true },
+            
+            // Section II - Calculus (green)
+            { id: 'calc-1', q: -1, r: 0, section: 'II', title: 'Derivative ℝⁿ→ℝ' },
+            { id: 'calc-2', q: -1, r: -1, section: 'II', title: 'Jacobian' },
+            { id: 'calc-3', q: -2, r: 0, section: 'II', title: 'Matrix Calculus' },
+            { id: 'calc-4', q: -2, r: -1, section: 'II', title: 'Numerical' },
+            { id: 'calc-5', q: -2, r: -2, section: 'II', title: 'det Derivative' },
+            { id: 'calc-6', q: -3, r: -1, section: 'II', title: 'MVT' },
+            { id: 'calc-7', q: -3, r: -2, section: 'II', title: 'Gradient Descent' },
+            { id: 'calc-8', q: -4, r: -1, section: 'II', title: "Newton's Method" },
+            { id: 'calc-9', q: -3, r: 0, section: 'II', title: 'Constrained Opt' },
+            { id: 'calc-10', q: -4, r: -2, section: 'II', title: 'Riemann' },
+            { id: 'calc-11', q: -4, r: 0, section: 'II', title: 'Measure Theory' },
+            { id: 'calc-12', q: -5, r: -1, section: 'II', title: 'Lebesgue' },
+            { id: 'calc-13', q: -5, r: -2, section: 'II', title: 'Duality' },
+            { id: 'calc-14', q: -5, r: 0, section: 'II', title: 'Fourier Series' },
+            { id: 'calc-15', q: -6, r: -1, section: 'II', title: 'Fourier Transform' },
+            { id: 'II-reserved-0', q: -7, r: -1, section: 'II', title: 'Coming Soon', isReserved: true },
+            { id: 'II-reserved-1', q: -6, r: -2, section: 'II', title: 'Coming Soon', isReserved: true },
+            { id: 'II-reserved-2', q: -7, r: 0, section: 'II', title: 'Coming Soon', isReserved: true },
+            
+            // Section III - Probability (red)
+            { id: 'prob-1', q: 0, r: -1, section: 'III', title: 'Basic Probability' },
+            { id: 'prob-2', q: 1, r: -1, section: 'III', title: 'Random Variables' },
+            { id: 'prob-3', q: 0, r: -2, section: 'III', title: 'Gamma & Beta' },
+            { id: 'prob-4', q: 1, r: -2, section: 'III', title: 'Gaussian' },
+            { id: 'prob-5', q: 2, r: -2, section: 'III', title: "Student's t" },
+            { id: 'prob-6', q: 0, r: -3, section: 'III', title: 'Covariance' },
+            { id: 'prob-7', q: 1, r: -3, section: 'III', title: 'Correlation' },
+            { id: 'prob-8', q: 2, r: -3, section: 'III', title: 'Multivariate' },
+            { id: 'prob-9', q: 0, r: -4, section: 'III', title: 'MLE' },
+            { id: 'prob-10', q: 1, r: -4, section: 'III', title: 'Hypothesis Testing' },
+            { id: 'prob-11', q: 2, r: -4, section: 'III', title: 'Linear Regression' },
+            { id: 'prob-12', q: 3, r: -3, section: 'III', title: 'Entropy' },
+            { id: 'prob-13', q: 3, r: -4, section: 'III', title: 'Convergence' },
+            { id: 'prob-14', q: 3, r: -2, section: 'III', title: 'Bayesian Stats' },
+            { id: 'prob-15', q: 4, r: -2, section: 'III', title: 'Exp Family' },
+            { id: 'prob-16', q: 4, r: -3, section: 'III', title: 'Fisher Info' },
+            { id: 'prob-17', q: 4, r: -4, section: 'III', title: 'Decision Theory' },
+            { id: 'prob-18', q: 5, r: -3, section: 'III', title: 'Markov Chains' },
+            { id: 'prob-19', q: 5, r: -4, section: 'III', title: 'Monte Carlo' },
+            { id: 'prob-20', q: 5, r: -2, section: 'III', title: 'Importance Sampling' },
+            { id: 'prob-21', q: 6, r: -3, section: 'III', title: 'Gaussian Processes' },
+            { id: 'III-reserved-0', q: 7, r: -3, section: 'III', title: 'Coming Soon', isReserved: true },
+            { id: 'III-reserved-1', q: 6, r: -4, section: 'III', title: 'Coming Soon', isReserved: true },
+            { id: 'III-reserved-2', q: 7, r: -4, section: 'III', title: 'Coming Soon', isReserved: true },
+            
+            // Section IV - Discrete (purple)
+            { id: 'disc-1', q: 0, r: 1, section: 'IV', title: 'Graph Theory' },
+            { id: 'disc-2', q: 2, r: 2, section: 'IV', title: 'Combinatorics' },
+            { id: 'disc-3', q: 0, r: 2, section: 'IV', title: 'Automata' },
+            { id: 'disc-4', q: 1, r: 2, section: 'IV', title: 'Boolean Logic' },
+            { id: 'disc-5', q: -1, r: 3, section: 'IV', title: 'Context-Free' },
+            { id: 'disc-6', q: 0, r: 3, section: 'IV', title: 'Turing Machines' },
+            { id: 'disc-7', q: 1, r: 3, section: 'IV', title: 'Time Complexity' },
+            { id: 'disc-8', q: 0, r: 4, section: 'IV', title: 'Eulerian' },
+            { id: 'disc-9', q: 1, r: 4, section: 'IV', title: 'Class NP' },
+            { id: 'IV-reserved-0', q: 2, r: 4, section: 'IV', title: 'Coming Soon', isReserved: true },
+            { id: 'IV-reserved-1', q: 1, r: 5, section: 'IV', title: 'Coming Soon', isReserved: true },
+            { id: 'IV-reserved-2', q: 2, r: 3, section: 'IV', title: 'Coming Soon', isReserved: true },
+            
+            // Section V - ML (orange)
+            { id: 'ml-1', q: 1, r: 0, section: 'V', title: 'Intro ML' },
+            { id: 'ml-2', q: 1, r: 1, section: 'V', title: 'Regularized Regression' },
+            { id: 'ml-3', q: 2, r: 0, section: 'V', title: 'Classification' },
+            { id: 'ml-4', q: 2, r: -1, section: 'V', title: 'Neural Networks' },
+            { id: 'ml-5', q: 2, r: 1, section: 'V', title: 'Autodiff' },
+            { id: 'ml-6', q: 3, r: 0, section: 'V', title: 'SVM' },
+            { id: 'ml-7', q: 3, r: -1, section: 'V', title: 'PCA & Autoencoders' },
+            { id: 'ml-8', q: 3, r: 1, section: 'V', title: 'Clustering' },
+            { id: 'ml-9', q: 4, r: 0, section: 'V', title: 'Deep NN' },
+            { id: 'ml-10', q: 4, r: -1, section: 'V', title: 'Reinforcement Learning' },
+            { id: 'V-reserved-0', q: 5, r: -1, section: 'V', title: 'Coming Soon', isReserved: true },
+            { id: 'V-reserved-1', q: 5, r: 0, section: 'V', title: 'Coming Soon', isReserved: true },
+            { id: 'V-reserved-2', q: 4, r: 1, section: 'V', title: 'Coming Soon', isReserved: true },
+        ];
+        // ========== END TILE DATA ==========
+
+        const SECTION_COLORS = {
+            'HOME': '#888888',
+            'I': '#1565c0',
+            'II': '#2e7d32',
+            'III': '#c62828',
+            'IV': '#6a1b9a',
+            'V': '#ef6c00',
+            'EMPTY': '#2a2a2a'
+        };
+
+        const SECTION_NAMES = {
+            'HOME': 'Home',
+            'I': 'Linear Algebra',
+            'II': 'Calculus',
+            'III': 'Probability',
+            'IV': 'Discrete Math',
+            'V': 'Machine Learning'
+        };
+
+        function HexMapEditor() {
+            const [selectedTile, setSelectedTile] = useState(null);
+            const [showEmptySlots, setShowEmptySlots] = useState(true);
+            const [showReserved, setShowReserved] = useState(true);
+            const [highlightSection, setHighlightSection] = useState(null);
+            
+            const hexSize = 28;
+            
+            const activeTiles = useMemo(() => {
+                return EXISTING_TILES.filter(t => showReserved || !t.isReserved);
+            }, [showReserved]);
+            
+            const occupiedMap = useMemo(() => {
+                const map = new Map();
+                activeTiles.forEach(tile => map.set(`${tile.q},${tile.r}`, tile));
+                return map;
+            }, [activeTiles]);
+            
+            const emptySlots = useMemo(() => {
+                const slots = [];
+                const checked = new Set();
+                const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
+                
+                activeTiles.forEach(tile => {
+                    neighbors.forEach(([dq, dr]) => {
+                        const nq = tile.q + dq, nr = tile.r + dr;
+                        const key = `${nq},${nr}`;
+                        if (!occupiedMap.has(key) && !checked.has(key)) {
+                            checked.add(key);
+                            const borderingSection = new Set();
+                            neighbors.forEach(([ddq, ddr]) => {
+                                const neighbor = occupiedMap.get(`${nq + ddq},${nr + ddr}`);
+                                if (neighbor && !neighbor.isReserved) borderingSection.add(neighbor.section);
+                            });
+                            slots.push({ q: nq, r: nr, section: 'EMPTY', borderingSection: Array.from(borderingSection) });
+                        }
+                    });
+                });
+                return slots;
+            }, [occupiedMap, activeTiles]);
+            
+            const hexToPixel = (q, r) => ({
+                x: hexSize * Math.sqrt(3) * (q + r / 2),
+                y: hexSize * (3 / 2) * r
+            });
+            
+            const viewBox = useMemo(() => {
+                const allTiles = [...activeTiles, ...emptySlots];
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                allTiles.forEach(tile => {
+                    const { x, y } = hexToPixel(tile.q, tile.r);
+                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                });
+                const padding = hexSize * 2;
+                return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+            }, [emptySlots, activeTiles]);
+            
+            const hexPath = (cx, cy, size) => {
+                const points = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 6) + (i * Math.PI / 3);
+                    points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
+                }
+                return `M${points.join('L')}Z`;
+            };
+            
+            const renderTile = (tile, isEmpty = false) => {
+                const { x, y } = hexToPixel(tile.q, tile.r);
+                const color = SECTION_COLORS[tile.section];
+                const isReserved = tile.isReserved;
+                const isHighlighted = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
+                const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
+                let opacity = isEmpty ? 0.3 : (isHighlighted || !highlightSection ? 1 : 0.3);
+                if (isReserved) opacity = 0.35;
+                
+                return (
+                    <g key={`${tile.q},${tile.r}`} onClick={() => setSelectedTile(tile)}>
+                        <path
+                            d={hexPath(x, y, hexSize * 0.88)}
+                            fill={color}
+                            fillOpacity={opacity}
+                            stroke={isSelected ? '#fff' : isEmpty ? '#444' : isReserved ? '#666' : 'rgba(255,255,255,0.3)'}
+                            strokeWidth={isSelected ? 2.5 : 1}
+                            strokeDasharray={isEmpty || isReserved ? '3,2' : 'none'}
+                        />
+                        {!isEmpty && (
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6"
+                                fontWeight={isReserved ? 'normal' : 'bold'} fontStyle={isReserved ? 'italic' : 'normal'} opacity={isReserved ? 0.6 : opacity}>
+                                {isReserved ? '?' : tile.id.replace(/^[a-z]+-/, '')}
+                            </text>
+                        )}
+                        {isEmpty && (
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="#555" fontSize="5">
+                                {tile.q},{tile.r}
+                            </text>
+                        )}
+                    </g>
+                );
+            };
+            
+            const realTiles = activeTiles.filter(t => !t.isReserved);
+            const reservedTiles = activeTiles.filter(t => t.isReserved);
+            
+            return (
+                <div className="container">
+                    <h1>MATH-CS COMPASS - Map Layout Editor</h1>
+                    
+                    <div className="controls">
+                        <label>
+                            <input type="checkbox" checked={showEmptySlots} onChange={(e) => setShowEmptySlots(e.target.checked)} />
+                            Empty slots
+                        </label>
+                        <label>
+                            <input type="checkbox" checked={showReserved} onChange={(e) => setShowReserved(e.target.checked)} />
+                            Reserved
+                        </label>
+                        <div className="filter-group">
+                            <span className="filter-label">Filter:</span>
+                            <button className={`filter-btn ${!highlightSection ? 'active' : ''}`} onClick={() => setHighlightSection(null)}>All</button>
+                            {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key]) => (
+                                <button key={key} className={`filter-btn ${highlightSection === key ? 'active' : ''}`}
+                                    style={{ backgroundColor: highlightSection === key ? SECTION_COLORS[key] : undefined }}
+                                    onClick={() => setHighlightSection(key === highlightSection ? null : key)}>
+                                    {key}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="legend">
+                        {Object.entries(SECTION_NAMES).map(([key, name]) => (
+                            <div key={key} className="legend-item">
+                                <div className="legend-color" style={{ backgroundColor: SECTION_COLORS[key] }}></div>
+                                <span>{key}: {name}</span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="main-content">
+                        <div className="map-container">
+                            <svg viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}>
+                                <defs>
+                                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a1a1a" strokeWidth="0.5"/>
+                                    </pattern>
+                                </defs>
+                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
+                                {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
+                                {activeTiles.map(tile => renderTile(tile, false))}
+                            </svg>
+                        </div>
+                        
+                        <div className="info-panel">
+                            {selectedTile ? (
+                                <div className="info-box">
+                                    <h3>
+                                        {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : `📄 ${selectedTile.title}`}
+                                    </h3>
+                                    <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
+                                    {selectedTile.id && <p><span className="label">ID:</span> {selectedTile.id}</p>}
+                                    {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
+                                    {selectedTile.borderingSection && <p><span className="label">Borders:</span> {selectedTile.borderingSection.join(', ') || 'None'}</p>}
+                                    {selectedTile.section === 'EMPTY' && <p className="available">✓ Available for new tile</p>}
+                                    {selectedTile.isReserved && <p className="reserved">⏳ Placeholder for future content</p>}
+                                </div>
+                            ) : (
+                                <div className="info-box" style={{ color: '#9ca3af' }}>Click a tile to see details</div>
+                            )}
+                            
+                            <div className="stats">
+                                <p>Active: {realTiles.length} | Reserved: {reservedTiles.length} | Empty: {emptySlots.length}</p>
+                            </div>
+                            
+                            <div className="info-box" style={{ marginTop: '12px' }}>
+                                <h3 style={{ marginBottom: '8px' }}>By Section:</h3>
+                                {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => {
+                                    const count = realTiles.filter(t => t.section === key).length;
+                                    const reserved = reservedTiles.filter(t => t.section === key).length;
+                                    return (
+                                        <div key={key} className="section-stats">
+                                            <span style={{ color: SECTION_COLORS[key] }}>{name}:</span>
+                                            <span>{count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<HexMapEditor />, document.getElementById('root'));
+    </script>
+</body>
+</html>
