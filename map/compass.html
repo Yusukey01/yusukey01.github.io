@@ -202,7 +202,7 @@ let knowledgeData = [];
 let SECTION_COLORS = {};
 
 // Animation settings
-const IDLE_BLINK_DURATION = 6000; 
+const IDLE_BLINK_DURATION = 5000; 
 const IDLE_BLINK_CHANCE = 0.005;  
 const idleBlinkState = {};
 
@@ -297,15 +297,15 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     let finalAlpha = alpha;
 
     if (isBlinking) {
-        // Active pulse for specific highlighted tile
-        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 4000)) * 0.7;
-    } else if (idleBlinkTargetId) {
-        // Survival pulse logic using the passed ID
-        const elapsed = Date.now() - idleBlinkState[idleBlinkTargetId];
-        const progress = elapsed / IDLE_BLINK_DURATION;
-        finalAlpha = 0.8 + 0.2 * Math.sin(progress * Math.PI - Math.PI / 2);
+        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 2000)) * 0.7;
+    } else if (isIdleBlinking) {
+        if (idleBlinkState[isIdleBlinking] !== undefined) {
+            const elapsed = Date.now() - idleBlinkState[isIdleBlinking];
+            const progress = elapsed / IDLE_BLINK_DURATION;
+            finalAlpha = 0.8 + 0.2 * Math.sin(progress * Math.PI * 2 - Math.PI / 2);
+        }
     }
-    
+
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -441,41 +441,44 @@ function render() {
     }
 
     // --- 3. Draw Tiles (Hexagons) ---
-        knowledgeData.forEach(tile => {
-            const { x, y } = getPixelCoords(tile.q, tile.r);
-            
-            let alpha = activeTile ? 0.15 : 1.0; 
-            let glow = false;
-            let currentTileBlinkId = false; // Flag to pass to drawHexagon
+    knowledgeData.forEach(tile => {
+        const { x, y } = getPixelCoords(tile.q, tile.r);
+        
+        // Visual state logic
+        let alpha = activeTile ? 0.15 : 1.0; // Dim non-selected tiles
+        let glow = false;
+        let isIdleBlinking = false;
 
-            // Check if this specific tile should be pulsing (Survival Pulse)
-            if (isSystemIdle && idleBlinkState[tile.id]) {
+        // Handle random idle blinking (The "Pulse" of the system)
+        if (isSystemIdle) {
+            if (idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
                 if (elapsed < IDLE_BLINK_DURATION) {
-                    currentTileBlinkId = tile.id; // Set the ID to trigger animation
+                    isIdleBlinking = tile.id;
                 } else {
                     delete idleBlinkState[tile.id];
                 }
+            } else if (Math.random() < IDLE_BLINK_CHANCE) {
+                idleBlinkState[tile.id] = time;
             }
+        } else {
+            delete idleBlinkState[tile.id];
+        }
 
-            if (activeTile) {
-                const isSelf = tile.id === activeTileId;
-                const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
-                const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
-                if (isSelf || isSeq || isPrereq) { 
-                    alpha = 1.0; 
-                    glow = isSelf || isPrereq; 
-                }
-            }
-
-            const color = SECTION_COLORS[tile.section] || '#888888';
+        // Highlight logic for active/related tiles
+        if (activeTile) {
+            const isSelf = tile.id === activeTileId;
+            const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
+            const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
             
-            // Pass the parameters correctly
-            drawHexagon(
-                x, y, scale * 0.95, color, alpha, glow, 
-                tile.id === blinkTileId, // isBlinking (Active)
-                currentTileBlinkId       // idleBlinkTargetId (Survival)
-            );
+            if (isSelf || isSeq || isPrereq) { 
+                alpha = 1.0; 
+                glow = isSelf || isPrereq; 
+            }
+        }
+
+        const color = SECTION_COLORS[tile.section] || '#888888';
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
         
         // --- 4. Draw Text (Final Optimized Version) ---
         // 1. Calculate zoom-based opacity independently.
@@ -650,12 +653,8 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', e => {
     e.preventDefault(); 
-    if (!isDragging && e.changedTouches.length === 1 && e.touches.length === 0) {
+    if (!isDragging && e.changedTouches.length === 1) {
         handleInteraction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-    }
-    // Reset pinch tracking when fingers are lifted
-    if (e.touches.length < 2) {
-        initialPinchDist = 0;
     }
     setTimeout(() => isTouchInteraction = false, 500); 
 });
@@ -676,16 +675,6 @@ window.addEventListener('keydown', e => {
 window.addEventListener('resize', setup);
 window.addEventListener('mousedown', () => isPanning = false);
 window.addEventListener('wheel', () => isPanning = false);
-
-// This triggers the random "pulse" safely outside the render loop
-setInterval(() => {
-    if (!activeTileId && Math.random() > 0.85) { // 15% chance every 5s
-        const randomTile = knowledgeData[Math.floor(Math.random() * knowledgeData.length)];
-        if (!idleBlinkState[randomTile.id]) {
-            idleBlinkState[randomTile.id] = Date.now();
-        }
-    }
-}, 5000);
 
 async function init() {
     setup();
