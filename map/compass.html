@@ -481,16 +481,24 @@ function render() {
         drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
         
         // --- 4. Draw Text (With Overflow Protection) ---
-        if (scale > 35 && (alpha > 0.5 || tile.id === blinkTileId)) {
+        // Only render text if the scale is large enough to contain it
+        if (scale > 50 && (alpha > 0.5 || tile.id === blinkTileId)) {
             ctx.fillStyle = "white"; 
             ctx.textAlign = "center";
             
-            // Adjusted font scale and wrapping width to fit within larger hexagons
-            const fontSize = Math.max(scale / 5.5, 12); 
+            // Font size follows scale linearly without a large minimum limit
+            // This ensures text shrinks along with the hexagon
+            const fontSize = scale / 5.5; 
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
             
-            // maxWidth is restricted to scale * 1.3 to avoid clipping at the edges
+            // Add a slight transparency to text as it gets smaller for a smoother transition
+            const textAlpha = Math.min(1, (scale - 50) / 20);
+            ctx.globalAlpha = alpha * textAlpha;
+
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
+            
+            // Reset globalAlpha to the standard factor for next operations
+            ctx.globalAlpha = globalAlphaFactor;
         }
     });
     
