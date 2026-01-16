@@ -176,9 +176,17 @@ const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
 // State
-let scale = 60;
-const minScale = 20, maxScale = 150;
-let offsetX = 0, offsetY = 0;
+let scale = 80;
+const minScale = 40, maxScale = 250;
+let offsetX = window.innerWidth / 2;
+let offsetY = window.innerHeight / 2;
+
+// Camera animation state
+let targetOffsetX = offsetX;
+let targetOffsetY = offsetY;
+let isPanning = false;        // True when camera is auto-moving
+
+// Tile animation
 let activeTileId = null;
 let blinkTileId = null; 
 let blinkStartTime = 0;
@@ -197,6 +205,8 @@ let SECTION_COLORS = {};
 const IDLE_BLINK_DURATION = 5000; 
 const IDLE_BLINK_CHANCE = 0.005;  
 const idleBlinkState = {};
+
+const panSpeed = 0.1; // Easing factor (0.1 = smooth, 0.5 = snappy)
 
 /**
  * Load curriculum data from JSON file
@@ -391,34 +401,55 @@ function drawPrerequisiteConnections(activeTile) {
     });
 }
 
+/**
+ * Main rendering loop using RequestAnimationFrame
+ */
 function render() {
     if (knowledgeData.length === 0) {
         requestAnimationFrame(render);
         return;
     }
-    
+
+    // --- 1. Camera Panning Animation (Easing) ---
+    if (isPanning) {
+        offsetX += (targetOffsetX - offsetX) * panSpeed;
+        offsetY += (targetOffsetY - offsetY) * panSpeed;
+
+        // Stop panning when coordinates are close enough
+        if (Math.abs(targetOffsetX - offsetX) < 0.1 && Math.abs(targetOffsetY - offsetY) < 0.1) {
+            offsetX = targetOffsetX;
+            offsetY = targetOffsetY;
+            isPanning = false;
+        }
+    }
+
     const time = Date.now();
+    
+    // Subtle breathing effect for global transparency
     const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     ctx.globalAlpha = globalAlphaFactor;
 
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
-    if (blinkTileId && Date.now() - blinkStartTime > 3000) blinkTileId = null;
+    if (blinkTileId && time - blinkStartTime > 3000) blinkTileId = null;
 
     const isSystemIdle = !activeTileId && !blinkTileId;
 
-    // Draw prerequisite connections first (behind tiles)
+    // --- 2. Draw Prerequisite Connections (Behind Tiles) ---
     if (activeTile) {
         drawPrerequisiteConnections(activeTile);
     }
 
-    // Draw tiles
+    // --- 3. Draw Tiles (Hexagons) ---
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
-        let alpha = activeTile ? 0.15 : 1.0;
-        let glow = false;
         
+        // Visual state logic
+        let alpha = activeTile ? 0.15 : 1.0; // Dim non-selected tiles
+        let glow = false;
         let isIdleBlinking = false;
+
+        // Handle random idle blinking (The "Pulse" of the system)
         if (isSystemIdle) {
             if (idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
@@ -434,6 +465,7 @@ function render() {
             delete idleBlinkState[tile.id];
         }
 
+        // Highlight logic for active/related tiles
         if (activeTile) {
             const isSelf = tile.id === activeTileId;
             const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
@@ -448,58 +480,95 @@ function render() {
         const color = SECTION_COLORS[tile.section] || '#888888';
         drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking);
         
-        // Draw text
-        if (scale > 30 && (alpha > 0.5 || tile.id === blinkTileId)) {
+        // --- 4. Draw Text (With Overflow Protection) ---
+        if (scale > 35 && (alpha > 0.5 || tile.id === blinkTileId)) {
             ctx.fillStyle = "white"; 
             ctx.textAlign = "center";
-            const fontSize = Math.max(scale / 4.5, 12);
+            
+            // Adjusted font scale and wrapping width to fit within larger hexagons
+            const fontSize = Math.max(scale / 5.5, 12); 
             ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
-            wrapText(tile.title, x, y, scale * 1.5, fontSize * 1.2);
+            
+            // maxWidth is restricted to scale * 1.3 to avoid clipping at the edges
+            wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
         }
     });
     
-    // UI Hint for selected tile
+    // --- 5. UI Overlay / Selection Hints ---
     if (activeTile) {
         const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "12px sans-serif";
-        ctx.fillText("▼ Tap again to Open", x, y + scale * 0.85);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText("▼ Tap again to Open", x, y + scale * 0.9);
         
-        // Show prerequisite count
         if (activeTile.prereqs && activeTile.prereqs.length > 0) {
-            ctx.fillStyle = "rgba(255,255,255,0.7)";
-            ctx.fillText(`Prerequisites: ${activeTile.prereqs.length}`, x, y - scale * 0.85);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.font = "11px sans-serif";
+            ctx.fillText(`Required knowledge found`, x, y - scale * 0.9);
         }
     }
 
     requestAnimationFrame(render);
 }
 
+
+/**
+ * Smoothly pans the camera to center the specified tile on screen.
+ * @param {Object} tile - The tile data containing q and r coordinates.
+ */
+function panToTile(tile) {
+    const coords = getPixelCoords(tile.q, tile.r);
+    
+    // Calculate the required offset to place (coords.x, coords.y) at the screen center
+    // We calculate based on raw map coordinates (excluding current offsets)
+    const rawMapX = coords.x - offsetX;
+    const rawMapY = coords.y - offsetY;
+
+    targetOffsetX = (window.innerWidth / 2) - rawMapX;
+    targetOffsetY = (window.innerHeight / 2) - rawMapY;
+    
+    isPanning = true;
+}
+
 // --- INTERACTION LOGIC ---
 
+/**
+ * Handles mouse and touch interactions for tile selection and navigation.
+ * Includes auto-panning to center the selected tile.
+ */
 function handleInteraction(clientX, clientY) {
     if (isDragging) return;
 
     let hit = false;
     for (const tile of knowledgeData) {
         const { x, y } = getPixelCoords(tile.q, tile.r);
+        
+        // Check if the click/tap is within the hexagon bounds
         if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
             hit = true;
+            
             if (activeTileId === tile.id) {
-                // Second tap: navigate
+                // Second tap on the same tile: Navigate to the content page
                 window.location.assign(tile.url);
             } else {
-                // First tap: select
+                // First tap: Select the tile and trigger auto-panning
                 activeTileId = tile.id;
+                
                 const prereqCount = tile.prereqs?.length || 0;
                 const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
                 document.getElementById('status').innerText = `Selected: ${tile.title}${prereqText}`;
+                
+                // Trigger smooth camera movement to center this tile
+                panToTile(tile);
             }
             break;
         }
     }
+
+    // Deselect if clicking on empty background
     if (!hit) {
         activeTileId = null;
+        isPanning = false; // Stop any ongoing auto-pan
         document.getElementById('status').innerText = "Explore the Knowledge Map";
     }
 }
@@ -590,6 +659,8 @@ window.addEventListener('keydown', e => {
 
 // Initialize
 window.addEventListener('resize', setup);
+window.addEventListener('mousedown', () => isPanning = false);
+window.addEventListener('wheel', () => isPanning = false);
 
 async function init() {
     setup();
