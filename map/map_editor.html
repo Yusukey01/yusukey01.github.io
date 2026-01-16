@@ -38,134 +38,34 @@
             overflow: auto; max-height: 65vh; min-height: 400px;
         }
         .map-container svg { width: 100%; min-height: 400px; }
-        .info-panel { width: 220px; flex-shrink: 0; }
+        .info-panel { width: 280px; flex-shrink: 0; }
         .info-box { background: #1f2937; padding: 12px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 12px; }
         .info-box h3 { font-size: 0.875rem; margin-bottom: 8px; }
         .info-box p { margin-bottom: 4px; }
         .info-box .label { color: #9ca3af; }
         .info-box .available { color: #4ade80; margin-top: 8px; font-weight: 500; }
         .info-box .reserved { color: #facc15; margin-top: 8px; }
+        .info-box .url-link { 
+            color: #60a5fa; text-decoration: none; word-break: break-all; 
+            display: block; margin-top: 4px; font-size: 0.7rem;
+        }
+        .info-box .url-link:hover { text-decoration: underline; }
         .stats { font-size: 0.75rem; color: #9ca3af; }
         .section-stats { display: flex; justify-content: space-between; margin-bottom: 2px; }
         .section-stats .count-reserved { color: #6b7280; }
         svg text { user-select: none; pointer-events: none; }
         svg g { cursor: pointer; }
         svg g:hover path { filter: brightness(1.2); }
+        .loading { text-align: center; padding: 40px; color: #9ca3af; }
+        .error { text-align: center; padding: 40px; color: #ef4444; }
+        .error code { display: block; margin-top: 12px; font-size: 0.8rem; color: #9ca3af; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     
     <script type="text/babel">
-        const { useState, useMemo } = React;
-
-        // ========== TILE DATA - UPDATE THIS WHEN YOU ADD NEW CONTENT ==========
-        const EXISTING_TILES = [
-            // Home
-            { id: 'home', q: 0, r: 0, section: 'HOME', title: 'Home' },
-            
-            // Section I - Linear Algebra (blue)
-            { id: 'linalg-1', q: -1, r: 1, section: 'I', title: 'Linear Equations' },
-            { id: 'linalg-2', q: -1, r: 2, section: 'I', title: 'Linear Transformation' },
-            { id: 'linalg-3', q: -2, r: 1, section: 'I', title: 'Matrix Algebra' },
-            { id: 'linalg-4', q: -2, r: 2, section: 'I', title: 'Determinants' },
-            { id: 'linalg-5', q: -2, r: 3, section: 'I', title: 'Vector Spaces' },
-            { id: 'linalg-6', q: -3, r: 2, section: 'I', title: 'Eigenvalues' },
-            { id: 'linalg-7', q: -3, r: 3, section: 'I', title: 'Orthogonality' },
-            { id: 'linalg-8', q: -3, r: 4, section: 'I', title: 'Least-Squares' },
-            { id: 'linalg-9', q: -4, r: 3, section: 'I', title: 'Symmetry' },
-            { id: 'linalg-10', q: -4, r: 4, section: 'I', title: 'Trace & Norms' },
-            { id: 'linalg-11', q: -4, r: 5, section: 'I', title: 'Kronecker' },
-            { id: 'linalg-12', q: -5, r: 4, section: 'I', title: 'Woodbury' },
-            { id: 'linalg-13', q: -5, r: 5, section: 'I', title: 'Stochastic' },
-            { id: 'linalg-14', q: -5, r: 6, section: 'I', title: 'Graph Laplacian' },
-            { id: 'linalg-15', q: -6, r: 5, section: 'I', title: 'Abstract Algebra' },
-            { id: 'linalg-16', q: -6, r: 6, section: 'I', title: 'Finite Groups' },
-            { id: 'linalg-17', q: -6, r: 7, section: 'I', title: 'Structural Groups' },
-            { id: 'linalg-18', q: -7, r: 6, section: 'I', title: 'Abelian Classification' },
-            { id: 'linalg-19', q: -7, r: 7, section: 'I', title: 'Rings & Fields' },
-            { id: 'linalg-20', q: -7, r: 8, section: 'I', title: 'Ideals' },
-            { id: 'linalg-21', q: -8, r: 7, section: 'I', title: 'Polynomial Rings' },
-            { id: 'I-reserved-0', q: -9, r: 7, section: 'I', title: 'Coming Soon', isReserved: true },
-            { id: 'I-reserved-1', q: -8, r: 8, section: 'I', title: 'Coming Soon', isReserved: true },
-            { id: 'I-reserved-2', q: -9, r: 8, section: 'I', title: 'Coming Soon', isReserved: true },
-            
-            // Section II - Calculus (green)
-            { id: 'calc-1', q: -1, r: 0, section: 'II', title: 'Derivative ℝⁿ→ℝ' },
-            { id: 'calc-2', q: -1, r: -1, section: 'II', title: 'Jacobian' },
-            { id: 'calc-3', q: -2, r: 0, section: 'II', title: 'Matrix Calculus' },
-            { id: 'calc-4', q: -2, r: -1, section: 'II', title: 'Numerical' },
-            { id: 'calc-5', q: -2, r: -2, section: 'II', title: 'det Derivative' },
-            { id: 'calc-6', q: -3, r: -1, section: 'II', title: 'MVT' },
-            { id: 'calc-7', q: -3, r: -2, section: 'II', title: 'Gradient Descent' },
-            { id: 'calc-8', q: -4, r: -1, section: 'II', title: "Newton's Method" },
-            { id: 'calc-9', q: -3, r: 0, section: 'II', title: 'Constrained Opt' },
-            { id: 'calc-10', q: -4, r: -2, section: 'II', title: 'Riemann' },
-            { id: 'calc-11', q: -4, r: 0, section: 'II', title: 'Measure Theory' },
-            { id: 'calc-12', q: -5, r: -1, section: 'II', title: 'Lebesgue' },
-            { id: 'calc-13', q: -5, r: -2, section: 'II', title: 'Duality' },
-            { id: 'calc-14', q: -5, r: 0, section: 'II', title: 'Fourier Series' },
-            { id: 'calc-15', q: -6, r: -1, section: 'II', title: 'Fourier Transform' },
-            { id: 'II-reserved-0', q: -7, r: -1, section: 'II', title: 'Coming Soon', isReserved: true },
-            { id: 'II-reserved-1', q: -6, r: -2, section: 'II', title: 'Coming Soon', isReserved: true },
-            { id: 'II-reserved-2', q: -7, r: 0, section: 'II', title: 'Coming Soon', isReserved: true },
-            
-            // Section III - Probability (red)
-            { id: 'prob-1', q: 0, r: -1, section: 'III', title: 'Basic Probability' },
-            { id: 'prob-2', q: 1, r: -1, section: 'III', title: 'Random Variables' },
-            { id: 'prob-3', q: 0, r: -2, section: 'III', title: 'Gamma & Beta' },
-            { id: 'prob-4', q: 1, r: -2, section: 'III', title: 'Gaussian' },
-            { id: 'prob-5', q: 2, r: -2, section: 'III', title: "Student's t" },
-            { id: 'prob-6', q: 0, r: -3, section: 'III', title: 'Covariance' },
-            { id: 'prob-7', q: 1, r: -3, section: 'III', title: 'Correlation' },
-            { id: 'prob-8', q: 2, r: -3, section: 'III', title: 'Multivariate' },
-            { id: 'prob-9', q: 0, r: -4, section: 'III', title: 'MLE' },
-            { id: 'prob-10', q: 1, r: -4, section: 'III', title: 'Hypothesis Testing' },
-            { id: 'prob-11', q: 2, r: -4, section: 'III', title: 'Linear Regression' },
-            { id: 'prob-12', q: 3, r: -3, section: 'III', title: 'Entropy' },
-            { id: 'prob-13', q: 3, r: -4, section: 'III', title: 'Convergence' },
-            { id: 'prob-14', q: 3, r: -2, section: 'III', title: 'Bayesian Stats' },
-            { id: 'prob-15', q: 4, r: -2, section: 'III', title: 'Exp Family' },
-            { id: 'prob-16', q: 4, r: -3, section: 'III', title: 'Fisher Info' },
-            { id: 'prob-17', q: 4, r: -4, section: 'III', title: 'Decision Theory' },
-            { id: 'prob-18', q: 5, r: -3, section: 'III', title: 'Markov Chains' },
-            { id: 'prob-19', q: 5, r: -4, section: 'III', title: 'Monte Carlo' },
-            { id: 'prob-20', q: 5, r: -2, section: 'III', title: 'Importance Sampling' },
-            { id: 'prob-21', q: 6, r: -3, section: 'III', title: 'Gaussian Processes' },
-            { id: 'III-reserved-0', q: 7, r: -3, section: 'III', title: 'Coming Soon', isReserved: true },
-            { id: 'III-reserved-1', q: 6, r: -4, section: 'III', title: 'Coming Soon', isReserved: true },
-            { id: 'III-reserved-2', q: 7, r: -4, section: 'III', title: 'Coming Soon', isReserved: true },
-            
-            // Section IV - Discrete (purple)
-            { id: 'disc-1', q: 0, r: 1, section: 'IV', title: 'Graph Theory' },
-            { id: 'disc-2', q: 2, r: 2, section: 'IV', title: 'Combinatorics' },
-            { id: 'disc-3', q: 0, r: 2, section: 'IV', title: 'Automata' },
-            { id: 'disc-4', q: 1, r: 2, section: 'IV', title: 'Boolean Logic' },
-            { id: 'disc-5', q: -1, r: 3, section: 'IV', title: 'Context-Free' },
-            { id: 'disc-6', q: 0, r: 3, section: 'IV', title: 'Turing Machines' },
-            { id: 'disc-7', q: 1, r: 3, section: 'IV', title: 'Time Complexity' },
-            { id: 'disc-8', q: 0, r: 4, section: 'IV', title: 'Eulerian' },
-            { id: 'disc-9', q: 1, r: 4, section: 'IV', title: 'Class NP' },
-            { id: 'IV-reserved-0', q: 2, r: 4, section: 'IV', title: 'Coming Soon', isReserved: true },
-            { id: 'IV-reserved-1', q: 1, r: 5, section: 'IV', title: 'Coming Soon', isReserved: true },
-            { id: 'IV-reserved-2', q: 2, r: 3, section: 'IV', title: 'Coming Soon', isReserved: true },
-            
-            // Section V - ML (orange)
-            { id: 'ml-1', q: 1, r: 0, section: 'V', title: 'Intro ML' },
-            { id: 'ml-2', q: 1, r: 1, section: 'V', title: 'Regularized Regression' },
-            { id: 'ml-3', q: 2, r: 0, section: 'V', title: 'Classification' },
-            { id: 'ml-4', q: 2, r: -1, section: 'V', title: 'Neural Networks' },
-            { id: 'ml-5', q: 2, r: 1, section: 'V', title: 'Autodiff' },
-            { id: 'ml-6', q: 3, r: 0, section: 'V', title: 'SVM' },
-            { id: 'ml-7', q: 3, r: -1, section: 'V', title: 'PCA & Autoencoders' },
-            { id: 'ml-8', q: 3, r: 1, section: 'V', title: 'Clustering' },
-            { id: 'ml-9', q: 4, r: 0, section: 'V', title: 'Deep NN' },
-            { id: 'ml-10', q: 4, r: -1, section: 'V', title: 'Reinforcement Learning' },
-            { id: 'V-reserved-0', q: 5, r: -1, section: 'V', title: 'Coming Soon', isReserved: true },
-            { id: 'V-reserved-1', q: 5, r: 0, section: 'V', title: 'Coming Soon', isReserved: true },
-            { id: 'V-reserved-2', q: 4, r: 1, section: 'V', title: 'Coming Soon', isReserved: true },
-        ];
-        // ========== END TILE DATA ==========
+        const { useState, useMemo, useEffect } = React;
 
         const SECTION_COLORS = {
             'HOME': '#888888',
@@ -186,7 +86,92 @@
             'V': 'Machine Learning'
         };
 
+        /**
+         * Load curriculum data from JSON file - same logic as compass.html
+         */
+        async function loadCurriculumData() {
+            // Try multiple paths to support different folder structures
+            const paths = [
+                '../data/curriculum.json',
+                './data/curriculum.json',
+                '/data/curriculum.json',
+                'curriculum.json'
+            ];
+            
+            let data = null;
+            let lastError = null;
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log(`Loaded curriculum from: ${path}`);
+                        break;
+                    }
+                } catch (e) {
+                    lastError = e;
+                }
+            }
+            
+            if (!data) {
+                throw new Error(`Could not load curriculum.json. Tried: ${paths.join(', ')}`);
+            }
+            
+            const tiles = [];
+            const sectionColors = data.sectionColors || {};
+            sectionColors['HOME'] = '#888888';
+            
+            // Add home node
+            if (data.homeNode) {
+                tiles.push({
+                    id: data.homeNode.id,
+                    section: 'HOME',
+                    title: data.homeNode.title,
+                    url: data.homeNode.url,
+                    q: data.homeNode.mapCoords.q,
+                    r: data.homeNode.mapCoords.r
+                });
+            }
+            
+            // Add all parts from all sections
+            Object.entries(data.sections).forEach(([sectionId, section]) => {
+                section.parts.forEach(part => {
+                    tiles.push({
+                        id: part.id,
+                        section: sectionId,
+                        title: part.title,
+                        url: section.baseUrl + part.url,
+                        q: part.mapCoords.q,
+                        r: part.mapCoords.r,
+                        prereqs: part.prereqs || [],
+                        keywords: part.keywords || []
+                    });
+                });
+                
+                // Add reserved slots
+                if (section.reservedSlots) {
+                    section.reservedSlots.forEach((slot, index) => {
+                        tiles.push({
+                            id: `${sectionId}-reserved-${index}`,
+                            section: sectionId,
+                            title: 'Coming Soon',
+                            url: null,
+                            q: slot.q,
+                            r: slot.r,
+                            isReserved: true
+                        });
+                    });
+                }
+            });
+            
+            return { tiles, sectionColors };
+        }
+
         function HexMapEditor() {
+            const [tiles, setTiles] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
             const [selectedTile, setSelectedTile] = useState(null);
             const [showEmptySlots, setShowEmptySlots] = useState(true);
             const [showReserved, setShowReserved] = useState(true);
@@ -194,9 +179,22 @@
             
             const hexSize = 28;
             
+            // Load data on mount
+            useEffect(() => {
+                loadCurriculumData()
+                    .then(({ tiles }) => {
+                        setTiles(tiles);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        setError(err.message);
+                        setLoading(false);
+                    });
+            }, []);
+            
             const activeTiles = useMemo(() => {
-                return EXISTING_TILES.filter(t => showReserved || !t.isReserved);
-            }, [showReserved]);
+                return tiles.filter(t => showReserved || !t.isReserved);
+            }, [tiles, showReserved]);
             
             const occupiedMap = useMemo(() => {
                 const map = new Map();
@@ -234,6 +232,8 @@
             
             const viewBox = useMemo(() => {
                 const allTiles = [...activeTiles, ...emptySlots];
+                if (allTiles.length === 0) return { x: -100, y: -100, width: 200, height: 200 };
+                
                 let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
                 allTiles.forEach(tile => {
                     const { x, y } = hexToPixel(tile.q, tile.r);
@@ -255,7 +255,7 @@
             
             const renderTile = (tile, isEmpty = false) => {
                 const { x, y } = hexToPixel(tile.q, tile.r);
-                const color = SECTION_COLORS[tile.section];
+                const color = SECTION_COLORS[tile.section] || '#888';
                 const isReserved = tile.isReserved;
                 const isHighlighted = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
                 const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
@@ -286,6 +286,25 @@
                     </g>
                 );
             };
+            
+            if (loading) {
+                return <div className="container"><div className="loading">Loading curriculum.json...</div></div>;
+            }
+            
+            if (error) {
+                return (
+                    <div className="container">
+                        <div className="error">
+                            Failed to load curriculum data
+                            <code>{error}</code>
+                            <p style={{ marginTop: '16px', fontSize: '0.8rem', color: '#9ca3af' }}>
+                                Make sure this file is in your project's /tools/ or /map/ folder,<br/>
+                                and curriculum.json is in /data/ folder.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
             
             const realTiles = activeTiles.filter(t => !t.isReserved);
             const reservedTiles = activeTiles.filter(t => t.isReserved);
@@ -343,11 +362,26 @@
                             {selectedTile ? (
                                 <div className="info-box">
                                     <h3>
-                                        {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : `📄 ${selectedTile.title}`}
+                                        {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : '📄 ' + selectedTile.id}
                                     </h3>
+                                    {selectedTile.section !== 'EMPTY' && (
+                                        <p style={{ fontSize: '1rem', fontWeight: 'bold', margin: '8px 0', color: SECTION_COLORS[selectedTile.section] }}>
+                                            {selectedTile.title}
+                                        </p>
+                                    )}
                                     <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
-                                    {selectedTile.id && <p><span className="label">ID:</span> {selectedTile.id}</p>}
                                     {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
+                                    {selectedTile.url && (
+                                        <p>
+                                            <span className="label">URL:</span>
+                                            <a className="url-link" href={selectedTile.url} target="_blank" rel="noopener noreferrer">
+                                                {selectedTile.url}
+                                            </a>
+                                        </p>
+                                    )}
+                                    {selectedTile.prereqs && selectedTile.prereqs.length > 0 && (
+                                        <p><span className="label">Prereqs:</span> {selectedTile.prereqs.join(', ')}</p>
+                                    )}
                                     {selectedTile.borderingSection && <p><span className="label">Borders:</span> {selectedTile.borderingSection.join(', ') || 'None'}</p>}
                                     {selectedTile.section === 'EMPTY' && <p className="available">✓ Available for new tile</p>}
                                     {selectedTile.isReserved && <p className="reserved">⏳ Placeholder for future content</p>}
@@ -372,6 +406,14 @@
                                         </div>
                                     );
                                 })}
+                            </div>
+                            
+                            <div className="info-box" style={{ marginTop: '12px', fontSize: '0.7rem', color: '#6b7280' }}>
+                                <p><strong>Tips:</strong></p>
+                                <p>• Data loads from curriculum.json</p>
+                                <p>• Swap tiles by swapping their mapCoords</p>
+                                <p>• Change section when moving to different region</p>
+                                <p>• Empty slots auto-expand at edges</p>
                             </div>
                         </div>
                     </div>
