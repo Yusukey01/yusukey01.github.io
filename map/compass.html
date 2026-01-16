@@ -202,7 +202,7 @@ let knowledgeData = [];
 let SECTION_COLORS = {};
 
 // Animation settings
-const IDLE_BLINK_DURATION = 5000; 
+const IDLE_BLINK_DURATION = 6000; 
 const IDLE_BLINK_CHANCE = 0.005;  
 const idleBlinkState = {};
 
@@ -297,7 +297,7 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     let finalAlpha = alpha;
 
     if (isBlinking) {
-        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 2000)) * 0.7;
+        finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 800)) * 0.7;
     } else if (isIdleBlinking) {
         if (idleBlinkState[isIdleBlinking] !== undefined) {
             const elapsed = Date.now() - idleBlinkState[isIdleBlinking];
@@ -458,9 +458,7 @@ function render() {
                 } else {
                     delete idleBlinkState[tile.id];
                 }
-            } else if (Math.random() < IDLE_BLINK_CHANCE) {
-                idleBlinkState[tile.id] = time;
-            }
+            } 
         } else {
             delete idleBlinkState[tile.id];
         }
@@ -653,8 +651,12 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', e => {
     e.preventDefault(); 
-    if (!isDragging && e.changedTouches.length === 1) {
+    if (!isDragging && e.changedTouches.length === 1 && e.touches.length === 0) {
         handleInteraction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    }
+    // Reset pinch tracking when fingers are lifted
+    if (e.touches.length < 2) {
+        initialPinchDist = 0;
     }
     setTimeout(() => isTouchInteraction = false, 500); 
 });
@@ -675,6 +677,16 @@ window.addEventListener('keydown', e => {
 window.addEventListener('resize', setup);
 window.addEventListener('mousedown', () => isPanning = false);
 window.addEventListener('wheel', () => isPanning = false);
+
+// This triggers the random "pulse" safely outside the render loop
+setInterval(() => {
+    if (!activeTileId && Math.random() > 0.85) { // 15% chance every 5s
+        const randomTile = knowledgeData[Math.floor(Math.random() * knowledgeData.length)];
+        if (!idleBlinkState[randomTile.id]) {
+            idleBlinkState[randomTile.id] = Date.now();
+        }
+    }
+}, 5000);
 
 async function init() {
     setup();
