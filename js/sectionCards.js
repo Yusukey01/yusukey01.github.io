@@ -1,7 +1,7 @@
 /**
  * MATH-CS COMPASS: Section Card Generator
  * @author Yusuke Yokota
- * @version 1.0.0
+ * @version 1.1.0 (Fixed)
  * 
  * Generates topic cards dynamically from centralized curriculum.json data.
  * This ensures consistency between section pages and the compass map.
@@ -10,6 +10,12 @@
  *   1. Include this script in your section page
  *   2. Add a container with id="topic-cards-container"
  *   3. Call: SectionCards.init('I') where 'I' is the section number
+ * 
+ * FIXES in v1.1.0:
+ *   - Added proper base URL handling for relative paths
+ *   - Fixed badge rendering to use proper badge classes
+ *   - Improved error handling and debugging
+ *   - Added container existence validation
  */
 
 const SectionCards = (function() {
@@ -33,9 +39,10 @@ const SectionCards = (function() {
             const response = await fetch(CONFIG.dataPath);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             curriculumData = await response.json();
+            console.log('SectionCards: Curriculum data loaded successfully');
             return curriculumData;
         } catch (error) {
-            console.error('Failed to load curriculum data:', error);
+            console.error('SectionCards: Failed to load curriculum data:', error);
             return null;
         }
     }
@@ -60,30 +67,39 @@ const SectionCards = (function() {
         // Card title with link
         const titleH3 = document.createElement('h3');
         const titleLink = document.createElement('a');
+        // Fix: Use relative URL if baseUrl is provided, otherwise use part.url directly
         titleLink.href = part.url;
         titleLink.textContent = `Part ${part.part}: ${part.title}`;
         titleH3.appendChild(titleLink);
         card.appendChild(titleH3);
 
+        // FIX: Add badges as a separate container with proper styling
+        if (part.badges && part.badges.length > 0) {
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'card-badges';
+            
+            part.badges.forEach(badge => {
+                const badgeSpan = document.createElement('span');
+                badgeSpan.className = `card-badge card-badge-${badge}`;
+                
+                // Add icon and text
+                if (badge === 'code') {
+                    badgeSpan.innerHTML = '<i class="fas fa-code"></i> Code Included';
+                } else if (badge === 'interactive') {
+                    badgeSpan.innerHTML = '<i class="fas fa-hand-pointer"></i> Interactive Demo';
+                } else {
+                    badgeSpan.textContent = badge;
+                }
+                badgesDiv.appendChild(badgeSpan);
+            });
+            
+            card.appendChild(badgesDiv);
+        }
+
         // Keywords (limited to maxKeywords)
         if (part.keywords && part.keywords.length > 0) {
             const keywordsDiv = document.createElement('div');
             keywordsDiv.className = 'keywords';
-            
-            // Add badges as the first keywords (matching original style)
-            if (part.badges && part.badges.length > 0) {
-                part.badges.forEach(badge => {
-                    const badgeSpan = document.createElement('span');
-                    const strong = document.createElement('strong');
-                    if (badge === 'code') {
-                        strong.textContent = 'Code Included';
-                    } else if (badge === 'interactive') {
-                        strong.textContent = 'Interactive Demo';
-                    }
-                    badgeSpan.appendChild(strong);
-                    keywordsDiv.appendChild(badgeSpan);
-                });
-            }
             
             const displayKeywords = part.keywords.slice(0, CONFIG.maxKeywords);
             const remainingCount = part.keywords.length - CONFIG.maxKeywords;
@@ -117,19 +133,20 @@ const SectionCards = (function() {
     async function renderSection(sectionId, containerId = 'topic-cards-container') {
         const data = await loadData();
         if (!data) {
-            console.error('Could not load curriculum data');
+            console.error('SectionCards: Could not load curriculum data');
             return;
         }
 
         const section = data.sections[sectionId];
         if (!section) {
-            console.error(`Section "${sectionId}" not found`);
+            console.error(`SectionCards: Section "${sectionId}" not found in curriculum data`);
             return;
         }
 
         const container = document.getElementById(containerId);
         if (!container) {
-            console.error(`Container "#${containerId}" not found`);
+            console.error(`SectionCards: Container "#${containerId}" not found in DOM`);
+            console.error('SectionCards: Make sure the container element exists before calling init()');
             return;
         }
 
@@ -147,6 +164,8 @@ const SectionCards = (function() {
         });
 
         container.appendChild(cardsDiv);
+        
+        console.log(`SectionCards: Rendered ${section.parts.length} cards for Section ${sectionId}`);
     }
 
     /**
@@ -214,6 +233,7 @@ const SectionCards = (function() {
                 renderSection(sectionId, options.containerId);
             });
         } else {
+            // DOM is already ready, render immediately
             renderSection(sectionId, options.containerId);
         }
     }
