@@ -145,7 +145,8 @@
                         q: part.mapCoords.q,
                         r: part.mapCoords.r,
                         prereqs: part.prereqs || [],
-                        keywords: part.keywords || []
+                        keywords: part.keywords || [],
+                        topicGroup: part.topicGroup || null
                     });
                 });
                 
@@ -159,7 +160,8 @@
                             url: null,
                             q: slot.q,
                             r: slot.r,
-                            isReserved: true
+                            isReserved: true,
+                            topicGroup: null
                         });
                     });
                 }
@@ -167,6 +169,32 @@
             
             return { tiles, sectionColors };
         }
+
+        // Topic group display names
+        const TOPIC_GROUP_NAMES = {
+            'core-linalg': 'Core Linear Algebra',
+            'abstract-algebra': 'Abstract Algebra',
+            'derivatives': 'Derivatives',
+            'numerical': 'Numerical Methods',
+            'optimization': 'Optimization',
+            'analysis': 'Analysis & Integration',
+            'fourier': 'Fourier Analysis',
+            'foundations': 'Probability Foundations',
+            'distributions': 'Distributions',
+            'multivariate': 'Multivariate Statistics',
+            'inference': 'Statistical Inference',
+            'information': 'Information Theory',
+            'bayesian': 'Bayesian Methods',
+            'gaussian-process': 'Gaussian Processes',
+            'graph-theory': 'Graph Theory',
+            'combinatorics': 'Combinatorics',
+            'computation': 'Theory of Computation',
+            'boolean': 'Boolean Logic',
+            'ml-foundations': 'ML Foundations',
+            'neural-networks': 'Neural Networks',
+            'dimensionality': 'Dimensionality Reduction',
+            'reinforcement-learning': 'Reinforcement Learning'
+        };
 
         function HexMapEditor() {
             const [tiles, setTiles] = useState([]);
@@ -176,6 +204,7 @@
             const [showEmptySlots, setShowEmptySlots] = useState(true);
             const [showReserved, setShowReserved] = useState(true);
             const [highlightSection, setHighlightSection] = useState(null);
+            const [highlightTopicGroup, setHighlightTopicGroup] = useState(null);
             
             const hexSize = 28;
             
@@ -257,10 +286,33 @@
                 const { x, y } = hexToPixel(tile.q, tile.r);
                 const color = SECTION_COLORS[tile.section] || '#888';
                 const isReserved = tile.isReserved;
-                const isHighlighted = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
+                const isHighlightedBySection = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
                 const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
-                let opacity = isEmpty ? 0.3 : (isHighlighted || !highlightSection ? 1 : 0.3);
-                if (isReserved) opacity = 0.35;
+                
+                // Highlight tiles in the same topic group as selected tile
+                const isSameTopicGroup = selectedTile && selectedTile.topicGroup && tile.topicGroup === selectedTile.topicGroup;
+                const isPrereqOfSelected = selectedTile && selectedTile.prereqs && selectedTile.prereqs.includes(tile.id);
+                
+                let opacity = isEmpty ? 0.3 : 1;
+                
+                // Apply section filter
+                if (highlightSection && !isHighlightedBySection) {
+                    opacity = 0.3;
+                }
+                
+                // When a tile is selected, highlight topic group and prereqs
+                if (selectedTile && !isEmpty) {
+                    if (isSelected || isSameTopicGroup || isPrereqOfSelected) {
+                        opacity = 1;
+                    } else {
+                        opacity = 0.2;
+                    }
+                }
+                
+                if (isReserved) opacity = Math.min(opacity, 0.35);
+                
+                // Glow effect for selected tile and its prereqs
+                const hasGlow = isSelected || isPrereqOfSelected;
                 
                 return (
                     <g key={`${tile.q},${tile.r}`} onClick={() => setSelectedTile(tile)}>
@@ -268,8 +320,8 @@
                             d={hexPath(x, y, hexSize * 0.88)}
                             fill={color}
                             fillOpacity={opacity}
-                            stroke={isSelected ? '#fff' : isEmpty ? '#444' : isReserved ? '#666' : 'rgba(255,255,255,0.3)'}
-                            strokeWidth={isSelected ? 2.5 : 1}
+                            stroke={isSelected ? '#fff' : isPrereqOfSelected ? '#ffeb3b' : isEmpty ? '#444' : isReserved ? '#666' : 'rgba(255,255,255,0.3)'}
+                            strokeWidth={isSelected ? 2.5 : isPrereqOfSelected ? 2 : 1}
                             strokeDasharray={isEmpty || isReserved ? '3,2' : 'none'}
                         />
                         {!isEmpty && (
@@ -371,6 +423,9 @@
                                     )}
                                     <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
                                     {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
+                                    {selectedTile.topicGroup && (
+                                        <p><span className="label">Topic Group:</span> <span style={{ color: '#60a5fa' }}>{TOPIC_GROUP_NAMES[selectedTile.topicGroup] || selectedTile.topicGroup}</span></p>
+                                    )}
                                     {selectedTile.url && (
                                         <p>
                                             <span className="label">URL:</span>
@@ -380,7 +435,7 @@
                                         </p>
                                     )}
                                     {selectedTile.prereqs && selectedTile.prereqs.length > 0 && (
-                                        <p><span className="label">Prereqs:</span> {selectedTile.prereqs.join(', ')}</p>
+                                        <p><span className="label">Prereqs:</span> <span style={{ color: '#facc15' }}>{selectedTile.prereqs.join(', ')}</span></p>
                                     )}
                                     {selectedTile.borderingSection && <p><span className="label">Borders:</span> {selectedTile.borderingSection.join(', ') || 'None'}</p>}
                                     {selectedTile.section === 'EMPTY' && <p className="available">✓ Available for new tile</p>}

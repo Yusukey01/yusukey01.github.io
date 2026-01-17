@@ -161,7 +161,7 @@
 /**
  * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
  * @author Yusuke Yokota
- * @version 5.1.0 (January 2026)
+ * @version 5.0.0 (January 2026)
  * 
  * Now imports from centralized curriculum.json for single source of truth.
  * 
@@ -204,7 +204,7 @@ let SECTION_COLORS = {};
 // Animation settings
 const IDLE_BLINK_DURATION = 4000;      // How long each blink animation lasts
 const IDLE_BLINK_INTERVAL = 2500;      // Minimum ms between starting new blinks
-const MAX_CONCURRENT_BLINKS = 3;       // Maximum tiles blinking simultaneously
+const MAX_CONCURRENT_BLINKS = 2;       // Maximum tiles blinking simultaneously
 const idleBlinkState = {};
 let lastBlinkTime = 0;
 
@@ -258,7 +258,7 @@ async function loadCurriculumData() {
                     url: '../' + section.baseUrl + part.url,
                     q: part.mapCoords.q,
                     r: part.mapCoords.r,
-                    seqGroup: sectionId,
+                    topicGroup: part.topicGroup || null,  // Use topicGroup for related highlighting
                     prereqs: part.prereqs || []
                 });
             });
@@ -273,7 +273,7 @@ async function loadCurriculumData() {
                         url: null,  // No URL for reserved slots
                         q: slot.q,
                         r: slot.r,
-                        seqGroup: sectionId,
+                        topicGroup: null,
                         prereqs: [],
                         isReserved: true  // Flag to identify reserved slots
                     });
@@ -517,10 +517,11 @@ function render() {
         // Highlight logic for active/related tiles (reserved slots don't highlight)
         if (activeTile && !isReserved) {
             const isSelf = tile.id === activeTileId;
-            const isSeq = activeTile.seqGroup && tile.seqGroup === activeTile.seqGroup;
+            // Highlight tiles in the same topic group (e.g., "abstract-algebra", "derivatives")
+            const isSameTopicGroup = activeTile.topicGroup && tile.topicGroup === activeTile.topicGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
             
-            if (isSelf || isSeq || isPrereq) { 
+            if (isSelf || isSameTopicGroup || isPrereq) { 
                 alpha = 1.0; 
                 glow = isSelf || isPrereq; 
             }
