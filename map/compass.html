@@ -379,12 +379,14 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
 }
 
 /**
- * Draw prerequisite connections as curved lines
+ * Draw prerequisite connections as curved lines with colored glow
+ * Lines use the section color and are drawn with a glow effect for visibility
  */
 function drawPrerequisiteConnections(activeTile) {
     if (!activeTile || !activeTile.prereqs || activeTile.prereqs.length === 0) return;
     
     const activeCoords = getPixelCoords(activeTile.q, activeTile.r);
+    const sectionColor = SECTION_COLORS[activeTile.section] || '#ffffff';
     
     activeTile.prereqs.forEach(prereqId => {
         const prereq = knowledgeData.find(t => t.id === prereqId);
@@ -392,40 +394,87 @@ function drawPrerequisiteConnections(activeTile) {
         
         const prereqCoords = getPixelCoords(prereq.q, prereq.r);
         
-        // Draw curved connection line
-        ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        
         // Calculate control point for curve
         const midX = (activeCoords.x + prereqCoords.x) / 2;
         const midY = (activeCoords.y + prereqCoords.y) / 2;
         const dx = activeCoords.x - prereqCoords.x;
         const dy = activeCoords.y - prereqCoords.y;
-        const perpX = -dy * 0.2;
-        const perpY = dx * 0.2;
+        const dist = Math.sqrt(dx * dx + dy * dy);
         
+        // Perpendicular offset - scales with distance but caps at reasonable value
+        const curveAmount = Math.min(dist * 0.25, scale * 0.8);
+        const perpX = (-dy / dist) * curveAmount;
+        const perpY = (dx / dist) * curveAmount;
+        
+        const ctrlX = midX + perpX;
+        const ctrlY = midY + perpY;
+        
+        ctx.save();
+        
+        // Draw glow layer (thick, blurred)
+        ctx.strokeStyle = sectionColor;
+        ctx.lineWidth = 8;
+        ctx.globalAlpha = 0.3;
+        ctx.shadowColor = sectionColor;
+        ctx.shadowBlur = 15;
         ctx.beginPath();
         ctx.moveTo(prereqCoords.x, prereqCoords.y);
-        ctx.quadraticCurveTo(midX + perpX, midY + perpY, activeCoords.x, activeCoords.y);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
         ctx.stroke();
         
-        // Draw arrow head
-        const angle = Math.atan2(activeCoords.y - (midY + perpY), activeCoords.x - (midX + perpX));
-        const arrowSize = 10;
+        // Draw main line (solid color)
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = sectionColor;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(prereqCoords.x, prereqCoords.y);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
+        ctx.stroke();
+        
+        // Draw animated dashes on top (white for contrast)
+        const dashOffset = (Date.now() / 50) % 20; // Animate the dashes
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 12]);
+        ctx.lineDashOffset = -dashOffset;
+        ctx.beginPath();
+        ctx.moveTo(prereqCoords.x, prereqCoords.y);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
+        ctx.stroke();
         ctx.setLineDash([]);
+        
+        // Draw arrow head at destination
+        const angle = Math.atan2(activeCoords.y - ctrlY, activeCoords.x - ctrlX);
+        const arrowSize = Math.max(10, scale * 0.15);
+        
+        // Arrow with fill
+        ctx.fillStyle = sectionColor;
+        ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.moveTo(activeCoords.x, activeCoords.y);
         ctx.lineTo(
-            activeCoords.x - arrowSize * Math.cos(angle - Math.PI/6),
-            activeCoords.y - arrowSize * Math.sin(angle - Math.PI/6)
+            activeCoords.x - arrowSize * Math.cos(angle - Math.PI/7),
+            activeCoords.y - arrowSize * Math.sin(angle - Math.PI/7)
         );
-        ctx.moveTo(activeCoords.x, activeCoords.y);
         ctx.lineTo(
-            activeCoords.x - arrowSize * Math.cos(angle + Math.PI/6),
-            activeCoords.y - arrowSize * Math.sin(angle + Math.PI/6)
+            activeCoords.x - arrowSize * 0.6 * Math.cos(angle),
+            activeCoords.y - arrowSize * 0.6 * Math.sin(angle)
         );
+        ctx.lineTo(
+            activeCoords.x - arrowSize * Math.cos(angle + Math.PI/7),
+            activeCoords.y - arrowSize * Math.sin(angle + Math.PI/7)
+        );
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw circle at prereq source
+        ctx.beginPath();
+        ctx.arc(prereqCoords.x, prereqCoords.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = sectionColor;
+        ctx.fill();
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
         ctx.stroke();
         
         ctx.restore();
@@ -483,12 +532,7 @@ function render() {
         }
     }
 
-    // --- 2. Draw Prerequisite Connections (Behind Tiles) ---
-    if (activeTile) {
-        drawPrerequisiteConnections(activeTile);
-    }
-
-    // --- 3. Draw Tiles (Hexagons) ---
+    // --- 2. Draw Tiles (Hexagons) - First layer ---
     knowledgeData.forEach(tile => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         
@@ -558,7 +602,12 @@ function render() {
         }
     });
     
-    // --- 5. UI Overlay / Selection Hints ---
+    // --- 3. Draw Prerequisite Connections (On top of tiles for visibility) ---
+    if (activeTile) {
+        drawPrerequisiteConnections(activeTile);
+    }
+    
+    // --- 4. UI Overlay / Selection Hints ---
     if (activeTile) {
         const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
         ctx.fillStyle = "rgba(255, 255, 255, 0.9)";

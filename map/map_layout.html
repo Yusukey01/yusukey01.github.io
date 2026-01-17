@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATH-CS COMPASS - Layout Planner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; }
+        .container { padding: 16px; }
+        h1 { font-size: 1.25rem; margin-bottom: 8px; }
+        .subtitle { font-size: 0.8rem; color: #9ca3af; margin-bottom: 16px; }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        .controls label { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer; }
+        .main-layout { display: flex; gap: 16px; }
+        .map-container { flex: 1; background: #111; border-radius: 8px; overflow: hidden; }
+        .map-container svg { width: 100%; height: 70vh; }
+        .side-panel { width: 320px; flex-shrink: 0; font-size: 0.75rem; }
+        .panel-box { background: #1a1a1a; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .panel-box h3 { font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        .topic-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .topic-item { display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 3px; }
+        .topic-item:hover { background: #333; }
+        .topic-color { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+        .section-header { font-weight: bold; margin-top: 8px; margin-bottom: 4px; padding: 4px; background: #222; border-radius: 3px; }
+        .stats-row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .selected-info { background: #1e3a5f; }
+        .prereq-list { margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; }
+        .prereq-item { color: #fbbf24; }
+        svg text { user-select: none; pointer-events: none; }
+        svg g.tile { cursor: pointer; }
+        svg g.tile:hover path { filter: brightness(1.3); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, useCallback } = React;
+
+        // Topic group colors - distinct colors within each section
+        const TOPIC_GROUP_COLORS = {
+            // Section I - Linear Algebra (blues)
+            'core-linalg': '#1976d2',
+            'abstract-algebra': '#7c4dff',
+            
+            // Section II - Calculus (greens)
+            'derivatives': '#2e7d32',
+            'numerical': '#00897b',
+            'optimization': '#558b2f',
+            'analysis': '#1b5e20',
+            'fourier': '#4caf50',
+            
+            // Section III - Probability (reds/pinks)  
+            'foundations': '#c62828',
+            'distributions': '#ad1457',
+            'multivariate': '#d32f2f',
+            'inference': '#e65100',
+            'information': '#bf360c',
+            'bayesian': '#b71c1c',
+            'gaussian-process': '#880e4f',
+            
+            // Section IV - Discrete (purples)
+            'graph-theory': '#7b1fa2',
+            'combinatorics': '#9c27b0',
+            'computation': '#6a1b9a',
+            'boolean': '#8e24aa',
+            
+            // Section V - ML (oranges)
+            'ml-foundations': '#ef6c00',
+            'neural-networks': '#ff9800',
+            'dimensionality': '#f57c00',
+            'reinforcement-learning': '#ffa726',
+            
+            // Home
+            'home': '#666666'
+        };
+
+        const TOPIC_GROUP_NAMES = {
+            'core-linalg': 'Core LinAlg',
+            'abstract-algebra': 'Abstract Algebra',
+            'derivatives': 'Derivatives',
+            'numerical': 'Numerical',
+            'optimization': 'Optimization',
+            'analysis': 'Analysis',
+            'fourier': 'Fourier',
+            'foundations': 'Foundations',
+            'distributions': 'Distributions',
+            'multivariate': 'Multivariate',
+            'inference': 'Inference',
+            'information': 'Information',
+            'bayesian': 'Bayesian',
+            'gaussian-process': 'Gaussian Process',
+            'graph-theory': 'Graph Theory',
+            'combinatorics': 'Combinatorics',
+            'computation': 'Computation',
+            'boolean': 'Boolean',
+            'ml-foundations': 'ML Foundations',
+            'neural-networks': 'Neural Networks',
+            'dimensionality': 'Dimensionality',
+            'reinforcement-learning': 'RL',
+            'home': 'Home'
+        };
+
+        const SECTION_NAMES = {
+            'HOME': 'Home',
+            'I': 'Linear Algebra',
+            'II': 'Calculus', 
+            'III': 'Probability',
+            'IV': 'Discrete Math',
+            'V': 'Machine Learning'
+        };
+
+        async function loadCurriculumData() {
+            const paths = ['../data/curriculum.json', './data/curriculum.json', '/data/curriculum.json', 'curriculum.json'];
+            let data = null;
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) { data = await response.json(); break; }
+                } catch (e) {}
+            }
+            
+            if (!data) throw new Error('Could not load curriculum.json');
+            
+            const tiles = [];
+            
+            if (data.homeNode) {
+                tiles.push({
+                    id: data.homeNode.id,
+                    section: 'HOME',
+                    title: data.homeNode.title,
+                    q: data.homeNode.mapCoords.q,
+                    r: data.homeNode.mapCoords.r,
+                    topicGroup: 'home',
+                    prereqs: []
+                });
+            }
+            
+            Object.entries(data.sections).forEach(([sectionId, section]) => {
+                section.parts.forEach(part => {
+                    tiles.push({
+                        id: part.id,
+                        section: sectionId,
+                        title: part.title,
+                        q: part.mapCoords.q,
+                        r: part.mapCoords.r,
+                        topicGroup: part.topicGroup || 'unknown',
+                        prereqs: part.prereqs || []
+                    });
+                });
+            });
+            
+            return tiles;
+        }
+
+        function LayoutPlanner() {
+            const [tiles, setTiles] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedTile, setSelectedTile] = useState(null);
+            const [showPrereqs, setShowPrereqs] = useState(true);
+            const [showLabels, setShowLabels] = useState(true);
+            const [colorByTopic, setColorByTopic] = useState(true);
+            
+            const hexSize = 36;
+            
+            useEffect(() => {
+                loadCurriculumData()
+                    .then(data => { setTiles(data); setLoading(false); })
+                    .catch(err => { console.error(err); setLoading(false); });
+            }, []);
+            
+            const tileMap = useMemo(() => {
+                const map = new Map();
+                tiles.forEach(t => map.set(t.id, t));
+                return map;
+            }, [tiles]);
+            
+            const hexToPixel = useCallback((q, r) => ({
+                x: hexSize * Math.sqrt(3) * (q + r / 2),
+                y: hexSize * 1.5 * r
+            }), [hexSize]);
+            
+            const viewBox = useMemo(() => {
+                if (tiles.length === 0) return { x: -200, y: -200, width: 400, height: 400 };
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                tiles.forEach(tile => {
+                    const { x, y } = hexToPixel(tile.q, tile.r);
+                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                });
+                const padding = hexSize * 3;
+                return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+            }, [tiles, hexToPixel, hexSize]);
+            
+            const hexPath = useCallback((cx, cy, size) => {
+                const points = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.PI / 6 + i * Math.PI / 3;
+                    points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
+                }
+                return `M${points.join('L')}Z`;
+            }, []);
+            
+            // Group tiles by section and topic
+            const groupedTiles = useMemo(() => {
+                const groups = {};
+                tiles.forEach(t => {
+                    if (!groups[t.section]) groups[t.section] = {};
+                    if (!groups[t.section][t.topicGroup]) groups[t.section][t.topicGroup] = [];
+                    groups[t.section][t.topicGroup].push(t);
+                });
+                return groups;
+            }, [tiles]);
+            
+            // Calculate layout metrics
+            const layoutMetrics = useMemo(() => {
+                const metrics = { sections: {} };
+                Object.entries(groupedTiles).forEach(([section, topics]) => {
+                    let minQ = Infinity, maxQ = -Infinity, minR = Infinity, maxR = -Infinity;
+                    let count = 0;
+                    Object.values(topics).flat().forEach(t => {
+                        minQ = Math.min(minQ, t.q); maxQ = Math.max(maxQ, t.q);
+                        minR = Math.min(minR, t.r); maxR = Math.max(maxR, t.r);
+                        count++;
+                    });
+                    metrics.sections[section] = {
+                        span: { q: maxQ - minQ, r: maxR - minR },
+                        count,
+                        topics: Object.keys(topics).length
+                    };
+                });
+                return metrics;
+            }, [groupedTiles]);
+            
+            const renderPrereqLines = () => {
+                if (!showPrereqs) return null;
+                const lines = [];
+                
+                tiles.forEach(tile => {
+                    if (!tile.prereqs) return;
+                    tile.prereqs.forEach(prereqId => {
+                        const prereq = tileMap.get(prereqId);
+                        if (!prereq) return;
+                        
+                        const from = hexToPixel(prereq.q, prereq.r);
+                        const to = hexToPixel(tile.q, tile.r);
+                        
+                        // Calculate control point for curved line
+                        const midX = (from.x + to.x) / 2;
+                        const midY = (from.y + to.y) / 2;
+                        const dx = to.x - from.x;
+                        const dy = to.y - from.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // Perpendicular offset for curve
+                        const perpX = -dy / dist * Math.min(dist * 0.3, 30);
+                        const perpY = dx / dist * Math.min(dist * 0.3, 30);
+                        
+                        const ctrlX = midX + perpX;
+                        const ctrlY = midY + perpY;
+                        
+                        // Use topic color of the destination tile
+                        const color = TOPIC_GROUP_COLORS[tile.topicGroup] || '#666';
+                        
+                        // Highlight if selected tile's prereq
+                        const isHighlighted = selectedTile && (selectedTile.id === tile.id || selectedTile.prereqs?.includes(prereqId));
+                        
+                        lines.push(
+                            <g key={`${prereqId}-${tile.id}`}>
+                                {/* Glow effect */}
+                                <path
+                                    d={`M${from.x},${from.y} Q${ctrlX},${ctrlY} ${to.x},${to.y}`}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={isHighlighted ? 8 : 4}
+                                    strokeOpacity={isHighlighted ? 0.4 : 0.15}
+                                    strokeLinecap="round"
+                                />
+                                {/* Main line */}
+                                <path
+                                    d={`M${from.x},${from.y} Q${ctrlX},${ctrlY} ${to.x},${to.y}`}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={isHighlighted ? 3 : 1.5}
+                                    strokeOpacity={isHighlighted ? 1 : 0.5}
+                                    strokeDasharray={isHighlighted ? "none" : "6,4"}
+                                    strokeLinecap="round"
+                                />
+                                {/* Arrow head */}
+                                <circle
+                                    cx={to.x}
+                                    cy={to.y}
+                                    r={isHighlighted ? 5 : 3}
+                                    fill={color}
+                                    fillOpacity={isHighlighted ? 1 : 0.6}
+                                />
+                            </g>
+                        );
+                    });
+                });
+                
+                return <g className="prereq-lines">{lines}</g>;
+            };
+            
+            const renderTile = (tile) => {
+                const { x, y } = hexToPixel(tile.q, tile.r);
+                const color = colorByTopic ? (TOPIC_GROUP_COLORS[tile.topicGroup] || '#666') : '#666';
+                const isSelected = selectedTile?.id === tile.id;
+                const isSameGroup = selectedTile && tile.topicGroup === selectedTile.topicGroup;
+                const isPrereq = selectedTile?.prereqs?.includes(tile.id);
+                
+                let opacity = 1;
+                if (selectedTile && !isSelected && !isSameGroup && !isPrereq) {
+                    opacity = 0.25;
+                }
+                
+                return (
+                    <g key={tile.id} className="tile" onClick={() => setSelectedTile(isSelected ? null : tile)}>
+                        <path
+                            d={hexPath(x, y, hexSize * 0.9)}
+                            fill={color}
+                            fillOpacity={opacity}
+                            stroke={isSelected ? '#fff' : isPrereq ? '#fbbf24' : 'rgba(255,255,255,0.3)'}
+                            strokeWidth={isSelected ? 3 : isPrereq ? 2.5 : 1}
+                        />
+                        {showLabels && (
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" 
+                                fill="white" fontSize="8" fontWeight="bold" opacity={opacity}>
+                                {tile.id.replace(/^[a-z]+-/, '')}
+                            </text>
+                        )}
+                    </g>
+                );
+            };
+            
+            if (loading) return <div className="container">Loading...</div>;
+            
+            return (
+                <div className="container">
+                    <h1>MATH-CS COMPASS - Layout Planner</h1>
+                    <p className="subtitle">Visualize topic groups and plan tile reorganization. Click tiles to see relationships.</p>
+                    
+                    <div className="controls">
+                        <label><input type="checkbox" checked={showPrereqs} onChange={e => setShowPrereqs(e.target.checked)} /> Show Prerequisites</label>
+                        <label><input type="checkbox" checked={showLabels} onChange={e => setShowLabels(e.target.checked)} /> Show Labels</label>
+                        <label><input type="checkbox" checked={colorByTopic} onChange={e => setColorByTopic(e.target.checked)} /> Color by Topic Group</label>
+                    </div>
+                    
+                    <div className="main-layout">
+                        <div className="map-container">
+                            <svg viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}>
+                                <defs>
+                                    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                                        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1a1a1a" strokeWidth="0.5"/>
+                                    </pattern>
+                                </defs>
+                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
+                                
+                                {renderPrereqLines()}
+                                {tiles.map(renderTile)}
+                            </svg>
+                        </div>
+                        
+                        <div className="side-panel">
+                            {selectedTile && (
+                                <div className="panel-box selected-info">
+                                    <h3>📄 {selectedTile.id}</h3>
+                                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: TOPIC_GROUP_COLORS[selectedTile.topicGroup] }}>
+                                        {selectedTile.title}
+                                    </p>
+                                    <div className="stats-row"><span>Section:</span><span>{SECTION_NAMES[selectedTile.section]}</span></div>
+                                    <div className="stats-row"><span>Topic:</span><span style={{ color: TOPIC_GROUP_COLORS[selectedTile.topicGroup] }}>{TOPIC_GROUP_NAMES[selectedTile.topicGroup]}</span></div>
+                                    <div className="stats-row"><span>Coords:</span><span>q={selectedTile.q}, r={selectedTile.r}</span></div>
+                                    {selectedTile.prereqs?.length > 0 && (
+                                        <div className="prereq-list">
+                                            <strong>Prerequisites:</strong>
+                                            {selectedTile.prereqs.map(p => (
+                                                <div key={p} className="prereq-item">→ {p}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div className="panel-box">
+                                <h3>📊 Layout Metrics</h3>
+                                {Object.entries(layoutMetrics.sections).map(([section, m]) => (
+                                    <div key={section} style={{ marginBottom: '8px' }}>
+                                        <div style={{ fontWeight: 'bold', color: '#aaa' }}>{SECTION_NAMES[section]}</div>
+                                        <div className="stats-row"><span>Tiles:</span><span>{m.count}</span></div>
+                                        <div className="stats-row"><span>Span:</span><span>q:{m.span.q} r:{m.span.r}</span></div>
+                                        <div className="stats-row"><span>Topics:</span><span>{m.topics}</span></div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="panel-box">
+                                <h3>🎨 Topic Groups</h3>
+                                {Object.entries(groupedTiles).filter(([s]) => s !== 'HOME').map(([section, topics]) => (
+                                    <div key={section}>
+                                        <div className="section-header">{SECTION_NAMES[section]}</div>
+                                        <div className="topic-legend">
+                                            {Object.entries(topics).map(([topic, tileList]) => (
+                                                <div key={topic} className="topic-item" 
+                                                    onClick={() => setSelectedTile(tileList[0])}
+                                                    style={{ cursor: 'pointer' }}>
+                                                    <div className="topic-color" style={{ background: TOPIC_GROUP_COLORS[topic] }}></div>
+                                                    <span>{TOPIC_GROUP_NAMES[topic]} ({tileList.length})</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<LayoutPlanner />, document.getElementById('root'));
+    </script>
+</body>
+</html>
