@@ -574,6 +574,28 @@ function render() {
         const color = SECTION_COLORS[tile.section] || '#888888';
         drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved);
         
+        // --- Draw Part Number as faint background ---
+        // Extract part number from id (e.g., "linalg-15" -> "15", "calc-3" -> "3")
+        const partMatch = tile.id.match(/-(\d+)$/);
+        if (partMatch && !isReserved) {
+            const partNum = partMatch[1];
+            ctx.save();
+            
+            // Large, faint number in the background
+            const numSize = scale * 0.7;  // Large size
+            ctx.font = `bold ${numSize}px 'Segoe UI', sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            // Very subtle - just enough to see when looking for it
+            // Use section color with low opacity for a subtle tint
+            ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.globalAlpha = alpha;
+            
+            ctx.fillText(partNum, x, y);
+            ctx.restore();
+        }
+        
         // --- 4. Draw Text (Final Optimized Version) ---
         // 1. Calculate zoom-based opacity independently.
         // Starts fading in at scale 40, reaches full opacity at scale 60.
