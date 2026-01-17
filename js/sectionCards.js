@@ -115,7 +115,7 @@ const SectionCards = (function() {
                 const moreSpan = document.createElement('span');
                 moreSpan.className = 'keywords-more';
                 moreSpan.textContent = `+${remainingCount} more`;
-                moreSpan.title = part.keywords.slice(CONFIG.maxKeywords).join(', ');
+                moreSpan.setAttribute('data-tooltip', part.keywords.slice(CONFIG.maxKeywords).join(', '));
                 keywordsDiv.appendChild(moreSpan);
             }
             
