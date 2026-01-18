@@ -307,45 +307,6 @@
                 0 0 20px rgba(100, 180, 255, 0.2);
         }
 
-        /* Info Panel (appears on tile selection) */
-        #info-panel {
-            position: absolute;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%) translateX(120%);
-            width: 280px;
-            padding: 20px;
-            z-index: 10;
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        }
-
-        #info-panel.visible {
-            transform: translateY(-50%) translateX(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        #info-panel h3 {
-            margin: 0 0 12px 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        #info-panel p {
-            margin: 0 0 16px 0;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            opacity: 0.8;
-        }
-
-        #info-panel .prereq-list {
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-
         @media (max-width: 768px) {
             #legend {
                 font-size: 0.7rem;
@@ -360,10 +321,6 @@
             #search-input:focus {
                 width: 220px;
             }
-            #info-panel {
-                width: 240px;
-                right: 10px;
-            }
             #zoom-controls {
                 right: 10px;
             }
@@ -373,9 +330,6 @@
             #search-container {
                 left: 70px;
                 transform: none;
-            }
-            #info-panel {
-                display: none;
             }
         }
     </style>
@@ -430,7 +384,7 @@
 /**
  * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
  * @author Yusuke Yokota
- * @version 6.0.0 (January 2026)
+ * @version 6.0.1 (January 2026)
  * 
  * Enhanced with professional animations:
  * - Animated prerequisite flows with particles
@@ -438,6 +392,7 @@
  * - Enhanced hover states with glow and depth
  * - Glassmorphism UI
  * - Micro-interactions throughout
+ * - Section highlighting from legend clicks
  */
 
 const canvas = document.getElementById('mapCanvas');
@@ -951,7 +906,7 @@ function render() {
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
     if (blinkTileId && time - blinkStartTime > 3000) blinkTileId = null;
 
-    const isSystemIdle = !activeTileId && !blinkTileId && !entryAnimationActive;
+    const isSystemIdle = !activeTileId && !blinkTileId && !entryAnimationActive && !highlightedSection;
 
     // Idle blink scheduling
     if (isSystemIdle && knowledgeData.length > 0) {
@@ -965,6 +920,15 @@ function render() {
                 idleBlinkState[randomTile.id] = time;
                 lastBlinkTime = time;
             }
+        }
+    }
+
+    // Check if section highlight should expire
+    if (highlightedSection) {
+        const elapsed = time - highlightedSectionTime;
+        if (elapsed >= SECTION_HIGHLIGHT_DURATION) {
+            highlightedSection = null;
+            document.getElementById('status').innerText = "Explore the Knowledge Map";
         }
     }
 
@@ -993,7 +957,8 @@ function render() {
                     delete idleBlinkState[tile.id];
                 }
             }
-        } else {
+        } else if (!highlightedSection) {
+            // Clear idle blinks unless we're showing section highlight
             delete idleBlinkState[tile.id];
         }
 
@@ -1017,23 +982,13 @@ function render() {
         // Section highlight (from legend click)
         let isSectionHighlight = false;
         if (highlightedSection && !activeTile && !searchQuery) {
-            const elapsed = time - highlightedSectionTime;
-            if (elapsed < SECTION_HIGHLIGHT_DURATION) {
-                const isInSection = tile.section === highlightedSection && !isReserved;
-                if (isInSection) {
-                    alpha = 1.0;
-                    isSectionHighlight = true;
-                    // Pulsing glow effect
-                    const pulseProgress = elapsed / SECTION_HIGHLIGHT_DURATION;
-                    const pulseIntensity = Math.sin(pulseProgress * Math.PI * 4) * 0.3 + 0.7;
-                    alpha = pulseIntensity;
-                    glow = true;
-                } else {
-                    alpha = 0.15;
-                }
+            const isInSection = tile.section === highlightedSection && !isReserved;
+            if (isInSection) {
+                alpha = 1.0;
+                isSectionHighlight = true;
+                glow = true;
             } else {
-                // Clear highlight after duration
-                highlightedSection = null;
+                alpha = 0.15;
             }
         }
 
@@ -1139,32 +1094,10 @@ function render() {
 }
 
 /**
- * Update info panel
+ * Update info panel - no longer used, kept for compatibility
  */
 function updateInfoPanel(tile) {
-    const panel = document.getElementById('info-panel');
-    const title = document.getElementById('info-title');
-    const prereqs = document.getElementById('info-prereqs');
-    
-    if (!tile || tile.isReserved) {
-        panel.classList.remove('visible');
-        return;
-    }
-    
-    title.textContent = tile.title;
-    
-    if (tile.prereqs && tile.prereqs.length > 0) {
-        const prereqNames = tile.prereqs.map(id => {
-            const p = knowledgeData.find(t => t.id === id);
-            return p ? p.title : id;
-        }).join(', ');
-        prereqs.textContent = `Prerequisites: ${prereqNames}`;
-        prereqs.style.display = 'block';
-    } else {
-        prereqs.style.display = 'none';
-    }
-
-    panel.classList.add('visible');
+    // Info panel removed - function kept for compatibility
 }
 
 /**
@@ -1234,6 +1167,9 @@ function panToSection(sectionId) {
  */
 function performSearch(query) {
     searchQuery = query.toLowerCase().trim();
+    
+    // Clear section highlight when searching
+    highlightedSection = null;
     
     if (!searchQuery) {
         searchResults = [];
@@ -1460,15 +1396,16 @@ document.getElementById('zoom-out').addEventListener('click', () => {
     scale = Math.max(minScale, scale * 0.8);
 });
 
-// Legend hover effects
+// Legend hover effects and click handlers
 document.querySelectorAll('.legend-item').forEach(item => {
     item.addEventListener('mouseenter', () => {
         const section = item.dataset.section;
-        // Could highlight all tiles of this section
+        // Could highlight all tiles of this section on hover (optional)
     });
     
     // Click to pan and highlight section
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent event from bubbling to canvas
         const section = item.dataset.section;
         if (section) {
             panToSection(section);
