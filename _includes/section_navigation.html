@@ -1,11 +1,68 @@
+{% comment %}
+  Unified Section Navigation - Single source of truth from curriculum.json
+  Replaces: section_i_navigation.html, section_ii_navigation.html, etc.
+{% endcomment %}
+
+{% assign curriculum = site.data.curriculum %}
+
+{% comment %} Determine current section based on URL {% endcomment %}
 {% if page.url contains 'Linear_algebra' %}
-  {% include section_i_navigation.html %}
+  {% assign current_section = curriculum.sections.I %}
+  {% assign section_key = "I" %}
 {% elsif page.url contains 'Calculus' %}
-  {% include section_ii_navigation.html %}
+  {% assign current_section = curriculum.sections.II %}
+  {% assign section_key = "II" %}
 {% elsif page.url contains 'Probability' %}
-  {% include section_iii_navigation.html %}
+  {% assign current_section = curriculum.sections.III %}
+  {% assign section_key = "III" %}
 {% elsif page.url contains 'Discrete' %}
-  {% include section_iv_navigation.html %}
+  {% assign current_section = curriculum.sections.IV %}
+  {% assign section_key = "IV" %}
 {% elsif page.url contains 'Machine_learning' %}
-  {% include section_v_navigation.html %}
+  {% assign current_section = curriculum.sections.V %}
+  {% assign section_key = "V" %}
+{% endif %}
+
+{% if current_section %}
+<div class="quick-jump-container">
+    <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
+      <i class="fas fa-list"></i> <strong>Section {{ section_key }} Navigation</strong>
+    </button>
+    <div id="quick-jump-menu" class="quick-jump-menu">
+      <h3>{{ current_section.title }}</h3>
+      <div class="quick-jump-links">
+
+        {% if page.level == 'detail' %}
+        {% comment %} Extract the index page filename from indexUrl {% endcomment %}
+        {% assign index_parts = current_section.indexUrl | split: "/" %}
+        {% assign index_file = index_parts | last %}
+        <a href="{{ index_file }}">← Back to Section {{ section_key }} Overview</a>
+        <hr style="margin: 8px 0; border: 1px solid #ddd;">
+        {% endif %}
+        
+        {% for part in current_section.parts %}
+        {% comment %} Build the URL based on whether we're at detail level or overview {% endcomment %}
+        {% if page.level == 'detail' %}
+          {% assign part_url = part.url %}
+        {% else %}
+          {% comment %} For overview pages, construct relative path like ../Linear_algebra/filename.html {% endcomment %}
+          {% assign base_parts = current_section.baseUrl | split: "/" %}
+          {% assign folder_name = base_parts[1] %}
+          {% assign part_url = "../" | append: folder_name | append: "/" | append: part.url %}
+        {% endif %}
+        
+        {% comment %} Check if this is the current page {% endcomment %}
+        {% assign url_without_ext = part.url | remove: ".html" %}
+        {% if page.url contains url_without_ext %}
+          {% assign is_current = true %}
+        {% else %}
+          {% assign is_current = false %}
+        {% endif %}
+        
+        <a href="{{ part_url }}" {% if is_current %}class="current-page"{% endif %}>Part {{ part.part }}: {{ part.title }}</a>
+        {% endfor %}
+            
+      </div>
+    </div>
+</div>
 {% endif %}
