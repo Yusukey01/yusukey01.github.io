@@ -139,11 +139,18 @@
             margin: 6px 0;
             padding: 4px 6px;
             border-radius: 6px;
+            cursor: pointer;
             transition: all 0.2s ease;
         }
 
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
         .legend-item:hover .legend-color {
-            transform: scale(1.1);
+            transform: scale(1.2);
+            box-shadow: 0 0 12px currentColor;
         }
 
         .legend-color {
@@ -774,6 +781,22 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
 }
 
 /**
+ * Spawn particles along prerequisite paths
+ */
+function spawnPrereqParticle(fromX, fromY, toX, toY, color) {
+    prereqAnimState.particles.push({
+        startX: fromX,
+        startY: fromY,
+        endX: toX,
+        endY: toY,
+        progress: 0,
+        speed: 0.008 + Math.random() * 0.006,
+        color: color,
+        size: 3 + Math.random() * 3
+    });
+}
+
+/**
  * Update and draw particles
  */
 function updateAndDrawParticles() {
@@ -872,12 +895,6 @@ function drawPrerequisiteConnections(activeTile) {
         ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
         ctx.stroke();
         ctx.setLineDash([]);
-        
-        // Spawn particles periodically
-        if (time - prereqAnimState.lastSpawnTime > 150) {
-            spawnPrereqParticle(prereqCoords.x, prereqCoords.y, activeCoords.x, activeCoords.y, sectionColor);
-            prereqAnimState.lastSpawnTime = time;
-        }
         
         // Arrow head
         const angle = Math.atan2(activeCoords.y - ctrlY, activeCoords.x - ctrlX);
@@ -1031,7 +1048,7 @@ function render() {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            ctx.fillStyle = "rgba(255, 255, 255, 0.50)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
             ctx.globalAlpha = alpha * entryProgress * 0.6;
             
             ctx.fillText(partNum, x, y);
@@ -1240,9 +1257,6 @@ function handleMouseMove(clientX, clientY) {
 
 // Mouse Handlers
 window.addEventListener('mousedown', e => { 
-    // Dismiss keyboard when interacting with canvas
-    document.getElementById('search-input').blur();
-    
     if (isTouchInteraction) return; 
     isDragging = false; 
     startX = e.clientX; startY = e.clientY; 
@@ -1278,9 +1292,6 @@ window.addEventListener('wheel', e => {
 
 // Touch Handlers
 canvas.addEventListener('touchstart', e => {
-    // Dismiss keyboard when interacting with canvas (fixes mobile keyboard issue)
-    document.getElementById('search-input').blur();
-    
     isTouchInteraction = true; 
     if (e.touches.length === 1) {
         isDragging = false;
@@ -1359,6 +1370,14 @@ document.getElementById('zoom-in').addEventListener('click', () => {
 
 document.getElementById('zoom-out').addEventListener('click', () => {
     scale = Math.max(minScale, scale * 0.8);
+});
+
+// Legend hover effects
+document.querySelectorAll('.legend-item').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+        const section = item.dataset.section;
+        // Could highlight all tiles of this section
+    });
 });
 
 // Initialize
