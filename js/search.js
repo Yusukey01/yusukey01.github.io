@@ -140,14 +140,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add all parts in the section
                 if (section.parts) {
                     section.parts.forEach(part => {
+                        const keywords = part.keywords || [];
                         pages.push({
                             path: '/' + section.baseUrl + part.url,
                             title: part.title,
-                            keywords: part.keywords || [],
+                            keywords: keywords,
                             section: sectionId,
                             partNumber: part.part,
                             badges: part.badges || []
                         });
+                        // Debug: Log pages with many keywords
+                        if (keywords.length > 4) {
+                            console.log(`Part "${part.title}" has ${keywords.length} keywords (including hidden ones)`);
+                        }
                     });
                 }
             });
@@ -263,17 +268,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     continue;
                 }
                 
-                // Check keywords from curriculum.json
+                // Check keywords from curriculum.json (searches ALL keywords, not just displayed ones)
                 if (page.keywords && page.keywords.length > 0) {
-                    const matchingKeyword = page.keywords.find(kw => 
+                    const matchingKeywords = page.keywords.filter(kw => 
                         kw.toLowerCase().includes(searchTerm)
                     );
                     
-                    if (matchingKeyword) {
+                    if (matchingKeywords.length > 0) {
+                        // Show all matching keywords (up to 3)
+                        const displayKeywords = matchingKeywords.slice(0, 3);
+                        const moreCount = matchingKeywords.length - 3;
+                        let matchContext = displayKeywords.join(', ');
+                        if (moreCount > 0) {
+                            matchContext += ` (+${moreCount} more)`;
+                        }
+                        
                         results.push({
                             ...page,
                             matchType: 'keyword',
-                            matchContext: matchingKeyword,
+                            matchContext: matchContext,
                             priority: 2
                         });
                         continue;
