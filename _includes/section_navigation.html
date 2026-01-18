@@ -4,23 +4,29 @@
 {% endcomment %}
 
 {% assign curriculum = site.data.curriculum %}
+{% assign sections = curriculum.sections %}
 
 {% comment %} Determine current section based on URL {% endcomment %}
 {% if page.url contains 'Linear_algebra' %}
-  {% assign current_section = curriculum.sections.I %}
+  {% assign current_section = sections["I"] %}
   {% assign section_key = "I" %}
+  {% assign overview_file = "linear_algebra.html" %}
 {% elsif page.url contains 'Calculus' %}
-  {% assign current_section = curriculum.sections.II %}
+  {% assign current_section = sections["II"] %}
   {% assign section_key = "II" %}
+  {% assign overview_file = "calculus.html" %}
 {% elsif page.url contains 'Probability' %}
-  {% assign current_section = curriculum.sections.III %}
+  {% assign current_section = sections["III"] %}
   {% assign section_key = "III" %}
+  {% assign overview_file = "probability.html" %}
 {% elsif page.url contains 'Discrete' %}
-  {% assign current_section = curriculum.sections.IV %}
+  {% assign current_section = sections["IV"] %}
   {% assign section_key = "IV" %}
+  {% assign overview_file = "discrete_math.html" %}
 {% elsif page.url contains 'Machine_learning' %}
-  {% assign current_section = curriculum.sections.V %}
+  {% assign current_section = sections["V"] %}
   {% assign section_key = "V" %}
+  {% assign overview_file = "ml.html" %}
 {% endif %}
 
 {% if current_section %}
@@ -33,33 +39,30 @@
       <div class="quick-jump-links">
 
         {% if page.level == 'detail' %}
-        {% comment %} Extract the index page filename from indexUrl {% endcomment %}
-        {% assign index_parts = current_section.indexUrl | split: "/" %}
-        {% assign index_file = index_parts | last %}
-        <a href="{{ index_file }}">← Back to Section {{ section_key }} Overview</a>
+        <a href="{{ overview_file }}">← Back to Section {{ section_key }} Overview</a>
         <hr style="margin: 8px 0; border: 1px solid #ddd;">
         {% endif %}
         
         {% for part in current_section.parts %}
-        {% comment %} Build the URL based on whether we're at detail level or overview {% endcomment %}
-        {% if page.level == 'detail' %}
-          {% assign part_url = part.url %}
-        {% else %}
-          {% comment %} For overview pages, construct relative path like ../Linear_algebra/filename.html {% endcomment %}
-          {% assign base_parts = current_section.baseUrl | split: "/" %}
-          {% assign folder_name = base_parts[1] %}
-          {% assign part_url = "../" | append: folder_name | append: "/" | append: part.url %}
-        {% endif %}
-        
-        {% comment %} Check if this is the current page {% endcomment %}
-        {% assign url_without_ext = part.url | remove: ".html" %}
-        {% if page.url contains url_without_ext %}
-          {% assign is_current = true %}
-        {% else %}
-          {% assign is_current = false %}
-        {% endif %}
-        
-        <a href="{{ part_url }}" {% if is_current %}class="current-page"{% endif %}>Part {{ part.part }}: {{ part.title }}</a>
+          {% comment %} Build the URL based on whether we're at detail level or overview {% endcomment %}
+          {% if page.level == 'detail' %}
+            {% assign part_url = part.url %}
+          {% else %}
+            {% comment %} For overview pages, construct relative path like ../Linear_algebra/filename.html {% endcomment %}
+            {% assign base_parts = current_section.baseUrl | split: "/" %}
+            {% assign folder_name = base_parts[1] %}
+            {% assign part_url = "../" | append: folder_name | append: "/" | append: part.url %}
+          {% endif %}
+          
+          {% comment %} Check if this is the current page {% endcomment %}
+          {% assign url_without_ext = part.url | remove: ".html" %}
+          {% if page.url contains url_without_ext %}
+            {% assign is_current = true %}
+          {% else %}
+            {% assign is_current = false %}
+          {% endif %}
+          
+          <a href="{{ part_url }}" {% if is_current %}class="current-page"{% endif %}>Part {{ part.part }}: {{ part.title }}</a>
         {% endfor %}
             
       </div>
