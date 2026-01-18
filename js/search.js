@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pages.push({
                     path: '/' + section.indexUrl,
                     title: section.title,
-                    keywords: [section.shortTitle, section.tagline, section.description].filter(Boolean),
+                    keywords: [],  // Section index pages don't need keyword search
                     section: sectionId,
                     isIndex: true
                 });
