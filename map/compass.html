@@ -469,7 +469,7 @@ const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
 // State
-let scale = 55;
+let scale = 80;
 const minScale = 40, maxScale = 250;
 let offsetX = window.innerWidth / 2;
 let offsetY = window.innerHeight / 2;
@@ -523,6 +523,11 @@ const panSpeed = 0.12;
 // Search state
 let searchQuery = '';
 let searchResults = [];
+
+// Section highlight state (for legend clicks)
+let highlightedSection = null;
+let highlightedSectionTime = 0;
+const SECTION_HIGHLIGHT_DURATION = 3000; // How long the highlight lasts
 
 /**
  * Load curriculum data from JSON file
@@ -1034,8 +1039,31 @@ function render() {
             alpha = isSearchMatch ? 1.0 : 0.15;
         }
 
+        // Section highlight (from legend click)
+        let isSectionHighlight = false;
+        if (highlightedSection && !activeTile && !searchQuery) {
+            const elapsed = time - highlightedSectionTime;
+            if (elapsed < SECTION_HIGHLIGHT_DURATION) {
+                const isInSection = tile.section === highlightedSection && !isReserved;
+                if (isInSection) {
+                    alpha = 1.0;
+                    isSectionHighlight = true;
+                    // Pulsing glow effect
+                    const pulseProgress = elapsed / SECTION_HIGHLIGHT_DURATION;
+                    const pulseIntensity = Math.sin(pulseProgress * Math.PI * 4) * 0.3 + 0.7;
+                    alpha = pulseIntensity;
+                    glow = true;
+                } else {
+                    alpha = 0.15;
+                }
+            } else {
+                // Clear highlight after duration
+                highlightedSection = null;
+            }
+        }
+
         const color = SECTION_COLORS[tile.section] || '#888888';
-        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, entryProgress, isHovered, isSearchMatch);
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, entryProgress, isHovered, isSearchMatch || isSectionHighlight);
         
         // Part number background
         const partMatch = tile.id.match(/-(\d+)$/);
@@ -1152,6 +1180,54 @@ function panToTile(tile) {
 }
 
 /**
+ * Pan to section center and highlight all tiles in that section
+ */
+function panToSection(sectionId) {
+    // Clear any existing selection/search state
+    activeTileId = null;
+    searchQuery = '';
+    searchResults = [];
+    document.getElementById('search-input').value = '';
+    updateInfoPanel(null);
+    
+    // Get all tiles in this section (excluding reserved)
+    const sectionTiles = knowledgeData.filter(t => t.section === sectionId && !t.isReserved);
+    
+    if (sectionTiles.length === 0) return;
+    
+    // Calculate the center of all tiles in this section
+    let sumQ = 0, sumR = 0;
+    sectionTiles.forEach(tile => {
+        sumQ += tile.q;
+        sumR += tile.r;
+    });
+    const centerQ = sumQ / sectionTiles.length;
+    const centerR = sumR / sectionTiles.length;
+    
+    // Convert to pixel coordinates and pan
+    const centerX = scale * Math.sqrt(3) * (centerQ + centerR / 2);
+    const centerY = scale * (3 / 2 * centerR);
+    
+    targetOffsetX = (window.innerWidth / 2) - centerX;
+    targetOffsetY = (window.innerHeight / 2) - centerY;
+    isPanning = true;
+    
+    // Set the highlighted section with timestamp
+    highlightedSection = sectionId;
+    highlightedSectionTime = Date.now();
+    
+    // Update status
+    const sectionNames = {
+        'I': 'Linear Algebra to Algebraic Foundations',
+        'II': 'Calculus to Optimization & Analysis',
+        'III': 'Probability & Statistics',
+        'IV': 'Discrete Mathematics & Algorithms',
+        'V': 'Machine Learning'
+    };
+    document.getElementById('status').innerText = `Section ${sectionId}: ${sectionNames[sectionId] || sectionId} (${sectionTiles.length} topics)`;
+}
+
+/**
  * Search functionality
  */
 function performSearch(query) {
@@ -1190,6 +1266,9 @@ function performSearch(query) {
 
 function handleInteraction(clientX, clientY) {
     if (isDragging) return;
+
+    // Clear section highlight on any interaction
+    highlightedSection = null;
 
     let hit = false;
     for (const tile of knowledgeData) {
@@ -1337,6 +1416,7 @@ canvas.addEventListener('touchend', e => {
 window.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         activeTileId = null;
+        highlightedSection = null;
         updateInfoPanel(null);
         document.getElementById('status').innerText = "Explore the Knowledge Map";
         searchQuery = '';
@@ -1377,6 +1457,14 @@ document.querySelectorAll('.legend-item').forEach(item => {
     item.addEventListener('mouseenter', () => {
         const section = item.dataset.section;
         // Could highlight all tiles of this section
+    });
+    
+    // Click to pan and highlight section
+    item.addEventListener('click', () => {
+        const section = item.dataset.section;
+        if (section) {
+            panToSection(section);
+        }
     });
 });
 
