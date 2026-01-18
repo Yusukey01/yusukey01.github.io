@@ -7,7 +7,10 @@
     <style>
         :root { 
             --bg-color: #0b0e14; 
-            --text-color: #e0e0e0; 
+            --text-color: #e0e0e0;
+            --glass-bg: rgba(15, 20, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-glow: rgba(100, 180, 255, 0.3);
         }
 
         /* Essential Mobile Styling */
@@ -25,11 +28,46 @@
             position: fixed; 
         }
 
+        /* Subtle animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(30, 60, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(60, 30, 80, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+            animation: bgPulse 20s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
         canvas { 
             display: block; 
             width: 100vw; 
             height: 100vh; 
             image-rendering: -webkit-optimize-contrast;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glassmorphism UI Elements */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         /* UI Overlay */
@@ -38,8 +76,31 @@
             top: env(safe-area-inset-top, 20px); 
             left: 20px; 
             pointer-events: none; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
-            z-index: 10; 
+            z-index: 10;
+        }
+
+        #ui-layer h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #fff 0%, #a0c4ff 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+
+        #status {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 4px;
+            transition: all 0.3s ease;
         }
 
         /* Legend */
@@ -47,35 +108,63 @@
             position: absolute;
             bottom: env(safe-area-inset-bottom, 20px);
             left: 20px;
-            background: rgba(11, 14, 20, 0.9);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 12px 16px;
+            padding: 14px 18px;
             font-size: 0.8rem;
             z-index: 10;
             pointer-events: auto;
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #legend:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         #legend h4 {
-            margin: 0 0 8px 0;
+            margin: 0 0 10px 0;
             font-size: 0.85rem;
+            font-weight: 600;
             color: #fff;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 8px;
+            letter-spacing: 1px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 4px 0;
+            margin: 6px 0;
+            padding: 4px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .legend-item:hover .legend-color {
+            transform: scale(1.2);
+            box-shadow: 0 0 12px currentColor;
         }
 
         .legend-color {
             width: 16px;
             height: 16px;
             border-radius: 4px;
-            margin-right: 8px;
+            margin-right: 10px;
             border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .legend-item span {
+            font-size: 0.75rem;
+            opacity: 0.9;
         }
 
         /* Loading indicator */
@@ -86,36 +175,226 @@
             transform: translate(-50%, -50%);
             font-size: 1.2rem;
             color: var(--text-color);
+            z-index: 100;
         }
 
-        /* Home button */
+        #loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            margin-left: 12px;
+            vertical-align: middle;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Home button with micro-interactions */
         #home-btn {
             position: absolute;
             top: env(safe-area-inset-top, 20px);
             right: 20px;
-            background: rgba(11, 14, 20, 0.9);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            padding: 10px 16px;
+            padding: 12px 20px;
             color: var(--text-color);
             text-decoration: none;
             font-size: 0.9rem;
+            font-weight: 500;
             z-index: 10;
-            transition: all 0.2s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        #home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
         }
 
         #home-btn:hover {
-            background: rgba(52, 152, 219, 0.3);
-            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 25px rgba(52, 152, 219, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border-color: rgba(52, 152, 219, 0.5);
+        }
+
+        #home-btn:hover::before {
+            left: 100%;
+        }
+
+        #home-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Zoom Controls */
+        #zoom-controls {
+            position: absolute;
+            bottom: env(safe-area-inset-bottom, 20px);
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 300;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .zoom-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Search Bar with expanding focus */
+        #search-container {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        #search-input {
+            width: 200px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        #search-input:focus {
+            width: 280px;
+            border-color: rgba(100, 180, 255, 0.5);
+            box-shadow: 
+                0 4px 30px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(100, 180, 255, 0.2);
+        }
+
+        /* Info Panel (appears on tile selection) */
+        #info-panel {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%) translateX(120%);
+            width: 280px;
+            padding: 20px;
+            z-index: 10;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        #info-panel.visible {
+            transform: translateY(-50%) translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #info-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        #info-panel p {
+            margin: 0 0 16px 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            opacity: 0.8;
+        }
+
+        #info-panel .prereq-list {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        #info-panel .open-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.6), rgba(41, 128, 185, 0.8));
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        #info-panel .open-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         }
 
         @media (max-width: 768px) {
             #legend {
                 font-size: 0.7rem;
-                padding: 8px 12px;
+                padding: 10px 14px;
             }
             #legend h4 {
                 font-size: 0.75rem;
+            }
+            #search-input {
+                width: 160px;
+            }
+            #search-input:focus {
+                width: 220px;
+            }
+            #info-panel {
+                width: 240px;
+                right: 10px;
+            }
+            #zoom-controls {
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #search-container {
+                left: 70px;
+                transform: none;
+            }
+            #info-panel {
+                display: none;
             }
         }
     </style>
@@ -123,37 +402,52 @@
 <body>
 
 <div id="ui-layer">
-    <h1 style="margin:0; font-size: 1.2rem;">MATH-CS COMPASS</h1>
-    <div id="status" style="font-size: 0.9rem; opacity: 0.8;">Explore the Knowledge Map</div>
+    <h1>MATH-CS COMPASS</h1>
+    <div id="status">Explore the Knowledge Map</div>
 </div>
 
-<a id="home-btn" href="/index.html">← Back to Home</a>
+<div id="search-container">
+    <input type="text" id="search-input" placeholder="Search topics..." autocomplete="off">
+</div>
 
-<div id="legend">
+<a id="home-btn" class="glass-panel" href="/index.html">← Home</a>
+
+<div id="legend" class="glass-panel">
     <h4>Sections</h4>
-    <div class="legend-item">
-        <div class="legend-color" style="background: #1565c0;"></div>
+    <div class="legend-item" data-section="I">
+        <div class="legend-color" style="background: #1565c0; color: #1565c0;"></div>
         <span>I - Linear Algebra to Algebraic Foundations</span>
     </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background: #2e7d32;"></div>
+    <div class="legend-item" data-section="II">
+        <div class="legend-color" style="background: #2e7d32; color: #2e7d32;"></div>
         <span>II - Calculus to Optimization & Analysis</span>
     </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background: #c62828;"></div>
+    <div class="legend-item" data-section="III">
+        <div class="legend-color" style="background: #c62828; color: #c62828;"></div>
         <span>III - Probability & Statistics</span>
     </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background: #6a1b9a;"></div>
+    <div class="legend-item" data-section="IV">
+        <div class="legend-color" style="background: #6a1b9a; color: #6a1b9a;"></div>
         <span>IV - Discrete Mathematics & Algorithms</span>
     </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background: #ef6c00;"></div>
+    <div class="legend-item" data-section="V">
+        <div class="legend-color" style="background: #ef6c00; color: #ef6c00;"></div>
         <span>V - Machine Learning</span>
     </div>
 </div>
 
-<div id="loading">Loading curriculum data...</div>
+<div id="zoom-controls">
+    <div class="zoom-btn glass-panel" id="zoom-in">+</div>
+    <div class="zoom-btn glass-panel" id="zoom-out">−</div>
+</div>
+
+<div id="info-panel" class="glass-panel">
+    <h3 id="info-title">Topic Title</h3>
+    <p id="info-prereqs" class="prereq-list"></p>
+    <a id="info-open" class="open-btn" href="#">Open Topic →</a>
+</div>
+
+<div id="loading">Loading curriculum data</div>
 
 <canvas id="mapCanvas"></canvas>
 
@@ -161,15 +455,14 @@
 /**
  * MATH-CS COMPASS: HEXAGONAL KNOWLEDGE MAP SYSTEM
  * @author Yusuke Yokota
- * @version 5.0.0 (January 2026)
+ * @version 6.0.0 (January 2026)
  * 
- * Now imports from centralized curriculum.json for single source of truth.
- * 
- * Technical Specs:
- * - Cube Coordinates (q, r, s) where q+r+s=0
- * - LOD (Level of Detail) rendering
- * - Sequential Path Highlighting with prerequisite connections
- * - Dynamic data loading from curriculum.json
+ * Enhanced with professional animations:
+ * - Animated prerequisite flows with particles
+ * - Entry animations with staggered cascade
+ * - Enhanced hover states with glow and depth
+ * - Glassmorphism UI
+ * - Micro-interactions throughout
  */
 
 const canvas = document.getElementById('mapCanvas');
@@ -184,10 +477,11 @@ let offsetY = window.innerHeight / 2;
 // Camera animation state
 let targetOffsetX = offsetX;
 let targetOffsetY = offsetY;
-let isPanning = false;        // True when camera is auto-moving
+let isPanning = false;
 
 // Tile animation
 let activeTileId = null;
+let hoveredTileId = null;
 let blinkTileId = null; 
 let blinkStartTime = 0;
 let isTouchInteraction = false;
@@ -201,21 +495,40 @@ let initialScale = 0;
 let knowledgeData = [];
 let SECTION_COLORS = {};
 
+// Entry Animation State
+let entryAnimationActive = true;
+let entryAnimationStartTime = 0;
+const ENTRY_ANIMATION_DURATION = 1500; // Total duration for all tiles to appear
+const ENTRY_STAGGER_DELAY = 30; // ms between each tile appearing
+const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animation
+
+// Hover Animation State
+const hoverState = {};
+
+// Prerequisite Animation State
+const prereqAnimState = {
+    particles: [],
+    lastSpawnTime: 0
+};
+
 // Animation settings
-const IDLE_BLINK_DURATION = 4000;      // How long each blink animation lasts
-const IDLE_BLINK_INTERVAL = 2500;      // Minimum ms between starting new blinks
-const MAX_CONCURRENT_BLINKS = 4;       // Maximum tiles blinking simultaneously
+const IDLE_BLINK_DURATION = 4000;
+const IDLE_BLINK_INTERVAL = 2500;
+const MAX_CONCURRENT_BLINKS = 4;
 const idleBlinkState = {};
 let lastBlinkTime = 0;
 
-const panSpeed = 0.1; // Easing factor (0.1 = smooth, 0.5 = snappy)
+const panSpeed = 0.12;
+
+// Search state
+let searchQuery = '';
+let searchResults = [];
 
 /**
  * Load curriculum data from JSON file
  */
 async function loadCurriculumData() {
     try {
-        // Try relative path first (for local testing), then absolute
         let response;
         try {
             response = await fetch('../data/curriculum.json');
@@ -227,14 +540,11 @@ async function loadCurriculumData() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
-        // Extract section colors
         SECTION_COLORS = data.sectionColors || {};
-        SECTION_COLORS['HOME'] = '#888888'; // Gray for home
+        SECTION_COLORS['HOME'] = '#888888';
         
-        // Build knowledge data array
         knowledgeData = [];
         
-        // Add home node
         if (data.homeNode) {
             knowledgeData.push({
                 id: data.homeNode.id,
@@ -247,44 +557,51 @@ async function loadCurriculumData() {
             });
         }
         
-        // Add all parts from all sections
         Object.entries(data.sections).forEach(([sectionId, section]) => {
             section.parts.forEach(part => {
                 knowledgeData.push({
                     id: part.id,
                     section: sectionId,
                     title: part.title,
-                    // URL relative to map folder
                     url: '../' + section.baseUrl + part.url,
                     q: part.mapCoords.q,
                     r: part.mapCoords.r,
-                    topicGroup: part.topicGroup || null,  // Use topicGroup for related highlighting
-                    prereqs: part.prereqs || []
+                    topicGroup: part.topicGroup || null,
+                    prereqs: part.prereqs || [],
+                    keywords: part.keywords || []
                 });
             });
             
-            // Add reserved slots (Coming Soon tiles)
             if (section.reservedSlots) {
                 section.reservedSlots.forEach((slot, index) => {
                     knowledgeData.push({
                         id: `${sectionId}-reserved-${index}`,
                         section: sectionId,
                         title: 'Coming Soon',
-                        url: null,  // No URL for reserved slots
+                        url: null,
                         q: slot.q,
                         r: slot.r,
                         topicGroup: null,
                         prereqs: [],
-                        isReserved: true  // Flag to identify reserved slots
+                        isReserved: true
                     });
                 });
             }
         });
         
+        // Sort tiles by distance from center for entry animation
+        knowledgeData.sort((a, b) => {
+            const distA = Math.sqrt(a.q * a.q + a.r * a.r);
+            const distB = Math.sqrt(b.q * b.q + b.r * b.r);
+            return distA - distB;
+        });
+        
         console.log(`Loaded ${knowledgeData.length} tiles from curriculum data`);
         
-        // Hide loading indicator
         document.getElementById('loading').style.display = 'none';
+        
+        // Start entry animation
+        entryAnimationStartTime = Date.now();
         
         return true;
     } catch (error) {
@@ -311,9 +628,57 @@ function getPixelCoords(q, r) {
     return { x: x + offsetX, y: y + offsetY };
 }
 
-function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, isReserved = false) {
+/**
+ * Easing functions for smooth animations
+ */
+const Easing = {
+    easeOutCubic: t => 1 - Math.pow(1 - t, 3),
+    easeOutElastic: t => {
+        const c4 = (2 * Math.PI) / 3;
+        return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    },
+    easeOutBack: t => {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+    easeInOutQuad: t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+};
+
+/**
+ * Calculate entry animation progress for a tile
+ */
+function getEntryAnimationProgress(tileIndex) {
+    if (!entryAnimationActive) return 1;
+    
+    const elapsed = Date.now() - entryAnimationStartTime;
+    const tileStartTime = tileIndex * ENTRY_STAGGER_DELAY;
+    const tileElapsed = elapsed - tileStartTime;
+    
+    if (tileElapsed < 0) return 0;
+    if (tileElapsed >= ENTRY_TILE_DURATION) return 1;
+    
+    return Easing.easeOutBack(tileElapsed / ENTRY_TILE_DURATION);
+}
+
+/**
+ * Draw hexagon with enhanced visuals
+ */
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, isReserved = false, entryProgress = 1, isHovered = false, isSearchMatch = false) {
     ctx.save();
-    let finalAlpha = alpha;
+    
+    // Entry animation: scale and fade in
+    const animScale = 0.3 + 0.7 * entryProgress;
+    const animAlpha = entryProgress;
+    
+    let finalAlpha = alpha * animAlpha;
+    let finalSize = size * animScale;
+
+    // Hover effect: slight scale up and glow
+    if (isHovered && !isReserved) {
+        finalSize *= 1.08;
+        finalAlpha = Math.min(1, finalAlpha * 1.2);
+    }
 
     if (isBlinking) {
         finalAlpha = 0.3 + Math.abs(Math.sin(Date.now() / 2000)) * 0.7;
@@ -325,40 +690,77 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
         }
     }
     
-    // Reserved slots are always dimmed
     if (isReserved) {
-        finalAlpha = 0.25;
+        finalAlpha = 0.2 * animAlpha;
+    }
+
+    // Search highlight glow
+    if (isSearchMatch) {
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 25;
+        finalAlpha = 1;
     }
 
     ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 6) + (i * Math.PI / 3);
-        ctx.lineTo(x + size * Math.cos(angle), y + size * Math.sin(angle));
+        ctx.lineTo(x + finalSize * Math.cos(angle), y + finalSize * Math.sin(angle));
     }
     ctx.closePath();
-    ctx.fillStyle = color;
+    
+    // Enhanced fill with subtle gradient
+    if (!isReserved && entryProgress > 0.5) {
+        const gradient = ctx.createRadialGradient(x, y - finalSize * 0.3, 0, x, y, finalSize);
+        gradient.addColorStop(0, lightenColor(color, 30));
+        gradient.addColorStop(1, color);
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = color;
+    }
     ctx.fill();
 
+    // Shadow for depth (only when not reserved)
+    if (!isReserved && entryProgress > 0.8) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = isHovered ? 20 : 10;
+        ctx.shadowOffsetY = isHovered ? 8 : 4;
+        ctx.fill();
+        ctx.restore();
+    }
+
     if (isReserved) {
-        // Dashed border for reserved slots
         ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.setLineDash([]);
-    } else if (isGlow || isBlinking || isIdleBlinking) {
-        ctx.strokeStyle = isIdleBlinking ? "rgba(255,255,255,0.5)" : "white"; 
-        ctx.lineWidth = isIdleBlinking ? 2 : 3; 
-        ctx.shadowBlur = isIdleBlinking ? 5 : 15; 
-        ctx.shadowColor = "white"; 
+    } else if (isGlow || isBlinking || isIdleBlinking || isHovered || isSearchMatch) {
+        const glowColor = isSearchMatch ? '#ffd700' : (isIdleBlinking ? "rgba(255,255,255,0.5)" : "white");
+        ctx.strokeStyle = glowColor; 
+        ctx.lineWidth = isIdleBlinking ? 2 : (isHovered ? 4 : 3); 
+        ctx.shadowBlur = isIdleBlinking ? 5 : (isHovered ? 25 : 15); 
+        ctx.shadowColor = isSearchMatch ? '#ffd700' : "white"; 
         ctx.stroke();
     } else {
-        ctx.strokeStyle = "rgba(255,255,255,0.15)"; 
+        ctx.strokeStyle = "rgba(255,255,255,0.12)"; 
         ctx.lineWidth = 1; 
         ctx.stroke();
     }
     ctx.restore();
+}
+
+/**
+ * Lighten a hex color
+ */
+function lightenColor(color, percent) {
+    const num = parseInt(color.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+    const B = Math.min(255, (num & 0x0000FF) + amt);
+    return `rgb(${R}, ${G}, ${B})`;
 }
 
 function wrapText(text, x, y, maxWidth, lineHeight) {
@@ -379,14 +781,66 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
 }
 
 /**
- * Draw prerequisite connections as curved lines with colored glow
- * Lines use the section color and are drawn with a glow effect for visibility
+ * Spawn particles along prerequisite paths
+ */
+function spawnPrereqParticle(fromX, fromY, toX, toY, color) {
+    prereqAnimState.particles.push({
+        startX: fromX,
+        startY: fromY,
+        endX: toX,
+        endY: toY,
+        progress: 0,
+        speed: 0.008 + Math.random() * 0.006,
+        color: color,
+        size: 3 + Math.random() * 3
+    });
+}
+
+/**
+ * Update and draw particles
+ */
+function updateAndDrawParticles() {
+    prereqAnimState.particles = prereqAnimState.particles.filter(p => {
+        p.progress += p.speed;
+        
+        if (p.progress >= 1) return false;
+        
+        const t = Easing.easeInOutQuad(p.progress);
+        const x = p.startX + (p.endX - p.startX) * t;
+        const y = p.startY + (p.endY - p.startY) * t;
+        
+        // Draw particle with trail
+        ctx.save();
+        ctx.globalAlpha = 1 - p.progress * 0.5;
+        
+        // Glow
+        ctx.beginPath();
+        ctx.arc(x, y, p.size * 2, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        
+        // Core
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        
+        ctx.restore();
+        return true;
+    });
+}
+
+/**
+ * Draw prerequisite connections with animated flows
  */
 function drawPrerequisiteConnections(activeTile) {
     if (!activeTile || !activeTile.prereqs || activeTile.prereqs.length === 0) return;
     
     const activeCoords = getPixelCoords(activeTile.q, activeTile.r);
     const sectionColor = SECTION_COLORS[activeTile.section] || '#ffffff';
+    const time = Date.now();
     
     activeTile.prereqs.forEach(prereqId => {
         const prereq = knowledgeData.find(t => t.id === prereqId);
@@ -394,14 +848,12 @@ function drawPrerequisiteConnections(activeTile) {
         
         const prereqCoords = getPixelCoords(prereq.q, prereq.r);
         
-        // Calculate control point for curve
         const midX = (activeCoords.x + prereqCoords.x) / 2;
         const midY = (activeCoords.y + prereqCoords.y) / 2;
         const dx = activeCoords.x - prereqCoords.x;
         const dy = activeCoords.y - prereqCoords.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Perpendicular offset - scales with distance but caps at reasonable value
         const curveAmount = Math.min(dist * 0.25, scale * 0.8);
         const perpX = (-dy / dist) * curveAmount;
         const perpY = (dx / dist) * curveAmount;
@@ -411,32 +863,32 @@ function drawPrerequisiteConnections(activeTile) {
         
         ctx.save();
         
-        // Draw glow layer (thick, blurred)
+        // Draw glow layer
         ctx.strokeStyle = sectionColor;
-        ctx.lineWidth = 8;
-        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 10;
+        ctx.globalAlpha = 0.2;
         ctx.shadowColor = sectionColor;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.beginPath();
         ctx.moveTo(prereqCoords.x, prereqCoords.y);
         ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
         ctx.stroke();
         
-        // Draw main line (solid color)
+        // Draw main line
         ctx.shadowBlur = 0;
         ctx.strokeStyle = sectionColor;
         ctx.lineWidth = 3;
-        ctx.globalAlpha = 0.9;
+        ctx.globalAlpha = 0.8;
         ctx.beginPath();
         ctx.moveTo(prereqCoords.x, prereqCoords.y);
         ctx.quadraticCurveTo(ctrlX, ctrlY, activeCoords.x, activeCoords.y);
         ctx.stroke();
         
-        // Draw animated dashes on top (white for contrast)
-        const dashOffset = (Date.now() / 50) % 20; // Animate the dashes
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        // Animated flowing dashes
+        const dashOffset = (time / 30) % 24;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
         ctx.lineWidth = 2;
-        ctx.setLineDash([8, 12]);
+        ctx.setLineDash([6, 18]);
         ctx.lineDashOffset = -dashOffset;
         ctx.beginPath();
         ctx.moveTo(prereqCoords.x, prereqCoords.y);
@@ -444,34 +896,42 @@ function drawPrerequisiteConnections(activeTile) {
         ctx.stroke();
         ctx.setLineDash([]);
         
-        // Draw arrow head at destination
-        const angle = Math.atan2(activeCoords.y - ctrlY, activeCoords.x - ctrlX);
-        const arrowSize = Math.max(10, scale * 0.15);
+        // Spawn particles periodically
+        if (time - prereqAnimState.lastSpawnTime > 150) {
+            spawnPrereqParticle(prereqCoords.x, prereqCoords.y, activeCoords.x, activeCoords.y, sectionColor);
+            prereqAnimState.lastSpawnTime = time;
+        }
         
-        // Arrow with fill
+        // Arrow head
+        const angle = Math.atan2(activeCoords.y - ctrlY, activeCoords.x - ctrlX);
+        const arrowSize = Math.max(12, scale * 0.18);
+        
         ctx.fillStyle = sectionColor;
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.moveTo(activeCoords.x, activeCoords.y);
         ctx.lineTo(
-            activeCoords.x - arrowSize * Math.cos(angle - Math.PI/7),
-            activeCoords.y - arrowSize * Math.sin(angle - Math.PI/7)
+            activeCoords.x - arrowSize * Math.cos(angle - Math.PI/6),
+            activeCoords.y - arrowSize * Math.sin(angle - Math.PI/6)
         );
         ctx.lineTo(
             activeCoords.x - arrowSize * 0.6 * Math.cos(angle),
             activeCoords.y - arrowSize * 0.6 * Math.sin(angle)
         );
         ctx.lineTo(
-            activeCoords.x - arrowSize * Math.cos(angle + Math.PI/7),
-            activeCoords.y - arrowSize * Math.sin(angle + Math.PI/7)
+            activeCoords.x - arrowSize * Math.cos(angle + Math.PI/6),
+            activeCoords.y - arrowSize * Math.sin(angle + Math.PI/6)
         );
         ctx.closePath();
         ctx.fill();
         
-        // Draw circle at prereq source
+        // Pulsing circle at source
+        const pulseScale = 1 + 0.3 * Math.sin(time / 300);
         ctx.beginPath();
-        ctx.arc(prereqCoords.x, prereqCoords.y, 6, 0, Math.PI * 2);
+        ctx.arc(prereqCoords.x, prereqCoords.y, 6 * pulseScale, 0, Math.PI * 2);
         ctx.fillStyle = sectionColor;
+        ctx.shadowColor = sectionColor;
+        ctx.shadowBlur = 10;
         ctx.fill();
         ctx.strokeStyle = "white";
         ctx.lineWidth = 2;
@@ -482,7 +942,7 @@ function drawPrerequisiteConnections(activeTile) {
 }
 
 /**
- * Main rendering loop using RequestAnimationFrame
+ * Main rendering loop
  */
 function render() {
     if (knowledgeData.length === 0) {
@@ -490,12 +950,17 @@ function render() {
         return;
     }
 
-    // --- 1. Camera Panning Animation (Easing) ---
+    // Check if entry animation is complete
+    const entryElapsed = Date.now() - entryAnimationStartTime;
+    if (entryAnimationActive && entryElapsed > ENTRY_ANIMATION_DURATION + ENTRY_TILE_DURATION) {
+        entryAnimationActive = false;
+    }
+
+    // Camera panning animation
     if (isPanning) {
         offsetX += (targetOffsetX - offsetX) * panSpeed;
         offsetY += (targetOffsetY - offsetY) * panSpeed;
 
-        // Stop panning when coordinates are close enough
         if (Math.abs(targetOffsetX - offsetX) < 0.1 && Math.abs(targetOffsetY - offsetY) < 0.1) {
             offsetX = targetOffsetX;
             offsetY = targetOffsetY;
@@ -505,7 +970,6 @@ function render() {
 
     const time = Date.now();
     
-    // Subtle breathing effect for global transparency
     const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     ctx.globalAlpha = globalAlphaFactor;
@@ -513,16 +977,14 @@ function render() {
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
     if (blinkTileId && time - blinkStartTime > 3000) blinkTileId = null;
 
-    const isSystemIdle = !activeTileId && !blinkTileId;
+    const isSystemIdle = !activeTileId && !blinkTileId && !entryAnimationActive;
 
-    // --- Controlled Idle Blink Scheduling ---
-    // Only trigger new blinks when idle, respecting interval and max concurrent limits
+    // Idle blink scheduling
     if (isSystemIdle && knowledgeData.length > 0) {
         const currentBlinkCount = Object.keys(idleBlinkState).length;
         const timeSinceLastBlink = time - lastBlinkTime;
         
         if (currentBlinkCount < MAX_CONCURRENT_BLINKS && timeSinceLastBlink > IDLE_BLINK_INTERVAL) {
-            // Pick a random tile that isn't already blinking and isn't reserved
             const availableTiles = knowledgeData.filter(t => !idleBlinkState[t.id] && !t.isReserved);
             if (availableTiles.length > 0) {
                 const randomTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
@@ -532,19 +994,22 @@ function render() {
         }
     }
 
-    // --- 2. Draw Tiles (Hexagons) - First layer ---
-    knowledgeData.forEach(tile => {
+    // Draw tiles
+    knowledgeData.forEach((tile, index) => {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         
-        // Visual state logic
-        let alpha = activeTile ? 0.15 : 1.0; // Dim non-selected tiles
+        // Entry animation progress
+        const entryProgress = getEntryAnimationProgress(index);
+        if (entryProgress === 0) return; // Don't draw if not yet visible
+        
+        let alpha = activeTile ? 0.12 : 1.0;
         let glow = false;
         let isIdleBlinking = false;
-        
-        // Reserved slots don't participate in idle blinking
         const isReserved = tile.isReserved === true;
+        const isHovered = tile.id === hoveredTileId && !isReserved;
+        const isSearchMatch = searchResults.includes(tile.id);
 
-        // Handle random idle blinking (The "Pulse" of the system)
+        // Idle blinking
         if (isSystemIdle && !isReserved) {
             if (idleBlinkState[tile.id]) {
                 const elapsed = time - idleBlinkState[tile.id];
@@ -558,10 +1023,9 @@ function render() {
             delete idleBlinkState[tile.id];
         }
 
-        // Highlight logic for active/related tiles (reserved slots don't highlight)
+        // Highlight logic
         if (activeTile && !isReserved) {
             const isSelf = tile.id === activeTileId;
-            // Highlight tiles in the same topic group (e.g., "abstract-algebra", "derivatives")
             const isSameTopicGroup = activeTile.topicGroup && tile.topicGroup === activeTile.topicGroup;
             const isPrereq = activeTile.prereqs && activeTile.prereqs.includes(tile.id);
             
@@ -571,38 +1035,36 @@ function render() {
             }
         }
 
+        // Search results override
+        if (searchQuery && searchResults.length > 0) {
+            alpha = isSearchMatch ? 1.0 : 0.15;
+        }
+
         const color = SECTION_COLORS[tile.section] || '#888888';
-        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved);
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, entryProgress, isHovered, isSearchMatch);
         
-        // --- Draw Part Number as faint background ---
-        // Extract part number from id (e.g., "linalg-15" -> "15", "calc-3" -> "3")
+        // Part number background
         const partMatch = tile.id.match(/-(\d+)$/);
-        if (partMatch && !isReserved) {
+        if (partMatch && !isReserved && entryProgress > 0.8) {
             const partNum = partMatch[1];
             ctx.save();
             
-            // Large, faint number in the background
-            const numSize = scale * 1.1;  // Large size
+            const numSize = scale * 1.1;
             ctx.font = `bold ${numSize}px 'Segoe UI', sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            // Very subtle - just enough to see when looking for it
-            // Use section color with low opacity for a subtle tint
-            ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-            ctx.globalAlpha = alpha;
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.globalAlpha = alpha * entryProgress * 0.3;
             
             ctx.fillText(partNum, x, y);
             ctx.restore();
         }
         
-        // --- 4. Draw Text (Final Optimized Version) ---
-        // 1. Calculate zoom-based opacity independently.
-        // Starts fading in at scale 40, reaches full opacity at scale 60.
+        // Text rendering
         const zoomOpacity = Math.max(0, Math.min(1, (scale - 40) / (60 - 40)));
 
-        // 2. Only proceed if text is actually visible (eliminates magic if-statements).
-        if (zoomOpacity > 0) {
+        if (zoomOpacity > 0 && entryProgress > 0.5) {
             ctx.save();
             
             ctx.fillStyle = isReserved ? "rgba(255,255,255,0.5)" : "white"; 
@@ -610,13 +1072,8 @@ function render() {
             const fontSize = scale / 4.5; 
             ctx.font = isReserved ? `italic ${fontSize}px 'Segoe UI', sans-serif` : `bold ${fontSize}px 'Segoe UI', sans-serif`;
 
-            // 3. Fix the "Original Density" problem.
-            // We ignore the tile's low alpha (0.15) and use a dedicated text visibility base.
-            // Selected/Related tiles: 1.0, Others: 0.7 (still readable). Reserved: 0.5
             const textBaseAlpha = isReserved ? 0.5 : (alpha > 0.5) ? 1.0 : 0.7;
-
-            // 4. Combine factors: Base Visibility * Breathing * Zoom Fade
-            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity;
+            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity * entryProgress;
 
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
             
@@ -624,30 +1081,30 @@ function render() {
         }
     });
     
-    // --- 3. Draw Prerequisite Connections (On top of tiles for visibility) ---
+    // Draw prerequisite connections and particles
     if (activeTile) {
         drawPrerequisiteConnections(activeTile);
     }
+    updateAndDrawParticles();
     
-    // --- 4. UI Overlay / Selection Hints ---
-    if (activeTile) {
+    // Selection hint UI
+    if (activeTile && !activeTile.isReserved) {
         const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
         
-        // Draw "Tap again to Open" with background for better visibility
         const text = "▼ Tap to Open";
         ctx.font = "bold 13px sans-serif";
         const textWidth = ctx.measureText(text).width;
-        const textY = y + scale * 1.1;
+        const textY = y + scale * 1.15;
         
-        // Background pill
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        const padding = 8;
-        const pillHeight = 20;
+        // Animated background pill
+        const pulseAlpha = 0.7 + 0.3 * Math.sin(time / 500);
+        ctx.fillStyle = `rgba(0, 0, 0, ${pulseAlpha})`;
+        const padding = 10;
+        const pillHeight = 24;
         ctx.beginPath();
-        ctx.roundRect(x - textWidth/2 - padding, textY - pillHeight/2 - 2, textWidth + padding*2, pillHeight, 10);
+        ctx.roundRect(x - textWidth/2 - padding, textY - pillHeight/2 - 2, textWidth + padding*2, pillHeight, 12);
         ctx.fill();
         
-        // Text
         ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
         ctx.textAlign = "center";
         ctx.fillText(text, x, textY);
@@ -656,16 +1113,42 @@ function render() {
     requestAnimationFrame(render);
 }
 
+/**
+ * Update info panel
+ */
+function updateInfoPanel(tile) {
+    const panel = document.getElementById('info-panel');
+    const title = document.getElementById('info-title');
+    const prereqs = document.getElementById('info-prereqs');
+    const openBtn = document.getElementById('info-open');
+    
+    if (!tile || tile.isReserved) {
+        panel.classList.remove('visible');
+        return;
+    }
+    
+    title.textContent = tile.title;
+    
+    if (tile.prereqs && tile.prereqs.length > 0) {
+        const prereqNames = tile.prereqs.map(id => {
+            const p = knowledgeData.find(t => t.id === id);
+            return p ? p.title : id;
+        }).join(', ');
+        prereqs.textContent = `Prerequisites: ${prereqNames}`;
+        prereqs.style.display = 'block';
+    } else {
+        prereqs.style.display = 'none';
+    }
+    
+    openBtn.href = tile.url || '#';
+    panel.classList.add('visible');
+}
 
 /**
- * Smoothly pans the camera to center the specified tile on screen.
- * @param {Object} tile - The tile data containing q and r coordinates.
+ * Smoothly pans camera to center tile
  */
 function panToTile(tile) {
     const coords = getPixelCoords(tile.q, tile.r);
-    
-    // Calculate the required offset to place (coords.x, coords.y) at the screen center
-    // We calculate based on raw map coordinates (excluding current offsets)
     const rawMapX = coords.x - offsetX;
     const rawMapY = coords.y - offsetY;
 
@@ -675,12 +1158,43 @@ function panToTile(tile) {
     isPanning = true;
 }
 
+/**
+ * Search functionality
+ */
+function performSearch(query) {
+    searchQuery = query.toLowerCase().trim();
+    
+    if (!searchQuery) {
+        searchResults = [];
+        return;
+    }
+    
+    searchResults = knowledgeData
+        .filter(tile => {
+            if (tile.isReserved) return false;
+            const titleMatch = tile.title.toLowerCase().includes(searchQuery);
+            const keywordMatch = tile.keywords && tile.keywords.some(k => k.toLowerCase().includes(searchQuery));
+            return titleMatch || keywordMatch;
+        })
+        .map(t => t.id);
+    
+    // Pan to first result
+    if (searchResults.length > 0) {
+        const firstResult = knowledgeData.find(t => t.id === searchResults[0]);
+        if (firstResult) {
+            panToTile(firstResult);
+            activeTileId = firstResult.id;
+            updateInfoPanel(firstResult);
+        }
+    }
+    
+    document.getElementById('status').innerText = searchResults.length > 0 
+        ? `Found ${searchResults.length} result${searchResults.length > 1 ? 's' : ''}`
+        : 'No results found';
+}
+
 // --- INTERACTION LOGIC ---
 
-/**
- * Handles mouse and touch interactions for tile selection and navigation.
- * Includes auto-panning to center the selected tile.
- */
 function handleInteraction(clientX, clientY) {
     if (isDragging) return;
 
@@ -688,43 +1202,63 @@ function handleInteraction(clientX, clientY) {
     for (const tile of knowledgeData) {
         const { x, y } = getPixelCoords(tile.q, tile.r);
         
-        // Check if the click/tap is within the hexagon bounds
         if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
             hit = true;
             
-            // Handle reserved (Coming Soon) tiles
             if (tile.isReserved) {
                 activeTileId = tile.id;
-                document.getElementById('status').innerText = `Coming Soon - New content planned for this section`;
+                document.getElementById('status').innerText = `Coming Soon - New content planned`;
+                updateInfoPanel(null);
                 panToTile(tile);
                 break;
             }
             
             if (activeTileId === tile.id) {
-                // Second tap on the same tile: Navigate to the content page
                 if (tile.url) {
                     window.location.assign(tile.url);
                 }
             } else {
-                // First tap: Select the tile and trigger auto-panning
                 activeTileId = tile.id;
                 
                 const prereqCount = tile.prereqs?.length || 0;
                 const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
                 document.getElementById('status').innerText = `Selected: ${tile.title}${prereqText}`;
                 
-                // Trigger smooth camera movement to center this tile
+                updateInfoPanel(tile);
                 panToTile(tile);
             }
             break;
         }
     }
 
-    // Deselect if clicking on empty background
     if (!hit) {
         activeTileId = null;
-        isPanning = false; // Stop any ongoing auto-pan
+        isPanning = false;
+        updateInfoPanel(null);
         document.getElementById('status').innerText = "Explore the Knowledge Map";
+        
+        // Clear search
+        if (searchQuery) {
+            searchQuery = '';
+            searchResults = [];
+            document.getElementById('search-input').value = '';
+        }
+    }
+}
+
+function handleMouseMove(clientX, clientY) {
+    let found = null;
+    for (const tile of knowledgeData) {
+        const { x, y } = getPixelCoords(tile.q, tile.r);
+        if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
+            found = tile.id;
+            break;
+        }
+    }
+    
+    if (hoveredTileId !== found) {
+        hoveredTileId = found;
+        canvas.style.cursor = found ? 'pointer' : 'grab';
     }
 }
 
@@ -734,10 +1268,14 @@ window.addEventListener('mousedown', e => {
     isDragging = false; 
     startX = e.clientX; startY = e.clientY; 
     lastX = e.clientX; lastY = e.clientY;
+    canvas.style.cursor = 'grabbing';
 });
 
 window.addEventListener('mousemove', e => {
     if (isTouchInteraction) return;
+    
+    handleMouseMove(e.clientX, e.clientY);
+    
     if (e.buttons === 1) {
         if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) isDragging = true;
         if (isDragging) { 
@@ -750,11 +1288,13 @@ window.addEventListener('mousemove', e => {
 
 window.addEventListener('mouseup', e => {
     if (isTouchInteraction) return;
+    canvas.style.cursor = hoveredTileId ? 'pointer' : 'grab';
     if (!isDragging) handleInteraction(e.clientX, e.clientY);
 });
 
 window.addEventListener('wheel', e => {
-    scale = Math.min(Math.max(minScale, scale - e.deltaY * 0.05), maxScale);
+    const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
+    scale = Math.min(Math.max(minScale, scale * zoomFactor), maxScale);
 }, { passive: false });
 
 // Touch Handlers
@@ -804,12 +1344,47 @@ canvas.addEventListener('touchend', e => {
 window.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         activeTileId = null;
+        updateInfoPanel(null);
         document.getElementById('status').innerText = "Explore the Knowledge Map";
+        searchQuery = '';
+        searchResults = [];
+        document.getElementById('search-input').value = '';
     }
     if (e.key === 'Enter' && activeTileId) {
         const tile = knowledgeData.find(t => t.id === activeTileId);
-        if (tile) window.location.assign(tile.url);
+        if (tile && tile.url) window.location.assign(tile.url);
     }
+});
+
+// Search input
+document.getElementById('search-input').addEventListener('input', e => {
+    performSearch(e.target.value);
+});
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && searchResults.length > 0) {
+        const tile = knowledgeData.find(t => t.id === searchResults[0]);
+        if (tile && tile.url) {
+            window.location.assign(tile.url);
+        }
+    }
+});
+
+// Zoom controls
+document.getElementById('zoom-in').addEventListener('click', () => {
+    scale = Math.min(maxScale, scale * 1.2);
+});
+
+document.getElementById('zoom-out').addEventListener('click', () => {
+    scale = Math.max(minScale, scale * 0.8);
+});
+
+// Legend hover effects
+document.querySelectorAll('.legend-item').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+        const section = item.dataset.section;
+        // Could highlight all tiles of this section
+    });
 });
 
 // Initialize
