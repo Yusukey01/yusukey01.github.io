@@ -1086,24 +1086,53 @@ function render() {
     // Selection hint UI
     if (activeTile && !activeTile.isReserved) {
         const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
+        const sectionColor = SECTION_COLORS[activeTile.section] || '#3498db';
         
-        const text = "▼ Tap to Open";
-        ctx.font = "bold 13px sans-serif";
+        const text = "TAP TO OPEN";
+        ctx.font = "bold 14px 'Segoe UI', sans-serif";
         const textWidth = ctx.measureText(text).width;
-        const textY = y + scale * 1.15;
+        const hintY = y + scale * 0.5;
         
-        // Animated background pill
-        const pulseAlpha = 0.7 + 0.3 * Math.sin(time / 500);
-        ctx.fillStyle = `rgba(0, 0, 0, ${pulseAlpha})`;
-        const padding = 10;
-        const pillHeight = 24;
+        // Pulsing glow effect
+        const pulsePhase = (Math.sin(time / 300) + 1) / 2;
+        const glowIntensity = 0.6 + pulsePhase * 0.4;
+        
+        // Outer glow
+        ctx.save();
+        ctx.shadowColor = sectionColor;
+        ctx.shadowBlur = 15 + pulsePhase * 10;
+        
+        // Gradient background pill
+        const padding = 14;
+        const pillHeight = 28;
+        const pillWidth = textWidth + padding * 2;
+        const pillX = x - pillWidth / 2;
+        const pillY = hintY - pillHeight / 2;
+        
+        const gradient = ctx.createLinearGradient(pillX, pillY, pillX + pillWidth, pillY + pillHeight);
+        gradient.addColorStop(0, sectionColor);
+        gradient.addColorStop(1, lightenColor(sectionColor, -20));
+        
+        ctx.globalAlpha = glowIntensity;
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(x - textWidth/2 - padding, textY - pillHeight/2 - 2, textWidth + padding*2, pillHeight, 12);
+        ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 14);
         ctx.fill();
         
-        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        // Border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.restore();
+        
+        // Text with subtle bounce
+        const bounceOffset = Math.sin(time / 200) * 1.5;
+        ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
-        ctx.fillText(text, x, textY);
+        ctx.textBaseline = "middle";
+        ctx.font = "bold 13px 'Segoe UI', sans-serif";
+        ctx.fillText(text, x, hintY + bounceOffset);
     }
 
     requestAnimationFrame(render);
@@ -1134,7 +1163,7 @@ function updateInfoPanel(tile) {
     } else {
         prereqs.style.display = 'none';
     }
-    
+
     panel.classList.add('visible');
 }
 
