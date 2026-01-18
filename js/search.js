@@ -1,12 +1,24 @@
-// search.js - Using external JSON for page definitions
+/**
+ * MATH-CS COMPASS: Search Functionality
+ * @author Yusuke Yokota
+ * @version 2.0.0
+ * 
+ * Uses curriculum.json as the single source of truth for all page data.
+ * Works from any directory level by using absolute paths from site root.
+ */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing search with JSON page data');
+    console.log('DOM loaded - initializing search with curriculum.json');
     
     // Find search elements
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
     const searchIcon = searchButton ? searchButton.querySelector('i') : null;
+    
+    if (!searchInput) {
+        console.warn('Search input not found');
+        return;
+    }
     
     // Create popup
     const popupHTML = `
@@ -32,78 +44,165 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Content cache
     const contentCache = {};
-    let pages = []; // Will be populated from JSON
+    let pages = []; // Will be populated from curriculum.json
+    let curriculumData = null;
     
-    // Determine the correct path to the root of the website
-    function getRootPath() {
-        const pathSegments = window.location.pathname.split('/').filter(Boolean);
-        let rootPath = '';
+    /**
+     * Get the site root path (handles both local dev and production)
+     * Uses absolute path from site root for consistency
+     */
+    function getSiteRoot() {
+        // Check if we're on a known domain or localhost
+        const hostname = window.location.hostname;
         
-        // If we're in a subdirectory, we need to go back to the root
-        if (pathSegments.length > 0) {
-            // For each directory level, we need to go up one level
-            // But we need to handle the case where the URL ends with a file
-            const segmentsToRoot = pathSegments.length;
-            for (let i = 0; i < segmentsToRoot; i++) {
-                rootPath += '../';
-            }
+        // For GitHub Pages or custom domain
+        if (hostname.includes('github.io') || hostname.includes('math-cs-compass')) {
+            return '/';
         }
         
-        return rootPath;
+        // For local development, try to detect the root
+        // Look for common indicators in the path
+        const path = window.location.pathname;
+        
+        // If path contains 'Mathematics/', we're in a subdirectory
+        const mathIndex = path.indexOf('/Mathematics/');
+        if (mathIndex !== -1) {
+            return path.substring(0, mathIndex + 1);
+        }
+        
+        // Default to root
+        return '/';
     }
     
-    // Load page data from JSON
-    async function loadPageData() {
+    /**
+     * Load curriculum data and build pages array
+     */
+    async function loadCurriculumData() {
+        if (curriculumData && pages.length > 0) {
+            return pages;
+        }
+        
         try {
-            // Use the correct path to the root directory
-            const rootPath = getRootPath();
-            const response = await fetch(`${rootPath}pages.json`);
+            const siteRoot = getSiteRoot();
+            const curriculumPath = `${siteRoot}data/curriculum.json`;
+            
+            console.log('Loading curriculum from:', curriculumPath);
+            
+            const response = await fetch(curriculumPath);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data = await response.json();
-            pages = data.pages || [];
-            console.log(`Loaded ${pages.length} pages from JSON`);
+            
+            curriculumData = await response.json();
+            
+            // Build pages array from curriculum data
+            pages = buildPagesFromCurriculum(curriculumData);
+            
+            console.log(`Loaded ${pages.length} pages from curriculum.json`);
             return pages;
+            
         } catch (error) {
-            console.error('Error loading pages.json:', error);
-            // Fallback to default pages if JSON loading fails
-            return [
-                { path: '/index.html', title: 'Math-CS Compass - Home' },
-                { path: '/Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra' },
-                { path: '/Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization' },
-                { path: '/Mathematics/Probability/probability.html', title: 'Probability & Statistics' },
-                { path: '/Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics' }
-            ];
+            console.error('Error loading curriculum.json:', error);
+            // Return fallback pages
+            return getFallbackPages();
         }
     }
     
-    // Fetch page content with correct path resolution
+    /**
+     * Build a flat pages array from curriculum.json structure
+     */
+    function buildPagesFromCurriculum(data) {
+        const pages = [];
+        
+        // Add home page
+        if (data.homeNode) {
+            pages.push({
+                path: data.homeNode.url || '/index.html',
+                title: 'MATH-CS COMPASS - Home',
+                keywords: ['home', 'mathematics', 'computer science', 'compass'],
+                section: 'HOME'
+            });
+        }
+        
+        // Add all section index pages and their parts
+        if (data.sections) {
+            Object.entries(data.sections).forEach(([sectionId, section]) => {
+                // Add section index page
+                pages.push({
+                    path: '/' + section.indexUrl,
+                    title: section.title,
+                    keywords: [section.shortTitle, section.tagline, section.description].filter(Boolean),
+                    section: sectionId,
+                    isIndex: true
+                });
+                
+                // Add all parts in the section
+                if (section.parts) {
+                    section.parts.forEach(part => {
+                        pages.push({
+                            path: '/' + section.baseUrl + part.url,
+                            title: part.title,
+                            keywords: part.keywords || [],
+                            section: sectionId,
+                            partNumber: part.part,
+                            badges: part.badges || []
+                        });
+                    });
+                }
+            });
+        }
+        
+        return pages;
+    }
+    
+    /**
+     * Fallback pages if curriculum.json fails to load
+     */
+    function getFallbackPages() {
+        return [
+            { path: '/index.html', title: 'MATH-CS COMPASS - Home', keywords: [] },
+            { path: '/Mathematics/Linear_algebra/linear_algebra.html', title: 'Linear Algebra', keywords: [] },
+            { path: '/Mathematics/Calculus/calculus.html', title: 'Calculus & Optimization', keywords: [] },
+            { path: '/Mathematics/Probability/probability.html', title: 'Probability & Statistics', keywords: [] },
+            { path: '/Mathematics/Discrete/discrete_math.html', title: 'Discrete Mathematics', keywords: [] },
+            { path: '/Mathematics/Machine_learning/ml.html', title: 'Machine Learning', keywords: [] }
+        ];
+    }
+    
+    /**
+     * Fetch page content for deep search
+     */
     async function fetchPageContent(page) {
-        if (contentCache[page.path]) return contentCache[page.path];
+        if (contentCache[page.path]) {
+            return contentCache[page.path];
+        }
         
         try {
-            // Use the correct path to the root directory
-            const rootPath = getRootPath();
-            const fullPath = `${rootPath}${page.path.startsWith('/') ? page.path.substring(1) : page.path}`;
+            const siteRoot = getSiteRoot();
+            const fullPath = siteRoot + (page.path.startsWith('/') ? page.path.substring(1) : page.path);
+            
             const response = await fetch(fullPath);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
             // Remove navigation elements before extracting content
-            const elementsToRemove = doc.querySelectorAll('.quick-jump-container, .quick-jump-menu, nav, .navigation');
+            const elementsToRemove = doc.querySelectorAll('.quick-jump-container, .quick-jump-menu, nav, .navigation, script, style');
             elementsToRemove.forEach(el => el.remove());
             
             // Extract content
             let content = '';
-            const main = doc.querySelector('main');
+            const main = doc.querySelector('main, .container, article');
             if (main) {
                 content = main.textContent;
             } else {
-                content = doc.body.textContent;
+                content = doc.body ? doc.body.textContent : '';
             }
             
             content = content.replace(/\s+/g, ' ').trim();
@@ -112,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const metaDesc = doc.querySelector('meta[name="description"]');
             const description = metaDesc ? metaDesc.getAttribute('content') : '';
             
-            // Extract headings (after removing navigation)
+            // Extract headings
             const headings = Array.from(doc.querySelectorAll('h1, h2, h3'))
                 .map(h => h.textContent.trim())
                 .filter(h => h.length > 0);
@@ -120,13 +219,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = { content, description, headings };
             contentCache[page.path] = result;
             return result;
+            
         } catch (error) {
             console.error(`Error fetching ${page.path}:`, error);
             return { content: '', description: '', headings: [] };
         }
     }
     
-    // Perform search function
+    /**
+     * Main search function
+     */
     async function performSearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
         console.log('Performing search for:', searchTerm);
@@ -136,9 +238,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Make sure pages are loaded
+        // Ensure pages are loaded
         if (pages.length === 0) {
-            pages = await loadPageData();
+            pages = await loadCurriculumData();
         }
         
         // Show loading state
@@ -146,115 +248,109 @@ document.addEventListener('DOMContentLoaded', function() {
         searchPopup.classList.add('active');
         
         try {
-            // Search all pages
-            const contentPromises = pages.map(page => fetchPageContent(page));
-            const pagesContent = await Promise.all(contentPromises);
-            
-            // Find matches
             const results = [];
             
-            for (let i = 0; i < pages.length; i++) {
-                const page = pages[i];
-                const content = pagesContent[i];
-                
+            // First pass: Search titles and keywords (fast, no fetching needed)
+            for (const page of pages) {
                 // Check title
                 if (page.title.toLowerCase().includes(searchTerm)) {
                     results.push({
                         ...page,
                         matchType: 'title',
-                        matchContext: page.title
+                        matchContext: page.title,
+                        priority: 1
                     });
                     continue;
                 }
                 
-                // Check description
-                if (content.description && content.description.toLowerCase().includes(searchTerm)) {
-                    results.push({
-                        ...page,
-                        matchType: 'description',
-                        matchContext: content.description
-                    });
-                    continue;
-                }
-                
-                // Check headings
-                const matchingHeading = content.headings.find(h => 
-                    h.toLowerCase().includes(searchTerm)
-                );
-                
-                if (matchingHeading) {
-                    results.push({
-                        ...page,
-                        matchType: 'heading',
-                        matchContext: matchingHeading
-                    });
-                    continue;
-                }
-                
-                // Check content
-                if (content.content && content.content.toLowerCase().includes(searchTerm)) {
-                    // Find context
-                    const contentLower = content.content.toLowerCase();
-                    const matchIndex = contentLower.indexOf(searchTerm);
-                    const start = Math.max(0, matchIndex - 40);
-                    const end = Math.min(content.content.length, matchIndex + searchTerm.length + 40);
-                    let matchContext = content.content.substring(start, end);
+                // Check keywords from curriculum.json
+                if (page.keywords && page.keywords.length > 0) {
+                    const matchingKeyword = page.keywords.find(kw => 
+                        kw.toLowerCase().includes(searchTerm)
+                    );
                     
-                    if (start > 0) matchContext = '...' + matchContext;
-                    if (end < content.content.length) matchContext = matchContext + '...';
-                    
-                    results.push({
-                        ...page,
-                        matchType: 'content',
-                        matchContext: matchContext
-                    });
+                    if (matchingKeyword) {
+                        results.push({
+                            ...page,
+                            matchType: 'keyword',
+                            matchContext: matchingKeyword,
+                            priority: 2
+                        });
+                        continue;
+                    }
                 }
             }
+            
+            // Second pass: Deep content search for pages not yet matched
+            // Only if we have few results from keywords
+            if (results.length < 5) {
+                const unmatchedPages = pages.filter(p => 
+                    !results.some(r => r.path === p.path)
+                );
+                
+                // Fetch content for unmatched pages
+                const contentPromises = unmatchedPages.map(page => 
+                    fetchPageContent(page).then(content => ({ page, content }))
+                );
+                
+                const pagesWithContent = await Promise.all(contentPromises);
+                
+                for (const { page, content } of pagesWithContent) {
+                    // Check description
+                    if (content.description && content.description.toLowerCase().includes(searchTerm)) {
+                        results.push({
+                            ...page,
+                            matchType: 'description',
+                            matchContext: content.description,
+                            priority: 3
+                        });
+                        continue;
+                    }
+                    
+                    // Check headings
+                    const matchingHeading = content.headings.find(h => 
+                        h.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (matchingHeading) {
+                        results.push({
+                            ...page,
+                            matchType: 'heading',
+                            matchContext: matchingHeading,
+                            priority: 4
+                        });
+                        continue;
+                    }
+                    
+                    // Check content
+                    if (content.content && content.content.toLowerCase().includes(searchTerm)) {
+                        const contentLower = content.content.toLowerCase();
+                        const matchIndex = contentLower.indexOf(searchTerm);
+                        const start = Math.max(0, matchIndex - 50);
+                        const end = Math.min(content.content.length, matchIndex + searchTerm.length + 50);
+                        let matchContext = content.content.substring(start, end);
+                        
+                        if (start > 0) matchContext = '...' + matchContext;
+                        if (end < content.content.length) matchContext = matchContext + '...';
+                        
+                        results.push({
+                            ...page,
+                            matchType: 'content',
+                            matchContext: matchContext,
+                            priority: 5
+                        });
+                    }
+                }
+            }
+            
+            // Sort results by priority
+            results.sort((a, b) => a.priority - b.priority);
             
             console.log(`Found ${results.length} results`);
             
             // Display results
-            if (results.length > 0) {
-                let resultsHtml = `
-                    <div class="search-summary">
-                        Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"
-                    </div>
-                    <div class="results-list">
-                `;
-                
-                // Get root path for creating correct links
-                const rootPath = getRootPath();
-                
-                results.forEach(result => {
-                    // Highlight match
-                    let highlightedContext = result.matchContext;
-                    if (highlightedContext) {
-                        const regex = new RegExp(searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-                        highlightedContext = highlightedContext.replace(regex, match => `<mark>${match}</mark>`);
-                    }
-                    
-                    // Fix the path for the link
-                    const pagePath = result.path.startsWith('/') ? result.path.substring(1) : result.path;
-                    const fullPath = `${rootPath}${pagePath}`;
-                    
-                    resultsHtml += `
-                        <div class="popup-result-item">
-                            <h3><a href="${fullPath}">${result.title}</a></h3>
-                            <p class="result-context">${highlightedContext || ''}</p>
-                        </div>
-                    `;
-                });
-                
-                resultsHtml += '</div>';
-                popupContent.innerHTML = resultsHtml;
-            } else {
-                popupContent.innerHTML = `
-                    <div class="no-results">
-                        <p>No results found for "${searchTerm}"</p>
-                        <p class="search-suggestion">Try different keywords</p>
-                    </div>
-                `;
-            }
+            displayResults(results, searchTerm);
+            
         } catch (error) {
             console.error('Error during search:', error);
             popupContent.innerHTML = `
@@ -266,22 +362,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Load page data on initialization
-    loadPageData().then(loadedPages => {
-        console.log(`Initialized with ${loadedPages.length} pages from JSON`);
-        pages = loadedPages;
+    /**
+     * Display search results
+     */
+    function displayResults(results, searchTerm) {
+        if (results.length > 0) {
+            const siteRoot = getSiteRoot();
+            
+            let resultsHtml = `
+                <div class="search-summary">
+                    Found ${results.length} result${results.length === 1 ? '' : 's'} for "${searchTerm}"
+                </div>
+                <div class="results-list">
+            `;
+            
+            results.forEach(result => {
+                // Highlight match in context
+                let highlightedContext = result.matchContext || '';
+                if (highlightedContext) {
+                    const regex = new RegExp(
+                        searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 
+                        'gi'
+                    );
+                    highlightedContext = highlightedContext.replace(
+                        regex, 
+                        match => `<mark>${match}</mark>`
+                    );
+                }
+                
+                // Build the correct path
+                const pagePath = result.path.startsWith('/') ? result.path.substring(1) : result.path;
+                const fullPath = siteRoot + pagePath;
+                
+                // Add section badge
+                const sectionBadge = result.section && result.section !== 'HOME' 
+                    ? `<span class="result-section">Section ${result.section}</span>` 
+                    : '';
+                
+                // Add match type indicator
+                const matchTypeLabel = getMatchTypeLabel(result.matchType);
+                
+                resultsHtml += `
+                    <div class="popup-result-item">
+                        <h3>
+                            <a href="${fullPath}">${result.title}</a>
+                            ${sectionBadge}
+                        </h3>
+                        <p class="result-context">${highlightedContext}</p>
+                        <span class="result-match-type">${matchTypeLabel}</span>
+                    </div>
+                `;
+            });
+            
+            resultsHtml += '</div>';
+            popupContent.innerHTML = resultsHtml;
+            
+        } else {
+            popupContent.innerHTML = `
+                <div class="no-results">
+                    <p>No results found for "${searchTerm}"</p>
+                    <p class="search-suggestion">Try different keywords or check your spelling</p>
+                </div>
+            `;
+        }
+    }
+    
+    /**
+     * Get human-readable match type label
+     */
+    function getMatchTypeLabel(matchType) {
+        const labels = {
+            'title': 'Title match',
+            'keyword': 'Keyword match',
+            'description': 'Description match',
+            'heading': 'Heading match',
+            'content': 'Content match'
+        };
+        return labels[matchType] || '';
+    }
+    
+    // Initialize: Load curriculum data
+    loadCurriculumData().then(loadedPages => {
+        console.log(`Initialized with ${loadedPages.length} pages from curriculum.json`);
     });
     
-    // Function to ensure search is triggered regardless of what is clicked
+    // Event handler for search
     function triggerSearch(e) {
-        console.log('Search triggered by:', e.target.tagName);
-        e.preventDefault();
-        e.stopPropagation();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         performSearch();
         return false;
     }
     
-    // Add event listeners to all possible elements
+    // Add event listeners
     if (searchButton) {
         searchButton.onclick = triggerSearch;
         searchButton.addEventListener('click', triggerSearch);
@@ -310,9 +485,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Test function
+    // Escape key closes popup
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && searchPopup.classList.contains('active')) {
+            searchPopup.classList.remove('active');
+        }
+    });
+    
+    // Test function for debugging
     window.testSearch = function(term) {
-        searchInput.value = term || 'linear algebra';
+        searchInput.value = term || 'eigenvalue';
         performSearch();
         return 'Test search executed';
     };
@@ -320,5 +502,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make search function available globally
     window.doSearch = performSearch;
     
-    console.log('Search initialization complete with JSON loading');
+    console.log('Search initialization complete - using curriculum.json');
 });
