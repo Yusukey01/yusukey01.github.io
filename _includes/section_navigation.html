@@ -1,138 +1,103 @@
 {% comment %}
-  DEBUG VERSION - Section Navigation
+  Section Navigation - Loads curriculum.json via JavaScript
+  (Because data files are in /data/ not /_data/)
 {% endcomment %}
 
-{% assign curriculum = site.data.curriculum %}
-
-<!-- DEBUG: Check if curriculum loaded -->
-<div style="background: yellow; padding: 10px; margin: 10px 0; border: 2px solid red;">
-  <strong>DEBUG INFO:</strong><br>
-  
-  <!-- Check if curriculum exists -->
-  {% if curriculum %}
-    ✅ curriculum loaded<br>
-  {% else %}
-    ❌ curriculum is NULL<br>
-  {% endif %}
-  
-  <!-- Check if sections exists -->
-  {% if curriculum.sections %}
-    ✅ curriculum.sections exists<br>
-  {% else %}
-    ❌ curriculum.sections is NULL<br>
-  {% endif %}
-  
-  <!-- Check page.url -->
-  page.url = "{{ page.url }}"<br>
-  
-  <!-- Check page.level -->
-  page.level = "{{ page.level }}"<br>
-  
-  <!-- Check what sections are available -->
-  {% if curriculum.sections %}
-    <br>Available section keys:<br>
-    {% for section_entry in curriculum.sections %}
-      - Key: "{{ section_entry[0] }}" | Title: "{{ section_entry[1].title }}"<br>
-    {% endfor %}
-  {% endif %}
-  
-  <!-- Test direct access -->
-  <br>Testing URL matching:<br>
-  {% if page.url contains 'Linear_algebra' %}
-    ✅ URL contains 'Linear_algebra'<br>
-  {% else %}
-    ❌ URL does NOT contain 'Linear_algebra'<br>
-  {% endif %}
-  
-  {% if page.url contains 'linear_algebra' %}
-    ✅ URL contains 'linear_algebra' (lowercase)<br>
-  {% else %}
-    ❌ URL does NOT contain 'linear_algebra' (lowercase)<br>
-  {% endif %}
-</div>
-
-{% comment %} Original navigation code below {% endcomment %}
-
-{% assign current_section = nil %}
-{% assign section_key = nil %}
-{% assign overview_file = nil %}
-
-{% if page.url contains 'Linear_algebra' %}
-  {% assign section_key = "I" %}
-  {% assign overview_file = "linear_algebra.html" %}
-{% elsif page.url contains 'Calculus' %}
-  {% assign section_key = "II" %}
-  {% assign overview_file = "calculus.html" %}
-{% elsif page.url contains 'Probability' %}
-  {% assign section_key = "III" %}
-  {% assign overview_file = "probability.html" %}
-{% elsif page.url contains 'Discrete' %}
-  {% assign section_key = "IV" %}
-  {% assign overview_file = "discrete_math.html" %}
-{% elsif page.url contains 'Machine_learning' %}
-  {% assign section_key = "V" %}
-  {% assign overview_file = "ml.html" %}
-{% endif %}
-
-<!-- DEBUG: After URL check -->
-<div style="background: lightblue; padding: 10px; margin: 10px 0;">
-  section_key = "{{ section_key }}"<br>
-  overview_file = "{{ overview_file }}"
-</div>
-
-{% if section_key %}
-  {% for section_entry in curriculum.sections %}
-    {% if section_entry[0] == section_key %}
-      {% assign current_section = section_entry[1] %}
-      {% break %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-<!-- DEBUG: After section lookup -->
-<div style="background: lightgreen; padding: 10px; margin: 10px 0;">
-  {% if current_section %}
-    ✅ current_section found: "{{ current_section.title }}"<br>
-    Parts count: {{ current_section.parts.size }}
-  {% else %}
-    ❌ current_section is NULL
-  {% endif %}
-</div>
-
-{% if current_section %}
 <div class="quick-jump-container">
     <button type="button" id="quick-jump-toggle" class="quick-jump-toggle">
-      <i class="fas fa-list"></i> <strong>Section {{ section_key }} Navigation</strong>
+      <i class="fas fa-list"></i> <strong id="nav-section-title">Section Navigation</strong>
     </button>
     <div id="quick-jump-menu" class="quick-jump-menu">
-      <h3>{{ current_section.title }}</h3>
-      <div class="quick-jump-links">
-
-        {% if page.level == 'detail' %}
-        <a href="{{ overview_file }}">← Back to Section {{ section_key }} Overview</a>
-        <hr style="margin: 8px 0; border: 1px solid #ddd;">
-        {% endif %}
-        
-        {% for part in current_section.parts %}
-          {% if page.level == 'detail' %}
-            {% assign part_url = part.url %}
-          {% else %}
-            {% assign base_parts = current_section.baseUrl | split: "/" %}
-            {% assign folder_name = base_parts[1] %}
-            {% assign part_url = "../" | append: folder_name | append: "/" | append: part.url %}
-          {% endif %}
-          
-          {% assign url_without_ext = part.url | remove: ".html" %}
-          {% if page.url contains url_without_ext %}
-            {% assign is_current = true %}
-          {% else %}
-            {% assign is_current = false %}
-          {% endif %}
-          
-          <a href="{{ part_url }}" {% if is_current %}class="current-page"{% endif %}>Part {{ part.part }}: {{ part.title }}</a>
-        {% endfor %}
-            
+      <h3 id="nav-section-heading">Loading...</h3>
+      <div class="quick-jump-links" id="nav-links-container">
+        <!-- Links will be populated by JavaScript -->
       </div>
     </div>
 </div>
-{% endif %}
+
+<script>
+(function() {
+  // Determine current section from URL
+  const path = window.location.pathname;
+  let sectionKey = null;
+  let overviewFile = null;
+  
+  if (path.includes('Linear_algebra')) {
+    sectionKey = 'I';
+    overviewFile = 'linear_algebra.html';
+  } else if (path.includes('Calculus')) {
+    sectionKey = 'II';
+    overviewFile = 'calculus.html';
+  } else if (path.includes('Probability')) {
+    sectionKey = 'III';
+    overviewFile = 'probability.html';
+  } else if (path.includes('Discrete')) {
+    sectionKey = 'IV';
+    overviewFile = 'discrete_math.html';
+  } else if (path.includes('Machine_learning')) {
+    sectionKey = 'V';
+    overviewFile = 'ml.html';
+  }
+  
+  if (!sectionKey) {
+    // Not in a section page, hide navigation
+    document.querySelector('.quick-jump-container').style.display = 'none';
+    return;
+  }
+  
+  // Check if this is a detail page (has level: detail in front matter)
+  const isDetailPage = '{{ page.level }}' === 'detail';
+  
+  // Load curriculum data
+  fetch('/data/curriculum.json')
+    .then(response => response.json())
+    .then(curriculum => {
+      const section = curriculum.sections[sectionKey];
+      if (!section) {
+        console.error('Section not found:', sectionKey);
+        return;
+      }
+      
+      // Update section title
+      document.getElementById('nav-section-title').innerHTML = 
+        'Section ' + sectionKey + ' Navigation';
+      document.getElementById('nav-section-heading').textContent = section.title;
+      
+      // Build navigation links
+      const container = document.getElementById('nav-links-container');
+      let html = '';
+      
+      // Add back link for detail pages
+      if (isDetailPage) {
+        html += '<a href="' + overviewFile + '">← Back to Section ' + sectionKey + ' Overview</a>';
+        html += '<hr style="margin: 8px 0; border: 1px solid #ddd;">';
+      }
+      
+      // Add part links
+      section.parts.forEach(part => {
+        let partUrl;
+        if (isDetailPage) {
+          partUrl = part.url;
+        } else {
+          // For overview pages, construct relative path
+          const folderName = section.baseUrl.split('/')[1];
+          partUrl = '../' + folderName + '/' + part.url;
+        }
+        
+        // Check if current page
+        const urlWithoutExt = part.url.replace('.html', '');
+        const isCurrent = path.includes(urlWithoutExt);
+        
+        html += '<a href="' + partUrl + '"' + (isCurrent ? ' class="current-page"' : '') + '>';
+        html += 'Part ' + part.part + ': ' + part.title;
+        html += '</a>';
+      });
+      
+      container.innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Failed to load curriculum:', error);
+      document.querySelector('.quick-jump-container').style.display = 'none';
+    });
+})();
+</script>
