@@ -664,8 +664,7 @@ function getEntryAnimationProgress(tileIndex) {
 /**
  * Draw hexagon with enhanced visuals
  */
-function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, 
-                    isReserved = false, entryProgress = 1, isHovered = false, isSearchMatch = false){
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, isReserved = false, entryProgress = 1, isHovered = false, isSearchMatch = false) {
     ctx.save();
     
     // Entry animation: scale and fade in
@@ -897,6 +896,12 @@ function drawPrerequisiteConnections(activeTile) {
         ctx.stroke();
         ctx.setLineDash([]);
         
+        // Spawn particles periodically
+        if (time - prereqAnimState.lastSpawnTime > 150) {
+            spawnPrereqParticle(prereqCoords.x, prereqCoords.y, activeCoords.x, activeCoords.y, sectionColor);
+            prereqAnimState.lastSpawnTime = time;
+        }
+        
         // Arrow head
         const angle = Math.atan2(activeCoords.y - ctrlY, activeCoords.x - ctrlX);
         const arrowSize = Math.max(12, scale * 0.18);
@@ -1080,6 +1085,7 @@ function render() {
     if (activeTile) {
         drawPrerequisiteConnections(activeTile);
     }
+    updateAndDrawParticles();
     
     // Selection hint UI
     if (activeTile && !activeTile.isReserved) {
@@ -1258,6 +1264,9 @@ function handleMouseMove(clientX, clientY) {
 
 // Mouse Handlers
 window.addEventListener('mousedown', e => { 
+    // Dismiss keyboard when interacting with canvas
+    document.getElementById('search-input').blur();
+    
     if (isTouchInteraction) return; 
     isDragging = false; 
     startX = e.clientX; startY = e.clientY; 
@@ -1293,6 +1302,9 @@ window.addEventListener('wheel', e => {
 
 // Touch Handlers
 canvas.addEventListener('touchstart', e => {
+    // Dismiss keyboard when interacting with canvas (fixes mobile keyboard issue)
+    document.getElementById('search-input').blur();
+    
     isTouchInteraction = true; 
     if (e.touches.length === 1) {
         isDragging = false;
