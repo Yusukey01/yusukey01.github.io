@@ -139,29 +139,11 @@
             margin: 6px 0;
             padding: 4px 6px;
             border-radius: 6px;
-            cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        .legend-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(4px);
-        }
-
-        .legend-item.active {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(6px);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-
-        .legend-item.active .legend-color {
-            transform: scale(1.2);
-            box-shadow: 0 0 15px currentColor;
-        }
-
         .legend-item:hover .legend-color {
-            transform: scale(1.2);
-            box-shadow: 0 0 12px currentColor;
+            transform: scale(1.1);
         }
 
         .legend-color {
@@ -534,9 +516,6 @@ const panSpeed = 0.12;
 // Search state
 let searchQuery = '';
 let searchResults = [];
-
-// Section filter state
-let selectedSection = null;
 
 /**
  * Load curriculum data from JSON file
@@ -1037,15 +1016,6 @@ function render() {
         if (searchQuery && searchResults.length > 0) {
             alpha = isSearchMatch ? 1.0 : 0.15;
         }
-        
-        // Section filter override
-        if (selectedSection && !searchQuery) {
-            const isInSelectedSection = tile.section === selectedSection;
-            alpha = isInSelectedSection ? 1.0 : 0.12;
-            if (isInSelectedSection && !isReserved) {
-                glow = true;
-            }
-        }
 
         const color = SECTION_COLORS[tile.section] || '#888888';
         drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, entryProgress, isHovered, isSearchMatch);
@@ -1203,12 +1173,6 @@ function performSearch(query) {
 
 function handleInteraction(clientX, clientY) {
     if (isDragging) return;
-
-    // Clear section selection when interacting with map
-    if (selectedSection) {
-        selectedSection = null;
-        document.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
-    }
 
     let hit = false;
     for (const tile of knowledgeData) {
@@ -1395,80 +1359,6 @@ document.getElementById('zoom-in').addEventListener('click', () => {
 
 document.getElementById('zoom-out').addEventListener('click', () => {
     scale = Math.max(minScale, scale * 0.8);
-});
-
-// Legend click and hover effects
-document.querySelectorAll('.legend-item').forEach(item => {
-    // Click: highlight section tiles and pan to center
-    item.addEventListener('click', () => {
-        const section = item.dataset.section;
-        
-        // Toggle section selection
-        if (selectedSection === section) {
-            // Clicking same section again clears the filter
-            selectedSection = null;
-            document.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
-            document.getElementById('status').innerText = "Explore the Knowledge Map";
-        } else {
-            selectedSection = section;
-            
-            // Update visual state of legend items
-            document.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            
-            // Find all tiles in this section
-            const sectionTiles = knowledgeData.filter(t => t.section === section && !t.isReserved);
-            
-            if (sectionTiles.length > 0) {
-                // Calculate center of the section cluster
-                let avgQ = 0, avgR = 0;
-                sectionTiles.forEach(t => {
-                    avgQ += t.q;
-                    avgR += t.r;
-                });
-                avgQ /= sectionTiles.length;
-                avgR /= sectionTiles.length;
-                
-                // Pan to the center of the cluster
-                const centerCoords = getPixelCoords(avgQ, avgR);
-                const rawMapX = centerCoords.x - offsetX;
-                const rawMapY = centerCoords.y - offsetY;
-                targetOffsetX = (window.innerWidth / 2) - rawMapX;
-                targetOffsetY = (window.innerHeight / 2) - rawMapY;
-                isPanning = true;
-                
-                // Update status
-                const sectionNames = {
-                    'I': 'Linear Algebra',
-                    'II': 'Calculus & Optimization',
-                    'III': 'Probability & Statistics',
-                    'IV': 'Discrete Math & Algorithms',
-                    'V': 'Machine Learning'
-                };
-                document.getElementById('status').innerText = `Section ${section}: ${sectionNames[section] || section} (${sectionTiles.length} topics)`;
-            }
-        }
-        
-        // Clear other selections
-        activeTileId = null;
-        searchQuery = '';
-        searchResults = [];
-        document.getElementById('search-input').value = '';
-        updateInfoPanel(null);
-    });
-    
-    // Hover: subtle highlight preview
-    item.addEventListener('mouseenter', () => {
-        if (!selectedSection) {
-            item.style.background = 'rgba(255, 255, 255, 0.1)';
-        }
-    });
-    
-    item.addEventListener('mouseleave', () => {
-        if (!selectedSection || item.dataset.section !== selectedSection) {
-            item.style.background = '';
-        }
-    });
 });
 
 // Initialize
