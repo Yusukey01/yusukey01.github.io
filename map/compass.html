@@ -833,61 +833,73 @@ function updateTesseraForTile(tile) {
         clearTimeout(tesseraState.bubbleTimeout);
     }
     
-    // Check for custom message in tile data
-    if (tile.tesseraMessage) {
-        setTesseraExpression('idle');
-        updateTesseraMessage(tile.tesseraMessage);
-        return;
-    }
-    
-    // Reserved tile
+    // Reserved tile - surprised expression
     if (tile.isReserved) {
         setTesseraExpression('surprised');
         updateTesseraMessage(tesseraDefaultMessages.reserved);
         return;
     }
     
-    // Home tile
+    // Home tile - wave expression
     if (tile.id === 'home') {
         setTesseraExpression('wave');
         updateTesseraMessage(tesseraDefaultMessages.home);
         return;
     }
     
-    // Generate contextual message
+    // Check for custom message in tile data
+    if (tile.tesseraMessage) {
+        setTesseraExpression('wave'); // Happy when sharing custom info
+        updateTesseraMessage(tile.tesseraMessage);
+        return;
+    }
+    
+    // Generate contextual message based on tile properties
     let message = '';
-    setTesseraExpression('idle');
+    let expression = 'idle';
     
     // Check prerequisites
     const prereqCount = tile.prereqs?.length || 0;
     
     if (prereqCount >= 3) {
+        // Many prerequisites - surprised/concerned
+        expression = 'surprised';
         message = tesseraDefaultMessages.hasPrereqs(prereqCount);
     } else if (prereqCount === 0 && tile.section !== 'HOME') {
+        // Foundational tile - wave/encouraging
+        expression = 'wave';
         message = tesseraDefaultMessages.foundational;
     } else {
-        // Section-based messages
+        // Section-based - vary expression by section
         switch(tile.section) {
             case 'I':
+                expression = 'idle';
                 message = tesseraDefaultMessages.sectionI;
                 break;
             case 'II':
+                expression = 'idle';
                 message = tesseraDefaultMessages.sectionII;
                 break;
             case 'III':
+                expression = 'idle';
                 message = tesseraDefaultMessages.sectionIII;
                 break;
             case 'IV':
+                expression = 'idle';
                 message = tesseraDefaultMessages.sectionIV;
                 break;
             case 'V':
+                // ML section - excited/wave
+                expression = 'wave';
                 message = tesseraDefaultMessages.sectionV;
                 break;
             default:
+                expression = 'idle';
                 message = `Exploring: ${tile.title}`;
         }
     }
     
+    setTesseraExpression(expression);
     updateTesseraMessage(message);
 }
 
