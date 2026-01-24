@@ -271,6 +271,149 @@
             transform: scale(0.95);
         }
 
+        /* Tessera Guide Container */
+        #tessera-container {
+            position: absolute;
+            bottom: env(safe-area-inset-bottom, 20px);
+            right: 80px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        /* Speech Bubble */
+        #tessera-bubble {
+            max-width: 220px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: auto;
+        }
+
+        #tessera-bubble.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        #tessera-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 40px;
+            width: 16px;
+            height: 16px;
+            background: var(--glass-bg);
+            border-right: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            transform: rotate(45deg);
+        }
+
+        /* Tessera Character */
+        #tessera-character {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            cursor: pointer;
+            pointer-events: auto;
+            animation: tesseraFloat 3s ease-in-out infinite;
+        }
+
+        #tessera-character img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+        }
+
+        #tessera-character img.active {
+            opacity: 1;
+        }
+
+        @keyframes tesseraFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* Wave animation on load */
+        @keyframes tesseraWave {
+            0% { transform: translateY(20px) scale(0.8); opacity: 0; }
+            50% { transform: translateY(-10px) scale(1.05); }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        #tessera-character.entering {
+            animation: tesseraWave 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        #tessera-character.entering img.active {
+            opacity: 1;
+        }
+
+        /* Tessera name tag */
+        #tessera-name {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-top: 4px;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #tessera-container:hover #tessera-name {
+            opacity: 1;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            #tessera-container {
+                right: 70px;
+                bottom: env(safe-area-inset-bottom, 15px);
+            }
+            #tessera-character {
+                width: 70px;
+                height: 70px;
+            }
+            #tessera-bubble {
+                max-width: 180px;
+                font-size: 0.75rem;
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #tessera-container {
+                right: 60px;
+            }
+            #tessera-character {
+                width: 60px;
+                height: 60px;
+            }
+            #tessera-bubble {
+                max-width: 150px;
+            }
+        }
+
         /* Search Bar with expanding focus */
         #search-container {
             position: absolute;
@@ -376,6 +519,19 @@
     <div class="zoom-btn glass-panel" id="zoom-out">−</div>
 </div>
 
+<!-- Tessera Guide -->
+<div id="tessera-container">
+    <div id="tessera-bubble">
+        <span id="tessera-message">Welcome to MATH-CS COMPASS! Click any hexagon to explore.</span>
+    </div>
+    <div id="tessera-character" class="entering">
+        <img id="tessera-wave" src="../images/tessera/tessera_wave.png" alt="Tessera waving" class="active">
+        <img id="tessera-idle" src="../images/tessera/tessera_idle.png" alt="Tessera thinking">
+        <img id="tessera-surprised" src="../images/tessera/tessera_surprised.png" alt="Tessera surprised">
+    </div>
+    <div id="tessera-name">TESSERA</div>
+</div>
+
 <div id="loading">Loading curriculum data</div>
 
 <canvas id="mapCanvas"></canvas>
@@ -458,6 +614,36 @@ let searchResults = [];
 let highlightedSection = null;
 let highlightedSectionTime = 0;
 const SECTION_HIGHLIGHT_DURATION = 3000; // How long the highlight lasts
+
+// Tessera Guide State
+const tesseraState = {
+    currentExpression: 'wave', // 'wave', 'idle', 'surprised'
+    isInitialized: false,
+    bubbleTimeout: null,
+    lastTileId: null
+};
+
+// Default Tessera messages (can be overridden by curriculum.json tesseraMessage field)
+const tesseraDefaultMessages = {
+    welcome: "Welcome to MATH-CS COMPASS! Click any hexagon to explore.",
+    idle: [
+        "Take your time exploring the map!",
+        "Each hexagon is a piece of the puzzle.",
+        "Follow the connections to see how topics relate.",
+        "Hover over tiles to see their names.",
+        "Click a tile twice to open its page!"
+    ],
+    reserved: "I'm still preparing this topic... check back soon!",
+    home: "This is the center of your journey. Everything connects here.",
+    sectionI: "Linear Algebra forms the foundation of so much in CS!",
+    sectionII: "Calculus and Analysis — where change becomes measurable.",
+    sectionIII: "Probability & Statistics — understanding uncertainty.",
+    sectionIV: "Discrete Math & Algorithms — the heart of computer science.",
+    sectionV: "Machine Learning — where math meets intelligence!",
+    hasPrereqs: (count) => `This topic builds on ${count} prerequisite${count > 1 ? 's' : ''}. Make sure you're ready!`,
+    advanced: "An advanced topic! The journey here is worth it.",
+    foundational: "A great starting point for this section!"
+};
 
 /**
  * Load curriculum data from JSON file
@@ -544,6 +730,165 @@ async function loadCurriculumData() {
         document.getElementById('loading').textContent = 'Error loading data. Please refresh.';
         return false;
     }
+}
+
+/**
+ * Tessera Guide System
+ */
+function initTessera() {
+    if (tesseraState.isInitialized) return;
+    
+    const character = document.getElementById('tessera-character');
+    const bubble = document.getElementById('tessera-bubble');
+    
+    // Show welcome message after entry animation
+    setTimeout(() => {
+        bubble.classList.add('visible');
+        setTesseraExpression('wave');
+        
+        // Transition to idle after welcome
+        setTimeout(() => {
+            setTesseraExpression('idle');
+            character.classList.remove('entering');
+        }, 2500);
+    }, 800);
+    
+    // Click on Tessera to toggle bubble or show random tip
+    character.addEventListener('click', () => {
+        if (bubble.classList.contains('visible')) {
+            // Show a random idle message
+            const idleMessages = tesseraDefaultMessages.idle;
+            const randomMsg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
+            updateTesseraMessage(randomMsg);
+        } else {
+            bubble.classList.add('visible');
+        }
+    });
+    
+    tesseraState.isInitialized = true;
+}
+
+function setTesseraExpression(expression) {
+    const waveImg = document.getElementById('tessera-wave');
+    const idleImg = document.getElementById('tessera-idle');
+    const surprisedImg = document.getElementById('tessera-surprised');
+    
+    // Remove active class from all
+    waveImg.classList.remove('active');
+    idleImg.classList.remove('active');
+    surprisedImg.classList.remove('active');
+    
+    // Set the new expression
+    switch(expression) {
+        case 'wave':
+            waveImg.classList.add('active');
+            break;
+        case 'surprised':
+            surprisedImg.classList.add('active');
+            break;
+        case 'idle':
+        default:
+            idleImg.classList.add('active');
+            break;
+    }
+    
+    tesseraState.currentExpression = expression;
+}
+
+function updateTesseraMessage(message) {
+    const messageEl = document.getElementById('tessera-message');
+    const bubble = document.getElementById('tessera-bubble');
+    
+    // Fade out, change text, fade in
+    bubble.classList.remove('visible');
+    
+    setTimeout(() => {
+        messageEl.textContent = message;
+        bubble.classList.add('visible');
+    }, 200);
+}
+
+function updateTesseraForTile(tile) {
+    if (!tile) {
+        // No tile selected - show idle message after a delay
+        if (tesseraState.bubbleTimeout) {
+            clearTimeout(tesseraState.bubbleTimeout);
+        }
+        tesseraState.bubbleTimeout = setTimeout(() => {
+            setTesseraExpression('idle');
+            const idleMessages = tesseraDefaultMessages.idle;
+            const randomMsg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
+            updateTesseraMessage(randomMsg);
+        }, 1500);
+        tesseraState.lastTileId = null;
+        return;
+    }
+    
+    // Don't update if same tile
+    if (tile.id === tesseraState.lastTileId) return;
+    tesseraState.lastTileId = tile.id;
+    
+    // Clear any pending timeout
+    if (tesseraState.bubbleTimeout) {
+        clearTimeout(tesseraState.bubbleTimeout);
+    }
+    
+    // Check for custom message in tile data
+    if (tile.tesseraMessage) {
+        setTesseraExpression('idle');
+        updateTesseraMessage(tile.tesseraMessage);
+        return;
+    }
+    
+    // Reserved tile
+    if (tile.isReserved) {
+        setTesseraExpression('surprised');
+        updateTesseraMessage(tesseraDefaultMessages.reserved);
+        return;
+    }
+    
+    // Home tile
+    if (tile.id === 'home') {
+        setTesseraExpression('wave');
+        updateTesseraMessage(tesseraDefaultMessages.home);
+        return;
+    }
+    
+    // Generate contextual message
+    let message = '';
+    setTesseraExpression('idle');
+    
+    // Check prerequisites
+    const prereqCount = tile.prereqs?.length || 0;
+    
+    if (prereqCount >= 3) {
+        message = tesseraDefaultMessages.hasPrereqs(prereqCount);
+    } else if (prereqCount === 0 && tile.section !== 'HOME') {
+        message = tesseraDefaultMessages.foundational;
+    } else {
+        // Section-based messages
+        switch(tile.section) {
+            case 'I':
+                message = tesseraDefaultMessages.sectionI;
+                break;
+            case 'II':
+                message = tesseraDefaultMessages.sectionII;
+                break;
+            case 'III':
+                message = tesseraDefaultMessages.sectionIII;
+                break;
+            case 'IV':
+                message = tesseraDefaultMessages.sectionIV;
+                break;
+            case 'V':
+                message = tesseraDefaultMessages.sectionV;
+                break;
+            default:
+                message = `Exploring: ${tile.title}`;
+        }
+    }
+    
+    updateTesseraMessage(message);
 }
 
 function setup() {
@@ -1094,10 +1439,11 @@ function render() {
 }
 
 /**
- * Update info panel - no longer used, kept for compatibility
+ * Update info panel and Tessera guide
  */
 function updateInfoPanel(tile) {
-    // Info panel removed - function kept for compatibility
+    // Update Tessera with the selected tile
+    updateTesseraForTile(tile);
 }
 
 /**
@@ -1423,6 +1769,7 @@ async function init() {
     const loaded = await loadCurriculumData();
     if (loaded) {
         render();
+        initTessera();
     }
 }
 
