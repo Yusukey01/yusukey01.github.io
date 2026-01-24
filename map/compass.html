@@ -325,8 +325,8 @@
 
         /* Tessera Character */
         #tessera-character {
-            width: 100px;
-            height: 100px;
+            width: 160px;
+            height: 160px;
             position: relative;
             cursor: pointer;
             pointer-events: auto;
@@ -835,7 +835,7 @@ function updateTesseraForTile(tile) {
         clearTimeout(tesseraState.bubbleTimeout);
     }
     
-    // Reserved tile - surprised expression
+    // Reserved tile - surprised expression (Tessera is apologetic)
     if (tile.isReserved) {
         setTesseraExpression('surprised');
         updateTesseraMessage(tesseraDefaultMessages.reserved);
@@ -849,60 +849,16 @@ function updateTesseraForTile(tile) {
         return;
     }
     
-    // Check for custom message in tile data
+    // Custom message from curriculum.json - wave expression (happy to share)
     if (tile.tesseraMessage) {
-        setTesseraExpression('wave'); // Happy when sharing custom info
+        setTesseraExpression('wave');
         updateTesseraMessage(tile.tesseraMessage);
         return;
     }
     
-    // Generate contextual message based on tile properties
-    let message = '';
-    let expression = 'idle';
-    
-    // Check prerequisites
-    const prereqCount = tile.prereqs?.length || 0;
-    
-    if (prereqCount >= 3) {
-        // Many prerequisites - surprised/concerned
-        expression = 'surprised';
-        message = tesseraDefaultMessages.hasPrereqs(prereqCount);
-    } else if (prereqCount === 0 && tile.section !== 'HOME') {
-        // Foundational tile - wave/encouraging
-        expression = 'wave';
-        message = tesseraDefaultMessages.foundational;
-    } else {
-        // Section-based - vary expression by section
-        switch(tile.section) {
-            case 'I':
-                expression = 'idle';
-                message = tesseraDefaultMessages.sectionI;
-                break;
-            case 'II':
-                expression = 'idle';
-                message = tesseraDefaultMessages.sectionII;
-                break;
-            case 'III':
-                expression = 'idle';
-                message = tesseraDefaultMessages.sectionIII;
-                break;
-            case 'IV':
-                expression = 'idle';
-                message = tesseraDefaultMessages.sectionIV;
-                break;
-            case 'V':
-                // ML section - excited/wave
-                expression = 'wave';
-                message = tesseraDefaultMessages.sectionV;
-                break;
-            default:
-                expression = 'idle';
-                message = `Exploring: ${tile.title}`;
-        }
-    }
-    
-    setTesseraExpression(expression);
-    updateTesseraMessage(message);
+    // Fallback for tiles without custom messages (shouldn't happen if curriculum.json is complete)
+    setTesseraExpression('idle');
+    updateTesseraMessage(`Exploring: ${tile.title}`);
 }
 
 function setup() {
@@ -1578,7 +1534,7 @@ function handleInteraction(clientX, clientY) {
             if (tile.isReserved) {
                 activeTileId = tile.id;
                 document.getElementById('status').innerText = `Coming Soon - New content planned`;
-                updateInfoPanel(null);
+                updateInfoPanel(tile);
                 panToTile(tile);
                 break;
             }
