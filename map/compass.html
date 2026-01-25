@@ -450,56 +450,46 @@
                 0 0 20px rgba(100, 180, 255, 0.2);
         }
 
-        /* Desktop: Show full labels, hide numerals */
-        .legend-numeral {
+        /* Compact Legend - Roman Numeral Icons for ALL screen sizes */
+        #legend {
+            padding: 8px 10px;
+            left: 10px;
+        }
+        #legend h4 {
             display: none;
         }
-        .legend-items {
-            display: block;
+        #legend .legend-items {
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+        }
+        .legend-item {
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 4px;
+        }
+        .legend-item span.legend-label {
+            display: none;
+        }
+        .legend-color {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            margin-right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .legend-numeral {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
 
-        /* Mobile Compact Legend - Roman Numeral Icons Only */
+        /* Mobile-specific adjustments */
         @media (max-width: 768px) {
-            #legend {
-                padding: 8px 10px;
-                left: 10px;
-                bottom: env(safe-area-inset-bottom, 15px);
-            }
-            #legend h4 {
-                display: none;
-            }
-            #legend .legend-items {
-                display: flex;
-                flex-direction: row;
-                gap: 6px;
-            }
-            .legend-item {
-                flex-direction: column;
-                align-items: center;
-                margin: 0;
-                padding: 4px;
-            }
-            .legend-item span.legend-label {
-                display: none;
-            }
-            .legend-item .legend-numeral {
-                display: flex;
-            }
-            .legend-color {
-                width: 32px;
-                height: 32px;
-                border-radius: 6px;
-                margin-right: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .legend-numeral {
-                font-size: 0.75rem;
-                font-weight: 700;
-                color: white;
-                text-shadow: 0 1px 3px rgba(0,0,0,0.6);
-            }
             #search-input {
                 width: 160px;
             }
@@ -684,7 +674,8 @@ const tesseraState = {
     bubbleTimeout: null,
     lastTileId: null,
     clickCount: 0, // Track consecutive clicks on Tessera
-    lastClickTime: 0 // To reset click count after inactivity
+    lastClickTime: 0, // To reset click count after inactivity
+    showingSectionExplain: false // Prevent idle messages from overriding section explanations
 };
 
 // Tessera click reactions (progressive teasing)
@@ -941,10 +932,16 @@ function updateTesseraForTile(tile) {
     
     if (!tile) {
         // No tile selected - show idle message after a delay
+        // BUT only if we're not showing a section explanation
+        if (tesseraState.showingSectionExplain) {
+            return; // Don't override section explanation with idle
+        }
+        
         if (tesseraState.bubbleTimeout) {
             clearTimeout(tesseraState.bubbleTimeout);
         }
         tesseraState.bubbleTimeout = setTimeout(() => {
+            if (tesseraState.showingSectionExplain) return; // Double check
             setTesseraExpression('idle');
             const idleMessages = tesseraDefaultMessages.idle;
             const randomMsg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
@@ -953,6 +950,9 @@ function updateTesseraForTile(tile) {
         tesseraState.lastTileId = null;
         return;
     }
+    
+    // User selected a tile - this takes priority, clear section explain state
+    tesseraState.showingSectionExplain = false;
     
     // Don't update if same tile
     if (tile.id === tesseraState.lastTileId) return;
@@ -1003,6 +1003,11 @@ function updateTesseraForTile(tile) {
 function triggerTesseraSectionExplain(section) {
     const explanation = tesseraSectionExplanations[section];
     if (explanation) {
+        // Clear any pending idle timeout so it doesn't override our message
+        if (tesseraState.bubbleTimeout) {
+            clearTimeout(tesseraState.bubbleTimeout);
+        }
+        
         setTesseraExpression(explanation.expression);
         updateTesseraMessage(explanation.message);
         
@@ -1011,6 +1016,15 @@ function triggerTesseraSectionExplain(section) {
         if (bubble && !bubble.classList.contains('visible')) {
             bubble.classList.add('visible');
         }
+        
+        // Mark that we're showing a section explanation (prevent quick override)
+        tesseraState.showingSectionExplain = true;
+        tesseraState.lastTileId = null; // Reset so tile selection can still work
+        
+        // After a longer duration, allow idle messages again
+        tesseraState.bubbleTimeout = setTimeout(() => {
+            tesseraState.showingSectionExplain = false;
+        }, 8000); // Keep section explanation for 8 seconds
     }
 }
 
