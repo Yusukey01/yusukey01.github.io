@@ -636,7 +636,7 @@ const tesseraState = {
 const tesseraClickReactions = [
     { expression: 'excited', message: "Oh! Need a tip? Try clicking the legend to explore sections!" },
     { expression: 'confident', message: "I've organized all these topics for you. Take your time!" },
-    { expression: 'proud', message: "77 topics and counting! I'm quite proud of this map." },
+    { expression: 'proud', message: () => `${knowledgeData.filter(t => !t.isReserved && t.id !== 'home').length} topics and counting! I'm quite proud of this map.` },
     { expression: 'surprised', message: "Wow, you really like clicking me! I'm Tessera, your guide." },
     { expression: 'calm', message: "Just browsing? That's okay, I'll be here when you need me." },
     { expression: 'shocked', message: "H-hey! That tickles!" },
@@ -792,8 +792,11 @@ function initTessera() {
         const reactionIndex = Math.min(tesseraState.clickCount, tesseraClickReactions.length - 1);
         const reaction = tesseraClickReactions[reactionIndex];
         
+        // Handle message as string or function
+        const message = typeof reaction.message === 'function' ? reaction.message() : reaction.message;
+        
         setTesseraExpression(reaction.expression);
-        updateTesseraMessage(reaction.message);
+        updateTesseraMessage(message);
         
         // Increment click count
         tesseraState.clickCount++;
