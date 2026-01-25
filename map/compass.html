@@ -607,7 +607,7 @@ const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
 // State
-let scale = 80;
+let scale = 50; // Start zoomed out to show full map and entry animation
 const minScale = 40, maxScale = 250;
 let offsetX = window.innerWidth / 2;
 let offsetY = window.innerHeight / 2;
@@ -639,6 +639,14 @@ let entryAnimationStartTime = 0;
 const ENTRY_ANIMATION_DURATION = 1500; // Total duration for all tiles to appear
 const ENTRY_STAGGER_DELAY = 30; // ms between each tile appearing
 const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animation
+
+// Exit Animation State (reverse of entry)
+let exitAnimationActive = false;
+let exitAnimationStartTime = 0;
+let exitTargetUrl = null;
+const EXIT_ANIMATION_DURATION = 800; // Faster than entry for snappy feel
+const EXIT_STAGGER_DELAY = 15; // Faster stagger
+const EXIT_TILE_DURATION = 400; // Duration for each tile's individual animation
 
 // Hover Animation State
 const hoverState = {};
@@ -1059,6 +1067,11 @@ const Easing = {
         const c3 = c1 + 1;
         return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
     },
+    easeInBack: t => {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return c3 * t * t * t - c1 * t * t;
+    },
     easeInOutQuad: t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 };
 
@@ -1076,6 +1089,66 @@ function getEntryAnimationProgress(tileIndex) {
     if (tileElapsed >= ENTRY_TILE_DURATION) return 1;
     
     return Easing.easeOutBack(tileElapsed / ENTRY_TILE_DURATION);
+}
+
+/**
+ * Get exit animation progress for a tile (reverse of entry)
+ * Returns 1 (fully visible) to 0 (gone)
+ */
+function getExitAnimationProgress(tileIndex) {
+    if (!exitAnimationActive) return 1;
+    
+    const elapsed = Date.now() - exitAnimationStartTime;
+    // Reverse order: tiles further from center disappear first
+    const reversedIndex = knowledgeData.length - 1 - tileIndex;
+    const tileStartTime = reversedIndex * EXIT_STAGGER_DELAY;
+    const tileElapsed = elapsed - tileStartTime;
+    
+    if (tileElapsed < 0) return 1;
+    if (tileElapsed >= EXIT_TILE_DURATION) return 0;
+    
+    // Use easeInBack for a "sucking in" effect (reverse of easeOutBack)
+    return 1 - Easing.easeInBack(tileElapsed / EXIT_TILE_DURATION);
+}
+
+/**
+ * Trigger exit animation then navigate to URL
+ */
+function triggerExitAnimation(url) {
+    if (exitAnimationActive) return; // Already exiting
+    
+    exitAnimationActive = true;
+    exitAnimationStartTime = Date.now();
+    exitTargetUrl = url;
+    
+    // Update Tessera for departure
+    setTesseraExpression('wave');
+    updateTesseraMessage("See you there! Happy learning!");
+    
+    // Fade out UI elements for cleaner transition
+    const uiElements = ['#ui-layer', '#search-container', '#home-btn', '#legend', '#zoom-controls'];
+    uiElements.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            el.style.transition = 'opacity 0.4s ease-out';
+            el.style.opacity = '0';
+        }
+    });
+    
+    // Fade out Tessera slightly later
+    setTimeout(() => {
+        const tessera = document.getElementById('tessera-container');
+        if (tessera) {
+            tessera.style.transition = 'opacity 0.3s ease-out';
+            tessera.style.opacity = '0';
+        }
+    }, 300);
+    
+    // Navigate after animation completes
+    const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION + 100;
+    setTimeout(() => {
+        window.location.assign(url);
+    }, Math.min(totalExitDuration, 1000)); // Cap at 1 second max
 }
 
 /**
@@ -1422,6 +1495,13 @@ function render() {
         const entryProgress = getEntryAnimationProgress(index);
         if (entryProgress === 0) return; // Don't draw if not yet visible
         
+        // Exit animation progress (1 = visible, 0 = gone)
+        const exitProgress = getExitAnimationProgress(index);
+        if (exitProgress === 0) return; // Don't draw if already gone
+        
+        // Combined animation progress
+        const animProgress = Math.min(entryProgress, exitProgress);
+        
         let alpha = activeTile ? 0.12 : 1.0;
         let glow = false;
         let isIdleBlinking = false;
@@ -1475,11 +1555,11 @@ function render() {
         }
 
         const color = SECTION_COLORS[tile.section] || '#888888';
-        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, entryProgress, isHovered, isSearchMatch || isSectionHighlight);
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, animProgress, isHovered, isSearchMatch || isSectionHighlight);
         
         // Part number background
         const partMatch = tile.id.match(/-(\d+)$/);
-        if (partMatch && !isReserved && entryProgress > 0.8) {
+        if (partMatch && !isReserved && animProgress > 0.8) {
             const partNum = partMatch[1];
             ctx.save();
             
@@ -1489,7 +1569,7 @@ function render() {
             ctx.textBaseline = "middle";
             
             ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-            ctx.globalAlpha = alpha * entryProgress * 0.6;
+            ctx.globalAlpha = alpha * animProgress * 0.6;
             
             ctx.fillText(partNum, x, y);
             ctx.restore();
@@ -1498,7 +1578,7 @@ function render() {
         // Text rendering
         const zoomOpacity = Math.max(0, Math.min(1, (scale - 40) / (60 - 40)));
 
-        if (zoomOpacity > 0 && entryProgress > 0.5) {
+        if (zoomOpacity > 0 && animProgress > 0.5) {
             ctx.save();
             
             ctx.fillStyle = isReserved ? "rgba(255,255,255,0.5)" : "white"; 
@@ -1507,7 +1587,7 @@ function render() {
             ctx.font = isReserved ? `italic ${fontSize}px 'Segoe UI', sans-serif` : `bold ${fontSize}px 'Segoe UI', sans-serif`;
 
             const textBaseAlpha = isReserved ? 0.5 : (alpha > 0.5) ? 1.0 : 0.7;
-            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity * entryProgress;
+            ctx.globalAlpha = textBaseAlpha * globalAlphaFactor * zoomOpacity * animProgress;
 
             wrapText(tile.title, x, y, scale * 1.3, fontSize * 1.2);
             
@@ -1708,7 +1788,7 @@ function handleInteraction(clientX, clientY) {
             
             if (activeTileId === tile.id) {
                 if (tile.url) {
-                    window.location.assign(tile.url);
+                    triggerExitAnimation(tile.url);
                 }
             } else {
                 activeTileId = tile.id;
@@ -1855,7 +1935,7 @@ window.addEventListener('keydown', e => {
     }
     if (e.key === 'Enter' && activeTileId) {
         const tile = knowledgeData.find(t => t.id === activeTileId);
-        if (tile && tile.url) window.location.assign(tile.url);
+        if (tile && tile.url) triggerExitAnimation(tile.url);
     }
 });
 
@@ -1868,7 +1948,7 @@ document.getElementById('search-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && searchResults.length > 0) {
         const tile = knowledgeData.find(t => t.id === searchResults[0]);
         if (tile && tile.url) {
-            window.location.assign(tile.url);
+            triggerExitAnimation(tile.url);
         }
     }
 });
