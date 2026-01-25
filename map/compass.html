@@ -391,8 +391,8 @@
                 bottom: env(safe-area-inset-bottom, 15px);
             }
             #tessera-character {
-                width: 70px;
-                height: 70px;
+                width: 110px;
+                height: 110px;
             }
             #tessera-bubble {
                 max-width: 180px;
@@ -406,8 +406,8 @@
                 right: 60px;
             }
             #tessera-character {
-                width: 60px;
-                height: 60px;
+                width: 90px;
+                height: 90px;
             }
             #tessera-bubble {
                 max-width: 150px;
@@ -527,7 +527,14 @@
     <div id="tessera-character" class="entering">
         <img id="tessera-wave" src="../images/tessera/tessera_wave.png" alt="Tessera waving" class="active">
         <img id="tessera-idle" src="../images/tessera/tessera_idle.png" alt="Tessera thinking">
+        <img id="tessera-frustrated" src="../images/tessera/tessera_frustrated.png" alt="Tessera frustrated">
+        <img id="tessera-excited" src="../images/tessera/tessera_excited.png" alt="Tessera excited">
+        <img id="tessera-confident" src="../images/tessera/tessera_confident.png" alt="Tessera confident">
+        <img id="tessera-proud" src="../images/tessera/tessera_proud.png" alt="Tessera proud">
         <img id="tessera-surprised" src="../images/tessera/tessera_surprised.png" alt="Tessera surprised">
+        <img id="tessera-calm" src="../images/tessera/tessera_calm.png" alt="Tessera calm">
+        <img id="tessera-worried" src="../images/tessera/tessera_worried.png" alt="Tessera worried">
+        <img id="tessera-shocked" src="../images/tessera/tessera_shocked.png" alt="Tessera shocked">
     </div>
     <div id="tessera-name">TESSERA</div>
 </div>
@@ -617,11 +624,24 @@ const SECTION_HIGHLIGHT_DURATION = 3000; // How long the highlight lasts
 
 // Tessera Guide State
 const tesseraState = {
-    currentExpression: 'wave', // 'wave', 'idle', 'surprised'
+    currentExpression: 'wave', // 'wave', 'idle', 'frustrated', 'excited', 'confident', 'surprised', 'calm', 'shocked'
     isInitialized: false,
     bubbleTimeout: null,
-    lastTileId: null
+    lastTileId: null,
+    clickCount: 0, // Track consecutive clicks on Tessera
+    lastClickTime: 0 // To reset click count after inactivity
 };
+
+// Tessera click reactions (progressive teasing)
+const tesseraClickReactions = [
+    { expression: 'excited', message: "Oh! Need a tip? Try clicking the legend to explore sections!" },
+    { expression: 'confident', message: "I've organized all these topics for you. Take your time!" },
+    { expression: 'proud', message: "77 topics and counting! I'm quite proud of this map." },
+    { expression: 'surprised', message: "Wow, you really like clicking me! I'm Tessera, your guide." },
+    { expression: 'calm', message: "Just browsing? That's okay, I'll be here when you need me." },
+    { expression: 'shocked', message: "H-hey! That tickles!" },
+    { expression: 'frustrated', message: "Okay okay, I get it! Go explore the map already!" }
+];
 
 // Default Tessera messages (can be overridden by curriculum.json tesseraMessage field)
 const tesseraDefaultMessages = {
@@ -755,14 +775,31 @@ function initTessera() {
         }, 2500);
     }, 800);
     
-    // Click on Tessera to toggle bubble or show random tip
-    character.addEventListener('click', () => {
-        if (bubble.classList.contains('visible')) {
-            // Show a random idle message
-            const idleMessages = tesseraDefaultMessages.idle;
-            const randomMsg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
-            updateTesseraMessage(randomMsg);
-        } else {
+    // Click on Tessera - progressive teasing reactions
+    character.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent click from affecting map
+        
+        const now = Date.now();
+        
+        // Reset click count if more than 10 seconds since last click
+        if (now - tesseraState.lastClickTime > 10000) {
+            tesseraState.clickCount = 0;
+        }
+        
+        tesseraState.lastClickTime = now;
+        
+        // Get reaction based on click count
+        const reactionIndex = Math.min(tesseraState.clickCount, tesseraClickReactions.length - 1);
+        const reaction = tesseraClickReactions[reactionIndex];
+        
+        setTesseraExpression(reaction.expression);
+        updateTesseraMessage(reaction.message);
+        
+        // Increment click count
+        tesseraState.clickCount++;
+        
+        // Make bubble visible if not already
+        if (!bubble.classList.contains('visible')) {
             bubble.classList.add('visible');
         }
     });
@@ -770,28 +807,38 @@ function initTessera() {
     tesseraState.isInitialized = true;
 }
 
+// Reset Tessera to normal state (called when user interacts with tiles)
+function resetTesseraState() {
+    tesseraState.clickCount = 0;
+}
+
 function setTesseraExpression(expression) {
-    const waveImg = document.getElementById('tessera-wave');
-    const idleImg = document.getElementById('tessera-idle');
-    const surprisedImg = document.getElementById('tessera-surprised');
+    // Get all expression images
+    const expressions = {
+        wave: document.getElementById('tessera-wave'),
+        idle: document.getElementById('tessera-idle'),
+        frustrated: document.getElementById('tessera-frustrated'),
+        excited: document.getElementById('tessera-excited'),
+        confident: document.getElementById('tessera-confident'),
+        proud: document.getElementById('tessera-proud'),
+        surprised: document.getElementById('tessera-surprised'),
+        calm: document.getElementById('tessera-calm'),
+        worried: document.getElementById('tessera-worried'),
+        shocked: document.getElementById('tessera-shocked')
+    };
     
     // Remove active class from all
-    waveImg.classList.remove('active');
-    idleImg.classList.remove('active');
-    surprisedImg.classList.remove('active');
+    Object.values(expressions).forEach(img => {
+        if (img) img.classList.remove('active');
+    });
     
     // Set the new expression
-    switch(expression) {
-        case 'wave':
-            waveImg.classList.add('active');
-            break;
-        case 'surprised':
-            surprisedImg.classList.add('active');
-            break;
-        case 'idle':
-        default:
-            idleImg.classList.add('active');
-            break;
+    if (expressions[expression]) {
+        expressions[expression].classList.add('active');
+    } else {
+        // Default to idle if expression not found
+        expressions.idle.classList.add('active');
+        expression = 'idle';
     }
     
     tesseraState.currentExpression = expression;
@@ -811,6 +858,9 @@ function updateTesseraMessage(message) {
 }
 
 function updateTesseraForTile(tile) {
+    // Reset click count when user interacts with tiles (appropriate action)
+    resetTesseraState();
+    
     if (!tile) {
         // No tile selected - show idle message after a delay
         if (tesseraState.bubbleTimeout) {
@@ -835,10 +885,15 @@ function updateTesseraForTile(tile) {
         clearTimeout(tesseraState.bubbleTimeout);
     }
     
-    // Reserved tile - surprised expression (Tessera is apologetic)
+    // Reserved tile - randomly frustrated or worried
     if (tile.isReserved) {
-        setTesseraExpression('surprised');
-        updateTesseraMessage(tesseraDefaultMessages.reserved);
+        const reservedReactions = [
+            { expression: 'frustrated', message: "I'm still preparing this topic... check back soon!" },
+            { expression: 'worried', message: "This section isn't ready yet... I'm working on it!" }
+        ];
+        const reaction = reservedReactions[Math.floor(Math.random() * reservedReactions.length)];
+        setTesseraExpression(reaction.expression);
+        updateTesseraMessage(reaction.message);
         return;
     }
     
