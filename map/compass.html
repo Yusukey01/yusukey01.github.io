@@ -450,13 +450,55 @@
                 0 0 20px rgba(100, 180, 255, 0.2);
         }
 
+        /* Desktop: Show full labels, hide numerals */
+        .legend-numeral {
+            display: none;
+        }
+        .legend-items {
+            display: block;
+        }
+
+        /* Mobile Compact Legend - Roman Numeral Icons Only */
         @media (max-width: 768px) {
             #legend {
-                font-size: 0.7rem;
-                padding: 10px 14px;
+                padding: 8px 10px;
+                left: 10px;
+                bottom: env(safe-area-inset-bottom, 15px);
             }
             #legend h4 {
+                display: none;
+            }
+            #legend .legend-items {
+                display: flex;
+                flex-direction: row;
+                gap: 6px;
+            }
+            .legend-item {
+                flex-direction: column;
+                align-items: center;
+                margin: 0;
+                padding: 4px;
+            }
+            .legend-item span.legend-label {
+                display: none;
+            }
+            .legend-item .legend-numeral {
+                display: flex;
+            }
+            .legend-color {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                margin-right: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .legend-numeral {
                 font-size: 0.75rem;
+                font-weight: 700;
+                color: white;
+                text-shadow: 0 1px 3px rgba(0,0,0,0.6);
             }
             #search-input {
                 width: 160px;
@@ -492,25 +534,37 @@
 
 <div id="legend" class="glass-panel">
     <h4>Sections</h4>
-    <div class="legend-item" data-section="I">
-        <div class="legend-color" style="background: #1565c0; color: #1565c0;"></div>
-        <span>I - Linear Algebra to Algebraic Foundations</span>
-    </div>
-    <div class="legend-item" data-section="II">
-        <div class="legend-color" style="background: #2e7d32; color: #2e7d32;"></div>
-        <span>II - Calculus to Optimization & Analysis</span>
-    </div>
-    <div class="legend-item" data-section="III">
-        <div class="legend-color" style="background: #00838f; color: #00838f;"></div>
-        <span>III - Probability & Statistics</span>
-    </div>
-    <div class="legend-item" data-section="IV">
-        <div class="legend-color" style="background: #6a1b9a; color: #6a1b9a;"></div>
-        <span>IV - Discrete Mathematics & Algorithms</span>
-    </div>
-    <div class="legend-item" data-section="V">
-        <div class="legend-color" style="background: #ef6c00; color: #ef6c00;"></div>
-        <span>V - Machine Learning</span>
+    <div class="legend-items">
+        <div class="legend-item" data-section="I">
+            <div class="legend-color" style="background: #1565c0; color: #1565c0;">
+                <span class="legend-numeral">I</span>
+            </div>
+            <span class="legend-label">I - Linear Algebra to Algebraic Foundations</span>
+        </div>
+        <div class="legend-item" data-section="II">
+            <div class="legend-color" style="background: #2e7d32; color: #2e7d32;">
+                <span class="legend-numeral">II</span>
+            </div>
+            <span class="legend-label">II - Calculus to Optimization & Analysis</span>
+        </div>
+        <div class="legend-item" data-section="III">
+            <div class="legend-color" style="background: #00838f; color: #00838f;">
+                <span class="legend-numeral">III</span>
+            </div>
+            <span class="legend-label">III - Probability & Statistics</span>
+        </div>
+        <div class="legend-item" data-section="IV">
+            <div class="legend-color" style="background: #6a1b9a; color: #6a1b9a;">
+                <span class="legend-numeral">IV</span>
+            </div>
+            <span class="legend-label">IV - Discrete Mathematics & Algorithms</span>
+        </div>
+        <div class="legend-item" data-section="V">
+            <div class="legend-color" style="background: #ef6c00; color: #ef6c00;">
+                <span class="legend-numeral">V</span>
+            </div>
+            <span class="legend-label">V - Machine Learning</span>
+        </div>
     </div>
 </div>
 
@@ -656,14 +710,33 @@ const tesseraDefaultMessages = {
     ],
     reserved: "I'm still preparing this topic... check back soon!",
     home: "This is the center of your journey. Everything connects here.",
-    sectionI: "Linear Algebra forms the foundation of so much in CS!",
-    sectionII: "Calculus and Analysis — where change becomes measurable.",
-    sectionIII: "Probability & Statistics — understanding uncertainty.",
-    sectionIV: "Discrete Math & Algorithms — the heart of computer science.",
-    sectionV: "Machine Learning — where math meets intelligence!",
     hasPrereqs: (count) => `This topic builds on ${count} prerequisite${count > 1 ? 's' : ''}. Make sure you're ready!`,
     advanced: "An advanced topic! The journey here is worth it.",
     foundational: "A great starting point for this section!"
+};
+
+// Section explanations for Tessera (triggered by legend tap)
+const tesseraSectionExplanations = {
+    I: {
+        expression: 'confident',
+        message: "Section I: Linear Algebra & Algebraic Foundations — vectors, matrices, and abstract algebra power everything from graphics to cryptography!"
+    },
+    II: {
+        expression: 'excited',
+        message: "Section II: Calculus to Optimization — gradients, integrals, and metric spaces. Essential for understanding how ML models learn!"
+    },
+    III: {
+        expression: 'proud',
+        message: "Section III: Probability & Statistics — uncertainty is everywhere! Master this to understand data and predictions."
+    },
+    IV: {
+        expression: 'calm',
+        message: "Section IV: Discrete Math & Algorithms — the heart of CS! Graphs, logic, and computational thinking."
+    },
+    V: {
+        expression: 'surprised',
+        message: "Section V: Machine Learning — where all the math comes together! Neural networks, optimization, and AI magic."
+    }
 };
 
 /**
@@ -921,6 +994,24 @@ function updateTesseraForTile(tile) {
     // Fallback for tiles without custom messages (shouldn't happen if curriculum.json is complete)
     setTesseraExpression('idle');
     updateTesseraMessage(`Exploring: ${tile.title}`);
+}
+
+/**
+ * Trigger Tessera to explain a section when legend item is tapped
+ * @param {string} section - Section ID (I, II, III, IV, V)
+ */
+function triggerTesseraSectionExplain(section) {
+    const explanation = tesseraSectionExplanations[section];
+    if (explanation) {
+        setTesseraExpression(explanation.expression);
+        updateTesseraMessage(explanation.message);
+        
+        // Make bubble visible
+        const bubble = document.getElementById('tessera-bubble');
+        if (bubble && !bubble.classList.contains('visible')) {
+            bubble.classList.add('visible');
+        }
+    }
 }
 
 function setup() {
@@ -1784,12 +1875,14 @@ document.querySelectorAll('.legend-item').forEach(item => {
         // Could highlight all tiles of this section on hover (optional)
     });
     
-    // Click to pan and highlight section
+    // Click to pan, highlight section, and have Tessera explain
     item.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent event from bubbling to canvas
         const section = item.dataset.section;
         if (section) {
             panToSection(section);
+            // Trigger Tessera to explain the section
+            triggerTesseraSectionExplain(section);
         }
     });
 });
