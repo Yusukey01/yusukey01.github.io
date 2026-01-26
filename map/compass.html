@@ -644,9 +644,8 @@ const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animatio
 let exitAnimationActive = false;
 let exitAnimationStartTime = 0;
 let exitTargetUrl = null;
-const EXIT_ANIMATION_DURATION = 500; // Fast collapse
-const EXIT_STAGGER_DELAY = 8; // Very fast stagger
-const EXIT_TILE_DURATION = 250; // Quick individual tile animation
+const EXIT_STAGGER_DELAY = 10; // ms between each tile disappearing
+const EXIT_TILE_DURATION = 300; // Duration for each tile's individual animation
 
 // Hover Animation State
 const hoverState = {};
@@ -1135,20 +1134,22 @@ function triggerExitAnimation(url) {
         }
     });
     
-    // Fade out Tessera slightly later
+    // Calculate actual animation duration based on tile count
+    const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION;
+    
+    // Fade out Tessera near the end of animation
     setTimeout(() => {
         const tessera = document.getElementById('tessera-container');
         if (tessera) {
             tessera.style.transition = 'opacity 0.3s ease-out';
             tessera.style.opacity = '0';
         }
-    }, 300);
+    }, totalExitDuration - 300);
     
-    // Navigate after animation completes
-    const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION + 50;
+    // Navigate after full animation completes (with small buffer)
     setTimeout(() => {
         window.location.assign(url);
-    }, Math.min(totalExitDuration, 600)); // Cap at 600ms max
+    }, totalExitDuration + 150);
 }
 
 /**
@@ -2026,10 +2027,27 @@ function resetMapState() {
     document.getElementById('search-input').value = '';
     document.getElementById('status').innerText = "Explore the Knowledge Map";
     
-    // Reset Tessera
+    // Reset Tessera completely
     tesseraState.showingSectionExplain = false;
     tesseraState.lastTileId = null;
-    initTessera();
+    tesseraState.clickCount = 0;
+    if (tesseraState.bubbleTimeout) {
+        clearTimeout(tesseraState.bubbleTimeout);
+    }
+    
+    // Show welcome message again
+    setTesseraExpression('wave');
+    updateTesseraMessage(tesseraDefaultMessages.welcome);
+    
+    // Re-trigger Tessera entering animation
+    const character = document.getElementById('tessera-character');
+    if (character) {
+        character.classList.add('entering');
+        setTimeout(() => {
+            character.classList.remove('entering');
+            setTesseraExpression('idle');
+        }, 2500);
+    }
 }
 
 async function init() {
