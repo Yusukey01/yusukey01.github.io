@@ -493,9 +493,117 @@
                 width: 180px;
             }
         }
+
+        /* Gate Animation Overlay */
+        #gate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.4s ease-out;
+        }
+
+        #gate-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #gate-overlay.hidden {
+            display: none;
+        }
+
+        #gate-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            animation: gateFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes gateFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.02); }
+        }
+
+        .gate-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            filter: drop-shadow(0 0 20px rgba(0, 180, 220, 0.3));
+        }
+
+        .gate-image.active {
+            opacity: 1;
+        }
+
+        /* Glow effect behind gate */
+        #gate-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 180, 220, 0.15) 0%, transparent 70%);
+            animation: glowPulse 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Gate expand animation */
+        #gate-container.expanding {
+            animation: gateExpand 0.5s ease-in forwards;
+        }
+
+        @keyframes gateExpand {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        #gate-glow.expanding {
+            animation: glowExpand 0.5s ease-in forwards;
+        }
+
+        @keyframes glowExpand {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(5); opacity: 0; }
+        }
+
+        /* Hide UI during gate animation */
+        body.gate-active #ui-layer,
+        body.gate-active #search-container,
+        body.gate-active #legend,
+        body.gate-active #zoom-controls,
+        body.gate-active #tessera-container,
+        body.gate-active #loading {
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
+
+<!-- Gate Animation Overlay -->
+<div id="gate-overlay">
+    <div id="gate-container">
+        <img id="gate-0" src="../images/gate/gate_0.png" alt="" class="gate-image active">
+        <img id="gate-1" src="../images/gate/gate_1.png" alt="" class="gate-image">
+        <img id="gate-2" src="../images/gate/gate_2.png" alt="" class="gate-image">
+    </div>
+    <div id="gate-glow"></div>
+</div>
 
 <div id="ui-layer">
     <h1>MATH-CS COMPASS</h1>
@@ -564,7 +672,6 @@
         <img id="tessera-worried" src="../images/tessera/tessera_worried.png" alt="Tessera worried">
         <img id="tessera-laughing" src="../images/tessera/tessera_laughing.png" alt="Tessera laughing">
         <img id="tessera-shocked" src="../images/tessera/tessera_shocked.png" alt="Tessera shocked">
-        <img id="tessera-ease" src="../images/tessera/tessera_ease.png" alt="Tessera ease">
     </div>
     <div id="tessera-name">TESSERA</div>
 </div>
@@ -629,8 +736,8 @@ const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animatio
 let exitAnimationActive = false;
 let exitAnimationStartTime = 0;
 let exitTargetUrl = null;
-const EXIT_STAGGER_DELAY = 10; // ms between each tile disappearing
-const EXIT_TILE_DURATION = 200; // Duration for each tile's individual animation
+const EXIT_STAGGER_DELAY = 5; // ms between each tile disappearing (faster)
+const EXIT_TILE_DURATION = 200; // Duration for each tile's individual animation (snappier)
 
 // Hover Animation State
 const hoverState = {};
@@ -661,7 +768,7 @@ const SECTION_HIGHLIGHT_DURATION = 3000; // How long the highlight lasts
 
 // Tessera Guide State
 const tesseraState = {
-    currentExpression: 'wave', // 'wave', 'idle', 'frustrated', 'excited', 'confident', 'surprised', 'calm', 'laughing, 'shocked', 'ease'
+    currentExpression: 'wave', // 'wave', 'idle', 'frustrated', 'excited', 'confident', 'surprised', 'calm', 'laughing, 'shocked'
     isInitialized: false,
     bubbleTimeout: null,
     lastTileId: null,
@@ -676,7 +783,7 @@ const tesseraClickReactions = [
     { expression: 'confident', message: "I've organized all these topics for you. Take your time!" },
     { expression: 'proud', message: () => `${knowledgeData.filter(t => !t.isReserved && t.id !== 'home').length} topics and counting! I'm quite proud of this map.` },
     { expression: 'surprised', message: "Wow, you really like clicking me! I'm Tessera, your guide." },
-    { expression: 'ease', message: "Just browsing? That's okay, I'll be here when you need me." },
+    { expression: 'calm', message: "Just browsing? That's okay, I'll be here when you need me." },
     { expression: 'laughing', message: "H-hey! That tickles!" },
     { expression: 'frustrated', message: "Okay okay, I get it! Go explore the map already!" }
 ];
@@ -706,7 +813,7 @@ const tesseraSectionExplanations = {
     },
     II: {
         expression: 'excited',
-        message: "Section II: Calculus to Optimization & Analysis — gradients, integrals, and metric spaces. Essential for understanding how ML models learn!"
+        message: "Section II: Calculus to Optimization — gradients, integrals, and metric spaces. Essential for understanding how ML models learn!"
     },
     III: {
         expression: 'proud',
@@ -717,7 +824,7 @@ const tesseraSectionExplanations = {
         message: "Section IV: Discrete Math & Algorithms — the heart of CS! Graphs, logic, and computational thinking."
     },
     V: {
-        expression: 'shocked',
+        expression: 'surprised',
         message: "Section V: Machine Learning — where all the math comes together! Neural networks, optimization, and AI magic."
     }
 };
@@ -885,8 +992,7 @@ function setTesseraExpression(expression) {
         calm: document.getElementById('tessera-calm'),
         worried: document.getElementById('tessera-worried'),
         laughing: document.getElementById('tessera-laughing'),
-        shocked: document.getElementById('tessera-shocked'),
-        ease: document.getElementById('tessera-ease')
+        shocked: document.getElementById('tessera-shocked')
     };
     
     // Remove active class from all
@@ -977,7 +1083,7 @@ function updateTesseraForTile(tile) {
 
     // Custom message from curriculum.json - random expression (happy to share)
     if (tile.tesseraMessage) {
-        const tileExpressions = ['wave', 'confident', 'shocked', 'proud', 'surprised', 'ease'];
+        const tileExpressions = ['wave', 'confident', 'shocked', 'proud'];
         const randomExpression = tileExpressions[Math.floor(Math.random() * tileExpressions.length)];
         setTesseraExpression(randomExpression);
         updateTesseraMessage(tile.tesseraMessage);
@@ -1115,27 +1221,28 @@ function triggerExitAnimation(url) {
     uiElements.forEach(selector => {
         const el = document.querySelector(selector);
         if (el) {
-            el.style.transition = 'opacity 0.4s ease-out';
+            el.style.transition = 'opacity 0.25s ease-out';
             el.style.opacity = '0';
         }
     });
     
-    // Calculate actual animation duration based on tile count
+    // Calculate animation duration
     const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION;
     
-    // Fade out Tessera near the end of animation
+    // Fade out Tessera quickly
     setTimeout(() => {
         const tessera = document.getElementById('tessera-container');
         if (tessera) {
-            tessera.style.transition = 'opacity 0.3s ease-out';
+            tessera.style.transition = 'opacity 0.2s ease-out';
             tessera.style.opacity = '0';
         }
-    }, totalExitDuration - 300);
+    }, 150);
     
-    // Navigate after full animation completes (with small buffer)
+    // Navigate at ~60% through animation for smooth flow
+    const navigateAt = Math.min(totalExitDuration * 0.6, 400);
     setTimeout(() => {
         window.location.assign(url);
-    }, totalExitDuration + 150);
+    }, navigateAt);
 }
 
 /**
@@ -2001,6 +2108,9 @@ window.addEventListener('pageshow', (event) => {
  * Reset map state for fresh start (used when navigating back)
  */
 function resetMapState() {
+    // Skip gate animation on back navigation
+    skipGateAnimation();
+    
     // Reset animation states
     exitAnimationActive = false;
     exitTargetUrl = null;
@@ -2054,11 +2164,90 @@ function resetMapState() {
 
 async function init() {
     setup();
-    const loaded = await loadCurriculumData();
+    
+    // Start gate animation
+    document.body.classList.add('gate-active');
+    
+    // Load data while gate animation plays
+    const loadPromise = loadCurriculumData();
+    
+    // Play gate animation sequence
+    await playGateAnimation();
+    
+    // Wait for data to be loaded
+    const loaded = await loadPromise;
+    
     if (loaded) {
+        // Remove gate-active class to show UI
+        document.body.classList.remove('gate-active');
+        
+        // Start map entry animation
+        entryAnimationStartTime = Date.now();
         render();
         initTessera();
     }
+}
+
+/**
+ * Play the gate animation sequence: gate_0 -> gate_1 -> gate_2 -> expand
+ */
+function playGateAnimation() {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('gate-overlay');
+        const container = document.getElementById('gate-container');
+        const glow = document.getElementById('gate-glow');
+        const gate0 = document.getElementById('gate-0');
+        const gate1 = document.getElementById('gate-1');
+        const gate2 = document.getElementById('gate-2');
+        
+        // Timeline:
+        // 0ms: gate_0 visible (already active)
+        // 300ms: transition to gate_1
+        // 600ms: transition to gate_2
+        // 900ms: expand animation starts
+        // 1400ms: fade out overlay
+        // 1500ms: complete
+        
+        // Transition to gate_1
+        setTimeout(() => {
+            gate0.classList.remove('active');
+            gate1.classList.add('active');
+        }, 300);
+        
+        // Transition to gate_2
+        setTimeout(() => {
+            gate1.classList.remove('active');
+            gate2.classList.add('active');
+        }, 600);
+        
+        // Start expand animation
+        setTimeout(() => {
+            container.classList.add('expanding');
+            glow.classList.add('expanding');
+        }, 900);
+        
+        // Fade out overlay
+        setTimeout(() => {
+            overlay.classList.add('fade-out');
+        }, 1200);
+        
+        // Complete - hide overlay entirely
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            resolve();
+        }, 1600);
+    });
+}
+
+/**
+ * Skip gate animation (for back navigation)
+ */
+function skipGateAnimation() {
+    const overlay = document.getElementById('gate-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+    document.body.classList.remove('gate-active');
 }
 
 init();
