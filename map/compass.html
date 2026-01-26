@@ -628,8 +628,8 @@ const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animatio
 let exitAnimationActive = false;
 let exitAnimationStartTime = 0;
 let exitTargetUrl = null;
-const EXIT_STAGGER_DELAY = 10; // ms between each tile disappearing
-const EXIT_TILE_DURATION = 300; // Duration for each tile's individual animation
+const EXIT_STAGGER_DELAY = 5; // ms between each tile disappearing (faster)
+const EXIT_TILE_DURATION = 200; // Duration for each tile's individual animation (snappier)
 
 // Hover Animation State
 const hoverState = {};
@@ -1113,27 +1113,28 @@ function triggerExitAnimation(url) {
     uiElements.forEach(selector => {
         const el = document.querySelector(selector);
         if (el) {
-            el.style.transition = 'opacity 0.4s ease-out';
+            el.style.transition = 'opacity 0.25s ease-out';
             el.style.opacity = '0';
         }
     });
     
-    // Calculate actual animation duration based on tile count
+    // Calculate animation duration
     const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION;
     
-    // Fade out Tessera near the end of animation
+    // Fade out Tessera quickly
     setTimeout(() => {
         const tessera = document.getElementById('tessera-container');
         if (tessera) {
-            tessera.style.transition = 'opacity 0.3s ease-out';
+            tessera.style.transition = 'opacity 0.2s ease-out';
             tessera.style.opacity = '0';
         }
-    }, totalExitDuration - 300);
+    }, 150);
     
-    // Navigate after full animation completes (with small buffer)
+    // Navigate at ~60% through animation for smooth flow
+    const navigateAt = Math.min(totalExitDuration * 0.6, 400);
     setTimeout(() => {
         window.location.assign(url);
-    }, totalExitDuration + 150);
+    }, navigateAt);
 }
 
 /**
