@@ -644,9 +644,9 @@ const ENTRY_TILE_DURATION = 600; // Duration for each tile's individual animatio
 let exitAnimationActive = false;
 let exitAnimationStartTime = 0;
 let exitTargetUrl = null;
-const EXIT_ANIMATION_DURATION = 800; // Faster than entry for snappy feel
-const EXIT_STAGGER_DELAY = 15; // Faster stagger
-const EXIT_TILE_DURATION = 400; // Duration for each tile's individual animation
+const EXIT_ANIMATION_DURATION = 500; // Fast collapse
+const EXIT_STAGGER_DELAY = 8; // Very fast stagger
+const EXIT_TILE_DURATION = 250; // Quick individual tile animation
 
 // Hover Animation State
 const hoverState = {};
@@ -1145,10 +1145,10 @@ function triggerExitAnimation(url) {
     }, 300);
     
     // Navigate after animation completes
-    const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION + 100;
+    const totalExitDuration = (knowledgeData.length * EXIT_STAGGER_DELAY) + EXIT_TILE_DURATION + 50;
     setTimeout(() => {
         window.location.assign(url);
-    }, Math.min(totalExitDuration, 1000)); // Cap at 1 second max
+    }, Math.min(totalExitDuration, 600)); // Cap at 600ms max
 }
 
 /**
@@ -1985,6 +1985,52 @@ document.querySelectorAll('.legend-item').forEach(item => {
 window.addEventListener('resize', setup);
 window.addEventListener('mousedown', () => isPanning = false);
 window.addEventListener('wheel', () => isPanning = false);
+
+// Handle back navigation - reset state when page is shown from bfcache
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        // Page was restored from bfcache (back/forward navigation)
+        resetMapState();
+    }
+});
+
+/**
+ * Reset map state for fresh start (used when navigating back)
+ */
+function resetMapState() {
+    // Reset animation states
+    exitAnimationActive = false;
+    exitTargetUrl = null;
+    entryAnimationActive = true;
+    entryAnimationStartTime = Date.now();
+    
+    // Reset UI opacity
+    const uiElements = ['#ui-layer', '#search-container', '#home-btn', '#legend', '#zoom-controls', '#tessera-container'];
+    uiElements.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            el.style.transition = 'none';
+            el.style.opacity = '1';
+        }
+    });
+    
+    // Reset view
+    scale = 50;
+    offsetX = window.innerWidth / 2;
+    offsetY = window.innerHeight / 2;
+    activeTileId = null;
+    hoveredTileId = null;
+    highlightedSection = null;
+    searchQuery = '';
+    searchResults = [];
+    document.getElementById('search-input').value = '';
+    document.getElementById('status').innerText = "Explore the Knowledge Map";
+    
+    // Reset Tessera
+    tesseraState.showingSectionExplain = false;
+    tesseraState.lastTileId = null;
+    initTessera();
+}
 
 async function init() {
     setup();
