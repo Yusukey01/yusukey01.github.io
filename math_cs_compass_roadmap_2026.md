@@ -1,8 +1,8 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** January 2026  
-**Website:** https://yusukey01.github.io  
+**Last Updated:** 1/27/2026  
+**Website:** https://math-cs-compass.com  
 
 ---
 
@@ -12,7 +12,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 
 ---
 
-## Current Coverage (as of January 2026)
+## Current Coverage (as of 1/27/2026)
 
 ### Section I: Linear Algebra to Algebraic Foundations (21 pages)
 - **Core Linear Algebra (Parts 1-14):** Linear equations, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry, SVD, trace/norms, Kronecker products, Woodbury identity, stochastic matrices, graph Laplacians
@@ -24,8 +24,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 - **Optimization (Parts 6-9):** Mean value theorem, gradient descent, Newton's method, constrained optimization (KKT)
 - **Analysis (Parts 10-12):** Riemann integration, measure theory, Lebesgue integration
 - **Fourier (Parts 14-15):** Fourier series, Fourier transform, FFT
-- **Metric Spaces (Part 16):** Distance, boundary, open/closed sets, topology, completeness (preview), balls, convexity
-- **In Progress:** Full analysis track (convergence through homeomorphisms)
+- **Full analysis track(Part 16, 17, 18 - in Prgress)** 
 
 ### Section III: Probability & Statistics (21 pages)
 - **Foundations (Parts 1-2):** Basic probability, random variables
@@ -41,7 +40,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 ### Section V: Machine Learning (10 pages)
 - Intro to ML, regularized regression, classification, neural networks, autodiff, SVM, PCA & autoencoders, clustering, deep neural networks (CNNs, transformers), reinforcement learning
 
-**Total: ~77 pages completed**
+**Total: ~79 pages completed**
 
 ---
 
@@ -166,8 +165,8 @@ Alongside the analysis track, complete the algebraic foundations:
 | Month | Track A (Algebra) | Track B (Analysis) |
 |-------|-------------------|-------------------|
 | Jan | Integral Domains | Metric Spaces (intro) ✅ |
-| Feb | Field Extensions | Convergence & Boundedness |
-| Mar | Finite Fields | Continuity |
+| Feb | Field Extensions | Convergence & Boundedness　✅|
+| Mar | Finite Fields | Continuity　✅|
 | Apr | **Lie Groups (intro)** | Completeness |
 | May | Lie Algebras | Connectedness |
 | Jun | — | Compactness |
@@ -214,11 +213,14 @@ Alongside the analysis track, complete the algebraic foundations:
 - Follow textbook chapter ordering for rigor
 
 ### Current Metric Spaces Page Structure
-Following Ó Searcóid's *Metric Spaces*:
-- Ch. 1-5: Metric spaces, distance, boundary, open/closed, balls (current page)
-- Ch. 6-7: Convergence, boundedness (next page)
-- Ch. 8-9: Continuity, uniform continuity
-- Ch. 10: Completeness (full treatment with Banach fixed-point)
+Following Ó Searcóid's *Metric Spaces* (Structural approach):
+- Ch. 1-5: Metric spaces, distance, boundary, open/closed, balls (Completed)
+- Ch. 6-7: Convergence, boundedness (Completed)
+- Ch. 8-9: Continuity, Uniform Continuity, and Lipschitz Stability (Completed)
+    * Classification: Contraction ($k \leq 1$) vs. Strong Contraction ($k < 1$) per Source.
+    * Integration: Connection to WGAN stability and RL Bellman operators.
+- Ch. 10: Completeness (Next Page)
+    * Full treatment of Cauchy sequences and Banach Fixed-Point Theorem.
 - Ch. 11: Connectedness
 - Ch. 12: Compactness
 - Ch. 13: Homeomorphisms
