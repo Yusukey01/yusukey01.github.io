@@ -96,30 +96,40 @@ noindex: true
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    <strong>Continuity</strong> is one of the most fundamental concepts in analysis because continuity 
-                    let us transfer properties such as connectivity and compactness from domain to range. In calculus, 
+                    <strong>Continuity</strong> is one of the most fundamental concepts in analysis because it allows us to 
+                    transfer properties such as connectivity and compactness from the domain to the range. In calculus, 
                     you learned that a function is continuous if "small changes in input produce small changes in output." 
                     With our metric space framework, we can now make this precise and extend it to functions between 
                     arbitrary metric spaces, not just subsets of \(\mathbb{R}\).
                 </p>
 
                 <p>
-                    Why does this matter for machine learning and optimization? Neural networks are compositions 
-                    of continuous functions. The loss landscape we navigate during training is (usually) continuous. 
+                    Why does this matter for machine learning and optimization? 
+                    Neural networks are essentially compositions of continuous functions (linear layers and non-linear activations). 
+                    The "loss landscape" we navigate during training relies on continuity to ensure that we can essentially "slide down" 
+                    to a minimum. Without continuity, optimization methods like Gradient Descent would be fundamentally broken.
                 </p>
 
                 <p>
-                    But not all notions of continuity are equal. <strong>Uniform</strong> continuity provides stronger 
-                    guarantees, and <strong>Lipschitz</strong> continuity, which bounds how fast a function can change is 
-                    essential for proving convergence rates of optimization algorithms.
+                    But not all notions of continuity are equal. 
+                    <strong>Uniform continuity</strong> provides stronger global guarantees, and 
+                    <strong>Lipschitz continuity</strong>, which bounds how fast a function can change is 
+                    essential for guaranteeing the convergence speed of these algorithms.
                 </p>
-
             </section> 
             
             <section id="continuity" class="section-content">
                 <h2>Continuity</h2>
+                
                 <p>
-                    First, we would like to generalize \(\epsilon - \delta\) continuity to metric spaces.
+                    In calculus, continuity is often taught as "no breaks in the graph." However, in the rigorous language of 
+                    modern analysis, continuity is about <strong>preserving structure</strong>. It ensures that "nearness" in the 
+                    domain translates to "nearness" in the range, without tearing the space apart.
+                </p>
+                
+                <p>
+                    We define continuity using the concept of <strong>open sets</strong> (neighborhoods). This structural definition is 
+                    superior because it captures the essence of topology without relying on specific distance calculations.
                 </p>
 
                 <div class="theorem">
@@ -127,22 +137,67 @@ noindex: true
                     Suppose \(X\) and \(Y\) are metric spaces, \(z \in X\) and \(f: X \to Y\). We say that \(f\) is 
                     <strong>continuous</strong> at \(z\) in \(X\) if and only if for each open subset \(V\) of \(Y\) 
                     with \(f(z) \in V\), there exists an open subset \(U\) of \(X\) with \(z \in U\) such that 
-                    \(f(U) \subseteq V\).
+                    \[
+                    f(U) \subseteq V.
+                    \]
+                    If \(f\) is continuous at every point \(z \in X\), we say \(f\) is <strong>continuous on \(X\)</strong>.
                 </div>
+
+                <div class="insight-box">
+                    <h3>Insight: Mapping Neighborhoods</h3>
+                    <p>
+                        This definition says: "If you define a target neighborhood \(V\) around the output \(f(z)\), 
+                        I can always find a source neighborhood \(U\) around the input \(z\) that lands entirely within your target."
+                        This guarantees that the function does not "tear" the space or make abrupt jumps.
+                    </p>
+                </div>
+
+                <p>
+                    While the open-set definition gives us the structural view, in practical optimization we often need to 
+                    compute bounds using distances. In metric spaces, the structural definition is logically equivalent to 
+                    the familiar \(\epsilon-\delta\) formulation.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Metric Characterization (\(\epsilon-\delta\))</span>
+                    Let \((X, d)\) and \((Y, e)\) be metric spaces. A function \(f: X \to Y\) is continuous at \(z\) 
+                    (in the sense of the definition above) if and only if:
+                    <br>
+                    For every \(\epsilon > 0\), there exists \(\delta > 0\) such that
+                    \[
+                    d(x, z) < \delta \implies e(f(x), f(z)) < \epsilon.
+                    \]
+                </div>
+
+                <p>
+                    The power of the open-set definition becomes clear when we look at global properties. 
+                    Continuity allows us to pull topological structures back from the range to the domain.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Global Topological Characterization</span>
+                    A function \(f: X \to Y\) is continuous on \(X\) if and only if for every open subset \(V\) of \(Y\), 
+                    the preimage \(f^{-1}(V)\) is an open subset of \(X\).
+                </div>
+
+                <p>
+                    Using this topological definition, it becomes straightforward to show that continuity is preserved 
+                    under composition and subspace operations.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem:</span>
-                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces and \(f: X \to Y\) is continuous function. Suppose 
+                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces and \(f: X \to Y\) is a continuous function. Suppose 
                     \(Z\) is any metric superspace of \((f(X), e)\). Then \(f: X \to Z\) is also continuous.
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     Suppose \(U\) is an open subset of \(Z\). Then \(U \cap f(X)\) is open in \((f(X), e)\) because 
-                    \(Z\) is a metric superspace of \((f(X), e)\), and \(U \cap f(X) = W \cap f(X) \) fpr some open 
+                    \(Z\) is a metric superspace of \((f(X), e)\), and \(U \cap f(X) = W \cap f(X) \) for some open 
                     subset \(W\) of \((Y, e)\) because \((f(X), e)\) is metric subspace of \((Y, e)\). Thus,
                     \[
-                    \being{align*}
+                    \begin{align*}
                     f^{-1}(U) &= f^{-1}(U \cap f(X)) \\\\
                               &= f^{-1}(W \cap f(X)) \\\\
                               &= f^{-1}(W),
@@ -152,14 +207,10 @@ noindex: true
                     \(f: X \to Z\) is also continuous.
                 </div>
 
-                <p>
-                    Similarly, it is clear that compositions preserve continuity.
-                </p>
-
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Continuity of Compositions</span>
-                   Supose \(X\), \(Y\), and \(Z\) are metric spaces and \(f: X \to Y\) anf \(g: Y \to Z\). If \(f\) and \(g\) 
-                   are continuous, then \(g \circ f\) is continuous.
+                   Suppose \(X\), \(Y\), and \(Z\) are metric spaces and \(f: X \to Y\) and \(g: Y \to Z\). If \(f\) and \(g\) 
+                   are continuous, then the composition \(g \circ f\) is continuous.
                 </div>
 
                 <div class="proof">
@@ -170,25 +221,36 @@ noindex: true
                 </div>
 
                 <div class="insight-box">
-                    The topological characterization explains why continuity is really about preserving "nearness" 
-                    structure, not about specific distances.
+                    <h3>Insight: Continuity and Robustness</h3>
+                    <p>
+                        In deep learning, continuity is a prerequisite for <strong>robustness</strong>. 
+                        It implies that if an input image \(x\) is perturbed slightly (noise), the model's prediction \(f(x)\) 
+                        should not jump abruptly. However, mere continuity allows the function to change arbitrarily fast locally. 
+                        This loophole is exploited by <strong>Adversarial Attacks</strong>, where imperceptible noise causes a 
+                        continuous but unstable model to misclassify data with high confidence.
+                    </p>
                 </div>
-
                
             </section>  
 
             <section id="uniform" class="section-content">
                 <h2>Uniform Continuity</h2>
+               
                 <p>
-                    Why isn't regular continuity enough? The \(\delta\) depends on the point.
+                    In standard continuity, the \(\delta\) depends on both \(\epsilon\) and the point \(z\). 
+                    This means a function could get infinitely steep in some regions (like \(f(x) = 1/x\) near 0), requiring 
+                    an infinitely small \(\delta\). 
+                    <strong>Uniform continuity</strong> demands a single \(\delta\) that works for the entire domain.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Uniform Continuous Function</span>
-                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces, \(z \in X\) and \(f: X \to Y\). Suppose \(S \subseteq X\). 
+                    <span class="theorem-title">Definition: Uniformly Continuous Function</span>
+                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces and \(f: X \to Y\). Suppose \(S \subseteq X\). 
                     Then \(f\) is said to be <strong>uniformly continuous</strong> on \(S\) if and only if for every \(\epsilon \in \mathbb{R}^+\), 
-                    there exists \(\delta \in \mathbb{R}^+\) such that for every \(x, z \in S\) for which \(d(z, x) < \delta\), we have also 
-                    \(e(f(z), f(x)) < \epsilon\).      
+                    there exists \(\delta \in \mathbb{R}^+\) such that for <strong>every</strong> \(x, z \in S\) with \(d(z, x) < \delta\), we have:
+                    \[
+                    e(f(z), f(x)) < \epsilon.
+                    \]      
                 </div>
 
                 <div class="theorem">
@@ -205,37 +267,51 @@ noindex: true
                     on \(S\).
                 </div>
 
+                <div class="insight-box">
+                    <h3>Insight: Why Uniformity Matters in Optimization</h3>
+                    <p>
+                        Consider gradient descent with a fixed learning rate (step size). 
+                        If the loss function is <strong>not</strong> uniformly continuous, its steepness could change 
+                        drastically across the landscape. A step size that is safe in a flat region might cause the 
+                        algorithm to diverge (explode) in a steep region. Uniform continuity ensures that the function's 
+                        behavior is consistent enough that a "safe" step size exists globally.
+                    </p>
+                </div>
+
                 <p>
-                    An important fact is that any continuous fuction is uniformly continuous on all <strong>compact</strong> 
-                    subsets of its domain. We won't discuss compactness here, but we shall introduce the following definition of 
-                    compactness. This is not the only way to describe compactness. 
+                    An important fact (the Heine-Cantor theorem) is that any continuous function is uniformly continuous 
+                    on all <strong>compact</strong> subsets of its domain. While we will discuss compactness in depth later, 
+                    for the context of optimization, the following working definition is particularly useful:
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Completeness</span>
+                    <span class="theorem-title">Definition: Compactness</span>
                     Suppose \(X\) is a metric space. Then \(X\) is said to be a <strong>compact metric space</strong> if and 
-                    only if \(X\) is bounded and has the nearest-point property. 
+                    only if \(X\) is bounded and has the <strong>nearest-point property</strong> (meaning every point outside the set has a closest point within it). 
                 </div>
 
-                <div class="insight-box">
-                    In numerical analysis, uniform continuity ensures that approximation errors behave consistently across the domain.
-                </div>
+                <p>
+                    Note: In optimization, this ensures that if we are bounded, a minimum solution actually exists.
+                </p>
 
             </section>
 
             <section id="lipschitz" class="section-content">
                 <h2>Lipschitz Continuity</h2>
+
                 <p>
-                    A type of global continuity that we have encountered in linear maps between normed linear spaces is 
-                    called <strong>Lipschitz continuity</strong>, which is uniform and preserves <strong>boundedness</strong>.
+                    A stronger form of continuity, often encountered in linear maps between normed linear spaces, is 
+                    <strong>Lipschitz continuity</strong>. Unlike uniform continuity which only says "steepness is bounded locally," 
+                    Lipschitz continuity gives us a concrete number, the <strong>Lipschitz Constant</strong> that bounds the rate 
+                    of change globally.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Lipschitz continuous function</span>
+                    <span class="theorem-title">Definition: Lipschitz Continuous Function</span>
                     Suppose \((X, d)\) and \((Y, e)\) are metric spaces, and \(f: X \to Y\). If there exists \(k \in \mathbb{R}^+\) 
                     such that 
                     \[
-                    e(f(a), f(b)) \leq kd(a, b), \, \forall \, a, b \in X,
+                    e(f(a), f(b)) \leq k \cdot d(a, b), \quad \forall \, a, b \in X,
                     \]
                     then \(f\) is called a <strong>Lipschitz function</strong> on \(X\) with <strong>Lipschitz constant</strong> \(k\).
                  </div>
@@ -251,8 +327,16 @@ noindex: true
                     \(f |_S\) is also a Lipschitz function with Lipschitz constant \(k\). 
                 </div>
 
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Hierarchy of Continuity</span>
+                    If \(f\) is Lipschitz with constant \(k\), then \(f\) is uniformly continuous (choose \(\delta = \epsilon/k\)).
+                    <br>
+                    Lipschitz \(\implies\) Uniformly Continuous \(\implies\) Continuous.
+                </div>
+
                 <p>
-                    When the Lipschitz constant \(k = 1\), the Lipschitz function has a special name, <storng>isometry</storng>.
+                    If the Lipschitz constant is \(k \le 1\), the function is called <strong>non-expansive</strong> (it does not stretch distances). 
+                    A strictly stronger condition, where distances are <strong>exactly preserved</strong>, is called an <strong>isometry</strong>.
                 </p>
 
                 <div class="theorem">
@@ -262,20 +346,22 @@ noindex: true
                     \[
                     \forall a, b \in X, \, e(\phi(a), \phi(b)) = d(a, b).
                     \]
-                    Moreover, the metric subspace \((\phi(X), e)\) of \(Y, e\) is an <strong>isometric copy</strong> of the 
+                    Moreover, the metric subspace \((\phi(X), e)\) of \((Y, e)\) is an <strong>isometric copy</strong> of the 
                     space \((X, d)\).
+                    <br><br>
+                    <strong>Note:</strong> Every isometry is Lipschitz continuous with \(k=1\).
                 </div>
 
                 <p>
-                    More generally, any Lipschitz function between metric spaces that has Lipschitz constant \(k \leq 1\) is called 
-                    a <strong>contraction</strong>. When \(k\) is strictly less than \(1\), we call it a <strong>strong contraction</strong>.
+                    If the Lipschitz constant \(k \leq 1\), the function is called a <strong>contraction</strong>. 
+                    If \(k < 1\), it is a <strong>strong contraction</strong>.
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Strong Contraction</span>
-                    Suppose \((X, d)\) is a metric space, and map \(f: X \to X\) is called a strong contraction on \(X\) if and only if 
+                    A map \(f: X \to X\) is a strong contraction if there exists \(k \in [0, 1)\) such that:
                     \[
-                    \exists k \in [0, 1) \text{ such that } \forall x, z \in X, \, d(f(x), f(z)) \leq kd(x, z).
+                    d(f(x), f(z)) \leq k \cdot d(x, z) \quad \forall x, z \in X.
                     \]
                 </div>
 
@@ -285,13 +371,26 @@ noindex: true
                 </p>
 
                 <div class="insight-box">
-                    Lipschitz constants appear everywhere in optimization:
+                    <h3>Insight: The Backbone of Stability</h3>
+                    <p>Lipschitz constants are ubiquitous in modern ML theory:</p>
                     <ul style="padding-left: 40px;">
-                        <li>L-smooth functions (gradient is L-Lipschitz)</li>
-                        <li>Convergence rates depend on Lipschitz constants</li>
-                        <li>Neural network stability (spectral normalization)</li>
+                        <li>
+                            <strong>Convergence Rates:</strong><br>
+                            In convex optimization, if the gradient is \(L\)-Lipschitz (called \(L\)-smooth), 
+                            gradient descent is guaranteed to converge at a rate of \(O(1/T)\). The constant \(L\) determines the maximum safe learning rate (\(\eta < 2/L\)).
+                        </li>
+                        <li>
+                            <strong>GAN Stability:</strong><br>
+                            In Wasserstein GANs (WGAN), the theoretical framework requires the discriminator (critic) to be 1-Lipschitz. 
+                            Techniques like <strong>Gradient Penalty</strong> or <strong>Spectral Normalization</strong> are explicitly designed to enforce this constraint.
+                        </li>
+                        <li>
+                            <strong>Fixed Point Iterations:</strong><br>
+                            Strong contractions guarantee a unique fixed point (Banach Fixed Point Theorem). 
+                            This is why the Bellman Operator in Reinforcement Learning converges to the optimal value function.
+                        </li>
                     </ul>
-                </div> 
+                </div>
                      
             </section>
 
