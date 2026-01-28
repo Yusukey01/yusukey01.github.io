@@ -99,9 +99,9 @@ noindex: true
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    We brifly, introduced completeness in an earlier chapters as a property ensuring metric spaces have 
+                    We briefly introduced completeness in earlier chapters as a property ensuring metric spaces have 
                     "no holes." Now, equipped with the theory of convergence and Cauchy sequences, we can develop 
-                    completeness fully and prove one of the most important theorems in analysis: the 
+                    completeness fully and prove one of the most important theorems in analysis: 
                     <strong>Banach's Fixed-Point Theorem</strong>.
                 </p>
 
@@ -153,7 +153,7 @@ noindex: true
                     Suppose \((X, d)\) is a metric space and \(u: X \to \mathbb{R}\). Then \(u\) is called a <strong>virtual point</strong> 
                     of \(X\) if and only if u satisfies the following conditions:
                     <ul style="padding-left: 40px;">
-                        <li>\(\forall a, b \in X, \, u(a) - u(b) \leq d(a, b) \leq u(a) + u(b)\).</li>
+                        <li>\(\forall a, b \in X, \, |u(a) - u(b)| \leq d(a, b) \leq u(a) + u(b)\).</li>
                         <li>\(\inf u(X) = 0\).</li>
                         <li>0 \notin u(X).</li>
                     </ul>
@@ -164,13 +164,43 @@ noindex: true
                     A metric space \(X\) is said to be <strong>complete</strong> if and only if \(X\) has no virtual points of \(X\).
                 </div>
 
-                <!-- maybe examples here? famous complete metric spaces-->
+                <p>
+                    A virtual point is a function that "measures distance to a missing point." If \(X\) has a hole 
+                    (like \(\mathbb{Q}\) missing \(\sqrt{2}\)), we can define \(u: \mathbb{Q} \to \mathbb{R}\) by 
+                    \(u(q) = |q - \sqrt{2}|\). This function satisfies all three conditions: it respects the triangle 
+                    inequality, its infimum is 0 (rationals get arbitrarily close to \(\sqrt{2}\)), yet no rational 
+                    achieves distance 0.
+                </p>
+
+                <p>
+                    The virtual point criterion is equivalent to the Cauchy criterion: every non-convergent 
+                    Cauchy sequence \((x_n)\) in an incomplete space induces a virtual point via 
+                    \(u(a) = \lim_{n \to \infty} d(a, x_n)\).
+                </p>
 
                 <div class="insight-box">
-                     <!-- 
-                    These theorems explain why we work in R^n—it's complete.
-                    But function spaces (neural networks!) require careful treatment.
-                    -->
+                    <h3>Insight: Why Completeness Matters in Machine Learning</h3>
+                    <p>
+                        Parameter spaces for neural networks live in \(\mathbb{R}^n\), which is complete. Thus, 
+                        gradient-based optimizations can converge (when contraction conditions hold).
+                    </p>
+                    <p>
+                        However, <strong>function spaces</strong> require careful treatment:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            \(C([0,1])\) with \(d_\infty\) is complete — uniform limits of 
+                            continuous functions are continuous.
+                        </li>
+                        <li>
+                            \(C([0,1])\) with \(d_1(f,g) = \int_0^1 |f(x) - g(x)| \, dx\) is 
+                            <em>not</em> complete — the completion is \(L^1([0,1])\).
+                        </li>
+                        <li>
+                            Policy spaces in reinforcement learning often use \(L^\infty\) 
+                            or weighted supremum norms to ensure completeness.
+                        </li>
+                    </ul>
                 </div>
         
             </section>  
@@ -189,21 +219,55 @@ noindex: true
                     \((Y, e)\).
                 </div>
 
-                <!-- Theorem: Every metric space has a completion, unique up to isometry -->
+                <!-- Theorem: Every metric space has a completion, unique up to isometry???? -->
+                 <div class="theorem">
+                    <span class="theorem-title">Theorem: Existence and Uniqueness of Completion</span>
+                    <p>
+                        Every metric space \((X, d)\) has a completion. Moreover, the 
+                        completion is unique up to isometry: if \((Y_1, e_1)\) and 
+                        \((Y_2, e_2)\) are both completions of \((X, d)\), then there exists 
+                        an isometry \(\phi: Y_1 \to Y_2\) such that \(\phi(x) = x\) for all 
+                        \(x \in X\) (identifying \(X\) with its isometric image).
+                    </p>
+                </div>
 
-                <!-- Example: Q completes to R -->
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch (Construction):</span>
+                    <p>
+                        Define an equivalence relation on Cauchy sequences: \((x_n) \sim (y_n)\) 
+                        if \(\lim_{n \to \infty} d(x_n, y_n) = 0\). Let \(\tilde{X}\) be the 
+                        set of equivalence classes. Define 
+                        \[
+                        \tilde{d}([(x_n)], [(y_n)]) = \lim_{n \to \infty} d(x_n, y_n).
+                        \]
+                        The map \(x \mapsto [(x, x, x, \ldots)]\) embeds \(X\) isometrically 
+                        and densely into \(\tilde{X}\), and \(\tilde{X}\) is complete.
+                    </p>
+                </div>
 
-                <!-- 
-                    Note: This is how we construct R from Q rigorously.
-                    In practice, we usually start with complete spaces.
-                -->
+                <!-- Example: Q completes to R??? -->
+                <div class="proof">
+                    <span class="proof-title">Example: \(\mathbb{Q}\) Completes to \(\mathbb{R}\)</span>
+                    <p>
+                        The completion of \((\mathbb{Q}, |\cdot|)\) is \((\mathbb{R}, |\cdot|)\). 
+                        This is one rigorous construction of the real numbers: each real number 
+                        is an equivalence class of Cauchy sequences of rationals.
+                    </p>
+                    <p>
+                        For instance, \(\sqrt{2}\) is represented by the equivalence class 
+                        containing \((1, 1.4, 1.41, 1.414, \ldots)\).
+                    </p>
+                </div>    
 
             </section>
 
             <section id="cantor" class="section-content">
                 <h2>Cantor's Intersection Theorem</h2>
+
                 <p>
-                    <!-- Some intro here -->
+                    Cantor's Intersection Theorem provides an alternative characterization of completeness through nested closed sets. 
+                    This perspective is particularly useful in existence proofs, where we construct a solution by progressively 
+                    narrowing the search region.
                 </p>
 
                 <div class="theorem">
@@ -217,14 +281,14 @@ noindex: true
                     Suppose \((X, d)\) is a metric space and \(\mathcal{F}\) is a <strong>nest</strong> of non-empty subsets of 
                     \(X\) for which \(\inf \{\text{diam } (A) \mid A \in \mathcal{F}\} = 0\). 
                     <br>
-                    Suppose \big \cap \left\{\overline{A} \mid A \in \mathcal{F} \right\} = \emptyset. Then, given \(z \notin X\), 
-                    \(d\) can be extended to be a metrix on \(X' = X \cup \{z\}\) in such a way that 
+                    Suppose \big \cap \left\{\text{Cl }_{X}(A)  \mid A \in \mathcal{F} \right\} = \emptyset. Then, given \(z \notin X\), 
+                    \(d\) can be extended to be a metric on \(X' = X \cup \{z\}\) in such a way that 
                     \[
                     \forall A \in \mathcal{F}, \, \text{Cl }_{X'} (A) = \text{Cl }_{X}(A) \cup \{z\}.
                     \]
                     Thus, 
                     \[
-                    \big \cap \left\{\text{Cl }_{X'} (A) \mid A \in \mathcal{F} \right\} = \{z\}.
+                    \bigcap \left\{\text{Cl }_{X'} (A) \mid A \in \mathcal{F} \right\} = \{z\}.
                     \]
                 </div>
 
@@ -234,7 +298,7 @@ noindex: true
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Nest & Nested Sequence Criteria for Completeness</span>
-                    A metric space \((X)\) is said to be <strong>complete</strong> if and only if 
+                    A metric space \(X\) is said to be <strong>complete</strong> if and only if 
                     Every nest \(\mathcal{F}\) of non-empty closed subsets of \(X\) for which 
                     \[
                     \inf \{\text{diam } (A) \mid A \in \mathcal{F}\} = 0
@@ -245,14 +309,30 @@ noindex: true
                     <br><br>
                     A metric space \((X)\) is said to be <strong>complete</strong> if and only if
                     every sequence \(\{F_n\}\) of non-empty closed subsets of \(X\) for which \(F_{n+1} \subseteq F_n\) 
-                    for each \(n \in \mathbb{N}\) and \(\text{diam }(F_n) \to 0\) has non-empty intersection.
+                    for each \(n \in \mathbb{N}\) and \(\text{diam }(F_n) \to 0\) has singleton (hence non-empty) intersection.
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof:</span>
-                    <!-- 
+                     <!-- 
                     Do we need? how much important is this. 
                      -->
+                    <span class="proof-title">Proof Sketch (Nested Sequence Criterion):</span>
+                    <p>
+                        <strong>(\(\Rightarrow\))</strong> Assume \(X\) is complete. For each 
+                        \(n\), choose \(x_n \in F_n\). Since \(F_{n+1} \subseteq F_n\), we have 
+                        \(x_m, x_n \in F_{\min(m,n)}\) for all \(m, n\). Thus 
+                        \(d(x_m, x_n) \leq \text{diam}(F_{\min(m,n)}) \to 0\), so \((x_n)\) 
+                        is Cauchy. By completeness, \(x_n \to x\) for some \(x \in X\). Since 
+                        each \(F_n\) is closed and contains \(x_m\) for all \(m \geq n\), we 
+                        have \(x \in F_n\) for all \(n\). Hence \(x \in \bigcap F_n\). The 
+                        diameter condition ensures uniqueness.
+                    </p>
+                    <p>
+                        <strong>(\(\Leftarrow\))</strong> Given a Cauchy sequence \((x_n)\), 
+                        define \(F_n = \overline{\{x_n, x_{n+1}, \ldots\}}\). These are closed, 
+                        nested, and \(\text{diam}(F_n) \to 0\). The unique point in 
+                        \(\bigcap F_n\) is the limit of \((x_n)\).
+                    </p>
                 </div>
 
                 <p>
@@ -262,14 +342,30 @@ noindex: true
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Complete Subset</span>
                     Suppose \(X\) is complete metric space and \(S \subseteq X\). Then \(S\) is complete if and only if 
-                    \(S\) is closed in \(X\)
+                    \(S\) is closed in \(X\).
                 </div>
 
                 <div class="insight-box">
-                     <!-- 
-                    Insight box: This theorem is used in many existence proofs.
-                    It guarantees that shrinking search regions converge to a solution.
-                    -->
+                    <h3>Insight: Shrinking Search Regions in Algorithms</h3>
+                    <p>
+                        Cantor's theorem guarantees that if we can construct a nested sequence of closed sets with 
+                        shrinking diameter, their intersection contains exactly one point. This is the theoretical 
+                        foundation for:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            <strong>Bisection method:</strong><br>
+                            Nested intervals \([a_n, b_n]\) with \(b_n - a_n \to 0\) converge to a root.
+                        </li>
+                        <li>
+                            <strong>Branch and bound:</strong><br>
+                            Pruning creates nested feasible regions converging to optimal solutions.
+                        </li>
+                        <li>
+                            <strong>Kd-tree search:</strong><br>
+                            Recursive spatial partitioning narrows to nearest neighbors.
+                        </li>
+                    </ul>
                 </div>
 
             </section>
@@ -283,7 +379,7 @@ noindex: true
                 <div class="theorem">
                     <span class="theorem-title">Definition: Fixed Point</span>
                     Suppose \(X\) is a non-empty set and \(f: X \to X\). A point \(x \in X\) is called a <strong>fixed point</strong> 
-                    for \(f\) if and only if \(f(x) = x).
+                    for \(f\) if and only if \(f(x) = x\).
                 </div>
 
                 <div class="theorem">
@@ -300,10 +396,10 @@ noindex: true
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem:</span>
-                    Suppose \((X, d)\) is a metric space and \(f\) is a (strong) constraction on \(X\). Then,
+                    Suppose \((X, d)\) is a metric space and \(f\) is a (strong) contraction on \(X\). Then,
                     <ol style="padding-left: 40px;">
                         <li>for each \(a, b \in X\), the real sequence \(\{d(f^n(a), f^n(b))\}\) converges to \(0\).</li>
-                        <li>for each \(x in X\), the sequence \(\{f^n(x)\}\) is Cauchy sequence in \(X\).</li>
+                        <li>for each \(x \in X\), the sequence \(\{f^n(x)\}\) is a Cauchy sequence in \(X\).</li>
                     </ol>
                 </div>
 
@@ -319,7 +415,7 @@ noindex: true
                     \]
                     and since \(\{f^{n+1}(w)\}\) is a subsequence of \(\{f^n(w)\}\), 
                     \[
-                    \lim f^{n+1}(w) = \(\{f^n(w)\}\)
+                    \lim_{n \to \infty} f^{n+1}(w) = \lim_{n \to \infty} f^n(w) = z,
                     \]
                     so that \(f(z) = z\) as required.
                     <br>
@@ -327,30 +423,86 @@ noindex: true
                     \[
                     d(a, z) = d(f(a), f(z)) \leq k d(a, z)
                     \]
-                    that forces \(d(a, z) = 0) and thus \(a = z\) because \(k < 1\).
+                    that forces \(d(a, z) = 0\) and thus \(a = z\) because \(k < 1\).
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Convergence Rate</span>
+                    <p>
+                        Under the hypotheses of Banach's theorem, let \(z\) be the unique 
+                        fixed point. For any starting point \(w \in X\):
+                        \[
+                        d(f^n(w), z) \leq \frac{k^n}{1-k} \cdot d(w, f(w)).
+                        \]
+                        In particular, convergence is <strong>geometric</strong> (linear in 
+                        the logarithmic scale) with rate \(k\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For \(m > n\), triangle inequality and geometric series give:
+                        \[
+                        d(f^n(w), f^m(w)) \leq \sum_{i=n}^{m-1} d(f^i(w), f^{i+1}(w)) 
+                        \leq \sum_{i=n}^{m-1} k^i \cdot d(w, f(w)) 
+                        \leq \frac{k^n}{1-k} \cdot d(w, f(w)).
+                        \]
+                        Taking \(m \to \infty\) yields the result.
+                    </p>
                 </div>
 
                 <div class="insight-box">
-                    <h3>Insight: Why This Matters for Optimization</h3>
-                    <!--we need more details -->
+                    <h3>Insight: Fixed-Point Iterations in Optimization and Learning</h3>
                     <p>
-                        Many optimization algorithms can be viewed as fixed-point iterations:
+                        Banach's theorem transforms existence and convergence questions into 
+                        verification of two conditions: (1) the space is complete, and 
+                        (2) the iteration map is a contraction.
                     </p>
-                    <ul style="padding-left: 40px;">
-                        <li>Newton's method:<br>
-                            for solving \(f(x) = 0\) under suitable conditions.
-                        </li>
-                        <li>Gradient descent:<br>
-                                \(x_{n+1} = x_n - \alpha \nabla f(x_n)\).
-                        </li>
-                        <li>Proximal methods:<br>
-                            \(x_{n+1} = \text{prox}_{\alpha g}(x_n - \alpha \nabla f(x_n))\).
-                        </li>
-                        <li>Value iteration:<br> 
-                            \(V_{n+1} = T(V_n)\) where \(T\) is the Bellman operator. If we can show T is a contraction on a complete space, 
-                            convergence is guaranteed with a known rate. 
-                        </li>
-                    </ul>       
+                    
+                    <h4>Newton's Method</h4>
+                    <p>
+                        For solving \(g(x) = 0\), Newton's iteration is 
+                        \(f(x) = x - \frac{g(x)}{g'(x)}\). Under sufficient smoothness and 
+                        starting close enough to a simple root \(x^*\), one can show 
+                        \(f\) is a contraction on a neighborhood of \(x^*\) (in fact, 
+                        convergence is <em>quadratic</em>, not merely linear).
+                    </p>
+                    
+                    <h4>Gradient Descent</h4>
+                    <p>
+                        For minimizing \(h: \mathbb{R}^n \to \mathbb{R}\) with 
+                        \(L\)-Lipschitz gradient and strong convexity parameter \(\mu > 0\):
+                        \[
+                        f(x) = x - \alpha \nabla h(x)
+                        \]
+                        is a contraction with \(k = \max(|1 - \alpha L|, |1 - \alpha \mu|)\). 
+                        Choosing \(\alpha = \frac{2}{L + \mu}\) minimizes \(k\) to 
+                        \(\frac{L - \mu}{L + \mu} < 1\).
+                    </p>
+                    
+                    <h4>Value Iteration (Reinforcement Learning)</h4>
+                    <p>
+                        The Bellman operator \(T\) on bounded value functions:
+                        \[
+                        (TV)(s) = \max_a \left[ R(s,a) + \gamma \sum_{s'} P(s'|s,a) V(s') \right]
+                        \]
+                        is a \(\gamma\)-contraction under the supremum norm \(\|\cdot\|_\infty\), 
+                        where \(\gamma \in (0,1)\) is the discount factor. The space of 
+                        bounded functions is complete under \(\|\cdot\|_\infty\), so value 
+                        iteration converges to the unique optimal value function \(V^*\).
+                    </p>
+                    
+                    <h4>Proximal Methods</h4>
+                    <p>
+                        The proximal gradient operator for minimizing \(f + g\) (where \(f\) 
+                        is smooth and \(g\) is convex) is:
+                        \[
+                        T(x) = \text{prox}_{\alpha g}(x - \alpha \nabla f(x)).
+                        \]
+                        Under appropriate strong convexity and smoothness conditions, \(T\) 
+                        is a contraction.
+                    </p>
                 </div>
 
             </section>
