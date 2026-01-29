@@ -1,22 +1,29 @@
-const CACHE_NAME = 'math-cs-compass-v1';
-const STATIC_CACHE = 'static-v1';
-const PAGES_CACHE = 'pages-v1';
-const EXTERNAL_CACHE = 'external-v1';
-const MATH_CACHE = 'math-v1';
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE = `static-${CACHE_VERSION}`;
+const PAGES_CACHE = `pages-${CACHE_VERSION}`;
+const EXTERNAL_CACHE = `external-${CACHE_VERSION}`;
+const MATH_CACHE = `math-${CACHE_VERSION}`;
 
-// Core application shell assets
+// Core application shell assets - 
 const APP_SHELL = [
   '/',
   '/index.html',
   '/css/styles.css',
+  '/css/dark-theme-enhancement.css',
+  '/css/compass-map-styles.css',
   '/js/main.js',
   '/js/search.js',
   '/js/updateLog.js',
   '/offline.html',
-  '/images/maskable_icon_x512.png',
-  '/images/maskable_icon_x1280.png',
-  '/images/icon_x512.png',
-  '/manifest.json'
+  '/manifest.json',
+  // Updated icon paths
+  '/favicon.ico',
+  '/images/icon.svg',
+  '/images/apple-touch-icon.png',
+  '/images/icon-192.png',
+  '/images/icon-512.png',
+  '/images/icon-maskable-192.png',
+  '/images/icon-maskable-512.png'
 ];
 
 // Essential navigation pages
@@ -27,20 +34,17 @@ const CORE_PAGES = [
   '/Mathematics/Discrete/discrete_math.html'
 ];
 
-// External resources 
+// External resources - Updated Font Awesome version
 const EXTERNAL_RESOURCES = [
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-regular-400.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-brands-400.woff2'
 ];
 
-// Math resources (conditionally loaded in head.html)
+// Math resources - MathJax (loaded conditionally, so we cache but don't require)
 const MATH_RESOURCES = [
-  'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
-  'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff',
-  'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff',
-  'https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js'
+  'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
 ];
 
 // Install event handler - cache important resources
@@ -52,27 +56,53 @@ self.addEventListener('install', event => {
       // Cache app shell assets
       caches.open(STATIC_CACHE).then(cache => {
         console.log('Service Worker: Caching App Shell');
-        return cache.addAll(APP_SHELL);
+        // Use addAll but catch individual failures
+        return Promise.allSettled(
+          APP_SHELL.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache: ${url}`, err);
+            })
+          )
+        );
       }),
       
       // Cache core pages
       caches.open(PAGES_CACHE).then(cache => {
         console.log('Service Worker: Caching Core Pages');
-        return cache.addAll(CORE_PAGES);
+        return Promise.allSettled(
+          CORE_PAGES.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache: ${url}`, err);
+            })
+          )
+        );
       }),
       
       // Cache external resources
       caches.open(EXTERNAL_CACHE).then(cache => {
         console.log('Service Worker: Caching External Resources');
-        return cache.addAll(EXTERNAL_RESOURCES);
+        return Promise.allSettled(
+          EXTERNAL_RESOURCES.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache: ${url}`, err);
+            })
+          )
+        );
       }),
       
-      // Cache math resources
+      // Cache math resources 
       caches.open(MATH_CACHE).then(cache => {
         console.log('Service Worker: Caching Math Resources');
-        return cache.addAll(MATH_RESOURCES);
+        return Promise.allSettled(
+          MATH_RESOURCES.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache: ${url}`, err);
+            })
+          )
+        );
       })
     ]).then(() => {
+      console.log('Service Worker: Installation complete');
       return self.skipWaiting();
     })
   );
@@ -123,16 +153,31 @@ function getCacheStrategy(url) {
     return 'network-first';
   }
   
-  // Other assets - Stale While Revalidate
+  // Images - Cache First (they don't change often)
+  if (requestURL.pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/)) {
+    return 'cache-first';
+  }
+  
+  // CSS and JS - Stale While Revalidate
   return 'stale-while-revalidate';
 }
 
 // Fetch event handler
 self.addEventListener('fetch', event => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // Skip chrome-extension and other non-http(s) requests
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+  
   const strategy = getCacheStrategy(event.request.url);
   
   if (strategy === 'cache-first') {
-    // Cache First Strategy (for external libraries, fonts, etc.)
+    // Cache First Strategy (for external libraries, fonts, images, etc.)
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
@@ -144,13 +189,26 @@ self.addEventListener('fetch', event => {
             return networkResponse;
           }
           
-          return caches.open(EXTERNAL_CACHE).then(cache => {
+          // Determine which cache to use
+          const url = event.request.url;
+          let cacheName = STATIC_CACHE;
+          if (url.includes('cdnjs.cloudflare.com') || url.includes('cdn.jsdelivr.net')) {
+            cacheName = EXTERNAL_CACHE;
+          } else if (url.includes('mathjax') || url.includes('pyodide')) {
+            cacheName = MATH_CACHE;
+          }
+          
+          return caches.open(cacheName).then(cache => {
             cache.put(event.request, networkResponse.clone());
             return networkResponse;
           });
-        }).catch(() => {
-          // If fetch fails, return nothing (or a fallback)
-          return new Response('Failed to fetch external resource');
+        }).catch(error => {
+          console.error('Fetch failed for:', event.request.url, error);
+          // Return a fallback for images
+          if (event.request.url.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/)) {
+            return new Response('', { status: 404 });
+          }
+          return new Response('Resource unavailable', { status: 503 });
         });
       })
     );
@@ -179,63 +237,34 @@ self.addEventListener('fetch', event => {
             return caches.match('/offline.html');
           }
           
-          return new Response('Resource not available offline');
+          return new Response('Resource not available offline', { status: 503 });
         });
       })
     );
   } 
   else {
-    // Stale While Revalidate (for most assets)
+    // Stale While Revalidate (for CSS, JS, and other assets)
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         const fetchPromise = fetch(event.request).then(networkResponse => {
           // Update the cache with the new response
-          caches.open(STATIC_CACHE).then(cache => {
-            if (networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(STATIC_CACHE).then(cache => {
               cache.put(event.request, networkResponse.clone());
-            }
-          });
-          
+            });
+          }
           return networkResponse;
         }).catch(error => {
           console.error('Fetch failed:', error);
+          // Return cached version if available, otherwise throw
+          if (cachedResponse) {
+            return cachedResponse;
+          }
           throw error;
         });
         
         // Return cached response immediately, or wait for network response
         return cachedResponse || fetchPromise;
-      })
-    );
-  }
-});
-
-// Runtime caching for dynamically visited pages
-self.addEventListener('fetch', event => {
-  // Only cache GET requests from the same origin
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  const url = new URL(event.request.url);
-  
-  // Only cache specific page patterns in this listener
-  if (url.pathname.includes('/Mathematics/') && 
-      url.pathname.endsWith('.html') && 
-      !CORE_PAGES.includes(url.pathname)) {
-    
-    // Don't let this event listener interfere with the strategies above
-    // This is a separate listener only for dynamic page caching
-    event.waitUntil(
-      fetch(event.request).then(response => {
-        if (!response || response.status !== 200) return;
-        
-        const responseClone = response.clone();
-        caches.open(PAGES_CACHE).then(cache => {
-          cache.put(event.request, responseClone);
-          console.log('Dynamic page cached:', url.pathname);
-        });
-      }).catch(err => {
-        console.error('Failed to cache dynamic page:', err);
       })
     );
   }
