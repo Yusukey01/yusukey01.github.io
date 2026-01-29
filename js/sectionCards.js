@@ -1,21 +1,11 @@
 /**
  * MATH-CS COMPASS: Section Card Generator
  * @author Yusuke Yokota
- * @version 1.1.0 (Fixed)
+ * @version 1.1.0 
  * 
  * Generates topic cards dynamically from centralized curriculum.json data.
  * This ensures consistency between section pages and the compass map.
  * 
- * Usage:
- *   1. Include this script in your section page
- *   2. Add a container with id="topic-cards-container"
- *   3. Call: SectionCards.init('I') where 'I' is the section number
- * 
- * FIXES in v1.1.0:
- *   - Added proper base URL handling for relative paths
- *   - Fixed badge rendering to use proper badge classes
- *   - Improved error handling and debugging
- *   - Added container existence validation
  */
 
 const SectionCards = (function() {
@@ -67,13 +57,12 @@ const SectionCards = (function() {
         // Card title with link
         const titleH3 = document.createElement('h3');
         const titleLink = document.createElement('a');
-        // Fix: Use relative URL if baseUrl is provided, otherwise use part.url directly
+
         titleLink.href = part.url;
         titleLink.textContent = `Part ${part.part}: ${part.title}`;
         titleH3.appendChild(titleLink);
         card.appendChild(titleH3);
 
-        // FIX: Add badges as a separate container with proper styling
         if (part.badges && part.badges.length > 0) {
             const badgesDiv = document.createElement('div');
             badgesDiv.className = 'card-badges';

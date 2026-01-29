@@ -13,7 +13,6 @@ const APP_SHELL = [
   '/js/search.js',
   '/js/updateLog.js',
   '/offline.html',
-  '/logo/logo_ver3.webp',
   '/images/maskable_icon_x512.png',
   '/images/maskable_icon_x1280.png',
   '/images/icon_x512.png',
