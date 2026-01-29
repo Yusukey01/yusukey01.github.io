@@ -1,0 +1,131 @@
+{% comment %}
+  learning_resource_schema.html
+  
+  Generates Schema.org LearningResource JSON-LD from curriculum.json
+  
+  Usage: {% include learning_resource_schema.html topic_id="calc-17" %}
+  
+  Required: topic_id must match an id in curriculum.json
+{% endcomment %}
+
+{% assign topic = null %}
+{% assign parent_section = null %}
+{% assign parent_section_key = null %}
+
+{% for section in site.data.curriculum.sections %}
+  {% for part in section[1].parts %}
+    {% if part.id == include.topic_id %}
+      {% assign topic = part %}
+      {% assign parent_section = section[1] %}
+      {% assign parent_section_key = section[0] %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+{% if topic %}
+{% assign base_url = "https://math-cs-compass.com/" | append: parent_section.baseUrl | append: topic.url %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LearningResource",
+  "@id": "{{ base_url }}",
+  "name": "{{ topic.title }}",
+  "headline": "{{ topic.headline | default: topic.title }}",
+  "description": "{{ topic.description }}",
+  {% if topic.abstract %}"abstract": "{{ topic.abstract }}",{% endif %}
+  "keywords": {{ topic.keywords | jsonify }},
+  "learningResourceType": "lesson",
+  "educationalUse": ["instruction", "self-study"],
+  "educationalLevel": "university",
+  "interactivityType": "expository",
+  "accessMode": ["textual", "mathematical"],
+  "accessModeSufficient": [{"@type": "ItemList", "itemListElement": ["textual", "mathematical"]}],
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "isFamilyFriendly": true,
+  "author": {
+    "@type": "Person",
+    "name": "{{ site.data.curriculum.meta.author }}",
+    "jobTitle": "Mathematics & Computer Science Educator",
+    "url": "https://math-cs-compass.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MATH-CS COMPASS",
+    "url": "https://math-cs-compass.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://math-cs-compass.com/images/icon-512.png"
+    }
+  },
+  "datePublished": "{{ topic.datePublished | default: '2024-01-01' }}",
+  "dateModified": "{{ topic.dateModified | default: site.data.curriculum.meta.lastUpdated }}",
+  {% if topic.about and topic.about.size > 0 %}
+  "about": [
+    {% for item in topic.about %}
+    {
+      "@type": "Thing",
+      "name": "{{ item.name }}"{% if item.description %},
+      "description": "{{ item.description }}"{% endif %}
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ],
+  {% endif %}
+  {% if topic.teaches and topic.teaches.size > 0 %}
+  "teaches": {{ topic.teaches | jsonify }},
+  {% endif %}
+  {% if topic.competencyRequired and topic.competencyRequired.size > 0 %}
+  "competencyRequired": {{ topic.competencyRequired | jsonify }},
+  {% endif %}
+  "isPartOf": {
+    "@type": "Course",
+    "name": "{{ parent_section.title }}",
+    "courseCode": "{{ parent_section_key }}",
+    "description": "{{ parent_section.description }}",
+    "url": "https://math-cs-compass.com/{{ parent_section.indexUrl }}",
+    "provider": {
+      "@type": "Organization",
+      "name": "MATH-CS COMPASS",
+      "url": "https://math-cs-compass.com"
+    },
+    "hasCourseInstance": {
+      "@type": "CourseInstance",
+      "courseMode": "online",
+      "courseWorkload": "PT2H"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "category": "free"
+    }
+  }{% if topic.sections and topic.sections.size > 0 %},
+  "hasPart": [
+    {% for section in topic.sections %}
+    {
+      "@type": "WebPageElement",
+      "name": "{{ section.name }}",
+      "url": "{{ base_url }}#{{ section.id }}"
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ]{% endif %}{% if topic.definitions and topic.definitions.size > 0 %},
+  "mainEntity": {
+    "@type": "DefinedTermSet",
+    "name": "Key Concepts in {{ topic.title }}",
+    "hasDefinedTerm": [
+      {% for def in topic.definitions %}
+      {
+        "@type": "DefinedTerm",
+        "name": "{{ def.term }}",
+        "description": "{{ def.definition }}"
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+  }{% endif %}
+}
+</script>
+{% else %}
+<!-- ERROR: Topic with id="{{ include.topic_id }}" not found in curriculum.json -->
+{% endif %}
