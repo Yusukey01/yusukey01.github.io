@@ -694,7 +694,7 @@ class TransformerDemo {
             }
             
             .token-box {
-                background: white;
+                background: rgba(255, 255, 255, 0.03); 
                 border: 2px solid #dee2e6;
                 border-radius: 8px;
                 padding: 15px 20px;
@@ -705,17 +705,17 @@ class TransformerDemo {
             }
             
             .token-box.prompt {
-                background: #e3f2fd;
+                background: rgba(255, 255, 255, 0.03);
                 border-color: #2196f3;
             }
             
             .token-box.generated {
-                background: #e8f5e9;
+                background: rgba(255, 255, 255, 0.03);
                 border-color: #4caf50;
             }
             
             .token-box.processing {
-                background: #fff3e0;
+                background: rgba(255, 255, 255, 0.03);
                 border-color: #ff9800;
                 animation: tokenPulse 1s ease-in-out infinite;
             }
@@ -744,7 +744,7 @@ class TransformerDemo {
             /* Attention visualization */
             .attention-matrix {
                 margin: 20px 0;
-                background: #f8f9fa;
+                background: rgba(255, 255, 255, 0.03);
                 padding: 20px;
                 border-radius: 8px;
             }
@@ -771,7 +771,7 @@ class TransformerDemo {
             /* Probability chart */
             .probability-chart {
                 margin: 20px 0;
-                background: #f8f9fa;
+                background: rgba(255, 255, 255, 0.03);
                 padding: 20px;
                 border-radius: 8px;
             }
@@ -796,7 +796,7 @@ class TransformerDemo {
             .prob-value {
                 flex: 1;
                 height: 30px;
-                background: #e9ecef;
+                background: rgba(255, 255, 255, 0.03);
                 border-radius: 15px;
                 position: relative;
                 overflow: hidden;
