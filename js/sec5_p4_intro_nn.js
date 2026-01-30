@@ -1015,14 +1015,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .weight-section {
             margin-bottom: 15px;
             padding: 10px;
-            background-color: #f9f9f9;
+            background-color:  rgba(255, 255, 255, 0.03);
             border-radius: 4px;
         }
         
         .weight-section h4 {
             margin: 0 0 8px 0;
             font-size: 0.9rem;
-            color: #333;
+            color: #ddd;
         }
         
         .neuron-weights {
