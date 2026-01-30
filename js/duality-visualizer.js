@@ -184,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gap: 20px;
       }
       
+      /* Layout for larger screens */
       @media (min-width: 992px) {
         .visualizer-layout {
           flex-direction: row;
@@ -202,8 +203,10 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .controls-panel {
         background: rgba(20, 28, 40, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         padding: 15px;
-        border-radius: 8px;
+        border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
@@ -247,15 +250,15 @@ document.addEventListener('DOMContentLoaded', function() {
         font-family: "Computer Modern", serif;
         padding: 10px;
         background: rgba(21, 101, 192, 0.15);
-        border: 1px solid rgba(21, 101, 192, 0.3);
         border-radius: 5px;
         font-size: 0.95rem;
-        color: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(100, 180, 255, 0.2);
+        color: #e8eaed;
       }
       
       .equation, .constraint {
         margin-bottom: 5px;
-        color: rgba(255, 255, 255, 0.85);
+        color: rgba(255, 255, 255, 0.9);
       }
       
       .constraint-list {
@@ -283,7 +286,30 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .parameter-slider {
         flex: 1;
-        accent-color: #64b4ff;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      
+      .parameter-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: linear-gradient(135deg, #42a5f5, #1565c0);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+      
+      .parameter-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: linear-gradient(135deg, #42a5f5, #1565c0);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.3);
       }
       
       .parameter-value {
@@ -297,12 +323,12 @@ document.addEventListener('DOMContentLoaded', function() {
         text-align: center;
         margin-bottom: 10px;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 0.6);
       }
       
       #duality-canvas {
         border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 4px;
+        border-radius: 8px;
         background-color: #0f1419;
         max-width: 100%;
         height: auto;
@@ -312,37 +338,45 @@ document.addEventListener('DOMContentLoaded', function() {
       .legend {
         margin-top: 15px;
         padding: 10px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(20, 28, 40, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-      }
+     }
       
       .legend-item {
         display: flex;
         align-items: center;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+      }
+      
+      .legend-item:last-child {
+        margin-bottom: 0;
       }
       
       .legend-color {
         display: inline-block;
-        width: 12px;
-        height: 12px;
-        margin-right: 5px;
-        border-radius: 2px;
+        width: 14px;
+        height: 14px;
+        margin-right: 8px;
+        border-radius: 3px;
       }
       
       .legend-color.primal {
-        background-color: rgba(66, 165, 245, 0.3);
-        border: 1px solid rgba(66, 165, 245, 1);
+        background-color: rgba(52, 152, 219, 0.4);
+        border: 2px solid rgba(100, 180, 255, 0.8);
       }
       
       .legend-color.dual {
-        background-color: rgba(231, 76, 60, 0.3);
-        border: 1px solid rgba(231, 76, 60, 1);
+        background-color: rgba(231, 76, 60, 0.4);
+        border: 2px solid rgba(255, 107, 107, 0.8);
       }
       
       .legend-color.optimal {
         background-color: #2ecc71;
+        border: 2px solid #27ae60;
       }
       
       .results-panel {
@@ -372,14 +406,14 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .result-item {
         background: rgba(21, 101, 192, 0.1);
-        border: 1px solid rgba(21, 101, 192, 0.2);
         padding: 8px 12px;
         border-radius: 5px;
+        border: 1px solid rgba(100, 180, 255, 0.15);
       }
       
       .result-label {
         font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 0.6);
       }
       
       .result-value {
@@ -387,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 0.95rem;
         font-weight: 500;
         color: #64b4ff;
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.05);
         padding: 4px 8px;
         border-radius: 4px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -403,26 +437,29 @@ document.addEventListener('DOMContentLoaded', function() {
         background: linear-gradient(135deg, #1565c0, #42a5f5);
         color: white;
         border: none;
-        border-radius: 4px;
-        padding: 8px 16px;
+        border-radius: 6px;
+        padding: 10px 20px;
         font-size: 14px;
         cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 2px 8px rgba(21, 101, 192, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
       }
       
       .view-btn:hover {
-        background: linear-gradient(135deg, #1976d2, #64b5f6);
-        box-shadow: 0 4px 12px rgba(21, 101, 192, 0.4);
+        background: linear-gradient(135deg, #42a5f5, #1565c0);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
       }
       
       .explanation {
         background: rgba(20, 28, 40, 0.95);
+        backdrop-filter: blur(10px);
         padding: 20px;
-        border-radius: 8px;
+        border-radius: 12px;
         margin-top: 20px;
         border-left: 4px solid #64b4ff;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 4px solid #64b4ff;
       }
       
       .explanation h3 {
@@ -434,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .explanation p {
         margin-bottom: 15px;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.8);
       }
       
       .explanation-grid {
@@ -468,8 +505,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .explanation-column li strong {
-        color: #e8eaed;
+        color: #64b4ff;
       }
+
     `;
     
     document.head.appendChild(styleElement);
@@ -523,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to draw the grid and axes
     function drawGrid() {
-        ctx.strokeStyle = '#eee';
+        ctx.strokeStyle = '#2a3544';
         ctx.lineWidth = 1;
         
         // Draw grid lines
@@ -537,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Draw x-axis labels (every 5 units)
                 if (i % 5 === 0) {
-                    ctx.fillStyle = '#999';
+                    ctx.fillStyle = '#8899aa';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText(i.toString(), x, canvasHeight - padding + 20);
@@ -555,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Draw y-axis labels (every 5 units)
                 if (i % 5 === 0) {
-                    ctx.fillStyle = '#999';
+                    ctx.fillStyle = '#8899aa';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'right';
                     ctx.fillText(i.toString(), padding - 10, y + 4);
@@ -564,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Draw axes
-        ctx.strokeStyle = '#666';
+        ctx.strokeStyle = '#4a5568';
         ctx.lineWidth = 2;
         
         // x-axis
@@ -580,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
         
         // Axis labels
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = '#e8eaed';
         ctx.font = '14px Arial';
         
         // x-axis label
@@ -621,21 +659,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Improved label rendering with background for better readability
-    function drawLabel(x, y, text, color = '#333', bgColor = 'rgba(255, 255, 255, 0.8)') {
+    function drawLabel(x, y, text, color = '#e8eaed', bgColor = 'rgba(20, 28, 40, 0.95)') {
         const point = dataToCanvas(x, y);
         
         // Text metrics to size the background
-        ctx.font = '14px Arial';
+        ctx.font = '12px Arial';
         const metrics = ctx.measureText(text);
-        const padding = 4;
+        const paddingX = 6;
+        const paddingY = 4;
+        const textHeight = 14;
         
-        // Draw background rectangle
+        // Draw background rectangle with border
         ctx.fillStyle = bgColor;
         ctx.fillRect(
-            point.x - padding, 
-            point.y - 16 - padding, 
-            metrics.width + padding * 2, 
-            20 + padding * 2
+            point.x - paddingX, 
+            point.y - textHeight - paddingY, 
+            metrics.width + paddingX * 2, 
+            textHeight + paddingY * 2
+        );
+        
+        // Draw border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(
+            point.x - paddingX, 
+            point.y - textHeight - paddingY, 
+            metrics.width + paddingX * 2, 
+            textHeight + paddingY * 2
         );
         
         // Draw text
@@ -1073,6 +1123,18 @@ function solveDualSimplex() {
         const primalSolution = solvePrimalSimplex();
         const dualSolution = solveDualSimplex();
         
+        // Compute dual feasible region vertices
+        // Dual constraints (when μ = 0): 
+        //   a11*λ1 + a21*λ2 ≤ c1
+        //   a12*λ1 + a22*λ2 ≤ c2
+        //   λ1, λ2 ≥ 0
+        const dualVertices = computeDualFeasibleRegion(maxX, maxY);
+        
+        // Draw the filled dual feasible region (red)
+        if (dualVertices.length >= 3) {
+            fillPolygon(dualVertices, 'rgba(231, 76, 60, 0.25)', 'rgba(231, 76, 60, 0.6)');
+        }
+        
         // Draw the dual constraint lines (without the μ variables)
         // a11*λ1 + a21*λ2 = c1 - μ1 (when μ1 = 0)
         // a12*λ1 + a22*λ2 = c2 - μ2 (when μ2 = 0)
@@ -1094,10 +1156,7 @@ function solveDualSimplex() {
                 drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
                 
                 // Add label for constraint
-                const labelPoint = dataToCanvas(x1 + 0.5, maxY / 2);
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-                ctx.font = '12px Arial';
-                ctx.fillText('a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', labelPoint.x + 5, labelPoint.y);
+                drawLabel(x1 + 0.3, maxY * 0.7, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
                 return;
             }
             
@@ -1114,18 +1173,17 @@ function solveDualSimplex() {
                 drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
                 
                 // Add label for constraint
-                const labelPoint = dataToCanvas(maxX / 2, y1 + 0.5);
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-                ctx.font = '12px Arial';
-                ctx.fillText('a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', labelPoint.x, labelPoint.y + 15);
+                drawLabel(maxX * 0.5, y1 + 0.3, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
                 return;
             }
             
             // Draw constraint line
             drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
         
-            const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-            drawLabel(midPoint.x, midPoint.y - 0.5, 'a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', 'rgba(231, 76, 60, 1)');
+            // Position label away from line intersection
+            const labelX = Math.max(0.2, Math.min(x2 * 0.6, maxX * 0.4));
+            const labelY = y1 > 0 ? Math.max(0.2, y1 * 0.7) : maxY * 0.3;
+            drawLabel(labelX, labelY, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
         }
         
         // Draw second constraint: a12*λ1 + a22*λ2 = c2
@@ -1145,10 +1203,7 @@ function solveDualSimplex() {
                 drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
                 
                 // Add label for constraint
-                const labelPoint = dataToCanvas(x1 + 0.5, maxY / 2);
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
-                ctx.font = '12px Arial';
-                ctx.fillText('a₁₂λ₁ + a₂₂λ₂ = c₂ (μ₂=0)', labelPoint.x + 5, labelPoint.y);
+                drawLabel(x1 + 0.3, maxY * 0.5, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
                 return;
             }
             
@@ -1162,22 +1217,20 @@ function solveDualSimplex() {
                 y1 = c2 / a22;
                 x2 = maxX;
                 y2 = c2 / a22;
-                drawLine(x1, y1, x2, y2, 'rgba(8, 8, 8, 0.8)', 2);
+                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
                 
                 // Add label for constraint
-                const labelPoint = dataToCanvas(maxX / 2, y1 + 0.5);
-                ctx.fillStyle = 'rgba(8, 8, 8, 0.8)';
-                ctx.font = '12px Arial';
-                ctx.fillText('a₁₂λ₁ + a₂₂λ₂ = c₂ (μ₂=0)', labelPoint.x, labelPoint.y + 15);
+                drawLabel(maxX * 0.5, y1 + 0.3, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
                 return;
             }
             
             // Draw constraint line
             drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
             
-            // Add label for constraint
-            const midPoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
-            drawLabel(midPoint.x, midPoint.y - 0.5, 'a₁₁λ₁ + a₂₁λ₂ = c₁ (μ₁=0)', 'rgba(231, 76, 60, 1)');
+            // Position label away from line intersection
+            const labelX = Math.max(0.2, Math.min(x2 * 0.4, maxX * 0.3));
+            const labelY = y1 > 0 ? Math.max(0.2, y1 * 0.5) : maxY * 0.2;
+            drawLabel(labelX, labelY, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
         }
         
         // Draw non-negativity constraints
@@ -1200,9 +1253,96 @@ function solveDualSimplex() {
         if (legendSection) {
             const dualItem = legendSection.querySelector('.legend-item:nth-child(2)');
             if (dualItem) {
-                dualItem.innerHTML = '<span class="legend-color dual"></span> Dual Constraints (μ=0)';
+                dualItem.innerHTML = '<span class="legend-color dual"></span> Dual Feasible Region';
             }
         }
+    }
+    
+    // Function to compute dual feasible region vertices
+    function computeDualFeasibleRegion(maxX, maxY) {
+        let vertices = [];
+        
+        // Origin is always a vertex (λ1=0, λ2=0)
+        vertices.push({ x: 0, y: 0 });
+        
+        // Find intersection of first constraint with λ2 = 0 (x-axis)
+        // a11*λ1 = c1 => λ1 = c1/a11
+        if (a11 !== 0 && c1 / a11 >= 0) {
+            const x1 = c1 / a11;
+            // Check if it satisfies second constraint: a12*x1 ≤ c2
+            if (a12 * x1 <= c2 + eps) {
+                vertices.push({ x: x1, y: 0 });
+            }
+        }
+        
+        // Find intersection of second constraint with λ2 = 0 (x-axis)
+        // a12*λ1 = c2 => λ1 = c2/a12
+        if (a12 !== 0 && c2 / a12 >= 0) {
+            const x2 = c2 / a12;
+            // Check if it satisfies first constraint: a11*x2 ≤ c1
+            if (a11 * x2 <= c1 + eps) {
+                vertices.push({ x: x2, y: 0 });
+            }
+        }
+        
+        // Find intersection of first constraint with λ1 = 0 (y-axis)
+        // a21*λ2 = c1 => λ2 = c1/a21
+        if (a21 !== 0 && c1 / a21 >= 0) {
+            const y1 = c1 / a21;
+            // Check if it satisfies second constraint: a22*y1 ≤ c2
+            if (a22 * y1 <= c2 + eps) {
+                vertices.push({ x: 0, y: y1 });
+            }
+        }
+        
+        // Find intersection of second constraint with λ1 = 0 (y-axis)
+        // a22*λ2 = c2 => λ2 = c2/a22
+        if (a22 !== 0 && c2 / a22 >= 0) {
+            const y2 = c2 / a22;
+            // Check if it satisfies first constraint: a21*y2 ≤ c1
+            if (a21 * y2 <= c1 + eps) {
+                vertices.push({ x: 0, y: y2 });
+            }
+        }
+        
+        // Find intersection of two constraints
+        // a11*λ1 + a21*λ2 = c1
+        // a12*λ1 + a22*λ2 = c2
+        const det = a11 * a22 - a12 * a21;
+        if (Math.abs(det) > eps) {
+            const λ1 = (c1 * a22 - c2 * a21) / det;
+            const λ2 = (a11 * c2 - a12 * c1) / det;
+            if (λ1 >= -eps && λ2 >= -eps) {
+                vertices.push({ x: Math.max(0, λ1), y: Math.max(0, λ2) });
+            }
+        }
+        
+        // Remove duplicates
+        const uniqueVertices = [];
+        vertices.forEach(v => {
+            const isDuplicate = uniqueVertices.some(uv => 
+                Math.abs(uv.x - v.x) < eps && Math.abs(uv.y - v.y) < eps
+            );
+            if (!isDuplicate && v.x >= -eps && v.y >= -eps) {
+                uniqueVertices.push({ x: Math.max(0, v.x), y: Math.max(0, v.y) });
+            }
+        });
+        
+        // Sort vertices counter-clockwise around centroid
+        if (uniqueVertices.length > 2) {
+            const centroid = {
+                x: uniqueVertices.reduce((sum, v) => sum + v.x, 0) / uniqueVertices.length,
+                y: uniqueVertices.reduce((sum, v) => sum + v.y, 0) / uniqueVertices.length
+            };
+            
+            uniqueVertices.sort((a, b) => {
+                const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
+                const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+                return angleA - angleB;
+            });
+        }
+        
+        return uniqueVertices;
     }
 
     // Function to draw the entire visualization
@@ -1474,6 +1614,3 @@ function solveDualSimplex() {
         drawVisualization();
     }, 100);
 });
-
-
-
