@@ -658,35 +658,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
     }
 
-    // Improved label rendering with background for better readability
-    function drawLabel(x, y, text, color = '#e8eaed', bgColor = 'rgba(20, 28, 40, 0.95)') {
+    // Improved label rendering - text only with shadow for readability
+    function drawLabel(x, y, text, color = '#e8eaed') {
         const point = dataToCanvas(x, y);
         
-        // Text metrics to size the background
         ctx.font = '12px Arial';
-        const metrics = ctx.measureText(text);
-        const paddingX = 6;
-        const paddingY = 4;
-        const textHeight = 14;
         
-        // Draw background rectangle with border
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(
-            point.x - paddingX, 
-            point.y - textHeight - paddingY, 
-            metrics.width + paddingX * 2, 
-            textHeight + paddingY * 2
-        );
-        
-        // Draw border
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(
-            point.x - paddingX, 
-            point.y - textHeight - paddingY, 
-            metrics.width + paddingX * 2, 
-            textHeight + paddingY * 2
-        );
+        // Draw text shadow for better readability on dark background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillText(text, point.x + 1, point.y + 1);
         
         // Draw text
         ctx.fillStyle = color;
