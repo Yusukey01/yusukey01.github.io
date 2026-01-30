@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .results-box {
-      background-color: #f0f7ff;
+      background-color: rgba(255, 255, 255, 0.1);
       padding: 15px;
       border-radius: 8px;
       margin-bottom: 20px;
