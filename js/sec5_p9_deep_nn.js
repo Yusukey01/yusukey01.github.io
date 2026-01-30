@@ -921,11 +921,11 @@ class TransformerDemo {
         svg.innerHTML = `
             <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                    <polygon points="0 0, 10 3, 0 6" fill="#34495e" />
+                    <polygon points="0 0, 10 3, 0 6" fill="#ddd" />
                 </marker>
             </defs>
             
-            <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">
+            <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#ddd">
                 Transformer Architecture (Decoder)
             </text>
             
@@ -938,8 +938,8 @@ class TransformerDemo {
             
             <!-- Transformer Blocks -->
             <g id="transformer-stack">
-                <rect x="220" y="120" width="360" height="320" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,5" rx="10" />
-                <text x="400" y="105" text-anchor="middle" font-size="14" fill="#7f8c8d">Transformer Blocks (×2)</text>
+                <rect x="220" y="120" width="360" height="320" fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5" rx="10" />
+                <text x="400" y="105" text-anchor="middle" font-size="14" fill="#ddd">Transformer Blocks (×2)</text>
                 
                 <!-- First Transformer Block -->
                 <rect class="component-box" id="self-attention" x="260" y="370" width="280" height="40" rx="5" />
@@ -977,15 +977,15 @@ class TransformerDemo {
             <path class="connection-line" d="M 240 390 Q 210 330 240 330" stroke-dasharray="3,3" opacity="0.5" />
             <path class="connection-line" d="M 240 270 Q 210 210 240 210" stroke-dasharray="3,3" opacity="0.5" />
             
-            <text x="200" y="360" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
-            <text x="200" y="240" font-size="12" fill="#7f8c8d" text-anchor="middle">residual</text>
+            <text x="200" y="360" font-size="12" fill="#ddd" text-anchor="middle">residual</text>
+            <text x="200" y="240" font-size="12" fill="#ddd" text-anchor="middle">residual</text>
             
             <!-- Causal Mask Indicator -->
             <g transform="translate(550, 380)">
                 <rect x="0" y="-15" width="30" height="30" fill="#ff9800" rx="3" />
                 <text x="15" y="5" text-anchor="middle" fill="white" font-size="20">🔒</text>
-                <text x="15" y="30" text-anchor="middle" font-size="10" fill="#7f8c8d">Causal</text>
-                <text x="15" y="42" text-anchor="middle" font-size="10" fill="#7f8c8d">Mask</text>
+                <text x="15" y="30" text-anchor="middle" font-size="10" fill="#ddd">Causal</text>
+                <text x="15" y="42" text-anchor="middle" font-size="10" fill="#ddd">Mask</text>
             </g>
         `;
     }
