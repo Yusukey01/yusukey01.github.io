@@ -1098,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text-align: center;
             margin-bottom: 10px;
             font-size: 0.9rem;
-            color: #666;
+            color: #ddd;
         }
         
         .legend {
@@ -1213,14 +1213,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .result-hint {
             font-size: 0.8rem;
-            color: #666;
+            color: #ddd;
             font-style: italic;
             margin-top: 8px;
             text-align: center;
         }
         
         .kkt-conditions {
-            background-color: #f9f9f9;
+            background-color: rgba(255, 255, 255, 0.03);
             padding: 15px;
             border-radius: 8px;
             border-left: 4px solid #9b59b6;
