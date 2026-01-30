@@ -584,7 +584,7 @@ class TransformerDemo {
             
             .demo-content {
                 min-height: 500px;
-                background: white;
+                background:  rgba(255, 255, 255, 0.03);
                 position: relative;
                 overflow: auto;
             }
