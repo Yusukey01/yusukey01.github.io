@@ -271,23 +271,48 @@ class FourierVisualizer1D {
         `;
         
         // Add styles dynamically
+        // Add styles dynamically
         const styleElement = document.createElement('style');
         styleElement.textContent = `
-            .fourier-layout { display: flex; flex-direction: column; gap: 20px; }
-            @media (min-width: 992px) { .fourier-layout { flex-direction: row; } .fourier-visualization { flex: 3; order: 1; } .controls-panel { flex: 1; order: 2; } }
-            .fourier-visualization { background: rgba(20, 28, 40, 0.95); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; gap: 20px; }
-            .canvas-panel { width: 100%; }
-            .canvas-panel canvas { width: 100%; height: auto; background-color: #0f1419; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; }
-            .plot-title { font-weight: bold; text-align: center; margin-bottom: 5px; font-size: 0.9rem; color: #e8eaed; }
-            .plot-xlabel { text-align: center; font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
-            .controls-panel { background: rgba(20, 28, 40, 0.95); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); color: #e8eaed; }
-            .control-group { margin-bottom: 15px; }
-            .control-group-separator { font-weight: bold; color: #64b4ff; border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding-bottom: 5px; margin: 20px 0 15px 0; }
-            .control-group label { display: block; font-weight: bold; margin-bottom: 8px; color: rgba(255, 255, 255, 0.8); }
-            .full-width { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; color: #e8eaed; padding: 8px; }
-            .form-range { accent-color: #64b4ff; }
-            .form-select { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #e8eaed; }
+            .fft-visualizer { display: grid; grid-template-columns: 1fr; gap: 20px; color: #e8eaed; }
+            @media (min-width: 992px) { .fft-visualizer { grid-template-columns: 280px 1fr; } }
+            @media (min-width: 1200px) { .fft-visualizer { grid-template-columns: 300px 1fr; } }
+            .controls-panel { background: rgba(20, 28, 40, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px; }
+            .control-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+            .control-section:last-child { border-bottom: none; margin-bottom: 0; }
+            .control-section h3 { color: #66bb6a; margin-bottom: 12px; font-size: 0.95rem; font-weight: 600; }
+            .visualization-area { padding: 0; }
+            @media (min-width: 992px) { .visualization-area { padding-left: 15px; } }
+            .visualization-area .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 0; }
+            .visualization-area .row.mt-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 15px !important; }
+            .image-panel, .spectrum-panel { background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center; }
+            .col-md-6, .col-md-4 { padding: 0; }
+            .image-panel h4, .spectrum-panel h4 { color: rgba(255, 255, 255, 0.7); margin-bottom: 10px; font-size: 0.85rem; font-weight: 500; }
+            .image-panel canvas, .spectrum-panel canvas { width: 100%; height: auto; max-width: 256px; border: 1px solid rgba(255, 255, 255, 0.15); background: #0f1419; display: block; margin: 0 auto; }
+            .btn { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #e8eaed; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: all 0.3s; font-size: 0.85rem; }
+            .btn:hover { background: rgba(102, 187, 106, 0.15); border-color: rgba(102, 187, 106, 0.3); }
+            .btn-primary { background: linear-gradient(135deg, #2e7d32, #66bb6a); border: none; }
+            .btn-primary:hover { background: linear-gradient(135deg, #388e3c, #81c784); }
+            .btn-group { display: flex; flex-wrap: wrap; gap: 5px; }
+            .btn-preset { padding: 6px 12px; font-size: 0.8rem; }
+            .form-check { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+            .form-check-input { accent-color: #66bb6a; width: 16px; height: 16px; margin: 0; }
+            .form-check-label { color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; cursor: pointer; }
+            .form-label { color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; display: block; margin-bottom: 6px; }
+            .form-range { accent-color: #66bb6a; width: 100%; }
+            .form-text { color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; }
+            .filter-params { margin-top: 12px; }
+            .param-group { margin-bottom: 10px; }
+            .info-panel { background: rgba(255, 255, 255, 0.03); padding: 10px 15px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08); }
+            .stats { color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; }
+            .stats strong { color: #66bb6a; }
+            .mt-2 { margin-top: 8px !important; }
+            .mt-3 { margin-top: 15px !important; }
+            @media (max-width: 991px) { .visualization-area .row { grid-template-columns: 1fr; } .image-panel canvas, .spectrum-panel canvas { max-width: 100%; } }
         `;
+        
+        document.head.appendChild(styleElement);
+        document.head.appendChild(styleElement);
         document.head.appendChild(styleElement);
 
         // Cache DOM elements
