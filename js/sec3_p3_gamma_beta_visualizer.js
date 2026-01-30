@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-right: 8px;
         margin-bottom: 8px;
         padding: 8px 12px;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(20, 28, 40, 0.95);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         cursor: pointer;
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .special-case-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(20, 28, 40, 0.95);
       }
       
       .visualization-panel {
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .pdf-formula {
         margin-top: 20px;
         padding: 12px;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(20, 28, 40, 0.95);
         border-radius: 4px;
         border-left: 4px solid #3498db;
         font-family: 'Times New Roman', serif;
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .explanation-section {
         margin-top: 30px;
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(20, 28, 40, 0.95);
         padding: 20px;
         border-radius: 8px;
         border-left: 4px solid #3498db;
