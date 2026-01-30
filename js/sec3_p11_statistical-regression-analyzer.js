@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 16px;
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
         }
         
         .upload-controls {
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: block;
             margin-bottom: 8px;
             font-size: 14px;
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
         }
         
         .selector select {
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: flex;
             align-items: center;
             font-size: 14px;
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
             cursor: pointer;
         }
         
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 16px;
             font-size: 16px;
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
         }
         
         .equation-display {
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 16px;
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
         }
         
         .table-container {
