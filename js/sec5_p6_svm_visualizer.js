@@ -1089,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .param-hint {
             font-size: 0.8rem;
-            color: #666;
+            color: #ddd;
             margin-top: 4px;
             font-style: italic;
         }
@@ -1098,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text-align: center;
             margin-bottom: 10px;
             font-size: 0.9rem;
-            color: #ddd;
+            color: #666;
         }
         
         .legend {
