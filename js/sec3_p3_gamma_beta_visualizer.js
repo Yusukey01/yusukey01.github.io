@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     
-    // Add styles
+    // Add styles 
     const styleElement = document.createElement('style');
     styleElement.textContent = `
       .visualizer-container {
@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
         gap: 20px;
         margin-bottom: 20px;
+        color: #e8eaed;
       }
       
       @media (min-width: 992px) {
