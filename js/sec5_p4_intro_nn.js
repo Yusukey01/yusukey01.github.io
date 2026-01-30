@@ -1028,10 +1028,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .neuron-weights {
             margin-bottom: 8px;
             padding: 8px;
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.03);
             border-radius: 3px;
             border-left: 3px solid #3498db;
-            color:  rgba(255, 255, 255, 0.03);
         }
         
         .weight-item {
