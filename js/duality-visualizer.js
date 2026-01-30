@@ -1581,7 +1581,6 @@ function solveDualSimplex() {
     addTooltip(dualityGapElement, 'The difference between primal and dual optimal values. Zero indicates strong duality.');
 
     // Initialize on page load, need to wait for everything to load completely
-    // Fix the duality gap issue by ensuring proper scaling and numerical stability
     setTimeout(function() {
         // Add a small amount of numerical stability to avoid division by zero
         if (a11 === 0) a11 = 0.001;
