@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: flex;
             align-items: center;
             font-size: 14px;
-            color: rgba(20, 28, 40, 0.95);
+            color: #e8eaed;
             cursor: pointer;
         }
         
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .data-table td {
             padding: 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e8eaed;
+            color: rgba(20, 28, 40, 0.95);
         }
         
         .placeholder {
