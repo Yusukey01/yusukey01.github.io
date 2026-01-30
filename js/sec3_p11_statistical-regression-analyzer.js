@@ -219,9 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
     styleElement.textContent = `
         .regression-analyzer {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f9f9fb;
+            background: rgba(20, 28, 40, 0.95);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             padding: 20px;
             margin-bottom: 30px;
         }
@@ -231,9 +232,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .control-group {
-            background: white;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             padding: 16px;
             margin-bottom: 16px;
         }
@@ -242,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 16px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .upload-controls {
@@ -273,9 +274,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .sample-btn {
-            background-color: #f1f8ff;
+            background-color: rgba(20, 28, 40, 0.95);
             color: #0366d6;
-            border: 1px solid #c8e1ff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 4px 12px;
             font-size: 12px;
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .sample-btn:hover {
-            background-color: #dbedff;
+            background-color: rgba(20, 28, 40, 0.95);
         }
         
         .sample-btn.active {
@@ -307,13 +308,13 @@ document.addEventListener('DOMContentLoaded', function() {
             display: block;
             margin-bottom: 8px;
             font-size: 14px;
-            color: #555;
+            color: #e8eaed;
         }
         
         .selector select {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 4px;
         }
         
@@ -325,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: flex;
             align-items: center;
             font-size: 14px;
-            color: #555;
+            color: #e8eaed;
             cursor: pointer;
         }
         
@@ -350,11 +351,11 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 16px;
             font-size: 16px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .equation-display {
-            background-color: #f6f8fa;
+            background-color: rgba(20, 28, 40, 0.95);
             padding: 10px;
             border-radius: 4px;
             margin-bottom: 16px;
@@ -377,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .stats-card {
-            background-color: #f6f8fa;
+            background-color: rgba(20, 28, 40, 0.95);
             border-radius: 8px;
             padding: 12px;
         }
@@ -386,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 14px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .stats-table {
@@ -400,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .stats-table td:first-child {
-            color: #555;
+            color: #e8eaed;
         }
         
         .stats-table td:last-child {
@@ -417,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: flex;
             align-items: center;
             font-size: 14px;
-            color: #555;
+            color: #e8eaed;
             cursor: pointer;
         }
         
@@ -433,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 14px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .checks-grid {
@@ -443,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .check-item {
-            background-color: #f6f8fa;
+            background-color: rgba(20, 28, 40, 0.95);
             border-radius: 8px;
             padding: 10px;
         }
@@ -452,13 +453,13 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 8px;
             font-size: 13px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .check-item p {
             margin: 0;
             font-size: 12px;
-            color: #555;
+            color: #e8eaed;
             line-height: 1.4;
         }
         
@@ -474,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 16px;
-            color: #333;
+            color: #e8eaed;
         }
         
         .table-container {
@@ -490,16 +491,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .data-table th {
             text-align: left;
             padding: 8px;
-            background-color: #f6f8fa;
-            border-bottom: 1px solid #ddd;
+            background-color: rgba(20, 28, 40, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             font-weight: 600;
-            color: #333;
+            color: #e8eaed;
         }
         
         .data-table td {
             padding: 8px;
-            border-bottom: 1px solid #eee;
-            color: #555;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e8eaed;
         }
         
         .placeholder {
@@ -509,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             justify-content: center;
             min-height: 200px;
             text-align: center;
-            color: #666;
+            color: #e8eaed;
             padding: 20px;
         }
         
@@ -529,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
             .hint {
                 font-size: 12px;
-                color: #777;
+                color: #e8eaed;
                 margin-top: 4px;
             }
 
@@ -545,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
             display: flex;
             align-items: center;
             font-size: 14px;
-            color: #555;
+            color: #e8eaed;
             cursor: pointer;
         }
 
@@ -565,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         #polynomial-degree {
             padding: 4px 8px;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 4px;
         }
 
