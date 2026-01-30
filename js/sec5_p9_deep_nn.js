@@ -566,7 +566,7 @@ class TransformerDemo {
                 align-items: center;
                 gap: 10px;
                 padding: 15px;
-                background:  rgba(255,255,255,0.1);
+                background: #ecf0f1;
                 border-bottom: 1px solid #bdc3c7;
                 flex-wrap: wrap;
             }
@@ -605,7 +605,7 @@ class TransformerDemo {
             }
             
             .info-panel {
-                background: rgba(255, 255, 255, 0.03);
+                background: #ecf0f1;
                 padding: 20px;
                 border-top: 1px solid #bdc3c7;
             }
@@ -705,17 +705,17 @@ class TransformerDemo {
             }
             
             .token-box.prompt {
-                background: rgba(255, 255, 255, 0.03);
+                background: #e3f2fd;
                 border-color: #2196f3;
             }
             
             .token-box.generated {
-                background: rgba(255, 255, 255, 0.03);
+                background: #e8f5e9;
                 border-color: #4caf50;
             }
             
             .token-box.processing {
-                background: rgba(255, 255, 255, 0.03);
+                background: #fff3e0;
                 border-color: #ff9800;
                 animation: tokenPulse 1s ease-in-out infinite;
             }
@@ -744,7 +744,7 @@ class TransformerDemo {
             /* Attention visualization */
             .attention-matrix {
                 margin: 20px 0;
-                background: rgba(255, 255, 255, 0.03);
+                background: #f8f9fa;
                 padding: 20px;
                 border-radius: 8px;
             }
@@ -752,7 +752,7 @@ class TransformerDemo {
             .attention-heatmap {
                 display: inline-block;
                 margin: 10px;
-                border: 1px solid rgba(255, 255, 255, 0.03);
+                border: 1px solid #dee2e6;
                 border-radius: 5px;
                 overflow: hidden;
             }
