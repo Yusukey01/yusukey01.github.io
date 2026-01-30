@@ -566,7 +566,7 @@ class TransformerDemo {
                 align-items: center;
                 gap: 10px;
                 padding: 15px;
-                background: #ecf0f1;
+                background:  rgba(255,255,255,0.1);
                 border-bottom: 1px solid #bdc3c7;
                 flex-wrap: wrap;
             }
