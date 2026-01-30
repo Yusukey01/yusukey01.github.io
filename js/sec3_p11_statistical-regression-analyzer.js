@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-top: 0;
             margin-bottom: 12px;
             font-size: 16px;
-            color: rgba(20, 28, 40, 0.95);
+            color: #e8eaed;
         }
         
         .upload-controls {
