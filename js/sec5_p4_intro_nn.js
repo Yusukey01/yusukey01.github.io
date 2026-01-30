@@ -1031,6 +1031,7 @@ document.addEventListener('DOMContentLoaded', function() {
             background-color: white;
             border-radius: 3px;
             border-left: 3px solid #3498db;
+            color:  rgba(255, 255, 255, 0.03);
         }
         
         .weight-item {
@@ -1041,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .weight-label {
             font-weight: bold;
+            
         }
         
         .weight-value {
