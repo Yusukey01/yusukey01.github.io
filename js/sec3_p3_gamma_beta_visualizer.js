@@ -162,10 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .controls-panel {
-        background-color: #f8f9fa;
+        background: rgba(20, 28, 40, 0.95);
+        backdrop-filter: blur(20px);
         padding: 16px;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
       
       .distribution-selector {
@@ -180,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
       .distribution-btn {
         flex: 1;
         padding: 10px;
-        background-color: #e9ecef;
-        border: 1px solid #ced4da;
+        background-color: rgba(20, 28, 40, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         cursor: pointer;
         font-weight: 500;
         transition: all 0.2s;
@@ -209,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-top: 0;
         margin-bottom: 16px;
         font-size: 1.1rem;
-        color: #333;
+        color: #e8eaed;
       }
       
       .parameter-group {
@@ -252,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .property-value {
-        color: #333;
+        color: #e8eaed;
       }
       
       .special-cases {
@@ -263,22 +265,22 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-top: 0;
         margin-bottom: 12px;
         font-size: 1.1rem;
-        color: #333;
+        color: #e8eaed;
       }
       
       .special-case-btn {
         margin-right: 8px;
         margin-bottom: 8px;
         padding: 8px 12px;
-        background-color: #f0f7ff;
-        border: 1px solid #d0e0f0;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s;
       }
       
       .special-case-btn:hover {
-        background-color: #e1effe;
+        background-color: rgba(255, 255, 255, 0.1);
       }
       
       .visualization-panel {
@@ -287,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       #distribution-canvas {
         background-color: white;
-        border: 1px solid #ddd;
+        border: 1px solid  rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         max-width: 100%;
         height: auto;
@@ -296,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .pdf-formula {
         margin-top: 20px;
         padding: 12px;
-        background-color: #f5f5f5;
+        background-color: rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         border-left: 4px solid #3498db;
         font-family: 'Times New Roman', serif;
@@ -308,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       .explanation-section {
         margin-top: 30px;
-        background-color: #f8f9fa;
+        background-color: rgba(255, 255, 255, 0.1);
         padding: 20px;
         border-radius: 8px;
         border-left: 4px solid #3498db;
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .explanation-section h3 {
         margin-top: 0;
         margin-bottom: 16px;
-        color: #333;
+        color: #e8eaed;
       }
       
       .explanation-section ul {
