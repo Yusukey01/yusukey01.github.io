@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .visualizer-container {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         margin-bottom: 20px;
+        color: #e8eaed;
       }
       
       .visualizer-layout {
@@ -183,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
         gap: 20px;
       }
       
-      /* Layout for larger screens */
       @media (min-width: 992px) {
         .visualizer-layout {
           flex-direction: row;
@@ -201,10 +201,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .controls-panel {
-        background-color: #f8f9fa;
+        background: rgba(20, 28, 40, 0.95);
         padding: 15px;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
       
       .canvas-container {
@@ -224,33 +225,37 @@ document.addEventListener('DOMContentLoaded', function() {
       .visualization-header h3 {
         margin: 0;
         font-size: 1.1rem;
+        color: #e8eaed;
       }
       
       .control-group {
         margin-bottom: 20px;
-        background-color: white;
+        background: rgba(255, 255, 255, 0.03);
         padding: 15px;
         border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
       
       .control-group h3 {
         margin-top: 0;
         margin-bottom: 12px;
         font-size: 16px;
-        color: #333;
+        color: #e8eaed;
       }
       
       .problem-display {
         font-family: "Computer Modern", serif;
         padding: 10px;
-        background-color: #f0f7ff;
+        background: rgba(21, 101, 192, 0.15);
+        border: 1px solid rgba(21, 101, 192, 0.3);
         border-radius: 5px;
         font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.9);
       }
       
       .equation, .constraint {
         margin-bottom: 5px;
+        color: rgba(255, 255, 255, 0.85);
       }
       
       .constraint-list {
@@ -273,29 +278,32 @@ document.addEventListener('DOMContentLoaded', function() {
         width: 40px;
         font-family: "Computer Modern", serif;
         font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
       }
       
       .parameter-slider {
         flex: 1;
+        accent-color: #64b4ff;
       }
       
       .parameter-value {
         width: 30px;
         text-align: right;
         font-family: monospace;
+        color: #64b4ff;
       }
       
       .instruction {
         text-align: center;
         margin-bottom: 10px;
         font-size: 0.9rem;
-        color: #666;
+        color: rgba(255, 255, 255, 0.5);
       }
       
       #duality-canvas {
-        border: 1px solid #ddd;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
-        background-color: white;
+        background-color: #0f1419;
         max-width: 100%;
         height: auto;
         display: block;
@@ -304,14 +312,15 @@ document.addEventListener('DOMContentLoaded', function() {
       .legend {
         margin-top: 15px;
         padding: 10px;
-        background-color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-     }
+      }
       
       .legend-item {
         display: flex;
         align-items: center;
+        color: rgba(255, 255, 255, 0.7);
       }
       
       .legend-color {
@@ -323,8 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .legend-color.primal {
-        background-color: rgba(52, 152, 219, 0.3);
-        border: 1px solid rgba(52, 152, 219, 1);
+        background-color: rgba(66, 165, 245, 0.3);
+        border: 1px solid rgba(66, 165, 245, 1);
       }
       
       .legend-color.dual {
@@ -337,10 +346,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .results-panel {
-        background-color: white;
+        background: rgba(255, 255, 255, 0.03);
         padding: 15px;
         border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         margin-bottom: 20px;
       }
       
@@ -348,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-top: 0;
         margin-bottom: 12px;
         font-size: 16px;
-        color: #333;
+        color: #e8eaed;
       }
       
       .results-grid {
@@ -362,20 +371,28 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .result-item {
-        background-color: #f0f7ff;
+        background: rgba(21, 101, 192, 0.1);
+        border: 1px solid rgba(21, 101, 192, 0.2);
         padding: 8px 12px;
         border-radius: 5px;
       }
       
       .result-label {
         font-size: 0.85rem;
-        color: #666;
+        color: rgba(255, 255, 255, 0.5);
       }
       
       .result-value {
         font-family: "Computer Modern", serif;
         font-size: 0.95rem;
         font-weight: 500;
+        color: #64b4ff;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: inline-block;
+        margin-top: 4px;
       }
       
       .toggle-view {
@@ -383,36 +400,41 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .view-btn {
-        background-color: #3498db;
+        background: linear-gradient(135deg, #1565c0, #42a5f5);
         color: white;
         border: none;
         border-radius: 4px;
         padding: 8px 16px;
         font-size: 14px;
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(21, 101, 192, 0.3);
       }
       
       .view-btn:hover {
-        background-color: #2980b9;
+        background: linear-gradient(135deg, #1976d2, #64b5f6);
+        box-shadow: 0 4px 12px rgba(21, 101, 192, 0.4);
       }
       
       .explanation {
-        background-color: #f8f9fa;
+        background: rgba(20, 28, 40, 0.95);
         padding: 20px;
         border-radius: 8px;
         margin-top: 20px;
-        border-left: 4px solid #3498db;
+        border-left: 4px solid #64b4ff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
       
       .explanation h3 {
         margin-top: 0;
         margin-bottom: 10px;
         font-size: 1.1rem;
+        color: #e8eaed;
       }
       
       .explanation p {
         margin-bottom: 15px;
+        color: rgba(255, 255, 255, 0.7);
       }
       
       .explanation-grid {
@@ -431,6 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-top: 0;
         margin-bottom: 10px;
         font-size: 1rem;
+        color: #e8eaed;
       }
       
       .explanation-column ul {
@@ -441,20 +464,12 @@ document.addEventListener('DOMContentLoaded', function() {
       .explanation-column li {
         margin-bottom: 8px;
         line-height: 1.4;
+        color: rgba(255, 255, 255, 0.7);
       }
-
-      .result-value {
-    font-family: "Computer Modern", serif;
-    font-size: 0.95rem;
-    font-weight: 500;
-    background-color: #f5f5f5;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    display: inline-block;
-    margin-top: 4px;
-    }
-
+      
+      .explanation-column li strong {
+        color: #e8eaed;
+      }
     `;
     
     document.head.appendChild(styleElement);
