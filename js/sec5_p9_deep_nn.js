@@ -605,14 +605,14 @@ class TransformerDemo {
             }
             
             .info-panel {
-                background: #ecf0f1;
+                background: rgba(255, 255, 255, 0.03);
                 padding: 20px;
                 border-top: 1px solid #bdc3c7;
             }
             
             .info-panel h4 {
                 margin: 0 0 10px 0;
-                color: #2c3e50;
+                color: #ddd;
             }
             
             #step-title {
