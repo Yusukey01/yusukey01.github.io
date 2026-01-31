@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .tab-btn {
             padding: 10px 15px;
             border: none;
-            background:  rgba(255, 255, 255, 0.03);
+            background: #ddd;
             cursor: pointer;
             border-radius: 4px 4px 0 0;
             transition: all 0.3s;
