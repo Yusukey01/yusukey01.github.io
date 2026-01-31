@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       .distribution-properties {
-        background-color: white;
+        background-color: rgba(20, 28, 40, 0.95);
         padding: 12px;
         border-radius: 4px;
         margin-top: 16px;
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-right: 8px;
         margin-bottom: 8px;
         padding: 8px 12px;
-        background-color: rgba(20, 28, 40, 0.95);
+        background-color: #e8eaed;
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         cursor: pointer;
