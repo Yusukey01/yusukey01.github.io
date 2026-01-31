@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .distribution-btn {
         flex: 1;
         padding: 10px;
-        background-color: rgba(20, 28, 40, 0.95);
+        background-color: #e8eaed;
         border: 1px solid rgba(255, 255, 255, 0.1);
         cursor: pointer;
         font-weight: 500;
