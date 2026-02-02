@@ -91,3 +91,498 @@ V- ML
  
 
  noindex: true
+
+ ........................................................................................................................
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATH-CS COMPASS - Map Layout Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #111827;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container { padding: 16px; max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 1.25rem; margin-bottom: 12px; }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        .controls label { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; cursor: pointer; }
+        .controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .filter-group { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
+        .filter-label { font-size: 0.75rem; color: #9ca3af; }
+        .filter-btn { 
+            padding: 4px 8px; font-size: 0.75rem; border: none; border-radius: 4px; 
+            cursor: pointer; transition: all 0.15s;
+        }
+        .filter-btn.active { background: #fff; color: #000; }
+        .filter-btn:not(.active) { background: #374151; color: #fff; opacity: 0.7; }
+        .filter-btn:hover { opacity: 1; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.75rem; margin-bottom: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+        .main-content { display: flex; gap: 16px; }
+        .map-container { 
+            flex: 1; background: #030712; border-radius: 8px; 
+            overflow: auto; max-height: 65vh; min-height: 400px;
+        }
+        .map-container svg { width: 100%; min-height: 400px; }
+        .info-panel { width: 280px; flex-shrink: 0; }
+        .info-box { background: #1f2937; padding: 12px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 12px; }
+        .info-box h3 { font-size: 0.875rem; margin-bottom: 8px; }
+        .info-box p { margin-bottom: 4px; }
+        .info-box .label { color: #9ca3af; }
+        .info-box .available { color: #4ade80; margin-top: 8px; font-weight: 500; }
+        .info-box .reserved { color: #facc15; margin-top: 8px; }
+        .info-box .url-link { 
+            color: #60a5fa; text-decoration: none; word-break: break-all; 
+            display: block; margin-top: 4px; font-size: 0.7rem;
+        }
+        .info-box .url-link:hover { text-decoration: underline; }
+        .stats { font-size: 0.75rem; color: #9ca3af; }
+        .section-stats { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .section-stats .count-reserved { color: #6b7280; }
+        svg text { user-select: none; pointer-events: none; }
+        svg g { cursor: pointer; }
+        svg g:hover path { filter: brightness(1.2); }
+        .loading { text-align: center; padding: 40px; color: #9ca3af; }
+        .error { text-align: center; padding: 40px; color: #ef4444; }
+        .error code { display: block; margin-top: 12px; font-size: 0.8rem; color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const SECTION_COLORS = {
+            'HOME': '#888888',
+            'I': '#1565c0',
+            'II': '#2e7d32',
+            'III': '#c62828',
+            'IV': '#6a1b9a',
+            'V': '#ef6c00',
+            'EMPTY': '#2a2a2a'
+        };
+
+        const SECTION_NAMES = {
+            'HOME': 'Home',
+            'I': 'Linear Algebra to Algebraic Foundations',
+            'II': 'Calculus to Optimization & Analysis',
+            'III': 'Probability & Statistics',
+            'IV': 'Discrete Math',
+            'V': 'Machine Learning'
+        };
+        
+        // Short names for compact displays
+        const SECTION_SHORT_NAMES = {
+            'HOME': 'Home',
+            'I': 'LinAlg & Algebra',
+            'II': 'Calculus & Opt',
+            'III': 'Probability',
+            'IV': 'Discrete',
+            'V': 'ML'
+        };
+
+        /**
+         * Load curriculum data from JSON file - same logic as compass.html
+         */
+        async function loadCurriculumData() {
+            // Try multiple paths to support different folder structures
+            const paths = [
+                '../data/curriculum.json',
+                './data/curriculum.json',
+                '/data/curriculum.json',
+                'curriculum.json'
+            ];
+            
+            let data = null;
+            let lastError = null;
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log(`Loaded curriculum from: ${path}`);
+                        break;
+                    }
+                } catch (e) {
+                    lastError = e;
+                }
+            }
+            
+            if (!data) {
+                throw new Error(`Could not load curriculum.json. Tried: ${paths.join(', ')}`);
+            }
+            
+            const tiles = [];
+            const sectionColors = data.sectionColors || {};
+            sectionColors['HOME'] = '#888888';
+            
+            // Add home node
+            if (data.homeNode) {
+                tiles.push({
+                    id: data.homeNode.id,
+                    section: 'HOME',
+                    title: data.homeNode.title,
+                    url: data.homeNode.url,
+                    q: data.homeNode.mapCoords.q,
+                    r: data.homeNode.mapCoords.r
+                });
+            }
+            
+            // Add all parts from all sections
+            Object.entries(data.sections).forEach(([sectionId, section]) => {
+                section.parts.forEach(part => {
+                    tiles.push({
+                        id: part.id,
+                        section: sectionId,
+                        title: part.title,
+                        url: section.baseUrl + part.url,
+                        q: part.mapCoords.q,
+                        r: part.mapCoords.r,
+                        prereqs: part.prereqs || [],
+                        keywords: part.keywords || [],
+                        topicGroup: part.topicGroup || null
+                    });
+                });
+                
+                // Add reserved slots
+                if (section.reservedSlots) {
+                    section.reservedSlots.forEach((slot, index) => {
+                        tiles.push({
+                            id: `${sectionId}-reserved-${index}`,
+                            section: sectionId,
+                            title: 'Coming Soon',
+                            url: null,
+                            q: slot.q,
+                            r: slot.r,
+                            isReserved: true,
+                            topicGroup: null
+                        });
+                    });
+                }
+            });
+            
+            return { tiles, sectionColors };
+        }
+
+        // Topic group display names
+        const TOPIC_GROUP_NAMES = {
+            'core-linalg': 'Core Linear Algebra',
+            'abstract-algebra': 'Abstract Algebra',
+            'derivatives': 'Derivatives',
+            'numerical': 'Numerical Methods',
+            'optimization': 'Optimization',
+            'analysis': 'Analysis & Integration',
+            'fourier': 'Fourier Analysis',
+            'foundations': 'Probability Foundations',
+            'distributions': 'Distributions',
+            'multivariate': 'Multivariate Statistics',
+            'inference': 'Statistical Inference',
+            'information': 'Information Theory',
+            'bayesian': 'Bayesian Methods',
+            'gaussian-process': 'Gaussian Processes',
+            'graph-theory': 'Graph Theory',
+            'combinatorics': 'Combinatorics',
+            'computation': 'Theory of Computation',
+            'boolean': 'Boolean Logic',
+            'ml-foundations': 'ML Foundations',
+            'neural-networks': 'Neural Networks',
+            'dimensionality': 'Dimensionality Reduction',
+            'reinforcement-learning': 'Reinforcement Learning'
+        };
+
+        function HexMapEditor() {
+            const [tiles, setTiles] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [selectedTile, setSelectedTile] = useState(null);
+            const [showEmptySlots, setShowEmptySlots] = useState(true);
+            const [showReserved, setShowReserved] = useState(true);
+            const [highlightSection, setHighlightSection] = useState(null);
+            const [highlightTopicGroup, setHighlightTopicGroup] = useState(null);
+            
+            const hexSize = 28;
+            
+            // Load data on mount
+            useEffect(() => {
+                loadCurriculumData()
+                    .then(({ tiles }) => {
+                        setTiles(tiles);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        setError(err.message);
+                        setLoading(false);
+                    });
+            }, []);
+            
+            const activeTiles = useMemo(() => {
+                return tiles.filter(t => showReserved || !t.isReserved);
+            }, [tiles, showReserved]);
+            
+            const occupiedMap = useMemo(() => {
+                const map = new Map();
+                activeTiles.forEach(tile => map.set(`${tile.q},${tile.r}`, tile));
+                return map;
+            }, [activeTiles]);
+            
+            const emptySlots = useMemo(() => {
+                const slots = [];
+                const checked = new Set();
+                const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
+                
+                activeTiles.forEach(tile => {
+                    neighbors.forEach(([dq, dr]) => {
+                        const nq = tile.q + dq, nr = tile.r + dr;
+                        const key = `${nq},${nr}`;
+                        if (!occupiedMap.has(key) && !checked.has(key)) {
+                            checked.add(key);
+                            const borderingSection = new Set();
+                            neighbors.forEach(([ddq, ddr]) => {
+                                const neighbor = occupiedMap.get(`${nq + ddq},${nr + ddr}`);
+                                if (neighbor && !neighbor.isReserved) borderingSection.add(neighbor.section);
+                            });
+                            slots.push({ q: nq, r: nr, section: 'EMPTY', borderingSection: Array.from(borderingSection) });
+                        }
+                    });
+                });
+                return slots;
+            }, [occupiedMap, activeTiles]);
+            
+            const hexToPixel = (q, r) => ({
+                x: hexSize * Math.sqrt(3) * (q + r / 2),
+                y: hexSize * (3 / 2) * r
+            });
+            
+            const viewBox = useMemo(() => {
+                const allTiles = [...activeTiles, ...emptySlots];
+                if (allTiles.length === 0) return { x: -100, y: -100, width: 200, height: 200 };
+                
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                allTiles.forEach(tile => {
+                    const { x, y } = hexToPixel(tile.q, tile.r);
+                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                });
+                const padding = hexSize * 2;
+                return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+            }, [emptySlots, activeTiles]);
+            
+            const hexPath = (cx, cy, size) => {
+                const points = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 6) + (i * Math.PI / 3);
+                    points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
+                }
+                return `M${points.join('L')}Z`;
+            };
+            
+            const renderTile = (tile, isEmpty = false) => {
+                const { x, y } = hexToPixel(tile.q, tile.r);
+                const color = SECTION_COLORS[tile.section] || '#888';
+                const isReserved = tile.isReserved;
+                const isHighlightedBySection = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
+                const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
+                
+                // Highlight tiles in the same topic group as selected tile
+                const isSameTopicGroup = selectedTile && selectedTile.topicGroup && tile.topicGroup === selectedTile.topicGroup;
+                const isPrereqOfSelected = selectedTile && selectedTile.prereqs && selectedTile.prereqs.includes(tile.id);
+                
+                let opacity = isEmpty ? 0.3 : 1;
+                
+                // Apply section filter
+                if (highlightSection && !isHighlightedBySection) {
+                    opacity = 0.3;
+                }
+                
+                // When a tile is selected, highlight topic group and prereqs
+                if (selectedTile && !isEmpty) {
+                    if (isSelected || isSameTopicGroup || isPrereqOfSelected) {
+                        opacity = 1;
+                    } else {
+                        opacity = 0.2;
+                    }
+                }
+                
+                if (isReserved) opacity = Math.min(opacity, 0.35);
+                
+                // Glow effect for selected tile and its prereqs
+                const hasGlow = isSelected || isPrereqOfSelected;
+                
+                return (
+                    <g key={`${tile.q},${tile.r}`} onClick={() => setSelectedTile(tile)}>
+                        <path
+                            d={hexPath(x, y, hexSize * 0.88)}
+                            fill={color}
+                            fillOpacity={opacity}
+                            stroke={isSelected ? '#fff' : isPrereqOfSelected ? '#ffeb3b' : isEmpty ? '#444' : isReserved ? '#666' : 'rgba(255,255,255,0.3)'}
+                            strokeWidth={isSelected ? 2.5 : isPrereqOfSelected ? 2 : 1}
+                            strokeDasharray={isEmpty || isReserved ? '3,2' : 'none'}
+                        />
+                        {!isEmpty && (
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6"
+                                fontWeight={isReserved ? 'normal' : 'bold'} fontStyle={isReserved ? 'italic' : 'normal'} opacity={isReserved ? 0.6 : opacity}>
+                                {isReserved ? '?' : tile.id.replace(/^[a-z]+-/, '')}
+                            </text>
+                        )}
+                        {isEmpty && (
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="#555" fontSize="5">
+                                {tile.q},{tile.r}
+                            </text>
+                        )}
+                    </g>
+                );
+            };
+            
+            if (loading) {
+                return <div className="container"><div className="loading">Loading curriculum.json...</div></div>;
+            }
+            
+            if (error) {
+                return (
+                    <div className="container">
+                        <div className="error">
+                            Failed to load curriculum data
+                            <code>{error}</code>
+                            <p style={{ marginTop: '16px', fontSize: '0.8rem', color: '#9ca3af' }}>
+                                Make sure this file is in your project's /tools/ or /map/ folder,<br/>
+                                and curriculum.json is in /data/ folder.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            const realTiles = activeTiles.filter(t => !t.isReserved);
+            const reservedTiles = activeTiles.filter(t => t.isReserved);
+            
+            return (
+                <div className="container">
+                    <h1>MATH-CS COMPASS - Map Layout Editor</h1>
+                    
+                    <div className="controls">
+                        <label>
+                            <input type="checkbox" checked={showEmptySlots} onChange={(e) => setShowEmptySlots(e.target.checked)} />
+                            Empty slots
+                        </label>
+                        <label>
+                            <input type="checkbox" checked={showReserved} onChange={(e) => setShowReserved(e.target.checked)} />
+                            Reserved
+                        </label>
+                        <div className="filter-group">
+                            <span className="filter-label">Filter:</span>
+                            <button className={`filter-btn ${!highlightSection ? 'active' : ''}`} onClick={() => setHighlightSection(null)}>All</button>
+                            {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key]) => (
+                                <button key={key} className={`filter-btn ${highlightSection === key ? 'active' : ''}`}
+                                    style={{ backgroundColor: highlightSection === key ? SECTION_COLORS[key] : undefined }}
+                                    onClick={() => setHighlightSection(key === highlightSection ? null : key)}>
+                                    {key}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="legend">
+                        {Object.entries(SECTION_NAMES).map(([key, name]) => (
+                            <div key={key} className="legend-item">
+                                <div className="legend-color" style={{ backgroundColor: SECTION_COLORS[key] }}></div>
+                                <span>{key}: {name}</span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="main-content">
+                        <div className="map-container">
+                            <svg viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}>
+                                <defs>
+                                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a1a1a" strokeWidth="0.5"/>
+                                    </pattern>
+                                </defs>
+                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
+                                {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
+                                {activeTiles.map(tile => renderTile(tile, false))}
+                            </svg>
+                        </div>
+                        
+                        <div className="info-panel">
+                            {selectedTile ? (
+                                <div className="info-box">
+                                    <h3>
+                                        {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : '📄 ' + selectedTile.id}
+                                    </h3>
+                                    {selectedTile.section !== 'EMPTY' && (
+                                        <p style={{ fontSize: '1rem', fontWeight: 'bold', margin: '8px 0', color: SECTION_COLORS[selectedTile.section] }}>
+                                            {selectedTile.title}
+                                        </p>
+                                    )}
+                                    <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
+                                    {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
+                                    {selectedTile.topicGroup && (
+                                        <p><span className="label">Topic Group:</span> <span style={{ color: '#60a5fa' }}>{TOPIC_GROUP_NAMES[selectedTile.topicGroup] || selectedTile.topicGroup}</span></p>
+                                    )}
+                                    {selectedTile.url && (
+                                        <p>
+                                            <span className="label">URL:</span>
+                                            <a className="url-link" href={selectedTile.url} target="_blank" rel="noopener noreferrer">
+                                                {selectedTile.url}
+                                            </a>
+                                        </p>
+                                    )}
+                                    {selectedTile.prereqs && selectedTile.prereqs.length > 0 && (
+                                        <p><span className="label">Prereqs:</span> <span style={{ color: '#facc15' }}>{selectedTile.prereqs.join(', ')}</span></p>
+                                    )}
+                                    {selectedTile.borderingSection && <p><span className="label">Borders:</span> {selectedTile.borderingSection.join(', ') || 'None'}</p>}
+                                    {selectedTile.section === 'EMPTY' && <p className="available">✓ Available for new tile</p>}
+                                    {selectedTile.isReserved && <p className="reserved">⏳ Placeholder for future content</p>}
+                                </div>
+                            ) : (
+                                <div className="info-box" style={{ color: '#9ca3af' }}>Click a tile to see details</div>
+                            )}
+                            
+                            <div className="stats">
+                                <p>Active: {realTiles.length} | Reserved: {reservedTiles.length} | Empty: {emptySlots.length}</p>
+                            </div>
+                            
+                            <div className="info-box" style={{ marginTop: '12px' }}>
+                                <h3 style={{ marginBottom: '8px' }}>By Section:</h3>
+                                {Object.entries(SECTION_SHORT_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => {
+                                    const count = realTiles.filter(t => t.section === key).length;
+                                    const reserved = reservedTiles.filter(t => t.section === key).length;
+                                    return (
+                                        <div key={key} className="section-stats">
+                                            <span style={{ color: SECTION_COLORS[key] }}>{name}:</span>
+                                            <span>{count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="info-box" style={{ marginTop: '12px', fontSize: '0.7rem', color: '#6b7280' }}>
+                                <p><strong>Tips:</strong></p>
+                                <p>• Data loads from curriculum.json</p>
+                                <p>• Swap tiles by swapping their mapCoords</p>
+                                <p>• Change section when moving to different region</p>
+                                <p>• Empty slots auto-expand at edges</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<HexMapEditor />, document.getElementById('root'));
+    </script>
+</body>
+</html>
