@@ -219,7 +219,25 @@
             const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
      
             const hexSize = 28;
-            
+
+            const swapOrMove = (dragId, q, r) => {
+                setTiles(prev => {
+                    const targetKey = `${q},${r}`;
+                    const targetTile = prev.find(t => `${t.q},${t.r}` === targetKey && t.id !== dragId);
+
+                    return prev.map(t => {
+                        if (t.id === dragId) {
+                            return { ...t, q, r };
+                        }
+                        if (targetTile && t.id === targetTile.id) {
+                            const source = prev.find(x => x.id === dragId);
+                            return { ...t, q: source.q, r: source.r };
+                        }
+                        return t;
+                    });
+                });
+            };
+ 
             // Load data on mount
             useEffect(() => {
                 loadCurriculumData()
@@ -470,11 +488,8 @@
                                         cursor.y - dragOffset.y
                                     );
 
-                                    setTiles(prev =>
-                                    prev.map(t =>
-                                        t.id === draggingId ? { ...t, q, r } : t
-                                    )
-                                    );
+                                    swapOrMove(draggingId, q, r);
+
                                 }}
                                 onMouseUp={() => setDraggingId(null)}
                                 onMouseLeave={() => setDraggingId(null)}
