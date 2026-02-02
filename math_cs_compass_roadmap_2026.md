@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 1/27/2026  
+**Last Updated:** 2/02/2026  
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -12,19 +12,19 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 
 ---
 
-## Current Coverage (as of 1/27/2026)
+## Current Coverage (as of 2/02/2026)
 
 ### Section I: Linear Algebra to Algebraic Foundations (21 pages)
 - **Core Linear Algebra (Parts 1-14):** Linear equations, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry, SVD, trace/norms, Kronecker products, Woodbury identity, stochastic matrices, graph Laplacians
 - **Abstract Algebra (Parts 15-21):** Groups, cyclic/permutation groups, structural group theory (cosets, Lagrange, normal subgroups, isomorphism theorems), classification of finite abelian groups, rings & fields, ideals & factor rings, polynomial rings
 - **In Progress:** Integral domains (ED ⊂ PID ⊂ UFD hierarchy)
 
-### Section II: Calculus to Optimization & Analysis (16 pages)
+### Section II: Calculus to Optimization & Analysis (21 pages)
 - **Derivatives (Parts 1-5):** Gradients, Jacobians, matrix calculus, scalar functions of matrices
 - **Optimization (Parts 6-9):** Mean value theorem, gradient descent, Newton's method, constrained optimization (KKT)
 - **Analysis (Parts 10-12):** Riemann integration, measure theory, Lebesgue integration
 - **Fourier (Parts 14-15):** Fourier series, Fourier transform, FFT
-- **Full analysis track(Part 16, 17, 18 - in Prgress)** 
+- **Full analysis track(Part 16, 17, 18, 19, 20, 21 - in Prgress)** 
 
 ### Section III: Probability & Statistics (21 pages)
 - **Foundations (Parts 1-2):** Basic probability, random variables
@@ -40,7 +40,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 ### Section V: Machine Learning (10 pages)
 - Intro to ML, regularized regression, classification, neural networks, autodiff, SVM, PCA & autoencoders, clustering, deep neural networks (CNNs, transformers), reinforcement learning
 
-**Total: ~79 pages completed**
+**Total: ~82 pages completed**
 
 ---
 
@@ -53,7 +53,7 @@ Current Foundation                    Missing for GDL
 ─────────────────────                ─────────────────
 ✅ Linear Algebra                    
 ✅ Groups (Abstract Algebra)         ❌ Lie Groups & Lie Algebras
-✅ Metric Spaces (intro)             ❌ Full Analysis Track (Ch. 6-13)
+✅ Metric Spaces (intro)             ❌ Analysis Track (Ch.13 Equivalence)
 ✅ Optimization                      
 ✅ Probability/Bayesian              
 ✅ Graph Laplacians                  ❌ Spectral Graph Theory (deeper)
@@ -167,9 +167,9 @@ Alongside the analysis track, complete the algebraic foundations:
 | Jan | Integral Domains | Metric Spaces (intro) ✅ |
 | Feb | Field Extensions | Convergence & Boundedness　✅|
 | Mar | Finite Fields | Continuity　✅|
-| Apr | **Lie Groups (intro)** | Completeness |
-| May | Lie Algebras | Connectedness |
-| Jun | — | Compactness |
+| Apr | **Lie Groups (intro)** | Completeness ✅ |
+| May | Lie Algebras | Connectedness ✅|
+| Jun | — | Compactness ✅|
 | Jul | — | Homeomorphisms |
 | Aug | — | **Smooth Manifolds** |
 | Sep | **CONVERGENCE: Lie Groups as Manifolds** |
