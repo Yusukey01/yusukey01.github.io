@@ -217,7 +217,8 @@
             const [highlightTopicGroup, setHighlightTopicGroup] = useState(null);
             const [draggingId, setDraggingId] = useState(null);
             const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-     
+            const [dragHex, setDragHex] = useState(null);
+
             const hexSize = 28;
 
             const swapOrMove = (dragId, q, r) => {
@@ -341,12 +342,15 @@
             };
             
             const renderTile = (tile, isEmpty = false) => {
-                const { x, y } = hexToPixel(tile.q, tile.r);
+
+                const isDragging = draggingId === tile.id;
+                const pos = isDragging && dragHex ? dragHex : tile;
+                const { x, y } = hexToPixel(pos.q, pos.r);
+
                 const color = SECTION_COLORS[tile.section] || '#888';
                 const isReserved = tile.isReserved;
                 const isHighlightedBySection = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
                 const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
-                const isDragging = draggingId === tile.id;
 
                 // Highlight tiles in the same topic group as selected tile
                 const isSameTopicGroup = selectedTile && selectedTile.topicGroup && tile.topicGroup === selectedTile.topicGroup;
@@ -483,16 +487,38 @@
                                     pt.y = e.clientY;
                                     const cursor = pt.matrixTransform(e.currentTarget.getScreenCTM().inverse());
 
-                                    const { q, r } = pixelToHex(
+                                    const hex = pixelToHex(
                                         cursor.x - dragOffset.x,
                                         cursor.y - dragOffset.y
                                     );
 
-                                    swapOrMove(draggingId, q, r);
-
+                                    setDragHex(hex);   // only preview
                                 }}
-                                onMouseUp={() => setDraggingId(null)}
-                                onMouseLeave={() => setDraggingId(null)}
+
+                                onMouseUp={() => {
+                                    if (!draggingId || !dragHex) {
+                                        setDraggingId(null);
+                                        return;
+                                    }
+
+                                    setTiles(prev => {
+                                        const source = prev.find(t => t.id === draggingId);
+                                        const target = prev.find(t => t.q === dragHex.q && t.r === dragHex.r && t.id !== draggingId);
+
+                                        return prev.map(t => {
+                                            if (t.id === draggingId) return { ...t, q: dragHex.q, r: dragHex.r };
+                                            if (target && t.id === target.id) return { ...t, q: source.q, r: source.r };
+                                            return t;
+                                        });
+                                    });
+
+                                    setDraggingId(null);
+                                    setDragHex(null);
+                                }}
+                                onMouseLeave={() => {
+                                    setDraggingId(null);
+                                    setDragHex(null);
+                                }}
                             >
 
                                 <defs>
