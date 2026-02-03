@@ -12,19 +12,21 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 
 ---
 
-## Current Coverage (as of 2/02/2026)
+## Current Coverage (as of 2/03/2026)
 
-### Section I: Linear Algebra to Algebraic Foundations (21 pages)
+### Section I: Linear Algebra to Algebraic Foundations (22 pages)
 - **Core Linear Algebra (Parts 1-14):** Linear equations, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry, SVD, trace/norms, Kronecker products, Woodbury identity, stochastic matrices, graph Laplacians
-- **Abstract Algebra (Parts 15-21):** Groups, cyclic/permutation groups, structural group theory (cosets, Lagrange, normal subgroups, isomorphism theorems), classification of finite abelian groups, rings & fields, ideals & factor rings, polynomial rings
-- **In Progress:** Integral domains (ED ⊂ PID ⊂ UFD hierarchy)
+- **Abstract Algebra (Parts 15-22):** Groups, cyclic/permutation groups, structural group theory (cosets, Lagrange, normal subgroups, isomorphism theorems), classification of finite abelian groups, rings & fields, ideals & factor rings, polynomial rings, Integral domains (ED ⊂ PID ⊂ UFD hierarchy)
+- **In Progress:** Part 23 Extension Fields
 
 ### Section II: Calculus to Optimization & Analysis (21 pages)
 - **Derivatives (Parts 1-5):** Gradients, Jacobians, matrix calculus, scalar functions of matrices
 - **Optimization (Parts 6-9):** Mean value theorem, gradient descent, Newton's method, constrained optimization (KKT)
 - **Analysis (Parts 10-12):** Riemann integration, measure theory, Lebesgue integration
 - **Fourier (Parts 14-15):** Fourier series, Fourier transform, FFT
-- **Full analysis track(Part 16, 17, 18, 19, 20, 21 - in Prgress)** 
+- **Full analysis track(Part 16, 17, 18, 19, 20, 21 - )**
+- **In Progress:** Part 22 Homeomorphism 
+
 
 ### Section III: Probability & Statistics (21 pages)
 - **Foundations (Parts 1-2):** Basic probability, random variables
@@ -40,7 +42,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 ### Section V: Machine Learning (10 pages)
 - Intro to ML, regularized regression, classification, neural networks, autodiff, SVM, PCA & autoencoders, clustering, deep neural networks (CNNs, transformers), reinforcement learning
 
-**Total: ~82 pages completed**
+**Total: ~83 pages completed**
 
 ---
 
@@ -152,8 +154,8 @@ Alongside the analysis track, complete the algebraic foundations:
 |--------|------|---------|
 | ✅ | Groups (linalg-15,16,17,18) | Complete |
 | ✅ | Rings (linalg-19,20,21) | Complete |
-| 🔄 | Integral Domains | In progress (ED ⊂ PID ⊂ UFD) |
-| ❌ | Field Extensions | Extension fields, algebraic extensions, minimal polynomials |
+| ✅ | Integral Domains | In progress (ED ⊂ PID ⊂ UFD) |
+| 🔄 | Field Extensions | Extension fields, algebraic extensions, minimal polynomials |
 | ❌ | Finite Fields | GF(p^n), applications to cryptography |
 | ❌ | **Lie Groups** | Groups that are smooth manifolds |
 | ❌ | Lie Algebras | Infinitesimal structure |
@@ -164,8 +166,8 @@ Alongside the analysis track, complete the algebraic foundations:
 
 | Month | Track A (Algebra) | Track B (Analysis) |
 |-------|-------------------|-------------------|
-| Jan | Integral Domains | Metric Spaces (intro) ✅ |
-| Feb | Field Extensions | Convergence & Boundedness　✅|
+| Jan | Integral Domains ✅ | Metric Spaces (intro) ✅ |
+| Feb | Field Extensions 🔄 | Convergence & Boundedness　✅|
 | Mar | Finite Fields | Continuity　✅|
 | Apr | **Lie Groups (intro)** | Completeness ✅ |
 | May | Lie Algebras | Connectedness ✅|

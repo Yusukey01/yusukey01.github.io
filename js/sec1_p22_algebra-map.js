@@ -59,23 +59,84 @@ const renderAlgebraCompass = () => {
     
     root.innerHTML = `
         <style>
-            .map-layer { cursor: pointer; transition: all 0.3s ease; stroke: rgba(255,255,255,0.1); stroke-width: 1; fill-opacity: 0.75; }
-            .map-layer:hover { fill-opacity: 1; stroke: #00d2d3; stroke-width: 3; filter: drop-shadow(0 0 12px rgba(0,210,211,0.6)); }
-            .compass-label { font-family: 'Inter', sans-serif; font-size: 13px; fill: #ecf0f1; font-weight: bold; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
-            .main-label { opacity: 1; font-size: 15px; fill: #00d2d3; }
-            .compass-center-label { font-family: 'Inter', sans-serif; font-size: 10px; fill: #fff; font-weight: bold; text-anchor: middle; pointer-events: none; }
-            #structure-info-box { 
-                width: 100%; max-width: 600px; min-height: 160px; padding: 20px; 
-                border-radius: 12px; background: #1e272e; border: 1px solid #34495e; 
-                border-left: 5px solid #00d2d3; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 15px; 
+            .map-layer { 
+                cursor: pointer; 
+                transition: all 0.3s ease; 
+                stroke: rgba(255,255,255,0.1); 
+                stroke-width: 1; 
+                fill-opacity: 0.75; 
             }
-            #info-name { color: #00d2d3; margin: 0 0 8px 0; font-size: 1.5em; }
-            #info-desc { color: #dcdde1; margin: 0 0 12px 0; font-size: 0.95em; line-height: 1.6; }
-            #info-ex { color: #00d2d3; margin: 0; font-size: 0.9em; font-weight: bold; }
+            .map-layer:hover { 
+                fill-opacity: 1; 
+                stroke: #00d2d3; 
+                stroke-width: 3; 
+                filter: drop-shadow(0 0 12px rgba(0,210,211,0.6)); 
+            }
+            .compass-label { 
+                font-family: 'Inter', 
+                sans-serif; 
+                font-size: 13px; 
+                fill: #ecf0f1; 
+                font-weight: bold; 
+                pointer-events: none; 
+                text-transform: uppercase; 
+                letter-spacing: 1px; 
+                opacity: 0.6; 
+            }
+            .main-label { 
+                opacity: 1; 
+                font-size:
+                15px; 
+                fill: #00d2d3; 
+            }
+            .compass-center-label { 
+                font-family: 'Inter', 
+                sans-serif; 
+                font-size: 10px; 
+                fill: #fff; 
+                font-weight: bold; 
+                text-anchor: middle; 
+                pointer-events: none; 
+            }
+            #structure-info-box { 
+                width: 100%; 
+                max-width: 600px; 
+                min-height: 160px; 
+                padding: 20px; 
+                border-radius: 12px; 
+                background: #1e272e; 
+                border: 1px solid #34495e; 
+                border-left: 5px solid #00d2d3; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+                margin-top: 15px; 
+            }
+            #info-name { 
+                color: #00d2d3; 
+                margin: 0 0 8px 0; 
+                font-size: 1.5em; 
+            }
+            #info-desc { 
+                color: #dcdde1; 
+                margin: 0 0 12px 0; 
+                font-size: 0.95em; 
+                line-height: 1.6; 
+            }
+            #info-ex { 
+                color: #00d2d3; 
+                margin: 0; 
+                font-size: 0.9em; 
+                font-weight: bold; 
+            }
+            .map-layer.active {
+                fill-opacity: 1;
+                stroke: #00d2d3;
+                stroke-width: 3;
+                filter: drop-shadow(0 0 10px rgba(0,210,211,0.5));
+            }
         </style>
 
         <svg id="algebra-svg" viewBox="0 0 600 600" style="max-width: 500px; width: 100%; height: auto;">
-            ${structures.map(s => `
+            ${[...structures].reverse().map(s => `
                 <circle cx="300" cy="300" r="${s.r}" class="map-layer" fill="${s.color}" data-name="${s.name}"></circle>
             `).join('')}
 
@@ -100,13 +161,21 @@ const renderAlgebraCompass = () => {
     const exEl = document.getElementById('info-ex');
 
     root.querySelectorAll('.map-layer').forEach(layer => {
-        layer.addEventListener('mouseenter', () => {
+        const activate = () => {
             const name = layer.getAttribute('data-name');
             const data = structures.find(s => s.name === name);
+
             nameEl.textContent = data.name;
             descEl.textContent = data.desc;
             exEl.textContent = `Example: ${data.ex}`;
-        });
+
+            root.querySelectorAll('.map-layer').forEach(l => l.classList.remove('active'));
+            layer.classList.add('active');
+        };
+
+        layer.addEventListener('mouseenter', activate); // desktop
+        layer.addEventListener('click', activate);      // mobile
+       
     });
 };
 
