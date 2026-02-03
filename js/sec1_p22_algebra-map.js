@@ -33,13 +33,6 @@ const renderAlgebraCompass = () => {
         </style>
 
         <svg id="algebra-svg" viewBox="0 0 600 600" style="max-width: 500px; width: 100%; height: auto;">
-            <defs>
-                <radialGradient id="fieldGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" style="stop-color:#00d2d3; stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#341f97; stop-opacity:0" />
-                </radialGradient>
-            </defs>
-            
             ${structures.map(s => `
                 <circle cx="300" cy="300" r="${s.r}" class="map-layer" fill="${s.color}" data-name="${s.name}"></circle>
             `).join('')}
@@ -48,12 +41,14 @@ const renderAlgebraCompass = () => {
             <text x="300" y="85" text-anchor="middle" class="compass-label">Rings</text>
             <text x="300" y="130" text-anchor="middle" class="compass-label">Domains</text>
             <text x="300" y="175" text-anchor="middle" class="compass-label" style="font-size: 10px;">UFDs</text>
+            <text x="300" y="215" text-anchor="middle" class="compass-label" style="font-size: 10px;">PIDs</text>
+            <text x="300" y="245" text-anchor="middle" class="compass-label" style="font-size: 9px;">EDs</text>
             <text x="300" y="304" class="compass-center-label">FIELD</text>
         </svg>
 
         <div id="structure-info-box">
             <h3 id="info-name">Hierarchy of Integrity</h3>
-            <p id="info-desc">Hover over the layers to see how algebraic structures nest. The innermost Field represents the pinnacle of algebraic utility.</p>
+            <p id="info-desc">Hover over the layers to explore how mathematical structures nest. The innermost Field represents the pinnacle of algebraic utility.</p>
             <p id="info-ex"></p>
         </div>
     `;
@@ -73,8 +68,4 @@ const renderAlgebraCompass = () => {
     });
 };
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderAlgebraCompass);
-} else {
-    renderAlgebraCompass();
-}
+renderAlgebraCompass();
