@@ -75,9 +75,21 @@ const renderAlgebraCompass = () => {
         </style>
 
         <svg id="algebra-svg" viewBox="0 0 600 600" style="max-width: 500px; width: 100%; height: auto;">
-            ${[...structures].reverse().map(s => `
-                <circle cx="300" cy="300" r="${s.r}" class="map-layer" fill="${s.color}" data-name="${s.name}"></circle>
-            `).join('')}
+            ${structures.map((s, i) => {
+                const next = structures[i + 1];
+                const width = s.r - (next ? next.r : 0);
+                return `
+                <circle
+                    cx="300" cy="300"
+                    r="${s.r - width / 2}"
+                    stroke="${s.color}"
+                    stroke-width="${width}"
+                    fill="none"
+                    class="map-layer"
+                    data-name="${s.name}">
+                </circle>
+                `;
+            }).join('')}
 
             <text x="300" y="45" text-anchor="middle" class="compass-label main-label">Groups</text>
             <text x="300" y="85" text-anchor="middle" class="compass-label">Rings</text>
