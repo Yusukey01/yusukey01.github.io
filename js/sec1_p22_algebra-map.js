@@ -66,11 +66,9 @@ const renderAlgebraCompass = () => {
                 stroke-width: 1; 
                 fill-opacity: 0.75; 
             }
-            .map-layer:hover { 
-                fill-opacity: 1; 
-                stroke: #00d2d3; 
-                stroke-width: 3; 
-                filter: drop-shadow(0 0 12px rgba(0,210,211,0.6)); 
+
+            .map-layer:hover {
+                filter: drop-shadow(0 0 6px rgba(0,210,211,0.4));
             }
             .compass-label { 
                 font-family: 'Inter', 
@@ -137,7 +135,14 @@ const renderAlgebraCompass = () => {
 
         <svg id="algebra-svg" viewBox="0 0 600 600" style="max-width: 500px; width: 100%; height: auto;">
             ${[...structures].reverse().map(s => `
-                <circle cx="300" cy="300" r="${s.r}" class="map-layer" fill="${s.color}" data-name="${s.name}"></circle>
+                <circle cx="300" cy="300"
+                        r="${s.r}"
+                        class="map-layer"
+                        fill="none"
+                        stroke="${s.color}"
+                        stroke-width="${s.r - (structures[structures.indexOf(s)+1]?.r || 0)}"
+                        data-name="${s.name}">
+                </circle>
             `).join('')}
 
             <text x="300" y="45" text-anchor="middle" class="compass-label main-label">Groups</text>
@@ -173,7 +178,9 @@ const renderAlgebraCompass = () => {
             layer.classList.add('active');
         };
 
-        layer.addEventListener('mouseenter', activate); // desktop
+        if (!('ontouchstart' in window)) {
+                layer.addEventListener('mouseenter', activate);
+        }
         layer.addEventListener('click', activate);      // mobile
        
     });
