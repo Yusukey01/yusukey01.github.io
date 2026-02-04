@@ -1,14 +1,11 @@
 /* ========================================================================
    MATH-CS COMPASS: THEME SWITCHER
    ========================================================================
-   Swaps between styles-light.css and styles-dark.css
-   Persists user preference in localStorage
-   
-   Usage:
-   1. Include styles-base.css (always loaded)
-   2. Include ONE theme file with id="theme-stylesheet"
-   3. Add a toggle button with id="theme-toggle"
-   4. Include this script
+   Toggles between light and dark theme by enabling/disabling 
+   dark-theme-enhancement.css
+
+   - styles.css = base/light theme
+   - styles.css + dark-theme-enhancement.css = dark theme
    ======================================================================== */
 
 (function() {
@@ -18,9 +15,9 @@
     const DARK = 'dark';
     const LIGHT = 'light';
 
-    // Get the theme stylesheet element
-    function getThemeStylesheet() {
-        return document.getElementById('theme-stylesheet');
+    // Get the dark theme stylesheet
+    function getDarkStylesheet() {
+        return document.getElementById('dark-theme-stylesheet');
     }
 
     // Get saved theme or detect system preference
@@ -29,36 +26,31 @@
         if (saved === LIGHT || saved === DARK) {
             return saved;
         }
-        // Check system preference as fallback
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            return LIGHT;
-        }
-        return DARK; // Default to dark
+        // Default to dark (your current default)
+        // Or check system preference:
+        // if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        //     return LIGHT;
+        // }
+        return DARK;
     }
 
-    // Get CSS path based on current stylesheet location
-    function getThemePath(theme) {
-        const stylesheet = getThemeStylesheet();
-        if (!stylesheet) return null;
-        
-        const currentHref = stylesheet.getAttribute('href');
-        // Replace the theme filename while keeping the path
-        return currentHref.replace(/styles-(light|dark)\.css/, `styles-${theme}.css`);
-    }
-
-    // Apply theme
+    // Apply theme by enabling/disabling dark stylesheet
     function applyTheme(theme) {
-        const stylesheet = getThemeStylesheet();
-        if (stylesheet) {
-            const newPath = getThemePath(theme);
-            if (newPath) {
-                stylesheet.setAttribute('href', newPath);
-            }
+        const darkStylesheet = getDarkStylesheet();
+        
+        if (darkStylesheet) {
+            // disabled = true means the stylesheet is NOT applied (light theme)
+            // disabled = false means the stylesheet IS applied (dark theme)
+            darkStylesheet.disabled = (theme === LIGHT);
         }
         
-        // Also set data attribute on html for potential CSS hooks
+        // Set data attribute on html for any additional CSS hooks
         document.documentElement.setAttribute('data-theme', theme);
+        
+        // Save preference
         localStorage.setItem(THEME_KEY, theme);
+        
+        // Update button
         updateToggleButton(theme);
     }
 
@@ -71,7 +63,8 @@
         const text = toggleBtn.querySelector('.theme-text');
 
         if (icon) {
-            // Sun icon for dark mode (click to get light), Moon for light mode
+            // Show sun when in dark mode (click to get light)
+            // Show moon when in light mode (click to get dark)
             icon.className = theme === DARK ? 'fas fa-sun' : 'fas fa-moon';
         }
         if (text) {
@@ -84,7 +77,8 @@
 
     // Toggle between themes
     function toggleTheme() {
-        const current = localStorage.getItem(THEME_KEY) || DARK;
+        const current = document.documentElement.getAttribute('data-theme') || 
+                       localStorage.getItem(THEME_KEY) || DARK;
         const newTheme = current === DARK ? LIGHT : DARK;
         applyTheme(newTheme);
     }
@@ -94,15 +88,16 @@
         const theme = getSavedTheme();
         applyTheme(theme);
 
-        // Set up toggle button click handler
+        // Set up toggle button
         const toggleBtn = document.getElementById('theme-toggle');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', toggleTheme);
         }
 
-        // Listen for system theme changes (only if user hasn't set preference)
+        // Listen for system theme changes (optional)
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                // Only auto-switch if user hasn't set a manual preference
                 if (!localStorage.getItem(THEME_KEY)) {
                     applyTheme(e.matches ? DARK : LIGHT);
                 }
@@ -110,14 +105,23 @@
         }
     }
 
-    // Run on DOM ready
+    // Apply theme immediately to prevent flash
+    // This runs before DOM is ready
+    (function() {
+        const theme = getSavedTheme();
+        // We can't disable the stylesheet yet (DOM not ready), 
+        // but we can set the data attribute
+        document.documentElement.setAttribute('data-theme', theme);
+    })();
+
+    // Initialize when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Expose globally
+    // Expose functions globally
     window.toggleTheme = toggleTheme;
     window.setTheme = applyTheme;
 })();
