@@ -24,7 +24,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 - **Optimization (Parts 6-9):** Mean value theorem, gradient descent, Newton's method, constrained optimization (KKT)
 - **Analysis (Parts 10-12):** Riemann integration, measure theory, Lebesgue integration
 - **Fourier (Parts 14-15):** Fourier series, Fourier transform, FFT
-- **Full analysis track(Part 16, 17, 18, 19, 20, 21 - )**
+- **Full analysis track(Part 16 - )**
 - **In Progress:** Part 22 Homeomorphism 
 
 
@@ -57,7 +57,7 @@ Current Foundation                    Missing for GDL
 ✅ Groups (Abstract Algebra)         ❌ Lie Groups & Lie Algebras
 ✅ Metric Spaces (intro)             ❌ Analysis Track (Ch.13 Equivalence)
 ✅ Optimization                      
-✅ Probability/Bayesian              
+✅ Probability/Bayesian             
 ✅ Graph Laplacians                  ❌ Spectral Graph Theory (deeper)
 ✅ Fourier Transform                 ❌ Harmonic Analysis on Groups
                                      ❌ Smooth Manifolds
@@ -182,12 +182,11 @@ Alongside the analysis track, complete the algebraic foundations:
 ## Key References
 
 ### Analysis Track
-- **Primary:** Ó Searcóid, *Metric Spaces* (Chapters 1-13)
-- Supporting: Rudin, *Principles of Mathematical Analysis*
+- Ó Searcóid, *Metric Spaces 11ed* (Chapters 1-13)
+- John B. Conway *A Course in Functional Analysis 2ed*
 
 ### Abstract Algebra Track
-- **Primary:** Gallian, *Contemporary Abstract Algebra*
-- Supporting: Dummit & Foote, *Abstract Algebra*
+- Gallian, *Contemporary Abstract Algebra*
 
 ### Geometry Track (future)
 - Lee, *Introduction to Smooth Manifolds*
