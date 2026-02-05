@@ -541,11 +541,11 @@ document.addEventListener('DOMContentLoaded', function() {
         scene.add(zAxis);
 
         // Add axis labels with bright colors
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff6666');
+        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#fffcfc');
         scene.add(xLabel);
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#66ff66');
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#fffcfc');
         scene.add(yLabel);
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#6688ff');
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#fffcfc');
         scene.add(zLabel);
 
         // Create camera
