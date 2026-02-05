@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="elements-section">
                 <div class="section-header reflection-header">
                   <span class="section-icon">↔</span>
-                  Reflections (coset r⟨r⟩s)
+                  Reflections (coset ⟨r⟩s)
                 </div>
                 <div class="elements-grid" id="reflection-buttons">
                   <button class="element-btn reflection-btn" data-element="s" title="Reflection across axis at 0°">
