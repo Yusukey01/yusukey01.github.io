@@ -1141,13 +1141,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return sprite;
             }
             // X axis label
-            const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
+            const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ece7e7');
             scene.add(xLabel);
             // Y axis label
-            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000'); 
+            const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#ece7e7'); 
             scene.add(yLabel);
             // Z axis label
-            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
+            const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#ece7e7');
             scene.add(zLabel);
 
         }
