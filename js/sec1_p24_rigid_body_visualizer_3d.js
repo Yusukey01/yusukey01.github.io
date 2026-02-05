@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 SE(3) Special Euclidean
               </button>
             </div>
-            <div class="instruction" id="rigid-instruction">Drag to rotate object (2-finger to move camera). Watch the matrix change continuously.</div>
+            <div class="instruction" id="rigid-instruction">👆 1-finger drag = rotate object &nbsp;|&nbsp; 🤏 2-finger pinch = zoom &nbsp;|&nbsp; 🖱️ scroll = zoom</div>
             <div id="rigid-canvas-wrapper">
               <div id="three-rigid-container"></div>
             </div>
@@ -711,8 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.enablePan = false;
+        controls.dampingFactor = 0.1;
         
         // Lighting
         scene.add(new THREE.AmbientLight(0x404040, 0.6));
@@ -934,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Update functions
-        function updateCoinTransform() {
+       function updateCoinTransform() {
             const R = eulerToRotationMatrix(roll, pitch, yaw);
             coin.matrix.set(
                 R[0][0], R[0][1], R[0][2], tx,
@@ -1063,15 +1062,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const getPos = (e) => e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
         
-        // Desktop mouse events
+        // Disable OrbitControls rotate (we handle rotation ourselves), keep zoom
+        controls.enableRotate = false;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        
+        // Desktop mouse events - always rotate coin
         renderer.domElement.addEventListener('mousedown', (e) => {
-            if (e.shiftKey) {
-                controls.enabled = true;
-            } else {
-                controls.enabled = false;
-                isDragging = true;
-                prevMouse = getPos(e);
-            }
+            isDragging = true;
+            prevMouse = getPos(e);
         });
         renderer.domElement.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
@@ -1086,7 +1085,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         document.addEventListener('mouseup', () => { 
             isDragging = false; 
-            controls.enabled = true;
         });
         
         // Mobile touch events
@@ -1094,14 +1092,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.touches.length === 1) {
                 // One finger: rotate coin
                 touchMode = 'coin';
-                controls.enabled = false;
                 isDragging = true;
                 prevMouse = getPos(e);
                 e.preventDefault();
-            } else if (e.touches.length >= 2) {
-                // Two fingers: camera control
+            } else {
+                // Two+ fingers: let OrbitControls handle (zoom/pan)
                 touchMode = 'camera';
-                controls.enabled = true;
                 isDragging = false;
             }
         }, { passive: false });
@@ -1121,8 +1117,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (e.touches.length >= 2) {
                 // Switch to camera mode if second finger added
                 touchMode = 'camera';
-                controls.enabled = true;
                 isDragging = false;
+                // Don't preventDefault - let OrbitControls handle it
             }
         }, { passive: false });
         
@@ -1130,15 +1126,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.touches.length === 0) {
                 isDragging = false;
                 touchMode = null;
-                controls.enabled = true;
-            } else if (e.touches.length === 1 && touchMode === 'camera') {
+            } else if (e.touches.length === 1) {
                 // Went from 2 fingers to 1: switch back to coin mode
                 touchMode = 'coin';
-                controls.enabled = false;
                 isDragging = true;
                 prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
             }
         });
+        
+        // Mouse wheel zoom (desktop)
+        renderer.domElement.addEventListener('wheel', (e) => {
+            // Let OrbitControls handle wheel zoom
+        }, { passive: true });
         
         // Resize
         window.addEventListener('resize', () => {
