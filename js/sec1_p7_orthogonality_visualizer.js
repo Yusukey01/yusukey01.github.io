@@ -79,38 +79,41 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     
-    // Add styles
     const styleElement = document.createElement('style');
     styleElement.textContent = `
-      .visualizer-container {
+      #orthogonality-visualizer .visualizer-container {
+        background: rgba(15, 20, 25, 0.98);
+        border-radius: 12px;
+        padding: 20px;
         margin-bottom: 20px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #e8eaed;
       }
       
-      .visualizer-layout {
+      #orthogonality-visualizer .visualizer-layout {
         display: flex;
         flex-direction: column;
         gap: 20px;
       }
       
       @media (min-width: 992px) {
-        .visualizer-layout {
+        #orthogonality-visualizer .visualizer-layout {
           flex-direction: row;
         }
         
-        .canvas-container {
+        #orthogonality-visualizer .canvas-container {
           flex: 3;
           order: 1;
         }
         
-        .controls-panel {
+        #orthogonality-visualizer .controls-panel {
           flex: 2;
           order: 2;
+          max-width: 400px;
         }
       }
       
-      .controls-panel {
+      #orthogonality-visualizer .controls-panel {
         background: rgba(20, 28, 40, 0.95);
         padding: 15px;
         border-radius: 8px;
@@ -118,138 +121,151 @@ document.addEventListener('DOMContentLoaded', function() {
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
       
-      .canvas-container {
+      #orthogonality-visualizer .canvas-container {
         display: flex;
         flex-direction: column;
       }
       
-      #canvas-wrapper {
+      #orthogonality-visualizer #canvas-wrapper {
         position: relative;
         width: 100%;
       }
       
-      .visualization-mode-toggle {
+      #orthogonality-visualizer .visualization-mode-toggle {
         margin-bottom: 10px;
-        background: rgba(21, 101, 192, 0.15);
-        padding: 8px 12px;
-        border-radius: 4px;
-        border-left: 3px solid #64b4ff;
       }
       
-      .control-group {
-        margin-bottom: 20px;
-      }
-      
-      .control-group label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 8px;
-        color: rgba(255, 255, 255, 0.8);
-      }
-      
-      .full-width {
+      #orthogonality-visualizer .visualization-mode-toggle select {
         width: 100%;
-        padding: 10px;
+        padding: 10px 15px;
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: #e8eaed;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      
+      #orthogonality-visualizer .visualization-mode-toggle select:focus {
+        border-color: #64b4ff;
+        outline: none;
+      }
+      
+      #orthogonality-visualizer .visualization-mode-toggle select option {
+        background: #1a2332;
         color: #e8eaed;
       }
       
-      .vector-inputs {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+      #orthogonality-visualizer .control-group {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
       }
       
-      .vector-input {
+      #orthogonality-visualizer .control-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+      }
+      
+      #orthogonality-visualizer .vector-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      #orthogonality-visualizer .vector-input {
         display: flex;
         align-items: center;
         gap: 8px;
       }
       
-      .vector-input label {
+      #orthogonality-visualizer .vector-input label {
         font-weight: bold;
         margin-bottom: 0;
-        font-family: monospace;
-        font-size: 16px;
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
         color: #64b4ff;
+        min-width: 30px;
       }
       
-      .vector-input input {
-        width: 60px;
+      #orthogonality-visualizer .vector-input input {
+        width: 55px;
         padding: 8px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
         text-align: center;
-        color: #e8eaed;
+        color: #64b4ff;
+        font-family: 'Courier New', monospace;
       }
       
-      .vector-input input:focus {
+      #orthogonality-visualizer .vector-input input:focus {
         border-color: #64b4ff;
         outline: none;
         box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.2);
       }
       
-      .equation-display {
-        background: rgba(21, 101, 192, 0.15);
-        border: 1px solid rgba(21, 101, 192, 0.3);
-        padding: 12px;
+      #orthogonality-visualizer .equation-display {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
       }
       
-      .equation-title {
+      #orthogonality-visualizer .equation-title {
         font-weight: bold;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.8);
+        color: #64b4ff;
+        margin-bottom: 8px;
       }
       
-      .equation {
-        font-family: monospace;
-        font-size: 1.1rem;
+      #orthogonality-visualizer .equation {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: #2ecc71;
         background: rgba(0, 0, 0, 0.2);
         padding: 8px;
         border-radius: 4px;
-        overflow-x: auto;
-        color: #64b4ff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
       
-      .status {
+      #orthogonality-visualizer .status {
         font-weight: bold;
-        padding: 6px 8px;
+        padding: 6px 10px;
         border-radius: 4px;
         text-align: center;
+        margin-top: 8px;
       }
       
-      .status.orthogonal {
-        background: rgba(46, 204, 113, 0.2);
-        border: 1px solid rgba(46, 204, 113, 0.4);
+      #orthogonality-visualizer .status.orthogonal {
+        background: rgba(46, 204, 113, 0.15);
+        border: 1px solid rgba(46, 204, 113, 0.3);
         color: #2ecc71;
       }
       
-      .status.not-orthogonal {
-        background: rgba(231, 76, 60, 0.2);
-        border: 1px solid rgba(231, 76, 60, 0.4);
+      #orthogonality-visualizer .status.not-orthogonal {
+        background: rgba(231, 76, 60, 0.15);
+        border: 1px solid rgba(231, 76, 60, 0.3);
         color: #e74c3c;
       }
       
-      .instruction {
+      #orthogonality-visualizer .instruction {
         text-align: center;
         margin-bottom: 10px;
         font-size: 0.9rem;
         color: rgba(255, 255, 255, 0.5);
       }
       
-      #orthogonality-canvas {
+      #orthogonality-visualizer #orthogonality-canvas {
         border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 4px;
-        background-color: #0f1419;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #0a0f18 0%, #0f1419 100%);
         max-width: 100%;
         height: auto;
         cursor: crosshair;
@@ -257,116 +273,123 @@ document.addEventListener('DOMContentLoaded', function() {
         display: block;
       }
       
-      .legend {
+      #orthogonality-visualizer .legend {
         margin-top: 10px;
         display: flex;
         gap: 15px;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
         justify-content: center;
         flex-wrap: wrap;
       }
       
-      .legend-item {
+      #orthogonality-visualizer .legend-item {
         display: flex;
         align-items: center;
+        gap: 5px;
       }
       
-      .legend-color {
+      #orthogonality-visualizer .legend-color {
         display: inline-block;
         width: 12px;
         height: 12px;
-        margin-right: 5px;
         border-radius: 2px;
       }
       
-      .legend-color.vector-a {
-        background-color: #42a5f5;
+      #orthogonality-visualizer .legend-color.vector-a {
+        background-color: #3498db;
       }
       
-      .legend-color.vector-b {
+      #orthogonality-visualizer .legend-color.vector-b {
         background-color: #e74c3c;
       }
       
-      .legend-color.orthogonal {
+      #orthogonality-visualizer .legend-color.orthogonal {
         background-color: #2ecc71;
       }
       
-      .legend-color.projection {
-        background-color: #ab47bc;
+      #orthogonality-visualizer .legend-color.projection {
+        background-color: #9b59b6;
       }
       
-      .primary-btn, .secondary-btn {
+      #orthogonality-visualizer .primary-btn {
         width: 100%;
         padding: 10px 15px;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         font-weight: bold;
         cursor: pointer;
-        margin-bottom: 10px;
-        transition: all 0.3s;
-      }
-      
-      .primary-btn {
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
         background: linear-gradient(135deg, #1565c0, #42a5f5);
+        border: 1px solid #64b4ff;
         color: white;
       }
       
-      .primary-btn:hover {
-        background: linear-gradient(135deg, #1976d2, #64b5f6);
+      #orthogonality-visualizer .primary-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
       }
       
-      .secondary-btn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: #e8eaed;
-      }
-      
-      .secondary-btn:hover {
-        background: rgba(255, 255, 255, 0.12);
-      }
-      
-      .explanation-container {
-        background: rgba(21, 101, 192, 0.1);
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #64b4ff;
-        border: 1px solid rgba(21, 101, 192, 0.2);
-        margin-top: 20px;
-      }
-      
-      .explanation-container h3 {
-        margin-top: 0;
-        margin-bottom: 10px;
-        color: #e8eaed;
-      }
-      
-      #explanation-content {
-        font-size: 0.95rem;
-        line-height: 1.4;
+      #orthogonality-visualizer .secondary-btn {
+        width: 100%;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         color: rgba(255, 255, 255, 0.7);
       }
       
-      #explanation-content p {
-        margin: 8px 0;
+      #orthogonality-visualizer .secondary-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
       }
       
-      #explanation-content strong {
+      #orthogonality-visualizer .explanation-container {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.05));
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+      }
+      
+      #orthogonality-visualizer .explanation-container h3 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        color: #2ecc71;
+        font-size: 0.95rem;
+      }
+      
+      #orthogonality-visualizer #explanation-content {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      
+      #orthogonality-visualizer #explanation-content p {
+        margin: 6px 0;
+      }
+      
+      #orthogonality-visualizer #explanation-content strong {
         color: #e8eaed;
       }
       
       @media (max-width: 768px) {
-        .vector-inputs {
-          gap: 15px;
+        #orthogonality-visualizer .vector-inputs {
+          gap: 12px;
         }
         
-        .vector-input input {
-          width: 70px;
+        #orthogonality-visualizer .vector-input input {
+          width: 60px;
           padding: 10px;
           font-size: 16px;
         }
         
-        .primary-btn, .secondary-btn {
+        #orthogonality-visualizer .primary-btn, 
+        #orthogonality-visualizer .secondary-btn {
           padding: 12px;
           font-size: 16px;
         }
@@ -475,9 +498,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return scalarMultiply(onto, dotProduct / ontoSquared);
     }
     
-    // Drawing functions
     function drawGrid() {
-      ctx.strokeStyle = '#eee';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.lineWidth = 1;
       
       // Grid spacing
@@ -495,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw labels for every other line
         if (i !== 0 && i % 2 === 0) {
-          ctx.fillStyle = '#999';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
           ctx.font = '12px Arial';
           ctx.fillText(i, origin.x + 5, y - 5);
         }
@@ -511,14 +533,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw labels for every other line
         if (i !== 0 && i % 2 === 0) {
-          ctx.fillStyle = '#999';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
           ctx.font = '12px Arial';
           ctx.fillText(i, x + 5, origin.y + 15);
         }
       }
       
       // Draw axes with thicker lines
-      ctx.strokeStyle = '#999';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
       ctx.lineWidth = 2;
       
       // x-axis
@@ -533,13 +555,26 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.lineTo(origin.x, canvasHeight);
       ctx.stroke();
       
-      // Labels for axes
-      ctx.fillStyle = '#333';
-      ctx.font = '14px Arial';
-      ctx.fillText('x', canvasWidth - 15, origin.y - 10);
-      ctx.fillText('y', origin.x + 10, 15);
+      // Labels for axes with background for visibility
+      ctx.font = 'bold 16px Arial';
+      
+      // X label
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.beginPath();
+      ctx.arc(canvasWidth - 20, origin.y - 15, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff6666';
+      ctx.fillText('X', canvasWidth - 26, origin.y - 10);
+      
+      // Y label
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.beginPath();
+      ctx.arc(origin.x + 15, 20, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#66ff66';
+      ctx.fillText('Y', origin.x + 8, 25);
     }
-    
+     
     function drawVector(v, color, label, isHovered = false) {
       const start = { x: origin.x, y: origin.y };
       const end = vectorToCanvas(v);
@@ -574,11 +609,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const labelX = end.x + 15 * Math.cos(angle);
       const labelY = end.y - 15 * Math.sin(angle);
       
-      ctx.font = '16px Arial';
+      ctx.font = 'bold 16px Arial';
       const textWidth = ctx.measureText(label).width;
       
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.fillRect(labelX - 3, labelY - 14, textWidth + 6, 20);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(labelX - 5, labelY - 16, textWidth + 10, 22);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(labelX - 5, labelY - 16, textWidth + 10, 22);
       
       ctx.fillStyle = color;
       ctx.fillText(label, labelX, labelY);
