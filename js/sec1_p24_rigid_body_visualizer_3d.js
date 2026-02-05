@@ -110,29 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <span id="quaternion" class="repr-value">(1, 0, 0, 0)</span>
                 </div>
               </div>
-            </div>
-            
-            <div class="rigid-invariants">
-              <div class="invariants-title"><span class="invariants-icon">🔒</span> Measure Invariance (Rigidity)</div>
-              <div class="invariants-description">These quantities NEVER change under SO(3)/SE(3) — that's why it's "rigid" motion!</div>
-              <div class="invariants-grid">
-                <div class="invariant-card">
-                  <div class="invariant-label">Edge Length</div>
-                  <div class="invariant-value" id="edge-length">1.000</div>
-                  <div class="invariant-status">preserved ✓</div>
-                </div>
-                <div class="invariant-card">
-                  <div class="invariant-label">Interior Angle</div>
-                  <div class="invariant-value" id="interior-angle">120.0°</div>
-                  <div class="invariant-status">preserved ✓</div>
-                </div>
-                <div class="invariant-card">
-                  <div class="invariant-label">Volume Scale</div>
-                  <div class="invariant-value" id="volume-scale">1.000</div>
-                  <div class="invariant-status">|det(R)| = 1 ✓</div>
-                </div>
-              </div>
-            </div>
+            </div> 
             
             <div class="rigid-sliders">
               <div class="sliders-section">
@@ -172,22 +150,34 @@ document.addEventListener('DOMContentLoaded', function() {
                   <span class="slider-value" id="tz-value">0.0</span>
                 </div>
               </div>
-            </div>
-            
-            <div class="rigid-applications se3-only" id="applications-panel" style="display: none;">
-              <div class="applications-title">Real-World Applications</div>
-              <div class="applications-list">
-                <div class="app-item"><span class="app-icon">🤖</span> Robotics (ROS tf2): End-effector pose</div>
-                <div class="app-item"><span class="app-icon">🎮</span> Game Engines (Unity): Transform component</div>
-                <div class="app-item"><span class="app-icon">📷</span> Computer Vision: Camera extrinsics</div>
-                <div class="app-item"><span class="app-icon">🥽</span> VR/AR: HMD tracking</div>
-              </div>
-            </div>
-            
+            </div>  
             <div class="rigid-buttons">
               <button id="reset-transform" class="secondary-btn">Reset to Identity</button>
               <button id="random-rotation" class="primary-btn">Random Rotation</button>
             </div>
+
+            <div class="rigid-invariants">
+              <div class="invariants-title"><span class="invariants-icon">🔒</span> Measure Invariance (Rigidity)</div>
+              <div class="invariants-description">These quantities NEVER change under SO(3)/SE(3) — that's why it's "rigid" motion!</div>
+              <div class="invariants-grid">
+                <div class="invariant-card">
+                  <div class="invariant-label">Edge Length</div>
+                  <div class="invariant-value" id="edge-length">1.000</div>
+                  <div class="invariant-status">preserved ✓</div>
+                </div>
+                <div class="invariant-card">
+                  <div class="invariant-label">Interior Angle</div>
+                  <div class="invariant-value" id="interior-angle">120.0°</div>
+                  <div class="invariant-status">preserved ✓</div>
+                </div>
+                <div class="invariant-card">
+                  <div class="invariant-label">Volume Scale</div>
+                  <div class="invariant-value" id="volume-scale">1.000</div>
+                  <div class="invariant-status">|det(R)| = 1 ✓</div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -532,27 +522,6 @@ document.addEventListener('DOMContentLoaded', function() {
         border-radius: 8px;
         padding: 12px;
         margin-bottom: 12px;
-      }
-      .applications-title {
-        font-weight: bold;
-        font-size: 0.9rem;
-        color: #ab47bc;
-        margin-bottom: 8px;
-      }
-      .applications-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .app-item {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.7);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .app-icon {
-        font-size: 1rem;
       }
       .rigid-buttons {
         display: flex;
