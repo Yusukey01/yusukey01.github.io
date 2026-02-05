@@ -936,15 +936,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update functions
         function updateCoinTransform() {
             const R = eulerToRotationMatrix(roll, pitch, yaw);
-            const matrix = new THREE.Matrix4();
-            matrix.set(
+            coin.matrix.set(
                 R[0][0], R[0][1], R[0][2], tx,
                 R[1][0], R[1][1], R[1][2], ty,
                 R[2][0], R[2][1], R[2][2], tz,
                 0, 0, 0, 1
             );
-            coin.matrix.identity();
-            coin.applyMatrix4(matrix);
+            coin.matrixAutoUpdate = false;
         }
         
         function updateDisplays() {
