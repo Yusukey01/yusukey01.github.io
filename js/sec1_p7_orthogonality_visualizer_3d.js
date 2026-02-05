@@ -512,9 +512,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Create colored axes for dark background
-        const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff6666 });
-        const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x66ff66 });
-        const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x6688ff });
+        const xAxisMaterial = new THREE.LineBasicMaterial({ color: '#fffcfc' });
+        const yAxisMaterial = new THREE.LineBasicMaterial({ color: '#fffcfc'});
+        const zAxisMaterial = new THREE.LineBasicMaterial({ color: '#fffcfc' });
 
         // X-axis 
         const xPoints = [];
