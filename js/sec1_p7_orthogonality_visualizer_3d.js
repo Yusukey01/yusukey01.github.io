@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
               </label>
             </div>
-            <div class="instruction" id="instruction-text-3d">Drag vectors to move them. Drag empty space to rotate view. Pinch to zoom.</div>
+            <div class="instruction" id="instruction-text-3d">Drag to rotate the 3D space and see orthogonal projection</div>
             <div id="canvas-wrapper-3d" style="position: relative;">
               <div id="three-canvas-container" style="width: 100%; height: 500px;"></div>
             </div>
@@ -39,8 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="equation-display" id="equation-container-3d">
               <div class="equation-title">Projection Formula in 3D:</div>
               <div id="inner-product-3d" class="equation">proj_v u = (u·v / ||v||²) × v</div>
-              <div id="orthogonal-status-3d" class="status orthogonal"></div>
-            </div>
             </div>
   
             <div class="control-group" id="vector-controls-3d">
@@ -117,23 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
       }
-      
-      .status {
-        margin-top: 8px;
-        padding: 6px 10px;
-        border-radius: 4px;
-        font-size: 0.9em;
-      }
-      
-      .status.orthogonal {
-        background: rgba(39, 174, 96, 0.2);
-        color: #27ae60;
-      }
-      
-      .status.not-orthogonal {
-        background: rgba(231, 76, 60, 0.2);
-        color: #e74c3c;
-      }
     `;
     document.head.appendChild(styleElement);
     
@@ -188,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const demoTypeSelect = document.getElementById('demo-type-3d');
         const instructionText = document.getElementById('instruction-text-3d');
         const innerProductDisplay = document.getElementById('inner-product-3d');
-        const orthogonalStatus = document.getElementById('orthogonal-status-3d');
         const explanationTitle = document.getElementById('explanation-title-3d');
         const explanationContent = document.getElementById('explanation-content-3d');
         const legendContainer = document.getElementById('legend-container-3d');
@@ -867,33 +847,21 @@ document.addEventListener('DOMContentLoaded', function() {
             statusText = 'Process complete! All vectors are orthogonal';
             }
             
-            // Update inner product display for the orthogonal vectors
+           // Update inner product display for the orthogonal vectors
             if (orthogonalVectors.length >= 2) {
-            // Calculate all dot products between orthogonal vectors
-            let allOrthogonal = true;
-            let dotProductText = '';
-            
-            for (let i = 0; i < orthogonalVectors.length; i++) {
-                for (let j = i + 1; j < orthogonalVectors.length; j++) {
-                    const dotProd = dot(orthogonalVectors[i], orthogonalVectors[j]);
-                    dotProductText += `v₍${i+1}₎·v₍${j+1}₎ = ${dotProd.toFixed(2)}, `;
-                    if (Math.abs(dotProd) > 0.1) allOrthogonal = false;
+                // Calculate all dot products between orthogonal vectors
+                let dotProductText = '';
+                
+                for (let i = 0; i < orthogonalVectors.length; i++) {
+                    for (let j = i + 1; j < orthogonalVectors.length; j++) {
+                        const dotProd = dot(orthogonalVectors[i], orthogonalVectors[j]);
+                        dotProductText += `v₍${i+1}₎·v₍${j+1}₎ = ${dotProd.toFixed(2)}, `;
+                    }
                 }
-            }
-          
-            innerProductDisplay.textContent = dotProductText.slice(0, -2); 
-          
-            if (allOrthogonal) {
-                orthogonalStatus.textContent = 'All vectors are orthogonal to each other';
-                orthogonalStatus.className = 'status orthogonal';
-            } else {
-                orthogonalStatus.textContent = 'Continue the process for full orthogonalization';
-                orthogonalStatus.className = 'status not-orthogonal';
-            }
+              
+                innerProductDisplay.textContent = dotProductText.slice(0, -2); 
             } else {
                 innerProductDisplay.textContent = statusText;
-                orthogonalStatus.textContent = 'Gram-Schmidt creates orthogonal vectors';
-                orthogonalStatus.className = 'status orthogonal';
             }
         
             // Show current step visualization
@@ -1450,57 +1418,16 @@ document.addEventListener('DOMContentLoaded', function() {
             mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
         }
 
-        // Mouse events
+        // Mouse events with separate event handlers
         renderer.domElement.addEventListener('mousedown', onMouseDown, false);
         renderer.domElement.addEventListener('mousemove', onMouseMove, false);
         document.addEventListener('mouseup', onMouseUp, false);
 
-        // Touch events - handle single vs multi-touch
-        let touchMode = null; // 'vector' or 'camera'
-        
-        renderer.domElement.addEventListener('touchstart', function(event) {
-            if (event.touches.length === 1) {
-                // Single touch: try to select vector first
-                onMouseDown(event);
-                
-                // If we selected a vector, mark mode as 'vector'
-                if (isDragging && selectedVector) {
-                    touchMode = 'vector';
-                    controls.enabled = false;
-                } else {
-                    // No vector selected, let OrbitControls handle camera rotation
-                    touchMode = 'camera';
-                    controls.enabled = true;
-                }
-            } else {
-                // Multi-touch: always camera control (zoom/pan)
-                touchMode = 'camera';
-                controls.enabled = true;
-                isDragging = false;
-                selectedVector = null;
-            }
-        }, { passive: false });
-        
-        renderer.domElement.addEventListener('touchmove', function(event) {
-            if (touchMode === 'vector' && event.touches.length === 1) {
-                event.preventDefault();
-                onMouseMove(event);
-            }
-            // If touchMode === 'camera', OrbitControls handles it
-        }, { passive: false });
-        
-        document.addEventListener('touchend', function(event) {
-            if (event.touches.length === 0) {
-                if (touchMode === 'vector') {
-                    onMouseUp(event);
-                }
-                touchMode = null;
-                controls.enabled = true;
-            } else if (event.touches.length === 1 && touchMode === 'camera') {
-                // Went from 2 fingers to 1, stay in camera mode
-                touchMode = 'camera';
-            }
-        }, false);
+        // Touch events
+        renderer.domElement.addEventListener('touchstart', onMouseDown, false);
+        renderer.domElement.addEventListener('touchmove', onMouseMove, false);
+        document.addEventListener('touchend', onMouseUp, false);
+
 
         function generateRandomVectors(count) {
             // Clear previous vectors
@@ -1576,5 +1503,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }   
             updateGramSchmidtDemo();
         }
-    }
+    }// Close initializeVisualization function
 }); 
