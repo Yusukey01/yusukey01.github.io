@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="equation-display" id="equation-container-3d">
               <div class="equation-title">Projection Formula in 3D:</div>
               <div id="inner-product-3d" class="equation">proj_v u = (u·v / ||v||²) × v</div>
+              <div id="orthogonal-status-3d" class="status orthogonal"></div>
+            </div>
             </div>
   
             <div class="control-group" id="vector-controls-3d">
@@ -115,6 +117,23 @@ document.addEventListener('DOMContentLoaded', function() {
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
       }
+      
+      .status {
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      
+      .status.orthogonal {
+        background: rgba(39, 174, 96, 0.2);
+        color: #27ae60;
+      }
+      
+      .status.not-orthogonal {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+      }
     `;
     document.head.appendChild(styleElement);
     
@@ -169,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const demoTypeSelect = document.getElementById('demo-type-3d');
         const instructionText = document.getElementById('instruction-text-3d');
         const innerProductDisplay = document.getElementById('inner-product-3d');
+        const orthogonalStatus = document.getElementById('orthogonal-status-3d');
         const explanationTitle = document.getElementById('explanation-title-3d');
         const explanationContent = document.getElementById('explanation-content-3d');
         const legendContainer = document.getElementById('legend-container-3d');
