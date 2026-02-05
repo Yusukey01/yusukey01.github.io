@@ -90,30 +90,203 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add styles
     const styleElement = document.createElement('style');
     styleElement.textContent = `
-      .vector-input input {
-        width: 50px;
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 4px;
-        text-align: center;
+      #orthogonality-visualizer-3d .visualizer-container {
+        background: rgba(15, 20, 25, 0.98);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #e8eaed;
       }
       
-      .vector-input input:focus {
+      #orthogonality-visualizer-3d .controls-panel {
+        background: rgba(20, 28, 40, 0.95);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+      
+      #orthogonality-visualizer-3d .control-group {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      
+      #orthogonality-visualizer-3d .control-group label {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: bold;
+        font-size: 0.85rem;
+      }
+      
+      #orthogonality-visualizer-3d .vector-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      
+      #orthogonality-visualizer-3d .vector-input label {
+        color: #64b4ff;
+        font-weight: bold;
+        min-width: 30px;
+      }
+      
+      #orthogonality-visualizer-3d .vector-input input {
+        width: 55px;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        text-align: center;
+        color: #64b4ff;
+        font-family: 'Courier New', monospace;
+      }
+      
+      #orthogonality-visualizer-3d .vector-input input:focus {
         border-color: #64b4ff;
         outline: none;
         box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.2);
       }
       
-      .legend-color.vector-c {
-        background-color: #27ae60;
+      #orthogonality-visualizer-3d .equation-display {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
       }
       
-      #three-canvas-container {
-        background: #0f1419;
+      #orthogonality-visualizer-3d .equation-title {
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #64b4ff;
+        margin-bottom: 8px;
+      }
+      
+      #orthogonality-visualizer-3d .equation {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: #2ecc71;
+      }
+      
+      #orthogonality-visualizer-3d .explanation-container {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.05));
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      
+      #orthogonality-visualizer-3d .explanation-container h3 {
+        font-weight: bold;
+        font-size: 0.95rem;
+        color: #2ecc71;
+        margin-bottom: 8px;
+      }
+      
+      #orthogonality-visualizer-3d .explanation-container p {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 6px;
+        line-height: 1.5;
+      }
+      
+      #orthogonality-visualizer-3d .primary-btn {
+        background: linear-gradient(135deg, #1565c0, #42a5f5);
+        border: 1px solid #64b4ff;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+      
+      #orthogonality-visualizer-3d .primary-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+      }
+      
+      #orthogonality-visualizer-3d .secondary-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+      }
+      
+      #orthogonality-visualizer-3d .secondary-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      
+      #orthogonality-visualizer-3d .instruction {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      
+      #orthogonality-visualizer-3d .legend {
+        margin-top: 10px;
+        display: flex;
+        gap: 15px;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      
+      #orthogonality-visualizer-3d .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      
+      #orthogonality-visualizer-3d .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+      }
+      
+      #orthogonality-visualizer-3d .legend-color.vector-a { background: #3498db; }
+      #orthogonality-visualizer-3d .legend-color.vector-b { background: #e74c3c; }
+      #orthogonality-visualizer-3d .legend-color.vector-c { background: #27ae60; }
+      #orthogonality-visualizer-3d .legend-color.projection { background: #9b59b6; }
+      #orthogonality-visualizer-3d .legend-color.orthogonal { background: #f39c12; }
+      
+      #orthogonality-visualizer-3d #three-canvas-container {
+        background: linear-gradient(135deg, #0a0f18 0%, #0f1419 100%);
         border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 4px;
+        border-radius: 8px;
+      }
+      
+      #orthogonality-visualizer-3d .visualization-mode-toggle select {
+        width: 100%;
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: #e8eaed;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+      
+      #orthogonality-visualizer-3d .visualization-mode-toggle select:focus {
+        border-color: #64b4ff;
+        outline: none;
+      }
+      
+      #orthogonality-visualizer-3d .visualization-mode-toggle select option {
+        background: #1a2332;
+        color: #e8eaed;
       }
     `;
     document.head.appendChild(styleElement);
@@ -200,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create scene
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf8f9fa);
+        scene.background = new THREE.Color(0x0f1419);
 
         function createAxis(p1, p2, color) {
             const material = new THREE.LineBasicMaterial({ color: color });
@@ -235,9 +408,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create the semi-transparent colored plane with increased transparency
             const planeGeometry = new THREE.PlaneGeometry(10, 10);
             const planeMaterial = new THREE.MeshBasicMaterial({ 
-                color: color, 
+                color: 0x333333, 
                 transparent: true, 
-                opacity: 0.05, 
+                opacity: 0.1, 
                 side: THREE.DoubleSide
             });
             const plane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -248,9 +421,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const divisions = 10;
             const spacing = gridSize / divisions;
             const gridMaterial = new THREE.LineBasicMaterial({ 
-                color: color, 
+                color: 0x444444, 
                 transparent: true, 
-                opacity: 0.2
+                opacity: 0.3
             });
             
             // Create horizontal grid lines
@@ -328,8 +501,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return sprite;
         }
 
-       // Create black axes with proper mathematical orientation
-        const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+        // Create colored axes with proper mathematical orientation
+        const axisMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
 
         // X-axis 
         const xPoints = [];
@@ -356,11 +529,11 @@ document.addEventListener('DOMContentLoaded', function() {
         scene.add(zAxis);
 
         // Add axis labels with correct positions
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#000000');
+        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff6666');
         scene.add(xLabel);
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#000000');
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#66ff66');
         scene.add(yLabel);
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#000000');
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#6666ff');
         scene.add(zLabel);
 
         // Create camera
