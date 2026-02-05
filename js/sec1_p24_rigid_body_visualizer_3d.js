@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 SE(3) Special Euclidean
               </button>
             </div>
-            <div class="instruction" id="rigid-instruction">Drag the coin or use sliders. Watch the matrix change continuously.</div>
+            <div class="instruction" id="rigid-instruction">Drag to rotate object (2-finger to move camera). Watch the matrix change continuously.</div>
             <div id="rigid-canvas-wrapper">
               <div id="three-rigid-container"></div>
             </div>
@@ -711,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.1;
+        controls.dampingFactor = 0.05;
         controls.enablePan = false;
         
         // Lighting
@@ -1055,12 +1055,24 @@ document.addEventListener('DOMContentLoaded', function() {
         randomBtn.addEventListener('click', randomRotation);
         
         // Drag interaction
+        // Desktop: normal drag rotates coin, shift+drag for camera
+        // Mobile: one finger rotates coin, two fingers for camera (zoom/pan)
         let isDragging = false;
         let prevMouse = { x: 0, y: 0 };
+        let touchMode = null; // 'coin' or 'camera'
         
         const getPos = (e) => e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
         
-        renderer.domElement.addEventListener('mousedown', (e) => { isDragging = true; prevMouse = getPos(e); });
+        // Desktop mouse events
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            if (e.shiftKey) {
+                controls.enabled = true;
+            } else {
+                controls.enabled = false;
+                isDragging = true;
+                prevMouse = getPos(e);
+            }
+        });
         renderer.domElement.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             const pos = getPos(e);
@@ -1072,22 +1084,61 @@ document.addEventListener('DOMContentLoaded', function() {
             updateDisplays();
             prevMouse = pos;
         });
-        document.addEventListener('mouseup', () => { isDragging = false; });
+        document.addEventListener('mouseup', () => { 
+            isDragging = false; 
+            controls.enabled = true;
+        });
         
-        renderer.domElement.addEventListener('touchstart', (e) => { e.preventDefault(); isDragging = true; prevMouse = getPos(e); }, { passive: false });
-        renderer.domElement.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (!isDragging) return;
-            const pos = getPos(e);
-            yaw = ((yaw + (pos.x - prevMouse.x) * 0.5) % 360 + 360) % 360 - 180;
-            pitch = Math.max(-90, Math.min(90, pitch + (pos.y - prevMouse.y) * 0.3));
-            yawSlider.value = yaw;
-            pitchSlider.value = pitch;
-            updateCoinTransform();
-            updateDisplays();
-            prevMouse = pos;
+        // Mobile touch events
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                // One finger: rotate coin
+                touchMode = 'coin';
+                controls.enabled = false;
+                isDragging = true;
+                prevMouse = getPos(e);
+                e.preventDefault();
+            } else if (e.touches.length >= 2) {
+                // Two fingers: camera control
+                touchMode = 'camera';
+                controls.enabled = true;
+                isDragging = false;
+            }
         }, { passive: false });
-        document.addEventListener('touchend', () => { isDragging = false; });
+        
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            if (touchMode === 'coin' && e.touches.length === 1) {
+                e.preventDefault();
+                if (!isDragging) return;
+                const pos = getPos(e);
+                yaw = ((yaw + (pos.x - prevMouse.x) * 0.5) % 360 + 360) % 360 - 180;
+                pitch = Math.max(-90, Math.min(90, pitch + (pos.y - prevMouse.y) * 0.3));
+                yawSlider.value = yaw;
+                pitchSlider.value = pitch;
+                updateCoinTransform();
+                updateDisplays();
+                prevMouse = pos;
+            } else if (e.touches.length >= 2) {
+                // Switch to camera mode if second finger added
+                touchMode = 'camera';
+                controls.enabled = true;
+                isDragging = false;
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                isDragging = false;
+                touchMode = null;
+                controls.enabled = true;
+            } else if (e.touches.length === 1 && touchMode === 'camera') {
+                // Went from 2 fingers to 1: switch back to coin mode
+                touchMode = 'coin';
+                controls.enabled = false;
+                isDragging = true;
+                prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
         
         // Resize
         window.addEventListener('resize', () => {
