@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 transparent: true, 
                 opacity: 0.3
             });
-            
+
             // Create horizontal grid lines
             for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
                 const lineGeometry = new THREE.BufferGeometry();
@@ -528,12 +528,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const zAxis = new THREE.Line(zGeometry, axisMaterial);
         scene.add(zAxis);
 
-        // Add axis labels with correct positions
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff6666');
+        // Add axis labels with correct positions 
+        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff4444');
+        xLabel.scale.set(1.2, 1.2, 1.2);
         scene.add(xLabel);
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#66ff66');
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#44ff44');
+        yLabel.scale.set(1.2, 1.2, 1.2);
         scene.add(yLabel);
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#6666ff');
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#4488ff');
+        zLabel.scale.set(1.2, 1.2, 1.2);
         scene.add(zLabel);
 
         // Create camera
@@ -1088,22 +1091,38 @@ document.addEventListener('DOMContentLoaded', function() {
             scene.children.forEach(child => {
             if (child.isAxisLabel) scene.remove(child);
             });
-            
+        
             // Create X, Y, Z text labels using sprites for simplicity
             function createTextSprite(text, position, color) {
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
-                canvas.width = 64;
-                canvas.height = 64;
+                canvas.width = 256;
+                canvas.height = 256;
                 
-                context.font = 'Bold 32px Arial';
-                context.fillStyle = color;
+                // Draw background circle for better visibility
+                context.beginPath();
+                context.arc(128, 128, 100, 0, Math.PI * 2);
+                context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                context.fill();
+                context.strokeStyle = color;
+                context.lineWidth = 6;
+                context.stroke();
+                
+                // Draw text with shadow for better readability
+                context.font = 'Bold 140px Arial';
                 context.textAlign = 'center';
                 context.textBaseline = 'middle';
-                context.fillText(text, 32, 32);
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                context.fillText(text, 131, 131);
+                
+                // Main text
+                context.fillStyle = color;
+                context.fillText(text, 128, 128);
                 
                 const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.SpriteMaterial({map: texture});
+                const material = new THREE.SpriteMaterial({ map: texture });
                 const sprite = new THREE.Sprite(material);
                 
                 sprite.position.copy(position);
