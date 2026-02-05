@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
               </label>
             </div>
-            <div class="instruction" id="instruction-text-3d">Drag to rotate the 3D space and see orthogonal projection</div>
+            <div class="instruction" id="instruction-text-3d">Drag vectors to move them. Drag empty space to rotate view. Pinch to zoom.</div>
             <div id="canvas-wrapper-3d" style="position: relative;">
               <div id="three-canvas-container" style="width: 100%; height: 500px;"></div>
             </div>
@@ -1430,16 +1430,57 @@ document.addEventListener('DOMContentLoaded', function() {
             mouse.y = -((clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
         }
 
-        // Mouse events with separate event handlers
+        // Mouse events
         renderer.domElement.addEventListener('mousedown', onMouseDown, false);
         renderer.domElement.addEventListener('mousemove', onMouseMove, false);
         document.addEventListener('mouseup', onMouseUp, false);
 
-        // Touch events
-        renderer.domElement.addEventListener('touchstart', onMouseDown, false);
-        renderer.domElement.addEventListener('touchmove', onMouseMove, false);
-        document.addEventListener('touchend', onMouseUp, false);
-
+        // Touch events - handle single vs multi-touch
+        let touchMode = null; // 'vector' or 'camera'
+        
+        renderer.domElement.addEventListener('touchstart', function(event) {
+            if (event.touches.length === 1) {
+                // Single touch: try to select vector first
+                onMouseDown(event);
+                
+                // If we selected a vector, mark mode as 'vector'
+                if (isDragging && selectedVector) {
+                    touchMode = 'vector';
+                    controls.enabled = false;
+                } else {
+                    // No vector selected, let OrbitControls handle camera rotation
+                    touchMode = 'camera';
+                    controls.enabled = true;
+                }
+            } else {
+                // Multi-touch: always camera control (zoom/pan)
+                touchMode = 'camera';
+                controls.enabled = true;
+                isDragging = false;
+                selectedVector = null;
+            }
+        }, { passive: false });
+        
+        renderer.domElement.addEventListener('touchmove', function(event) {
+            if (touchMode === 'vector' && event.touches.length === 1) {
+                event.preventDefault();
+                onMouseMove(event);
+            }
+            // If touchMode === 'camera', OrbitControls handles it
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function(event) {
+            if (event.touches.length === 0) {
+                if (touchMode === 'vector') {
+                    onMouseUp(event);
+                }
+                touchMode = null;
+                controls.enabled = true;
+            } else if (event.touches.length === 1 && touchMode === 'camera') {
+                // Went from 2 fingers to 1, stay in camera mode
+                touchMode = 'camera';
+            }
+        }, false);
 
         function generateRandomVectors(count) {
             // Clear previous vectors
