@@ -179,18 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button id="apply-composition" class="primary-btn">Apply Result</button>
               <div class="composition-note" id="composition-note"></div>
             </div>
-            
-            <div class="dihedral-info-group">
-              <div class="info-title">D₆ Group Properties</div>
-              <div class="info-content">
-                <p><strong>Order:</strong> |D₆| = 12 (6 rotations + 6 reflections)</p>
-                <p><strong>Generators:</strong> ⟨r, s⟩ where r⁶ = e, s² = e</p>
-                <p><strong>Key relation:</strong> srs⁻¹ = r⁻¹ (conjugation inverts rotation)</p>
-                <p><strong>Non-abelian:</strong> rs ≠ sr (try it with composition!)</p>
-                <p><strong>Normal subgroup:</strong> ⟨r⟩ ◁ D₆</p>
-              </div>
-            </div>
-            
+              
             <button id="reset-btn" class="secondary-btn">Reset to Identity</button>
           </div>
         </div>
@@ -574,37 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .composition-note.highlight {
         color: #f39c12;
       }
-      
-      /* Info Group */
-      .dihedral-info-group {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 15px;
-      }
-      
-      .info-title {
-        font-weight: bold;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 8px;
-      }
-      
-      .info-content {
-        font-size: 0.85rem;
-        line-height: 1.5;
-        color: rgba(255, 255, 255, 0.7);
-      }
-      
-      .info-content p {
-        margin: 4px 0;
-      }
-      
-      .info-content strong {
-        color: #e8eaed;
-      }
-      
+
       /* Buttons */
       .primary-btn, .secondary-btn {
         width: 100%;
