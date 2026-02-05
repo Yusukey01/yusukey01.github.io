@@ -476,40 +476,52 @@ document.addEventListener('DOMContentLoaded', function() {
         yzPlane.rotation.y = Math.PI/2;  // Rotate around Y axis to create side wall
         scene.add(yzPlane);
                 
-
+        
         // Create X, Y, Z text labels using sprites for simplicity
         function createTextSprite(text, position, color) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = 64;
-            canvas.height = 64;
+            canvas.width = 256;
+            canvas.height = 256;
             
-            context.font = 'Bold 32px Arial';
-            context.fillStyle = color;
+            // Draw background circle for better visibility
+            context.beginPath();
+            context.arc(128, 128, 100, 0, Math.PI * 2);
+            context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            context.fill();
+            context.strokeStyle = color;
+            context.lineWidth = 8;
+            context.stroke();
+            
+            // Draw text
+            context.font = 'Bold 140px Arial';
             context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(text, 32, 32);
+            context.fillStyle = color;
+            context.fillText(text, 128, 128);
             
             const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({map: texture});
+            const material = new THREE.SpriteMaterial({ map: texture });
             const sprite = new THREE.Sprite(material);
             
             sprite.position.copy(position);
-            sprite.scale.set(1, 1, 1);
+            sprite.scale.set(1.2, 1.2, 1.2);
             sprite.isAxisLabel = true;
             
             return sprite;
         }
 
-        // Create colored axes with proper mathematical orientation
-        const axisMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
+        // Create colored axes for dark background
+        const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff6666 });
+        const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x66ff66 });
+        const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x6688ff });
 
         // X-axis 
         const xPoints = [];
         xPoints.push(new THREE.Vector3(-5, 0, 0)); 
         xPoints.push(new THREE.Vector3(5, 0, 0));
         const xGeometry = new THREE.BufferGeometry().setFromPoints(xPoints);
-        const xAxis = new THREE.Line(xGeometry, axisMaterial);
+        const xAxis = new THREE.Line(xGeometry, xAxisMaterial);
         scene.add(xAxis);
 
         // Y-axis
@@ -517,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
         yPoints.push(new THREE.Vector3(0, 0, -5));  // Y in math is Z in Three.js
         yPoints.push(new THREE.Vector3(0, 0, 5));
         const yGeometry = new THREE.BufferGeometry().setFromPoints(yPoints);
-        const yAxis = new THREE.Line(yGeometry, axisMaterial);
+        const yAxis = new THREE.Line(yGeometry, yAxisMaterial);
         scene.add(yAxis);
 
         // Z-axis
@@ -525,18 +537,15 @@ document.addEventListener('DOMContentLoaded', function() {
         zPoints.push(new THREE.Vector3(0, -5, 0));  // Z in math is Y in Three.js
         zPoints.push(new THREE.Vector3(0, 5, 0));
         const zGeometry = new THREE.BufferGeometry().setFromPoints(zPoints);
-        const zAxis = new THREE.Line(zGeometry, axisMaterial);
+        const zAxis = new THREE.Line(zGeometry, zAxisMaterial);
         scene.add(zAxis);
 
-        // Add axis labels with correct positions 
-        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff4444');
-        xLabel.scale.set(1.2, 1.2, 1.2);
+        // Add axis labels with bright colors
+        const xLabel = createTextSprite('X', new THREE.Vector3(5.5, 0, 0), '#ff6666');
         scene.add(xLabel);
-        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#44ff44');
-        yLabel.scale.set(1.2, 1.2, 1.2);
+        const yLabel = createTextSprite('Y', new THREE.Vector3(0, 0, 5.5), '#66ff66');
         scene.add(yLabel);
-        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#4488ff');
-        zLabel.scale.set(1.2, 1.2, 1.2);
+        const zLabel = createTextSprite('Z', new THREE.Vector3(0, 5.5, 0), '#6688ff');
         scene.add(zLabel);
 
         // Create camera
