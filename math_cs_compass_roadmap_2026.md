@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with the ultimate goal of covering **Geometric Deep Learning** — now a core paradigm in the AI industry (2026).
+MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with the ultimate goal of covering **Geometric Deep Learning** - now a core paradigm in the AI industry (2026).
 
 ---
 
@@ -64,7 +64,7 @@ RINGS & DOMAINS (linalg-19 to 22) ✅
 └── Integral Domains (ED ⊂ PID ⊂ UFD)
 
 FIELD EXTENSIONS (linalg-23 to 24) 🔄
-├── Extension Fields (Ch 20 — SHARED FOUNDATION) 🔄
+├── Extension Fields (Ch 20 - SHARED FOUNDATION) 🔄
 │   ├── Fundamental Theorem of Field Theory
 │   ├── Splitting Fields
 │   ├── Simple Extensions: F(a) ≅ F[x]/⟨p(x)⟩
@@ -121,7 +121,7 @@ FIELD EXTENSIONS (linalg-23 to 24) 🔄
 
 ### Detailed Content: Algebraic Extensions (linalg-25)
 
-**Chapter 21 from Gallian — GDL PATH**
+**Chapter 21 from Gallian - GDL PATH**
 
 | Section | Content | CS/AI Connection |
 |---------|---------|------------------|
@@ -132,11 +132,11 @@ FIELD EXTENSIONS (linalg-23 to 24) 🔄
 | Algebraic Closure | Every polynomial splits | Universal computation environment |
 
 **Key Theorem for GDL:**
-The Tower Law explains why dimensions multiply when composing extensions — this is exactly why SE(3) = SO(3) ⋉ ℝ³ has dimension 3 + 3 = 6.
+The Tower Law explains why dimensions multiply when composing extensions - this is exactly why SE(3) = SO(3) ⋉ ℝ³ has dimension 3 + 3 = 6.
 
 ### Detailed Content: Finite Fields (linalg-26)
 
-**Chapters 22 + Ch 20 extras — CRYPTO PATH**
+**Chapters 22 + Ch 20 extras - CRYPTO PATH**
 
 | Section | Content | Application |
 |---------|---------|-------------|
@@ -159,7 +159,7 @@ The Tower Law explains why dimensions multiply when composing extensions — thi
 ### Current Structure
 
 ```
-METRIC SPACES (calc-16 to 22) — Following Ó Searcóid
+METRIC SPACES (calc-16 to 22) - Following Ó Searcóid
 ═══════════════════════════════════════════════════════════════════════
 Part  | Title                    | Status   | Content
 ──────┼──────────────────────────┼──────────┼─────────────────────────
@@ -176,7 +176,7 @@ Part  | Title                    | Status   | Content
 ### Upcoming: Functional Analysis Bridge
 
 ```
-FUNCTIONAL ANALYSIS BRIDGE (calc-23 to 25) — NEW
+FUNCTIONAL ANALYSIS BRIDGE (calc-23 to 25) - NEW
 ═══════════════════════════════════════════════════════════════════════
 Part  | Title                    | Status   | Content
 ──────┼──────────────────────────┼──────────┼─────────────────────────
@@ -189,7 +189,7 @@ Part  | Title                    | Status   | Content
 ### Future: Geometry Track
 
 ```
-GEOMETRY (calc-26 to 29) — Path to GDL
+GEOMETRY (calc-26 to 29) - Path to GDL
 ═══════════════════════════════════════════════════════════════════════
 Part  | Title                    | Status   | Content
 ──────┼──────────────────────────┼──────────┼─────────────────────────
@@ -255,16 +255,16 @@ Extension Fields (23)                      Banach/Hilbert (23-24)
 | Month | Track A (Algebra) | Track B (Analysis) |
 |-------|-------------------|-------------------|
 | Jan | Integral Domains ✅ | Metric Spaces (intro) ✅ |
-| Feb | Extension Fields 🔄 | Convergence, Continuity ✅ |
+| Feb | Extension Fields ✅ | Convergence, Continuity ✅ |
 | Mar | Geometry of Symmetry (D_n, SO/SE) ✅ | Completeness, Connectedness ✅ |
 | Apr | Algebraic Extensions | Compactness ✅ |
 | May | Finite Fields | Homeomorphisms 🔄 |
-| Jun | — | **Normed & Banach Spaces** |
-| Jul | — | **Hilbert Spaces & RKHS** |
-| Aug | — | **Synthesis Page** |
+| Jun | - | **Normed & Banach Spaces** |
+| Jul | - | **Hilbert Spaces & RKHS** |
+| Aug | - | **Synthesis Page** |
 | Sep | **Lie Groups (intro)** | **Topological Spaces** |
 | Oct | Lie Algebras | **Smooth Manifolds** |
-| Nov | — | Tangent Spaces |
+| Nov | - | Tangent Spaces |
 | Dec | **CONVERGENCE: Lie Groups as Manifolds** |
 
 ---
@@ -282,8 +282,8 @@ Extension Fields (23)                      Banach/Hilbert (23-24)
 | 20 | linalg-20 | Ideals & Factor Rings | ✅ |
 | 21 | linalg-21 | Polynomial Rings | ✅ |
 | 22 | linalg-22 | Integral Domains | ✅ |
-| 23 | linalg-23 | **Extension Fields** | 🔄 |
-| 24 | linalg-24 | **Geometry of Symmetry** (D_n, SO/SE) | ✅ |
+| 23 | linalg-23 | Extension Fields | ✅ |
+| 24 | linalg-24 | Geometry of Symmetry (D_n, SO/SE) | ✅ |
 | 25 | linalg-25 | Algebraic Extensions (GDL path) | ❌ |
 | 26 | linalg-26 | Finite Fields (Crypto path) | ❌ |
 
