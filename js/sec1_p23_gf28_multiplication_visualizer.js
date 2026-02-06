@@ -476,7 +476,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const presetBtns = document.querySelectorAll('.preset-btn');
     
     // AES irreducible polynomial: x^8 + x^4 + x^3 + x + 1 = 0x11B
-    const IRREDUCIBLE = 0x11B;
     const REDUCTION_MASK = 0x1B;
     
     // Convert hex string to number
