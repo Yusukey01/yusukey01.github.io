@@ -653,7 +653,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const homogeneousMatrixDisplay = document.getElementById('homogeneous-matrix-display');
         const translationSliders = document.getElementById('translation-sliders');
-        const applicationsPanel = document.getElementById('applications-panel');
         
         const resetBtn = document.getElementById('reset-transform');
         const randomBtn = document.getElementById('random-rotation');
@@ -974,7 +973,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const se3Display = mode === 'SE3' ? 'block' : 'none';
             homogeneousMatrixDisplay.style.display = se3Display;
             translationSliders.style.display = se3Display;
-            applicationsPanel.style.display = se3Display;
             
             instructionText.textContent = mode === 'SO3' 
                 ? 'SO(3): Pure rotation. Drag coin or use sliders. det(R) = 1 always.'
