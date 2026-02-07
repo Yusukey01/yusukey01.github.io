@@ -1,6 +1,6 @@
 ---
 layout: default
-title: The Derivative of Scalar Functions of Matrices
+title: Scalar Functions of a Matrix
 topic_id: calc-5
 level: detail
 uses_math: true
@@ -12,8 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
 
         <div class="hero-section">
-            <h1 class="webpage-name">The Derivative of Scalar Functions of Matrices
-            </h1>
+            <h1 class="webpage-name">Scalar Functions of a Matrix</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -22,189 +21,239 @@ uses_python: false
             <a href="#frob">Derivative of the Frobenius norm</a>
             <a href="#det">Derivative of the Determinant</a>
         </div>  
-        <div class="container">     
+
+        <div class="container">    
+
             <section id="frob" class="section-content">
-            <h2>Derivative of the Frobenius norm</h2>
-            <p>
-                Derivatives implicitly rely on <strong>norms</strong> to measure the magnitude of changes in both the input \(dx\) 
-                and the output \(df\) ensuring a consistent comparison of their scales.
-                <br><br>
-                The <a href="../Linear_algebra/trace.html"><strong>Frobenius norm</strong></a> of a matrix \(X \in \mathbb{R}^{m \times n}\) is defined as:
-                \[
-                f(X) = \| X \|_F = \sqrt{\text{tr }(X^TX)} 
-                \] 
-                <br>
-                Now, taking the differential \(df\):
-                <br><br>
-                First, by the chain rule:
-                \[
-                df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}d[\text{tr }(X^TX)]
-                \]
-                Note: for any matrix \(A\),
-                \[
-                \begin{align*}
-                d(\text{tr }(A)) &= \text{tr }(A + dA) - \text{tr }(A) \\\\\
-                                &= \text{tr }(A) + \text{tr }(dA) - \text{tr }(A) \\\\
-                                &= \text{tr }(dA)
-                \end{align*}
-                \]
-                Thus:
-                \[
-                df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[d(X^TX)]
-                \]
-                By the product rule:
-                \[
-                \begin{align*}
-                df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[dX^TX + X^TdX]\\\\
-                &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }(dX^TX) + \text{tr }(X^TdX)
-                \end{align*}
-                \]
-                Since 
-                \[
-                \text{tr }(dX^TX)  = \text{tr }((dX^TX)^T) = \text{tr }(X^TdX),
-                \]
-                We obtain
-                \[ 
-                \begin{align*}
-                df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}2\text{tr }(X^TdX)\\\\
-                    &= \frac{1}{\sqrt{\text{tr }(X^TX)}}\text{tr }(X^TdX)
-                \end{align*}
-                \]
-                Here, \(\text{tr }(X^TdX)\) represents the <strong>Frobenius inner product</strong> of \(X\) and \(dX\). Then:
-                \[
-                df = \left\langle \frac{X}{\sqrt{\text{tr }(X^TX)}}, dX \right\rangle_F  \tag{1}
-                \]
-                Therefore, 
-                \[
-                \nabla f = \frac{X}{ \| X \|_F}.
-                \]
-                <br>
-                Note:The expression in (1) is equivalent to
-                \[
-                df = \text{tr }((\nabla f)^TdX) \tag{2}
-                \]
-                <br>
-                The trace operator satisfies linearity and the cyclic property, making it a convenient way to express derivatives 
-                in terms of gradients.
-                <br>
-                For example, consider \(f(A) = x^TAy\) where \(A\) is 
-                a \(m \times n\) matrix, \(x \in \mathbb{R}^m\), and  \(y \in \mathbb{R}^n\).
-                <br>
-                By the product rule,
-                \[
-                df = x^TdAy
-                \]
-                Since \(df\) is a scalar,  taking the trace does not change its value:
-                \[
-                df = \text{tr }(x^TdAy)
-                \]
-                By the cyclic property of the trace:
-                \[
-                df = \text{tr }(yx^TdA)
-                \]
-                Therefore, comparing this with \(df = \text{tr }((\nabla f)^TdA)\), 
-                \[
-                \nabla f = (yx^T)^T = xy^T
-                \]
-            </p>
+                <h2>Derivative of the Frobenius Norm</h2>
+
+                <p>
+                    In machine learning, we frequently map high-dimensional weight matrices to a single scalar "cost" or "penalty" term.
+                    The <a href="../Linear_algebra/trace.html"><strong>Frobenius norm</strong></a> provides the most natural way to measure 
+                    the total magnitude of a matrix \(X \in \mathbb{R}^{m \times n}\), acting as the matrix-space equivalent of the Euclidean 
+                    \(L_2\) norm.
+                </p>
+
+                <p>
+                    It is defined through the <strong>trace operator</strong>, which we will see is the fundamental tool for extracting 
+                    scalar information from matrix products:
+                    \[
+                    f(X) = \| X \|_F = \sqrt{\text{tr}(X^TX)} = \sqrt{\sum_{i,j} X_{ij}^2}
+                    \] 
+                </p>
+
+                <p>
+                    Derivatives implicitly rely on <strong>norms</strong> to measure the magnitude of changes in both the input \(dx\) 
+                    and the output \(df\) ensuring a consistent comparison of their scales.  
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Derivative of the Frobenius Norm</span>
+                    <p>
+                        Let's take the differential \(df\) of 
+                        \[
+                        f(X) = \| X \|_F = \sqrt{\text{tr}(X^TX)} = \sqrt{\sum_{i,j} X_{ij}^2}.
+                        \]
+                        First, by the chain rule:
+                        \[
+                        df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}d[\text{tr }(X^TX)]
+                        \]
+                        Note: for any matrix \(A\),
+                        \[
+                        \begin{align*}
+                        d(\text{tr }(A)) &= \text{tr }(A + dA) - \text{tr }(A) \\\\\
+                                        &= \text{tr }(A) + \text{tr }(dA) - \text{tr }(A) \\\\
+                                        &= \text{tr }(dA)
+                        \end{align*}
+                        \]
+                        Thus:
+                        \[
+                        df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[d(X^TX)]
+                        \]
+                        By the product rule:
+                        \[
+                        \begin{align*}
+                        df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[dX^TX + X^TdX]\\\\
+                        &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }(dX^TX) + \text{tr }(X^TdX)
+                        \end{align*}
+                        \]
+                        Since 
+                        \[
+                        \text{tr }(dX^TX)  = \text{tr }((dX^TX)^T) = \text{tr }(X^TdX),
+                        \]
+                        We obtain
+                        \[ 
+                        \begin{align*}
+                        df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}2\text{tr }(X^TdX)\\\\
+                            &= \frac{1}{\sqrt{\text{tr }(X^TX)}}\text{tr }(X^TdX)
+                        \end{align*}
+                        \]
+                        Here, \(\text{tr }(X^TdX)\) represents the <strong>Frobenius inner product</strong> of \(X\) and \(dX\). Then:
+                        \[
+                        df = \left\langle \frac{X}{\sqrt{\text{tr }(X^TX)}}, dX \right\rangle_F  \tag{1}
+                        \]
+                        Therefore, 
+                        \[
+                        \nabla f = \frac{X}{ \| X \|_F}.
+                        \]
+                    </p>
+                </div>
+                
+                <p>
+                    Note:The expression in (1) is equivalent to
+                    \[
+                    df = \text{tr }((\nabla f)^TdX) \tag{2}
+                    \]
+                </p>
+                
+                    
+                <p>
+                    The trace operator satisfies linearity and the cyclic property, making it a convenient way to express derivatives 
+                    in terms of gradients.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Appling Cyclic Property</span>
+                    <p>
+                        consider \(f(A) = x^TAy\) where \(A\) is a \(m \times n\) matrix, \(x \in \mathbb{R}^m\), and  
+                        \(y \in \mathbb{R}^n\).
+                    </p>
+                    <p>
+                        By the product rule,
+                        \[
+                        df = x^TdAy
+                        \]
+                        Since \(df\) is a scalar,  taking the trace does not change its value:
+                        \[
+                        df = \text{tr }(x^TdAy)
+                        \]
+                        By the cyclic property of the trace:
+                        \[
+                        df = \text{tr }(yx^TdA)
+                        \]
+                        Therefore, comparing this with \(df = \text{tr }((\nabla f)^TdA)\), 
+                        \[
+                        \nabla f = (yx^T)^T = xy^T
+                        \]
+                    </p>
+                </div>
+
             </section>
+
             <section id="det" class="section-content">
                 <h2>Derivative of the Determinant</h2>
                 <p>
-                The derivative of the  <a href="../Linear_algebra/determinants.html">determinant</a> of a square matrix \(A \in \mathbb{R}^{n \times n}\) 
-                can be expressed using several equivalent forms.  
-                <br>
-                Recall: 
-                \[
-                \text{adj }(A) = \text{cofactor }(A)^T = (\det A)A^{-1}.
-                \]
-                This implies:
-                \[
-                \text{cofactor }(A) = \text{adj }(A)^T = (\det A)(A^{-1})^T.
-                \]
-                <br><br>
-                By the cofactor expansion of the determinant based on \(i\)-th row of \(A\):
-                \[
-                \det (A) = A_{i1}C_{i1} + A_{i2}C_{i2} +  \cdots + A_{in}C_{in}
-                \]
-                Thus, \(\frac{\partial \det A}{\partial A_{ij}} = C_{ij} \) and then:
-                \[
-                \nabla (\det A) = \text{cofactor } (A)
-                \]
-                Equivalently, using the expression (2): 
-                \[
-                \begin{align*}
-                d (\det A) &= \text{tr }(\text{cofactor }(A)^T dA) \\\\
-                        &= \text{tr }(\text{adj }(A) dA) \\\\
-                        &= \text{tr }((\det A)A^{-1} dA)  \tag{3}
-                \end{align*}
-                \]
-                Therefore,
-                \[
-                \begin{align*}
-                \nabla (\det A) &= \text{cofactor } (A) \\\\
-                                &= \text{adj }(A)^T  \\\\
-                                &= (\det A)(A^{-1})^T
-                \end{align*}
-                \]
-                
-                <br>
-                Since \(\det A\) is a scalar, the expression (3) can be written as:
-                \[
-                d(\det A) = (\det A)\text{tr }(A^{-1} dA) \tag{4}
-                \]
-                Consider the scalar function \(p(x) = \det(xI - A)\), which is the characteristic polynomial of \(A\). 
-                In practice, when approximating eigenvalues using numerical methods, we often need to compute the derivative 
-                of \(p(x)\) at different values of \(x\).
-                <br>
-                Applying the expression (4), we have:
-                \[
-                \begin{align*}
-                &d(\det (xI-A))  \\\\
-                &= (\det (xI-A)) \text{tr } ((xI-A)^{-1} d(xI -A)).
-                \end{align*}
-                \]
-                Since \(A\) is constant, \(d(xI -A) = dxI\), and also \(dx\) is a scalar. Thus, 
-                \[
-                \begin{align*}
-                &d(\det (xI-A)) \\\\
-                &= (\det (xI-A)) \text{tr } ((xI-A)^{-1})dx
-                \end{align*}
-                \]
-                <br>
-                Note: While the <strong>analytical approach</strong> provides a useful formula for the differential of many functions, in practice,
-                <a href="../Machine_learning/autodiff.html"><strong>reverse mode automatic differentiation</strong></a> offers a more stable and efficient way to compute 
-                the gradient of functions. Auto-diff allows us to compute the derivative with respect to matrix parameters directly 
-                without explicitly computing like \(A^{-1}\), which can introduce numerical instability in certain cases.
-                <br><br>
-                Here's an example using auto-diff in PyTorch vs using the analytical formula to compute the derivative of \(p(x)\):
-                <pre class="python-code">
-                import torch
-
-                # Random square matrix
-                def generate_matrix(n):
-                    return torch.randn(n, n, dtype=torch.float64, requires_grad=False)
-
-                # Characteristic polynomial p(x) = det(xI - A)
-                def p(x, A):
-                    return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
-
-                # Derivative of p(x) using auto-differentiation
-                def dp_torch(x, A):
-                    x_tensor = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
-                    grad = torch.autograd.grad(p(x_tensor, A), x_tensor)[0]
-                    return grad.item()
-
-                # Analytical formula d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
-                def dp(x, A):
-                    return (
-                        p(x, A).item() *
-                        torch.trace(
-                            torch.inverse(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
-                        ).item()
-                    )
-                </pre>
+                    The <a href="../Linear_algebra/determinants.html">determinant</a> \(\det(X)\) represents the oriented volume scaling 
+                    factor of a linear transformation. Its derivative is crucial for <strong>Normalizing Flows</strong> and any optimization 
+                    involving <strong>Covariance Matrices</strong>.
                 </p>
+
+                <p>
+                    The derivative of the of a square matrix \(A \in \mathbb{R}^{n \times n}\) 
+                    can be expressed using several equivalent forms. Recall that 
+                    \[
+                    \text{adj }(A) = \text{cofactor }(A)^T = (\det A)A^{-1}.
+                    \]
+                    This implies:
+                    \[
+                    \text{cofactor }(A) = \text{adj }(A)^T = (\det A)(A^{-1})^T.
+                    \]
+                    By the cofactor expansion of the determinant based on \(i\)-th row of \(A\):
+                    \[
+                    \det (A) = A_{i1}C_{i1} + A_{i2}C_{i2} +  \cdots + A_{in}C_{in}
+                    \]
+                    Thus, \(\frac{\partial \det A}{\partial A_{ij}} = C_{ij} \) and then:
+                    \[
+                    \nabla (\det A) = \text{cofactor } (A)
+                    \]
+                </p>
+
+                <p>
+                    Equivalently, using the expression (2): 
+                    \[
+                    \begin{align*}
+                    d (\det A) &= \text{tr }(\text{cofactor }(A)^T dA) \\\\
+                            &= \text{tr }(\text{adj }(A) dA) \\\\
+                            &= \text{tr }((\det A)A^{-1} dA)  \tag{3}
+                    \end{align*}
+                    \]
+                    Therefore,
+                    \[
+                    \begin{align*}
+                    \nabla (\det A) &= \text{cofactor } (A) \\\\
+                                    &= \text{adj }(A)^T  \\\\
+                                    &= (\det A)(A^{-1})^T
+                    \end{align*}
+                    \]
+                    Since \(\det A\) is a scalar, the expression (3) can be written as:
+                    \[
+                    d(\det A) = (\det A)\text{tr }(A^{-1} dA) \tag{4}
+                    \]
+                </p>
+
+                
+                <div class="proof">
+                    <span class="proof-title">Characteristic polynomial</span>
+                    <p>
+                        Consider the scalar function \(p(x) = \det(xI - A)\), which is the characteristic polynomial of \(A\). 
+                        In practice, when approximating eigenvalues using numerical methods, we often need to compute the derivative 
+                        of \(p(x)\) at different values of \(x\).
+                    </p>
+                    <p>
+                        Applying the expression (4), we have:
+                        \[
+                        \begin{align*}
+                        &d(\det (xI-A))  \\\\
+                        &= (\det (xI-A)) \text{tr } ((xI-A)^{-1} d(xI -A)).
+                        \end{align*}
+                        \]
+                        Since \(A\) is constant, \(d(xI -A) = dxI\), and also \(dx\) is a scalar. Thus, 
+                        \[
+                        \begin{align*}
+                        &d(\det (xI-A)) \\\\
+                        &= (\det (xI-A)) \text{tr } ((xI-A)^{-1})dx
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Note: While the <strong>analytical approach</strong> provides a useful formula for the differential of many functions, in practice,
+                    <a href="../Machine_learning/autodiff.html"><strong>reverse mode automatic differentiation</strong></a> offers a more stable and 
+                    efficient way to compute the gradient of functions. Auto-diff allows us to compute the derivative with respect to matrix parameters directly 
+                    without explicitly computing like \(A^{-1}\), which can introduce numerical instability in certain cases (e.g., \(\det(xI - A) \approx 0\))/
+                </p>
+
+                <p>
+                    Here's an example using auto-diff in PyTorch vs using the analytical formula to compute the derivative of \(p(x)\):
+                </p>
+    
+                <pre class="python-code">
+                    import torch
+
+                    # Random square matrix
+                    def generate_matrix(n):
+                        return torch.randn(n, n, dtype=torch.float64, requires_grad=False)
+
+                    # Characteristic polynomial p(x) = det(xI - A)
+                    def p(x, A):
+                        return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
+
+                    # Derivative of p(x) using auto-differentiation
+                    def dp_torch(x, A):
+                        x_tensor = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
+                        grad = torch.autograd.grad(p(x_tensor, A), x_tensor)[0]
+                        return grad.item()
+
+                    # Analytical formula d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
+                    def dp(x, A):
+                        return (
+                            p(x, A).item() *
+                            torch.trace(
+                                torch.inverse(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
+                            ).item()
+                        )
+                </pre>
             </section>
         </div>
         <script src="/js/main.js"></script>
