@@ -73,43 +73,88 @@ uses_python: true
 
             <section id="NM" class="section-content">
                 <h2>Newton's Method</h2>
+
                 <p>
-                    Even though the first-order methods such as the gradient descent is computationally cheap, they do not consider the 
-                    <strong>curvature</strong>, which often leads to slower convergence. A classic second-order method, <strong>Newton's method</strong> 
-                    is as follows:
+                    While gradient descent relies on a first-order linear approximation, <strong>Newton's Method</strong> utilizes a 
+                    <strong>second-order Taylor expansion</strong> to find the stationary point of a function. By incorporating the 
+                    <strong>curvature</strong> (Hessian matrix) of the loss function, it creates a quadratic approximation locally 
+                    and jumps to the minimum of that quadratic.
                 </p>
+
+                <p>
+                    Consider the second-order approximation of \(\mathcal{L}\) around the current point \(\theta_t\):
+                    \[
+                    \mathcal{L}(\theta_t + \Delta \theta) \approx \mathcal{L}(\theta_t) + \nabla \mathcal{L}(\theta_t)^T \Delta \theta + \frac{1}{2} \Delta \theta^T \nabla^2 \mathcal{L}(\theta_t) \Delta \theta.
+                    \]
+                </p>
+
+                <p>
+                    To find the optimal change \(\Delta \theta\) that minimizes this approximation, we set the derivative with respect 
+                    to \(\Delta \theta\) to zero:
+                    \[
+                    \nabla \mathcal{L}(\theta_t) + \nabla^2 \mathcal{L}(\theta_t) \Delta \theta = 0.
+                    \]
+                </p>
+
+                <p>
+                    Let \(g_t = \nabla \mathcal{L}(\theta_t)\) be the gradient and \(H_t = \nabla^2 \mathcal{L}(\theta_t)\) be the Hessian. 
+                    Solving for \(\Delta \theta\) gives us the <strong>Newton Direction</strong>, denoted as \(d_t\):
+                    \[
+                    H_t d_t = -g_t \implies d_t = -H_t^{-1} g_t.
+                    \]
+                </p>
+
+                <p>
+                    In the pure Newton's method, the update is simply \(\theta_{t+1} = \theta_t + d_t\). However, to ensure 
+                    convergence even when the function is not perfectly quadratic, we often employ <strong>Damped Newton's Method</strong>. 
+                    This involves performing a <strong>line search</strong> along the direction \(d_t\) to find a step size \(\eta_t\) 
+                    that satisfies sufficient decrease conditions (such as the Armijo rule).
+                </p>
+
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm 1: NEWTONS_METHOD</span>
-                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\);
-                    <strong>Output:</strong> stationary point \(\theta^*\);
-                    <strong>begin</strong>
-                    &emsp;\(t \leftarrow 0\);
-                    &emsp;Choose an initial point \(\theta_o\);
-                    &emsp;<strong>repeat: </strong>
-                    &emsp;&emsp;&emsp;Compute gradient: \(g_t = \nabla \mathcal{L}(\theta_t);\)
-                    &emsp;&emsp;&emsp;Compute Hessian: \(H_t = \nabla^2 \mathcal{L}(\theta_t);\)
-                    &emsp;&emsp;&emsp;Solve \(H_t d_t = -g_t\) for \(d_t\);
-                    &emsp;&emsp;&emsp;\(d_t \leftarrow -H_t^{-1}g_t\);
-                    &emsp;&emsp;&emsp;Do LINE_SEARCH to get step size \(\eta_t\) along \(d_t\);
-                    &emsp;&emsp;&emsp;Update parameters: \(\theta_{t+1} = \theta_t + \eta_t d_t;\)
-                    &emsp;&emsp;&emsp;\( t \leftarrow t + 1 ;\)
-                    &emsp;<strong>until</strong> \(\| g_t \| < \epsilon\);
-                    &emsp;Output \(\theta_t\);
+                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\);<br>
+                    <strong>Output:</strong> stationary point \(\theta_t\);<br>
+                    <strong>begin</strong><br>
+                    &emsp;\(t \leftarrow 0\);<br>
+                    &emsp;Choose an initial point \(\theta_o\);<br>
+                    &emsp;<strong>repeat: </strong><br>
+                    &emsp;&emsp;&emsp;Compute gradient: \(g_t = \nabla \mathcal{L}(\theta_t);\)<br>
+                    &emsp;&emsp;&emsp;Compute Hessian: \(H_t = \nabla^2 \mathcal{L}(\theta_t);\)<br>
+                    &emsp;&emsp;&emsp;Solve \(H_t d_t = -g_t\) for \(d_t\);<br>
+                    &emsp;&emsp;&emsp;Do LINE_SEARCH to get step size \(\eta_t\) along \(d_t\);<br>
+                    &emsp;&emsp;&emsp;Update parameters: \(\theta_{t+1} = \theta_t + \eta_t d_t;\)<br>
+                    &emsp;&emsp;&emsp;\( t \leftarrow t + 1 ;\)<br>
+                    &emsp;<strong>until</strong> \(\| g_t \| < \epsilon\);<br>
+                    &emsp;Output \(\theta_t\);<br>
                     <strong>end</strong>
                 </div>
-                <p>
-                A critical issue of Newton's method is computing the inverse Hessian \(H_t^{-1}\) at 
-                each \(t\) step, which is obviously expensive.
-                </p>
+
+                <div class="insight-box">
+                    <h3>Computational Note: Solving vs. Inverting</h3>
+                    <p>
+                        A critical issue of Newton's method is computing the inverse Hessian \(H_t^{-1}\) at 
+                        each \(t\) step, which is obviously expensive.
+                    </p>
+                    <p>
+                        Mathematically, we write \(d_t = -H^{-1}g_t\). However, in algorithmic practice (as shown in the pseudocode), 
+                        we rarely compute the inverse explicitly due to numerical instability and high cost. Instead, we <strong>solve</strong> 
+                        the system of linear equations \(H_t d_t = -g_t\) using methods like Cholesky decomposition or Conjugate Gradient.
+                    </p>
+                </div>
+                
             </section>
 
             
             <section id="BFGS" class="section-content">
                 <h2>BFGS Method</h2>
+
                 <p>
-                    In <strong>Quasi-Newton methods</strong>, we approximate the Hessian using the curvature information from the gradient vector at each step. 
-                    The most common Quasi-Newton method is called <strong>BFGS(Broyden, Fletcher, Goldfarb and Shanno) method</strong>.
+                    To mitigate the computational burden of the Hessian, <strong>Quasi-Newton methods</strong> like 
+                    <strong>BFGS</strong> (Broyden-Fletcher-Goldfarb-Shanno) are used. These algorithms iteratively construct 
+                    an approximation of the Hessian (or its inverse) using only gradient information.
                 </p>
+
                 <div class="theorem">
                     <span class="theorem-title">Approximation of Hessian in BFGS</span>
                     \[
@@ -183,6 +228,7 @@ uses_python: true
                     Therefore, \(B_{t+1}\) satisfies the secant condition, maintaining positive definiteness while approximating 
                     the curvature of the objective function.
                 </p>
+
                 <div class="proof">
                     <span class="proof-title">Inverse Hessian Approximation:</span>
                     <br>
@@ -250,8 +296,9 @@ uses_python: true
                     <br>
                     Then \(B_{t+1}\) remains positive definite. Condition (1) and (2) are together called <strong>Wolfe conditions</strong>. 
                 </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 1: Wolfe conditions</span>
+                    <span class="theorem-title">Theorem: Wolfe conditions</span>
                     <ol>
                         <li>Sufficient decrease condition</li>
                         \[\mathcal{L}(\theta_t + \eta \, d_t) \leq \mathcal{L}(\theta_t) + c_1 \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
