@@ -24,76 +24,86 @@ uses_python: true
 
         <div class="container">        
             <section id="ex1" class="section-content">
-            <h2>Example: \(df = X(dx)+(dX)X\) for \(f(X) = X^2\)</h2>
-            <p>
-            In this example, we numerically compute the derivative of the matrix equation \(f(X) = X^2\). Defining 
-            differentiation rules, such as the general chain rule and vector-Jacobian product can significantly enhance 
-            computational performance.
-            <br>
-            To validate your differentiation rules, comparing them with the <strong>finite-difference approximation</strong> 
-            is a practical approach. Two common methods for finite-difference approximation are:
-            \[
-            f(x+dx) - f(x) \text{ (Forward Difference)}
-            \]
-            \[
-            f(x) - f(x-dx) \text{ (Backward Difference)}
-            \]
-            When evaluating the accuracy of your results, it is essential to use <strong>relative error</strong> as a metric. 
-            A small simple difference between two quantities does not always imply that the error is negligible. Instead, relative 
-            error is calculated as:
-            \[
-            Relative Error = \frac{\| True - Approximation \|}{\|True \|}
-            \]
-            Theoritically, as \(dx \to 0\), the approximation of \(df\) becomes more accurate. However, this is not always true in 
-            practice due to the limitations of floating-point arithmetic. When \(dx\) becomes too small, the computed difference 
-            \(f(x+dx) - f(x) \) may be rounded off to zero by the computer, leading to a loss of accuracy and an increase in the error.
-            <br><br>
-            In the example, we set dX = np.random.randn(2, 2) * <strong>1e-8</strong>. This is small enough to approximate the derivative 
-            but not so small that numerical rounding errors dominate the computation. (Check <strong>machine epsilon</strong>)
-            <br><br>
-            Finally, to ensure the reliability of your code, avoid choosing arbitrarily "nice" numbers. Instead, generate random 
-            <strong>non-integer</strong> values to test the robustness of your implementation and minimize bias in your results.
-            <div class="code-container">
-                <div class="collapsible-section">
-                <button class="collapsible-btn">Show/Hide Code</button>
-                <div class="collapsible-content">
-                <pre class="python-code">
-                    import numpy as np
-                    # Matrix X 
-                    X = np.random.randn(2, 2)
+                <h2>Example: \(df = X(dx)+(dX)X\) for \(f(X) = X^2\)</h2>
+                <p>
+                    In matrix calculus, complex symbolic derivations are prone to human error. A professional developer's 
+                    first step is to validate these rules using <strong>finite-difference approximations</strong>. 
+                </p>
 
-                    # Differential matrix dX
-                    dX = np.random.randn(2, 2) * 1e-8
+                <p>
+                    In this example, we numerically compute the derivative of the matrix equation \(f(X) = X^2\). Defining 
+                    differentiation rules, such as the general chain rule and vector-Jacobian product can significantly enhance 
+                    computational performance.
+                </p>
 
-                    # Define f(X) = X^2
-                    f_X = X @ X  
+                <p>
+                    To validate our differentiation rules, comparing them with the <strong>finite-difference approximation</strong> 
+                    is a practical approach. Two common methods for finite-difference approximation are:
+                    \[
+                    f(x+dx) - f(x) \text{ (Forward Difference)}
+                    \]
+                    \[
+                    f(x) - f(x-dx) \text{ (Backward Difference)}
+                    \]
+                    When evaluating the accuracy of your results, it is essential to use <strong>relative error</strong> as a metric. 
+                    A small simple difference between two quantities does not always imply that the error is negligible. Instead, relative 
+                    error is calculated as:
+                    \[
+                    Relative Error = \frac{\| True - Approximation \|}{\|True \|}
+                    \]
+                    Theoritically, as \(dx \to 0\), the approximation of \(df\) becomes more accurate. However, this is not always true in 
+                    practice due to the limitations of floating-point arithmetic. When \(dx\) becomes too small, the computed difference 
+                    \(f(x+dx) - f(x) \) may be rounded off to zero by the computer, leading to a loss of accuracy and an increase in the error.
+                </p>
+                <P>
+                    In the example, we set \(dX = np.random.randn(2, 2)\) * <strong>1e-8</strong>. This is small enough to approximate the derivative 
+                    but not so small that numerical rounding errors dominate the computation. (Check <strong>machine epsilon</strong>)
+                </P>
+                <p>
+                    Finally, to ensure the reliability of your code, avoid choosing arbitrarily "nice" numbers. Instead, generate random 
+                    <strong>non-integer</strong> values to test the robustness of your implementation and minimize bias in your results.
+                </p>
 
-                    # Forward Difference Approximation: f(X + dX) - f(X) 
-                    f_approx = (X + dX) @ (X + dX) - f_X
+                <div class="code-container">
+                    <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                    <pre class="python-code">
+                        import numpy as np
+                        # Matrix X 
+                        X = np.random.randn(2, 2)
 
-                    # Backward Difference Approximation: f(X) - f(X - dX)
-                    b_approx = f_X - (X - dX) @ (X - dX) 
+                        # Differential matrix dX
+                        dX = np.random.randn(2, 2) * 1e-8
 
-                    # Exact: X dX + dX X
-                    exact = X @ dX + dX @ X
+                        # Define f(X) = X^2
+                        f_X = X @ X  
 
-                    # Relative errors (by Frobenius norm)
-                    f_relative_error =  np.linalg.norm(f_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
-                    b_relative_error =  np.linalg.norm(b_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
+                        # Forward Difference Approximation: f(X + dX) - f(X) 
+                        f_approx = (X + dX) @ (X + dX) - f_X
 
-                    # Print the results
-                    print(f"Input Matrix X:\n {X} \n")
-                    print(f"Differential dX:\n {dX}\n")
-                    print(f"Foward Difference (f(X + dX) - f(X)):\n {f_approx}\n")
-                    print(f"Backward Difference (f(X) - f(X - dX)):\n {b_approx}\n")
-                    print(f"Exact (X dX + dX X):\n {exact}\n")
-                    print(f"\nRelative Error(Forward): {f_relative_error:.2e}")
-                    print(f"\nRelative Error(Backward): {b_relative_error:.2e}")
-                </pre>
-            </div>
-            <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
-            <div class="python-output"></div>
-            </p>
+                        # Backward Difference Approximation: f(X) - f(X - dX)
+                        b_approx = f_X - (X - dX) @ (X - dX) 
+
+                        # Exact: X dX + dX X
+                        exact = X @ dX + dX @ X
+
+                        # Relative errors (by Frobenius norm)
+                        f_relative_error =  np.linalg.norm(f_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
+                        b_relative_error =  np.linalg.norm(b_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
+
+                        # Print the results
+                        print(f"Input Matrix X:\n {X} \n")
+                        print(f"Differential dX:\n {dX}\n")
+                        print(f"Foward Difference (f(X + dX) - f(X)):\n {f_approx}\n")
+                        print(f"Backward Difference (f(X) - f(X - dX)):\n {b_approx}\n")
+                        print(f"Exact (X dX + dX X):\n {exact}\n")
+                        print(f"\nRelative Error(Forward): {f_relative_error:.2e}")
+                        print(f"\nRelative Error(Backward): {b_relative_error:.2e}")
+                    </pre>
+                </div>
+                <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
+                <div class="python-output"></div>
             </section>
         </div>
         <script src="/js/main.js"></script>
