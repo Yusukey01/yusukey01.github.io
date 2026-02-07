@@ -287,70 +287,70 @@ uses_python: true
                     \]
                 </div>
                 <p>
-                    If the initial \(B_o\) is positive definite(Usually, \(B_o = I\)), and the step size \(\eta\) is found via Condition (1) and the following 
+                    If the initial \(B_0\) is positive definite (usually, \(B_0 = I\)), and the step size \(\eta\) is found via Condition (1) and the following 
                     <strong>curvature condition</strong>: 
                     \[
-                    d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t) \tag{2}
+                    d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, d_t^\top \nabla \mathcal{L}(\theta_t) \tag{2}
                     \]
-                    where \(c_2 \in (c, 1)\).
+                    where \(c_2 \in (c_1, 1)\).
                     <br>
-                    Then \(B_{t+1}\) remains positive definite. Condition (1) and (2) are together called <strong>Wolfe conditions</strong>. 
+                    Then \(B_{t+1}\) remains positive definite. Conditions (1) and (2) together are called the <strong>Wolfe conditions</strong>. 
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Wolfe conditions</span>
                     <ol>
-                        <li>Sufficient decrease condition</li>
+                        <li>Sufficient decrease condition (Armijo condition)</li>
                         \[\mathcal{L}(\theta_t + \eta \, d_t) \leq \mathcal{L}(\theta_t) + c_1 \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
                         <li>Curvature condition</li>
-                        \[d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
+                        \[d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
                         <br>
-                        where \(0 < c_1 << c_2 < 1\). For example, \(c_1 = 10^{-4}, c_2 = 0.9\) for Quasi-Newton methods.
+                        where \(0 < c_1 < c_2 < 1\). For example, \(c_1 = 10^{-4}, c_2 = 0.9\) for Quasi-Newton methods.
                         <br>
-                        Note: In <strong>strong Wolfe conditions</strong>, the courvature condition becomes
+                        Note: In the <strong>strong Wolfe conditions</strong>, the curvature condition becomes
                         \[ 
-                        | d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) | \geq c_2 \, | \eta \, d_t^\top \nabla \mathcal{L}(\theta_t) |
+                        | d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) | \leq c_2 \, | d_t^\top \nabla \mathcal{L}(\theta_t) |
                         \]
                     </ol>
                 </div>
                 <p>
                     In practice, we cannot store the whole Hessian approximation for large-scale problems. It costs \(O(n^2)\) memory space. 
-                    In <strong>Limited memory BFGS(L-BFGS)</strong>, we only use the \(m\) most recent \((s_t, y_t)\) pairs, and do not store the Hessian approximation 
-                    explicitly. So, we can approximate \(H_t^{-1 }g_t\) by computing a sequence of inner products of these vectors. The memory requirement 
-                    can be \(O(mn)\), where \(m\) is typically 5 to 20.
+                    In <strong>Limited-memory BFGS (L-BFGS)</strong>, we only use the \(m\) most recent \((s_t, y_t)\) pairs, and do not store the Hessian approximation 
+                    explicitly. Instead, we approximate \(H_t^{-1} g_t\) by computing a sequence of inner products of these vectors. The memory requirement 
+                    is \(O(mn)\), where \(m\) is typically 5 to 20.
                 </p>
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm 2: L_BFGS</span>
-                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\); 
+                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_0\); 
                     <strong>Output:</strong> stationary point \(\theta^*\);
                     <strong>begin</strong>
-                    &emsp;Choose an initial point \(\theta_o\);
+                    &emsp;Choose an initial point \(\theta_0\);
                     &emsp;Initialize \( (s, y) \) storage for \( m \) past updates;
                     &emsp;\(t \leftarrow 0\);
                     &emsp;<strong>repeat: </strong>
                     &emsp;&emsp;Compute gradient \( g_t = \nabla \mathcal{L}(\theta_t) \);
-                    &emsp;&emsp;Set \( q_t \leftarrow g_t \);
-                    &emsp;&emsp;Loop backward (from latest stored \( (s, y) \) pairs):
-                    &emsp;&emsp;&emsp;Compute \( \alpha_i = \frac{s_i^\top q_t}{y_i^\top s_i} \);
-                    &emsp;&emsp;&emsp;Update \( q_t \leftarrow q_t - \alpha_i y_i \);
-                    &emsp;&emsp;Set \( r_t \leftarrow H_t^0 q_t \);
-                    &emsp;&emsp;Loop forward (from oldest stored \( (s, y) \) pairs):
-                    &emsp;&emsp;&emsp;Compute \( \beta_i = \frac{y_i^\top r_t}{y_i^\top s_i} \);
-                    &emsp;&emsp;&emsp;Update \( r_t \leftarrow r_t + s_i (\alpha_i - \beta_i) \);
-                    &emsp;&emsp;Set search direction  \( p_t \leftarrow -r_t \);
-                    &emsp;&emsp;Do LINE_SEARCH: find step size \( \eta_t \) along \(p_t\) s.t. \( \mathcal{L}(\theta_t + \eta_t p_t) < \mathcal{L}(\theta_t) \);
+                    &emsp;&emsp;Set \( q \leftarrow g_t \);
+                    &emsp;&emsp;Loop backward (from newest to oldest stored \( (s, y) \) pairs):
+                    &emsp;&emsp;&emsp;Compute \( \alpha_i = \rho_i \, s_i^\top q \);
+                    &emsp;&emsp;&emsp;Update \( q \leftarrow q - \alpha_i y_i \);
+                    &emsp;&emsp;Set \( r \leftarrow H_t^0 q \);
+                    &emsp;&emsp;Loop forward (from oldest to newest stored \( (s, y) \) pairs):
+                    &emsp;&emsp;&emsp;Compute \( \beta_i = \rho_i \, y_i^\top r \);
+                    &emsp;&emsp;&emsp;Update \( r \leftarrow r + s_i (\alpha_i - \beta_i) \);
+                    &emsp;&emsp;Set search direction \( p_t \leftarrow -r \);
+                    &emsp;&emsp;Do LINE_SEARCH: find step size \( \eta_t \) along \(p_t\) satisfying Wolfe conditions;
                     &emsp;&emsp;Update parameters: \( \theta_{t+1} \leftarrow \theta_t + \eta_t p_t \);
-                    &emsp;&emsp;Update gradient \( g_{t+1} \leftarrow \nabla \mathcal{L}(\theta_{t+1}) \);
-                    &emsp;&emsp;Store \( (s_t\leftarrow \theta_{t+1} - \theta_t,\, y_t \leftarrow g_{t+1} - g_t) \);
-                    &emsp;&emsp;Maintain memory size:If the number of stored \( s, y \) pairs exceeds \( m \), discard the oldest pair;
-                    &emsp;&emsp;\( t \leftarrow t + 1\);
+                    &emsp;&emsp;Compute gradient \( g_{t+1} \leftarrow \nabla \mathcal{L}(\theta_{t+1}) \);
+                    &emsp;&emsp;Store \( s_t \leftarrow \theta_{t+1} - \theta_t \), \( y_t \leftarrow g_{t+1} - g_t \), \( \rho_t \leftarrow \frac{1}{y_t^\top s_t} \);
+                    &emsp;&emsp;If the number of stored pairs exceeds \( m \), discard the oldest pair;
+                    &emsp;&emsp;\( t \leftarrow t + 1 \);
                     &emsp;<strong>until</strong> \( \|g_t\| < \epsilon \);
                     &emsp;Output \(\theta_t\);
                     <strong>end</strong>
                 </div>
                 <p>
-                    Note: For computational efficiency and numerical stability, instead of calculating \(\frac{1}{s^\top y}\) multiple times, usually 
-                    a new variable \(\rho = \frac{1}{s^\top y}\) will be introduced.
+                    Note: For computational efficiency and numerical stability, instead of calculating \(\frac{1}{s^\top y}\) multiple times, 
+                    we introduce \(\rho = \frac{1}{s^\top y}\) and store it alongside each \((s, y)\) pair.
                 </p>
                 <h3>Python Implementation</h3>
                 <p>A sample code for L-BFGS is as follows:</p>
