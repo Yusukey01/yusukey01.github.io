@@ -21,9 +21,9 @@ uses_python: false
         <div class="topic-nav">
             <a href="#lapp">Linear Approximations</a>
             <a href="#diff">Differentials</a>
-            <a href="#ex1">Example 1: \(f(x) = x^Tx\) where \(x \in \mathbb{R}^n\)</a>
-            <a href="#ex2">Example 2: \(f(x) = x^TAx\) where \(x \in \mathbb{R}^n\) and \(A \in \mathbb{R}^{n \times n}\)</a>
-            <a href="#ex3">Example 3: \(f(x) = \| x \|_2\) where \(x \in \mathbb{R}^n\)</a>   
+            <a href="#ex1">Vector Derivatives: Optimization Foundations</a>
+            <a href="#ex2">Quadratic Forms \(f(x) = x^TAx\)</a>
+            <a href="#ex3">\(L_2\) Norm \(f(x) = \| x \|_2\)</a>   
         </div> 
 
         <div class="container">  
@@ -126,7 +126,7 @@ uses_python: false
             </section>
         
             <section id="ex1" class="section-content">
-                <h2>Example 1: \(f(x) = x^Tx\) where \(x \in \mathbb{R}^n\)</h2>
+                <h2>Vector Derivatives: Optimization Foundations</h2>
 
                 <p>
                     In machine learning, we rarely optimize single variables. We optimize weight <strong>vectors</strong>. Applying differential 
@@ -193,7 +193,7 @@ uses_python: false
                 </p>
 
                 <div class="proof">
-                        <span class="proof-title">Example 1</span>  
+                        <span class="proof-title">Example 1:</span>  
                 <p>
                     By the <strong>product rule</strong>, and the commutativity of the vector inner product:
                     \[
@@ -219,56 +219,83 @@ uses_python: false
             </section>
 
             <section id="ex2" class="section-content">
-            <h2>Example 2: \(f(x) = x^TAx\) where \(x \in \mathbb{R}^n\) and \(A \in \mathbb{R}^{n \times n}\)</h2>
-            <p>
-            Let's use the differential representation: 
-            \[\begin{align*}
-            df &= f(x + dx) -f(x) \\\\
-               &= (x + dx)^T A (x + dx) - x^T A x
-            \end{align*}
-            \]
-            Expanding this expression, we get:
-            \[
-            df = x^TAx + dx^T A x + x^TAdx + dx^T A dx - x^T A x 
-            \]
-            It is valid to ignore the higher-order term \(dx^T A dx\), which becomes negligible as \(dx \to 0\).
-            Then
-            \[
-            df = dx^TAx + x^TAdx.
-            \]
-            since \(dx^TAx\) is a scalar, \((dx^TAx)^T = x^TA^Tdx\). Then we get:
-            \[
-            df = x^TA^Tdx + x^TAdx = x^T(A^T + A)dx
-            \]
-            Here, 
-            \[
-            (A^T + A)^T = A + A^T =  (A^T + A)
-            \].
-            So, \((A^T + A)^T\) is symmetric and thus: 
-            \[
-            \nabla f = (A+A^T)x.
-            \]
-            if \(A\) is symmetric (\(x^TAx\) is a quadratic form), \(\nabla f = (A+A^T)x = (A+A)x  = 2Ax\).
-            <br>
-            Also, Example 1 is a special case: \(A\) is an identity matrix. 
-            </p>
+                <h2>Example 2: Quadratic Forms \(f(x) = x^TAx\)</h2>
+
+                <p>
+                    <strong>Quadratic forms</strong> are essential for modeling local curvature — specifically, they form the 
+                    basis of the <strong>Hessian matrix</strong> in optimization. Let \(x \in \mathbb{R}^n\) and 
+                    \(A \in \mathbb{R}^{n \times n}\).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 2:</span>  
+                    <p>
+                        Using the differential representation to analyze the change:
+                        \[
+                        \begin{align*}
+                        df &= f(x + dx) - f(x) \\\\
+                        &= (x + dx)^T A (x + dx) - x^T A x \\\\
+                        &= x^TAx + dx^T A x + x^TAdx + dx^T A dx - x^T A x 
+                        \end{align*}
+                        \]
+                        Here, it is valid to ignore the higher-order term \(dx^T A dx\), which becomes negligible as \(dx \to 0\). Then
+                        \[
+                        df = dx^TAx + x^TAdx.
+                        \]
+                        since \(dx^TAx\) is a scalar, \((dx^TAx)^T = x^TA^Tdx\). Then we get:
+                        \[
+                        df = x^TA^Tdx + x^TAdx = x^T(A^T + A)dx
+                        \]
+                        Here, 
+                        \[
+                        (A^T + A)^T = A + A^T =  (A^T + A)
+                        \].
+                        So, \((A^T + A)^T\) is symmetric and thus: 
+                        \[
+                        \nabla f = (A+A^T)x.
+                        \]
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Symmetry and Optimization Efficiency</h3>
+                    <p>
+                        In most machine learning contexts, such as the Second-Order Taylor Expansion of a loss function, the matrix \(A\) is 
+                        the Hessian, which is <strong>symmetric</strong> (\(A = A^T\)). In this case, the gradient simplifies to:
+                        \[
+                        \nabla f = (A+A^T)x = (A+A)x  = 2Ax.
+                        \]
+                        This symmetry is not just a mathematical curiosity; it is exploited by solvers 
+                        to reduce memory overhead and computational complexity by nearly half.
+                    </p>
+                    <p>
+                         Moreover, now we can see Example 1 as a special case: \(A\) is an <strong>identity matrix</strong>. 
+                    </p>
+                </div>
+
             </section>
 
             <section id="ex3" class="section-content">
-            <h2>Example 3: \(f(x) = \| x \|_2\) where \(x \in \mathbb{R}^n\)</h2>
-            <p>
-            Now, it is simple to find the derivative of <strong>\(L_2\) norm</strong>.
-            <br>
-            Let \(r = \| x \|\),  and then:
-            \[
-            \begin{align*}
-            & r^2 = x^Tx \\\\
-            &\Longrightarrow 2rdr = 2x^Tdr \\\\
-            &\Longrightarrow  dr = \frac{x^T}{r} = \frac{x^T}{\| x \|} \\\\\
-            &\Longrightarrow  \nabla f = \frac{x}{\| x \|}.
-            \end{align*}
-            \]
-            </p>
+                <h2>Example 3: The \(L_2\) Norm \(f(x) = \| x \|_2\)</h2>
+                <p>
+                    The \(L_2\) norm, or Euclidean distance, is the most common regularization term used to prevent overfitting 
+                    in AI models. Understanding its derivative is key to understanding how weight decay works.
+                </p>
+
+                <p>
+                    Let \(r = \| x \|_2\). We know from Example 1 that \(r^2 = x^Tx\). Taking the differential of both sides:
+                    \[
+                    \begin{align*}
+                    d(r^2) &= d(x^Tx) \\\\
+                    2rdr   &= 2x^Tdx \quad \text{(Using the result from Example 1)} \\\\
+                    dr     &= \frac{x^T}{r}dx = \frac{x^T}{\| x \|_2}dx
+                    \end{align*}
+                    \]
+                    Therefore, the gradient is:
+                    \[
+                    \nabla \| x \|_2 = \frac{x}{\| x \|_2}
+                    \]
+                </p>
             </section>
         </div>
         <script src="/js/main.js"></script>   
