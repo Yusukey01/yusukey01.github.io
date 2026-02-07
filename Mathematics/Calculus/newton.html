@@ -55,9 +55,15 @@ uses_python: true
                     \[
                     \eta = - \frac{d^\top (A\theta + b)}{d^\top A d}.
                     \]
+                    Note that we assunme the matrix \(A\) is <strong>symmetric positive definite (SPD)</strong>, ensuring the quadratic 
+                    is strictly convex and has a unique minimum. 
+                </p>
+
+                <p>
                     In practice, we don't need the "exact" line search because it can be expensive to solve this sub-optimization 
                     problem "at each step." 
                 </p>
+                
                 <p>
                     For example, we can start with some initial step size, and then reduce it by a factor \(c \in (0, 1)\)  at each 
                     iteration until we satisfy the following condition: 
@@ -102,6 +108,8 @@ uses_python: true
                     \[
                     H_t d_t = -g_t \implies d_t = -H_t^{-1} g_t.
                     \]
+                    Note that we assume \(H_t = \nabla^2 \mathcal{L}(\theta_t)\) is positive definite 
+                    (which holds when \(\mathcal{L}\) is locally strictly convex). Otherwise, we cannot solve for \(d_t\).
                 </p>
 
                 <p>
@@ -163,7 +171,7 @@ uses_python: true
                             &= B_{t} + \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}
                     \end{align*}
                     \]
-                    where \(s_t = \theta_t - \theta_{t-1}\) is the step in the parameter space and \(y_t = g_t - g_{t-1}\) is the change in the gradient 
+                    where \(s_t = \theta_{t+1} - \theta_t\) is the step in the parameter space and \(y_t = g_{t+1} - g_t\) is the change in the gradient
                     of objective \(\mathcal{L}\).
                     <br>
                     Alternatively, we can iteratively update an approximation to the inverse Hessian: 
@@ -196,7 +204,9 @@ uses_python: true
                     B_{t+1} s_t = y_t.
                     \]
                     This condition ensures that the updated Hessian approximation \(B_{t+1} \) reflects the curvature 
-                    relationship between the step \(s_t\) and the gradient change \(y_t\). (Note: \(y_t^\top s_t >0\))
+                    relationship between the step \(s_t\) and the gradient change \(y_t\).
+                    (Note: The Wolfe curvature condition ensures \(y_t^\top s_t >0\), which is necessary for the BFGS update to
+                     maintain positive definiteness.)
                     <br>
                     Assuming \(B_{t+1}\) is a positive definite rank-2 update of \(B_t\): 
                     \[
