@@ -417,6 +417,8 @@ uses_python: true
                                         q -= alpha * y
                             
                                     # Initial Hessian approximation is identity: H0 = I, so H0 * q = q
+                                    # Note: In the first iteration (when s_list is empty), the loops do nothing,
+                                    # so r = q = g, and thus p = -r = -g (steepest descent direction)
                                     r = q
                             
                                     # Loop forward through stored (s, y) pairs
@@ -437,7 +439,7 @@ uses_python: true
                                     # Update memory for (s, y) pairs
                                     s = eta * p
                                     y = grad_next - g
-                                    if np.dot(s, y) > 1e-6:  
+                                    if np.dot(s, y) > 1e-10 * np.linalg.norm(s) * np.linalg.norm(y): 
                                         if len(s_list) == m:
                                             s_list.pop(0)
                                             y_list.pop(0)
