@@ -344,10 +344,74 @@ uses_python: false
 
             <section id="part" class="section-content">
                 <h2>Partitions</h2>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Partitioned Matrix</span>
+                    <p>
+                        A <strong>partitioned matrix</strong> (or <strong>block matrix</strong>) is a matrix that has been 
+                        divided into submatrices by horizontal and vertical lines. The resulting submatrices are called 
+                        <strong>blocks</strong>.
+                    </p>
+                </div>
+
                 <p>
-                    \[ 
-                    \begin{align*}
-                        &A = 
+                    For example, we can partition a \(3 \times 5\) matrix \(A\) as follows:
+                    \[
+                    A = 
+                    \left[\begin{array}{ccc|cc}
+                    1 & 2 & -1 & 3 & 4 \\
+                    5 & 3 & 0 & -2 & 1 \\ \hline
+                    -1 & 3 & 1 & 7 & 1 \\
+                    \end{array}\right]
+                    =
+                    \left[\begin{array}{c|c}
+                    A_{11}& A_{12}  \\ \hline
+                    A_{21} & A_{22} \\
+                    \end{array}\right]
+                    \]
+                    where \(A_{11}\) is \(2 \times 3\), \(A_{12}\) is \(2 \times 2\), \(A_{21}\) is \(1 \times 3\), 
+                    and \(A_{22}\) is \(1 \times 2\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem 4: Block Multiplication</span>
+                    <p>
+                        If matrices \(A\) and \(B\) are partitioned so that the column partitions of \(A\) match the row 
+                        partitions of \(B\), then the product \(AB\) can be computed by treating the blocks as scalars:
+                        \[
+                        AB = \left[\begin{array}{ccc}
+                        A_{11}& \cdots & A_{1p}  \\
+                        \vdots & \ddots & \vdots \\
+                        A_{m1} & \cdots & A_{mp} \\
+                        \end{array}\right]
+                        \left[\begin{array}{ccc}
+                        B_{11}& \cdots & B_{1n}  \\
+                        \vdots & \ddots & \vdots \\
+                        B_{p1} & \cdots & B_{pn} \\
+                        \end{array}\right]
+                        = \left[\begin{array}{ccc}
+                        C_{11}& \cdots & C_{1n}  \\
+                        \vdots & \ddots & \vdots \\
+                        C_{m1} & \cdots & C_{mn} \\
+                        \end{array}\right]
+                        \]
+                        where \(C_{ij} = \sum_{k=1}^p A_{ik}B_{kj}\), provided that each product \(A_{ik}B_{kj}\) is defined.
+                    </p>
+                </div>
+
+                <p>
+                    The condition "column partitions of \(A\) match row partitions of \(B\)" means that for each \(k\), 
+                    the number of columns in \(A_{ik}\) must equal the number of rows in \(B_{kj}\). This ensures that 
+                    each block product \(A_{ik}B_{kj}\) is well-defined, and the resulting blocks can be summed because 
+                    they have compatible dimensions.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        Consider the following matrices \(A\) and \(B\):
+                        \[ 
+                        A = 
                         \left[\begin{array}{ccc|cc}
                         1 & 2 & -1 & 3 & 4 \\
                         5 & 3 & 0 & -2 & 1 \\ \hline
@@ -357,10 +421,11 @@ uses_python: false
                         \left[\begin{array}{c|c}
                         A_{11}& A_{12}  \\ \hline
                         A_{21} & A_{22} \\
-                        \end{array}\right] \\\\
-                        
-                        &B = 
-                        \left[\begin{array}{}
+                        \end{array}\right]
+                        \]
+                        \[
+                        B = 
+                        \left[\begin{array}{cc}
                         3 & 2 \\
                         3 & -5 \\ 
                         -1 & 6 \\ \hline
@@ -368,29 +433,67 @@ uses_python: false
                         1 & 1\\ 
                         \end{array}\right]
                         =
-                        B = \left[\begin{array}{}
+                        \left[\begin{array}{c}
                         B_1 \\ \hline
                         B_2 \\ 
                         \end{array}\right]
-                    \end{align*}
-                    \]
-                    The partitions of \(A\) and \(B\) are conformable for block multiplication. Partitioning is particularly 
-                    useful when matrices are very large, as it enables a computer to process smaller submatrices at a time, 
-                    improving efficiency and computational feasibility.
-                    \[
+                        \]
+                        where \(A_{11}\) is \(2 \times 3\), \(A_{12}\) is \(2 \times 2\), \(A_{21}\) is \(1 \times 3\), 
+                        \(A_{22}\) is \(1 \times 2\), \(B_1\) is \(3 \times 2\), and \(B_2\) is \(2 \times 2\).
+                    </p>
+                    <p>
+                        The column partition of \(A\) divides it into 3 columns and 2 columns, while the row partition 
+                        of \(B\) divides it into 3 rows and 2 rows. Since these match, we can perform block multiplication:
+                        \[
                         AB
                         =
-                        \left[\begin{array}{c|c}
-                        A_{11}B_1 + A_{12}B_2  \\
+                        \left[\begin{array}{c}
+                        A_{11}B_1 + A_{12}B_2  \\ \hline
                         A_{21}B_1 + A_{22}B_2 \\
                         \end{array}\right]
+                        \]
+                        Computing each block:
+                        \[
+                        \begin{align*}
+                        A_{11}B_1 &= \begin{bmatrix} 1 & 2 & -1 \\ 5 & 3 & 0 \end{bmatrix}
+                        \begin{bmatrix} 3 & 2 \\ 3 & -5 \\ -1 & 6 \end{bmatrix}
+                        = \begin{bmatrix} 10 & -14 \\ 24 & -5 \end{bmatrix} \\\\
+                        A_{12}B_2 &= \begin{bmatrix} 3 & 4 \\ -2 & 1 \end{bmatrix}
+                        \begin{bmatrix} 4 & 7 \\ 1 & 1 \end{bmatrix}
+                        = \begin{bmatrix} 16 & 25 \\ -7 & -13 \end{bmatrix} \\\\
+                        A_{21}B_1 &= \begin{bmatrix} -1 & 3 & 1 \end{bmatrix}
+                        \begin{bmatrix} 3 & 2 \\ 3 & -5 \\ -1 & 6 \end{bmatrix}
+                        = \begin{bmatrix} 5 & -11 \end{bmatrix} \\\\
+                        A_{22}B_2 &= \begin{bmatrix} 7 & 1 \end{bmatrix}
+                        \begin{bmatrix} 4 & 7 \\ 1 & 1 \end{bmatrix}
+                        = \begin{bmatrix} 29 & 50 \end{bmatrix}
+                        \end{align*}
+                        \]
+                        Therefore,
+                        \[
+                        AB
                         =
-                        \left[\begin{array}{}
+                        \left[\begin{array}{cc}
+                        10 + 16 & -14 + 25 \\
+                        24 - 7 & -5 - 13 \\ \hline
+                        5 + 29 & -11 + 50 \\ 
+                        \end{array}\right]
+                        =
+                        \left[\begin{array}{cc}
                         26 & 11 \\
                         17 & -18\\ \hline
                         34 & 39 \\ 
                         \end{array}\right]
-                    \]
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Block multiplication is particularly useful in numerical linear algebra when matrices are very large. 
+                    By partitioning a matrix into smaller blocks that fit into memory, algorithms can process submatrices 
+                    individually, reducing memory requirements and enabling parallel computation. Additionally, block 
+                    structures often reveal mathematical properties—for example, block diagonal matrices and block triangular 
+                    matrices simplify the computation of determinants and inverses.
                 </p>
             </section>
 
