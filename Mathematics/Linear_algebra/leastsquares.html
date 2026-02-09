@@ -29,6 +29,13 @@ uses_python: false
             <section id="lsp" class="section-content">
                 <h2>Least-Squares Problems</h2>
 
+                 <p>
+                    Many practical problems require solving systems of equations \(Ax = b\) that have no exact solution 
+                    because the system is overdetermined (more equations than unknowns). The least-squares approach finds 
+                    the vector \(\hat{x}\) that makes \(Ax\) as close as possible to \(b\), providing the best approximate 
+                    solution in the sense of minimizing the squared error.
+                </p>
+
                 <div class="theorem">
                     <span class="theorem-title">Definition: Least-Squares Solution</span>
                     <p>
@@ -41,95 +48,118 @@ uses_python: false
                     </p>
                 </div>
 
-               <p>
-                    In practice, it is possible that a solution to the equation \(Ax = b\) is required but does not exist
-                    (i.e., the system is inconsistent). In that case, we try to find an \(x\) that makes \(Ax\) as close to \(b\) 
-                    as possible. Let
-                    \[
-                    \hat{b} = \text{proj}_{\text{Col }A} \, b. 
-                    \]
-                    Since \(\hat{b} \in \text{Col }A \,\), \(Ax = \hat{b}\) is consistent. 
-                    This \(\hat{b}\) is the closest point to \(b\) in \(\text{Col }A\).
-                    Then, there exists a least-squares solution \(\hat{x} \in \mathbb{R}^n\) such that \(A\hat{x} = \hat{b}\).
-               </p>
+                <div class="proof">
+                    <span class="proof-title">Derivation:</span>
+                    <p>
+                        Let
+                        \[
+                        \hat{b} = \text{proj}_{\text{Col }A} \, b. 
+                        \]
+                        Since \(\hat{b} \in \text{Col }A \,\), \(Ax = \hat{b}\) is consistent. 
+                        This \(\hat{b}\) is the closest point to \(b\) in \(\text{Col }A\).
+                        Then, there exists a least-squares solution \(\hat{x} \in \mathbb{R}^n\) such that \(A\hat{x} = \hat{b}\).
+                    </p>
 
-               <p>
-                    Since \(\hat{b}\) is the orthogonal projection of \(b\) onto \(\text{Col }A\), we can say that \(b - \hat{b} = b - A\hat{x}\) 
-                    is orthogonal to \(\text{Col }A \). (Note:\(b = A\hat{x} + (b - A\hat{x})\).)
-               </p>
-               <p>
-                    Let \(a_j\) be a column of \(A\), then 
-                    \[
-                    \begin{align*}
-                    a_j \cdot (b-A\hat{x}) = 0 
-                            &\Longrightarrow a_j^T(b-A\hat{x}) = 0 \\\\
-                            &\Longrightarrow A^T (b-A\hat{x}) = 0 
-                    \end{align*}
-                    \]
-                    and we obtain 
-                    \[
-                    A^TA\hat{x} = A^Tb.
-                    \]
-               </p>
-               <p>
-                    So, the set of least-squares solutions of \(Ax =b\) must satisfy the <strong>normal equations</strong>
-                    \[
-                    A^TAx = A^Tb.
-                    \]
-                    If \(A^TA\) is invertible(= The columns of \(A\) are <strong>linearly independent</strong>.),
-                    \[
-                    \hat{x} = (A^TA)^{-1}A^Tb.
-                    \]
-               </p>
+                    <p>
+                        Since \(\hat{b}\) is the orthogonal projection of \(b\) onto \(\text{Col }A\), we can say that \(b - \hat{b} = b - A\hat{x}\) 
+                        is orthogonal to \(\text{Col }A \). (Note: \(b = A\hat{x} + (b - A\hat{x})\).)
+                    </p>
+                    <p>
+                        Let \(a_j\) be a column of \(A\), then 
+                        \[
+                        \begin{align*}
+                        a_j \cdot (b-A\hat{x}) = 0 
+                                &\Longrightarrow a_j^T(b-A\hat{x}) = 0 \\\\
+                                &\Longrightarrow A^T (b-A\hat{x}) = 0 
+                        \end{align*}
+                        \]
+                        and we obtain 
+                        \[
+                        A^TA\hat{x} = A^Tb.
+                        \]
+                    </p>
+                    <p>
+                        Finally, we also get the orthogonal projection of \(b\) onto the \(\text{Col } A\)
+                        \[
+                        \begin{align*}
+                        \hat{b} &= \text{proj}_{\text{Col }A} \, b  \\\\
+                                &= A\hat{x} = A(A^TA)^{-1}A^Tb.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+              
+               <div class="theorem">
+                    <span class="theorem-title">Theorem 1: Normal Equations</span>
+                    <p>
+                        The set of least-squares solutions of \(Ax = b\) consists of all vectors \(\hat{x}\) that satisfy 
+                        the <strong>normal equations</strong>:
+                        \[
+                        A^TAx = A^Tb.
+                        \]
+                        If the columns of \(A\) are linearly independent, then \(A^TA\) is invertible and the unique 
+                        least-squares solution is:
+                        \[
+                        \hat{x} = (A^TA)^{-1}A^Tb.
+                        \]
+                    </p>
+                </div>
                 
-               <p>
-                    Finally, we also get the orthogonal projection of \(b\) onto the \(\text{Col } A\)
-                    \[
-                    \begin{align*}
-                    \hat{b} &= \text{proj}_{\text{Col }A} \, b  \\\\
-                            &= A\hat{x} = A(A^TA)^{-1}A^Tb.
-                    \end{align*}
-                    \]
-               </p>
-               <p>
-                    In practice, computing \(A^TA\) makes relatively large errors in \(\hat{x}\). Instead, the <strong>QR factorization</strong>
-                    gives us more reliable result. Let \(A = QR\). Then 
-                    \[
-                    \begin{align*}
-                    \hat{x} &= (R^TQ^TQR)^{-1}(R^TQ^T)b  \\\\
-                            &= (R^TR)^{-1}(R^TQ^T)b.  \tag{1}
-                    \end{align*}
-                    \]
-                    On the other hand, 
-                    \[
-                    \begin{align*}
-                    A\hat{x} = b &\Longrightarrow Q^TQR\hat{x} = Q^Tb  \\\\
-                                &\Longrightarrow  R\hat{x} = Q^Tb  \\\\
-                                &\Longrightarrow \hat{x} = R^{-1}Q^Tb. \\\\
-                    \end{align*}
-                    \]
-                    Comparing with (1), 
-                    \[
-                    (R^TR)^{-1}R^T = R^{-1}.
-                    \]
-                </p>
-                <p>
-                    Thus, the unique least-squares solution can be generated by \(\hat{x} = R^{-1}Q^Tb\) but in practice, solving 
-                    \[
-                    R\hat{x} = Q^Tb
-                    \]
-                    by back-substitution is much faster than computing \(R^{-1}\).
-                </p>
+              
+                 <div class="proof">
+                    <span class="proof-title">QR Factorization Method:</span>
+                    <p>
+                        In practice, computing \(A^TA\) makes relatively large errors in \(\hat{x}\). Instead, the <strong>QR factorization</strong>
+                        gives us more reliable result. Let \(A = QR\). Then 
+                        \[
+                        \begin{align*}
+                        \hat{x} &= (R^TQ^TQR)^{-1}(R^TQ^T)b  \\\\
+                                &= (R^TR)^{-1}(R^TQ^T)b.  \tag{1}
+                        \end{align*}
+                        \]
+                        On the other hand, 
+                        \[
+                        \begin{align*}
+                        A\hat{x} = b &\Longrightarrow Q^TQR\hat{x} = Q^Tb  \\\\
+                                    &\Longrightarrow  R\hat{x} = Q^Tb  \\\\
+                                    &\Longrightarrow \hat{x} = R^{-1}Q^Tb. \\\\
+                        \end{align*}
+                        \]
+                        Comparing with (1), 
+                        \[
+                        (R^TR)^{-1}R^T = R^{-1}.
+                        \]
+                    </p>
+                    <p>
+                        Thus, the unique least-squares solution can be generated by 
+                        \[
+                        \hat{x} = R^{-1}Q^Tb.
+                        \]
+                        Note:<br>
+                        In practice, we solve \(R\hat{x} = Q^Tb\) by back-substitution rather than computing \(R^{-1}\) explicitly, 
+                        which is much faster and more stable.
+                    </p>
+                </div>
 
+                <div class="insight-box">
+                    <span class="insight-title">Computational Insight:</span>
+                    <p>
+                        The QR factorization method avoids computing \(A^TA\), which squares the condition number 
+                        of \(A\). This makes QR-based least-squares significantly more numerically stable, especially 
+                        for ill-conditioned problems. The back-substitution step is also computationally efficient 
+                        since \(R\) is upper triangular.
+                    </p>
+                </div>
             </section>
 
             <section id="pinv" class="section-content">
                 <h2>Moore-Penrose Pseudo-inverse (\(A^\dagger\))</h2>
 
-                <p>
-                    In the previous section, we derived the normal equations \(A^TA\hat{x} = A^Tb\). If \(A^TA\) is invertible, 
-                    the unique least-squares solution is \(\hat{x} = (A^TA)^{-1}A^Tb\). However, this approach has two major 
-                    problems in practice:
+                 <p>
+                    While the normal equations \(A^TA\hat{x} = A^Tb\) provide a theoretical solution to least-squares 
+                    problems, they have serious practical and theoretical limitations. The Moore-Penrose pseudo-inverse 
+                    provides a unified framework that handles all cases—including singular, underdetermined, and 
+                    ill-conditioned systems with numerical stability and a unique solution guarantee.
                 </p>
                    
                 <ol style="padding-left: 40px;">
@@ -147,44 +177,49 @@ uses_python: false
                     </li>
                 </ol><br>
 
-                <p>
-                    Both issues are resolved by using the <strong>Moore-Penrose Pseudo-inverse</strong>, denoted \(A^\dagger\).
-                </p>
-
-                <p>
-                    For any matrix \(A\), the Moore-Penrose Pseudo-inverse \(A^\dagger\) is the <strong>unique</strong> matrix that satisfies 
-                    the following four algebraic conditions:
-                </p>
-
-                <ol style="padding-left: 40px;">
-                    <li>\(A A^\dagger A = A\)</li>
-                    <li>\(A^\dagger A A^\dagger = A^\dagger\)</li>
-                    <li>\((A A^\dagger)^T = A A^\dagger\) &nbsp;&nbsp;&nbsp; (The projection onto Col(A) is symmetric)</li>
-                    <li>\((A^\dagger A)^T = A^\dagger A\) &nbsp;&nbsp;&nbsp; (The projection onto Row(A) is symmetric)</li>
-                </ol><br>
-            
-                
-                <h3>The Minimum-Norm Least-Squares Solution</h3>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Moore-Penrose Pseudo-inverse</span>
+                    <p>
+                        For any matrix \(A \in \mathbb{R}^{m \times n}\), the <strong>Moore-Penrose pseudo-inverse</strong> 
+                        \(A^\dagger \in \mathbb{R}^{n \times m}\) is the unique matrix satisfying:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(A A^\dagger A = A\) &nbsp;&nbsp; (reconstruction property)</li>
+                        <li>\(A^\dagger A A^\dagger = A^\dagger\) &nbsp;&nbsp; (weak inverse property)</li>
+                        <li>\((A A^\dagger)^T = A A^\dagger\) &nbsp;&nbsp; (\(AA^\dagger\) is the symmetric projection onto \(\text{Col }A\))</li>
+                        <li>\((A^\dagger A)^T = A^\dagger A\) &nbsp;&nbsp; (\(A^\dagger A\) is the symmetric projection onto \(\text{Row }A\))</li>
+                    </ol>
+                </div>
                 
                 <p>  
-                    The reason this unique matrix is so powerful is that the vector \(\hat{x} = A^\dagger b\) is <em>always</em> the 
+                    The reason why this unique matrix is so powerful is that the vector \(\hat{x} = A^\dagger b\) is <em>always</em> the 
                     <strong>unique minimum-norm least-squares solution</strong> to \(Ax=b\). This means \(\hat{x}\) simultaneously 
                     satisfies two conditions:
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li><strong>Least-Squares:</strong><br>
-                         It minimizes the error \(\|Ax - b\|^2\).
-                    </li>
-                    <li><strong>Minimum-Norm:</strong><br>
-                        If there are multiple solutions that minimize this error (i.e., the system is underdetermined), \(\hat{x}\) is 
-                        the <em>only</em> solution that also has the smallest Euclidean norm \(\|\hat{x}\|\).
-                    </li>
-                </ul><br>
+                <div class="theorem">
+                    <span class="theorem-title">Theorem 2: Minimum-Norm Least-Squares Solution</span>
 
+                    <p>
+                        For any \(A \in \mathbb{R}^{m \times n}\) and \(b \in \mathbb{R}^m\), the vector 
+                        \(\hat{x} = A^\dagger b\) is the unique <strong>minimum-norm least-squares solution</strong> 
+                        to \(Ax = b\), meaning:
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Least-Squares Property:</strong><br>
+                            \(\hat{x}\) minimizes \(\|Ax - b\|^2\).
+                        </li>
+                        <li><strong>Minimum-Norm Property:</strong><br>
+                            Among all vectors that minimize \(\|Ax - b\|^2\), \(\hat{x}\) has the smallest norm 
+                            \(\|\hat{x}\|\).
+                        </li>
+                    </ul>
+                </div>
+                 
                 <p>
-                    In machine learning, this is incredibly powerful. For an underdetermined system (e.g., more features than data points), the minimum-norm 
-                    solution is the "simplest" one, which is a form of implicit regularization.
+                    This property is particularly valuable in machine learning. For an underdetermined system (e.g., more features than data points), 
+                    the minimum-norm solution is the "simplest" one, which is a form of implicit regularization.
                 </p>
 
                 <p>
@@ -195,35 +230,46 @@ uses_python: false
 
             <section id="lr" class="section-content">
                 <h2>Linear Regression</h2>
-                <p>
-                    Given a set of observed data points \(\{(x_i, y_i)\}_{i = 1}^{n}\) where \(x_i \in \mathbb{R}^d, \quad y_i \in \mathbb{R}\),
-                    we assume that the given data can be explained by the <strong>linear model</strong>:
-                    \[
-                    Y = X\beta + \epsilon 
-                    \]
-                    where 
+
+                 <p>
+                    Least-squares theory has its most widespread application in statistical modeling through linear 
+                    regression. Given data points, we seek the best linear relationship between predictor variables 
+                    and an observed response. This is a direct application of the least-squares framework we've developed.
                 </p>
-                <ul style="padding-left: 40px;">
-                    <li><strong>design matrix</strong>: \(X \in \mathbb{R}^{n \times d}\)</li>
-                    <li><strong>parameter(weight) vector</strong>: \(\beta \in \mathbb{R}^d\)</li>
-                    <li><strong>observation vector</strong>: \(Y \in \mathbb{R}^n\)</li>
-                    <li><strong>residual vector</strong>:  \(\epsilon = Y - X\beta\) </li>
-                </ul><br>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Linear Regression Model</span>
+                    <p>
+                        Given observed data points \(\{(x_i, y_i)\}_{i=1}^n\) where \(x_i \in \mathbb{R}^d\) and 
+                        \(y_i \in \mathbb{R}\), the <strong>linear regression model</strong> is:
+                        \[
+                        Y = X\beta + \epsilon
+                        \]
+                        where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(X \in \mathbb{R}^{n \times d}\) is the <strong>design matrix</strong></li>
+                        <li>\(\beta \in \mathbb{R}^d\) is the <strong>parameter (i.e., weight) vector</strong></li>
+                        <li>\(Y \in \mathbb{R}^n\) is the <strong>observation vector</strong></li>
+                        <li>\(\epsilon = Y - X\beta\) is the <strong>residual vector</strong></li>
+                    </ul>
+                </div>
 
                 <p>
-                    The dimension \(d\) is the number of features, and \(n\) is the number of data points. 
-                    The residual \(\epsilon\) is the "difference" between each observed value \(y_i\) and its corresponding predicted \(y\) value.
-                    The <strong>least-squares hyperplane</strong> represents the set of predicted \(y\) values based on "estimated" parameters(weights) \(\hat{\beta}\), 
-                    and it must satisfy the normal equations:
+                    The dimension \(d\) is the number of features, and \(n\) is the number of data points. The residual \(\epsilon\) is the 
+                    "difference" between each observed value \(y_i\) and its corresponding predicted \(y\) value. The <strong>least-squares hyperplane</strong> 
+                    represents the set of predicted \(y\) values based on estimated parameters (i.e., weights) \(\hat{\beta}\), and it must satisfy the normal 
+                    equations:
                     \[
                     X^TX\hat{\beta} = X^TY.
                     \]
                 </p>
 
                 <p>
-                    Note: the linear model is linear in terms of <strong>parameters \(\beta \, \)</strong>, not \(X\). We can choose any non-linear transformation
+                    Note:<br>
+                    The linear model is linear in terms of <strong>parameters \(\beta \, \)</strong>, not \(X\). We can choose any non-linear transformation
                     for each \(x_i\). For example, \(y = \beta_0 + \beta_1 x^2 + \beta_2 \sin(2\pi x)\) is still a linear model. Thus, \(Y\) is modeled as a 
-                    <strong>linear combination</strong> of features(predictors) \(X\) with respect to the coefficients(weights) \(\beta\).
+                    <strong>linear combination</strong> of features (i.e., predictors) \(X\) with respect to the coefficients (i.e, weights) \(\beta\).
                 </p>
 
                 <p>
@@ -232,7 +278,7 @@ uses_python: false
                     Finally, \(X^TX\) is called a <strong>symmetric matrix</strong>. We will learn about this special matrix
                     in the next part. 
                 </p>
-                
+
             </section>
 
 
