@@ -101,7 +101,7 @@ uses_python: false
                     &= \|u\|^2 + 2u \cdot v + \|v\|^2
                     \end{align*}
                     \]
-                    (Note: \(dist(u, v) \text{ and } dist(u, -v)\) are perpendicular iff they are the same.)
+                    (Note: The vectors \(u-v\) and \(u+v\) are perpendicular if and only if \(\|u-v\| = \|u+v\|\), which occurs when \(u \cdot v = 0\).)
                     Thus, if \(u \cdot v = 0\), the terms resemble the Pythagorean theorem:
                     \[
                     \|u  + v \|^2 = \|u\|^2 + \|v\|^2.
@@ -161,6 +161,12 @@ uses_python: false
 
             <section id="orthogonal" class="section-content">
                 <h2>The Orthogonal Set</h2>
+
+                <p>
+                    Having established the concept of orthogonality between individual vectors, we now extend this to 
+                    sets of vectors. Orthogonal sets have special properties that simplify many linear algebra computations, 
+                    particularly when finding coordinates relative to a basis.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Orthogonal Set & Basis</span>
@@ -402,7 +408,14 @@ uses_python: false
 
             <section id="proj" class="section-content">
                 <h2>The Orthogonal Projection</h2>
-                
+
+                <p>
+                    Orthogonal matrices preserve "structure under linear transformations," but we often need to decompose 
+                    arbitrary vectors relative to a subspace. The orthogonal projection provides the closest approximation 
+                    to a vector by elements of a subspace, a fundamental operation in applications from least squares 
+                    regression to signal processing.
+                </p>
+
                 <p>
                     Given a nonzero vector \(u \in \mathbb{R}^n\). We often need to decompose a vector \(y\in \mathbb{R}^n\) 
                     into two vectors: 
@@ -537,10 +550,32 @@ uses_python: false
 
             <section id="gs" class="section-content">
                 <h2>Gram-Schmidt Algorithm</h2>
+
                 <p>
-                    The <Strong>Gram-Schmidt algorithm</Strong> generates an orthogonal (or orthonormal) basis for <strong>any</strong>
-                    nonzero subspace of \(\mathbb{R}^n\). Let us explore this process through a simple example. 
+                    While orthogonal and orthonormal bases simplify computations significantly, an arbitrary basis for a 
+                    subspace will typically not be orthogonal. The <storng>Gram-Schmidt Algorithm</storng> provides a 
+                    systematic method to transform any basis into an orthogonal (or orthonormal) basis while preserving the span.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem 6: Gram-Schmidt Algorithm (Process)</span>
+                    <p>
+                        Given a basis \(\{x_1, \cdots, x_p\}\) for a nonzero subspace \(W\) of \(\mathbb{R}^n\), 
+                        the <strong>Gram-Schmidt algorithm</strong> constructs an orthogonal basis \(\{v_1, \cdots, v_p\}\) 
+                        for \(W\) as follows:
+                        \[
+                        \begin{align*}
+                        v_1 &= x_1 \\
+                        v_2 &= x_2 - \frac{x_2 \cdot v_1}{v_1 \cdot v_1}v_1 \\
+                        v_3 &= x_3 - \frac{x_3 \cdot v_1}{v_1 \cdot v_1}v_1 - \frac{x_3 \cdot v_2}{v_2 \cdot v_2}v_2 \\
+                        &\vdots \\
+                        v_k &= x_k - \sum_{j=1}^{k-1} \frac{x_k \cdot v_j}{v_j \cdot v_j}v_j
+                        \end{align*}
+                        \]
+                        An orthonormal basis is obtained by normalizing: \(u_k = \frac{v_k}{\|v_k\|}\) for \(k = 1, \cdots, p\).
+                    </p>
+                </div>    
+
                 <p>
                     Consider the basis \({x_1, x_2, x_3}\) for a nonzero subspace \(W\) of \(\mathbb{R}^3\), where:
                     \(x_1 = \begin{bmatrix} 1 \\ 2 \\ 3 \end{bmatrix}, \quad 
@@ -596,42 +631,70 @@ uses_python: false
 
             <section id="qr" class="section-content">
                 <h2>QR Factorization</h2>
-                <p>
-                    The <strong>QR factorization</strong> is a practical decomposition of matrices with linearly independent columns.
-                    It is widely used in numerical applications, such as eigenvalue estimation.
-                    (Note:Solving the characteristic polynomial is often impossible.)
-                </p>
-                <p>
-                    Let \(A\) be an \(m \times n\) matrix with linearly independent columns. Then A can be factorized as
-                    \(A = QR\), where \(Q\) is an \(m \times n\) matrix with columns forming an orthonormal basis for \(Col A\)
-                    and \(R\) is an \(n \times n\) upper triangular invertible matrix with positive diagonal entries. 
-                </p>
                 
-                <p>
-                    Consider \(A = \begin{bmatrix} 1 & 0 & 0 \\ 2 & 1 & 0 \\ 3 & 0 & 1 \end{bmatrix}\) again. 
-                    By the GS algorithm, we have already obtained \(Q\) from the previous example:
-                    \[Q = \begin{bmatrix} \frac{1}{\sqrt{14}} &  \frac{-1}{\sqrt{35}} & \frac{-3}{\sqrt{10}} \\ 
-                                        \frac{2}{\sqrt{14}} &  \frac{5}{\sqrt{35}} &  0  \\
-                                        \frac{3}{\sqrt{14}} &  \frac{-3}{\sqrt{35}} & \frac{1}{\sqrt{10}}
-                        \end{bmatrix}\]
-                    Since the columns of \(Q\) are orthonormal, \(Q^TQ=I\). Then, \(Q^TA = Q^TQR = IR = R\).
-                    \[
-                    \begin{align*}
-                    R = Q^TA &= \begin{bmatrix}
-                                \frac{1}{\sqrt{14}}  & \frac{2}{\sqrt{14}}  & \frac{3}{\sqrt{14}} \\
-                                \frac{-1}{\sqrt{35}} & \frac{5}{\sqrt{35}} & \frac{-3}{\sqrt{35}} \\
-                                \frac{-3}{\sqrt{10}} & \ 0                 & \frac{1}{\sqrt{10}} 
-                                \end{bmatrix}
-                                \begin{bmatrix} 1 & 0 & 0 \\ 2 & 1 & 0 \\ 3 & 0 & 1 \end{bmatrix} \\\\
-                            &= \begin{bmatrix}
-                                \frac{14}{\sqrt{14}} & \frac{2}{\sqrt{14}} & \frac{3}{\sqrt{14}} \\
-                                0                   & \frac{5}{\sqrt{35}} & \frac{-3}{\sqrt{35}} \\
-                                0                   &  0                  & \frac{1}{\sqrt{10}} 
-                                \end{bmatrix}
-                    \end{align*}
-                    \]  
-                </p>
-            </section>
+                 <p>
+                    The Gram-Schmidt process has a matrix interpretation: it factors any matrix with linearly independent 
+                    columns into the product of an orthogonal matrix \(Q\) and an upper triangular matrix \(R\). This 
+                    <strong>QR factorization</strong> is fundamental in numerical linear algebra, particularly for 
+                    approximating eigenvalues and solving least squares problems.
+                    <br>
+                    (Note: Finding exact roots of high-degree characteristic polynomials is often computationally infeasible, 
+                    making iterative methods based on QR factorization essential for eigenvalue computation.)
+                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem 7: QR Factorization</span>
+                    <p>
+                        Let \(A\) be an \(m \times n\) matrix with linearly independent columns. Then \(A\) can be 
+                        factorized as
+                        \[
+                        A = QR,
+                        \]
+                        where \(Q\) is an \(m \times n\) matrix whose columns form an orthonormal basis for \(\text{Col }A\), 
+                        and \(R\) is an \(n \times n\) upper triangular invertible matrix with positive diagonal entries.
+                    </p>
+                </div>       
+                
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        Consider again
+                        \[
+                        A = \begin{bmatrix} 1 & 0 & 0 \\ 2 & 1 & 0 \\ 3 & 0 & 1 \end{bmatrix}.
+                        \]
+                    </p>
+
+                    <p>
+                        By the GS algorithm, we have already obtained \(Q\) from the previous example:
+                        \[
+                        Q = \begin{bmatrix} \frac{1}{\sqrt{14}} &  \frac{-1}{\sqrt{35}} & \frac{-3}{\sqrt{10}} \\ 
+                                            \frac{2}{\sqrt{14}} &  \frac{5}{\sqrt{35}} &  0  \\
+                                            \frac{3}{\sqrt{14}} &  \frac{-3}{\sqrt{35}} & \frac{1}{\sqrt{10}}
+                            \end{bmatrix}.
+                        \]
+                    </p>
+                           
+                    <p>
+                        Since the columns of \(Q\) are orthonormal, \(Q^TQ=I\). Then, \(Q^TA = Q^TQR = IR = R\).
+                        \[
+                        \begin{align*}
+                        R = Q^TA &= \begin{bmatrix}
+                                    \frac{1}{\sqrt{14}}  & \frac{2}{\sqrt{14}}  & \frac{3}{\sqrt{14}} \\
+                                    \frac{-1}{\sqrt{35}} & \frac{5}{\sqrt{35}} & \frac{-3}{\sqrt{35}} \\
+                                    \frac{-3}{\sqrt{10}} & \ 0                 & \frac{1}{\sqrt{10}} 
+                                    \end{bmatrix}
+                                    \begin{bmatrix} 1 & 0 & 0 \\ 2 & 1 & 0 \\ 3 & 0 & 1 \end{bmatrix} \\\\
+                                &= \begin{bmatrix}
+                                    \frac{14}{\sqrt{14}} & \frac{2}{\sqrt{14}} & \frac{3}{\sqrt{14}} \\
+                                    0                   & \frac{5}{\sqrt{35}} & \frac{-3}{\sqrt{35}} \\
+                                    0                   &  0                  & \frac{1}{\sqrt{10}} 
+                                    \end{bmatrix}
+                        \end{align*}
+                        \]  
+                    </p>
+                </div>
+                               
+            </section>  
 
             <section id="interactive" class="section-content">
                 <h2>Interactive Visualizer</h2>
