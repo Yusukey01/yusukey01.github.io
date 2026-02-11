@@ -48,6 +48,12 @@ uses_python: false
                         and \(\sum_{i=1}^n P_{ij} = 1\) for each column \(j\).
                     </p>
                 </div>
+
+                <p>
+                    Note that while any matrix satisfying these conditions is a stochastic matrix, further properties such as 
+                    <strong>irreducibility</strong> and <strong>aperiodicity</strong> (making the matrix <strong>regular</strong>) 
+                    are required to guarantee convergence to a unique stationary distribution.
+                </p>
                 
                 <p>
                     In this page, we will use the <strong>column-stochastic matrix</strong>, but we can also use the 
@@ -62,13 +68,17 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Row vs Column Convention in ML Frameworks</h3>
                     <p>
-                        In practice, most machine learning libraries (scikit-learn, PyTorch, TensorFlow) use 
-                        <strong>row-stochastic</strong> convention, where each row of the transition matrix sums to 1. 
-                        This is because data is typically stored with samples as rows. For instance, in a softmax 
-                        layer of a neural network, the output for each input sample is a probability vector forming 
-                        a row of the output matrix. When reading research papers, always check which convention is used — 
-                        the mathematics is equivalent (related by transposition), but confusing the two leads to incorrect 
-                        matrix multiplications.
+                        In practice, most machine learning libraries (scikit-learn, PyTorch, TensorFlow) adopt the 
+                        <strong>row-stochastic</strong> convention, where each row \(\sum_j P_{ij} = 1\). This aligns with the 
+                        standard data representation where each <strong>row</strong> corresponds to a sample. For example, 
+                        a <strong>Softmax</strong> layer applied across the final dimension of a hidden representation 
+                        produces a row-stochastic matrix. 
+                    </p>
+                    <p>
+                        Mathematically, if \(x\) is a column vector, the update rule for a column-stochastic matrix is \(x_{k+1} = P x_k\). 
+                        In code, using row-stochastic matrices and row vectors \(x^\top\), this becomes \(x_{k+1}^\top = x_k^\top P^\top\) 
+                        (often written simply as \(XW\) in linear layers). Always verify the matrix orientation to avoid 
+                        incorrect broadcasting or transpositions in your custom layers.
                     </p>
                 </div>
                
@@ -150,19 +160,19 @@ uses_python: false
                         In statistics, we also call it <strong>stationary distribution</strong>. 
                     </p>
                 </div>
-               
-                <p>
-                    The Markov chain, a sequence of vectors \(\{x_k : k = 1, 2, \cdots\}\) converges to the unique steady-state 
-                    vector \(q\) as \(k \to \infty\). Importantly, the initial state does not effect on the long-term behavior of the 
-                    Markov chain. 
-                </p>
 
                 <p>
-                    In short, the reason why it happens is related to the fact that the steady-state vector \(q\) is 
-                    an <strong>eigenvector</strong> of the stochastic matrix corresponding to the largest eigenvalue \(\lambda_1 = 1\). Let's 
-                    dig a little deeper. 
+                    For a <strong>regular stochastic matrix</strong> (one where some power \(P^k\) has all strictly positive entries), 
+                    the Markov chain \(\{x_k : k = 1, 2, \cdots\}\) converges to a <strong>unique steady-state vector \(q\)</strong> as
+                     \(k \to \infty\), regardless of the initial distribution \(x_0\). This ensures the system eventually settles into a 
+                     predictable long-term equilibrium, losing all memory of its starting state.
                 </p>
-
+                <p>
+                    Algebraically, the steady-state vector \(q\) is the <strong>principal eigenvector</strong> of \(P\) associated with the 
+                    eigenvalue \(\lambda_1 = 1\). The Perron-Frobenius theorem guarantees that for regular matrices, this eigenvalue is unique 
+                    and its corresponding eigenvector can be normalized to form a valid probability distribution.
+                </p>
+                           
                 <div class="theorem">
                     <span class="theorem-title">Definition: Spectral Radius</span>
                       <p>
@@ -174,22 +184,25 @@ uses_python: false
                         for any submultiplicative matrix norm \(\| \cdot \| \).
                     </p>
                 </div>
-    
+   
                 <p>
-                    Remember, by definition, every column of a column-stochastic matrix sums to 1, which means the maximum absolute 
-                    column sum (<a href="trace.html"><strong>1-norm</strong></a>, \(\| P \|_1\)) is always 1. Thus:
-                    \[
-                    \rho(P) \leq \| P \|_1 = 1
+                    By definition, every column of a column-stochastic matrix sums to 1, which means the maximum absolute column sum 
+                    (the <strong>1-norm</strong>, \(\| P \|_1\)) is always 1. According to the property of submultiplicative norms, 
+                    the <strong>spectral radius</strong> satisfies:
+                    \[ 
+                    \rho(P) \leq \| P \|_1 = 1 
                     \]
-                    (For the row-stochastic matrix, we use the <strong>infinity norm</strong> \(\| P \|_{\infty} = 1\).)
+                    (For the row-stochastic matrix, we use the <strong>infinity norm</strong> \(\| P \|_{\infty} = 1\) to reach the 
+                    same conclusion.)
                 </p>
                 <p>
-                    Since we already know that 1 is an eigenvalue of \(P\), the spectral radius must be exactly 1, and no eigenvalue 
-                    can have greater than 1. This means that as \(k \to \infty\), the contribution from all components other than the 
-                    one corresponding to \(\lambda_1 = 1\) decays exponentially fast. Therefore, any initial distribution converges to the 
-                    stationary distribution.
+                    Since the vector \(\mathbf{1}^\top = [1, 1, \dots, 1]\) is a left-eigenvector of \(P\) associated with the 
+                    eigenvalue 1 (satisfying \(\mathbf{1}^\top P = \mathbf{1}^\top\)), we know that \(\lambda = 1\) is always an 
+                    eigenvalue of any stochastic matrix. Therefore, the spectral radius is <strong>exactly 1</strong> (\(\rho(P) = 1\)). 
+                    For a regular stochastic matrix, all other eigenvalues \(\lambda_i\) satisfy \(|\lambda_i| < 1\), which ensures that 
+                    the influence of non-steady-state components vanishes as \(k \to \infty\).
                 </p>
-
+                    
                 <div class="proof">
                     <span class="proof-title">Example: </span>
                     <p>
@@ -306,20 +319,26 @@ uses_python: false
                         Note that the eigenvector matrix \(V = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}\) satisfies 
                         \(V^{-1} = \frac{1}{2}V\), since the columns are orthogonal with squared norm 2.
                     </p>
-                </div>
+                </div>  
 
                 <div class="insight-box">
                     <h3>Insight: Doubly Stochastic Matrices in Machine Learning</h3>
                     <p>
-                        Doubly stochastic matrices appear throughout machine learning. The <strong>Sinkhorn-Knopp algorithm</strong> 
-                        iteratively normalizes rows and columns of a nonnegative matrix to produce a doubly stochastic 
-                        matrix, and forms the basis of <strong>optimal transport</strong> computations used in Wasserstein 
-                        GANs, domain adaptation, and distribution matching. In <strong>spectral clustering</strong>, the 
-                        normalized graph Laplacian produces a doubly stochastic structure, and the steady-state distribution 
-                        of a doubly stochastic matrix is always the uniform distribution \(q = \frac{1}{n}\mathbf{1}\) — a 
-                        fact that simplifies the analysis of random walks on graphs.
+                        Doubly stochastic matrices are the cornerstone of <strong>Optimal Transport (OT)</strong>. 
+                        The <strong>Sinkhorn-Knopp algorithm</strong> transforms a raw cost matrix into a doubly stochastic 
+                        assignment matrix through iterative scaling. This approach is highly valued in modern AI 
+                        (e.g., Wasserstein GANs, SuperGlue for feature matching) because it is <strong>fully differentiable</strong> 
+                        and enables entropic regularization, turning a hard combinatorial matching problem into a smooth, GPU-friendly 
+                        optimization.
+                    </p>
+                    <p>
+                        In <strong>Spectral Clustering</strong>, ensuring the affinity matrix is normalized into a stochastic form 
+                        relates to the random walk Laplacian. Since the steady-state of a doubly stochastic matrix is always the 
+                        <strong>uniform distribution</strong> \(q = \frac{1}{n}\mathbf{1}\), these matrices are ideal for modeling 
+                        systems where no prior bias exists, such as in data shuffling, sorting networks, or fair resource allocation.
                     </p>
                 </div>
+
             </section>
         </div>
        
