@@ -452,17 +452,20 @@ uses_python: true
                     \]
                     This is a "convolution" in the graph spectral domain.
                 </p>
+
                 <p>
                     Directly computing this is too expensive. Instead, methods like <strong>ChebNet</strong>
                     approximate the filter \(g(\cdot)\) using a \(K\)-th order polynomial:
                     \[
                     g_\theta(\boldsymbol{L}) \approx \sum_{k=0}^K \theta_k T_k(\tilde{\boldsymbol{L}})
                     \]
-                    where \(T_k\) are Chebyshev polynomials and \(\tilde{\boldsymbol{L}}\) is
-                    the scaled Laplacian (\(\mathcal{L}_{sym}\)). This approximation
-                    is crucial because it allows for <strong>localized</strong> and
-                    <strong>efficient</strong> computations (a \(K\)-hop neighborhood) without
-                    ever computing the eigenvectors. The standard GCN is a
+                    where \(T_k\) are Chebyshev polynomials. Crucially, \(\tilde{\boldsymbol{L}}\) is the 
+                    <strong>rescaled Laplacian</strong> mapping eigenvalues from \([0, 2]\) to \([-1, 1]\):
+                    \[
+                    \tilde{\boldsymbol{L}} = \frac{2}{\lambda_{max}}\mathcal{L}_{sym} - \boldsymbol{I}.
+                    \]
+                    This approximation allows for <strong>localized</strong> and <strong>efficient</strong> computations 
+                    (a \(K\)-hop neighborhood) without ever computing eigenvectors. The standard GCN is a
                     first-order approximation (\(K=1\)) of this process.
                 </p>
 
@@ -525,10 +528,10 @@ uses_python: true
                         \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}, \quad \tilde{\boldsymbol{D}}_{ii} = \sum_j \tilde{\boldsymbol{A}}_{ij}
                         \]
                         Replacing \(\boldsymbol{A}\) with \(\tilde{\boldsymbol{A}}\) (adding self-loops) serves two mathematical purposes:
-                        it preserves a node's own features during aggregation, and critically, it <strong>shrinks the eigenvalues</strong> 
-                        of the graph operator from the range \([-1, 1]\) to approximately \([0, 1]\). This prevents numerical instabilities 
-                        (exploding/vanishing gradients) and reinforces the low-pass filtering effect, effectively smoothing the signal 
-                        over the graph structure without washing out information too quickly.
+                        it preserves a node's own features during aggregation, and critically, it <strong>controls the spectral radius</strong>.
+                        Without this, the operation \(I + D^{-1/2}AD^{-1/2}\) has eigenvalues up to 2, leading to exploding gradients in deep networks.
+                        The renormalization ensures eigenvalues stay within \([-1, 1]\) (with \(\lambda_{max} \approx 1\)), guaranteeing numerical stability 
+                        while maintaining the low-pass filtering effect.
                     </p>
                 </div>
 
