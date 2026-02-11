@@ -78,38 +78,38 @@ uses_python: false
                     </p>
                 </div>
                 
-               <p>
-                Conversely, we can reshape a vector back into a matrix. However, the result depends on the 
-                <strong>memory layout convention</strong> used — an important practical distinction when moving between 
-                mathematical formulas and code.
-            </p>
+                <p>
+                    Conversely, we can reshape a vector back into a matrix. However, the result depends on the 
+                    <strong>memory layout convention</strong> used — an important practical distinction when moving between 
+                    mathematical formulas and code.
+                </p>
 
-            <div class="proof">
-                <span class="proof-title">Example: Row-Major vs Column-Major Order</span>
-                <p>
-                    Consider the vector 
-                    \[
-                    a = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
-                    \]
-                    Reshaping \(a\) into a \(2 \times 3\) matrix yields different results depending on the convention:
-                </p>
-                <p>
-                    <strong>Row-major order</strong> (used by C, C++, and Python/NumPy by default): elements fill each row before moving to the next.
-                    \[
-                    A = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix}
-                    \]
-                </p>
-                <p>
-                    <strong>Column-major order</strong> (used by Julia, MATLAB, R, and Fortran): elements fill each column before moving to the next.
-                    \[
-                    A = \begin{bmatrix} 1 & 3 & 5 \\ 2 & 4 & 6 \end{bmatrix}
-                    \]
-                </p>
-                <p>
-                    Note that the standard mathematical definition of \(\text{vec}(\cdot)\) follows <strong>column-major</strong> order. 
-                    That is, \(\text{vec}(A)\) stacks columns, so the inverse operation (reshaping back) also fills by columns.
-                </p>
-            </div>
+                <div class="proof">
+                    <span class="proof-title">Example: Row-Major vs Column-Major Order</span>
+                    <p>
+                        Consider the vector 
+                        \[
+                        a = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
+                        \]
+                        Reshaping \(a\) into a \(2 \times 3\) matrix yields different results depending on the convention:
+                    </p>
+                    <p>
+                        <strong>Row-major order</strong> (used by C, C++, and Python/NumPy by default): elements fill each row before moving to the next.
+                        \[
+                        A = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Column-major order</strong> (used by Julia, MATLAB, R, and Fortran): elements fill each column before moving to the next.
+                        \[
+                        A = \begin{bmatrix} 1 & 3 & 5 \\ 2 & 4 & 6 \end{bmatrix}
+                        \]
+                    </p>
+                    <p>
+                        Note that the standard mathematical definition of \(\text{vec}(\cdot)\) follows <strong>column-major</strong> order. 
+                        That is, \(\text{vec}(A)\) stacks columns, so the inverse operation (reshaping back) also fills by columns.
+                    </p>
+                </div>
 
                 <pre class="python-code">
                     import numpy as np
@@ -126,6 +126,13 @@ uses_python: false
 
             <section id="k_pro" class="section-content">
                 <h2>Kronecker Product</h2>
+
+                <p>
+                    The vectorization operation converts matrices into vectors, but we also need an algebraic operation that builds 
+                    larger structured matrices from smaller ones. The <strong>Kronecker product</strong> combines two matrices into a 
+                    block matrix whose structure encodes pairwise interactions between their entries. 
+                    This operation arises naturally whenever we need to represent the joint action of two independent linear maps.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Kronecker product</span>
@@ -162,49 +169,73 @@ uses_python: false
                     </p>
                 </div>   
 
+                <p>
+                    The Kronecker product satisfies several elegant algebraic properties that make it a powerful 
+                    tool for theoretical analysis. Note that the Kronecker product is <strong>not commutative</strong> in general 
+                    (\(A \otimes B \neq B \otimes A\)), but it interacts well with standard matrix operations.
+                </p>
+
                 <div class="theorem">
                     <span class="theorem-title"> Useful Properties of the Kronecker Product</span> 
                     <ol style="padding-left: 40px;">
-                        <li>Mixed-product property</li>
+                        <li><strong>Mixed-product property</strong><br>
                             \[
                             (A \otimes B)(C \otimes D)  = (AC) \otimes (BD)
                             \]
-
-                        <li>Transpose </li>
+                        </li>
+                        <li><strong>Transpose</strong><br>
                             \[
                             (A \otimes B)^\top = A^\top \otimes B^\top
                             \]
-
-                        <li>Inverse</li>
+                        </li>
+                        <li><strong>Inverse</strong> (when \(A\) and \(B\) are invertible)<br>
                             \[
                             (A \otimes B)^{-1} = A^{-1} \otimes B^{-1} 
                             \]
-
-                        <li>Trace</li>
+                        </li>
+                        <li><strong>Trace</strong><br>
                             \[
                             \text{Tr }(A \otimes B) = \text{Tr }(A) \text{Tr }(B)
                             \]
-                            
-                        <li>Determinant</li>
+                        </li> 
+                        <li><strong>Determinant</strong> (for square matrices \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\))<br>
                             \[
                             \det (A \otimes B) = \det(A)^n \det(B)^m
                             \]
                             where \(A \in \mathbb{R}^{m \times m}\), and \(B \in \mathbb{R}^{n \times n}\).
-
-                        <li>Eigenvalues</li>
-                            Suppose \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\). Then 
+                        </li>
+                        <li><strong>Eigenvalues</strong><br>
+                            If \(A \in \mathbb{R}^{m \times m}\) has eigenvalues \(\lambda_1, \ldots, \lambda_m\) and 
+                            \(B \in \mathbb{R}^{n \times n}\) has eigenvalues \(\mu_1, \ldots, \mu_n\), then the 
+                            eigenvalues of \(A \otimes B\) are all products
                             \[
-                            \text{Eigenvalues of } A \otimes B   = \lambda_i \mu_j
+                            \lambda_i \mu_j \quad (i = 1, \ldots, m, \; j = 1, \ldots, n).
                             \]
-                            where \(\lambda_i (i = 1, \cdots m)\) and \(\mu_j (j = 1, \cdots, n)\) are eigenvalues of \(A\) 
-                            and \(B\) respectively.
-                            <br>
+                            In particular, if \(Av = \lambda v\) and \(Bw = \mu w\), then 
+                            \((A \otimes B)(v \otimes w) = \lambda\mu (v \otimes w)\).
+                        </li>
                     </ol>
                 </div>
 
+               <div class="insight-box">
+                    <h3>Insight: Kronecker Products in Machine Learning</h3>
+                    <p>
+                        The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic 
+                        foundation of <strong>Kronecker-factored approximations</strong> in deep learning. The K-FAC 
+                        optimizer approximates the <strong>Fisher information matrix</strong> of a neural network layer 
+                        as a Kronecker product of two smaller matrices (one capturing input statistics, the other capturing 
+                        gradient statistics). This reduces the cost of natural gradient descent from \(O(n^3)\) on the full 
+                        parameter space to \(O(n^{3/2})\), enabling second-order optimization for large models. 
+                        The eigenvalue property further allows efficient spectral analysis of these approximations.
+                    </p>
+                </div>
+
                 <p>
-                    Now, we are ready to discuss <strong>tensors</strong>, an important concept in machine learning.
+                    With the Kronecker product established, we now turn to <strong>tensors</strong> — the natural 
+                    generalization of vectors and matrices to higher dimensions. While the Kronecker product builds 
+                    larger matrices from smaller ones, tensors extend this idea beyond two dimensions entirely.
                 </p>
+                
             </section>
             
             <section id="tensor" class="section-content">
