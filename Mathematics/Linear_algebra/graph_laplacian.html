@@ -157,10 +157,13 @@ uses_python: true
                     <p>
                         <strong>2. Random Walk Normalized Laplacian:</strong>
                         \[
-                        \mathcal{L}_{rw} = \boldsymbol{D}^{-1} \boldsymbol{L} = \boldsymbol{I} - \boldsymbol{D}^{-1} \boldsymbol{A}
+                        \begin{align*}
+                        \mathcal{L}_{rw} &= \boldsymbol{D}^{-1} \boldsymbol{L}  \\\\
+                                         &= \boldsymbol{I} - \boldsymbol{D}^{-1} \boldsymbol{A} = \boldsymbol{I} - \boldsymbol{P}.
+                        \end{align*}
                         \]
-                        This form is closely related to the transition matrix of a random walk on the graph, 
-                        since \(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A} = \boldsymbol{I} - \mathcal{L}_{rw}\).
+                        Here, \(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A}\) is the transition matrix of a random walk. 
+                        Thus, the eigenvalues of \(\mathcal{L}_{rw}\) relate directly to the convergence rate of the random walk.
                     </p>
                 </div>
 
@@ -259,20 +262,22 @@ uses_python: true
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Cheeger's Inequality</span>
                     <p>
-                        Let \(h(G)\) be the <strong>Cheeger constant</strong>, which measures the "best" partition 
-                        of the graph by finding the minimum "cut" normalized by the size of the smaller set:
+                        Let \(h(G)\) be the <strong>Cheeger constant</strong> (or conductance), which measures the "bottleneck" 
+                        of the graph by finding the minimum cut normalized by the volume of the smaller set:
                         \[
-                        h(G) = \min_{S \subset V, 0 < |S| \leq n/2} \frac{|\partial S|}{\min(|S|, |V \setminus S|)}
+                        h(G) = \min_{S \subset V} \frac{|\partial S|}{\min(\text{Vol}(S), \text{Vol}(V \setminus S))}
                         \]
-                        where \(|\partial S|\) is the number of edges between \(S\) and its complement \(V \setminus S\).
+                        where \(\text{Vol}(S) = \sum_{v \in S} \deg(v)\).
                     </p>
                     <p>
-                        Cheeger's inequality bounds \(\lambda_1\) using this constant:
+                        Cheeger's inequality bounds the second eigenvalue \(\lambda_1\) of the <strong>normalized Laplacian</strong> 
+                        (\(\mathcal{L}_{rw}\) or \(\mathcal{L}_{sym}\)) using this constant:
                         \[
-                        \frac{h(G)^2}{2d_{max}} \leq \lambda_1 \leq 2h(G)
+                        \frac{h(G)^2}{2} \leq \lambda_1 \leq 2h(G)
                         \]
-                        This shows that a small \(\lambda_1\) (small spectral gap) implies the
-                        existence of a "bottleneck" cut (small \(h(G)\)), and vice-versa.
+                        This fundamental result links the spectral gap directly to the graph's geometric structure: a small \(\lambda_1\) 
+                        guarantees the existence of a "bottleneck" (a sparse cut), while a large \(\lambda_1\) certifies that the graph 
+                        is well-connected (an expander graph).
                     </p>
                 </div>
 
@@ -514,21 +519,16 @@ uses_python: true
                     <h3>Insight: From Spectral Filtering to Message Passing</h3>
                     <p>
                         The spectral viewpoint (filtering via \(\boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^\top\)) 
-                        and the spatial viewpoint (aggregating information from neighbors) are two sides of the same coin. 
-                        The key insight of Kipf & Welling's GCN [1] is that a first-order Chebyshev approximation 
-                        reduces spectral filtering to the simple rule 
+                        and the spatial viewpoint (aggregating information from neighbors) are unified in GCNs. 
+                        Kipf & Welling (2017) proposed the <strong>renormalization trick</strong>:
                         \[
-                        \boldsymbol{H}^{(l+1)} = \sigma(\tilde{\boldsymbol{D}}^{-1/2} \tilde{\boldsymbol{A}} \tilde{\boldsymbol{D}}^{-1/2} \boldsymbol{H}^{(l)} \boldsymbol{W}^{(l)}),
+                        \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}, \quad \tilde{\boldsymbol{D}}_{ii} = \sum_j \tilde{\boldsymbol{A}}_{ij}
                         \]
-                        where 
-                        \[
-                        \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}
-                        \] 
-                        adds self-loops. Each layer performs one step of (approximate) diffusion. This is why deep GCNs suffer from 
-                        <strong>over-smoothing</strong>: too many diffusion steps drive all node representations toward 
-                        the same value, which corresponds to the zero-frequency eigenvector \(\boldsymbol{v}_0\). 
-                        Understanding this through the lens of the heat equation is essential for designing modern 
-                        architectures that balance depth with expressivity.
+                        Replacing \(\boldsymbol{A}\) with \(\tilde{\boldsymbol{A}}\) (adding self-loops) serves two mathematical purposes:
+                        it preserves a node's own features during aggregation, and critically, it <strong>shrinks the eigenvalues</strong> 
+                        of the graph operator from the range \([-1, 1]\) to approximately \([0, 1]\). This prevents numerical instabilities 
+                        (exploding/vanishing gradients) and reinforces the low-pass filtering effect, effectively smoothing the signal 
+                        over the graph structure without washing out information too quickly.
                     </p>
                 </div>
 
