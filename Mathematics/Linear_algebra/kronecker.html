@@ -66,15 +66,28 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Vectorization in Machine Learning</h3>
                     <p>
-                        Vectorization is not merely a notational convenience — it is the algebraic basis for efficient 
-                        computation in deep learning frameworks. Libraries such as PyTorch and TensorFlow internally reshape 
-                        multi-dimensional parameter tensors into flat vectors when computing gradients.
+                        Vectorization is more than a notational convenience; it is the algebraic bridge between coordinate-free matrix 
+                        operations and hardware-level linear algebra. Deep learning frameworks like PyTorch and JAX leverage this by 
+                        flattening multi-dimensional parameter tensors into vectors to perform efficient Jacobian-vector products (JVPs) 
+                        during backpropagation.
                     </p>
                     <p>
-                        Moreover, the identity \(\text{vec}(ABC) = (C^\top \otimes A)\,\text{vec}(B)\) is essential for solving 
-                        <strong>Lyapunov stability problems</strong>. In control theory and AI safety, we use this to prove that 
-                        a system (like a neural network or a robot) will always converge to a stable state without "blowing up," 
-                        by transforming complex matrix equations into solvable linear systems.
+                        The identity 
+                        \[
+                        \text{vec}(ABC) = (C^\top \otimes A)\,\text{vec}(B)
+                        \]
+                        is a cornerstone for deriving closed-form solutions to matrix-valued optimization problems. A prime example is the 
+                        <strong>continuous-time Lyapunov equation</strong> 
+                        \[
+                        AX + XA^\top = Q
+                        \], 
+                        used to certify the stability of dynamical systems (including RNNs and neural controllers). By applying vectorization, 
+                        this matrix equation is transformed into the standard linear system
+                        \[
+                        (I \otimes A + A \otimes I)\text{vec}(X) = \text{vec}(Q).
+                        \]
+                        This transformation allows us to use high-performance linear solvers to find the Lyapunov candidate \(X\), thereby 
+                        mathematically guaranteeing that a system's "energy" dissipates over time.
                     </p>
                 </div>
                 
@@ -215,23 +228,26 @@ uses_python: false
                             \((A \otimes B)(v \otimes w) = \lambda\mu (v \otimes w)\).
                         </li>
                     </ol>
-                </div>
+                </div>       
 
-               <div class="insight-box">
+                <div class="insight-box">
                     <h3>Insight: Kronecker Products in Machine Learning</h3>
                     <p>
-                        The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic 
-                        foundation of <strong>Kronecker-factored approximations</strong> in deep learning. The K-FAC 
-                        optimizer approximates the <strong>Fisher information matrix</strong> of a neural network layer 
-                        as a Kronecker product of two smaller matrices (one capturing input statistics, the other capturing 
-                        gradient statistics). This reduces the cost of natural gradient descent from \(O(n^3)\) on the full 
-                        parameter space to \(O(n^{3/2})\), enabling second-order optimization for large models. 
-                        The eigenvalue property further allows efficient spectral analysis of these approximations.
+                        The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic foundation of 
+                        <strong>Kronecker-factored approximations</strong>. The <strong>K-FAC</strong> optimizer approximates the Fisher Information Matrix 
+                        of a layer as \(F \approx A \otimes G\), where \(A\) is the covariance of activations and \(G\) is the covariance of 
+                        backpropagated gradient statistics.
+                    </p>
+                    <p>
+                        By exploiting this structure, K-FAC reduces the inversion cost from \(O(n^3)\) on the full parameter space to 
+                        approximately \(O(n^{3/2})\). The <strong>eigenvalue property</strong> further enables efficient 
+                        <strong>spectral preconditioning</strong>, allowing large-scale neural networks to converge faster by utilizing 
+                        the curvature of the loss landscape.
                     </p>
                 </div>
 
                 <p>
-                    With the Kronecker product established, we now turn to <strong>tensors</strong> — the natural 
+                    With the Kronecker product established, we now turn to <strong>tensors</strong> - the natural 
                     generalization of vectors and matrices to higher dimensions. While the Kronecker product builds 
                     larger matrices from smaller ones, tensors extend this idea beyond two dimensions entirely.
                 </p>
@@ -240,56 +256,89 @@ uses_python: false
             
             <section id="tensor" class="section-content">
                 <h2>Tensor</h2>
-                <p>
-                    A <strong>tensor</strong> is a generalization of a 2d array to more than 2 dimensions. So far we have seen 
-                    the following tensors in mathematics. 
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li>A <strong>scalar</strong> is a 0-dimensional tensor (single number, \(a \in \mathbb{R}\)).</li>
-                    <li>A <strong>vector</strong> is a 1-dimensional tensor (array of numbers, \(\vec{a} \in \mathbb{R}^n\)).</li>
-                    <li>A <strong>matrix</strong> is a 2-dimensional tensor (table of numbers,  \(A \in \mathbb{R}^{m \times n}\)).</li>
-                </ul>
 
                 <p>
-                    We can apply this notion to higher-order tensors. For example, the data of images are indeed, <strong>3-dimensional tensors</strong>, 
-                    because real-world images usually include color information, which requires multiple <strong>channels</strong>. So, for any image \(I\), 
-                    \[
-                    I \in \mathbb{R}^{H \times W \times C}
-                    \]
-                    where \(H\) is height, \(W\) is width, and \(C\) is channels(e.g., RGB: \(C = 3\)) of the image. 
+                    So far, we have worked with scalars, vectors, and matrices — objects of dimension 0, 1, and 2 respectively. 
+                    Many applications require data structures that extend beyond two dimensions. A <strong>tensor</strong> 
+                    provides exactly this generalization: it is a multidimensional array that can be understood both as a 
+                    computational data structure and as an element of a tensor product of vector spaces.
                 </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Familiar Tensors</span>
+                    <p>
+                        The objects we have studied throughout linear algebra are all tensors of low order:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>A <strong>scalar</strong> is an order-0 tensor (a single number, \(a \in \mathbb{R}\)).</li>
+                        <li>A <strong>vector</strong> is an order-1 tensor (a one-dimensional array, \(v \in \mathbb{R}^n\)).</li>
+                        <li>A <strong>matrix</strong> is an order-2 tensor (a two-dimensional array, \(A \in \mathbb{R}^{m \times n}\)).</li>
+                    </ul>
+                    <p>
+                        The <strong>order</strong> (also called <strong>mode</strong> or informally "dimension") of a tensor refers to 
+                        the number of indices required to specify an entry.
+                    </p>
+                </div>
+
+                <p>
+                    Higher-order tensors arise naturally in applications. For example, a color image is an order-3 tensor 
+                    \(I \in \mathbb{R}^{H \times W \times C}\), where \(H\) is height, \(W\) is width, and \(C\) is the 
+                    number of channels (e.g., \(C = 3\) for RGB). A batch of \(N\) such images forms an order-4 tensor in 
+                    \(\mathbb{R}^{N \times H \times W \times C}\).
+                </p>
+
+                <p>
+                    Beyond this computational viewpoint, tensors also have a precise algebraic definition rooted in the 
+                    tensor product of vector spaces.
+                </p> 
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Tensor</span>
+                    <span class="theorem-title">Definition: Tensor Product Space</span>
                     <p>
-                        Formally, a <strong>tensor</strong> is an element of a <strong>tensor product</strong> of vector spaces.
-                        Consider vector spaces \(V\) and \(W\) over a field \(\mathbb{F}\). The tensor product of \(V\) and \(W\), denoted \(V \otimes W\) 
-                        is a new vector space(<strong>tensor product space</strong>) whose elements are linear combinations of tensor products of vectors:
+                        Let \(V\) and \(W\) be vector spaces over a field \(\mathbb{F}\). The <strong>tensor product</strong> 
+                        \(V \otimes W\) is a vector space whose elements are (finite) linear combinations of elementary tensors:
                         \[
-                        v \otimes w  \quad \text{where } v \in V, \, w \in W.
+                        \sum_{i} \alpha_i \, (v_i \otimes w_i), \quad v_i \in V, \; w_i \in W, \; \alpha_i \in \mathbb{F}.
                         \]
-                        A <strong>rank-r tensor</strong>, \(T\) is an element of a tensor product of \(r\) vector spaces:
+                        More generally, an <strong>order-\(r\) tensor</strong> is an element of
                         \[
                         T \in V_1 \otimes V_2 \otimes \cdots \otimes V_r.
                         \]
+                        When each \(V_k = \mathbb{R}^{n_k}\), such a tensor can be represented as a multidimensional array 
+                        with entries \(T_{i_1 i_2 \cdots i_r}\) where \(1 \leq i_k \leq n_k\).
                     </p>
                 </div>
+
+                <p>
+                    Under this formal definition, the familiar objects of linear algebra are recovered as special cases:
+                    a scalar is an order-0 tensor (an element of \(\mathbb{F}\)), a vector is an order-1 tensor (an element of \(V\)), 
+                    and a matrix is an order-2 tensor (an element of \(V \otimes W\)).
+                </p>
                 
-                <p>
-                    In this context, we can explain scalars, vectors, and matrices as following:
+               <p>
+                    The <strong>Kronecker product</strong> is the coordinate representation of the tensor product: when 
+                    \(V = \mathbb{R}^m\) and \(W = \mathbb{R}^n\), the tensor product of matrices (viewed as linear maps) 
+                    corresponds precisely to the Kronecker product of their matrix representations. The tensor product itself 
+                    is the abstract, coordinate-free operation, while the Kronecker product is what we compute in practice.
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li>A <strong>scalar</strong> is a rank-0 tensor, which is an element of \(\mathbb{F}\).</li>
-                    <li>A <strong>vector</strong> is a rank-1 tensor, which is an element of the vector space \(V\) or \(W\).</li>
-                    <li>A <strong>matrix</strong> is a rank-2 tensor, which is an element of the tensor product space \(V \otimes W\).</li>
-                </ul><br>
+                <div class="insight-box">
+                    <h3>Insight: Tensors as the Language of Deep Learning</h3>
+                    <p>
+                        While deep learning frameworks treat tensors primarily as multidimensional arrays, their algebraic power stems 
+                        from their identity as <strong>multilinear maps</strong>. In Transformer architectures, the <strong>Attention mechanism</strong> 
+                        is fundamentally a series of tensor contractions—specifically, bilinear operations where queries and keys interact to produce 
+                        attention weights.
+                    </p>
+                    <p>
+                        In the emerging field of <strong>Geometric Deep Learning</strong>, the mathematical definition of a tensor 
+                        — how it transforms under coordinate changes — becomes critical. This enables the design of 
+                        <strong>Equivariant Neural Networks</strong>, where internal representations (scalars, vectors, and higher-order tensors) 
+                        transform consistently according to group representations. This ensures the model respects the underlying physical symmetries 
+                        of the data, such as rotation and reflection invariance in 3D molecular modeling or medical imaging.
+                    </p>
+                </div>
 
-                <p>
-                    So, the <strong>Kronecker product</strong> is just a specific case of the tensor product applied to "matrices" and 
-                    the tensor product is a more general mathematical operation that applies to <strong>multilinear maps</strong>.
-                </p>
             </section>
         </div>
         <script src="/js/main.js"></script>
