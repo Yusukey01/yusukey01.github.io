@@ -27,17 +27,30 @@ uses_python: false
             <section id="sto" class="section-content">
                 <h2>Stochastic Matrix</h2>
 
+                 <p>
+                    Many real-world systems evolve probabilistically: a customer's next purchase depends on their current 
+                    preferences, a web user's next click depends on the current page, and weather tomorrow depends on 
+                    conditions today. To model such processes using linear algebra, we need matrices whose columns (or rows) 
+                    represent probability distributions. These are called <strong>stochastic matrices</strong>, and they 
+                    form the algebraic backbone of <strong>Markov chains</strong>.
+                </p>
+
                 <div class="theorem">
                     <span class="theorem-title">Definition: Stochastic Matrix & Probability Vector</span>
                     <p>
-                        A <strong>probability vector</strong> \(x \in \mathbb{R}^n\) is a vector with nonnegative entries that add up 
-                        to 1, and A <strong>stochastic matrix</strong>(or <strong>transition matrix</strong>) \(P \in \mathbb{R}^{n \times n}\) is 
-                        a square matrix whose "columns" are probability vectors. 
+                        A <strong>probability vector</strong> \(x \in \mathbb{R}^n\) is a vector with nonnegative entries that sum 
+                        to 1:
+                        \[
+                        x_i \geq 0 \text{ for all } i, \quad \sum_{i=1}^n x_i = 1.
+                        \]
+                        A <strong>stochastic matrix</strong> (or <strong>transition matrix</strong>) \(P \in \mathbb{R}^{n \times n}\) is 
+                        a square matrix whose columns are probability vectors. That is, \(P_{ij} \geq 0\) for all \(i, j\), 
+                        and \(\sum_{i=1}^n P_{ij} = 1\) for each column \(j\).
                     </p>
                 </div>
                 
                 <p>
-                    Note: In this page, we will use the <strong>column-stochastic matrix</strong>, but we can also use the 
+                    In this page, we will use the <strong>column-stochastic matrix</strong>, but we can also use the 
                     <strong>row-stochastic matrix</strong>. Essentially, the choice between a row-stochastic and a column-stochastic 
                     matrix is a matter of convention and convenience, and both formulations are equivalent up to taking a transpose. 
                     Using the row-stochastic matrix is often natural in Markov chains because each row directly tells 
@@ -45,6 +58,19 @@ uses_python: false
                     the form of \(Ax = b\), the column-stochastic matrix can be chosen more often. (Also, many programming environments 
                     default to column vectors.)
                 </p>
+
+                <div class="insight-box">
+                    <h3>Insight: Row vs Column Convention in ML Frameworks</h3>
+                    <p>
+                        In practice, most machine learning libraries (scikit-learn, PyTorch, TensorFlow) use 
+                        <strong>row-stochastic</strong> convention, where each row of the transition matrix sums to 1. 
+                        This is because data is typically stored with samples as rows. For instance, in a softmax 
+                        layer of a neural network, the output for each input sample is a probability vector forming 
+                        a row of the output matrix. When reading research papers, always check which convention is used — 
+                        the mathematics is equivalent (related by transposition), but confusing the two leads to incorrect 
+                        matrix multiplications.
+                    </p>
+                </div>
                
                 <p>
                     Remember, a <a href="../Probability/markov.html"><strong>Markov chain</strong></a> is a sequence of probability 
@@ -77,14 +103,14 @@ uses_python: false
                         \[
                         x_0 = \begin{bmatrix} 0.1 \\ 0.9 \end{bmatrix}
                         \]
-                        which means now, 10% of students are sick 90% are not.
+                        which means that currently, 10% of students are sick and 90% are not.
                     </p>
                     <p>
                         Moreover, we assume the following conditions:
                     </p>
                     <ul>
-                        <li> 70% of sick students recover the next day and 30% remain sick.</li>
-                        <li> 5% of not sick students become sick the next day and 95% remain not sick</li>
+                        <li> 70% of sick students recover the next day, and 30% remain sick.</li>
+                        <li> 5% of healthy students become sick the next day, and 95% remain healthy.</li>
                     </ul><br>
                     <p>
                         So, our stochastic matrix can be written as 
@@ -98,7 +124,7 @@ uses_python: false
                         This means that on the next day, approximately 7.5% students are expected to be sick and 92.5% are not.
                     </p>
                     <p>
-                        We can keep going this process:
+                        We can continue this process:
                         \[
                         \begin{align*}
                         &x_2 = P x_1 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.075 \\ 0.925 \end{bmatrix} = \begin{bmatrix} 0.06875 \\ 0.93125 \end{bmatrix} \\\\
@@ -207,7 +233,7 @@ uses_python: false
                         \[
                         D = \begin{bmatrix} \lambda_1 & 0\\ 0 & \lambda_2 \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 0.25 \end{bmatrix}
                         \]
-                    </P>
+                    </p>
                     <p>
                         Thus, the transition matrix \(P\) after \(k\) steps can be written as: 
                         \[
@@ -231,40 +257,69 @@ uses_python: false
                     </p>
                 </div>
 
+                 <p>
+                    In this example, \(P\) is <a href="eigenvectors.html"><strong>diagonalizable</strong></a>, which allowed us 
+                    to express \(P^k\) in closed form and read off the convergence rate directly from the eigenvalues. In general, 
+                    stochastic matrices are not always diagonalizable, but the convergence result still holds under mild 
+                    conditions (irreducibility and aperiodicity) via the Perron-Frobenius theorem.
+                </p>
+
                 <p>
-                    In this example, \(P\) is <a href="eigenvectors.html"><strong>diagonalizable</strong></a>, but in general, the stochastic matrices 
-                    are not always diagonalizable. 
+                    A particularly well-behaved class of stochastic matrices arises when both the columns <em>and</em> 
+                    the rows are probability vectors.
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Doubly Stochastic Matrix</span>
-                    <p>
-                        A matrix \(A\) is said to be <strong>doubly stochastic</strong> if the sum of each row and the sum of 
-                        each column are 1. 
+                     <p>
+                        A nonnegative matrix \(A\) is said to be <strong>doubly stochastic</strong> if both the sum of each row 
+                        and the sum of each column equal 1. That is, \(A\) is both row-stochastic and column-stochastic.
                     </p>
                 </div>
                 
-                <p>
-                    In this case, the matrix is not always diagonalizable, but in the case \(n =2\), it becomes a symmetric matrix and thus, it is diagonalizable.
-                    Consider the following doubly stochastic matrix for \(t \neq 0\):
-                    \[
-                    A = \begin{bmatrix} 1 - t & t \\  t & 1 -t \end{bmatrix}.
-                    \]
-                    Since the trace of \(A\) is \(2-2t\), and every stochastic matrix has an eigenvalue \(\lambda_1 =  1\) 
-                    corresponding to an eigenvector \(v_1 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}\).
-                    \[
-                    \lambda_1 + \lambda_2 = 1 + \lambda_2  = 2 - 2t.
-                    \]
-                </p>
-                <p>
-                    Thus, \(\lambda_2 = 1 -2t\). Moreover, since the matrix is symmetric, and the two eigenvalues are distinct, their corresponding 
-                    eigenvectors must be orthogonal each other. Therefore, we have \(v_2 = \begin{bmatrix} 1 \\ -1 \end{bmatrix}\) and 
-                    \[
-                    A = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix} 
-                    \begin{bmatrix} 1  & 0 \\ 0 & 1-2t \end{bmatrix} 
-                    \frac{1}{-2}\begin{bmatrix} -1 & -1 \\ -1 & 1 \end{bmatrix}.
-                    \]
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Example: Doubly Stochastic Matrix (\(2 \times 2\))</span>
+                    <p>
+                        For \(n = 2\), the doubly stochastic constraint forces the matrix to be symmetric. 
+                        Consider the following doubly stochastic matrix for \(0 < t \leq 1\):
+                        \[
+                        A = \begin{bmatrix} 1 - t & t \\  t & 1 - t \end{bmatrix}.
+                        \]
+                        The trace is \(\text{tr}(A) = 2 - 2t\). Since every stochastic matrix has eigenvalue 
+                        \(\lambda_1 = 1\) with corresponding eigenvector \(v_1 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}\), 
+                        we can find the second eigenvalue from
+                        \[
+                        \lambda_1 + \lambda_2 = \text{tr}(A) = 2 - 2t \quad \Longrightarrow \quad \lambda_2 = 1 - 2t.
+                        \]
+                    </p>
+                    <p>
+                        Since \(A\) is symmetric and the two eigenvalues are distinct (for \(t \neq 0\)), the 
+                        <a href="orthogonality.html">spectral theorem</a> guarantees that the eigenvectors are orthogonal. 
+                        Thus \(v_2 = \begin{bmatrix} 1 \\ -1 \end{bmatrix}\), and the eigendecomposition is
+                        \[
+                        A = \frac{1}{2}\begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix} 
+                        \begin{bmatrix} 1  & 0 \\ 0 & 1-2t \end{bmatrix} 
+                        \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}.
+                        \]
+                    </p>
+                    <p>
+                        Note that the eigenvector matrix \(V = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}\) satisfies 
+                        \(V^{-1} = \frac{1}{2}V\), since the columns are orthogonal with squared norm 2.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Insight: Doubly Stochastic Matrices in Machine Learning</h3>
+                    <p>
+                        Doubly stochastic matrices appear throughout machine learning. The <strong>Sinkhorn-Knopp algorithm</strong> 
+                        iteratively normalizes rows and columns of a nonnegative matrix to produce a doubly stochastic 
+                        matrix, and forms the basis of <strong>optimal transport</strong> computations used in Wasserstein 
+                        GANs, domain adaptation, and distribution matching. In <strong>spectral clustering</strong>, the 
+                        normalized graph Laplacian produces a doubly stochastic structure, and the steady-state distribution 
+                        of a doubly stochastic matrix is always the uniform distribution \(q = \frac{1}{n}\mathbf{1}\) — a 
+                        fact that simplifies the analysis of random walks on graphs.
+                    </p>
+                </div>
             </section>
         </div>
        
