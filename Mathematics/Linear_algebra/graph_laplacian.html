@@ -29,115 +29,162 @@ uses_python: true
             
             <section id="fundamentals" class="section-content">
                 <h2>Graph Laplacian Fundamentals</h2>
+
                 <p>
-                    The <strong>graph Laplacian</strong> is a matrix operator that plays a central role in spectral graph theory. 
-                    It's a fundamental tool that captures the connectivity and structure of a graph, enabling powerful 
-                    analytical techniques. Building on your knowledge of 
-                    <a href="../Discrete/intro_graph.html"><strong>graph theory</strong></a> and <a href="eigenvectors.html"><strong>eigenvalues</strong></a>, 
-                    we'll explore its forms and properties.
+                    Graphs encode relationships between objects, but to apply the powerful machinery of linear 
+                    algebra — eigenvalues, quadratic forms, spectral decompositions — we need a matrix that 
+                    faithfully represents a graph's connectivity structure. The <strong>graph Laplacian</strong> 
+                    is exactly this matrix. It captures how "different" adjacent vertices are from each other, 
+                    making it the natural bridge between 
+                    <a href="../Discrete/intro_graph.html"><strong>graph theory</strong></a> and 
+                    <a href="eigenvectors.html"><strong>spectral analysis</strong></a>.
                 </p>
 
-                <h3>The Unnormalized Laplacian</h3>
-                <p>
-                    For a graph \(G\) with \(n\) vertices, its structure can be represented by an <strong>adjacency matrix</strong> 
-                    \(\boldsymbol{A}\), where \(A_{ij} = 1\) if vertices \(i\) and \(j\) are connected (and 0 otherwise). 
-                    The <strong>degree matrix</strong> \(\boldsymbol{D}\) is a diagonal matrix where \(D_{ii}\) is the 
-                    degree of vertex \(i\).
-                </p>
-                <p>
-                    The <strong>unnormalized graph Laplacian</strong> \(\boldsymbol{L}\) is defined as:
-                    \[
-                    \boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}
-                    \]
-                </p>
-                <p>
-                    Here is a concrete example:
-                    <div style="text-align: center;">
-                    <img src="images/laplacian.jpg" alt="A simple graph and its corresponding Laplacian matrix calculation."  class="responsive-image">
-                    </div>
-                    \[
-                    \underbrace{
-                    \begin{bmatrix} 2 & 0 & 0 & 0 & 0 \\ 
-                                    0 & 2 & 0 & 0 & 0 \\
-                                    0 & 0 & 4 & 0 & 0 \\
-                                    0 & 0 & 0 & 1 & 0 \\
-                                    0 & 0 & 0 & 0 & 1 \\
-                    \end{bmatrix}
-                    }_{\boldsymbol{D}}
-                    - 
-                    \underbrace{
-                    \begin{bmatrix} 0 & 1 & 1 & 0 & 0 \\ 
-                                    1 & 0 & 1 & 0 & 0 \\
-                                    1 & 1 & 0 & 1 & 1 \\
-                                    0 & 0 & 1 & 0 & 0 \\
-                                    0 & 0 & 1 & 0 & 0 \\
-                    \end{bmatrix}
-                    }_{\boldsymbol{A}}
-                    = 
-                    \underbrace{
-                    \begin{bmatrix} 2 & -1 & -1 & 0 & 0 \\ 
-                                    -1 & 2 & -1 & 0 & 0 \\
-                                    -1 & -1 & 4 & -1 & -1 \\
-                                    0 & 0 & -1 & 1 & 0 \\
-                                    0 & 0 & -1 & 0 & 1 \\
-                    \end{bmatrix}
-                    }_{\boldsymbol{L}}
-                    \]
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Unnormalized Graph Laplacian</span>
+                    <p>
+                        For a graph \(G\) with adjacency matrix \(\boldsymbol{A}\) and degree matrix \(\boldsymbol{D}\), 
+                        the <strong>unnormalized graph Laplacian</strong> is the matrix
+                        \[
+                        \boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}.
+                        \]
+                        Its entries are given by
+                        \[
+                        L_{ij} = \begin{cases} \deg(v_i) & \text{if } i = j \\ -1 & \text{if } i \neq j \text{ and } v_i \sim v_j \\ 0 & \text{otherwise} \end{cases}
+                        \]
+                        where \(v_i \sim v_j\) means vertices \(v_i\) and \(v_j\) are adjacent.
+                    </p>
+                </div>
+
+                 <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        <div style="text-align: center;">
+                        <img src="images/laplacian.jpg" alt="A simple graph and its corresponding Laplacian matrix calculation."  class="responsive-image">
+                        </div>
+                        \[
+                        \underbrace{
+                        \begin{bmatrix} 2 & 0 & 0 & 0 & 0 \\ 
+                                        0 & 2 & 0 & 0 & 0 \\
+                                        0 & 0 & 4 & 0 & 0 \\
+                                        0 & 0 & 0 & 1 & 0 \\
+                                        0 & 0 & 0 & 0 & 1 \\
+                        \end{bmatrix}
+                        }_{\boldsymbol{D}}
+                        - 
+                        \underbrace{
+                        \begin{bmatrix} 0 & 1 & 1 & 0 & 0 \\ 
+                                        1 & 0 & 1 & 0 & 0 \\
+                                        1 & 1 & 0 & 1 & 1 \\
+                                        0 & 0 & 1 & 0 & 0 \\
+                                        0 & 0 & 1 & 0 & 0 \\
+                        \end{bmatrix}
+                        }_{\boldsymbol{A}}
+                        = 
+                        \underbrace{
+                        \begin{bmatrix} 2 & -1 & -1 & 0 & 0 \\ 
+                                        -1 & 2 & -1 & 0 & 0 \\
+                                        -1 & -1 & 4 & -1 & -1 \\
+                                        0 & 0 & -1 & 1 & 0 \\
+                                        0 & 0 & -1 & 0 & 1 \\
+                        \end{bmatrix}
+                        }_{\boldsymbol{L}}
+                        \]
+                    </p>
+                </div>
 
                 <h3>The Laplacian Quadratic Form (Measuring Smoothness)</h3>
                 <p>
-                    A key insight into the Laplacian comes from its <strong>quadratic form</strong>. 
-                    If we define a function (or "signal") \(\boldsymbol{f}\) on the graph's vertices, where 
-                    \(\boldsymbol{f} \in \mathbb{R}^n\) and \(f_i\) is the value at vertex \(i\), the 
-                    quadratic form measures the "smoothness" of the signal:
-                    \[
-                    \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_{(i,j) \in E} w_{ij}(f_i - f_j)^2
-                    \]
-                    (Assuming edge weights \(w_{ij}\), which are 1 for an unweighted graph).
+                    The definition \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) may appear 
+                    arbitrary, but the Laplacian has a natural interpretation through its quadratic form, 
+                    which measures how much a signal varies across the edges of the graph.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Dirichlet Energy</span>
+                    <p>
+                        For any signal \(\boldsymbol{f} \in \mathbb{R}^n\) defined on the vertices of a 
+                        graph with Laplacian \(\boldsymbol{L}\), the quadratic form satisfies
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_{(i,j) \in E} w_{ij}(f_i - f_j)^2
+                        \]
+                        where \(w_{ij}\) is the weight of edge \((i,j)\) (equal to 1 for unweighted graphs). 
+                        This quantity is called the <strong>Dirichlet energy</strong> of \(\boldsymbol{f}\).
+                    </p>
+                </div>
+
                 <p>
-                    This expression, known as the <strong>Dirichlet energy</strong>, shows that a signal \(\boldsymbol{f}\) 
-                    is "smooth" (i.e., \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}\) is small) if adjacent 
-                    vertices have similar values. The Laplacian is thus an operator that measures 
-                    the total variance of a signal across the graph's edges.
+                    The Dirichlet energy is small when adjacent vertices have similar signal values (the signal 
+                    is "smooth") and large when adjacent vertices differ significantly. The Laplacian thus acts 
+                    as an operator that measures the total variation of a signal across the graph's edges. 
+                    Since \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} \geq 0\) for all \(\boldsymbol{f}\), 
+                    this also shows that \(\boldsymbol{L}\) is 
+                    <a href="symmetry.html"><strong>positive semidefinite</strong></a>.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Insight: Dirichlet Energy as a Regularizer in ML</h3>
+                    <p>
+                        The Dirichlet energy \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}\) is widely used as a 
+                        <strong>graph regularization</strong> term in semi-supervised learning. The objective 
+                        \[
+                        \min_{\boldsymbol{f}} \|\boldsymbol{f} - \boldsymbol{y}\|^2 + \alpha \, \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}
+                        \]
+                        penalizes label assignments where connected nodes receive different labels, encoding the 
+                        <strong>smoothness assumption</strong>: nearby nodes in a graph are likely to share the same label. 
+                        This principle underlies label propagation, graph-based semi-supervised learning, and the 
+                        message-passing mechanism in Graph Neural Networks.
+                    </p>
+                </div>
 
                 <h3>Normalized Laplacians</h3>
                 <p>
-                    The unnormalized Laplacian \(\boldsymbol{L}\) can be biased by vertices with
-                    large degrees. To address this, two <strong>normalized Laplacians</strong> are commonly used,
-                    especially in spectral clustering and graph neural networks (GNNs):
+                    The unnormalized Laplacian \(\boldsymbol{L}\) can be biased by vertices with 
+                    large degrees, since high-degree vertices contribute disproportionately to the 
+                    Dirichlet energy. To account for varying degrees, two <strong>normalized Laplacians</strong> 
+                    are commonly used.
                 </p>
 
-                <ol>
-                    <li>
-                        <strong>Symmetric Normalized Laplacian (\(\mathcal{L}_{sym}\)):</strong>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Normalized Graph Laplacians</span>
+                    <p>
+                        <strong>1. Symmetric Normalized Laplacian:</strong>
                         \[
                         \mathcal{L}_{sym} = \boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2} = \boldsymbol{I} - \boldsymbol{D}^{-1/2} \boldsymbol{A} \boldsymbol{D}^{-1/2}
                         \]
-                        Its eigenvalues are normalized to the range \([0, 2]\), making it useful for spectral analysis and GNNs.
-                    </li>
-                    <li>
-                        <strong>Random Walk Normalized Laplacian (\(\mathcal{L}_{rw}\)):</strong>
+                        This is a symmetric matrix with eigenvalues in the range \([0, 2]\).
+                    </p>
+                    <p>
+                        <strong>2. Random Walk Normalized Laplacian:</strong>
                         \[
                         \mathcal{L}_{rw} = \boldsymbol{D}^{-1} \boldsymbol{L} = \boldsymbol{I} - \boldsymbol{D}^{-1} \boldsymbol{A}
                         \]
-                        This form is closely related to the transition matrix of a random walk on the graph (\(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A}\)).
-                    </li>
-                </ol>
+                        This form is closely related to the transition matrix of a random walk on the graph, 
+                        since \(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A} = \boldsymbol{I} - \mathcal{L}_{rw}\).
+                    </p>
+                </div>
+
+                <p>
+                    Both normalized forms share the same eigenvalues. The choice between them depends on the application: 
+                    \(\mathcal{L}_{sym}\) is preferred when symmetry is needed (e.g., for the spectral theorem), 
+                    while \(\mathcal{L}_{rw}\) connects directly to random walk analysis.
+                </p>
+
             </section>
 
             <hr>
 
             <section id="spectral" class="section-content">
                 <h2>Spectral Properties</h2>
+
                 <p>
-                    The "spectral" in spectral graph theory refers to the <strong>eigenvalues</strong> 
-                    and <strong>eigenvectors</strong> of the graph Laplacian. Since \(\boldsymbol{L}\) 
-                    (and \(\mathcal{L}_{sym}\)) is real and symmetric, it has a complete set of 
-                    real eigenvalues and orthonormal eigenvectors.
+                    The Dirichlet energy established that \(\boldsymbol{L}\) is positive semidefinite, which 
+                    immediately constrains its eigenvalue structure. Since \(\boldsymbol{L}\) is also real and 
+                    symmetric, the <a href="symmetry.html"><strong>spectral theorem</strong></a> guarantees a 
+                    complete set of real, nonnegative eigenvalues and orthonormal eigenvectors. These eigenvalues 
+                    and eigenvectors encode remarkably detailed information about the graph's connectivity.
                 </p>
+                
                 <p>
                     The eigendecomposition of the unnormalized Laplacian \(\boldsymbol{L}\) is:
                     \[
@@ -162,8 +209,9 @@ uses_python: true
                     \]
                     (where \(\boldsymbol{d}\) is the vector of degrees).
                 </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Eigenvalue Multiplicity and Connectivity</span>
+                    <span class="theorem-title">Definition: Eigenvalue Multiplicity and Connectivity</span>
                     <p>
                         The <strong>multiplicity of the zero eigenvalue</strong> (how many times \(\lambda_k = 0\)) 
                         is equal to the number of <strong>connected components</strong> in the graph. For any 
@@ -172,12 +220,15 @@ uses_python: true
                 </div>
 
                 <h3>The Fiedler Vector and Algebraic Connectivity</h3>
+
                 <p>
-                    The second smallest eigenvalue, \(\lambda_1\), is arguably the most important.
+                    While \(\lambda_0 = 0\) tells us whether the graph is connected (and how many components it has), 
+                    the second-smallest eigenvalue \(\lambda_1\) quantifies <em>how well</em> the graph is connected. 
+                    It is arguably the single most informative spectral quantity of a graph.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">The Fiedler Vector and Algebraic Connectivity</span>
+                    <span class="theorem-title">Definition: The Fiedler Vector and Algebraic Connectivity</span>
                     <p>
                         The eigenvalue \(\lambda_1\) is called the <strong>algebraic connectivity</strong> 
                         (or <strong>Fiedler value</strong>) of the graph.
@@ -197,13 +248,16 @@ uses_python: true
                 </div>
                 
                 <h3>The Spectral Gap and Cheeger's Inequality</h3>
-                <p>
-                    The "spectral gap" (the magnitude of \(\lambda_1\)) is formally related to the
-                    graph's connectivity by Cheeger's inequality.
+
+                 <p>
+                    The Fiedler value \(\lambda_1\) provides a spectral measure of connectivity, but 
+                    one might ask: does it correspond to a genuine combinatorial notion of "bottleneck"? 
+                    Cheeger's inequality makes this connection precise, relating the spectral gap to the 
+                    minimum normalized cut of the graph.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Cheeger's Inequality</span>
+                    <span class="theorem-title">Theorem: Cheeger's Inequality</span>
                     <p>
                         Let \(h(G)\) be the <strong>Cheeger constant</strong>, which measures the "best" partition 
                         of the graph by finding the minimum "cut" normalized by the size of the smaller set:
@@ -221,6 +275,19 @@ uses_python: true
                         existence of a "bottleneck" cut (small \(h(G)\)), and vice-versa.
                     </p>
                 </div>
+
+                <div class="insight-box">
+                    <h3>Insight: The Spectral Gap in Network Science and ML</h3>
+                    <p>
+                        The spectral gap \(\lambda_1\) has direct practical significance. In <strong>graph-based semi-supervised learning</strong>, 
+                        a large spectral gap means that label information propagates quickly through the graph, leading to better generalization 
+                        from few labeled examples. In <strong>network robustness</strong>, \(\lambda_1\) measures how resilient a network is to 
+                        partitioning - networks with small algebraic connectivity are vulnerable to targeted edge removal. The Cheeger 
+                        inequality thus provides a principled criterion for evaluating graph quality in applications from social network analysis 
+                        to mesh generation in computational geometry.
+                    </p>
+                </div>
+
             </section>
 
             <hr>
@@ -230,12 +297,12 @@ uses_python: true
                 <p>
                     The GSP framework provides a crucial link between graph theory and classical signal analysis. It 
                     re-interprets the Laplacian's eigenvectors as a <strong>Fourier basis</strong> for signals on the graph, 
-                    making it the natural generalization of t
-                    he classical <a href="../Calculus/fourier_transform.html"><strong>Fourier transform</strong></a> to irregular domains.
+                    making it the natural generalization of the classical 
+                    <a href="../Calculus/fourier_transform.html"><strong>Fourier transform</strong></a> to irregular domains.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Graph Fourier Transform (GFT)</span>
+                    <span class="theorem-title">Definition: Graph Fourier Transform (GFT)</span>
                     <p>
                         Let \(\boldsymbol{V} = [\boldsymbol{v}_0, \boldsymbol{v}_1, \ldots, \boldsymbol{v}_{n-1}]\) 
                         be the matrix of orthonormal eigenvectors of \(\boldsymbol{L}\). 
@@ -259,30 +326,42 @@ uses_python: true
 
                 <ul>
                     <li>
-                        <strong>Small \(\lambda_k\) (e.g., \(\lambda_0, \lambda_1\)) ↔ Low Frequencies:</strong> 
+                        <strong>Small \(\lambda_k\) (e.g., \(\lambda_0, \lambda_1\)) \(\leftrightarrow\) Low Frequencies:</strong> 
                         The corresponding eigenvectors \(\boldsymbol{v}_k\) vary slowly across edges 
                         (they are "smooth").
                     </li>
                     <li>
-                        <strong>Large \(\lambda_k\) ↔ High Frequencies:</strong> 
+                        <strong>Large \(\lambda_k\) \(\leftrightarrow\) High Frequencies:</strong> 
                         The eigenvectors \(\boldsymbol{v}_k\) oscillate rapidly, with adjacent 
                         nodes having very different values.
                     </li>
                 </ul><br>
 
                 <p>
-                    This connects back to the Dirichlet energy. By expanding \(\boldsymbol{f}\) in the 
-                    eigenbasis, we can see how "rough" it is:
-                    \[
-                    \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = 
-                    \boldsymbol{f}^\top (\boldsymbol{V} \boldsymbol{\Lambda} \boldsymbol{V}^\top) \boldsymbol{f} =
-                    (\boldsymbol{V}^T \boldsymbol{f})^\top \boldsymbol{\Lambda} (\boldsymbol{V}^T \boldsymbol{f}) =
-                    \hat{\boldsymbol{f}}^\top \boldsymbol{\Lambda} \hat{\boldsymbol{f}} =
-                    \sum_{k=0}^{n-1} \lambda_k \hat{f}_k^2
-                    \]
-                    This is the graph equivalent of Parseval's theorem. It shows that the 
-                    signal's energy is the sum of its spectral components, weighted by 
-                    their corresponding frequencies (\(\lambda_k\)).
+                    This frequency interpretation connects back to the Dirichlet energy. By expanding 
+                    \(\boldsymbol{f}\) in the eigenbasis, we obtain a graph analogue of 
+                    <a href="../Calculus/fourier_series.html"><strong>Parseval's theorem</strong></a>:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Parseval's Identity on Graphs</span>
+                    <p>
+                        For any graph signal \(\boldsymbol{f}\) with Graph Fourier Transform 
+                        \(\hat{\boldsymbol{f}} = \boldsymbol{V}^\top \boldsymbol{f}\),
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = 
+                        \boldsymbol{f}^\top (\boldsymbol{V} \boldsymbol{\Lambda} \boldsymbol{V}^\top) \boldsymbol{f} =
+                        (\boldsymbol{V}^T \boldsymbol{f})^\top \boldsymbol{\Lambda} (\boldsymbol{V}^T \boldsymbol{f}) =
+                        \hat{\boldsymbol{f}}^\top \boldsymbol{\Lambda} \hat{\boldsymbol{f}} =
+                        \sum_{k=0}^{n-1} \lambda_k \hat{f}_k^2
+                        \]
+                    </p>
+                </div>
+                <p>
+                    This identity shows that the Dirichlet energy of a signal equals the weighted sum of its 
+                    spectral components, where each frequency \(\lambda_k\) weights the corresponding 
+                    coefficient \(\hat{f}_k^2\). High-frequency components (large \(\lambda_k\)) contribute 
+                    more to the energy, which is why smooth signals have small Dirichlet energy.
                 </p>
             </section>
 
@@ -298,6 +377,16 @@ uses_python: true
                     Instead, iterative methods are used to find only the few
                     eigenvectors and eigenvalues that are needed (typically the smallest ones).
                 </p>
+
+                <p>
+                    The spectral theory above assumes access to the full eigendecomposition of 
+                    \(\boldsymbol{L}\), but computing all \(n\) eigenvalues and eigenvectors requires 
+                    \(O(n^3)\) operations - prohibitive for graphs with millions of vertices. In practice, 
+                    most applications (spectral clustering, GNNs, graph partitioning) require only the few 
+                    smallest eigenvalues and their eigenvectors, which can be computed efficiently using 
+                    iterative methods.
+                </p>
+
                 <ul style="padding-left: 40px;">
                     <li>
                         <strong>Power Iteration:</strong> A simple method to find the dominant
@@ -391,7 +480,7 @@ uses_python: true
                     <strong>graph heat equation</strong>:
                 </p>
                 <div class="theorem">
-                    <span class="theorem-title">Heat Diffusion on Graphs</span>
+                    <span class="theorem-title">Theorem: Heat Diffusion on Graphs</span>
                     <p>
                         \[
                         \frac{\partial \boldsymbol{u}}{\partial t} = -\boldsymbol{L} \boldsymbol{u}
@@ -421,6 +510,28 @@ uses_python: true
                     to the design of modern AI models.
                 </p>
 
+                <div class="insight-box">
+                    <h3>Insight: From Spectral Filtering to Message Passing</h3>
+                    <p>
+                        The spectral viewpoint (filtering via \(\boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^\top\)) 
+                        and the spatial viewpoint (aggregating information from neighbors) are two sides of the same coin. 
+                        The key insight of Kipf & Welling's GCN [1] is that a first-order Chebyshev approximation 
+                        reduces spectral filtering to the simple rule 
+                        \[
+                        \boldsymbol{H}^{(l+1)} = \sigma(\tilde{\boldsymbol{D}}^{-1/2} \tilde{\boldsymbol{A}} \tilde{\boldsymbol{D}}^{-1/2} \boldsymbol{H}^{(l)} \boldsymbol{W}^{(l)}),
+                        \]
+                        where 
+                        \[
+                        \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}
+                        \] 
+                        adds self-loops. Each layer performs one step of (approximate) diffusion. This is why deep GCNs suffer from 
+                        <strong>over-smoothing</strong>: too many diffusion steps drive all node representations toward 
+                        the same value, which corresponds to the zero-frequency eigenvector \(\boldsymbol{v}_0\). 
+                        Understanding this through the lens of the heat equation is essential for designing modern 
+                        architectures that balance depth with expressivity.
+                    </p>
+                </div>
+
                 <h3>Other Applications</h3>
 
                 <ul style="padding-left: 40px;">
@@ -434,7 +545,7 @@ uses_python: true
                     </li>
                     <li><strong>Social Network Analysis:</strong><br>
                         Continues to be the primary method for community detection (spectral clustering) and identifying network bottlenecks 
-                        (algebraic connectivity $\lambda_1$) at scale.
+                        (algebraic connectivity \(\lambda_1\)) at scale.
                     </li>
                     <li><strong>Computer Vision:</strong><br>
                          Historically used for image segmentation and denoising via graph cuts (minimum cut problems, which are directly 
