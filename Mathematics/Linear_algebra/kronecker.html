@@ -27,11 +27,25 @@ uses_python: false
            
             <section id="vec" class="section-content">
                 <h2>Vectorization</h2>
+
                 <p>
-                    The <strong>vectorization</strong> operation, denoted by \(\text{vec }(\cdot)\), takes a matrix and stacks its columns 
-                    into a single <strong>column vector</strong>. 
+                    When working with matrices in optimization and statistics, we often need to treat a matrix as a single vector. 
+                    For instance, to take derivatives with respect to all entries simultaneously or to express matrix equations as 
+                    standard linear systems. The <strong>vectorization</strong> operation provides exactly this conversion.
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Vectorization</span>
+                    <p>
+                        The <strong>vectorization</strong> of a matrix \(A \in \mathbb{R}^{m \times n}\), denoted \(\text{vec}(A)\), 
+                        stacks the columns of \(A\) into a single <strong>column vector </strong> in \(\mathbb{R}^{mn}\):
+                        \[
+                        \text{vec}(A) = \begin{bmatrix} a_1 \\ a_2 \\ \vdots \\ a_n \end{bmatrix}
+                        \]
+                        where \(a_j \in \mathbb{R}^m\) is the \(j\)th column of \(A\).
+                    </p>
+                </div>
+               
                 <p>
                     For example, let \(x \in \mathbb{R}^n \), and consider outer product \(xx^\top  \in \mathbb{R}^{n \times n}\).
                     \[
@@ -44,32 +58,58 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    The notation \(\otimes\) is called <strong>Kronecker product</strong>(more generally, <strong>tensor product</strong>). 
-                    This operation is widely used in fields like machine learning, statistics, and optimization for representing higher-order 
-                    interactions or matrix manipulations in a compact form.
-                </p>
-                
-                <p>
-                     Conversely, we can reshape a vector into a matrix:
-                </p>
-               
-                <p>
-                    Consider a vector 
-                        \[
-                        a = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
-                        \]
+                    The notation \(\otimes\) denotes the <strong>Kronecker product</strong>, which we define formally in the next section. 
+                    The identity \(\text{vec}(xx^\top) = x \otimes x\) is a special case of a more general relationship between 
+                    vectorization and the Kronecker product.
                 </p>
 
-                <ul>
-                <li><strong>row-major order</strong> (e.g. used C, C++, and Python)</li>
+                <div class="insight-box">
+                    <h3>Insight: Vectorization in Machine Learning</h3>
+                    <p>
+                        Vectorization is not merely a notational convenience — it is the algebraic basis for efficient 
+                        computation in deep learning frameworks. Libraries such as PyTorch and TensorFlow internally reshape 
+                        multi-dimensional parameter tensors into flat vectors when computing gradients.
+                    </p>
+                    <p>
+                        Moreover, the identity \(\text{vec}(ABC) = (C^\top \otimes A)\,\text{vec}(B)\) is essential for solving 
+                        <strong>Lyapunov stability problems</strong>. In control theory and AI safety, we use this to prove that 
+                        a system (like a neural network or a robot) will always converge to a stable state without "blowing up," 
+                        by transforming complex matrix equations into solvable linear systems.
+                    </p>
+                </div>
+                
+               <p>
+                Conversely, we can reshape a vector back into a matrix. However, the result depends on the 
+                <strong>memory layout convention</strong> used — an important practical distinction when moving between 
+                mathematical formulas and code.
+            </p>
+
+            <div class="proof">
+                <span class="proof-title">Example: Row-Major vs Column-Major Order</span>
+                <p>
+                    Consider the vector 
+                    \[
+                    a = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
+                    \]
+                    Reshaping \(a\) into a \(2 \times 3\) matrix yields different results depending on the convention:
+                </p>
+                <p>
+                    <strong>Row-major order</strong> (used by C, C++, and Python/NumPy by default): elements fill each row before moving to the next.
                     \[
                     A = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix}
                     \]
-                <li><strong>column-major order</strong> (e.g. used by Julia, Matlab, R, and Fortran)</li>
+                </p>
+                <p>
+                    <strong>Column-major order</strong> (used by Julia, MATLAB, R, and Fortran): elements fill each column before moving to the next.
                     \[
                     A = \begin{bmatrix} 1 & 3 & 5 \\ 2 & 4 & 6 \end{bmatrix}
                     \]
-                </ul>
+                </p>
+                <p>
+                    Note that the standard mathematical definition of \(\text{vec}(\cdot)\) follows <strong>column-major</strong> order. 
+                    That is, \(\text{vec}(A)\) stacks columns, so the inverse operation (reshaping back) also fills by columns.
+                </p>
+            </div>
 
                 <pre class="python-code">
                     import numpy as np
