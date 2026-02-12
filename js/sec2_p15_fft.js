@@ -17,7 +17,6 @@ const FFTUtils = {
 
     /**
      * Bit-reversal (for 1D FFT)
-     *
      */
     reverseBits: (x, bits) => {
         let reversed = 0;
@@ -31,7 +30,6 @@ const FFTUtils = {
     /**
      * 1D Fast Fourier Transform (Cooley-Tukey, Iterative)
      * Assumes 'data' is an array of complex objects {real, imag}.
-     *
      */
     fft1D: (data) => {
         const n = data.length;
@@ -175,7 +173,6 @@ const FFTUtils = {
 
     /**
      * Gaussian random number generator (for 1D demo noise)
-     *
      */
     gaussianRandom: (() => {
         let spareRandom = null;
@@ -199,7 +196,7 @@ const FFTUtils = {
 
 
 //======================================================================
-// 2. 1D Fourier Transform Visualizer (Refactored from FT2_visualizer.js)
+// 2. 1D Fourier Transform Visualizer 
 //    Now uses FFTUtils for core logic.
 //======================================================================
 
@@ -216,7 +213,6 @@ class FourierVisualizer1D {
 
     /**
      * Creates UI HTML and gets DOM elements
-     *
      */
     init() {
         this.container.innerHTML = `
@@ -271,7 +267,6 @@ class FourierVisualizer1D {
         `;
         
         // Add styles dynamically
-        // Add styles dynamically
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             .fft-visualizer { display: grid; grid-template-columns: 1fr; gap: 20px; color: #e8eaed; }
@@ -311,8 +306,6 @@ class FourierVisualizer1D {
             @media (max-width: 991px) { .visualization-area .row { grid-template-columns: 1fr; } .image-panel canvas, .spectrum-panel canvas { max-width: 100%; } }
         `;
         
-        document.head.appendChild(styleElement);
-        document.head.appendChild(styleElement);
         document.head.appendChild(styleElement);
 
         // Cache DOM elements
@@ -950,16 +943,19 @@ class FourierVisualizer2D {
         for (let i = 1; i < this.magnitudeSpectrum.length; i++) {
             if (this.magnitudeSpectrum[i] > maxMag) maxMag = this.magnitudeSpectrum[i];
         }
-        
+        let displayMax = maxMag;
+        if (this.settings.logScale) {
+            displayMax = Math.log(1 + maxMag);
+        }
+
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = y * width + x;
                 let value = this.magnitudeSpectrum[idx];
                 if (this.settings.logScale) {
                     value = Math.log(1 + value);
-                    maxMag = Math.log(1 + maxMag); // Adjust max for log scale
                 }
-                value = Math.floor((value / maxMag) * 255);
+                value = Math.floor((value / displayMax) * 255);
                 
                 // Show custom mask as red overlay
                 if (this.filterMask && this.filterMask[idx] === 0) {
@@ -1071,7 +1067,7 @@ class FourierVisualizer2D {
                                         const nx = x + dx; const ny = y + dy;
                                         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                                             const dist = Math.sqrt(dx * dx + dy * dy);
-                                            if (dist <= notchSize) mask[ny * width + nx] *= Math.exp(-(dist * dist) / (2 * notchSize));
+                                            if (dist <= notchSize) mask[ny * width + nx] *= Math.exp(-(dist * dist) / (2 * notchSize * notchSize));
                                         }
                                     }
                                 }
@@ -1129,7 +1125,7 @@ class FourierVisualizer2D {
         })).sort((a, b) => b.magnitude - a.magnitude); // Sort by magnitude
         
         const keepCount = Math.floor(coefficients.length * this.settings.compressionLevel / 100);
-        const compressedFFT = new Array(this.fftData.length).fill({ real: 0, imag: 0 });
+        const compressedFFT = Array.from({ length: this.fftData.length }, () => ({ real: 0, imag: 0 }));
         
         // Keep only the top N coefficients
         for (let i = 0; i < keepCount; i++) {
