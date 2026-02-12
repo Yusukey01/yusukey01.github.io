@@ -29,105 +29,159 @@ uses_python: true
 
                 <h2>Covariance Matrix</h2>
 
-                <p> 
-                    From this section, we consider <strong>multivariate</strong> models. First of all, we need a way to measure 
-                    the dependence of variables each other.
+                <p>
+                    In <a href="random_variables.html"><strong>Part 2</strong></a>, we introduced the <strong>variance</strong> as a measure 
+                    of how a single random variable deviates from its mean. However, real-world phenomena rarely involve just one variable. 
+                    In machine learning, a data point is typically a vector of features, and understanding how these features relate to one 
+                    another is essential for tasks ranging from dimensionality reduction to generative modeling. This motivates 
+                    the transition from univariate to <strong>multivariate</strong> statistics, which begins with a systematic way to measure 
+                    how pairs of random variables vary together.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Covariance</span>
+                    <p>
+                        The <strong>covariance</strong> between two random variables \(X\) and \(Y\) is defined as 
+                        \[
+                        \text{Cov}[X, Y] = \mathbb{E}[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])].
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Here, \((X - \mathbb{E}[X])\) and \((Y - \mathbb{E}[Y])\) are <strong>mean deviations</strong>, representing 
+                    how far \(X\) and \(Y\) deviate from their respective means. The covariance measures how these deviations 
+                    vary together (<strong>joint variation</strong>).
                 </p>
 
                 <p>
-                    The <strong>covariance</strong> between two random variables \(X\) and \(Y\) is defined as 
+                    Note: A useful computational identity is 
                     \[
-                    \text{Cov }[X, Y] = \mathbb{E}[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])].
+                    \text{Cov}[X, Y] = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]. 
                     \]
-                    Here, \((X - \mathbb{E}[X])\) and \((Y - \mathbb{E}[Y])\) are <strong>mean deviations</strong> which represent 
-                    how far the random variables \(X\) and \(Y\) deviate from their respective expected values(means). So, the covariance 
-                    measures how these deviation of random variables vary together(<strong>joint variation</strong>).
-                </p>
-
-                <p>
-                    Note: \(\text{Cov }[X, Y] = \mathbb{E}[XY]- \mathbb{E}[X]\mathbb{E}[Y]\). So, if \(X\) and \(Y\) are independent, 
-                    \(\mathbb{E}[XY] = \mathbb{E}[X]\mathbb{E}[Y]\) and thus \(\text{Cov }[X, Y] = 0\). However, in general, the converse is 
-                    NOT true. Zero covariance only tells us there is <strong>no linear dependence</strong>. The positive(negative) covariance 
-                    indicates positive(negative) <strong>linear</strong> association.
-                </p>
-
-                <p>
-                    In practice, often we extend this idea to \(n\) random variables. Consider a vector \(x \in \mathbb{R}^n\) whose each 
-                    entries represent random variables \(X_1, \cdots X_n\).
-                </p>
-
-                <p>
-                    The <strong>population covariance matrix </strong> of the vector \(x\) is defined as
+                    If \(X\) and \(Y\) are independent, then 
                     \[
-                    \begin{align*}
-                    \Sigma  &= \text{Cov }[x] \\\\ 
-                            &= \mathbb{E}[(x - \mathbb{E}[x])(x - \mathbb{E}[x])^T]  \\\\
-                            &= \begin{bmatrix}
-                                    \text{Var }[X_1] & \text{Cov }[X_1, X_2] & \cdots & \text{Cov }[X_1, X_n] \\
-                                    \text{Cov }[X_2, X_1] &  \text{Var }[X_2] & \cdots & \text{Cov }[X_2, X_n] \\
-                                    \vdots  & \vdots & \ddots & \vdots \\
-                                    \text{Cov }[X_n, X_1] &   \text{Cov }[X_n, X_2] & \cdots & \text{Var }[X_n]
-                                    \end{bmatrix} \\\\
-                            &= \mathbb{E }[xx^T] - \mu \mu^T.
-                    \end{align*}
+                    \mathbb{E}[XY] = \mathbb{E}[X]\mathbb{E}[Y],
+                    \], 
+                    so 
+                    \[
+                    \text{Cov}[X, Y] = 0.
+                    \] 
+                    However, the converse is <strong>not</strong> true in general: zero covariance indicates only the 
+                    absence of <strong>linear</strong> dependence. A positive (negative) covariance indicates a positive 
+                    (negative) "linear" association between \(X\) and \(Y\).
+                </p>
+
+                <p>
+                    In practice, we extend this idea to \(n\) random variables. Consider a vector \(\boldsymbol{x} \in \mathbb{R}^n\) whose each 
+                    entries represent random variables \(X_1, \ldots X_n\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Population Covariance Matrix</span>
+                    <p>
+                        The <strong>population covariance matrix</strong> of a random vector 
+                        \(\boldsymbol{x} = (X_1, \ldots, X_n)^\top\) with mean \(\boldsymbol{\mu} = \mathbb{E}[\boldsymbol{x}]\) is
+                        \[
+                        \begin{align*}
+                        \Sigma  &= \text{Cov}[\boldsymbol{x}] \\\\ 
+                                &= \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]  \\\\
+                                &= \begin{bmatrix}
+                                        \text{Var}[X_1] & \text{Cov}[X_1, X_2] & \cdots & \text{Cov}[X_1, X_n] \\
+                                        \text{Cov}[X_2, X_1] &  \text{Var}[X_2] & \cdots & \text{Cov}[X_2, X_n] \\
+                                        \vdots  & \vdots & \ddots & \vdots \\
+                                        \text{Cov}[X_n, X_1] &   \text{Cov}[X_n, X_2] & \cdots & \text{Var}[X_n]
+                                        \end{bmatrix} \\\\
+                                &= \mathbb{E}[\boldsymbol{x}\boldsymbol{x}^\top] - \boldsymbol{\mu}\boldsymbol{\mu}^\top.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                 <p>
+                    Each diagonal entry \(\Sigma_{ii}\) is the <strong>variance</strong> of \(X_i\), since 
+                    \[
+                    \text{Cov}[X_i, X_i] = \mathbb{E}[(X_i - \mathbb{E}[X_i])^2] = \sigma_i^2.
                     \]
-                    Each diagonal entry \(\Sigma_{ii}\) represents the <strong>variance</strong> of \(X_i\) because
+                    The <strong>total variance</strong> is defined as the trace of \(\Sigma\):
                     \[
-                    \text{Cov }[X_i, X_i] = \mathbb{E}[(X_i - \mathbb{E}[X_i])^2]  = \sigma^2
-                    \]
-                    Also, the <strong>total variance</strong> of \(\Sigma \) is defined as the trace of \(\Sigma \):
-                    \[
-                    \text{tr } (\Sigma ) = \sum_{i=1}^n \text{Var }[X_i].
+                    \text{tr}(\Sigma) = \sum_{i=1}^n \text{Var}[X_i].
                     \]
                 </p>
 
-                <p>
-                    The covariance matrix is <strong>symmetric</strong> because the covariance itself is symmetric:
-                    \[
-                    \Sigma_{ij} = \text{Cov }[X_i, X_j] = \text{Cov }[X_j, X_i] = \Sigma_{ji}.
-                    \]
-                    (Or, for any matrix \(A\), \(\, AA^T\) is symmetric because \((AA^T)^T = (A^T)^TA^T = AA^T \).)
+                 <p>
+                    The covariance matrix has several important structural properties that connect probability theory 
+                    to linear algebra.
                 </p>
 
                 <p>
-                    Since \(\Sigma\) is symmetric, it is always <a href="../Linear_algebra/symmetry.html"><strong>orthogonally diagonalizable</strong></a>: 
+                    First, \(\Sigma\) is <strong>symmetric</strong> because covariance itself is symmetric:
                     \[
-                    \Sigma = P D P^T  
+                    \Sigma_{ij} = \text{Cov}[X_i, X_j] = \text{Cov}[X_j, X_i] = \Sigma_{ji}.
+                    \]
+                    Equivalently, writing \(\Sigma = \mathbb{E}[(\boldsymbol{x} - \boldsymbol{\mu})(\boldsymbol{x} - \boldsymbol{\mu})^\top]\), 
+                    symmetry follows from the general fact that \((AA^\top)^\top = (A^\top)^\top A^\top = AA^\top \).
+                </p>
+
+                 <p>
+                    Since \(\Sigma\) is symmetric, by the <a href="../Linear_algebra/symmetry.html"><strong>spectral theorem</strong></a>, 
+                    it is <strong>orthogonally diagonalizable</strong>: 
+                    \[
+                    \Sigma = P D P^\top  
                     \]
                     where \(P\) is an orthogonal matrix whose columns are unit eigenvectors of \(\Sigma\), and \(D\) is a diagonal matrix 
-                    whose diagonal entries are eigenvalues of \(\Sigma\) corresponding to its eigenvectors. 
+                    of the corresponding eigenvalues. In particular, because the trace is invariant under orthogonal similarity, the total 
+                    variance equals the sum of eigenvalues:
+                    \[
+                    \text{tr}(\Sigma) = \sum_{i=1}^n \text{Var}[X_i] = \text{tr}(D) = \sum_{i=1}^n \lambda_i.
+                    \]
+                    Note that the individual eigenvalues do <em>not</em> correspond to individual variances 
+                    \(\text{Var}[X_i]\); only the <em>totals</em> agree.
                 </p>
 
-                <p>
-                    Note: The total variance of \(\Sigma\) is equal to the sum of its eigenvalues.(ONLY the total!)
-                    \[
-                    \text{tr } (\Sigma ) = \sum_{i=1}^n \text{Var }[X_i] = \text{tr } (D) = \sum_{i=1}^n \lambda_i.
-                    \]
-                </p>
+                 <div class="theorem">
+                    <span class="theorem-title">Theorem 1: Positive Semi-Definiteness of the Covariance Matrix</span>
+                    <p>
+                        Every covariance matrix \(\Sigma\) is positive semi-definite. That is, 
+                        for any \(\boldsymbol{v} \in \mathbb{R}^n\),
+                        \[
+                        \boldsymbol{v}^\top \Sigma\, \boldsymbol{v} \geq 0.
+                        \]
+                    </p>
+                </div>
 
-                <p>
-                    Moreover, the covariance matrix is always <strong>positive semi-definite</strong>:
-                    For any vector \(v \in \mathbb{R}^n\), 
-                    \[
-                    \begin{align*}
-                    v^T \Sigma v &=  v^T\mathbb{E}[(x - \mathbb{E}[x])(x - \mathbb{E}[x])^T] v \\\\
-                                &=  \mathbb{E}[v^T(x - \mathbb{E}[x])(x - \mathbb{E}[x])^T v] \\\\
-                                &=  \mathbb{E}[(v^T(x - \mathbb{E}[x]))^2] \geq 0.
-                    \end{align*}
-                    \]
-                    Thus, the diagonal entries of \(D\) are <strong>non-negative</strong>. In other words, the eigenvalues of \(\, \Sigma\) 
-                    always satisfies: 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For any \(\boldsymbol{v} \in \mathbb{R}^n\),
+                        \[
+                        \begin{align*}
+                        \boldsymbol{v}^\top \Sigma\, \boldsymbol{v} 
+                            &= \boldsymbol{v}^\top \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]\, \boldsymbol{v} \\\\
+                            &= \mathbb{E}[\boldsymbol{v}^\top (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top \boldsymbol{v}] \\\\
+                            &= \mathbb{E} \left[(\boldsymbol{v}^\top (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}]))^2\right] \geq 0.
+                        \end{align*}
+                        \]
+                        The last expression is the expectation of a squared real number, which is always non-negative.
+                    </p>
+                </div>
+
+                 <p>
+                    As a consequence, the eigenvalues of \(\Sigma\) satisfy  
                     \[
                     \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq 0.
-                    \]
+                    \] 
+                    This non-negativity of eigenvalues is precisely what makes the spectral decomposition of \(\Sigma\) meaningful for data analysis, 
+                    as we shall see next in <strong>Principal Component Analysis</strong>.
                 </p>
 
                 <p>
-                    SideNote: \(\mathbb{E }[xx^T]\) is called the <strong>autocorrelation matrix</strong> denoted as \(R_{xx}\):
+                    SideNote: \(\mathbb{E }[\boldsymbol{x}\boldsymbol{x}^\top]\) is called the <strong>autocorrelation matrix</strong> 
+                    denoted as \(R_{\boldsymbol{x}\boldsymbol{x}}\):
                     \[
                     \begin{align*}
-                            R_{xx} 
-                            &= \mathbb{E }[xx^T] \\\\
+                            R_{\boldsymbol{x}\boldsymbol{x}} 
+                            &= \mathbb{E }[\\boldsymbol{x}\boldsymbol{x}^\top] \\\\
                             &= \begin{bmatrix}
                                     \mathbb{E }[X_1^2] & \mathbb{E }[X_1 X_2] & \cdots & \mathbb{E }[X_1 X_n] \\
                                     \mathbb{E }[X_2 X_1] &  \mathbb{E }[X_2^2] & \cdots & \mathbb{E }[X_2 X_n] \\
@@ -141,6 +195,13 @@ uses_python: true
 
             <section id="pca" class="section-content">
                 <h2>Principal Component Analysis (PCA)</h2>
+
+                <p>
+                    The previous section established that every covariance matrix admits an orthogonal eigendecomposition with non-negative eigenvalues. 
+                    This spectral structure has a direct and powerful interpretation. The eigenvectors identify the directions along which the data varies 
+                    the most, and the eigenvalues quantify how much variance lies along each direction. Exploiting this insight leads to 
+                    <strong>Principal Component Analysis (PCA)</strong>, one of the most widely used techniques in data science for dimensionality reduction.
+                </p>
 
                 <p> 
                     The orthogonal diagonalization of the covariance matrix \(\Sigma\) is important in statistics and machine learning for 
@@ -193,8 +254,11 @@ uses_python: true
                 <h2>PCA with Singular Value Decomposition(SVD)</h2>
 
                 <p>
-                    In practice, the <a href="../Linear_algebra/symmetry.html"><strong>singular value decomposition</strong></a> plays an 
-                    important role in the PCA due to its mathematical properties and computational advantages.
+                    In the derivation above, PCA was formulated through the eigendecomposition of the covariance matrix \(S = PDP^\top\). 
+                    While conceptually clean, this approach requires explicitly forming \(X^\top X\), which can be expensive for high-dimensional 
+                    data and may suffer from numerical instability. The 
+                    <a href="../Linear_algebra/symmetry.html"><strong>singular value decomposition (SVD)</strong></a> 
+                    provides an elegant alternative that avoids these issues while yielding the same principal components.
                 </p>
 
                 <p>
@@ -326,6 +390,30 @@ uses_python: true
                     <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
                     <div class="python-output"></div>
                 </div>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The covariance matrix and PCA are foundational across modern machine learning. 
+                        In <a href="../Machine_learning/pca.html"><strong>kernel PCA</strong></a>, 
+                        the same eigendecomposition idea is applied in a feature space induced by a kernel, 
+                        enabling nonlinear dimensionality reduction. 
+                    </p>
+                    <p>
+                        In <a href="mvn.html"><strong>multivariate Gaussian models</strong></a>, the covariance 
+                        matrix \(\Sigma\) fully determines the shape and orientation of the distribution, 
+                        and its inverse (the <strong>precision matrix</strong>) encodes conditional independence 
+                        structure. In <a href="gaussian_process.html"><strong>Gaussian processes</strong></a>, 
+                        the covariance function generalizes \(\Sigma\) to infinite-dimensional function spaces.
+                    </p>
+                </div>
+
+                <p>
+                    While covariance captures the magnitude and direction of linear association, its values depend on the 
+                    scales of the variables involved. In the <a href="correlation.html"><strong>next part</strong></a>, 
+                    we introduce the <strong>correlation coefficient</strong> and <strong>correlation matrix</strong>, which 
+                    standardize covariance to produce "scale-free" measures of linear relationship.
+                </p>
                 
             </section>
         </div>  
