@@ -12,8 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
         
         <div class="hero-section">
-            <h1 class="webpage-name">Statistical Inference & Hypothesis Testing
-            </h1>
+            <h1 class="webpage-name">Statistical Inference & Hypothesis Testing</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -28,222 +27,367 @@ uses_python: false
         <div class="container">  
            
             <section id="NHST" class="section-content">
-            <h2>Null Hypothesis Significance Test</h2>
-            <p>
-            Once we have a statistical model (or <strong>hypothesis</strong>), we need to assess whether it's plausible given our data \(\mathcal{D}\). 
-            In this section, we introduce <strong>frequentist statistical inference</strong> and <strong>hypothesis testing</strong>. Although 
-            <a href="bayesian.html"><strong>Bayesian inference</strong></a> can replace many frequentist techniques and is especially popular in 
-            modern machine learning, frequentist methods remain valuable tools - they're often simpler to compute, more standardized, and provide 
-            complementary insights.
-            <br><br>
-            Here, we discuss the <strong>null hypothesis significance test(NHST)</strong>.
-            <br>
-            Suppose we have two competing hypotheses:
-            <ul style="padding-left: 40px;">
-                <li><strong>Null Hypothesis</strong> \(H_0\): This is the default assumption.</li>
 
-                <li><strong>Alternative Hypothesis</strong> \(H_1\): This represents the claim we wish to support.</li>
-            </ul>
-            (So, hypothesis testing is a kind of <strong>binary classification</strong> problem.)
-            <br><br>
-            Our goal is to decide which hypothesis is more plausible. Usually, our reasoning is that if \(H_0\) is very unlikely, 
-            then we conclude that \(H_1\) would be true (i.e., we <strong>reject the null hypothesis</strong>). 
-            <br><br>
-            Rejecting \(H_0\) does NOT mean \(H_1\) is absolutely true. Conversely, failing to reject \(H_0\) only means 
-            that the evidence is insufficient to support \(H_1\). Thus, our conclusion can be wrong: 
-            <br>
-            <ul style="padding-left: 40px;">
-                <li><strong>Type I error</strong>(or <strong>false negative</strong>) : Accidentally rejecting the null \(H_0\) when it is true.</li>
-                <li><strong>Type II error</strong>(or <strong>false positive</strong>): Accidentally accepting \(H_0\) when the alternative \(H_1\) is true.</li>
-            </ul>
-            <br>
-            The type I error rate \(\alpha\) is called <strong>significance</strong> of the test. It represents the probability of mistakenly rejecting 
-            \(H_0\) when it is true (typically, set 0.05 to 0.01 in practice.)
-            <br><br>
-            To decide whether to reject \(H_0\), we define a function of the data \(\mathcal{D}\) that summarizes the evidence 
-            against \(H_0\). This is called the <strong>test statistic</strong>, denoted as \(test(\mathcal{D})\).
-            To evaluate the significance of our observed test statistic, we compare it to what we would expect under the null 
-            hypothesis. That is, we sample the hypothetical dataset \(\tilde{\mathcal{D}}\) assuming \(H_0\) is true and compute 
-            their test statistics, \(test(\tilde{\mathcal{D}})\). 
-            <br><br>
-            The <strong>p-value</strong> is defined as the probability, under \(H_0\), 
-            of obtaining a test statistic at least as extreme as the one we observed:
-            \[
-            p = P(test(\tilde{\mathcal{D}}) \geq test(\mathcal{D}) | \tilde{\mathcal{D}} \sim H_0).
-            \]
-            A "small" p-value (typically, \(< \alpha\)) indicates that the observed result is unlikely under \(H_0\), 
-            leading us to reject the null hypothesis in favor of \(H_1\). Traditionally we reject the null hypothesis 
-            if the p-value is less than \(\alpha = 0.05\), which is called the <strong>significance level </strong> of the 
-            test. Note that a p-value of 0.05 does NOT mean that the alternative hypothesis \(H_1\) is true with probability
-            0.95. Indeed, even many scientists misinterpret p-values.
-            <br><br>
-            NHST provides a systematic way to evaluate claims, but it has limitations:
-            <ul style="padding-left: 40px;">
-                <li>Statistical significance does not imply practical significance. Even if \(H_0\) is rejected, the actual effect size may be too small to be meaningful.</li>
-                <li>p-values depend on sample size. With very large datasets, even tiny, practically irrelevant differences may yield small p-values.</li>
-                <li>Frequentist methods rely on fixed significance thresholds. Bayesian approaches offer an alternative framework by directly computing the probability of hypotheses given the data.</li>
-            </ul>
-            </p>
+                <h2>Null Hypothesis Significance Test</h2>
+
+                <p>
+                    Once we have a statistical model (or <strong>hypothesis</strong>), we need to assess whether it's plausible given our data
+                    \(\mathcal{D}\). In <a href="mle.html"><strong>Part 9</strong></a>, we developed <strong>maximum likelihood estimation</strong> 
+                    as a method for fitting parameters to data. MLE answers the question "what is the best estimate?" but it does not answer a 
+                    complementary question: "is the effect we observe real, or could it be due to chance?" 
+                    <strong>Hypothesis testing</strong> provides a principled framework for making such decisions under uncertainty.
+                </p>
+
+                <p>
+                    Although <a href="bayesian.html"><strong>Bayesian inference</strong></a> can replace many frequentist techniques and 
+                    is especially popular in modern machine learning, frequentist methods remain valuable - they are often simpler to compute, 
+                    more standardized, and provide complementary insights. Here, we introduce the <strong>null hypothesis significance test (NHST)</strong>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Hypotheses</span>
+                    <p>
+                        A hypothesis test involves two competing statements:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Null Hypothesis</strong> \(H_0\):<br>
+                            The default assumption (e.g., "the treatment has no effect").
+                        </li>
+                        <li><strong>Alternative Hypothesis</strong> \(H_1\):<br>
+                            The claim we wish to support (e.g., "the treatment has a positive effect").
+                        </li>
+                    </ul>
+                    <p>
+                        Hypothesis testing can be viewed as a <strong>binary classification</strong> problem: 
+                        given data \(\mathcal{D}\), decide between \(H_0\) and \(H_1\).
+                    </p>
+                </div>
+
+                <p>
+                    Our reasoning follows the logic of proof by contradiction: if the observed data would be extremely unlikely under \(H_0\), 
+                    we <strong>reject the null hypothesis</strong> in favor of \(H_1\). However, rejecting \(H_0\) does not prove \(H_1\) is true, 
+                    and failing to reject \(H_0\) does not prove \(H_0\) is true - <strong>it only means the evidence is insufficient</strong>. 
+                    Because our conclusion can be wrong, we must account for two types of error:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Type I and Type II Errors</span>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Type I error</strong> (<strong>false positive</strong>):<br>
+                            Rejecting \(H_0\) when it is actually true.
+                        </li>
+                        <li><strong>Type II error</strong> (<strong>false negative</strong>):<br>
+                             Failing to reject \(H_0\) when \(H_1\) is actually true.
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    The Type I error rate \(\alpha\) is called the <strong>significance level</strong> of the test. 
+                    It represents the probability of mistakenly rejecting \(H_0\) when it is true, and is typically 
+                    set to 0.05 or 0.01 in practice.
+                </p>
+
+                <p>
+                    To decide whether to reject \(H_0\), we compute a <strong>test statistic</strong> \(\text{test}(\mathcal{D})\) 
+                    - a function of the data that summarizes the evidence against \(H_0\). We then compare it to the distribution of 
+                    \(\text{test}(\tilde{\mathcal{D}})\) under hypothetical datasets \(\tilde{\mathcal{D}}\) drawn assuming \(H_0\) is true.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: p-Value</span>
+                    <p>
+                        The <strong>p-value</strong> is the probability, under \(H_0\), of obtaining 
+                        a test statistic at least as extreme as the one observed:
+                        \[
+                        p = P\!\left(\text{test}(\tilde{\mathcal{D}}) \geq \text{test}(\mathcal{D}) \;\middle|\; \tilde{\mathcal{D}} \sim H_0\right).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    If \(p < \alpha\), the observed result is deemed unlikely under \(H_0\), and we reject the null hypothesis. 
+                    It is essential to interpret p-values correctly. A p-value of 0.05 does <strong>not</strong> mean that \(H_1\) is true with 
+                    probability 0.95. The p-value measures the compatibility of the data with \(H_0\), not the probability that \(H_0\) is 
+                    true or false.
+                </p>
+
+                <p>
+                    While NHST provides a systematic framework, it has well-known limitations:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>Statistical significance does not imply <strong>practical significance</strong>. 
+                        Even if \(H_0\) is rejected, the effect size may be too small to matter.
+                    </li>
+                    <li>p-values depend on <strong>sample size</strong>. With very large datasets, 
+                        even tiny, practically irrelevant differences may yield small p-values.
+                    </li>
+                    <li><a href="bayesian.html"><strong>Bayesian approaches</strong></a> offer an 
+                        alternative by directly computing the probability of hypotheses given the data, 
+                        rather than relying on fixed significance thresholds.
+                    </li>
+                </ul>
+
+                <p>
+                    To make the NHST framework concrete, we now work through a specific example 
+                    using the <strong>t-test</strong>.
+                </p>
+
             </section>
 
             <section id="test" class="section-content">
-            <h2>t-Tests</h2>
-            <p>
-                <span class="proof-title">Example:</span>
-                Suppose we are analyzing the test scores of students in a school. Historically, the average test score is 70. A researcher 
-                believes that a new teaching method has improved scores. To test this, we collect a sample of 30 students' scores after 
-                using the new method.
-                <ul style="padding-left: 40px;">
-                    <li>\(H_0\): The new method has no effect, meaning the true mean is still 70.</li>
-                    <li>\(H_1\): The new method increases the average score, meaning the mean is greater than 70.</li>
-                </ul>
-                <br>
-                We collected a sample of (\(n = 30\)) students with the following observed statistics:
-                <ul style="padding-left: 40px;">
-                    <li> Sample mean: \(\bar{x} = 75.20\). </li>
-                    <li> Sample standard deviation \(s = 9.00\)</li>
-                </ul>
-                where 
-                \[
-                s = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
-                \]
-                Since the population standard deviation \(\sigma\) is unknown, we use <strong>one-sample t-test</strong>.
-                The test statistic is computed by: 
-                \[
-                t = \frac{\bar{x} - \mu_0}{s / \sqrt{n}} = \frac{75.20 - 70}{9.00 / \sqrt{30}} \approx 3.16.
-                \]
-                The p-value is the probability of observing a test statistic as extreme as (or more extreme than) the calculated 
-                t-value under the null hypothesis. This follows a <a href="student.html"><strong>Student's t-distribution</strong></a> 
-                with \(n -1 = 29 \) degrees of freedom.
-                <br>
-                Then we have \(p \approx 0.0021\) via some numerical computation. Set the significance level \(\alpha = 0.05\). 
-                Since \(p < 0.05\), we reject \(H_0\). Therefore, there is strong statistical evidence that the new teaching method 
-                increases students' test scores.
-                <br>
-                We can only say that the data we observed(test scores) are very unlikely under the assumption that the true mean is still 70. 
-                <br>
-                It does <strong>NOT</strong> mean that..
-                <ul style="padding-left: 40px;">
-                    <li>the new teaching method definitely increases test scores.</li>
-                    <li>the probability that \(H_0\) is true is 0.0021.</li>
-                    <li>the effect is practically significant.</li>
-                </ul>       
-            </p>
+                <h2>t-Tests</h2>
+
+                <p>
+                    When the population standard deviation \(\sigma\) is unknown - which is the typical situation in practice - 
+                    we replace it with the sample standard deviation \(s\) and use the <a href="student.html"><strong>Student's t-distribution</strong></a> 
+                    instead of the normal distribution. The resulting procedure is called a <strong>t-test</strong>.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        Suppose we are analyzing the test scores of students in a school. Historically, the average test score is 70. A researcher 
+                        believes that a new teaching method has improved scores. To test this, we collect a sample of 30 students' scores after 
+                        using the new method.
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(H_0\): The new method has no effect, meaning the true mean is still 70.</li>
+                        <li>\(H_1\): The new method increases the average score, meaning the mean is greater than 70.</li>
+                    </ul>
+
+                    <p>
+                        We collected a sample of (\(n = 30\)) students with the following observed statistics:
+                    </p>
+                    
+                    <ul style="padding-left: 40px;">
+                        <li> Sample mean: \(\bar{x} = 75.20\). </li>
+                        <li> Sample standard deviation \(s = 9.00\)</li>
+                    </ul>
+                    where 
+                    \[
+                    s = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
+                    \]
+                    <p>
+                        Since the population standard deviation \(\sigma\) is unknown, we use <strong>one-sample t-test</strong>.
+                        The test statistic is computed by: 
+                        \[
+                        t = \frac{\bar{x} - \mu_0}{s / \sqrt{n}} = \frac{75.20 - 70}{9.00 / \sqrt{30}} \approx 3.16.
+                        \]
+                    </p>
+                    <p>
+                        The p-value is the probability of observing a test statistic as extreme as (or more extreme than) the calculated 
+                        t-value under the null hypothesis. This follows a <a href="student.html"><strong>Student's t-distribution</strong></a> 
+                        with \(n - 1 = 29 \) degrees of freedom.
+                   </p>
+
+                   <p>
+                        Then we have \(p \approx 0.0018\) via some numerical computation (the area in the upper tail of the \(t_{29}\) distribution). 
+                        Set the significance level \(\alpha = 0.05\). 
+                        Since \(p < 0.05\), we reject \(H_0\). Therefore, there is strong statistical evidence that the new teaching method 
+                        increases students' test scores.
+                    </p>
+                   
+                    <p>
+                        We can only say that the data we observed (test scores) are very unlikely under the assumption that the true mean 
+                        is still 70. It does <strong>NOT</strong> mean that..
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>the new teaching method definitely increases test scores.</li>
+                        <li>the probability that \(H_0\) is true is 0.0021.</li>
+                        <li>the effect is practically significant.</li>
+                    </ul>       
+                </div>
             </section>
 
             <section id="CI" class="section-content">
-            <h2>Confidence Intervals vs Credible Intervals</h2>
-            <p>
-            In frequentist statistics, we use the variability induced by the sampling distribution as a way to estimate uncertainty 
-            of a parameter estimate. we define \(100(1 - \alpha)%\) <strong>confidence interval(CI)</strong>. It is common to set the 
-            significance level \(\alpha = 0.05\), which yields a 95% CI. If we repeatedly sampled data, and construct a 95% CI for each data, 
-            then about 95% of such intervals will contain the true parameter \(\theta\).
-            <br>
-            95% CI does <strong>NOT</strong> mean that the true parameter lies in the interval with probability 0.95 
-            because, in frequentist statistics, \(\theta\) is treated as a <strong>fixed constant</strong>. 
-            <br>
-            On the other hand, in <a href="bayesian.html"><strong>Bayesian statistics</strong></a>, we treat the data as fixed (since it is known) and the parameter as random (since
-            it is unknown). Indeed, the explanation; "the true parameter lies in the interval with probability 0.95." is valid in Bayesian 
-            statistics. Such a interval is called the <strong>credible interval</strong>. 
-            <div class="proof">
-                <span class="proof-title">Example:</span>
-                Suppose we toss a coin \(n = 100\) times and observe 60 heads. Now we want to estimate the probability of getting heads.
-                <br><br>
-                First, we try the frequentist approach. The point estimate for the probability of heads is \(\hat{p} = \frac{60}{100} = 0.6\), and 
-                the standard error(SE) for a proportion is given by:
-                \[
-                \begin{align*}
-                \text{SE} &= \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \\\\
-                          &= \sqrt{\frac{0.6 \times 0.4}{100}} \\\\\
-                          &\approx 0.049.
-                \end{align*}
-                \]
-                For a 95% CI using normal approximation, the <strong>critical value</strong> is \(z_{0.025} \approx 1.96\). Then CI is given by 
-                \[
-                \begin{align*}
-                \text{CI} &= [\hat{p}-z_{0.025} \times \text{SE}, \quad \hat{p}+z_{0.025}\times \text{SE}] \\\\
-                          &\approx [0.504, 0.696].
-                \end{align*}
-                \]
-                If we repeated the experiment (tossing the coin 100 times) many times and computed a 95% CI each time, about 95% of those 
-                intervals would contain the true \(p\).
-                <div style="text-align: center;">
-                    <img src="Images/zscore.webp" alt="z-score"  class="responsive-image">
+
+                <h2>Confidence Intervals vs Credible Intervals</h2>
+
+                <p>
+                    Hypothesis testing gives a binary answer - reject or fail to reject - but it says nothing about <em>how close</em> 
+                    our estimate might be to the true parameter. In practice, we often want a range of plausible values for \(\theta\). 
+                    Both frequentist and Bayesian statistics provide such intervals, but they differ fundamentally in 
+                    interpretation.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Confidence Interval (Frequentist)</span>
+                    <p>
+                        A \(100(1 - \alpha)\%\) <strong>confidence interval</strong> is a random interval 
+                        \([L(\mathcal{D}),\, U(\mathcal{D})]\) such that, if we were to repeat the 
+                        experiment many times and construct such an interval each time, approximately 
+                        \(100(1 - \alpha)\%\) of those intervals would contain the true parameter \(\theta\).
+                    </p>
                 </div>
-                Note: A <strong>z-score</strong> is any value that has been standardized to represent the number of standard deviations 
-                away from the mean. The <strong>critical value</strong> is a specific z-score used as a threshold in hypothesis testing or 
-                confidence interval calculations. In our case, \(z_{0.025} \approx 1.96\) is the critical value that separates the central 
-                95% of the distribution from the outer 5% (2.5% in each tail).
-                <br><br>
-                In Bayesian approach, we assume a uniform prior for the probability \(p\) which is equivalent to 
-                a <a href="gamma.html"><strong>Beta distribution</strong></a>: 
-                \[
-                p \sim \text{Beta}(1, 1).
-                \]
-                With 60 heads and 40 tails, the likelihood is given by a binomial distribution. In the Bayesian framework, the 
-                <strong>posterior</strong> distribution is:
-                \[
-                p \sim \text{Beta}(1+60, 1+40) = \text{Beta}(61, 41).
-                \]
-                (Note:The Beta distribution is a <a href="bayesian.html"><strong>conjugate prior</strong></a> for the binomial likelihood. 
-                This means that when the likelihood is binomial, which is the case for coin tosses, using a Beta prior results in a 
-                posterior distribution that is also a Beta distribution.)
-                <br>
-                A 95% credible interval (CrI) is typically obtained by finding the 2.5th and 97.5th percentiles of the posterior 
-                distribution. These percentiles can be computed using the inverse cumulative distribution function (CDF) for the 
-                Beta distribution. For example, 
-                \[
-                \begin{align*}
-                \text{CrI} &= [\text{invBeta}(0.025, 61, 41), \quad \text{invBeta}(0.975, 61, 41)] 
-                           &\approx [0.52, 0.68].
-                \end{align*}
-                \]
-                Given the observed data and the chosen prior, there is a 95% probability that \(p\) falls between 0.52 and 0.68. 
-                This interval directly reflects our uncertainty about \(p\) after seeing the data.
-            </div>
-            You find the Bayesian credible interval "more intuitive" because it directly answers the question, “What is the probability 
-            that the parameter falls within this interval given the data and our prior beliefs?” On the other hand, Frequentist methods 
-            provide guarantees on long-run performance without the need for a prior, which can be an advantage in settings where subjective 
-            beliefs are hard to justify.
-            </p>
+
+                <p>
+                    A critical subtlety: a 95% CI does <strong>not</strong> mean "there is a 95% probability that \(\theta\) 
+                    lies in this interval." In frequentist statistics, \(\theta\) is a <strong>fixed constant</strong> - it 
+                    either lies in the interval or it does not. The probability statement refers to the <em>procedure</em>, 
+                    not to any single interval.
+                </p>
+
+                <p>
+                    In <a href="bayesian.html"><strong>Bayesian statistics</strong></a>, the interpretation is reversed: 
+                    the data are fixed (since they are observed) and the parameter is treated as a random variable with a 
+                    posterior distribution. A <strong>credible interval</strong> directly states that, given the data and the prior, 
+                    the parameter falls within the interval with the stated probability. This is often considered more intuitive.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        Suppose we toss a coin \(n = 100\) times and observe 60 heads. Now we want to estimate the probability of getting heads.
+                    </p>
+                    <p>
+                        First, we try the frequentist approach. The point estimate for the probability of heads is 
+                        \(\hat{p} = \frac{60}{100} = 0.6\), and the standard error(SE) for a proportion is given by:
+                        \[
+                        \begin{align*}
+                        \text{SE} &= \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \\\\
+                                &= \sqrt{\frac{0.6 \times 0.4}{100}} \\\\\
+                                &\approx 0.049.
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <p>
+                        For a 95% CI using normal approximation, the <strong>critical value</strong> is \(z_{0.025} \approx 1.96\). Then CI is given by 
+                        \[
+                        \begin{align*}
+                        \text{CI} &= [\hat{p}-z_{0.025} \times \text{SE}, \quad \hat{p}+z_{0.025}\times \text{SE}] \\\\
+                                &\approx [0.504, 0.696].
+                        \end{align*}
+                        \]
+                        If we repeated the experiment (tossing the coin 100 times) many times and computed a 95% CI each time, about 95% of those 
+                        intervals would contain the true \(p\).
+                    </p>
+
+                    <div style="text-align: center;">
+                        <img src="Images/zscore.webp" alt="z-score"  class="responsive-image">
+                    </div>
+
+                    <p>
+                        Note: A <strong>z-score</strong> is any value that has been standardized to represent the number of standard deviations 
+                        away from the mean. The <strong>critical value</strong> is a specific z-score used as a threshold in hypothesis testing or 
+                        confidence interval calculations. In our case, \(z_{0.025} \approx 1.96\) is the critical value that separates the central 
+                        95% of the distribution from the outer 5% (2.5% in each tail).
+                    </p>
+
+                    <p>
+                        In Bayesian approach, we assume a uniform prior for the probability \(p\) which is equivalent to 
+                        a <a href="gamma.html"><strong>Beta distribution</strong></a>: 
+                        \[
+                        p \sim \text{Beta}(1, 1).
+                        \]
+                        With 60 heads and 40 tails, the likelihood is given by a binomial distribution. In the Bayesian framework, the 
+                        <strong>posterior</strong> distribution is:
+                        \[
+                        p \sim \text{Beta}(1+60, 1+40) = \text{Beta}(61, 41).
+                        \]
+                        (Note: The Beta distribution is a <a href="bayesian.html"><strong>conjugate prior</strong></a> for the binomial likelihood. 
+                        This means that when the likelihood is binomial, which is the case for coin tosses, using a Beta prior results in a 
+                        posterior distribution that is also a Beta distribution.)
+                    </p>
+
+                    <p>
+                        A 95% credible interval (CrI) is typically obtained by finding the 2.5th and 97.5th percentiles of the posterior 
+                        distribution. These percentiles can be computed using the inverse cumulative distribution function (CDF) for the 
+                        Beta distribution. For example, 
+                        \[
+                        \begin{align*}
+                        \text{CrI} &= [\text{invBeta}(0.025, 61, 41), \quad \text{invBeta}(0.975, 61, 41)] \\
+                                &\approx [0.50, 0.69].
+                        \end{align*}
+                        \]
+                        Given the observed data and the chosen prior, there is a 95% probability that \(p\) falls between 0.50 and 0.69. 
+                        This interval directly reflects our uncertainty about \(p\) after seeing the data.
+                    </p>
+
+                </div>
+
+                <p>
+                    You may find the Bayesian credible interval "more intuitive" because it directly answers the question, “What is the probability 
+                    that the parameter falls within this interval given the data and our prior beliefs?” On the other hand, Frequentist methods 
+                    provide guarantees on long-run performance without the need for a prior, which can be an advantage in settings where subjective 
+                    beliefs are hard to justify.
+                </p>
+
             </section>
 
             <section id="BS" class="section-content">
-            <h2>Bootstrap</h2>
-            <p>
-            In situations where the estimator is a complex function of the data (for example, when it is not a simple maximum 
-            likelihood estimator), or when the sample size is too small to reliably approximate its sampling distribution 
-            analytically, we can use the <strong>bootstrap</strong> method. 
-            <br>
-            This technique involves resampling the observed data with replacement to generate many "bootstrap samples," which are 
-            then used to empirically estimate the sampling distribution of the estimator. This approach is especially useful when 
-            traditional assumptions (e.g., normality) may not hold, providing a flexible, non-parametric way to assess uncertainty 
-            and construct confidence intervals. 
-            <div class="proof">
-                <span class="proof-title">Example:</span>
-                we have a small dataset of 10 people's heights (in cm):
-                \[
-                x = [160,165,170,175,180,185,190,195,200,205].
-                \]
-                The sample mean is \(\hat{\mu} = 182.5\). Since our sample size is small, we might not be able to assume the sampling 
-                distribution of the mean is normal. Instead of relying on theoretical approximations, we use bootstrap resampling to 
-                approximate it empirically.
-                <br>
-                Here, we randomly draw 10 values from the original sample with replacement. Some values may be repeated, and others may be 
-                missing in a given resample. For example, we might obtain:
-                \[
-                \begin{align*}
-                &x_1 = [165,175,175,190,185,160,200,195,180,185], \\\\
-                &\hat{\mu} = 181.0.
-                \end{align*}
-                \]
-                Then we repeat this process many times (e.g., 10,000 times). Each time, we create a new resampled dataset, compute its mean, 
-                and store it. Once we have 10,000 bootstrap sample means, we can use them to estimate the confidence interval: 
-                <div style="text-align: center;">
-                    <img src="Images/bootstrap.webp" alt="bootstrap"  class="responsive-image">
+
+                <h2>Bootstrap</h2>
+
+                <p>
+                    The confidence intervals derived above rely on distributional assumptions - typically, that the sampling 
+                    distribution is approximately normal by CLT. When the sample size is small, the estimator is a complex function 
+                    of the data, or the underlying distribution is far from normal, these analytical approximations may be 
+                    unreliable. The <strong>bootstrap</strong> method provides a powerful, assumption-free alternative.
+                </p>
+
+                <p>
+                    The idea is conceptually simple: treat the observed sample as a proxy for the population and resample from it 
+                    with replacement to generate many <strong>bootstrap samples</strong>. By computing the estimator on each bootstrap 
+                    sample, we obtain an empirical approximation of the sampling distribution. This approach provides a flexible, 
+                    non-parametric way to assess uncertainty and construct confidence intervals.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        we have a small dataset of 10 people's heights (in cm):
+                        \[
+                        x = [160,165,170,175,180,185,190,195,200,205].
+                        \]
+                        The sample mean is \(\hat{\mu} = 182.5\). Since our sample size is small, we might not be able to assume the sampling 
+                        distribution of the mean is normal. Instead of relying on theoretical approximations, we use bootstrap resampling to 
+                        approximate it empirically.
+                    </p>
+                    <p>
+                        Here, we randomly draw 10 values from the original sample with replacement. Some values may be repeated, and others may be 
+                        missing in a given resample. For example, we might obtain:
+                        \[
+                        \begin{align*}
+                        &x_1 = [165,175,175,190,185,160,200,195,180,185], \\\\
+                        &\hat{\mu} = 181.0.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Then we repeat this process many times (e.g., 10,000 times). Each time, we create a new resampled dataset, compute its mean, 
+                        and store it. Once we have 10,000 bootstrap sample means, we can use them to estimate the confidence interval: 
+                    </p>
+                    <div style="text-align: center;">
+                        <img src="Images/bootstrap.webp" alt="bootstrap"  class="responsive-image">
+                    </div>
+
                 </div>
-            </div>
-            </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        Hypothesis testing and confidence intervals appear throughout machine learning practice. 
+                        When comparing two models, <strong>paired t-tests</strong> or <strong>bootstrap confidence intervals</strong> 
+                        on the performance difference help determine whether one model is genuinely better or the gap is within sampling noise. 
+                        The <a href="decision_theory.html"><strong>confusion matrix</strong></a> and ROC analysis extend hypothesis testing ideas 
+                        to classifier evaluation. The bootstrap is particularly valuable in deep learning, where the sampling distribution 
+                        of complex metrics (e.g., BLEU scores, F1) has no closed-form expression. 
+                        In <a href="bayesian.html"><strong>Bayesian inference</strong></a>, credible intervals provide a principled alternative 
+                        that directly quantifies parameter uncertainty.
+                    </p>
+                </div>
+
+                <p>
+                    With the tools for estimation (MLE) and inference (hypothesis testing, confidence intervals) established, we can now 
+                    apply them to one of the most important models in statistics. In the <a href="linear_regression.html"><strong>next part</strong></a>, 
+                    we develop <strong>linear regression</strong> as the intersection of least-squares optimization and maximum likelihood estimation 
+                    under Gaussian noise.
+                </p>
+
             </section>
         </div>  
         <script src="/js/main.js"></script>
