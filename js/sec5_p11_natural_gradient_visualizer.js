@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="ngv-info-card" id="ngv-gradient-card">
               <div class="ngv-card-title">Gradient Comparison</div>
-              <div class="ngv-card-subtitle">Click canvas to probe a point</div>
+              <div class="ngv-card-subtitle">Click anywhere on canvas — both arrows normalized to same length</div>
               <div class="ngv-gradient-rows">
                 <div class="ngv-grad-row">
                   <span class="ngv-grad-label ngv-naive-label">∇L (Euclidean)</span>
@@ -816,23 +816,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return [F00, F01, F01, F11];
     }
 
-    // Compute a simple "log-likelihood" style loss for gradient visualization
-    // L(θ) = -log p(x_obs | θ) for some fixed observation x_obs
-    // We use a synthetic loss: distance-based potential that has interesting gradients
+    // Compute a synthetic loss landscape for gradient visualization.
+    // We use a softened "log-sum-exp" of distances to the two handles.
+    // This gives non-vanishing gradients across the entire parameter space,
+    // with interesting curvature for comparing Euclidean vs Natural gradient.
     function computeLoss(px, py) {
-        // Loss landscape: sum of Gaussian wells centered at the handles
         const dx1 = px - mu1.x, dy1 = py - mu1.y;
         const dx2 = px - mu2.x, dy2 = py - mu2.y;
         const r1sq = dx1 * dx1 + dy1 * dy1;
         const r2sq = dx2 * dx2 + dy2 * dy2;
-        return -(Math.exp(-r1sq / (2 * sigma * sigma)) + Math.exp(-r2sq / (2 * sigma * sigma)));
+        // Smooth "distance to nearest handle" via log-sum-exp
+        // L(θ) = -log(exp(-r1²/2s²) + exp(-r2²/2s²))  with wide s
+        const s2 = sigma * sigma * 4; // wider than σ so gradients extend far
+        const e1 = Math.exp(-r1sq / (2 * s2));
+        const e2 = Math.exp(-r2sq / (2 * s2));
+        return -Math.log(e1 + e2 + 1e-30);
     }
 
+    // Analytical gradient of loss — more accurate than finite differences
     function computeGradient(px, py) {
-        const eps = 0.005;
-        const dLdx = (computeLoss(px + eps, py) - computeLoss(px - eps, py)) / (2 * eps);
-        const dLdy = (computeLoss(px, py + eps) - computeLoss(px, py - eps)) / (2 * eps);
-        return { x: dLdx, y: dLdy };
+        const dx1 = px - mu1.x, dy1 = py - mu1.y;
+        const dx2 = px - mu2.x, dy2 = py - mu2.y;
+        const r1sq = dx1 * dx1 + dy1 * dy1;
+        const r2sq = dx2 * dx2 + dy2 * dy2;
+        const s2 = sigma * sigma * 4;
+        const e1 = Math.exp(-r1sq / (2 * s2));
+        const e2 = Math.exp(-r2sq / (2 * s2));
+        const denom = e1 + e2 + 1e-30;
+        // ∂L/∂px = (e1 * dx1/s² + e2 * dx2/s²) / denom  (chain rule on -log)
+        const gx = (e1 * dx1 + e2 * dx2) / (s2 * denom);
+        const gy = (e1 * dy1 + e2 * dy2) / (s2 * denom);
+        return { x: gx, y: gy };
     }
 
     function computeNaturalGradient(px, py) {
@@ -1070,60 +1084,106 @@ document.addEventListener('DOMContentLoaded', function() {
         const naive = computeGradient(px, py);
         const natural = computeNaturalGradient(px, py);
 
-        // Scale for visibility
-        const arrowScale = 100;
+        // Fixed arrow display length in pixels (direction matters, not magnitude)
+        const ARROW_LEN = 90;
 
-        // Draw probe point
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        // Compute naive arrow endpoint (descent = negative gradient)
+        const naiveLen = Math.sqrt(naive.x * naive.x + naive.y * naive.y);
+        let nEx = 0, nEy = 0;
+        if (naiveLen > 1e-10) {
+            // Normalized descent direction, with canvas y-flip
+            nEx = (-naive.x / naiveLen) * ARROW_LEN;
+            nEy = (naive.y / naiveLen) * ARROW_LEN; // positive because canvas y is flipped
+        }
+
+        // Compute natural arrow endpoint
+        const natLen = Math.sqrt(natural.x * natural.x + natural.y * natural.y);
+        let ngEx = 0, ngEy = 0;
+        if (natLen > 1e-10) {
+            ngEx = (-natural.x / natLen) * ARROW_LEN;
+            ngEy = (natural.y / natLen) * ARROW_LEN;
+        }
+
+        // Draw probe point marker (white crosshair)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+        ctx.moveTo(pos.x - 8, pos.y); ctx.lineTo(pos.x + 8, pos.y);
+        ctx.moveTo(pos.x, pos.y - 8); ctx.lineTo(pos.x, pos.y + 8);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Naive gradient (red) — negate because gradient descent goes opposite
-        drawArrow(pos.x, pos.y,
-            pos.x - naive.x * arrowScale,
-            pos.y + naive.y * arrowScale, // y-flip
-            '#ff4646', 'rgba(255, 70, 70, 0.3)', 2.5);
+        // Draw Euclidean gradient FIRST (red, behind)
+        if (naiveLen > 1e-10) {
+            drawArrow(pos.x, pos.y, pos.x + nEx, pos.y + nEy,
+                '#ff4646', 'rgba(255, 70, 70, 0.35)', 3);
+            // Label at tip
+            ctx.font = '600 12px Rajdhani, sans-serif';
+            ctx.fillStyle = 'rgba(255, 70, 70, 0.9)';
+            ctx.textAlign = 'center';
+            ctx.fillText('∇L', pos.x + nEx * 1.15, pos.y + nEy * 1.15 + 4);
+        }
 
-        // Natural gradient (cyan)
-        drawArrow(pos.x, pos.y,
-            pos.x - natural.x * arrowScale,
-            pos.y + natural.y * arrowScale, // y-flip
-            '#00ffff', 'rgba(0, 255, 255, 0.3)', 2.5);
+        // Draw Natural gradient SECOND (cyan, on top)
+        if (natLen > 1e-10) {
+            drawArrow(pos.x, pos.y, pos.x + ngEx, pos.y + ngEy,
+                '#00ffff', 'rgba(0, 255, 255, 0.35)', 3);
+            // Label at tip
+            ctx.font = '600 12px Rajdhani, sans-serif';
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.95)';
+            ctx.textAlign = 'center';
+            ctx.fillText('F⁻¹∇L', pos.x + ngEx * 1.15, pos.y + ngEy * 1.15 + 4);
+        }
+
+        // Show angle between the two arrows
+        if (naiveLen > 1e-10 && natLen > 1e-10) {
+            const dot = (nEx * ngEx + nEy * ngEy) / (ARROW_LEN * ARROW_LEN);
+            const angleDeg = Math.acos(Math.max(-1, Math.min(1, dot))) * (180 / Math.PI);
+            ctx.font = '500 11px Rajdhani, sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Δθ = ${angleDeg.toFixed(1)}°`, pos.x, pos.y - 16);
+        }
     }
 
     function drawArrow(x1, y1, x2, y2, color, glowColor, lineWidth) {
         const dx = x2 - x1, dy = y2 - y1;
         const len = Math.sqrt(dx * dx + dy * dy);
-        if (len < 2) return;
+        if (len < 3) return;
 
         const nx = dx / len, ny = dy / len;
-        const headLen = Math.min(12, len * 0.3);
+        const headLen = Math.min(16, len * 0.25);
+        const headWidth = headLen * 0.45;
 
-        // Glow
+        // Glow (wider, softer)
         ctx.strokeStyle = glowColor;
-        ctx.lineWidth = lineWidth + 3;
+        ctx.lineWidth = lineWidth + 5;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        // Line
+        // Main line
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        // Arrowhead
+        // Arrowhead (filled triangle)
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.moveTo(x2, y2);
-        ctx.lineTo(x2 - headLen * nx + headLen * 0.35 * ny,
-                    y2 - headLen * ny - headLen * 0.35 * nx);
-        ctx.lineTo(x2 - headLen * nx - headLen * 0.35 * ny,
-                    y2 - headLen * ny + headLen * 0.35 * nx);
+        ctx.lineTo(x2 - headLen * nx + headWidth * ny,
+                    y2 - headLen * ny - headWidth * nx);
+        ctx.lineTo(x2 - headLen * nx - headWidth * ny,
+                    y2 - headLen * ny + headWidth * nx);
         ctx.closePath();
         ctx.fill();
     }
