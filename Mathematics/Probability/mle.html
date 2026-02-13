@@ -29,194 +29,359 @@ uses_python: false
         <div class="container">  
            
             <section id="point" class="section-content">
-            <h2>Point Estimators</h2>
-            <p>
-            In practice, it is hard or impossible to find a population parameter \(\theta\). Instead, we estimate the unknown parameter by 
-            statistic computations from sample data. The estimated parameter from the sample data is called a <strong>point estimator</strong> denoted 
-            by \(\hat{\theta}\). 
-            <br>For example, to estimate the population mean \(\mu = \theta\), we compute a sample mean
-            \[
-            \bar{X} = \frac{1}{n}\sum_{i = 1}^n  X_i = \hat{\theta}
-            \]
-            The point estimator is also a random variable, and then a <strong>function</strong> of sampled random variables \(X_1, X_2, \cdots, X_n\). 
-            <br><br>
-            Once we obtained the estimator, it is natural that we want to know how much it is close to the true parameter. There are two 
-            factors we have to be concerned about:
-            <ol style="padding-left: 40px;">
-                <li>\(\text{Bias }(\hat{\theta}) = \mathbb{E}(\hat{\theta}) - \theta\)</li>
-                The <strong>bias</strong> measures the average accuracy of the estimator. 
-                <li>\(\text{Var }(\hat{\theta}) = \mathbb{E}[\hat{\theta} - \mathbb{E}(\hat{\theta})]^2\)</li>
-                The <strong>variance</strong> measures the reliability(precision) of the estimator. 
-            </ol>
-            <br>
-            If both bias and variance are low enough, the estimator must be acceptable as an approximation of the population parameter. 
-            <div class="theorem">
-                <span class="theorem-title">Mean square error(MSE):</span>
-                \[
-                \begin{align*}
-                \text{MSE }(\hat{\theta}) &= \mathbb{E }(\hat{\theta} - \theta)^2 \\\\
-                                          &= \text{Var }(\hat{\theta}) + [\text{Bias }(\hat{\theta})]^2
-                \end{align*}
-                \] 
-            </div>
-            <div class="proof">
-                \[
-                \begin{align*}
-                \text{MSE }(\hat{\theta}) &= \mathbb{E }(\hat{\theta} - \theta)^2 \\\\
-                                          &= \mathbb{E }[\hat{\theta} - \theta + \mathbb{E }(\hat{\theta}) - \mathbb{E }(\hat{\theta})]^2 \\\\
-                                          &= \mathbb{E }[\hat{\theta} - \mathbb{E }(\hat{\theta})]^2 
-                                             + 2 \mathbb{E }[\hat{\theta} - \mathbb{E }(\hat{\theta})][\mathbb{E }(\hat{\theta})- \theta]
-                                             + [\mathbb{E }(\hat{\theta})- \theta]^2 \\\\
-                                         &= \mathbb{E }[\hat{\theta} - \mathbb{E }(\hat{\theta})]^2 
-                                             + 2 [\mathbb{E }(\hat{\theta}) - \mathbb{E }(\hat{\theta})][\mathbb{E }(\hat{\theta})- \theta]
-                                            + [\mathbb{E }(\hat{\theta})- \theta]^2 \\\\   
-                                         &=  \text{Var }(\hat{\theta}) + 0 + [\text{Bias }(\hat{\theta})]^2
-                \end{align*}
-                \]
-                Note: <strong>The population parameter is a fixed value.</strong> Thus, 
-                \(\mathbb{E }\{[\mathbb{E }(\hat{\theta})- \theta]\} = [\mathbb{E }(\hat{\theta})- \theta] \) because 
-                \(\mathbb{E }(constant) = constant\).
-            </div>
-            The MSE serves as a criterion for comparing estimators, enabling us to identify the most suitable one. Once an estimator 
-            is selected, its precision in approximating the population parameter is typically assessed using the <strong>standard error (SE)</strong>, which 
-            represents the <strong>standard deviation</strong> of the estimator's sampling distribution.
-            <br><br>
-            For example, since \(\text{Var }(\bar{X}) = \frac{\sigma^2}{n}\), the standard error of the mean (SEM) is given by
-            \[
-            \text{SE }(\bar{X}) = \sqrt{\text{Var }(\bar{X})} = \frac{\sigma}{\sqrt{n}}.
-            \]
-            </p>
+
+                <h2>Point Estimators</h2>
+                <p>
+                    In the previous parts, we built up a vocabulary of probability distributions. Each of them is 
+                    parameterized by unknown quantities (means, variances, covariance matrices) that must 
+                    be determined from observed data. The fundamental question of <strong>statistical inference</strong> 
+                    is: given a sample \(\mathcal{D} = \{x_1, \ldots, x_n\}\), how do we estimate the true parameter \(\theta\) 
+                    of the underlying population?
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Point Estimator</span>
+                    <p>
+                        A <strong>point estimator</strong> \(\hat{\theta}\) is a function of sample 
+                        random variables \(X_1, X_2, \ldots, X_n\) that produces a single value as an 
+                        estimate of the unknown population parameter \(\theta\). For example, the 
+                        sample mean 
+                        \[
+                        \bar{X} = \frac{1}{n}\sum_{i=1}^n X_i
+                        \]
+                        is a point estimator of the population mean \(\mu\).
+                    </p>
+                </div>
+
+                <p>
+                    Since \(\hat{\theta}\) is a function of random variables, it is itself a random 
+                    variable with its own distribution, called the <strong>sampling distribution</strong>. 
+                    A natural question is: how close is \(\hat{\theta}\) to the true parameter \(\theta\)? 
+                    Two fundamental properties characterize the quality of an estimator:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>Bias:</strong><br>
+                        \[
+                        \text{Bias}(\hat{\theta}) = \mathbb{E}[\hat{\theta}] - \theta.
+                        \]
+                        This measures the systematic error - on average, how far off is the estimator from the truth?
+                        An estimator with zero bias is called <strong>unbiased</strong>.
+                    </li>
+                    <li><strong>Variance:</strong><br>
+                        \[
+                        \text{Var}(\hat{\theta}) = \mathbb{E}[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2]
+                        \]
+                        This measures the precision - how much does the estimator vary across different samples?
+                    </li>
+                </ul>
+
+                <p>
+                    An ideal estimator has both low bias and low variance. However, these two goals often 
+                    conflict - reducing one may increase the other. The <strong>mean squared error</strong> 
+                    provides a single criterion that balances both considerations.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Mean Squared Error (MSE)</span>
+                    <p>
+                        The <strong>mean squared error</strong> of an estimator \(\hat{\theta}\) is
+                        \[
+                        \begin{align*}
+                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\!\left[(\hat{\theta} - \theta)^2\right] \\\\
+                                                &= \text{Var}(\hat{\theta}) + \left[\text{Bias}(\hat{\theta})\right]^2.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Derivation:</span>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \theta)^2\right] \\\\
+                                                &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}] + \mathbb{E}[\hat{\theta}] - \theta)^2\right] \\\\
+                                                &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2 
+                                                    + 2(\hat{\theta} - \mathbb{E}[\hat{\theta}])(\mathbb{E}[\hat{\theta}] - \theta) 
+                                                    + (\mathbb{E}[\hat{\theta}] - \theta)^2\right].
+                        \end{align*}
+                        \]
+                        Using the linearity of expectation, we distribute \(\mathbb{E}\). Note that \(\theta\) is a fixed population parameter, 
+                        and \(\mathbb{E}[\hat{\theta}]\) is a constant. Thus, \((\mathbb{E}[\hat{\theta}] - \theta)\) is treated as a constant:
+                        \[
+                        \begin{align*}
+                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2\right] 
+                                                    + 2(\mathbb{E}[\hat{\theta}] - \theta)\mathbb{E}\left[\hat{\theta} - \mathbb{E}[\hat{\theta}]\right] 
+                                                    + \mathbb{E}\left[(\mathbb{E}[\hat{\theta}] - \theta)^2\right] \\\\   
+                                                &= \text{Var}(\hat{\theta}) + 2(\mathbb{E}[\hat{\theta}] - \theta)(0) + [\text{Bias}(\hat{\theta})]^2 \\\\
+                                                &= \text{Var}(\hat{\theta}) + [\text{Bias}(\hat{\theta})]^2.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <em>Note:</em> The cross term vanishes because the expected deviation from the mean is zero: 
+                        \(\mathbb{E}\left[\hat{\theta} - \mathbb{E}[\hat{\theta}]\right] = \mathbb{E}[\hat{\theta}] - \mathbb{E}[\hat{\theta}] = 0\).
+                    </p>
+                </div>
+
+                <p>
+                    The MSE serves as a criterion for comparing estimators: among competing estimators, we prefer the one with 
+                    the smallest MSE. For an <em>unbiased</em> estimator, the MSE reduces to the variance alone.
+                </p>
+
+                <p>
+                    Once an estimator is selected, we quantify its precision using the <strong>standard error (SE)</strong>, which 
+                    is the standard deviation of the estimator's sampling distribution. For the sample mean,
+                    \[
+                    \text{SE}(\bar{X}) = \sqrt{\text{Var}(\bar{X})} = \frac{\sigma}{\sqrt{n}}.
+                    \]
+                    Notice that the standard error decreases as \(n\) grows, confirming the intuition that more data yields more precise 
+                    estimates. With the concept of an estimator and its quality in hand, we now ask: what principle should guide 
+                    our choice of estimator in the first place?
+                </p>
+
             </section>
 
             <section id="lf" class="section-content">
-            <h2>Likelihood Functions</h2>
-            <p>
-            Suppose observations \(X_1, X_2, \cdots, X_n\) are i.i.d. random variables. The "observed" values of these random variables are 
-            denoted by \(x_1, x_2, \cdots, x_n\) respectively. Then the joint p.d.f. or p.m.f. of \(X_1, X_2, \cdots, X_n\) is given by 
-            \[
-            f(x_1, x_2, \cdots, x_n | \theta) = \prod_{i = 1}^n f(x_i|\theta) 
-            \]
-            where \(\theta\) is some unknown parameter.
-            <br><br>
-            we call this <strong>likelihood function</strong> of \(\theta\) for observed  \(x_1, x_2, \cdots, x_n\) and denote it by 
-            \(L(\theta | x_1, x_2, \cdots, x_n)\), or simply \(L(\theta)\): 
-            \[
-            \underbrace{L(\theta | x_1, x_2, \cdots, x_n)}_{\text{After sampling}}  = \underbrace{\prod_{i = 1}^n f(x_i|\theta)}_{\text{Before sampling}}
-            \]
-            </p>
+                <h2>Likelihood Functions</h2>
+
+                <p>
+                    Before we can choose an optimal estimator, we need a way to measure how well a candidate parameter value 
+                    \(\theta\) explains the observed data. The key insight is a <strong>change of perspective</strong>: 
+                    the same mathematical expression that gives the probability of data given a parameter can also be viewed 
+                    as a function of the parameter given fixed data. This reversal of roles leads to the <strong>likelihood function</strong>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Likelihood Function</span>
+                    <p>
+                        Suppose observations \(X_1, X_2, \ldots, X_n\) are i.i.d. random variables. 
+                        The "observed" values of these random variables are denoted by 
+                        \(x_1, x_2, \cdots, x_n\) respectively. Then the joint p.d.f. (or p.m.f.) of \(X_1, X_2, \cdots, X_n\) is given by 
+                        \[
+                        f(x_1, x_2, \cdots, x_n \mid \theta) = \prod_{i = 1}^n f(x_i \mid \theta) 
+                        \]
+                        where \(\theta\) is some unknown parameter.
+                    </p>
+                    <p>
+                        This is called the <strong>likelihood function</strong> of \(\theta\) for observed values \(x_1, x_2, \cdots, x_n\)
+                        and denote it by \(L(\theta \mid x_1, x_2, \cdots, x_n)\), or simply \(L(\theta)\).
+                    </p>
+                </div>
+
+                <p>
+                    The crucial distinction is one of interpretation: the expression \(\prod_{i=1}^n f(x_i \mid \theta)\) is the same mathematical 
+                    formula whether we view it as a probability (function of \(x\) with \(\theta\) fixed) or as a 
+                    likelihood (function of \(\theta\) with \(x\) fixed). This duality is often expressed as
+                    \[
+                    \underbrace{L(\theta \mid x_1, \ldots, x_n)}_{\text{After sampling: function of } \theta}
+                    = \underbrace{\prod_{i=1}^n f(x_i \mid \theta)}_{\text{Before sampling: function of } x}.
+                    \]
+                    With the likelihood function defined, we can now state the most widely used 
+                    principle for parameter estimation.
+                </p>
+
             </section>
 
             <section id="mle" class="section-content">
-            <h2>Maximum Likelihood Estimation</h2>
-            <p>
-                In machine learning, model fitting (or training) is the process of estimating unknown 
-                parameters \(\pmb{\theta} = (\theta_1, \theta_2, \cdots, \theta_k) \) from sample data 
-                \(\mathcal{D} = \{\mathbf{x_1}, \mathbf{x_2}, \cdots, \mathbf{x_n}\}\), which can be represented by an optimization problem of the form 
-                \[
-                \pmb{\hat{\theta}} = \arg \min_{\pmb{\theta}} \mathcal{L} (\pmb{\theta})
-                \]
-                where \(\mathcal{L} (\pmb{\theta})\) is a loss function(or objective function).
-                <br><br>
-                The most common approach for the optimization problem is <strong>maximum likelihood estimation (MLE)</strong>:
-                \[
-                \pmb{\hat{\theta}_{MLE}} = \arg \max_{(\pmb{\theta})} L(\pmb{\theta})
-                \]
-                where \(L(\pmb{\theta}) \) is a likelihood function of \(\pmb{\theta}\) for sample data \(\mathcal{D}\).
-                If \(L(\pmb{\theta})\) is differentiable function of \(\pmb{\theta}\), then \(\pmb{\hat{\theta}_{MLE}}\) can be calculated by solving the 
-                following equation: 
-                \[
-                \begin{align*}
-                &\nabla_{\pmb{\theta}} \ln L(\pmb{\theta}) = \nabla_{\pmb{\theta}} \ln \prod_{i = 1}^n f(\mathbf{x_i}|\pmb{\theta}) = 0 \\\\
-                &\Longrightarrow \nabla_{\pmb{\theta}} \ln L(\pmb{\theta}) = \sum_{i=1}^ n \nabla_{\pmb{\theta}} \ln  f(\mathbf{x_i}|\pmb{\theta}) = 0
-                \end{align*}
-                \]
-                Note: In practice, it is efficient to work with the <strong>log-likelihood function</strong> because we can 
-                compute it additions instead of multiplications. 
-            </p>
+
+                <h2>Maximum Likelihood Estimation</h2>
+
+                <p>
+                    In machine learning, model fitting (or training) is the process of estimating unknown parameters 
+                    \(\boldsymbol{\theta} = (\theta_1, \ldots, \theta_k)\) from sample data 
+                    \(\mathcal{D} = \{\mathbf{x}_1, \ldots, \mathbf{x}_n\}\). This can be framed as an 
+                    optimization problem:
+                    \[
+                    \hat{\boldsymbol{\theta}} = \arg\min_{\boldsymbol{\theta}} \mathcal{L}(\boldsymbol{\theta})
+                    \]
+                    where \(\mathcal{L}(\boldsymbol{\theta})\) is a loss function (or objective function). 
+                    The most natural and widely used choice is to select the parameter that makes the 
+                    observed data most probable.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Maximum Likelihood Estimator</span>
+                    <p>
+                        The <strong>maximum likelihood estimator (MLE)</strong> is defined as 
+                        \[
+                        \hat{\boldsymbol{\theta}}_{\text{MLE}} = \arg\max_{\boldsymbol{\theta}}\, L(\boldsymbol{\theta})
+                        \]
+                        where \(L(\boldsymbol{\theta})\) is the likelihood function for the sample data \(\mathcal{D}\).
+                    </p>
+                </div>
+
+                <p>
+                    Since the logarithm is a strictly increasing function, maximizing \(L\) is equivalent to maximizing \(\ln L\). 
+                    Working with the <strong>log-likelihood</strong> is preferred in practice for two reasons: it converts products 
+                    into sums (improving numerical stability) and simplifies differentiation.
+                </p>
+
+                <p>
+                    If \(L(\boldsymbol{\theta})\) is differentiable, the MLE can be found by solving the <strong>score equation</strong>:
+                    \[
+                    \begin{align*}
+                    &\nabla_{\boldsymbol{\theta}} \ln L(\boldsymbol{\theta}) 
+                        = \nabla_{\boldsymbol{\theta}} \ln \prod_{i = 1}^n f(\mathbf{x}_i \mid \boldsymbol{\theta}) = \mathbf{0}\\\\
+                    &\Longrightarrow
+                    \nabla_{\boldsymbol{\theta}} \ln L(\boldsymbol{\theta})
+                        = \sum_{i=1}^ n \nabla_{\boldsymbol{\theta}} \ln  f(\mathbf{x}_i \mid \boldsymbol{\theta}) = \mathbf{0}.
+                    \end{align*}
+                    \]
+                    This gradient of the log-likelihood is called the <strong>score function</strong>, which plays a central role in the 
+                    <a href="fisher_info.html"><strong>Fisher information theory</strong></a>. 
+                </p>
+
             </section>
 
             <section id="ex1" class="section-content">
+
                 <h2>Example 1: Binomial Distribution \(X \sim b(n, p) \)</h2>
+
                 <p>
-                Consider flipping a coin \(n\) times and we got \(k\) Heads. We assume \(P(Head) = \theta\) and 
-                \(P(Tail) = (1- \theta)\), where \(\theta \in [0, 1]\). Then 
-                \[
-                P(\mathcal{D} | \theta) = \theta^k (1-\theta)^{n-k}.
-                \]
-                To obtain \(\hat{\theta}_{MLE}\), we can solve: 
-                \[
-                \frac{d}{d\theta}[\ln \theta^k (1-\theta)^{n-k}] = 0
-                \]
-                \[
-                \begin{align*}
-                &\Longrightarrow \frac{d}{d\theta}[ k\ln (\theta) + (n-k)\ln (1-\theta)] = 0 \\\\
-                &\Longrightarrow \frac{k}{\theta} - \frac{n-k}{1-\theta} = 0 \\\\
-                &\Longrightarrow k(1 - \theta) - (n-k)\theta = 0 
-                \end{align*}
-                \]
-                Therefore, 
-                \[
-                \hat{\theta}_{MLE} = \frac{k}{n}.
-                \]
-                This is equivalent to  the <strong>sample proportion</strong> \(\hat{p} = \frac{X}{n}\), which is used as the point estimator for 
-                the population proportion \(p = \theta\). 
-                <br><br>
-                Note:
-                \[
-                \begin{align*}
-                &\mathbb{E}[\hat{p}] = \frac{1}{n}\mathbb{E}[X] = \frac{1}{n}np = p \\\\
-                &\text{Var }(\hat{p}) = \frac{1}{n^2}\text{Var }[X] = \frac{1}{n^2}np(1-p) = \frac{p(1-p)}{n}
-                \end{align*}
-                \]
+                    We begin with a discrete example. Consider flipping a coin \(n\) times and observing \(k\) heads.
                 </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(X \sim b(n, \theta)\), where \(\theta \in [0, 1]\) is the probability of success. 
+                        If we observe \(X = k\) successes in \(n\) trials, the likelihood function is the probability mass function:
+                        \[
+                        L(\theta) = P(X = k \mid \theta) = \binom{n}{k} \theta^k (1-\theta)^{n-k}.
+                        \]
+                        Taking the natural logarithm, we get:
+                        \[
+                        \ln L(\theta) = \ln \binom{n}{k} + k \ln(\theta) + (n-k) \ln(1-\theta).
+                        \]
+                        To find \(\hat{\theta}_{\text{MLE}}\), we take the derivative with respect to \(\theta\) and set it to zero. 
+                        Note that the combinatorial term \(\ln \binom{n}{k}\) is a constant with respect to \(\theta\) and vanishes:
+                        \[
+                        \begin{align*}
+                        \frac{d}{d\theta} \ln L(\theta) &= \frac{k}{\theta} - \frac{n-k}{1-\theta} = 0 \\\\
+                        &\Longrightarrow k(1 - \theta) - (n-k)\theta = 0 \\\\
+                        &\Longrightarrow k - k\theta - n\theta + k\theta = 0 \\\\
+                        &\Longrightarrow k = n\theta.
+                        \end{align*}
+                        \]
+                        Therefore, 
+                        \[
+                        \hat{\theta}_{\text{MLE}} = \frac{k}{n}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    This is exactly the <strong>sample proportion</strong> \(\hat{p} = \frac{X}{n}\), confirming that the 
+                    intuitively natural estimator for the population proportion coincides with the MLE. We now 
+                     turn to a continuous example where the MLE must be found for two parameters simultaneously.
+                <p>
+                    Note:
+                    \[
+                    \begin{align*}
+                    &\mathbb{E}[\hat{p}] = \frac{1}{n}\mathbb{E}[X] = \frac{1}{n}np = p \\\\
+                    &\text{Var }(\hat{p}) = \frac{1}{n^2}\text{Var }[X] = \frac{1}{n^2}np(1-p) = \frac{p(1-p)}{n}.
+                    \end{align*}
+                    \]
+                </p>
+
             </section>
 
             <section id="ex2" class="section-content">
                 <h2>Example 2: Normal Distribution</h2>
+
                 <p>
-                Suppose \(\mathcal{D} = \{x_1, x_2, \cdots, x_n \}\) is from a normal distribution with p.d.f 
-                \[
-                f(x | \mu, \sigma^2) = \frac{1}{\sigma \sqrt{2\pi}}\exp \Big\{- \frac{(x - \mu)^2}{2\sigma^2}\Big\}.
-                \]
-                And its likelihood fuction is given by
-                \[
-                \begin{align*}
-                L(\mu, \sigma^2) &= \prod_{i=1}^n [ f(x_i | \mu, \sigma^2)] \\\\
-                                &= \Big(\frac{1}{\sigma \sqrt{2\pi}}\Big)^n \exp \Big\{-\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \Big\}
-                \end{align*}
-                \]
-                The log-likelihood function is given by 
-                \[
-                \begin{align*}
-                \ln L(\mu, \sigma^2) &= n \ln \Big(\frac{1}{\sigma \sqrt{2\pi}}\Big) -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \\\\
-                                    &= -n \ln (\sigma) - n \ln (\sqrt{2\pi})  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2  \\\\
-                                    &= -\frac{n}{2} \ln (\sigma^2) - \frac{n}{2}\ln (2\pi)  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \tag{1} \\\\ 
-                \end{align*}
-                \]
-                Setting the partial derivative of (1) with respect to \(\mu\) equal to zero: 
-                \[
-                \begin{align*}
-                &\frac{\partial \ln L(\mu, \sigma^2) }{\partial \mu} = \frac{1}{\sigma^2} \sum_{i=1}^n (x_i - \mu) = 0 \\\\
-                &\Longrightarrow \sum_{i=1}^n (x_i) - n\mu = 0
-                \end{align*}
-                \]
-                Thus, 
-                \[
-                \hat{\mu}_{MLE} = \frac{1}{n} \sum_{i=1}^n x_i = \bar{x} \tag{2}
-                \]
-                Similarly, setting the partial derivative of (1) with respect to \(\sigma^2\) equal to zero and substituting (2) in the equation:
-                \[
-                \begin{align*}
-                &\frac{\partial \ln L(\mu, \sigma^2) }{\partial \sigma^2} = -\frac{n}{2\sigma^2}+ \frac{1}{2\sigma^4}\sum_{i=1}^n (x_i - \bar{x})^2  = 0 \\\\
-                &\Longrightarrow -n \sigma^2 + \sum_{i=1}^n (x_i - \bar{x})^2 = 0
-                \end{align*}
-                \]
-                Thus, 
-                \[
-                \hat{\sigma^2}_{MLE} = \frac{1}{n}\sum_{i=1}^n (x_i - \bar{x})^2
-                \]
-                Recall that the variance is biased, so we use \(s^2 = \frac{1}{n-1} \sum_{i=1}^n (x_i - \bar{x})^2\) for the sample variance.
+                    Given a random sample \(X_1, X_2, \ldots, X_n\) from the <a href="gaussian.html"><strong>normal distribution</strong></a> 
+                    \(\mathcal{N}(\mu, \sigma^2)\), we seek the MLEs for both parameters.
                 </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+
+                    <p>
+                        Suppose \(\mathcal{D} = \{x_1, x_2, \cdots, x_n \}\) is from a normal distribution with p.d.f 
+                        \[
+                        f(x \mid \mu, \sigma^2) = \frac{1}{\sigma \sqrt{2\pi}}\exp \left\{- \frac{(x - \mu)^2}{2\sigma^2}\right\}.
+                        \]
+                        And its likelihood fuction is given by
+                        \[
+                        \begin{align*}
+                        L(\mu, \sigma^2) &= \prod_{i=1}^n [ f(x_i \mid \mu, \sigma^2)] \\\\
+                                        &= \left (\frac{1}{\sigma \sqrt{2\pi}}\right)^n \exp \left\{-\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \right\}.
+                        \end{align*}
+                        \]
+                        The log-likelihood function is given by 
+                        \[
+                        \begin{align*}
+                        \ln L(\mu, \sigma^2) &= n \ln \left(\frac{1}{\sigma \sqrt{2\pi}}\right) -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \\\\
+                                            &= -n \ln (\sigma) - n \ln (\sqrt{2\pi})  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2  \\\\
+                                            &= -\frac{n}{2} \ln (\sigma^2) - \frac{n}{2}\ln (2\pi)  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2. \tag{1} \\\\ 
+                        \end{align*}
+                        \]
+                    </P>
+
+                    <p>
+                        Setting the partial derivative of (1) with respect to \(\mu\) equal to zero: 
+                        \[
+                        \begin{align*}
+                        &\frac{\partial \ln L(\mu, \sigma^2) }{\partial \mu} = \frac{1}{\sigma^2} \sum_{i=1}^n (x_i - \mu) = 0 \\\\
+                        &\Longrightarrow \sum_{i=1}^n (x_i) - n\mu = 0.
+                        \end{align*}
+                        \]
+                        Thus, 
+                        \[
+                        \hat{\mu}_{MLE} = \frac{1}{n} \sum_{i=1}^n x_i = \bar{x}. \tag{2}
+                        \]
+                    </p>
+
+                    <p>
+                        Similarly, taking the partial derivative of (1) with respect to the variance \(\sigma^2\) (treating \(\sigma^2\) as a single variable) 
+                        and setting it to zero:
+                        \[
+                        \begin{align*}
+                        &\frac{\partial \ln L(\mu, \sigma^2) }{\partial (\sigma^2)} = -\frac{n}{2\sigma^2} + \frac{1}{2(\sigma^2)^2}\sum_{i=1}^n (x_i - \mu)^2  = 0 \\\\
+                        &\Longrightarrow -n \sigma^2 + \sum_{i=1}^n (x_i - \mu)^2 = 0.
+                        \end{align*}
+                        \]
+                        To find the maximum, we substitute \(\mu\) with our MLE estimate \(\hat{\mu}_{\text{MLE}} = \bar{x}\) and solve for \(\sigma^2\):
+                        \[
+                        \hat{\sigma}^2_{\text{MLE}} = \frac{1}{n}\sum_{i=1}^n (x_i - \bar{x})^2.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Note that the MLE for the variance divides by \(n\), not \(n - 1\). This means \(\hat{\sigma}^2_{\text{MLE}}\) 
+                    is a <strong>biased</strong> estimator of \(\sigma^2\), with \(\mathbb{E}[\hat{\sigma}^2_{\text{MLE}}] = \frac{n-1}{n}\sigma^2\). 
+                    The unbiased sample variance \(s^2 = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2\) corrects for this by using Bessel's correction. 
+                    This is one instance of a general phenomenon: the MLE is <strong>consistent</strong> (converges to the true value as 
+                    \(n \to \infty\)) but not always unbiased for finite samples.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        MLE is the default parameter estimation method across machine learning. 
+                        Training a <a href="../Machine_learning/intro_classification.html"><strong>logistic regression</strong></a> 
+                        model is equivalent to minimizing the negative log-likelihood (cross-entropy loss). 
+                        Training a <a href="../Machine_learning/neural_network.html"><strong>neural network</strong></a> 
+                        with mean squared error loss is equivalent to MLE under a Gaussian noise assumption. 
+                        The <a href="expfamily.html"><strong>exponential family</strong></a> unifies these 
+                        examples, showing that MLE always reduces to <strong>moment matching</strong>.
+                        In <a href="bayesian.html"><strong>Bayesian inference</strong></a>, MLE corresponds 
+                        to the special case of a uniform (flat) prior, and incorporating 
+                        regularization is equivalent to choosing a non-uniform prior.
+                    </p>
+                </div>
+
+                <p>
+                    MLE provides point estimates - single "best guess" values for the parameters. But how confident should we be in these estimates? 
+                    In the <a href="hypothesis_testing.html"><strong>next part</strong></a>, we introduce <strong>hypothesis testing</strong> and 
+                    <strong>confidence intervals</strong>, which provide principled frameworks for quantifying the uncertainty inherent 
+                    in any statistical estimate.
+                </p>
+                 
             </section>
         </div>
         <script src="/js/main.js"></script>
