@@ -26,34 +26,59 @@ uses_python: false
 
         <div class="container">  
             <section id="mn" class="section-content">
+
                 <h2>Multivariate Normal Distribution</h2>
-                
+
                 <p>
-                    In machine learning, the most important joint probability distribution for continuous random variables is the 
-                    <strong>multivariate normal distribution</strong> (MVN). 
-                    The multivariate normal distribution of an \(n\) dimensional random vector \(\boldsymbol{x} \in \mathbb{R}^n \) is denoted as 
+                    In the previous two parts, we developed the <a href="covariance.html"><strong>covariance matrix</strong></a> and the 
+                    <a href="correlation.html"><strong>correlation coefficient</strong></a> as tools for quantifying linear relationships 
+                    among random variables. We also saw in <a href="gaussian.html"><strong>Part 4</strong></a> that the univariate Gaussian 
+                    \(\mathcal{N}(\mu, \sigma^2)\) is characterized by its mean and variance. The  <strong>multivariate normal distribution</strong> 
+                    (MVN) is the natural extension of the Gaussian to random vectors, and it is arguably the most important joint distribution 
+                    in all of statistics and machine learning. Its shape is entirely determined by a mean vector and a covariance matrix,
+                    making the concepts from Parts 6 and 7 indispensable for understanding its geometry.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Multivariate Normal Distribution</span>
+                    <p>
+                        An \(n\)-dimensional random vector \(\boldsymbol{x} \in \mathbb{R}^n\) follows a <strong>multivariate normal distribution</strong>, 
+                        written \(\boldsymbol{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)\), if its p.d.f. is 
+
+                        \[
+                        f(\boldsymbol{x}) = \frac{1}{\sqrt{(2\pi)^n \det(\Sigma)}} 
+                        \exp\!\left[ 
+                                    -\frac{1}{2}(\boldsymbol{x} - \boldsymbol{\mu})^\top \Sigma^{-1} (\boldsymbol{x} - \boldsymbol{\mu}) 
+                                \right], \tag{1}
+                        \]
+
+                        where \(\boldsymbol{\mu} = \mathbb{E}[\boldsymbol{x}] \in \mathbb{R}^n\) is the mean vector 
+                        and \(\Sigma = \text{Cov}[\boldsymbol{x}] \in \mathbb{R}^{n \times n}\) is the 
+                        (symmetric, positive definite) covariance matrix.
+                    </p>
+                </div>
+
+                <p>
+                    The expression inside the exponential (ignoring the factor of \(-\tfrac{1}{2}\)) is the squared 
+                    <strong>Mahalanobis distance</strong> between \(\boldsymbol{x}\) and \(\boldsymbol{\mu}\):
                     \[
-                    \boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)
+                    d_{\Sigma}(\boldsymbol{x}, \boldsymbol{\mu})^2 
+                    = (\boldsymbol{x} - \boldsymbol{\mu})^\top \Sigma^{-1} (\boldsymbol{x} - \boldsymbol{\mu}).
                     \]
-                    where \(\boldsymbol{\mu} = \mathbb{E} [\boldsymbol{x}] \in \mathbb{R}^n\) is the mean vector, and 
-                    \(\Sigma = \text{Cov }[\boldsymbol{x}] \in \mathbb{R}^{n \times n}\) is the covariance matrix. 
+                    Unlike the Euclidean distance, the Mahalanobis distance accounts for the correlation 
+                    structure among variables. The contours of constant density are 
+                    <strong>ellipsoids</strong> defined by 
+                    \[
+                    (\boldsymbol{x} - \boldsymbol{\mu})^\top \Sigma^{-1} (\boldsymbol{x} - \boldsymbol{\mu}) = c,
+                    \]
+                    whose axes are aligned with the eigenvectors of \(\Sigma\) and whose lengths are 
+                    proportional to the square roots of the corresponding eigenvalues.
                 </p>
 
                 <p>
-                    The p.d.f. is given by
-                    \[
-                    f(\boldsymbol{x}) = \frac{1}{\sqrt{(2\pi)^n \det(\Sigma)}} \exp \Big[-\frac{1}{2}(\boldsymbol{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\boldsymbol{x} -\boldsymbol{\mu}) \Big]. \tag{1}
-                    \]
-                    The expression inside the exponential (ignoring the factor of -\frac{1}{2}) is the squared <strong>Mahalanobis distance</strong> between 
-                    the data vector \(\boldsymbol{x}\) and the mean vector \(\boldsymbol{\mu}\), given by 
-                    \[
-                    d_{\Sigma} (\boldsymbol{x}, \boldsymbol{\mu})^2 = (\boldsymbol{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\boldsymbol{x} -\boldsymbol{\mu}).
-                    \]
-                </p>
-
-                <p>
-                    If \(\boldsymbol{x} \in \mathbb{R}^2\), the MVN is known as the <strong>bivariate normal distribution</strong>.
-                    In this case, 
+                    To build concrete intuition, let us work out the special case \(n = 2\) in full detail. 
+                    When \(\boldsymbol{x} \in \mathbb{R}^2\), the MVN is called the <strong>bivariate normal distribution</strong>.
+                    In this case,
                     \[
                     \begin{align*}
                     \Sigma  &=  \begin{bmatrix}
@@ -98,7 +123,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    Note that in Expression (1), \((\boldsymbol{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\boldsymbol{x} -\boldsymbol{\mu})\) is a <strong>quadratic form</strong>. So, 
+                    Note that in Expression (1), 
+                    \[
+                    (\boldsymbol{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\boldsymbol{x} -\boldsymbol{\mu})
+                    \]
+                    is a <strong>quadratic form</strong>. So, 
                     \[
                     \begin{align*}
                     (\boldsymbol{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\boldsymbol{x} -\boldsymbol{\mu}) 
@@ -108,9 +137,9 @@ uses_python: false
                             \frac{-\rho} {\sigma_1 \sigma_2} & \frac{1}{\sigma_2^2 }
                             \end{bmatrix} 
                             \begin{bmatrix} X_1 - \mu_1 \\ X_2 - \mu_2 \end{bmatrix} \\\\
-                            &= \frac{1}{1 - \rho^2}\Big[\frac{1}{\sigma_1^2 }(X_1 - \mu_1)^2 
+                            &= \frac{1}{1 - \rho^2}\left[\frac{1}{\sigma_1^2 }(X_1 - \mu_1)^2 
                                                     -\frac{2\rho} {\sigma_1 \sigma_2}(X_1 - \mu_1)(X_2 - \mu_2) 
-                                                    +\frac{1}{\sigma_2^2 }(X_2 - \mu_2)^2 \Big].
+                                                    +\frac{1}{\sigma_2^2 }(X_2 - \mu_2)^2 \right].
                     \end{align*}
                     \] 
                     Therefore, we obtain the p.d.f for the bivariate normal distribution:
@@ -130,15 +159,17 @@ uses_python: false
             <section id="cholesky" class="section-content">
                 <h2>Cholesky Decomposition</h2>
 
-                <p>
-                    In the previous section, we introduced the multivariate Gaussian distribution 
-                    \( \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma}) \), where the covariance matrix 
-                    \( \boldsymbol{\Sigma} \) determines the shape and orientation of the distribution.  
-                    To efficiently generate samples from such a distribution, we often need to 
-                    transform uncorrelated standard normal samples into correlated ones that follow 
-                    \( \boldsymbol{\Sigma} \).  
-                    The <strong>Cholesky decomposition</strong> provides a convenient and numerically stable way 
-                    to perform this transformation.
+                 <p>
+                    The previous section defined the MVN in terms of its density function, but 
+                    in practice we frequently need to <em>sample</em> from 
+                    \[
+                    \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma}).
+                    \] 
+                    For instance, when training variational autoencoders, implementing the reparameterization trick, 
+                    or running Monte Carlo simulations. Generating independent standard normal samples is straightforward, 
+                    but we need a way to introduce the correlation structure encoded in \(\boldsymbol{\Sigma}\). 
+                    The <strong>Cholesky decomposition</strong> provides a numerically stable factorization that transforms 
+                    uncorrelated samples into correlated ones.
                 </p>
 
                 <div class="theorem">
@@ -217,6 +248,14 @@ uses_python: false
             <section id="dirichlet" class="section-content">
                 <h2>Dirichlet Distribution</h2>
 
+                 <p>
+                    The multivariate normal distribution models random vectors taking values in all of \(\mathbb{R}^n\). 
+                    However, many quantities of interest in machine learning are <strong>probability vectors</strong>, which 
+                    entries are non-negative and sum to one. For example, the class probabilities output by a softmax layer, 
+                    the topic proportions in a document, or the mixing weights in a mixture model all live on a 
+                    <strong>probability simplex</strong>. We need a distribution that respects this constraint.
+                </p>
+
                 <p>
                     The <strong>Dirichlet distribution</strong> is a multivariate generalization of <a href="gamma.html"><strong>beta distribution</strong></a>. 
                     It has support over the the \((K - 1)\)-dimensional <strong>probability simplex</strong>, defined by
@@ -285,29 +324,38 @@ uses_python: false
             <section id="wishart" class="section-content">
                 <h2>Wishart Distribution</h2>
 
-                <p>
-                    The <strong>Wishart distribution</strong> is a fundamental multivariate distribution that generalizes the <a href="gamma.html"><strong>gamma distribution</strong></a> to 
-                    <a href="../Linear_algebra/symmetry.html"><strong>positive definite matrices</strong></a>. 
-                </p>
-                <p>
-                    The p.d.f. of Wishart distribution is defined as follows:
-                    \[
-                    \operatorname{Wi}(\boldsymbol{\Sigma} | \boldsymbol{S}, \nu) 
-                    = \frac{1}{Z} |\boldsymbol{\Sigma}| ^{(\nu-D-1)/2} \exp \Bigl( - \frac{1}{2} \text{ tr } (\boldsymbol{S}^{-1} \boldsymbol{\Sigma})\Bigr)
-                    \]
-                    where 
-                    \[
-                    Z = 2^{\nu D/2} | \boldsymbol{S} |^{-\nu / 2}\,\Gamma_D (\frac{\nu}{2}).
-                    \] 
-                    Here, \(\Gamma_D(\cdot)\) denotes the multivariate gamma function. The parameters are:
+                 <p>
+                    The Dirichlet distribution placed a prior on probability vectors. In Bayesian multivariate analysis, 
+                    we also need priors on <em>covariance matrices</em> themselves. For example, when inferring the parameters 
+                    of a multivariate normal model. The <strong>Wishart distribution</strong> fills this role: it generalizes the 
+                    <a href="gamma.html"><strong>gamma distribution</strong></a> from positive scalars to 
+                    <a href="../Linear_algebra/symmetry.html"><strong>positive definite matrices</strong></a>.
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li>\(\nu\): the <strong>degrees of freedom</strong> (which must satisfy \(\nu \ge D\) for the distribution to be well-defined),</li>
-                    <li>\(\boldsymbol{S}\): the <strong>scale matrix</strong> (a \(D \times D\) positive definite matrix).
-                     Note: \(\text{ mean } = \nu \boldsymbol{S}\).
-                    </li>
-                </ul>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Wishart Distribution</span>
+
+                    <p>
+                        The p.d.f. of Wishart distribution is defined as follows:
+                        \[
+                        \operatorname{Wi}(\boldsymbol{\Sigma} | \boldsymbol{S}, \nu) 
+                        = \frac{1}{Z} |\boldsymbol{\Sigma}| ^{(\nu-D-1)/2} \exp \Bigl( - \frac{1}{2} \text{ tr } (\boldsymbol{S}^{-1} \boldsymbol{\Sigma})\Bigr)
+                        \]
+                        where 
+                        \[
+                        Z = 2^{\nu D/2} | \boldsymbol{S} |^{-\nu / 2}\,\Gamma_D (\frac{\nu}{2}).
+                        \] 
+                        Here, \(\Gamma_D(\cdot)\) denotes the multivariate gamma function. The parameters are:
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\nu\): the <strong>degrees of freedom</strong> (which must satisfy \(\nu \ge D\) for the distribution to be well-defined),</li>
+                        <li>\(\boldsymbol{S}\): the <strong>scale matrix</strong> (a \(D \times D\) positive definite matrix).
+                        Note: \(\text{ mean } = \nu \boldsymbol{S}\).
+                        </li>
+                    </ul>
+
+                </div>
                 
                 <p>
                     If \(D=1\), ir reduces to the gamma distribution:
@@ -359,11 +407,33 @@ uses_python: false
                         </p>
                     </li>
                 </ul>
+
                 <p>
-                    Note: One is about sampling properties of the estimator (frequentist), and the other is about prior beliefs and posterior 
-                    inference (Bayesian). In practice, both deal with uncertainty in covariance matrices, and the same distribution arises in 
-                    both roles - just with different interpretations. 
+                    Note that one is about sampling properties of the estimator (<strong>frequentist</strong>), and the other is about 
+                    prior beliefs and posterior inference (<strong>Bayesian</strong>). In practice, both deal with uncertainty in 
+                    covariance matrices, and the same distribution arises in both roles - just with different interpretations.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The multivariate distributions introduced in this part form the backbone of probabilistic machine learning. 
+                        The MVN appears in <a href="gaussian_process.html"><strong>Gaussian processes</strong></a> (where it defines a 
+                        prior over functions), in the E-step of <a href="../Machine_learning/clustering.html"><strong>Gaussian mixture models</strong></a>, 
+                        and in the reparameterization trick for <strong>variational autoencoders</strong>. The Dirichlet distribution is the standard prior 
+                        for topic models (LDA) and categorical distributions in Bayesian inference. The Wishart and inverse Wishart distributions are essential 
+                        whenever the covariance matrix itself is a parameter to be inferred, as in Bayesian multivariate regression and Bayesian Gaussian mixture models.
+                    </p>
+                </div>
+
+                <p>
+                    With the multivariate framework now in place from covariance matrices (Part 6) through 
+                    correlation (Part 7) to multivariate distributions (this part), we have the probabilistic 
+                    foundations needed for statistical inference. In 
+                    <a href="mle.html"><strong>Part 9</strong></a>, we turn to <strong>maximum likelihood estimation</strong>, 
+                    the principal method for fitting probabilistic models to observed data.
+                </p>
+                
             </section>
         </div> 
         <script src="/js/main.js"></script>   
