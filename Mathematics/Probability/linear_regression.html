@@ -12,8 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
         
         <div class="hero-section">
-            <h1 class="webpage-name">Linear Regression
-            </h1>
+            <h1 class="webpage-name">Linear Regression</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -27,112 +26,176 @@ uses_python: false
         <div class="container">  
            
             <section id="recap" class="section-content">
-            <h2>Recap from Linear Algebra</h2>
-            <p>
-            Given a set of observed data points \(\{(x_i, y_i)\}_{i = 1}^{n}\) where \(x_i \in \mathbb{R}^d, \quad y_i \in \mathbb{R}\),
-            we assume that the given data can be explained by the <strong>linear model</strong>:
-            \[y = X\beta + \epsilon \tag{1} \]
-            where \(X \in \mathbb{R}^{n \times d}\) is the <strong>design matrix</strong>, \(\beta \in \mathbb{R}^d\) is the <strong>parameter(weight) vector</strong>, \(y \in \mathbb{R}^n\) is the
-            <strong>observation vector</strong>, and \(\epsilon = y - X\beta\) is a <strong>residual vector</strong>. 
-            <br><br>
-            The dimension \(d\) is the number of features, and \(n\) is the number of data points. 
-            The residual \(\epsilon\) is the "difference" between each observed value \(y_i\) and its corresponding predicted \(y\) value.
-            The <strong>least-squares hyperplane</strong> represents the set of predicted \(y\) values based on "estimated" parameters(weights) \(\hat{\beta}\), 
-            and it must satisfy the <strong>normal equations</strong>:
-            \[
-            X^TX\hat{\beta} = X^Ty \tag{2}
-            \]
-            <br><br>
-            Note: the linear model is linear in terms of <strong>parameters \(\beta \, \)</strong> , not \(X\). We can choose any non-linear transformation
-            for each \(x_i\). For example, \(y = \beta_0 + \beta_1 x^2 + \beta_2 \sin(2\pi x)\) is linear. So, \(y\) is modeled as a 
-            <strong>linear combination</strong> of features(predictors) \(X\) with respect to the coefficients(weights) \(\beta\).
-            </p>
-            Also, check: <a href="../Linear_algebra/leastsquares.html"><strong>Least-Squares Problems</strong></a>.
+
+                <h2>Recap from Linear Algebra</h2>
+                
+                <p>
+                    With <a href="mle.html"><strong>maximum likelihood estimation</strong></a> and 
+                    <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> in hand, we are ready to 
+                    apply these tools to the most fundamental predictive model in statistics. Linear regression sits at the intersection of 
+                    linear algebra and probability: the algebraic formulation leads to least-squares, while the probabilistic formulation 
+                    leads to MLE - and the two turn out to be equivalent under Gaussian noise.
+                </p>
+
+                <p>
+                    Given observed data points \(\{(\boldsymbol{x}_i, y_i)\}_{i=1}^{n}\) where \(\boldsymbol{x}_i \in \mathbb{R}^d\) and \(y_i \in \mathbb{R}\), we assume the 
+                    <strong>linear model</strong>:
+                    \[
+                    \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon} \tag{1}
+                    \]
+                    where \(X \in \mathbb{R}^{n \times d}\) is the <strong>design matrix</strong>, \(\boldsymbol{\beta} \in \mathbb{R}^d\) is the <strong>parameter (weight) vector</strong>, 
+                    \(\boldsymbol{y} \in \mathbb{R}^n\) is the <strong>observation vector</strong>, and \(\boldsymbol{\epsilon} = \boldsymbol{y} - X\boldsymbol{\beta}\) is the <strong>residual vector</strong>.
+                </p>
+
+                <p>
+                    Here \(d\) is the number of features and \(n\) is the number of data points. The least-squares solution \(\hat{\boldsymbol{\beta}}\) must satisfy the 
+                    <strong>normal equations</strong>:
+                    \[
+                    X^\top X\hat{\boldsymbol{\beta}} = X^\top \boldsymbol{y}. \tag{2}
+                    \]
+                    These were derived geometrically in 
+                    <a href="../Linear_algebra/leastsquares.html"><strong>Least-Squares Problems</strong></a> 
+                    via orthogonal projection of \(\boldsymbol{y}\) onto \(\text{Col}(X)\).
+                </p>
+
+                <p>
+                    An important point: the model is "linear" in the <strong>parameters</strong> \(\boldsymbol{\beta}\), not in the features \(\boldsymbol{x}\). 
+                    We can apply any nonlinear transformation to the features - for example, in a scalar case, 
+                    \(y = \beta_0 + \beta_1 x^2 + \beta_2 \sin(2\pi x)\) is still a linear model because \(y\) is a linear 
+                    combination of the transformed features with respect to \(\boldsymbol{\beta}\). We now show that the same normal equations arise 
+                    naturally from a probabilistic argument.
+                </p>
+
             </section>
 
             <section id="lr" class="section-content">
-            <h2>Linear Regression: A Probabilistic Perspective</h2>
-            <p>
-            We consider a probabilistic model for linear regression.  We assume that \(y_i\) is the observed value of 
-            the random variable \(Y_i\) and it depends on the predictor \(x_i\). In addition, the random error \(\epsilon_i\) is 
-            an i.i.d. random variable following \(\epsilon_i \sim N(0, \sigma^2)\). Then since \(\mathbb{E}[\epsilon_i]=0\), the unknown 
-            mean of \(Y_i\) can be represented as
-            \[
-            \mathbb{E }[Y_i] = \mu_i = x_i^T \beta
-            \]
-            where \(\beta \in \mathbb{R}^d\) represents the unknown parameters of the regression model. 
-            <br>
-            This relationship defines the true regression line between \(\mathbb{E }[Y_i]\) and \(x_i\). Here, \(Y_i\) is 
-            the independent random variable \(Y_i \sim N(\mu_i, \sigma^2)\). 
-            <br>
-            In other words, the conditional p.d.f of \(y_i\) is given by 
-            \[
-            p(y_i | x_i, \beta, \sigma^2) = \frac{1}{\sigma \sqrt{2\pi}} \exp \Big\{-\frac{1}{2\sigma^2}(y_i - x_i^T \beta)^2 \Big\}
-            \]
-            and its likelihood function of \(\beta\) for fixed \(\sigma^2\) is given by 
-            \[
-            \begin{align*}
-            L(\beta) &= \prod_{i =1}^n \Big[ \frac{1}{\sigma \sqrt{2\pi}} \exp \Big\{-\frac{1}{2\sigma^2}(y_i - x_i^T \beta)^2 \Big\} \Big] \\\\
-                     &=  \Big(\frac{1}{\sigma \sqrt{2\pi}}\Big)^n \exp \Big\{-\frac{1}{2\sigma^2} \sum_{i=1}^n (y_i - x_i^T \beta)^2 \Big\}.
-            \end{align*}
-            \]
-            The log-likelihood fuction is given by 
-            \[
-            \ln L(\beta) = n \ln \Big(\frac{1}{\sigma \sqrt{2\pi}}\Big) -\frac{1}{2\sigma^2} \sum_{i=1}^n (y_i - x_i^T \beta)^2
-            \]
-            Setting the derivative with respect to \(\beta\) equal to zero: 
-            \[
-            \begin{align*}
-            & \nabla_{\beta} = -\frac{1}{\sigma^2} \sum_{i=1}^n (y_i - x_i^T \beta) \cdot x_i = 0 \\\\
-            &\Longrightarrow \sum_{i=1}^n (x_i^T \beta -y_i) \cdot x_i = 0 \\\\
-            &\Longrightarrow (\sum_{i=1}^n x_ix_i^T)\beta - \sum_{i=1}^n x_i y_i = 0 \\\\
-            &\Longrightarrow X^TX \beta = X^Ty
-            \end{align*}
-            \]
-            This is equivalent to the normal equations (2) and thus, the MLE solution for linear regression corresponds to 
-            the <strong>least-squares</strong> solution:
-            \[
-            \begin{align*}
-            \hat{\beta}_{MLE} &= \Big(\sum_{i=1}^n x_ix_i^T \Big)^{-1}\Big(\sum_{i=1}^n x_i y_i \Big) \\\\
-                              &=(X^TX)^{-1}X^Ty \\\\
-                              &= \hat{\beta}_{LS} 
-            \end{align*}
-            \]
-            <br>
-            <div class="proof">
-                <span class="proof-title">Least-Squares Solution</span>
-                Consider the linear model (1) where \(X \in \mathbb{R}^{n \times d}\), \(\, y \in \mathbb{R}^n\), 
-                \(\, \beta \in \mathbb{R}^d\).
-                <br>
-                To obtain the least-squares solution \(\hat{\beta}_{LS}\), we minimize the <strong>least-squares error</strong>:
-                \[
-                \begin{align*}
-                \hat{\beta}_{LS} &= \arg \min_{\beta} \| y - X \beta \|_{2}^2 \\\\
-                                  &= \arg \min_{\beta} (y - X \beta)^T (y - X \beta) \\\\
-                                  &= \arg \min_{\beta} y^T y - y^T X \beta - \beta^T X^T y + \beta^T X^T X \beta \\\\
-                                  &= \arg \min_{\beta} f(\beta)
 
-                \end{align*}
-                \]
-                Differentiating \(f(\beta)\) and setting it equal to zero: 
-                \[
-                \begin{align*}
-                & df = - X^Ty - X^Ty + 2X^TX\beta \\\\
-                &\Longrightarrow -2 X^Ty + 2X^TX\beta = 0 \\\\
-                &\Longrightarrow \hat{\beta}_{LS}  = (X^TX)^{-1}X^Ty \\\\
-                \end{align*}
-                \] 
-                Note: The matrix \(X^TX\) is symmetric. 
-                <br>
-                If you are not familiar with Matrix Calculus, See: <a href="../Calculus/linear_approximation.html">Matrix Calculus</a>.
+                <h2>Linear Regression: A Probabilistic Perspective</h2>
+
+                <p>
+                    We now reinterpret the linear model (1) probabilistically. Assume that each observation \(y_i\) is the realized value of a random variable 
+                    \(Y_i\) that depends on the predictor \(\boldsymbol{x}_i\), corrupted by i.i.d. Gaussian noise:
+                    \[
+                    \epsilon_i \sim \mathcal{N}(0, \sigma^2).
+                    \]
+                    Since \(\mathbb{E}[\epsilon_i] = 0\), the conditional mean of \(Y_i\) is
+                    \[
+                    \mathbb{E}[Y_i] = \mu_i = \boldsymbol{x}_i^\top \boldsymbol{\beta}
+                    \]
+                    where \(\boldsymbol{\beta} \in \mathbb{R}^d\) contains the unknown regression parameters. 
+                    This means each response is an independent <a href="gaussian.html"><strong>Gaussian</strong></a> random variable 
+                    \(Y_i \sim \mathcal{N}(\boldsymbol{x}_i^\top \boldsymbol{\beta},\; \sigma^2)\).
+                </p>
+
+                <p>
+                    The conditional p.d.f. of a single observation \(y_i\) is therefore
+                    \[
+                    p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}, \sigma^2) 
+                    = \frac{1}{\sigma\sqrt{2\pi}} \exp\!\left\{-\frac{1}{2\sigma^2}(y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2\right\}
+                    \]
+                    and, by independence, the likelihood function for \(\boldsymbol{\beta}\) (with \(\sigma^2\) fixed) is
+                    \[
+                    \begin{align*}
+                    L(\boldsymbol{\beta}) 
+                    &= \prod_{i=1}^n p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}, \sigma^2) \\\\
+                    &= \left(\frac{1}{\sigma\sqrt{2\pi}}\right)^{\!n} \exp\!\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2\right\}.
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    The log-likelihood function is
+                    \[
+                    \begin{align*}
+                    \ln L(\boldsymbol{\beta}) 
+                    &= n \ln \left(\frac{1}{\sigma \sqrt{2\pi}} \right) - \frac{1}{2\sigma^2} \sum_{i = 1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2 \\\\
+                    &= -\frac{n}{2}\ln(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2.
+                    \end{align*}
+                    \]
+                </p>
+                
+                <p>
+                    Setting the gradient of the log-likelihood with respect to \(\boldsymbol{\beta}\) equal to zero. 
+                    By the chain rule, the derivative of \((y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2\) with respect to \(\boldsymbol{\beta}\) is \(-2(y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})\boldsymbol{x}_i\):
+                    \[
+                    \begin{align*}
+                    \nabla_{\boldsymbol{\beta}} \ln L(\boldsymbol{\beta}) &= \frac{1}{\sigma^2} \sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \mathbf{0} \\\\
+                    &\Longrightarrow \sum_{i=1}^n (y_i \boldsymbol{x}_i - (\boldsymbol{x}_i^\top \boldsymbol{\beta})\boldsymbol{x}_i) = \mathbf{0} \\\\
+                    &\Longrightarrow \sum_{i=1}^n y_i \boldsymbol{x}_i = \sum_{i=1}^n (\boldsymbol{x}_i \boldsymbol{x}_i^\top) \boldsymbol{\beta} \\\\
+                    &\Longrightarrow X^\top \boldsymbol{y} = X^\top X \boldsymbol{\beta}
+                    \end{align*}
+                    \] 
+                </p>
+
+                <p>
+                    This is exactly equivalent to the normal equations (2). Thus, the MLE solution for linear regression under Gaussian noise 
+                    coincides with the least-squares solution:
+                    \[
+                    \begin{align*}
+                    \hat{\boldsymbol{\beta}}_{\text{MLE}} &= \Big(\sum_{i=1}^n \boldsymbol{x}_i\boldsymbol{x}_i^\top \Big)^{-1}\Big(\sum_{i=1}^n \boldsymbol{x}_i y_i \Big) \\\\
+                                             &= (X^\top X)^{-1}X^\top \boldsymbol{y} \\\\
+                                             &= \hat{\boldsymbol{\beta}}_{\text{LS}}.
+                    \end{align*}
+                    \]
+                </p>
+                
+                <div class="proof">
+                    <span class="proof-title">Verification via Direct Minimization</span>
+                    
+                    <p>
+                        Consider the linear model (1) where \(X \in \mathbb{R}^{n \times d}\), \(\boldsymbol{y} \in \mathbb{R}^n\), and
+                        \(\boldsymbol{\beta} \in \mathbb{R}^d\).
+                    </p>
+                   
+                    <p>
+                        To obtain the least-squares solution \(\hat{\boldsymbol{\beta}}_{\text{LS}}\), we minimize the <strong>least-squares error</strong> objective function \(f(\boldsymbol{\beta})\):
+                        \[
+                        \begin{align*}
+                        \hat{\boldsymbol{\beta}}_{\text{LS}} &= \arg \min_{\boldsymbol{\beta}} \| \boldsymbol{y} - X \boldsymbol{\beta} \|_{2}^2 \\\\
+                                                &= \arg \min_{\boldsymbol{\beta}} (\boldsymbol{y} - X \boldsymbol{\beta})^\top (\boldsymbol{y} - X \boldsymbol{\beta}) \\\\
+                                                &= \arg \min_{\boldsymbol{\beta}} \left( \boldsymbol{y}^\top \boldsymbol{y} - \boldsymbol{y}^\top X \boldsymbol{\beta} - \boldsymbol{\beta}^\top X^\top \boldsymbol{y} + \boldsymbol{\beta}^\top X^\top X \boldsymbol{\beta} \right) \\\\
+                                                &= \arg \min_{\boldsymbol{\beta}} f(\boldsymbol{\beta}).
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Taking the gradient of \(f(\boldsymbol{\beta})\) with respect to \(\boldsymbol{\beta}\) and setting it equal to zero: 
+                        \[
+                        \begin{align*}
+                        \nabla_{\boldsymbol{\beta}} f(\boldsymbol{\beta}) &= - X^\top \boldsymbol{y} - X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} = \mathbf{0} \\\\
+                        &\Longrightarrow -2 X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} = \mathbf{0} \\\\
+                        &\Longrightarrow X^\top X\boldsymbol{\beta} = X^\top \boldsymbol{y} \\\\
+                        &\Longrightarrow \hat{\boldsymbol{\beta}}_{\text{LS}}  = (X^\top X)^{-1}X^\top \boldsymbol{y}.
+                        \end{align*}
+                        \] 
+                        Note that \(X^\top X\) is symmetric and positive semi-definite. It is invertible if and only if \(\text{rank}(X) = d\), i.e., 
+                        the columns of \(X\) are linearly independent (which requires \(n \geq d\)). 
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                <h3>Connections to Machine Learning</h3>
+                <p>
+                    The equivalence \(\hat{\beta}_{\text{MLE}} = \hat{\beta}_{\text{LS}}\) reveals a fundamental principle: 
+                    minimizing squared error is equivalent to maximum likelihood under Gaussian noise. This connection extends broadly. 
+                    Adding an \(\ell^2\) penalty (ridge regression) corresponds to placing a <a href="bayesian.html"><strong>Gaussian prior</strong></a> 
+                    on \(\beta\) and computing the MAP estimate, while an \(\ell^1\) penalty (LASSO) corresponds to a 
+                    <a href="student.html"><strong>Laplace prior</strong></a>. 
+                    The <a href="../Machine_learning/regression.html"><strong>bias-variance tradeoff</strong></a> 
+                    in regularized regression directly reflects the MSE decomposition from  <a href="mle.html"><strong>Part 9</strong></a>.
+                    When the Gaussian noise assumption fails, one may use generalized linear models or robust regression methods that replace 
+                    the squared loss with alternatives derived from other likelihood models.
+                </p>
             </div>
-            </p>
+            
             </section>
 
             <section id="interactive-tool" class="section-content">
                 <h2>Interactive Statistical Regression Tool</h2>
                 <p>
-                    This interactive tool allows you to explore linear regression from a statistical perspective. You can upload your own data or use the provided sample datasets to analyze regression models, check statistical significance, and perform diagnostics.
+                    This interactive tool allows you to explore linear regression from a statistical perspective. 
+                    You can upload your own data or use the provided sample datasets to analyze regression models, 
+                    check statistical significance, and perform diagnostics.
                 </p>
                 
                 <!-- The tool will be rendered in this div -->
