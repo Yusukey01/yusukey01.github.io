@@ -26,58 +26,100 @@ uses_python: false
            
             <section id="cross" class="section-content">
                 <h2>Cross-Covariance</h2>
-                <p>
-                    Often we want to handle multiple datasets or different sets of variables that are related but might 
-                    not be directly comparable in terms of the data structures. In such a case, the <strong>cross-covariance</strong> 
-                    measures the covariance between different pairs of variables from different datasets.
-                </p>
 
                 <p>
-                    For example, consider two different datasets \(A \in \mathbb{R}^{m \times n_1}\) and \(B \in \mathbb{R}^{m \times n_2}\). 
-                    We can compute the <strong>sample cross-covariance matrix</strong>:
+                    In <a href="covariance.html"><strong>Part 6</strong></a>, the covariance matrix 
                     \[
-                    K_{AB} = \frac{1}{m-1}(A-\bar{A})^T(B-\bar{B}).
+                    \Sigma = \text{Cov}[\boldsymbol{x}]
                     \]
-                    (Both \(A\) and \(B\) must have the same number of data points.)
+                    captured pairwise relationships among the components of a <em>single</em> random vector \(\boldsymbol{x}\). 
+                    In many applications, however, we work with two distinct sets of variables - for instance, relating a set 
+                    of input features to a set of output measurements, or comparing gene expression levels across different 
+                    experimental conditions. The <strong>cross-covariance</strong> extends the idea of covariance to pairs of 
+                    variables drawn from <em>different</em> datasets.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Sample Cross-Covariance Matrix</span>
+                    <p>
+                        Given two data matrices \(A \in \mathbb{R}^{m \times n_1}\) and 
+                        \(B \in \mathbb{R}^{m \times n_2}\) with the same number of observations \(m\), 
+                        the <strong>sample cross-covariance matrix</strong> is
+                        \[
+                        K_{AB} = \frac{1}{m-1}(A - \bar{A})^\top (B - \bar{B}) \in \mathbb{R}^{n_1 \times n_2},
+                        \]
+                        where \(\bar{A}\) and \(\bar{B}\) denote the matrices of column means.
+                    </p>
+                </div>
+
+                <p>
+                    Note that in general \(K_{AB}\) is <em>not</em> square (unless \(n_1 = n_2\)) and <em>not</em> symmetric. 
+                    In the special case \(A = B\), the cross-covariance reduces to the ordinary (sample) covariance matrix, 
+                    sometimes called the <strong>auto-covariance matrix</strong> and denoted \(K_{AA}\), which is exactly 
+                    the matrix \(S\) we studied in Part 6.
                 </p>
 
                 <p>
-                    Note: \(K_{AA}\) is called the <strong>auto-covariance matrix</strong>, which is the same as the covariance matrix that 
-                    we discussed in Part 6. 
+                    While cross-covariance quantifies how variables from two datasets co-vary, its magnitude depends on the scales of 
+                    the variables involved. To obtain a  scale-free measure, we turn to the <strong>correlation coefficient</strong>.
                 </p>
+
             </section>
 
             <section id="corr" class="section-content">
                 <h2>Correlation</h2>
+                
                 <p>
-                    The magnitude of the covariance between two random variables \(X\) and \(Y\) depends on the units of the variables, we 
-                    <strong>standardize</strong> the covariance by the standard deviation of the variables: 
-                    \[
-                    \begin{align*}
-                    \sigma_X  &= \sqrt{\mathbb{E}[(X - \mu_X])^2]}  \text{ and } \sigma_Y  \\\\
-                            &= \sqrt{\mathbb{E}[(Y - \mu_Y)^2]}.
-                    \end{align*}
-                    \]
-                    Then we obtain the <strong>population correlation coefficient</strong> between \(X\) and \(Y\) quantifies the strength 
-                    and direction of their <strong>linear</strong> relationship \(Y = aX +b\): 
-                    \[
-                    \begin{align*}
-                    \rho_{X, Y} = \text{Corr }[X, Y] &= \frac{\text{Cov }[X, Y]}{\sigma_X \sigma_Y} \\\\
-                                                    &= \frac{\mathbb{E }[(X - \mu_X)(Y-\mu_Y)]}{\sigma_X \sigma_Y}.
-                    \end{align*}
-                    \]
-                    Also, the <strong>sample correlation coefficient</strong> is defined as:
-                    \[
-                    r_{xy} = \frac{1}{(n-1)s_x s_y}\sum_{i =1}^n (x_i - \bar{x})(y_i - \bar{y})
-                    \]
-                    where \(\bar{x},\, \bar{y}\) are sample means and \(s_x \, , s_y\) are corrected sample standard deviations.
+                    Covariance tells us whether two variables tend to increase or decrease together, but its numerical value 
+                    depends on the units and scales of the variables. For example, \(\text{Cov}[X, Y] = 500\) might indicate a 
+                    strong relationship when the variables are measured in millimeters, but a weak one when measured in kilometers. 
+                    To obtain a <strong>scale-free</strong> measure of linear association, we normalize the covariance 
+                    by the standard deviations.
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Population Correlation Coefficient</span>
+                    <p>
+                        Let \(X\) and \(Y\) be random variables with standard deviations 
+                        \(\sigma_X = \sqrt{\mathbb{E}[(X - \mu_X)^2]}\) and 
+                        \(\sigma_Y = \sqrt{\mathbb{E}[(Y - \mu_Y)^2]}\), respectively. Then
+                        the <strong>population correlation coefficient</strong> is 
+                        \[
+                        \begin{align*}
+                        \rho_{X, Y} &= \text{Corr}[X, Y] \\\\
+                                    &= \frac{\text{Cov}[X, Y]}{\sigma_X \sigma_Y} \\\\
+                                    &= \frac{\mathbb{E}[(X - \mu_X)(Y - \mu_Y)]}{\sigma_X \sigma_Y}.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
                 <p>
-                    Note: the <strong>corrected sample standard deviation</strong> is an unbiased estimator of the population standard deviation:  
-                    \[
-                    s_x = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
-                    \]
+                    The correlation coefficient is a dimensionless quantity that measures the strength 
+                    and direction of the <strong>linear</strong> relationship between \(X\) and \(Y\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Sample Correlation Coefficient</span>
+                    <p>
+                        Given observed data \((x_1, y_1), \ldots, (x_n, y_n)\), the 
+                        <strong>sample correlation coefficient</strong> is
+                        \[
+                        r_{xy} = \frac{1}{(n-1)\,s_x\, s_y}\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})
+                        \]
+                        where \(\bar{x}, \bar{y}\) are sample means and \(s_x, s_y\) are the 
+                        <strong>corrected sample standard deviations</strong>:
+                        \[
+                        s_x = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
+                        \]
+                        The factor \(n - 1\) (Bessel's correction) ensures that \(s_x^2\) is an 
+                        unbiased estimator of \(\sigma_X^2\).
+                    </p>
+                </div>
+
+                <p>
+                    A natural question is: what range of values can \(\rho\) take? The following 
+                    theorem shows that it is always bounded between \(-1\) and \(1\).
                 </p>
 
                 <div class="theorem">
@@ -118,11 +160,13 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    The <strong>correlation matrix</strong> is essentially a standardized version of the covariance matrix ensuring that each element 
-                    is normalized to a value between \(-1\) and \(1\). This standardization is particularly useful in applications like 
-                    Principal Component Analysis (PCA), where features with significantly different scales can lead to biased results. By 
-                    standardizing, we ensure that all features are given fair weighting. 
+                  <p>
+                    Having established the correlation coefficient for a pair of random variables, we now extend this idea to an entire 
+                    random vector. Just as the covariance matrix collects all pairwise covariances, the <strong>correlation matrix</strong> 
+                    collects all pairwise correlations. It is a standardized version of the covariance matrix in which every entry 
+                    lies in \([-1, 1]\). This standardization is particularly useful when features have significantly different scales: 
+                    for example, in <a href="covariance.html"><strong>PCA</strong></a>, performing eigendecomposition on the correlation matrix 
+                    rather than the covariance matrix ensures that no single feature dominates the analysis merely because of its scale.
                 </p>
 
                 <p>
@@ -182,6 +226,27 @@ uses_python: false
                     \]
                     This formulation normalizes all rows and columns simultaneously, by dividing each covariance by the corresponding 
                     standard deviations, and avoids computing each pairwise correlation explicitly.
+                </p>
+
+                 <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The correlation matrix plays a key role in feature engineering and model diagnostics. Highly correlated 
+                        features indicate <strong>multicollinearity</strong>, which can destabilize 
+                        <a href="../Machine_learning/intro_regression.html"><strong>linear regression</strong></a> 
+                        and inflate variance in coefficient estimates. In practice, examining the correlation matrix 
+                        before training helps identify redundant features, guiding decisions about feature selection 
+                        or dimensionality reduction via PCA. In 
+                        <a href="gaussian_process.html"><strong>Gaussian processes</strong></a>, the kernel 
+                        function can be viewed as defining a correlation structure over function values.
+                    </p>
+                </div>
+
+                <p>
+                    With covariance and correlation established for random vectors, we are now prepared to study the most important 
+                    multivariate distribution in statistics and machine learning. In the <a href="mvn.html"><strong>next part</strong></a>, 
+                    we introduce the <strong>multivariate normal distribution</strong>, whose shape is entirely determined 
+                    by a mean vector and a covariance matrix.
                 </p>
                 
             </section>
