@@ -26,308 +26,393 @@ uses_python: false
         <div class="container">  
            
             <section id="bayesian" class="section-content">
-            <h2>Bayesian Inference</h2>
-            <p> 
-            In <strong>Bayesian statistics</strong>, we assume that prior knowledge about the unknown parameters can be explained by a probability 
-            distribution, which is called <strong>prior distribution</strong>, \(p(\theta)\). This means that the unknown parameters \(\theta\) are 
-            treated as <strong>random variables</strong>, while the data \(\mathcal{D}\) are considered fixed. This approach is opposite 
-            to that of frequentist statistics, where parameters are fixed and data are considered random. 
-            <br><br>
-            Bayesian inference updates our belief(= prior distribution) by using the observed data and
-            expresses our updated belief about the parameters as the <strong>posterior distribution</strong>, \(p(\theta | \mathcal{D})\) 
-            using Bayes' rule:
-            \[
-            \begin{align*}
-            p(\theta | \mathcal{D}) &= \frac{p(\theta)p(\mathcal{D}| \theta)}{p(\mathcal{D})} \\\\
-            \end{align*}
-            \]
-            The components are defined as follows:
-            <ol style="padding-left: 40px;">
-                <li><strong>Prior distribution</strong> \(p(\theta)\):</li> 
-                Represents our belief about the parameters \(\theta\) before observing any data. 
-                It encodes prior knowledge, assumptions, or uncertainty about \(\theta\).
-                <li><strong>Likelihood</strong> \(p(\mathcal{D}| \theta)\):</li>
-                Describes how likely the observed data \(\mathcal{D}\) is, given a specific value of \(\theta\). 
-                This reflects the model of the data-generating process.
-                <li><strong>Marginal likelihood</strong>(or <strong>evidence</strong>) \(p(\mathcal{D})\): </li>
-                A normalization constant, which is important when we evaluate different models, otherwise we can ignore this term because 
-                it is just a constant with respect to parameters \(\theta\).
-                For continuous parameters, marginal likelihood is computed by integrating over all possible values of \(\theta\):  
-                \[
-                p(\mathcal{D}) = \int p(\theta')p(\mathcal{D} | \theta') \, d\theta'.
-                \]
-                Note: In the integral for the marginal likelihood, we use \(\theta'\) instead of \(\theta\) to clarify that 
-                the integration is over the entire parameter space, not a specific parameter. 
-                <br><br>
-                Note: For discrete  parameters, marginal likelihood is given by:
-                \[
-                p(\mathcal{D}) = \sum_{\theta'} p(\theta')p(\mathcal{D} | \theta').
-                \]
-            </ol>
-            Note: Please check <a href="bayesian.html"><strong>Credible intervals</strong></a> too.
-            </p>
+                <h2>Bayesian Inference</h2>
+
+                <p> 
+                    In <strong>Bayesian statistics</strong>, we assume that prior knowledge about the unknown parameters can be explained by a probability 
+                    distribution, which is called <strong>prior distribution</strong>, \(p(\theta)\). This means that the unknown parameters \(\theta\) are 
+                    treated as <strong>random variables</strong>, while the data \(\mathcal{D}\) are considered fixed. This approach is opposite 
+                    to that of frequentist statistics, where parameters are fixed and data are considered random. 
+                </p>
+                <p>
+                    Bayesian inference updates our belief (= prior distribution) by using the observed data and expresses our updated belief about 
+                    the parameters as the <strong>posterior distribution</strong>, \(p(\theta \mid \mathcal{D})\) using Bayes' rule:
+                    \[
+                    \begin{align*}
+                    p(\theta \mid \mathcal{D}) &= \frac{p(\theta)p(\mathcal{D} \mid \theta)}{p(\mathcal{D})} \\\\
+                    \end{align*}
+                    \]
+                    The components are defined as follows:
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li><strong>Prior distribution</strong> \(p(\theta)\):<br>
+                        Represents our belief about the parameters \(\theta\) before observing any data. 
+                        It encodes prior knowledge, assumptions, or uncertainty about \(\theta\).
+                    </li> 
+                    
+                    <li><strong>Likelihood</strong> \(p(\mathcal{D} \mid \theta)\):<br>
+                        Describes how likely the observed data \(\mathcal{D}\) is, given a specific value of \(\theta\). 
+                        This reflects the model of the data-generating process.
+                    </li>
+                    
+                    <li><strong>Marginal likelihood</strong>(or <strong>evidence</strong>) \(p(\mathcal{D})\):<br>
+                        A normalization constant, which is important when we evaluate different models, otherwise we can 
+                        ignore this term because it is just a constant with respect to parameters \(\theta\).
+                        <p>
+                            For continuous parameters, marginal likelihood is computed by integrating over all possible values of \(\theta\):  
+                            \[
+                            p(\mathcal{D}) = \int p(\theta')p(\mathcal{D} \mid \theta') \, d\theta'.
+                            \]
+                            Note: In the integral for the marginal likelihood, we use \(\theta'\) instead of \(\theta\) to clarify that 
+                            the integration is over the entire parameter space, not a specific parameter. 
+                        </p>
+                        <P>
+                            Note: For discrete  parameters, marginal likelihood is given by:
+                            \[
+                            p(\mathcal{D}) = \sum_{\theta'} p(\theta')p(\mathcal{D} \mid \theta').
+                            \]
+                        </P>
+                    </li>   
+                </ol>
+                <p>
+                    Note: Please check <a href="hypothesis_testing.html#CI"><strong>Credible Intervals</strong></a> too.
+                </p>
             </section>
 
             <section id="conjugate" class="section-content">
-            <h2>Conjugate Prior</h2>
-            <p> 
-            In general, specifying a prior is a bottleneck of the Bayesian inference. Here, we introduce some special case of priors.
-            <br><br>
-            A prior \(p(\theta) \in \mathcal{F}\) is said to be <strong>conjugate prior</strong> for a likelihood function \(p(\mathcal{D} | \theta)\) if 
-            the posterior is in the same parameterized family as the prior: \(p(\mathcal{D} | \theta) \in \mathcal{F}\). 
-            <br><br>
-            Through the following example, we introduce basic Bayesian inference ideas and an example of a conjugate prior.
-            <div class="proof">
-                <span class="proof-title">Example 1: Beta-Binomial Model</span>
-                Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as 
-                \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1 : N\}\). We assume the data are iid.
-                <br><br>
-                If we consider a sequence of coin tosses, the <strong>likelihood</strong> can be written as a Bernoulli likelihood model: 
-                \[
-                \begin{align*}
-                p(\mathcal{D} | \theta) &= \prod_{n = 1}^N \theta^{y_n}(1 - \theta)^{1-y_n} \\\\
-                                        &= \theta^{N_1}(1 - \theta)^{N_0}
-                \end{align*}
-                \]
-                where \(N_1\) and \(N_0\) are the number of heads and tails respectively. (Sample size: \(N_1 + N_0 = N\))
-                <br><br>
-                Alternatively, we can consider the Binomial likelihood model: 
-                The likelihood has the following form:
-                \[
-                \begin{align*}
-                p(\mathcal{D} | \theta) &= \text{Bin } (y | N, \theta)  \\\\
-                                        &= \begin{pmatrix} N \\ y \end{pmatrix} \theta^y (1 - \theta)^{N - y} \\\\
-                                        &\propto  \theta^y (1 - \theta)^{N - y}
-                \end{align*}
-                \]
-                where \(y\) is the number of heads.
-                <br><br>
-                Next, we have to specify a <strong>prior</strong>. If we know nothing about the parameter, an 
-                <strong>uninformative prior</strong> can be used:
-                \[
-                p(\theta) = \text{Unif }(\theta | 0, 1).
-                \]
-                However, "in this example", using beta distribution(See <a href="gamma.html">Gamma & Beta distribution </a>), we can represent the prior as follows:
-                \[
-                \begin{align*}
-                p(\theta) = \text{Beta }(\theta | a, b) &= \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1} \tag{1} \\\\
-                                                        &\propto \theta^{a-1}(1-\theta)^{b-1}
-                \end{align*}
-                \]
-                where \(a, b > 0\) are usually called hyper-parameters.(Our main parameter is \(\theta\).)
-                <br>
-                Note: If \(a = b = 1\), we get the uninformative prior. 
-                <br><br>
-                Using Bayes' rule, the <strong>posterior</strong> is proportional to the product of the likelihood and the prior:
-                \[
-                \begin{align*}
-                p(\theta | \mathcal{D}) &\propto [\theta^{y}(1 - \theta)^{N-y}] \cdot [\theta^{a-1}(1-\theta)^{b-1}] \\\\
-                                        &\propto \text{Beta }(\theta | a+y, \, b+N-y) \\\\
-                                        &= \frac{\Gamma(a+b+N)}{\Gamma(a+y)\Gamma(b+N-y)}\theta^{a+y-1}(1-\theta)^{b+N-y-1}. \tag{2}
-                \end{align*}
-                \]
-                Here, the posterior has the same functional form as the prior. Thus, the beta distribution is the <strong>conjugate prior</strong> for the 
-                binomial distribution. 
-                <br><br>
-                Once we got the posterior distribution, for example, we can use <strong>posterior mean</strong>, \(\bar{\theta}\) as a point estimate of \(\theta\):
-                \[
-                \begin{align*}
-                \bar{\theta} = \mathbb{E }[\theta | \mathcal{D}] &= \frac{a+y}{(a+y) + (b+N-y)} \\\\
-                                                                 &= \frac{a+y}{a+b+N}.
-                \end{align*}
-                \]
-                Note: 
-                By adjusting hyper-parameters \(a\) and \(b\), we can control the influence of the prior on the posterior.
-                <br>
-                If \(a\) and \(b\) are small, the posterior mean will closely reflect the data: 
-                \[
-                \bar{\theta} \approx  \frac{y}{N} = \hat{\theta}_{MLE}
-                \]
-                while if \(a\) and \(b\) are large, the posterior mean will be more influenced by the prior.
-                <br><br>
-                Often we need to check the <strong>standard error</strong> of our estimate, which is the posterior standard deviation:
-                \[
-                \begin{align*}
-                \text{SE }(\theta) &= \sqrt{\text{Var }[\theta | \mathcal{D}]} \\\\
-                                   &= \sqrt{\frac{(a+y)(b+N-y)}{(a+b+N)^2(a+b+N+1)}}
-                \end{align*}
-                \]
-                Here, if \(N \gg a, b\), we can simplify the <strong>posterior variance</strong> as follows:
-                \[
-                \begin{align*}
-                \text{Var }[\theta | \mathcal{D}] &\approx \frac{y(N-y)}{(N)^2 N} \\\\
-                                                  &= \frac{y}{N^2} - \frac{y^2}{N^3} \\\\
-                                                  &= \frac{\hat{\theta}(1 - \hat{\theta})}{N}
-                \end{align*}
-                \]
-                where \(\hat{\theta} = \frac{y}{N}\) is the MLE.
-                <br><br>
-                Thus, the standard error is given by 
-                \[
-                \text{SE }(\theta) \approx \sqrt{\frac{\hat{\theta}(1 - \hat{\theta})}{N}}.
-                \]
-                <br>
-                From (1) and (2), the <strong>marginal likelihood</strong> is given by the ratio of normalization constants(beta functions) 
-                for the prior and posterior:
-                \[
-                p(\mathcal{D}) = \frac{B(a+y,\, b+N-y)}{B(a, b)}.
-                \]
-                Note: In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to get the 
-                exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
-                <br><br>
-                Finally, to make predictions for new observations, we use <strong>posterior predictive distribution</strong>:
-                \[
-                p(x_{new} | \mathcal{D}) = \int p(x_{new} | \theta) p(\theta | \mathcal{D}) d\theta.
-                \]
-                Again, like computing the marginal likelihood, it is difficult to compute posterior predictive distribution, but in this case, 
-                we can get it easily due to the conjugate prior. 
-                <br>
-                For example, the probability of observing a head in the next coin toss is given by:
-                \[
-                \begin{align*}
-                p(y_{new}=1 | \mathcal{D}) &= \int_0 ^1  p(y_{new}=1 | \theta) p(\theta | \mathcal{D}) d\theta \\\\
-                                           &= \int_0 ^1 \theta \text{Beta }(\theta | a+y, \, b+N-y) d\theta \\\\
-                                           &= \mathbb{E }[\theta|\mathcal{D}] \\\\
-                                           &= \frac{a+y}{a+b+N}.
-                \end{align*}
-                \]
-                Note: As you can see, the hyper-parameters \(a\) and \(b\) is critical in the whole process of our inference. In practice, setting up 
-                hyper-parameters is one of the most challenging factor of the project. 
-            </div>
-            </p>
+                <h2>Conjugate Prior</h2>
+
+                <p> 
+                    In general, specifying a prior is a bottleneck of the Bayesian inference. Here, we introduce some special case of priors.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Conjugate Prior</span>
+                    <p>
+                        A prior \(p(\theta) \in \mathcal{F}\) is said to be <strong>conjugate prior</strong> for a likelihood function 
+                        \(p(\mathcal{D} \mid \theta)\) if the posterior is in the same parameterized family as the prior: 
+                        \[
+                        p(\mathcal{D} \mid \theta) \in \mathcal{F}. 
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Through the following example, we introduce basic Bayesian inference ideas and an example of a conjugate prior.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 1: Beta-Binomial Model</span>
+                    <p>
+                        Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as 
+                        \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1 : N\}\). We assume the data are iid.
+                    </p>
+
+                    <p>
+                        If we consider a sequence of coin tosses, the <strong>likelihood</strong> can be written as a Bernoulli likelihood model: 
+                        \[
+                        \begin{align*}
+                        p(\mathcal{D} \mid \theta) &= \prod_{n = 1}^N \theta^{y_n}(1 - \theta)^{1-y_n} \\\\
+                                                &= \theta^{N_1}(1 - \theta)^{N_0}
+                        \end{align*}
+                        \]
+                        where \(N_1\) and \(N_0\) are the number of heads and tails respectively. (Sample size: \(N_1 + N_0 = N\))
+                    </p>
+
+                    <p>
+                        Alternatively, we can consider the Binomial likelihood model: 
+                        The likelihood has the following form:
+                        \[
+                        \begin{align*}
+                        p(\mathcal{D} \mid \theta) &= \text{Bin } (y \mid N, \theta)  \\\\
+                                                &= \begin{pmatrix} N \\ y \end{pmatrix} \theta^y (1 - \theta)^{N - y} \\\\
+                                                &\propto  \theta^y (1 - \theta)^{N - y}
+                        \end{align*}
+                        \]
+                        where \(y\) is the number of heads.
+                    </p>
+
+                    <p>
+                        Next, we have to specify a <strong>prior</strong>. If we know nothing about the parameter, an 
+                        <strong>uninformative prior</strong> can be used:
+                        \[
+                        p(\theta) = \text{Unif }(\theta \mid 0, 1).
+                        \]
+                        However, "in this example", using <a href="gamma.html#beta_d">Beta distribution</a>, 
+                        we can represent the prior as follows:
+                        \[
+                        \begin{align*}
+                        p(\theta) = \text{Beta }(\theta \mid a, b) &= \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1} \tag{1} \\\\
+                                                                &\propto \theta^{a-1}(1-\theta)^{b-1}
+                        \end{align*}
+                        \]
+                        where \(a, b > 0\) are usually called hyper-parameters.(Our main parameter is \(\theta\).)
+                    </p>
+
+                    <p>
+                        Note: If \(a = b = 1\), we get the uninformative prior. 
+                    </p>
+
+                    <p>
+                        Using Bayes' rule, the <strong>posterior</strong> is proportional to the product of the likelihood and the prior:
+                        \[
+                        \begin{align*}
+                        p(\theta \mid \mathcal{D}) &\propto [\theta^{y}(1 - \theta)^{N-y}] \cdot [\theta^{a-1}(1-\theta)^{b-1}] \\\\
+                                                &\propto \text{Beta }(\theta \mid a+y, \, b+N-y) \\\\
+                                                &= \frac{\Gamma(a+b+N)}{\Gamma(a+y)\Gamma(b+N-y)}\theta^{a+y-1}(1-\theta)^{b+N-y-1}. \tag{2}
+                        \end{align*}
+                        \]
+                        Here, the posterior has the same functional form as the prior. Thus, the beta distribution is the 
+                        <strong>conjugate prior</strong> for the binomial distribution. 
+                    </p>
+
+                    <p>
+                        Once we got the posterior distribution, for example, we can use <strong>posterior mean</strong> \(\bar{\theta}\) as a point estimate of \(\theta\):
+                        \[
+                        \begin{align*}
+                        \bar{\theta} = \mathbb{E }[\theta \mid \mathcal{D}] &= \frac{a+y}{(a+y) + (b+N-y)} \\\\
+                                                                        &= \frac{a+y}{a+b+N}.
+                        \end{align*}
+                        \]
+                        Note: 
+                        By adjusting hyper-parameters \(a\) and \(b\), we can control the influence of the prior on the posterior.
+                    </p>
+
+                    <p>
+                        If \(a\) and \(b\) are small, the posterior mean will closely reflect the data: 
+                        \[
+                        \bar{\theta} \approx  \frac{y}{N} = \hat{\theta}_{MLE}
+                        \]
+                        while if \(a\) and \(b\) are large, the posterior mean will be more influenced by the prior.
+                    </p>
+                    <p>
+                        Often we need to check the <strong>standard error</strong> of our estimate, which is the posterior standard deviation:
+                        \[
+                        \begin{align*}
+                        \text{SE }(\theta) &= \sqrt{\text{Var }[\theta \mid \mathcal{D}]} \\\\
+                                        &= \sqrt{\frac{(a+y)(b+N-y)}{(a+b+N)^2(a+b+N+1)}}
+                        \end{align*}
+                        \]
+                        Here, if \(N \gg a, b\), we can simplify the <strong>posterior variance</strong> as follows:
+                        \[
+                        \begin{align*}
+                        \text{Var }[\theta \mid \mathcal{D}] &\approx \frac{y(N-y)}{(N)^2 N} \\\\
+                                                        &= \frac{y}{N^2} - \frac{y^2}{N^3} \\\\
+                                                        &= \frac{\hat{\theta}(1 - \hat{\theta})}{N}
+                        \end{align*}
+                        \]
+                        where \(\hat{\theta} = \frac{y}{N}\) is the MLE.
+                    </p>
+                    <p>
+                        Thus, the standard error is given by 
+                        \[
+                        \text{SE }(\theta) \approx \sqrt{\frac{\hat{\theta}(1 - \hat{\theta})}{N}}.
+                        \]
+                    </p>
+                    <p>
+                        From (1) and (2), the <strong>marginal likelihood</strong> is given by the ratio of normalization constants(beta functions) 
+                        for the prior and posterior:
+                        \[
+                        p(\mathcal{D}) = \frac{B(a+y,\, b+N-y)}{B(a, b)}.
+                        \]
+                        Note: In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to get the 
+                        exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
+                    </p>
+                    <p>
+                        Finally, to make predictions for new observations, we use <strong>posterior predictive distribution</strong>:
+                        \[
+                        p(x_{new} \mid \mathcal{D}) = \int p(x_{new} \mid \theta) p(\theta \mid \mathcal{D}) d\theta.
+                        \]
+                        Again, like computing the marginal likelihood, it is difficult to compute posterior predictive distribution, but in this case, 
+                        we can get it easily due to the conjugate prior. 
+                    </p>
+                    <p>
+                        For example, the probability of observing a head in the next coin toss is given by:
+                        \[
+                        \begin{align*}
+                        p(y_{new}=1 \mid \mathcal{D}) &= \int_0 ^1  p(y_{new}=1 \mid \theta) p(\theta \mid \mathcal{D}) d\theta \\\\
+                                                &= \int_0 ^1 \theta \text{Beta }(\theta \mid a+y, \, b+N-y) d\theta \\\\
+                                                &= \mathbb{E }[\theta \mid \mathcal{D}] \\\\
+                                                &= \frac{a+y}{a+b+N}.
+                        \end{align*}
+                        \]
+                        Note: As you can see, the hyper-parameters \(a\) and \(b\) is critical in the whole process of our inference. 
+                        In practice, setting up hyper-parameters is one of the most challenging factor of the project. 
+                    </p>
+                </div>
             </section>
 
             <section id="normal" class="section-content">
-            <h2>Univariate Normal Distribution Model</h2>
-            <p>
-            Given the univariate normal distribution \(N(\mu, \sigma^2)\), there are three cases for our target posterior: 
-            <ol style="padding-left: 40px;">
-                <li>\(p(\mu | \mathcal{D}, \sigma^2) \): Variance \(\sigma^2\) is known.</li>
-                <li>\(p(\sigma^2 | \mathcal{D}, \mu) \): Mean \(\mu\) is known.</li>
-                <li>\(p(\mu, \sigma^2 | \mathcal{D})\): Both \(\sigma^2\) and \(\mu\) are unknown.</li>
-            </ol>
-            <br>
-            Here, we only discuss the case 1 and case 2. 
-            <div class="proof">
-                <span class="proof-title">Example 2: Normal distribution model with known variance \(\sigma^2\)</span>
-                In the case where \(\sigma^2\) is known constant, the <strong>likelihood</strong> for \(\mu\) is given by 
-                \[
-                \begin{align*}
-                p(\mathcal{D}| \mu) &= \prod_{n=1}^N \frac{1}{\sqrt{2\pi \sigma^2}} \exp \Big(-\frac{(y_n - \mu)^2}{2\sigma^2}\Big)\\\\
-                                    &= \Big(\frac{1}{\sqrt{2\pi \sigma^2}}\Big)^N \exp \Big(- \sum_{n=1}^N \frac{(y_n - \mu)^2}{2\sigma^2}\Big) \\\\
-                                    &\propto \exp \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \Big).
-                \end{align*}
-                \]
-                The <strong>conjugate prior</strong> is another normal distribution:
-                \[
-                \begin{align*}
-                p(\mu) &= N(\mu | \, \mu_0, \sigma_0^2) \\\\
-                       &\propto \exp \Big(-\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \Big).
-                \end{align*}
-                \]
-                <br>
-                Now, we can compute the <strong>posterior</strong> as follows:
-                \[
-                \begin{align*}
-                p(\mu | \, \mathcal{D}, \sigma^2) &\propto \exp \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \Big) \cdot \exp \Big(-\frac{(\mu - \mu_0)^2}{2\sigma_0^2}  \Big) \\\\
-                                                  &= \exp \Big\{-\frac{1}{2}\Big(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \Big)\mu^2 +\Big(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \Big)\mu 
-                                                                + \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2} \Big) \Big\}
-                \end{align*}
-                \]
-                Since \(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2}\) is constant with respect to \(\mu\), we ignore it.
-                <br><br>
-                Let \(A = \Big(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \Big)\) and \(B =\Big(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \Big)\), and completing the square, we get:
-                \[
-                \begin{align*}
-                p(\mu | \, \mathcal{D}, \sigma^2) &\propto \exp \Big\{-\frac{1}{2}A\mu^2 + B\mu \Big\} \\\\
-                                                  &= \exp \Big\{-\frac{1}{2}A \Big(\mu - \frac{B}{A} \Big)^2 + \frac{B^2}{2A}\Big\}.                     
-                \end{align*}
-                \]
-                Since the term \(\frac{B^2}{2A}\) does not depend on \(\mu\), and \(-\frac{1}{2}A \Big(\mu - \frac{B}{A} \Big)^2\) is a quadratic form of an univariate normal distributuin, we conclude that
-                \[
-                \begin{align*}
-                p(\mu | \, \mathcal{D}, \sigma^2)  = N(\mu | \, \mu_N, \sigma_N^2 )
-                \end{align*}
-                \]
-                where the <strong>posterior variance</strong> is given by:
-                \[
-                \begin{align*}
-                \sigma_N^2 &= \frac{1}{A} \\\\
-                           &= \frac{\sigma^2 \sigma_0^2}{N\sigma_0^2 + \sigma^2}
-                \end{align*}
-                \]
-                and the <strong>posterior mean</strong> is given by:
-                \[
-                \begin{align*}
-                \mu_N &= \frac{B}{A} \\\\
-                      &= \sigma_N^2 \Big(\frac{\mu_0}{\sigma_0^2} + \frac{N \bar{y}}{\sigma^2} \Big) \\\\
-                      &= \frac{\sigma^2}{N\sigma_0^2 + \sigma^2}\mu_0 + \frac{N\sigma_0^2}{N\sigma_0^2 + \sigma^2}\bar{y} \\\\
-                \end{align*}
-                \]
-                where \(\bar{y} = \frac{1}{N}\sum_{n=1}^N y_n\) is the empirical mean. 
-                <br><br>
-                Note: In this case, \(\mu_0\) and \(\sigma_0^2\) are hyper-parameters of the prior distribution. For example, as you can 
-                see the form of the posterior mean \(\mu_N\), a small \(\sigma_0^2\) gives more weight to the prior mean \(\mu_0\), while 
-                a large \(\sigma_0^2\) reduces the influence of the prior, making the posterior more rely on the data.
-            </div>
-            In machine learning, a typical application of this model is <strong>online learning</strong> that is a training approach where 
-            the model is updated incrementally as new data becomes available rather than being trained on fixed data at once (which 
-            is known as <strong>batch learning</strong>). Online learning is particularly useful in scenarios where data arrive in a stream 
-            or is too large to be processed all at once. 
-            <br><br>
-            <div class="proof">
-                <span class="proof-title">Example 3: Normal distribution model with known mean \(\mu\)</span>
-                In the case where \(\mu\) is known constant, the <strong>likelihood</strong> for \(\sigma^2\) is given by 
-                \[
-                \begin{align*}
-                p(\mathcal{D}| \sigma^2) &= \frac{1}{(2 \pi \sigma^2)^{\frac{N}{2}}} \exp \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \Big) \\\\
-                                         &\propto (\sigma^2)^{-\frac{N}{2}} \exp \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \Big).            
-                \end{align*}
-                \]
-                The "standard" <strong>conjugate prior</strong> is the <strong>inverse gamma distribution</strong>:
-                \[
-                \begin{align*}
-                p(\sigma^2) &= \text{InvGamma }(\sigma^2 | \, a, b) \\\\
-                            &= \frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \Big(- \frac{b}{\sigma^2}\Big)
-                \end{align*}
-                \]
-                where \(a > 0\) is the shape parameter and  \(b > 0\) is the scale parameter.
-                <br><br>
-                The <strong>posterior</strong> is given by:
-                \[
-                \begin{align*}
-                p(\sigma^2 | \, \mathcal{D}, \mu) &\propto \Big\{ (\sigma^2)^{-\frac{N}{2}} \exp \Big(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \Big) \Big\}
-                                                           \cdot \Big\{\frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \Big(- \frac{b}{\sigma^2}\Big) \Big\} \\\\    
-                                                  &= (\sigma^2)^{-(a+\frac{N}{2}+1)} \exp \Big\{ - \frac{1}{\sigma^2}\Big(b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2 \Big) \Big\}                         
-                                                 
-                \end{align*}
-                \]
-                Here, let \(\hat{a} = a + \frac{N}{2}\), and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\).
-                Thus,
-                \[
-                p(\sigma^2 | \, \mathcal{D}, \mu) = \text{InvGamma }(\sigma^2 | \, \hat{a}, \hat{b}).
-                \]
-                <br>
-                Alternatively, we can choose <strong>scaled inverse chi-squared distribution</strong> as the conjugate prior:
-                \[
-                \begin{align*}
-                p(\sigma^2) &= \text{ScaledInv- }\chi^2(\sigma^2 | \, \nu_0, \sigma_0^2) \\\\
-                            &= \text{InvGamma }\Big(\sigma^2 | \, \frac{\nu_0}{2}, \frac{\nu_0 \sigma_0^2}{2}\Big) \\\\
-                            &\propto (\sigma^2)^{-\frac{\nu_0}{2}-1} \exp \Big(- \frac{\nu_0 \sigma_0^2}{2\sigma^2}   \Big)
-                \end{align*}
-                \]
-                where \(\nu\) is the degrees of freedom. 
-                <br>
-                Thus, the posterior is given by:
-                \[
-                p(\sigma^2 | \, \mathcal{D}, \mu) = \text{ScaledInv- }\chi^2 \Big(\sigma^2 | \, \nu_0 +N, \, \frac{\nu_0 \sigma_0^2 + \sum_{n=1}^N (y_n - \mu)^2}{\nu_0 + N}\Big).
-                \]
-                A benefit of using this form is that we can control the strength of the prior by the single hyper-parameter \(\nu_0\).
-            </div>
-            This is typical model for quality control and process monitoring because in industrial and manufacturing processes, the 
-            mean of a quality characteristic might be known based on historical data. In machine learning, this kind of approach is 
-            called <strong>anomaly detection</strong>. Anomalies are detected by comparing new datapoints to the baseline model.
-            </p>
+                <h2>Univariate Normal Distribution Model</h2>
+
+                <p>
+                    Given the univariate normal distribution \(N(\mu, \sigma^2)\), there are three cases for our target posterior: 
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>\(p(\mu \mid \mathcal{D}, \sigma^2) \): Variance \(\sigma^2\) is known.</li>
+                    <li>\(p(\sigma^2 \mid \mathcal{D}, \mu) \): Mean \(\mu\) is known.</li>
+                    <li>\(p(\mu, \sigma^2 \mid \mathcal{D})\): Both \(\sigma^2\) and \(\mu\) are unknown.</li>
+                </ol>
+
+                <p>
+                    Here, we only discuss the case 1 and case 2. 
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 2: Normal distribution model with known variance \(\sigma^2\)</span>
+
+                    <p>
+                        In the case where \(\sigma^2\) is known constant, the <strong>likelihood</strong> for \(\mu\) is given by 
+                        \[
+                        \begin{align*}
+                        p(\mathcal{D} \mid \mu) &= \prod_{n=1}^N \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left(-\frac{(y_n - \mu)^2}{2\sigma^2}\right)\\\\
+                                                &= \left(\frac{1}{\sqrt{2\pi \sigma^2}}\right)^N \exp \left(- \sum_{n=1}^N \frac{(y_n - \mu)^2}{2\sigma^2}\right) \\\\
+                                                &\propto \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right).
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <p>
+                        The <strong>conjugate prior</strong> is another normal distribution:
+                        \[
+                        \begin{align*}
+                        p(\mu) &= N(\mu \mid \, \mu_0, \sigma_0^2) \\\\
+                            &\propto \exp \left(-\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right).
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <p>
+                        Now, we can compute the <strong>posterior</strong> as follows:
+                        \[
+                        \begin{align*}
+                        p(\mu \mid \, \mathcal{D}, \sigma^2) 
+                        &\propto \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \cdot \exp \left(-\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right) \\\\
+                        &= \exp \left\{-\frac{1}{2}\left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\mu^2 +\left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\mu 
+                                    + \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2} \right) \right\}
+                        \end{align*}
+                        \]
+                        Since \(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2}\) is constant with respect to \(\mu\), we ignore it.
+                    </p>
+
+                    <p>
+                        Let \(A = \left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\) and \(B = \left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\), 
+                        and completing the square, we get:
+                        \[
+                        \begin{align*}
+                        p(\mu \mid \, \mathcal{D}, \sigma^2) 
+                        &\propto \exp \left\{-\frac{1}{2}A\mu^2 + B\mu \right\} \\\\
+                        &= \exp \left\{-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2 + \frac{B^2}{2A}\right\}.                     
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <p>
+                        Since the term \(\frac{B^2}{2A}\) does not depend on \(\mu\), and \(-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2\) 
+                        is a quadratic form of an univariate normal distributuin, we conclude that
+                        \[
+                        \begin{align*}
+                        p(\mu \mid \, \mathcal{D}, \sigma^2)  = N(\mu \mid \, \mu_N, \sigma_N^2 )
+                        \end{align*}
+                        \]
+                        where the <strong>posterior variance</strong> is given by:
+                        \[
+                        \begin{align*}
+                        \sigma_N^2 &= \frac{1}{A} \\\\
+                                &= \frac{\sigma^2 \sigma_0^2}{N\sigma_0^2 + \sigma^2}
+                        \end{align*}
+                        \]
+                        and the <strong>posterior mean</strong> is given by:
+                        \[
+                        \begin{align*}
+                        \mu_N &= \frac{B}{A} \\\\
+                            &= \sigma_N^2 \left(\frac{\mu_0}{\sigma_0^2} + \frac{N \bar{y}}{\sigma^2} \right) \\\\
+                            &= \frac{\sigma^2}{N\sigma_0^2 + \sigma^2}\mu_0 + \frac{N\sigma_0^2}{N\sigma_0^2 + \sigma^2}\bar{y} \\\\
+                        \end{align*}
+                        \]
+                        where \(\bar{y} = \frac{1}{N}\sum_{n=1}^N y_n\) is the empirical mean. 
+                    </p>
+
+                    <p>
+                        Note: In this case, \(\mu_0\) and \(\sigma_0^2\) are hyper-parameters of the prior distribution. For example, as you can 
+                        see the form of the posterior mean \(\mu_N\), a small \(\sigma_0^2\) gives more weight to the prior mean \(\mu_0\), while 
+                        a large \(\sigma_0^2\) reduces the influence of the prior, making the posterior more rely on the data.
+                    </p>
+                </div>
+
+                <p>
+                    In machine learning, a typical application of this model is <strong>online learning</strong> that is a training approach where 
+                    the model is updated incrementally as new data becomes available rather than being trained on fixed data at once (which 
+                    is known as <strong>batch learning</strong>). Online learning is particularly useful in scenarios where data arrive in a stream 
+                    or is too large to be processed all at once. 
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 3: Normal distribution model with known mean \(\mu\)</span>
+
+                    <p>
+                        In the case where \(\mu\) is known constant, the <strong>likelihood</strong> for \(\sigma^2\) is given by 
+                        \[
+                        \begin{align*}
+                        p(\mathcal{D} \mid \sigma^2) 
+                        &= \frac{1}{(2 \pi \sigma^2)^{\frac{N}{2}}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \\\\
+                        &\propto (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right).            
+                        \end{align*}
+                        \]
+                        The "standard" <strong>conjugate prior</strong> is the <strong>inverse gamma distribution</strong>:
+                        \[
+                        \begin{align*}
+                        p(\sigma^2) &= \text{InvGamma }(\sigma^2 \mid \, a, b) \\\\
+                                    &= \frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right)
+                        \end{align*}
+                        \]
+                        where \(a > 0\) is the shape parameter and  \(b > 0\) is the scale parameter.
+                    </p>
+
+                    <p>
+                        The <strong>posterior</strong> is given by:
+                        \[
+                        \begin{align*}
+                        p(\sigma^2 \mid \, \mathcal{D}, \mu) 
+                        &\propto \left\{ (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}
+                                      \cdot \left\{\frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \right\} \\\\    
+                        &= (\sigma^2)^{-(a+\frac{N}{2}+1)} \exp \left\{ - \frac{1}{\sigma^2}\left(b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}.                                                           
+                        \end{align*}
+                        \]
+                        Here, let \(\hat{a} = a + \frac{N}{2}\), and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\).
+                        Thus,
+                        \[
+                        p(\sigma^2 \mid \, \mathcal{D}, \mu) = \text{InvGamma }(\sigma^2 \mid \, \hat{a}, \hat{b}).
+                        \]
+                    </p>
+
+                    <p>
+                        Alternatively, we can choose <strong>scaled inverse chi-squared distribution</strong> as the conjugate prior:
+                        \[
+                        \begin{align*}
+                        p(\sigma^2) &= \text{ScaledInv- }\chi^2(\sigma^2 \mid \, \nu_0, \sigma_0^2) \\\\
+                                    &= \text{InvGamma }\left(\sigma^2 \mid \, \frac{\nu_0}{2}, \frac{\nu_0 \sigma_0^2}{2}\right) \\\\
+                                    &\propto (\sigma^2)^{-\frac{\nu_0}{2}-1} \exp \left(- \frac{\nu_0 \sigma_0^2}{2\sigma^2} \right)
+                        \end{align*}
+                        \]
+                        where \(\nu\) is the degrees of freedom. 
+                    </p>
+                    <p>
+                        Thus, the posterior is given by:
+                        \[
+                        p(\sigma^2 \mid \, \mathcal{D}, \mu) 
+                        = \text{ScaledInv- }\chi^2 \left(\sigma^2 \mid \, \nu_0 + N, \, \frac{\nu_0 \sigma_0^2 + \sum_{n=1}^N (y_n - \mu)^2}{\nu_0 + N}\right).
+                        \]
+                        A benefit of using this form is that we can control the strength of the prior by the single hyper-parameter \(\nu_0\).
+                    </p>
+                </div>
+                <p>
+                    This is typical model for quality control and process monitoring because in industrial and manufacturing processes, the 
+                    mean of a quality characteristic might be known based on historical data. In machine learning, this kind of approach is 
+                    called <strong>anomaly detection</strong>. Anomalies are detected by comparing new datapoints to the baseline model.
+                </p>
             </section>
         </div>
         <script src="/js/main.js"></script>
