@@ -729,56 +729,89 @@ document.addEventListener('DOMContentLoaded', function() {
         const r1sq = dx1 * dx1 + dy1 * dy1;
         const r2sq = dx2 * dx2 + dy2 * dy2;
 
-        // Influence weights (Gaussian falloff)
-        const falloff = sigma * 2.5;
+        // Influence weights (Gaussian falloff) — wide enough to cover the whole canvas
+        const falloff = sigma * 3.0;
         const falloff2 = falloff * falloff;
         const w1 = Math.exp(-r1sq / (2 * falloff2));
         const w2 = Math.exp(-r2sq / (2 * falloff2));
-        const wSum = w1 + w2 + 0.01; // avoid division by zero
+        const wTotal = w1 + w2 + 0.001;
 
-        // The effective "separation" felt at this grid point
+        // How strongly this grid point "feels" the handles
+        const localInfluence = Math.min((w1 + w2) * 1.5, 1.0);
+
+        // The handle-to-handle separation vector
         const sepX = mu2.x - mu1.x;
         const sepY = mu2.y - mu1.y;
         const sep = Math.sqrt(sepX * sepX + sepY * sepY);
 
-        // Project separation onto a local direction
-        // This creates anisotropy: along the mu1↔mu2 axis, information is different
-        const localInfluence = (w1 + w2) / wSum;
-
-        // Build a locally-varying FIM
-        // When separation is small: high curvature (elongated ellipses along sep direction)
-        // When separation is large: near-isotropic (circular ellipses)
-
-        // Overlap factor: when sep/sigma is small, distributions overlap → singularity
-        const overlap = Math.exp(-sep * sep / (8 * sigma * sigma));
-
-        // Direction of mu1→mu2
-        let nx = 0, ny = 1;
+        // Unit direction along separation (with fallback)
+        let nx, ny;
         if (sep > 1e-6) {
             nx = sepX / sep;
             ny = sepY / sep;
+        } else {
+            nx = 1;
+            ny = 0;
         }
 
-        // Base information (from each component alone: 1/σ²)
+        // Base information scale: 1/σ²
         const baseInfo = 1.0 / (sigma * sigma);
 
-        // Along separation axis: information drops as overlap increases
-        // (harder to distinguish which component generated data)
-        // Perpendicular: information stays high
-        const infoAlongSep = baseInfo * (1.0 - 0.85 * overlap) * localInfluence + baseInfo * 0.15;
-        const infoPerpSep = baseInfo * localInfluence + baseInfo * 0.15;
+        // Overlap factor: exp(-d²/(8σ²))  — 1 when fully overlapping, 0 when well-separated
+        const overlap = Math.exp(-sep * sep / (8 * sigma * sigma));
 
-        // Near the singularity (overlap ≈ 1), the along-separation eigenvalue
-        // becomes very small → ellipse stretches perpendicular to sep axis
-        // This correctly shows: it's hard to move parameters along sep without changing the model much
-        // Actually the CORRECT behavior: near singularity, the FIM has a near-zero eigenvalue
-        // along the "exchange" direction → the natural gradient AMPLIFIES motion along this direction
+        // ── KEY: eigenvalues of the Fisher metric ──
+        // Along the separation axis (μ₁↔μ₂ direction):
+        //   When overlap ≈ 1 (singularity), info collapses → small eigenvalue
+        //   When overlap ≈ 0 (well-separated), info is normal → baseInfo
+        // Perpendicular to separation:
+        //   Always near baseInfo (both components contribute independently)
 
-        // Build FIM from eigenvectors/eigenvalues
-        // F = λ₁ * (n⊗n) + λ₂ * (n⊥⊗n⊥)
-        const F00 = infoAlongSep * nx * nx + infoPerpSep * ny * ny;
-        const F01 = (infoAlongSep - infoPerpSep) * nx * ny;
-        const F11 = infoAlongSep * ny * ny + infoPerpSep * nx * nx;
+        // The singularity factor: how much the along-sep eigenvalue drops
+        // Use a steep curve for dramatic visual effect
+        const singDrop = overlap * overlap * 0.95; // drops to 5% of baseInfo at full overlap
+
+        const lambdaAlong = baseInfo * (1.0 - singDrop);
+        const lambdaPerp = baseInfo;
+
+        // Blend toward isotropy (identity) far from handles
+        // Near handles: full anisotropy. Far away: gentle anisotropy
+        const blendedAlong = lambdaAlong * localInfluence + baseInfo * (1.0 - localInfluence);
+        const blendedPerp = lambdaPerp * localInfluence + baseInfo * (1.0 - localInfluence);
+
+        // ── Proximity-based rotation modulation ──
+        // Near the midpoint between handles, the anisotropy is strongest.
+        // Near one handle, the ellipse should be oriented differently.
+        // We modulate the direction by blending toward the "radial" direction from closest handle.
+        const midX = (mu1.x + mu2.x) * 0.5;
+        const midY = (mu1.y + mu2.y) * 0.5;
+        const toMidX = gx - midX, toMidY = gy - midY;
+        const distToMid = Math.sqrt(toMidX * toMidX + toMidY * toMidY);
+        const midProximity = Math.exp(-distToMid * distToMid / (2 * falloff2));
+
+        // Effective direction: blend between sep-axis (near midpoint) and radial (near handle)
+        let ex = nx, ey = ny;
+        if (localInfluence > 0.05 && distToMid > 0.1) {
+            // Add a subtle twist based on which handle is closer
+            const bias = (w1 - w2) / (wTotal + 0.001);
+            // Rotate direction slightly based on bias
+            const twistAngle = bias * (1 - midProximity) * 0.5;
+            const cos_t = Math.cos(twistAngle);
+            const sin_t = Math.sin(twistAngle);
+            ex = nx * cos_t - ny * sin_t;
+            ey = nx * sin_t + ny * cos_t;
+        }
+
+        // Renormalize direction
+        const eLen = Math.sqrt(ex * ex + ey * ey);
+        if (eLen > 1e-8) { ex /= eLen; ey /= eLen; }
+
+        // Build FIM from eigendecomposition:
+        // F = λ_along * (e⊗e) + λ_perp * (e⊥⊗e⊥)
+        // where e⊥ = (-ey, ex)
+        const F00 = blendedAlong * ex * ex + blendedPerp * ey * ey;
+        const F01 = (blendedAlong - blendedPerp) * ex * ey;
+        const F11 = blendedAlong * ey * ey + blendedPerp * ex * ex;
 
         return [F00, F01, F01, F11];
     }
@@ -855,7 +888,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== RENDERING ==========
     function drawGrid() {
         const step = PARAM_RANGE / gridDensity;
-        const baseRadius = (step * 0.42) * ellipseScale;
+        // pixelStep = how many pixels between grid centers
+        const pixelStep = (step / PARAM_RANGE) * W;
+        // Target semi-axis for a "unit circle" ellipse ≈ 40% of grid spacing
+        const baseSize = pixelStep * 0.42 * ellipseScale;
 
         for (let i = 0; i <= gridDensity; i++) {
             for (let j = 0; j <= gridDensity; j++) {
@@ -865,64 +901,86 @@ document.addEventListener('DOMContentLoaded', function() {
                 const F = computeFieldFIM(gx, gy);
                 const eig = mat2SymEigen(F);
 
-                // Clamp eigenvalues for visual stability
-                const l1 = Math.max(eig.lambda1, 0.01);
-                const l2 = Math.max(eig.lambda2, 0.01);
+                // Clamp eigenvalues positive for stability
+                const l1 = Math.max(eig.lambda1, 1e-4);
+                const l2 = Math.max(eig.lambda2, 1e-4);
 
-                // Ellipse semi-axes: proportional to 1/sqrt(eigenvalue)
-                // (Fisher ellipse: δθᵀFδθ = ε → axes ∝ 1/√λ)
-                const ratio = Math.sqrt(l1 / l2);
-                const clampedRatio = Math.min(ratio, 6); // visual clamp
+                // Fisher ellipse: δθᵀ F δθ = ε  →  semi-axes ∝ 1/√λ
+                // Normalize so the GEOMETRIC MEAN of the axes equals baseSize.
+                // raw axes: a_raw = 1/√l1, b_raw = 1/√l2
+                // geometric mean of raw = 1/(l1*l2)^{1/4}
+                // scale factor = baseSize * (l1*l2)^{1/4}
+                const rawA = 1.0 / Math.sqrt(l1);
+                const rawB = 1.0 / Math.sqrt(l2);
+                const geoMeanRaw = Math.sqrt(rawA * rawB); // = 1/(l1*l2)^{1/4}
+                const normFactor = baseSize / geoMeanRaw;
 
-                const avgInfo = Math.sqrt(l1 * l2);
-                const scale = baseRadius / Math.pow(avgInfo, 0.25);
-                const clampedScale = Math.min(scale, baseRadius * 2.5);
+                let a = rawA * normFactor; // semi-major in pixels
+                let b = rawB * normFactor; // semi-minor in pixels
 
-                // Semi-axes
-                const a = clampedScale * Math.sqrt(clampedRatio);
-                const b = clampedScale / Math.sqrt(clampedRatio);
+                // Clamp aspect ratio for visual clarity (max 8:1)
+                const aspect = a / (b + 0.01);
+                if (aspect > 8) {
+                    const mid = Math.sqrt(a * b);
+                    a = mid * Math.sqrt(8);
+                    b = mid / Math.sqrt(8);
+                } else if (aspect < 1 / 8) {
+                    const mid = Math.sqrt(a * b);
+                    a = mid / Math.sqrt(8);
+                    b = mid * Math.sqrt(8);
+                }
 
-                // Rotation angle from eigenvector
-                const angle = Math.atan2(eig.v2.y, eig.v2.x);
+                // Enforce minimum visible size
+                a = Math.max(a, 3);
+                b = Math.max(b, 3);
+
+                // Rotation angle: align major axis with eigenvector of SMALLER eigenvalue
+                // (smaller λ → larger 1/√λ → major axis direction)
+                const majorVec = (l1 <= l2) ? eig.v1 : eig.v2;
+                const angle = Math.atan2(majorVec.y, majorVec.x);
 
                 // Canvas position
                 const cpos = paramToCanvas(gx, gy);
 
-                // Intensity based on local information magnitude
-                const infoMag = Math.log(1 + avgInfo) * 0.5;
-                const alpha = Math.min(0.25, 0.05 + infoMag * 0.12);
-
-                // Color: brighter near handles, subtle singularity glow
+                // ── Visual intensity ──
+                // Proximity to either handle (0 = far, 1 = on top)
                 const dx1 = gx - mu1.x, dy1 = gy - mu1.y;
                 const dx2 = gx - mu2.x, dy2 = gy - mu2.y;
-                const dMin = Math.min(
-                    Math.sqrt(dx1 * dx1 + dy1 * dy1),
-                    Math.sqrt(dx2 * dx2 + dy2 * dy2)
-                );
-                const proximity = Math.exp(-dMin * dMin / (2 * sigma * sigma * 4));
+                const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                const dMin = Math.min(dist1, dist2);
+                // Wider falloff so ellipses stay visible across the whole canvas
+                const proxRadius = sigma * 4.0;
+                const proximity = Math.exp(-dMin * dMin / (2 * proxRadius * proxRadius));
 
-                // Singularity detection
-                const condNumber = l1 / (l2 + 1e-10);
-                const singularity = Math.min(condNumber / 10, 1);
+                // Condition number → singularity indicator
+                const condNumber = Math.max(l1, l2) / (Math.min(l1, l2) + 1e-10);
+                const singularity = Math.min((condNumber - 1) / 15, 1); // 0 = isotropic, 1 = very anisotropic
 
-                const r = Math.round(singularity * 100);
-                const g = Math.round(255 * (0.6 + 0.4 * proximity));
-                const bVal = 255;
-                const fillAlpha = alpha * (0.4 + 0.6 * proximity);
-                const strokeAlpha = Math.min(0.6, alpha * 1.5 + singularity * 0.2);
+                // Alpha: always visible, brighter near handles & singularities
+                const baseAlpha = 0.12;
+                const fillAlpha = baseAlpha + 0.35 * proximity + 0.10 * singularity;
+                const strokeAlpha = 0.20 + 0.50 * proximity + 0.15 * singularity;
+
+                // Color: cyan base, shifts warmer (orange-pink) at singularities
+                // Lerp from cyan (0,255,255) → warm singularity (255,120,200)
+                const sLerp = singularity * singularity; // quadratic for drama
+                const cr = Math.round(0 + sLerp * 255);
+                const cg = Math.round(255 - sLerp * 135);
+                const cb = Math.round(255 - sLerp * 55);
 
                 ctx.save();
                 ctx.translate(cpos.x, cpos.y);
-                ctx.rotate(-angle); // negate because canvas y is flipped
+                ctx.rotate(-angle); // negate for canvas y-flip
 
                 ctx.beginPath();
-                ctx.ellipse(0, 0, Math.max(a, 1.5), Math.max(b, 1.5), 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, a, b, 0, 0, Math.PI * 2);
 
-                ctx.fillStyle = `rgba(${r}, ${g}, ${bVal}, ${fillAlpha.toFixed(3)})`;
+                ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${fillAlpha.toFixed(3)})`;
                 ctx.fill();
 
-                ctx.strokeStyle = `rgba(${r}, ${g}, ${bVal}, ${strokeAlpha.toFixed(3)})`;
-                ctx.lineWidth = 0.8 + singularity * 0.5;
+                ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, ${strokeAlpha.toFixed(3)})`;
+                ctx.lineWidth = 1.0 + singularity * 1.0;
                 ctx.stroke();
 
                 ctx.restore();
@@ -933,7 +991,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawSubtleGrid() {
         // Faint reference grid
         const step = PARAM_RANGE / 8;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
         ctx.lineWidth = 0.5;
 
         for (let i = 0; i <= 8; i++) {
@@ -957,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Axes through origin
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
         ctx.lineWidth = 1;
         const o0 = paramToCanvas(0, PARAM_MIN);
         const o1 = paramToCanvas(0, PARAM_MAX);
@@ -1013,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const natural = computeNaturalGradient(px, py);
 
         // Scale for visibility
-        const arrowScale = 60;
+        const arrowScale = 100;
 
         // Draw probe point
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
