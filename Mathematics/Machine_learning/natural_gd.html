@@ -21,9 +21,7 @@ noindex: true
         <div class="topic-nav">
             <a href="#intro">Introduction</a>
             <a href="#demo">The Geometry of Information: Interactive GMM Manifold</a>
-            <a href="#intro"></a>
-            <a href="#intro"></a>
-            
+            <a href="#kfac">Scaling to Deep Learning: The Kronecker-factored Approximation (K-FAC)</a>    
         </div>
 
         <div class="container">  
@@ -32,39 +30,277 @@ noindex: true
                 <h2>Introduction</h2>
 
                 <p>
-
+                    Starting around <strong>2025</strong>, we entered the era of <strong>Physical AI</strong>. Learning is no longer just about 
+                    minimizing a loss function on a screen; it is about aligning internal model representations with the rigid constraints of the 
+                    "physical world." Whether it's robotics, autonomous systems, or neural ODEs, the path an AI takes through its parameter space 
+                    directly impacts its stability and energy efficiency in real-time environments.
                 </p>
+
+                <p>
+                    Deep learning model optimization often relies on finding the path of least resistance. 
+                    Standard  <a href="../Calculus/gradient.html#sgd"><strong>Stochastic Gradient Descent (SGD)</strong></a> assumes parameter space 
+                    is Euclidean that is a flat landscape where every step has the same weight. However, <strong>Information Geometry</strong> reveals that probability 
+                    distributions live on a curved <strong>statistical manifold</strong>. By respecting this intrinsic geometry, 
+                    <a href="../Probability/fisher_info.html#ngd"><strong>Natural Gradient Descent (NGD)</strong></a> accounts for this curvature by using the 
+                    <a href="../Probability/fisher_info.html#fim"><strong>Fisher Information Matrix (FIM)</strong></a> as a metric. Let's visualize how this geometry distorts 
+                    our path in a simple mixture model.
+                </p>
+
             </section>
 
             <section id="demo" class="section-content">
                 <h2>The Geometry of Information: Interactive GMM Manifold</h2>
 
-                <p>
-
-                </p>
-
                 <div id="natural-gradient-visualizer"></div>
 
-            </section>
-
-
-            <section id="" class="section-content">
-                <h2></h2>
+                <h3>The Model: A Two-Component Gaussian Mixture</h3>
 
                 <p>
-
+                    The entire canvas represents a two-dimensional parameter space 
+                    \[
+                    \Theta = \{(\mu_1, \mu_2) \in \mathbb{R}^2\}
+                    \]
+                    Each point on this plane specifies a one-dimensional Gaussian Mixture Model 
+                    \[
+                    p(x \mid \theta) = \tfrac{1}{2}\mathcal{N}(x \mid \mu_1, \sigma^2) + \tfrac{1}{2}\mathcal{N}(x \mid \mu_2, \sigma^2),
+                    \]
+                    where the mixing weights are fixed at \(\tfrac{1}{2}\) and the variance \(\sigma^2\) is shared. 
+                    The two draggable handles correspond to the current values of \(\mu_1\) and \(\mu_2\). 
+                    By moving them, you are traversing this parameter space and selecting different mixture distributions.
                 </p>
-            </section>
 
-            <section id="" class="section-content">
-                <h2></h2>
+                <h3>The Fisher Information Matrix as a Riemannian Metric</h3>
 
                 <p>
-
+                    The family of distributions \(\{p(x \mid \theta) : \theta \in \Theta\}\) forms a <strong>statistical manifold</strong> — 
+                    a <strong>smooth manifold</strong> where each point is a probability distribution. 
+                    The Fisher Information Matrix (FIM) provides the natural <strong>Riemannian metric</strong> on this manifold. 
+                    (Note: The formal definitions of manifold structures and Riemannian metrics will be explored in depth in 
+                    <strong>Section II: Calculus to Optimization & Analysis</strong> in the near future.)
                 </p>
+
+                <div class="theorem">
+                    <p>
+                        At each parameter value \(\theta_0\), the FIM is defined as
+                        \[
+                        \begin{align*}
+                        F(\theta_0)_{ij} &= \mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial \log p(x \mid \theta)}{\partial \theta_i}\,\frac{\partial \log p(x \mid \theta)}{\partial \theta_j}\right]_{\theta = \theta_0} \\\\
+                                         &= -\,\mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial^2 \log p(x \mid \theta)}{\partial \theta_i \,\partial \theta_j}\right]_{\theta = \theta_0}
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    This \(2 \times 2\) matrix is <strong>positive definite</strong> (almost everywhere) and encodes how sensitively the distribution \(p(x \mid \theta)\) 
+                    changes as we perturb \(\theta\) in each direction. The FIM defines an infinitesimal distance on the manifold: 
+                    for a small displacement \(d\theta\), the squared statistical distance is 
+                    \[
+                    ds^2 = d\theta^\top F(\theta)\, d\theta.
+                    \]
+                    This is precisely the <strong>second-order Taylor expansion</strong> of 
+                    the <a href="../Probability/entropy.html#kl"><strong>KL divergence</strong></a>: 
+                    \[
+                    D_{\mathrm{KL}}(p_\theta \,\|\, p_{\theta + d\theta}) \approx \tfrac{1}{2}\,d\theta^\top F(\theta)\,d\theta.
+                    \]
+                </p>
+
+                <h3>What the Ellipses Show: Local Quadratic Forms of the Metric</h3>
+
+                <p>
+                    Each ellipse in the tessellation is a <strong>Fisher ellipse</strong> - the level set 
+                    \[
+                    \{\delta\theta : \delta\theta^\top F(\theta_0)\,\delta\theta = \varepsilon\}
+                    \]
+                    of the local <a href="../Linear_algebra/symmetry.html#qf"><strong>quadratic form</strong></a> at that grid point. 
+                    The ellipse axes are determined by the eigendecomposition 
+                    \[
+                    F = Q \Lambda Q^\top
+                    \] 
+                    : the eigenvectors of \(F\) give the principal directions, and the semi-axis lengths are proportional to \(1/\sqrt{\lambda_i}\), 
+                    where \(\lambda_1, \lambda_2\) are the eigenvalues. A long axis in some direction means the FIM eigenvalue is <em>small</em> along 
+                    that direction - the distribution is insensitive to parameter changes there, so a large step in parameter space produces only a small 
+                    change in KL divergence.
+                </p>
+
+                <h3>The Information Singularity: When \(\mu_1 \to \mu_2\)</h3>
+
+                <p>
+                    Drag the two handles toward each other and observe the ellipses elongating dramatically along the \(\mu_1 \leftrightarrow \mu_2\) axis. 
+                    This visualizes the <strong>information singularity</strong> of mixture models. 
+                    When \(\mu_1 \approx \mu_2\), the model reduces to 
+                    \[
+                    p(x) \approx \mathcal{N}(x \mid \mu_1, \sigma^2), 
+                    \]
+                    and the two parameters become non-identifiable: swapping \(\mu_1\) and \(\mu_2\) produces the same distribution. 
+                    Formally, the FIM becomes <strong>rank-deficient</strong> (positive semi-definite but not definite) as the eigenvalue along the "exchange direction" \((\mu_1 - \mu_2)\) approaches zero 
+                    while the eigenvalue along \((\mu_1 + \mu_2)\) (the "mean shift" direction) remains bounded. 
+                    The condition number 
+                    \[
+                    \kappa(F) = \lambda_{\max}/\lambda_{\min}
+                    \] 
+                    diverges, which you can verify in the panel on the right.
+                </p>
+
+                <p>
+                    This singularity is not a numerical artifact - it reflects a genuine geometric property of the statistical manifold. 
+                    The manifold has a cusp-like structure near the identifiability boundary, 
+                    and standard Euclidean gradient descent slows catastrophically in this region 
+                    because it does not account for the degenerate geometry.
+                </p>
+
+                <h3>Well-Separated Regime: When \(\|\mu_1 - \mu_2\| \gg \sigma\)</h3>
+
+                <p>
+                    Pull the handles far apart and observe that the ellipses become nearly <em>circular</em> - the FIM approaches a scalar 
+                    multiple of the identity
+                    \[
+                    F(\theta) \approx \frac{1}{2\sigma^2} I.
+                    \]
+                    In this regime, the two Gaussian components have negligible overlap, and each parameter \(\mu_i\) is informed almost 
+                    exclusively by data generated from its own component. The manifold is locally flat (Euclidean), and the natural gradient 
+                    coincides with the ordinary gradient.
+                </p>
+
+                <h3>Euclidean vs. Natural Gradient: The Red and Cyan Arrows</h3>
+
+                <p>
+                    Click anywhere on the canvas to place a probe point. Two arrows appear:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>The <span style="color:#ff4646; font-weight:600;">Red Arrow</span>:<br>
+                        The <strong>Euclidean (steepest-descent) gradient</strong> \(\nabla_\theta L\), computed in the standard \(\ell^2\) geometry of parameter space. 
+                        This is the direction that changes \(\theta\) most rapidly per unit Euclidean distance \(\|d\theta\|_2\). 
+                    </li>
+
+                    <li>The <span style="color:#00ffff; font-weight:600;">cyan arrow</span>:<br>
+                        The natural gradient \(\tilde{\nabla}_\theta L = F(\theta)^{-1}\nabla_\theta L\), which is the steepest-descent direction under the Fisher-Rao metric. 
+                        This is the direction that changes \(\theta\) most rapidly per unit <em>statistical distance</em> \(\sqrt{d\theta^\top F(\theta)\,d\theta}\). 
+                        Equivalently, the natural gradient solves \(\min_{d\theta}\, L(\theta + d\theta)\) subject to \(D_{\mathrm{KL}}(p_\theta \| p_{\theta+d\theta}) \leq \varepsilon\) 
+                        to first order.
+                    </li>
+                </ul>
+               
+                <p>
+                    Both arrows are normalized to the same display length so that you can compare their <em>directions</em>. 
+                    The angle \(\Delta\theta\) between them, displayed above the probe point, measures how much the manifold geometry 
+                    distorts the gradient direction at that point. In the well-separated regime this angle is near \(0°\); 
+                    near the singularity it can exceed \(45°\), showing that Euclidean descent would head in a substantially suboptimal direction 
+                    when measured in the correct (information-geometric) metric.
+                </p>
+
+                <h3>Flow Mode: Particle Trajectories Along the Natural Gradient Field</h3>
+
+                <p>
+                    Activating <strong>Flow</strong> releases particles that follow the <strong>negative natural gradient field </strong>
+                    \[
+                    -F(\theta)^{-1}\nabla L(\theta).
+                    \]
+                    Each particle traces a geodesic-like path on the statistical manifold - not the shortest Euclidean path toward the loss minimum, 
+                    but the path of steepest descent in KL divergence. Observe how particles near the singularity region are deflected along the 
+                    manifold curvature rather than heading straight toward the nearest handle in Euclidean coordinates. This is the geometric correction 
+                    that algorithms such as Natural Gradient Descent (Amari, 1998), KFAC, and the closely related Fisher-preconditioned methods exploit 
+                    for faster convergence on the loss landscapes of neural networks and mixture models.
+                </p>
+
+                <h3>The Controls and What They Change Geometrically</h3>
+
+                <p>
+                    The <strong>\(\sigma\) slider</strong> controls the shared standard deviation. 
+                    Decreasing \(\sigma\) sharpens both components, increasing the base Fisher information \(\sim 1/\sigma^2\) and 
+                    making the singularity zone narrower (the components must be closer before they overlap). 
+                    Increasing \(\sigma\) broadens the overlap region and makes the singularity dominate a larger portion of parameter space.
+                </p>
+
+                <p>
+                    The <strong>grid density</strong> slider controls the tessellation resolution. More ellipses give a finer picture of how the 
+                    metric tensor varies across the manifold, at the cost of more computation per frame. 
+                    The <strong>ellipse scale</strong> slider uniformly scales the display size of the ellipses 
+                    without altering the underlying eigenvalues. This is a visualization aid, not a mathematical parameter.
+                </p>
+
             </section>
 
+            <section id="kfac" class="section-content">
+                <h2>Scaling to Deep Learning: The Kronecker-factored Approximation (K-FAC)</h2>
 
+                <p>
+                    While the \(2 \times 2\) Fisher Information Matrix (FIM) in our demo is easy to invert, 
+                    modern neural networks have millions, or even billions, of parameters. In such cases, the FIM becomes a 
+                    gargantuan \(n \times n\) matrix, where \(n\) is the number of weights. Computing, storing, and inverting 
+                    this matrix is computationally prohibitive \(O(n^3)\), making the exact natural gradient impractical for 
+                    large-scale models.
+                </p>
+
+                <p>
+                    For a simple layer with 1,000 inputs and 1,000 outputs, the FIM would have \(10^6 \times 10^6\) elements. 
+                    Standard Natural Gradient Descent fails here, not because the math is wrong, but because the hardware cannot keep up. 
+                    To bridge the gap between information-geometric rigor and practical deep learning, we need a way to <strong>approximate</strong> 
+                    the <strong>curvature</strong>.
+                </p>
+
+                <div class="theorem">
+                    <h3>The K-FAC Idea: Block-Diagonal & Kronecker Factorization</h3>
+                    <p>
+                        <strong>K-FAC (Kronecker-factored Approximate Curvature)</strong> introduces two major simplifications:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li><strong>Block-Diagonal Approximation:</strong><br>
+                            We assume that weights in different layers are independent, treating the FIM as a block-diagonal matrix 
+                            where each block corresponds to a single layer.
+                        </li>
+                        <li><strong>Kronecker Factorization:</strong><br>
+                            For a specific layer, the FIM block \(F_\ell\) is approximated as 
+                            the <a href="../Linear_algebra/kronecker.html#k_pro"><strong>Kronecker product (\(\otimes\))</strong></a> of two 
+                            much smaller matrices:
+                            \[
+                            F_\ell \approx A_{\ell-1} \otimes G_\ell
+                            \]
+                            where \(A_{\ell-1}\) is the covariance of the layer's inputs (activations) and \(G_\ell\) is the covariance 
+                            of the gradients with respect to the layer's outputs.
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    The beauty of this factorization lies in the property of the Kronecker product: 
+                    \[
+                    (A \otimes G)^{-1} = A^{-1} \otimes G^{-1}
+                    \]
+                    Instead of inverting a massive \(1,000,000 \times 1,000,000\) matrix, we only need to invert two \(1,000 \times 1,000\) matrices. 
+                    This reduces the computational complexity from \(O(n^3)\) to practically manageable levels, allowing us to exploit the "natural" 
+                    path even in deep neural networks.
+                </p>
+
+                <h3>Further Exploration & Implementations</h3>
+                <p>
+                    K-FAC is a rapidly evolving field with numerous variations for Convolutional (CNNs), Recurrent (RNNs), and Transformer architectures. 
+                    Rather than focusing on a single implementation, we recommend referring to the foundational research and high-performance libraries 
+                    that realize these geometric insights:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Physical AI & Control:</strong><br>
+                        <a href="https://arxiv.org/abs/2503.06070" target="_blank" rel="noopener noreferrer">
+                            Natural Gradient Descent for Control (Esmzad & Modares, 2025)
+                        </a>
+                    </li>
+                    <li>
+                        <strong>The Seminal Paper:</strong><br>
+                        <a href="https://arxiv.org/abs/1503.05671" target="_blank" rel="noopener noreferrer">
+                            Optimizing Neural Networks with Kronecker-factored Approximate Curvature (Martens & Grosse, 2015)
+                        </a>
+                    </li>
+                    <li>
+                        <strong>DeepMind's Curvature Library:</strong><br> 
+                        <a href="https://github.com/google-deepmind/kfac" target="_blank" rel="noopener noreferrer">
+                            kfac (Official implementation in JAX)
+                        </a>
+                    </li>
+                </ul>
+            </section>
 
         </div>
 
