@@ -31,12 +31,21 @@ uses_python: false
                 <h2>Fisher Information Matrix</h2>
 
                 <p>
-                    The <strong>Fisher information matrix</strong> is related to the <strong>curvature</strong> of log 
-                    likelihood functions. In frequentist statistics, it characterizes the sampling distribution of the MLE. 
+                    In the <a href="expfamily.html"><strong>previous page</strong></a>, we saw that the second derivative of the 
+                    log-partition function \(A(\eta)\) equals the covariance of the sufficient statistics. This object turns out 
+                    to have significance beyond the exponential family: it measures how much information data carries about unknown 
+                    parameters, governs the precision of maximum likelihood estimates, and defines a natural geometry on the space of 
+                    probability distributions.
+                </p>
+
+                <p>
+                    The <strong>Fisher information matrix (FIM)</strong> captures the <strong>curvature</strong> of the log-likelihood function. 
+                    In frequentist statistics, it characterizes the asymptotic variance of the MLE. In Bayesian statistics, it defines Jeffreys prior. 
+                    In optimization, it gives rise to <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Fisher Information Maatrix</span>
+                    <span class="theorem-title">Definition: Fisher Information Matrix</span>
                     <p>
                         The <strong>Fisher information matrix (FIM)</strong> is the <a href="covariance.html"><strong>covariance </strong></a> of 
                         the <strong>score function</strong> \(s(\theta)\):
@@ -49,11 +58,17 @@ uses_python: false
                         \]
                     </p>
                 </div>
+
+                 <p>
+                    Note: The score function has zero mean, \(\mathbb{E}[s(\theta)] = 0\), under the regularity conditions stated below. 
+                    This is why the FIM equals \(\mathbb{E}[s\,s^\top]\) rather than the full covariance 
+                    \(\mathbb{E}[s\,s^\top] - \mathbb{E}[s]\,\mathbb{E}[s]^\top\).
+                </p>
                 
                 <div class="theorem">
                     <span class="theorem-title">Theorem 1:</span>
                     <p>
-                        If \( \log p(x \mid \theta)\) is twice differentiable, and under certain regularity conditions, the
+                        If \( \log p(x \mid \theta)\) is twice differentiable, and under certain regularity conditions, 
                         the Fisher information matrix equals the expected Hessian of the negative log likelihood (NLL):
                         \[
                         F(\theta) = - \mathbb{E}_{x \sim \theta} [\nabla_{\theta}^2 \log p(x \mid \theta)].
@@ -78,20 +93,26 @@ uses_python: false
                         where \(\frac{\partial}{\partial \theta} \log p(x \mid \theta) = s(\theta)\).
                     </p>
                     <p>
-                        Taking derivatives of Equation (1), by the product rule, we obtain 
+                        Taking derivatives of Equation (1) with respect to \(\theta\), by the product rule, we obtain:
                         \[
                         \begin{align*}
 
-                        0 &= \frac{\partial}{\partial \theta} \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] p(x mid \theta) dx \\\\
+                        0 &= \frac{\partial}{\partial \theta} \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] p(x \mid \theta) dx \\\\
 
                         &= \int \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] p(x \mid \theta) dx 
                                 + \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] \frac{\partial}{\partial \theta} p(x \mid \theta) dx  \\\\
-
-                        &= \int \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] p(x \mid \theta) dx 
-                            + \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right]^2 p(x \mid \theta) dx.  \\\\
-
                         \end{align*}
                         \]
+                    </p>
+                    <p>
+                        Using the identity \(\frac{\partial}{\partial \theta} p(x \mid \theta) = p(x \mid \theta) \frac{\partial}{\partial \theta} \log p(x \mid \theta)\) 
+                        (derived from the <strong>chain rule</strong>), the second term can be rewritten as:
+                        \[
+                        0 = \int \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] p(x \mid \theta) dx 
+                            + \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right]^2 p(x \mid \theta) dx.
+                        \]
+                    </p>
+                    <p>
                         Therefore, 
                         \[
                         - \mathbb{E}_{x \sim \theta } \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] 
@@ -104,8 +125,15 @@ uses_python: false
 
             <section id="exp" class="section-content">
                 <h2>FIM for the Exponential Family</h2>
+
                 <p>
-                    Consider an <a href="expfamily.html">exponential family</a> distribution with natural parameter vector \(\eta \in \mathbb{R}^K\):
+                    For general parametric models, computing the FIM requires evaluating an expectation that may have no closed form. The 
+                    <a href="expfamily.html"><strong>exponential family</strong></a> is special: the FIM reduces to a simple derivative of 
+                    the log-partition function, which we have already computed.
+                </p>
+
+                <p>
+                    Consider an exponential family distribution with natural parameter vector \(\eta \in \mathbb{R}^K\):
                     \[
                     p(x \mid \eta) = h(x) \exp \{\eta^\top \mathcal{T}(x) - A(\eta)\}.
                     \]
@@ -155,15 +183,14 @@ uses_python: false
                 <h2>Natural Gradient Descent</h2>
 
                 <p>
-                    The FIM can be used in optimization. 
-                    The <strong>natural gradient descent (NGD)</strong> is the second order optimization method for the parameters 
-                    of (conditional) probability distributions \(p_{\theta}(y \mid x)\). 
+                    Standard <a href="../Calculus/gradient.html"><strong>gradient descent</strong></a> treats parameter space as Euclidean: it moves in the 
+                    direction of steepest descent measured by \(\|\delta\|_2\). But when the parameters define a probability distribution, two parameter 
+                    vectors that are close in Euclidean distance can correspond to very different distributions (and vice versa). <strong>Natural gradient descent (NGD)</strong> 
+                    corrects this by measuring "steepest descent" in terms of the <a href="entropy.html#kl"><strong>KL divergence</strong></a> between distributions 
+                    rather than the Euclidean distance between parameter vectors.
                 </p>
+
                 <p>
-                    (Check: <a href="../Calculus/gradient.html">Gradient Descent</a> for basic ideas of optimization problems.)
-                </p>
-                <p>
-                    In NGD, we measure the difference between two probability distributions by the <a href="entropy.html"><strong>KL divergence</strong></a>.
                     For any inputs \(x \in \mathbb{R}^n\), we can approximate the KL divergence in terms of the FIM by the 
                     second order Taylor series expansion: 
                     \[
@@ -176,6 +203,7 @@ uses_python: false
                     \]
                     where \(\delta\) represents the change in the parameters.        
                 </p>
+
                 <p>
                     We compute average KL divergence between updated distribution and previous one using 
                     \[
@@ -183,14 +211,18 @@ uses_python: false
                     \]
                     where \(F\) is the averaged FIM:
                     \[
-                    F(\theta) = \mathbb{E}_{p\mathcal{D}(x)}[F_x(\theta)].
+                    F(\theta) = \mathbb{E}_{p_{\mathcal{D}}(x)}[F_x(\theta)].
                     \]
                 </p>
+
                 <p>
                     In NGD, we use the inverse FIM as a preconditioning matrix and update parameters: 
                     \[
-                    \theta_{t+1} = \theta_{t} - \eta_{t} F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t)
+                    \theta_{t+1} = \theta_{t} - \alpha_{t} F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t).
                     \]
+                    where \(\alpha_t > 0\) is the <strong>learning rate</strong> (or step size) at iteration \(t\).
+                </p>
+                <p>
                     Here, we define the <strong>natural gradient</strong>:
                     \[
                     \widetilde{\nabla} \mathcal{L}(\theta_t) = F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t) = F^{-1}g_t
@@ -224,7 +256,8 @@ uses_python: false
                         p(\theta) \propto \sqrt{F(\theta)} 
                         \]
                         where \(F\) is the Fisher information.
-                        <br>
+                    </p>
+                    <p>
                         Or, in multiple dimensions, it has the form 
                         \[
                         p(\theta) \propto \sqrt{\det F(\theta)} 
@@ -239,9 +272,9 @@ uses_python: false
                     \begin{align*}
                     p_{\phi}(\phi) &=  p_{\theta}(\theta) \left| \frac{d\theta}{d\phi} \right| \\\\
                                     &\propto \sqrt{F(\theta)\left(\frac{d\theta}{d\phi}\right)^2} \\\\
-                                    &= \sqrt{\mathbb{E }\left[\left(\frac{d \log p(x \mid \theta)}{d\theta}\right)^2\right] \left(\frac{d\theta}{d\phi}\right)^2}\\\\
-                                    &= \sqrt{\mathbb{E }\left[\left(\frac{d \log p(x \mid \theta)}{d\theta}\frac{d\theta}{d\phi}\right)^2\right] }\\\\
-                                    &= \sqrt{\mathbb{E }\left[\left(\frac{d \log p(x \mid \phi)}{d\phi}\right)^2\right] }\\\\
+                                    &= \sqrt{\mathbb{E}\left[\left(\frac{d \log p(x \mid \theta)}{d\theta}\right)^2\right] \left(\frac{d\theta}{d\phi}\right)^2}\\\\
+                                    &= \sqrt{\mathbb{E}\left[\left(\frac{d \log p(x \mid \theta)}{d\theta}\frac{d\theta}{d\phi}\right)^2\right] }\\\\
+                                    &= \sqrt{\mathbb{E}\left[\left(\frac{d \log p(x \mid \phi)}{d\phi}\right)^2\right] }\\\\
                                     &= \sqrt{F(\phi)}
                     \end{align*}
                     \]
@@ -276,9 +309,7 @@ uses_python: false
                         \]
                         Thus, the Jeffreys prior for the parameter \(\theta\) is given by 
                         \[
-                        \begin{align*}
-                        p_{\theta} (\theta) = \sqrt{F(\theta)} &\propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}} \\\\
-                        \end{align*}
+                        p_{\theta} (\theta) = \sqrt{F(\theta)} \propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}}.
                         \]
                     </p>
                     <p>
@@ -354,6 +385,19 @@ uses_python: false
                     \]
                     Note: Remember, the mutual information itself is invariant under reparameterization.
                 </p>
+
+                 <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The Fisher information matrix is central to modern deep learning optimization. The <strong>natural gradient</strong> update 
+                        \(\theta \leftarrow \theta - \eta F^{-1} \nabla \mathcal{L}\) is impractical for large networks (inverting the full FIM is \(O(n^3)\) 
+                        in the number of parameters), but efficient approximations like <strong>K-FAC</strong> (Kronecker-Factored Approximate Curvature) use 
+                        the block-diagonal and Kronecker product structure to scale natural gradient methods to deep neural networks - see our interactive 
+                        <a href="../Machine_learning/natural_gd.html"><strong>Natural Gradient Descent</strong></a> page for a visualization. Moreover, 
+                        in information geometry, the FIM defines a <strong>Riemannian metric</strong> on the statistical 
+                        manifold, making the KL divergence the natural "distance" between nearby distributions.
+                    </p>
+                </div>
             </section>
         </div>   
         <script src="/js/main.js"></script> 
