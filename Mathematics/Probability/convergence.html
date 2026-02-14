@@ -28,14 +28,19 @@ uses_python: false
 
             <section id="LLA" class="section-content">
                 <h2>Modes of Convergence & The Law of Large Numbers</h2>
+
                 <p> 
-                    In computer science and practical engineering, we often accept the convergence of probabilities based on experimental 
-                    results or large-scale simulations. However, to build mathematically rigorous systems and gain a deeper understanding 
-                    of statistics, we must clarify exactly <em>how</em> a sequence of random variables approaches its limit.
+                    We usually, accept the convergence of probabilities based on experimental results or large-scale simulations.
+                    In <a href="mle.html"><strong>Part 9</strong></a> and <a href="hypothesis_testing.html"><strong>Part 10</strong></a>, 
+                    we relied on the idea that sample statistics approximate population parameters as the sample size grows. 
+                    But what exactly does "approximate" mean for random variables? Unlike deterministic sequences, 
+                    a sequence of random variables can approach a limit in several distinct senses, each with different mathematical 
+                    strength and practical implications.
                 </p>
+
                 <p>
-                    There are several ways to define convergence in a statistical context. Here, we introduce three fundamental modes, ordered 
-                    from strongest to weakest, and relate them to the <strong>Law of Large Numbers (LLN)</strong>.
+                    We introduce three fundamental modes of convergence, ordered from strongest to weakest, and connect each to a classical 
+                    result in probability theory.
                 </p>
 
                 <div class="theorem">
@@ -46,14 +51,31 @@ uses_python: false
                         \[
                         P\left( \lim_{n \to \infty} X_n = X \right) = 1.
                         \]
-                        <strong>Context:</strong> This is the foundation of the <strong>Strong Law of Large Numbers (SLLN)</strong>. 
-                        Mathematically, this is the probabilistic analogue of pointwise convergence <a href="../Calculus/lebesgue.html#c_f"><strong>"almost everywhere" (a.e.) in measure theory</strong></a>. 
-                        It asserts that while "pathological" non-convergent sequences exist in the sample space, their total measure (probability) is exactly zero:
-                        \[ 
-                        \bar{X}_n \xrightarrow{a.s.} \mu.
+                    </p>
+                </div>
+
+                <p>
+                    This is the strongest form of convergence. It is the probabilistic analogue of pointwise convergence 
+                    <a href="../Calculus/lebesgue.html#c_f"><strong>"almost everywhere" (a.e.) in measure theory</strong></a>: 
+                    the set of outcomes \(\omega\) for which \(X_n(\omega) \not\to X(\omega)\) exists as a subset of the sample space, but 
+                    has probability zero. Almost sure convergence underpins the following fundamental result.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Strong Law of Large Numbers (SLLN)</span>
+                    <p>
+                        Let \(X_1, X_2, \ldots\) be i.i.d. random variables with 
+                        \(\mathbb{E}[|X_1|] < \infty\) and \(\mathbb{E}[X_1] = \mu\). Then
+                        \[
+                        \bar{X}_n = \frac{1}{n}\sum_{i=1}^{n} X_i \xrightarrow{a.s.} \mu.
                         \]
                     </p>
                 </div>
+
+                <p>
+                    The SLLN guarantees that individual sample paths of \(\bar{X}_n\) converge to \(\mu\), except possibly on a set of probability zero. A weaker notion relaxes 
+                    this path-level guarantee.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">2. Convergence in Probability (\( \xrightarrow{P} \))</span>
@@ -63,12 +85,38 @@ uses_python: false
                         \[
                         \lim_{n \to \infty} P(|X_n - X| \geq \epsilon) = 0.
                         \]
-                        <strong>Context:</strong> This corresponds to the <strong>Weak Law of Large Numbers (WLLN)</strong>. 
-                        It implies that for large \(n\), the sample mean is unlikely to be far from \(\mu\). Unlike SLLN, WLLN 
-                        requires weaker conditions (e.g., finite variance via Chebyshev's inequality) but does not guarantee the 
-                        stability of individual sample paths.
                     </p>
                 </div>
+
+                <p>
+                    Convergence in probability says that large deviations from \(X\) become increasingly unlikely, but it does not demand that each 
+                    individual sample path settles down. This mode of convergence corresponds to the Weak Law.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Weak Law of Large Numbers (WLLN)</span>
+                    <p>
+                        Let \(X_1, X_2, \ldots\) be i.i.d. random variables with 
+                        \(\mathbb{E}[X_1] = \mu\) and \(\text{Var}(X_1) = \sigma^2 < \infty\). Then
+                        \[
+                        \bar{X}_n \xrightarrow{P} \mu.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The WLLN can be proved directly from <strong>Chebyshev's inequality</strong>.
+                    Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
+                    \[
+                    P(|\bar{X}_n - \mu| \geq \epsilon) \leq \sigma^2/(n\epsilon^2) \to 0.
+                    \]
+                    Note that the WLLN requires finite variance, whereas the SLLN only requires \(\mathbb{E}[|X_1|] < \infty\).
+                </p>
+
+                <p>
+                    The weakest mode concerns only the distribution functions, not the random 
+                    variables themselves.
+                </p>
 
                 <div class="theorem">
                     <span class="theorem-title">3. Convergence in Distribution (\( \xrightarrow{D} \))</span>
@@ -80,59 +128,64 @@ uses_python: false
                         \]
                         for all points \(x\) where \(F\) is continuous.
                     </p>
+                </div>
+
+                 <p>
+                    Convergence in distribution does not require the random variables to be defined on the same probability space 
+                    It is purely a statement about CDFs. This is the setting of the <strong>Central Limit Theorem (CLT)</strong>, which 
+                    describes how the standardized fluctuations of \(\bar{X}_n\) around \(\mu\) converge to a 
+                    <a href="gaussian.html"><strong>normal distribution</strong></a>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Hierarchy of Convergence Modes</span>
                     <p>
-                        This is the basis of the <strong>Central Limit Theorem (CLT)</strong>. Unlike LLN, which says the mean converges to a 
-                        <em>constant</em>, CLT describes how the standardized <em>fluctuations</em> around that constant converge to 
-                        a <strong>Normal Distribution</strong>.
+                        The three modes satisfy the following implications:
+                        \[
+                        \xrightarrow{a.s.} \;\Longrightarrow\; \xrightarrow{P} \;\Longrightarrow\; \xrightarrow{D}.
+                        \]
+                        The reverse is not generally true. However, if the limit \(X\) is a <strong>constant</strong> 
+                        (as in LLN), then convergence in distribution implies convergence in probability.
                     </p>
                 </div>
 
                 <p>
-                    These modes of convergence satisfy the following logical implications:
-                    \[
-                    (X_n \xrightarrow{a.s.} X) \implies (X_n \xrightarrow{P} X) \implies (X_n \xrightarrow{D} X)
-                    \]
-                    Note: The reverse is not generally true. However, if \(X\) is a constant (like the mean \(\mu\) in LLN), 
-                    then convergence in distribution implies convergence in probability.
+                    In the following sections, we develop each of the two weaker modes in detail - first convergence in probability 
+                    with the Continuous Mapping Theorem, then convergence in distribution with a proof that the former implies the latter. 
+                    Finally, we introduce the moment generating function and use it to give a rigorous proof of the Central Limit Theorem.
                 </p>
-                
-                <p>
-                    Now that we have established the theoretical landscape of convergence, let's focus on <strong>Convergence in Distribution</strong>. 
-                    After developing the formal definitions and key theorems in the following sections, we provide a rigorous proof of the Central Limit 
-                    Theorem using Moment Generating Functions.
-                </p>
+
             </section>
            
             <section id="prob" class="section-content">
                 <h2>Convergence in Probability</h2>
+
                 <p> 
-                    Convergence in probability captures the idea that \(X_n\) becomes increasingly unlikely to deviate 
-                    from \(X\) by any fixed amount. Unlike almost sure convergence, it does not require individual 
-                    sample paths to converge - only that "large deviations" become rare events.
+                    We now develop convergence in probability in more detail. Recall that this mode captures the idea that 
+                    \(X_n\) becomes increasingly unlikely to deviate from \(X\) by any fixed amount. Unlike almost sure 
+                    convergence, it does not require individual sample paths to converge pointwise - only that "large deviations" become rare events.
                 </p>
-                
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Converges in Probability</span>
+                    <span class="theorem-title">Definition: Convergence in Probability</span>
                     <p>
-                        Let \(\{X_n\}\) be a sequence of random variables and \(X\) be a random variable defined on a sample space. 
-                        \(X_n\) <strong>converges in probability</strong> to \(X\), denoted by
+                        Let \(\{X_n\}\) be a sequence of random variables and \(X\) be a random variable on a common probability 
+                        space. We say \(X_n\) <strong>converges in probability</strong> to \(X\), written \(X_n \xrightarrow{P} X\), 
+                        if for every \(\epsilon > 0\),
                         \[
-                        X_n \xrightarrow{P} X,
-                        \]
-                        if \(\quad \forall \epsilon > 0\), 
-                        \[
-                        \lim_{n \to \infty} P [| X_n - X | \geq \epsilon ] = 0 
+                        \lim_{n \to \infty} P[|X_n - X| \geq \epsilon] = 0,
                         \]
                         or equivalently,
                         \[
-                        \lim_{n \to \infty} P [| X_n - X | < \epsilon ] = 1.
+                        \lim_{n \to \infty} P[|X_n - X| < \epsilon] = 1.
                         \]
                     </p>
                 </div>
 
-                <p>
-                    A natural question arises: if \(X_n \xrightarrow{P} X\), what happens when we apply a function to \(X_n\)? 
-                    The following theorem, known as the <strong>Continuous Mapping Theorem</strong>, answers this question.
+                 <p>
+                    A natural question arises: if \(X_n \xrightarrow{P} X\), what happens when we apply a continuous 
+                    function to \(X_n\)? The following theorem answers this question and is indispensable for deriving 
+                    the asymptotic behavior of estimators.
                 </p>
 
                 <div class="theorem">
@@ -183,17 +236,27 @@ uses_python: false
 
             <section id="dist" class="section-content">
                 <h2>Convergence in Distribution</h2>
-                 <p> 
-                    Unlike convergence in probability, which tracks how the random variables themselves behave, 
-                    <strong>convergence in distribution</strong> focuses solely on the cumulative distribution functions (CDFs). 
-                    Two sequences of random variables can converge to the same limiting distribution even if they are defined 
-                    on entirely different probability spaces.
+
+                <p> 
+                    We now turn to the weakest mode of convergence. Unlike convergence in probability, which tracks how the 
+                    random variables themselves behave, <strong>convergence in distribution</strong> focuses solely on the 
+                    cumulative distribution functions (CDFs). Two sequences of random variables can converge to the same 
+                    limiting distribution even if they are defined on entirely different probability spaces.
                 </p>
 
-                <p>
-                    Let \(\{X_n\}\) be a sequence of random variables and let \(X\) be a random variable. Let \(F_{X_n}\) and 
-                    \(F_X\) be the CDFs of \(X_n\) and \(X\) respectively. 
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Convergence in Distribution</span>
+                    <p>
+                        Let \(\{X_n\}\) be a sequence of random variables with CDFs \(F_{X_n}\), and let \(X\) be a random variable 
+                        with CDF \(F_X\). We say \(X_n\) <strong>converges in distribution</strong> to \(X\), written 
+                        \(X_n \xrightarrow{D} X\), if
+                        \[
+                        \lim_{n \to \infty} F_{X_n}(x) = F_X(x)
+                        \]
+                        for every \(x\) at which \(F_X\) is continuous. The distribution of \(X\) is called the 
+                        <strong>asymptotic (limiting) distribution</strong> of \(\{X_n\}\).
+                    </p>
+                </div>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Converges in Distribution</span>
@@ -239,67 +302,82 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Suppose \(X_n \xrightarrow{P} X\), and let \(x\) be a point of continuity of \(F_X\).  
+                        Suppose \(X_n \xrightarrow{P} X\), and let \(x\) be a point of continuity of \(F_X\).
                     </p>
 
                     <p>
-                        \(\forall \, \epsilon > 0\),
+                        <strong>Upper bound.</strong><br>
+                        For any \(\epsilon > 0\), partition the event 
+                        \(\{X_n \leq x\}\) according to whether \(|X_n - X| < \epsilon\):
                         \[
                         \begin{align*}
-                        F_{X_n}(x) &= P[X_n \leq x] \\\\
-                                &= P[\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}] + P [\{X_n \leq x\} \cap \{|X_n - X| \geq \epsilon\}] \\\\
-                                &\leq P[X \leq x + \epsilon] + P[|X_n - X| \geq \epsilon].
+                        F_{X_n}(x) &= P[X_n \leq x] \\
+                                &= P[\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}] + P[\{X_n \leq x\} \cap \{|X_n - X| \geq \epsilon\}] \\
+                                &\leq P[X \leq x + \epsilon] + P[|X_n - X| \geq \epsilon] \\
+                                &= F_X(x + \epsilon) + P[|X_n - X| \geq \epsilon].
                         \end{align*}
                         \]
-                    </p>
-
-                    <p>
-                        Since \(X_n \xrightarrow{P} X\), we know  \(P[|X_n - X| \geq \epsilon] \to 0\). Then we get a upper bound 
+                        The first inequality holds because \(\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}\) 
+                        implies \(X < x + \epsilon\). Since \(X_n \xrightarrow{P} X\), the second 
+                        term vanishes, giving
                         \[
-                        \lim_{n \to \infty} \sup F_{X_n}(x) \leq F_{X}(x + \epsilon) \tag{1}.
-                        \]
-                        Similarly, we can get a lower bound:
-                        \[
-                        P[X_n  > x ] \leq P[X \geq x - \epsilon] + P[|X_n - X| \geq \epsilon]
-                        \]
-                        \[
-                        \Longrightarrow  \lim_{n \to \infty} \inf F_{X_n}(x) \geq F_X (x - \epsilon) \tag{2}.
+                        \limsup_{n \to \infty} F_{X_n}(x) \leq F_X(x + \epsilon). \tag{1}
                         \]
                     </p>
 
                     <p>
-                        Combining (1) and (2), we obtain 
+                        <strong>Lower bound:</strong><br>
+                        Similarly, consider the complementary event:
                         \[
-                        F_X(x - \epsilon) \leq \lim_{n \to \infty} \inf F_{X_n}(x) \leq \lim_{n \to \infty} \sup F_{X_n}(x) \leq F_X (x + \epsilon).
+                        \begin{align*}
+                        1 - F_{X_n}(x) &= P[X_n > x] \\
+                                &\leq P[X > x - \epsilon] + P[|X_n - X| \geq \epsilon] \\
+                                &= 1 - F_X(x - \epsilon) + P[|X_n - X| \geq \epsilon].
+                        \end{align*}
                         \]
-                        Here, as \(\epsilon \to 0\), we have
+                        Rearranging and taking the limit inferior:
                         \[
-                        \lim_{n \to \infty} F_{X_n}(x) = F_X (x)
+                        \liminf_{n \to \infty} F_{X_n}(x) \geq F_X(x - \epsilon). \tag{2}
                         \]
-                        because \(x\) is a point of continuity of \(F_{x_n}\). 
                     </p>
 
                     <p>
-                        Therefore
+                        Combining (1) and (2):
                         \[
-                        X_n \xrightarrow{D} X.
+                        F_X(x - \epsilon) \leq \liminf_{n \to \infty} F_{X_n}(x) \leq \limsup_{n \to \infty} F_{X_n}(x) \leq F_X(x + \epsilon).
                         \]
+                        Since \(x\) is a point of continuity of \(F_X\), letting \(\epsilon \to 0\) gives 
+                        \(F_X(x - \epsilon) \to F_X(x)\) and \(F_X(x + \epsilon) \to F_X(x)\), so
+                        \[
+                        \lim_{n \to \infty} F_{X_n}(x) = F_X(x).
+                        \]
+                        Since this holds for every continuity point of \(F_X\), we conclude 
+                        \(X_n \xrightarrow{D} X\).
                     </p>
                 </div>
+
                 <p>
                     Now, we can see that the <strong>central limit theorem(CLT)</strong> is a statement about convergence in distribution. 
                     (See: <a href="gaussian.html#clt"><strong>Part 4 Gaussian Distribution</strong></a>.)
                 </p>
+
+                <p>
+                    We can now see that the <strong>Central Limit Theorem (CLT)</strong> - first stated without proof in 
+                    <a href="gaussian.html#clt"><strong>Part 4: Gaussian Distribution</strong></a> - is precisely a statement 
+                    about convergence in distribution. To prove the CLT rigorously, we need a tool that characterizes distributions 
+                    and behaves well under limits: the moment generating function.
+                </p>
+
             </section>
 
             <section id="mgf" class="section-content">
                 <h2>Moment Generating Function (MGF)</h2>
 
-                <p>
-                    To prove convergence in distribution, we need a tool that characterizes distributions and behaves 
-                    well under limits. The <strong>moment generating function (MGF)</strong> provides exactly this: 
-                    it uniquely determines a distribution (when it exists) and converts the problem of distributional 
-                    convergence into the simpler problem of pointwise convergence of functions.
+                 <p>
+                    Verifying convergence in distribution directly - by showing pointwise convergence of CDFs at every continuity point - is 
+                    often impractical. The <strong>moment generating function (MGF)</strong> provides a powerful alternative: 
+                    it uniquely determines a distribution (when it exists) and converts the problem of distributional convergence into the 
+                    simpler problem of pointwise convergence of real-valued functions.
                 </p>
 
                 <div class="theorem">
@@ -429,28 +507,54 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="insight-box">
-                    <h3>Deriving the MGF of \(N(0,1)\)</h3>
+                <div class="proof">
+                    <span class="proof-title">Verification: MGF of \(N(0,1)\)</span>
                     <p>
-                        We verify that \(e^{t^2/2}\) is indeed the MGF of the standard normal:
+                        We confirm that \(e^{t^2/2}\) is the MGF of the standard normal distribution:
                         \[
                         \begin{align*}
-                        M(t) &= \int_{-\infty}^{\infty} e^{tx} \frac{1}{\sqrt{2\pi}} e^{-x^2/2} \, dx \\\\
-                             &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-(x^2 - 2tx)/2} \, dx \\\\
-                             &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-[(x-t)^2 - t^2]/2} \, dx \\\\
-                             &= e^{t^2/2} \underbrace{\int_{-\infty}^{\infty} \frac{1}{\sqrt{2\pi}} e^{-(x-t)^2/2} \, dx}_{= 1}  \\\\
+                        M(t) &= \int_{-\infty}^{\infty} e^{tx} \frac{1}{\sqrt{2\pi}} e^{-x^2/2} \, dx \\
+                             &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-(x^2 - 2tx)/2} \, dx \\
+                             &= \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-[(x-t)^2 - t^2]/2} \, dx \\
+                             &= e^{t^2/2} \underbrace{\int_{-\infty}^{\infty} \frac{1}{\sqrt{2\pi}} e^{-(x-t)^2/2} \, dx}_{= 1}  \\
                              &= e^{t^2/2}.
                         \end{align*}
                         \]
+                        The key step is completing the square in the exponent and recognizing the remaining integral 
+                        as the total probability of \(N(t, 1)\).
                     </p>
                 </div>
 
                 <p>
-                    <strong>Remark:</strong> Without standardization, the CLT can be written as:
+                    Without standardization, the CLT can equivalently be written as
                     \[
-                    \sqrt{n}(\bar{X}_n - \mu) \xrightarrow{D} N(0, \sigma^2).
+                    \sqrt{n}(\bar{X}_n - \mu) \xrightarrow{D} N(0, \sigma^2),
                     \]
+                    which makes the role of \(\sigma^2\) explicit: the fluctuations of \(\bar{X}_n\) around \(\mu\) 
+                    have order \(\sigma / \sqrt{n}\), and once rescaled by \(\sqrt{n}\), they converge to a Gaussian with variance \(\sigma^2\).
                 </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The convergence results developed in this section are not merely theoretical. The <strong>Law of Large Numbers</strong> 
+                        justifies replacing expectations with sample averages, which is the foundation of empirical risk minimization: 
+                        minimizing the training loss converges to minimizing the true expected loss as the dataset grows. The <strong>CLT</strong> 
+                        explains why confidence intervals and hypothesis tests (from <a href="hypothesis_testing.html"><strong>Part 10</strong></a>) 
+                        work: test statistics are asymptotically normal regardless of the underlying distribution. In deep learning, 
+                        the <strong>Continuous Mapping Theorem</strong> ensures that if parameter estimates converge, so do the predictions of any 
+                        continuous model.
+                    </p>
+                </div>
+
+                <p>
+                    we now have the tools to reason rigorously about parameter estimation and inference. 
+                    In <a href="bayesian.html"><strong>Part 14: Introduction to Bayesian Statistics</strong></a>, we adopt a fundamentally 
+                    different perspective on inference - treating parameters themselves as random variables with prior 
+                    distributions - where the convergence results developed here ensure that Bayesian and frequentist approaches agree 
+                    in the large-sample limit.
+                </p>
+
             </section>
         </div>
         <script src="/js/main.js"></script>    
