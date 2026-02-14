@@ -21,7 +21,7 @@ uses_python: false
             <a href="#LLA">Modes of Convergence & The Law of Large Numbers</a>
             <a href="#prob">Convergence in Probability</a>
             <a href="#dist">Convergence in Distribution</a>
-            <a href="#mgf">Moment Generating Function (mgf)</a>
+            <a href="#mgf">Moment Generating Function (MGF)</a>
         </div> 
 
         <div class="container">  
@@ -30,7 +30,7 @@ uses_python: false
                 <h2>Modes of Convergence & The Law of Large Numbers</h2>
 
                 <p> 
-                    We usually, accept the convergence of probabilities based on experimental results or large-scale simulations.
+                    We usually accept the convergence of probabilities based on experimental results or large-scale simulations.
                     In <a href="mle.html"><strong>Part 9</strong></a> and <a href="hypothesis_testing.html"><strong>Part 10</strong></a>, 
                     we relied on the idea that sample statistics approximate population parameters as the sample size grows. 
                     But what exactly does "approximate" mean for random variables? Unlike deterministic sequences, 
@@ -46,7 +46,7 @@ uses_python: false
                 <div class="theorem">
                     <span class="theorem-title">1. Almost Sure Convergence (\(\xrightarrow{a.s.}\))</span>
                     <p>
-                        This is the strongest form of convergence. We say \(X_n\) converges to \(X\) <strong>almost surely</strong> 
+                        A sequence \(\{X_n\}\) converges to \(X\) <strong>almost surely</strong> 
                         if the event where they do <em>not</em> converge has probability zero:
                         \[
                         P\left( \lim_{n \to \infty} X_n = X \right) = 1.
@@ -80,7 +80,7 @@ uses_python: false
                 <div class="theorem">
                     <span class="theorem-title">2. Convergence in Probability (\( \xrightarrow{P} \))</span>
                     <p>
-                        We say \(X_n\) converges to \(X\) <strong>in probability</strong> if, for any tiny error margin \(\epsilon > 0\), the probability 
+                        We say \(X_n\) converges to \(X\) <strong>in probability</strong> if, for every \(\epsilon > 0\), the probability 
                         of the difference exceeding \(\epsilon\) goes to zero:
                         \[
                         \lim_{n \to \infty} P(|X_n - X| \geq \epsilon) = 0.
@@ -105,12 +105,13 @@ uses_python: false
                 </div>
 
                 <p>
-                    The WLLN can be proved directly from <strong>Chebyshev's inequality</strong>.
-                    Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
+                    The WLLN is often proved using <strong>Chebyshev's inequality</strong>, which requires the assumption of a 
+                    finite variance (\(\sigma^2 < \infty\)). Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
                     \[
-                    P(|\bar{X}_n - \mu| \geq \epsilon) \leq \sigma^2/(n\epsilon^2) \to 0.
+                    P(|\bar{X}_n - \mu| \geq \epsilon) \leq \frac{\sigma^2}{n\epsilon^2} \to 0.
                     \]
-                    Note that the WLLN requires finite variance, whereas the SLLN only requires \(\mathbb{E}[|X_1|] < \infty\).
+                    Note: While Chebyshev's proof requires finite variance, Khinchin's theorem shows that the WLLN actually holds 
+                    under the same condition as the SLLN — only a finite mean (\(\mathbb{E}[|X_1|] < \infty\)) is needed.
                 </p>
 
                 <p>
@@ -131,7 +132,7 @@ uses_python: false
                 </div>
 
                  <p>
-                    Convergence in distribution does not require the random variables to be defined on the same probability space 
+                    Convergence in distribution does not require the random variables to be defined on the same probability space.
                     It is purely a statement about CDFs. This is the setting of the <strong>Central Limit Theorem (CLT)</strong>, which 
                     describes how the standardized fluctuations of \(\bar{X}_n\) around \(\mu\) converge to a 
                     <a href="gaussian.html"><strong>normal distribution</strong></a>.
@@ -146,6 +147,42 @@ uses_python: false
                         \]
                         The reverse is not generally true. However, if the limit \(X\) is a <strong>constant</strong> 
                         (as in LLN), then convergence in distribution implies convergence in probability.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Deep Dive: Why so many modes?</h3>
+                   
+                    <p>
+                        The distinction between these modes reflects how "well-behaved" a distribution's <strong>moments</strong> are. 
+                        To see why we need these conditions, we first must look at the <a href="student.html#cauchy"><strong>Cauchy Distribution</strong></a>.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            <strong>The Pathological Case (Cauchy):</strong><br>
+                            The Cauchy distribution has such "heavy tails" that its <strong>mean is undefined</strong> 
+                            (\(\mathbb{E}[|X|] = \infty\)). Because it lacks a finite mean, the Law of Large Numbers fails completely.
+                            The sample average \(\bar{X}_n\) of Cauchy variables does not settle down, and it follows the same Cauchy distribution 
+                            as a single observation, no matter how large \(n\) is.
+                        </li>
+                        <li>
+                            <strong>Finite Mean (\(\mathbb{E}[|X|] < \infty\)):</strong><br>
+                            This is the bare minimum for the universe to have a "balance point." Under this condition, 
+                            the <strong>Strong Law of Large Numbers (SLLN)</strong> guarantees the strongest mode: \(\xrightarrow{a.s.}\).
+                        </li>
+                        <li>
+                            <strong>Finite Variance (\(\sigma^2 < \infty\)):</strong><br>
+                            This ensures the "spread" doesn't explode. While the <strong>Weak Law (WLLN)</strong> only needs a finite mean 
+                            to reach \(\xrightarrow{P}\), having a finite variance allows us to use <strong>Chebyshev's Inequality</strong> 
+                            for a simple proof and, more importantly, enables the <strong>Central Limit Theorem (CLT)</strong>.
+                        </li>
+                    </ul>
+                    <p>
+                        <strong>The Takeaway:</strong><br>
+                        We use \(\xrightarrow{P}\) for the <strong>LLN</strong> to confirm our estimates hit the bullseye. 
+                        We use \(\xrightarrow{D}\) for the <strong>CLT</strong> to understand the "shape" of our uncertainty. 
+                        If you are dealing with Cauchy-like heavy tails (common in finance or network theory), these 
+                        standard convergence tools may break down.
                     </p>
                 </div>
 
@@ -248,32 +285,13 @@ uses_python: false
                     <span class="theorem-title">Definition: Convergence in Distribution</span>
                     <p>
                         Let \(\{X_n\}\) be a sequence of random variables with CDFs \(F_{X_n}\), and let \(X\) be a random variable 
-                        with CDF \(F_X\). We say \(X_n\) <strong>converges in distribution</strong> to \(X\), written 
-                        \(X_n \xrightarrow{D} X\), if
+                        with CDF \(F_X\). We say \(X_n\) <strong>converges in distribution</strong> to \(X\), written \(X_n \xrightarrow{D} X\), 
+                        if for every point \(x \in C(F_X)\) (where \(C(F_X)\) is the set of all points where \(F_X\) is continuous),
                         \[
-                        \lim_{n \to \infty} F_{X_n}(x) = F_X(x)
+                        \lim_{n \to \infty} F_{X_n}(x) = F_X(x).
                         \]
-                        for every \(x\) at which \(F_X\) is continuous. The distribution of \(X\) is called the 
-                        <strong>asymptotic (limiting) distribution</strong> of \(\{X_n\}\).
-                    </p>
-                </div>
-
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Converges in Distribution</span>
-                    <p>
-                        Let \(C(F_X)\) denote the set of all points where \(F_X\) is continuous. 
-                    </p>
-                    <p>
-                        \(X_n\) <strong>converges in distribution</strong> to \(X\), denoted by 
-                        \[
-                        X_n \xrightarrow{D} X,
-                        \]
-                        if \(\quad \forall x \in C(F_{X})\), 
-                        \[
-                        \lim_{n \to \infty} F_{X_n} (x) = F_X (x).
-                        \]
-                        Often the distribution of \(X\) is called the <strong>asymptotic (limiting) distribution</strong> 
-                        of the sequence \(\{X_n\}\).
+                        The distribution of \(X\) is often called the <strong>asymptotic (limiting) distribution</strong> of 
+                        the sequence \(\{X_n\}\).
                     </p>
                 </div>
 
@@ -355,11 +373,6 @@ uses_python: false
                         \(X_n \xrightarrow{D} X\).
                     </p>
                 </div>
-
-                <p>
-                    Now, we can see that the <strong>central limit theorem(CLT)</strong> is a statement about convergence in distribution. 
-                    (See: <a href="gaussian.html#clt"><strong>Part 4 Gaussian Distribution</strong></a>.)
-                </p>
 
                 <p>
                     We can now see that the <strong>Central Limit Theorem (CLT)</strong> - first stated without proof in 
@@ -548,7 +561,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    we now have the tools to reason rigorously about parameter estimation and inference. 
+                    We now have the tools to reason rigorously about parameter estimation and inference. 
                     In <a href="bayesian.html"><strong>Part 14: Introduction to Bayesian Statistics</strong></a>, we adopt a fundamentally 
                     different perspective on inference - treating parameters themselves as random variables with prior 
                     distributions - where the convergence results developed here ensure that Bayesian and frequentist approaches agree 
