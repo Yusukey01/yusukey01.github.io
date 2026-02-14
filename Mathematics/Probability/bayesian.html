@@ -245,23 +245,39 @@ uses_python: false
                         In practice, setting up hyper-parameters is one of the most challenging aspects of the project. 
                     </p>
                 </div>
+
+                <div class="insight-box">
+                    <h3>Hyperparameters as Pseudo-Counts</h3>
+                    <p>
+                        In machine learning, the hyper-parameters \(a\) and \(b\) of the Beta prior can be highly intuitive: they act as 
+                        <strong>pseudo-observations</strong> or <strong>effective prior counts</strong>. Before flipping the coin even once, 
+                        an AI agent with a prior of \(\text{Beta}(a, b)\) behaves exactly as if it has already observed \(a\) heads and \(b\) tails. 
+                        This structural equivalence is a common trick in natural language processing (like Laplace smoothing in Naive Bayes), 
+                        preventing models from assigning zero probability to unseen events.
+                    </p>
+                </div>
+
             </section>
 
             <section id="normal" class="section-content">
                 <h2>Univariate Normal Distribution Model</h2>
 
+
                 <p>
-                    Given the univariate normal distribution \(N(\mu, \sigma^2)\), there are three cases for our target posterior: 
+                    We now apply the same Bayesian framework to the <a href="gaussian.html"><strong>normal distribution</strong></a>. 
+                     Given the univariate normal distribution \(N(\mu, \sigma^2)\), there are three cases for our target posterior: 
                 </p>
 
                 <ol style="padding-left: 40px;">
-                    <li>\(p(\mu \mid \mathcal{D}, \sigma^2) \): Variance \(\sigma^2\) is known.</li>
-                    <li>\(p(\sigma^2 \mid \mathcal{D}, \mu) \): Mean \(\mu\) is known.</li>
-                    <li>\(p(\mu, \sigma^2 \mid \mathcal{D})\): Both \(\sigma^2\) and \(\mu\) are unknown.</li>
+                    <li>\(p(\mu \mid \mathcal{D}, \sigma^2)\): Variance \(\sigma^2\) is known.</li>
+                    <li>\(p(\sigma^2 \mid \mathcal{D}, \mu)\): Mean \(\mu\) is known.</li>
+                    <li>\(p(\mu, \sigma^2 \mid \mathcal{D})\): Both are unknown.</li>
                 </ol>
 
                 <p>
-                    Here, we only discuss the case 1 and case 2. 
+                    <p>
+                    Here, we discuss cases 1 and 2. (Case 3 requires the normal-inverse-gamma conjugate prior and is treated in 
+                    more advanced references.)
                 </p>
 
                 <div class="proof">
@@ -346,12 +362,19 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    In machine learning, a typical application of this model is <strong>online learning</strong> that is a training approach where 
-                    the model is updated incrementally as new data becomes available rather than being trained on fixed data at once (which 
-                    is known as <strong>batch learning</strong>). Online learning is particularly useful in scenarios where data arrive in a stream 
-                    or is too large to be processed all at once. 
-                </p>
+                <div class="insight-box">
+                    <h3>Condition Number in Deep Learning</h3>
+                    <p>
+                        The true power of conjugate priors in computer science is memory efficiency. In <strong>online learning</strong>, we do not need 
+                        to store massive historical datasets in memory. Because the posterior and prior share the same functional form, today's posterior 
+                        simply becomes tomorrow's prior. For sequential data points \(y_1, y_2\), the update rule is structurally elegant:
+                        \[
+                        p(\mu \mid y_1, y_2) \propto p(y_2 \mid \mu) p(\mu \mid y_1)
+                        \]
+                        An AI system only needs to maintain the current sufficient statistics (like \(\mu_N\) and \(\sigma_N^2\)) and update them as new data 
+                        streams in, demonstrating a perfect synergy between mathematical structure and computational limits.
+                    </p>  
+                </div>
 
                 <div class="proof">
                     <span class="proof-title">Example 3: Normal distribution model with known mean \(\mu\)</span>
@@ -412,11 +435,31 @@ uses_python: false
                         A benefit of using this form is that we can control the strength of the prior by the single hyper-parameter \(\nu_0\).
                     </p>
                 </div>
+
+                <div class="insight-box">
+                    <h3>Anomaly Detection and Uncertainty</h3>
+                    <p>
+                        This model is a cornerstone for <strong>quality control</strong> and process monitoring. In industrial manufacturing, the "target" mean of 
+                        a process is often known from historical data, while the variance represents the stability of the process.
+                    </p>
+                    <p>
+                        In machine learning, this is the fundamental principle of <strong>anomaly detection</strong>. Unlike simple frequentist methods that use a 
+                        point estimate for variance, the Bayesian approach evaluates new data points against the <strong>posterior predictive distribution</strong>. 
+                        By integrating over the inverse-gamma posterior of \(\sigma^2\), the resulting predictive distribution (a Student's t-distribution) naturally 
+                        accounts for our uncertainty about the variance itself. This makes the system far more robust: when we have very little data, the model is "cautious" 
+                        and requires stronger evidence to flag a point as an anomaly.
+                    </p>
+                </div>
+                
                 <p>
-                    This is typical model for quality control and process monitoring because in industrial and manufacturing processes, the 
-                    mean of a quality characteristic might be known based on historical data. In machine learning, this kind of approach is 
-                    called <strong>anomaly detection</strong>. Anomalies are detected by comparing new datapoints to the baseline model.
+                    The Beta prior was conjugate for the Binomial likelihood, and the Normal prior was conjugate for the Normal likelihood with 
+                    known variance. Is there a unifying structure that explains <em>why</em> these conjugacies exist? In 
+                    <a href="expfamily.html"><strong>Part 15: The Exponential Family</strong></a>, we show that all these distributions belong to a 
+                    single parametric family - the exponential family - whose canonical form guarantees the existence of 
+                    conjugate priors and reduces MLE to moment matching.
                 </p>
+
+                
             </section>
         </div>
         <script src="/js/main.js"></script>
