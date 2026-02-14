@@ -81,15 +81,52 @@ uses_python: false
                     Note: the <strong>log partition function</strong> is convex over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\).
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Minimal Representation</span>
+                    <p>
+                        An exponential family is said to be <strong>minimal</strong> if there is no nonzero \(\eta \in \mathbb{R}^K\) such that 
+                        \[
+                        \eta^\top \mathcal{T}(x) = \text{const}
+                        \]
+                        holds for all \(x\) in the support.
+                    </p>
+                </div>
+
                 <p>
-                    An exponential family is said to be <strong>minimal</strong> if there is no \(\eta \in \mathbb{R}^K \setminus \{0\}\) such that 
-                    \[
-                    \eta^\top \mathcal{T}(x) = 0.
-                    \]
-                    This means that the natural parameters are independent of each other. This condition can be violated in the case of multinomial 
-                    distributions, but we can reparameterize the distribution using \(K-1\) independent parameters. 
+                    Equivalently, the components of the sufficient statistic vector \(\mathcal{T}(x)\) 
+                    (along with the constant function \(1\)) are <strong>linearly independent</strong> as functions of \(x\). 
+                    This property ensures the <strong>identifiability</strong> of the model: there is a unique, one-to-one mapping 
+                    between the natural parameters \(\eta\) and the resulting probability distribution.
                 </p>
 
+                <div class="insight-box">
+                    <h3>Math vs. ML Perspectives: Handling the Constant</h3>
+                    <p>
+                        In many machine learning contexts, you may see the condition simplified to 
+                        \[
+                        \eta^\top \mathcal{T}(x) = 0.
+                        \] 
+                        This assumes that the bias (constant) term has already been absorbed into the sufficient statistic vector 
+                        \(\mathcal{T}(x)\) by augmenting it with a constant \(1\).
+                    </p>
+                    <p>
+                        However, in our canonical definition where the log-partition function \(A(\eta)\) and base measure \(h(x)\) 
+                        are explicitly separated, we must use the more rigorous \(\text{const}\) condition. 
+                        If \(\eta^\top \mathcal{T}(x)\) were a constant, that value would be absorbed by \(A(\eta)\), meaning multiple 
+                        \(\eta\) values could represent the same distribution. A <strong>minimal</strong> representation prevents this 
+                        redundancy, ensuring that the Fisher information matrix is strictly positive definite and the optimization surface 
+                        is well-behaved.
+                    </p>
+                </div>
+
+                <p>
+                    A common example of a non-minimal representation is the \(K\)-class <strong>multinomial distribution</strong>. 
+                    Because the probabilities must sum to one (\(\sum p_i = 1\)), the natural parameters are over-specified. 
+                    While we can work with this redundant form (as often done in Softmax regression), we can always reparameterize 
+                    it into a minimal representation using \(K-1\) independent components to restore unique identifiability.
+                </p>
+
+               
                 <p>
                     Let \(\eta = f(\phi)\), where \(\phi\) is some other possibly smaller set of parameters, and then 
                     \[
@@ -149,7 +186,8 @@ uses_python: false
                 </div>
 
                 <p>
-                    Note: The mean parameter \(\mu\) can be recovered from the canonical parameter \(\eta\):
+                    The Bernoulli example reveals a fundamental connection to classification models. The mean 
+                    parameter \(\mu\) can be recovered from the canonical parameter \(\eta\) via:
                     \[
                     \mu = \sigma(\eta) = \frac{1}{1+e^{-\eta}} \text{(This is a logistic function.)}
                     \]
@@ -182,8 +220,13 @@ uses_python: false
                     \[
                     \nabla^2 A(\eta) = \text{Cov }[\mathcal{T}(\eta)]
                     \]
-                    which means that the Hessian is positive definite, and thus <strong>the log partition function \(A(\eta)\) is 
-                    convex in \(\eta\)</strong>.
+                    which means that the Hessian is positive definite, and thus <strong>the log partition function \(A(\eta)\) 
+                    is convex in \(\eta\)</strong>. This convexity guarantees that the MLE (derived in the next section) has a 
+                    unique solution.
+                </p>
+
+                <p>
+                    We now verify these properties for the two most important continuous distributions in machine learning.
                 </p>
 
                 <div class="proof">
@@ -221,6 +264,13 @@ uses_python: false
                         <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = N(x \mid 0, 1)\) : Not constant.</li>
                     </ul>
                 </div>
+
+                <p>
+                    The univariate case extends naturally to higher dimensions. 
+                    The <a href="mvn.html"><strong>multivariate normal distribution</strong></a> introduces the 
+                    <strong>information form</strong> parameterization, which is the natural exponential family 
+                    representation for Gaussians and plays a central role in graphical models and message passing algorithms.
+                </p>
 
                 <div class="proof">
                     <span class="proof-title">Example 3: Multivariate Normal Distribution(MVN)</span>
@@ -294,6 +344,13 @@ uses_python: false
                 <h2>MLE for the Exponential Family</h2>
 
                 <p>
+                    One of the most elegant consequences of the exponential family structure is that 
+                    <a href="mle.html"><strong>maximum likelihood estimation</strong></a> reduces to a simple condition: 
+                    matching empirical moments to theoretical moments. This is because the gradient of the log-likelihood involves only 
+                    the sufficient statistics and the log-partition function.
+                </p>
+
+                <p>
                     The likelihood of an exponential family model is given by: 
                     \[ 
                     \begin{align*}
@@ -339,14 +396,23 @@ uses_python: false
                     \]
                     and its expected value(theoretical moment under the model) is 
                     \[
-                    \mathbb{E }[x] = \mu = \bar{x}.
+                    \mathbb{E}[x] = \mu = \bar{x}.
                     \]
                 </p>
 
+                 <p>
+                    In <strong>Variational Inference (VI)</strong>, approximating an intractable posterior with an exponential family distribution 
+                    is standard practice: the moment matching condition from MLE generalizes to moment matching between the true and approximate 
+                    posteriors. The log-partition function \(A(\eta)\) reappears as the <strong>Fenchel conjugate</strong> of the negative entropy, 
+                    connecting the exponential family to convex duality and <strong>Information Geometry</strong>.
+                </p>
+
                 <p>
-                    As we know, the MLE estimate \(\hat{\mu} = \bar{x}\), which leads to moment matching conditions. 
-                    Thus, MLE for exponential family distributions naturally reduces to solving moment matching conditions, 
-                    making the estimation process simpler.
+                    The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes all distributional information 
+                    through its derivatives. In the next part, we formalize this connection: the second derivative of \(A(\eta)\) - the covariance 
+                    of the sufficient statistics - is precisely the <a href="fisher_info.html"><strong>Fisher information matrix (Part 16)</strong></a>, 
+                    which measures how sensitive the distribution is to changes in the natural parameter and governs the geometry of the statistical 
+                    model.
                 </p>
             </section>
 
