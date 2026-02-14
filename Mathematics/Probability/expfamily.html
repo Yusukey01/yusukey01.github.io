@@ -12,8 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
         
         <div class="hero-section">
-            <h1 class="webpage-name">The Exponential Family
-            </h1>
+            <h1 class="webpage-name">The Exponential Family</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -26,242 +25,311 @@ uses_python: false
         <div class="container">  
            
             <section id="exp" class="section-content">
-            <h2>The Exponential Family</h2>
-            <p>
-            All members of the <strong>exponential family</strong> have conjugate priors. Before diving into Bayesian 
-            statistics deeper, we discuss this important family of distributions. 
-            <br><br>
-            The exponential family is a family of probability distributions parameterized by 
-            <strong>natural parameters</strong>(or <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with 
-            support over \(\mathcal{X}^D \subseteq \mathbb{R}^D\) such that 
-            \[
-            \begin{align*}
-            p(x | \eta ) &= \frac{1}{Z(\eta)} h(x) \exp\{\eta^T \mathcal{T}(x)\}\\\\
-                         &= h(x) \exp\{\eta^T \mathcal{T}(x) - A(\eta)\}
-            \end{align*}
-            \]
-            where 
-            <br>
-            <ul style="padding-left: 40px;">
-                <li>\(h(x)\) is a <strong>base measure</strong>, which is a scaling constant, often 1.</li>
-                <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is <strong>sufficient statistics</strong>.</li>
-                <li>\(Z(\eta)\) is a normalization constant (or <strong>partition function</strong>) and \( A(\eta) = \log Z(\eta) \).</li>
-            </ul>
-            <br>
-            Each exponential family is defined by different \(h(x)\) and \(\mathcal{T}(x)\).
-            <br>
-            Note: the <strong>log partition function</strong> is convex over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\).
-            <br><br>
-            An exponential family is said to be <strong>minimal</strong> if there is no \(\eta \in \mathbb{R}^K \setminus \{0\}\) such that 
-            \[
-            \eta^T\mathcal{T}(x) = 0.
-            \]
-            This means that the natural parameters are independent of each other. This condition can be violated in the case of multinomial distributions, 
-            but we can reparameterize the distribution using \(K-1\) independent parameters. 
-            <br><br>
-            Let \(\eta = f(\phi)\), where \(\phi\) is some other possibly smaller set of parameters, and then 
-            \[
-            p(x | \phi ) = h(x) \exp\{ f(\phi)^T \mathcal{T}(x) - A(f(\phi))\}.
-            \]
-            If the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
-            <br>
-            If \(\eta = f(\phi) = \phi\), the model is in <strong>canonical form</strong> and in addition, if \(\mathcal{T} =x\), 
-            we call it a <strong>natural exponential family(NEF)</strong>: 
-            \[
-            p(x | \eta ) =  h(x) \exp\{\eta^T x - A(\eta)\}.
-            \]
-            Finally, we define the <strong>moment parameters</strong> as follows:
-            \[
-            m = \mathbb{E }[\mathcal{T}(x)] \in \mathbb{R}^K.
-            \]
-            <div class="proof">
-                <span class="proof-title">Example 1:  Bernoulli Distribution</span>
-                \[
-                \begin{align*}
-                \text{Ber }(x | \mu) &= \mu^x (1-\mu)^{1-x} \\\\
-                                     &= \exp\{x \log (\mu) + (1-x) \log (1-\mu)\}\\\\
-                                     &= \exp\{\mathcal{T}(x)^T \eta\}
-                \end{align*}
-                \]
-                where 
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{T}(x) = [\mathbb{I}(x=1), \, \mathbb{I}(x=0)]\).</li>
-                    <li>\(\eta = [\log(\mu), \, \log(1-\mu)]\).</li>
-                    <li>\(\mu\) is the mean parameter.</li>
-                </ul>
-                <br>
-                In this representation, there is a linear dependence between the features, and then we cannot define 
-                \(\eta\) uniquely. It is common to use a <strong>minimal representation</strong> so that there is a unique 
-                \(\eta\) associated with the distribution.
-                \[
-                \text{Ber }(x | \mu) = \exp\Big\{x \log \Big(\frac{\mu}{1-\mu}\Big) + \log (1-\mu)\Big\}
-                \]
-                where 
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{T}(x) = x\).</li>
-                    <li>\(\eta = \log \Big(\frac{\mu}{1-\mu}\Big)\).</li>
-                    <li>\(A(\eta) = -\log (1-\mu) = \log(1+ e^{\eta})\).</li>
-                    <li>\(h(x) = 1\).</li>
-                </ul>
-            </div>
-            Note: The mean parameter \(\mu\) can be recovered from the canonical parameter \(\eta\):
-            \[
-            \mu = \sigma(\eta) = \frac{1}{1+e^{-\eta}} \text{(This is a logistic function.)}
-            \]
-            Also, you might notice that 
-            \[
-            \begin{align*}
-            \frac{dA}{d \eta} &= \frac{d}{d\eta} \log(1+ e^{\eta}) \\\\
-                              &= \frac{e^{\eta}}{1 + e^{\eta}} \\\\
-                              &= \frac{1}{1+e^{-\eta}} \\\\
-                              &= \mu
-            \end{align*}
-            \]
-            In general, derivatives of the log partition function generate all the <strong>cumulants</strong> of the sufficient 
-            statistics. For example, the first cumulant is given by 
-            \[
-            \nabla A(\eta) = \mathbb{E }[\mathcal{T}(\eta)]
-            \]
-            (Remember, this is <strong>moment parameters</strong>, \(m\))
-            <br>
-            and the second cumulant is given by  
-            \[
-            \nabla^2 A(\eta) = \text{Cov }[\mathcal{T}(\eta)]
-            \]
-            which means that the Hessian is positive definite, and thus <strong>the log partition function \(A(\eta)\) is 
-            convex in \(\eta\)</strong>.
-            <br>
-            <div class="proof">
-                <span class="proof-title">Example 2: Normal Distribution</span>
-                \[
-                \begin{align*}
-                N(x | \mu, \, \sigma^2) &= \frac{1}{\sigma\sqrt{2\pi}}\exp\Big\{-\frac{1}{2\sigma^2}(x - \mu)^2\Big\} \\\\
-                                        &= \frac{1}{\sqrt{2\pi}}
-                                            \exp\Big\{ \frac{\mu}{\sigma^2}x - \frac{1}{2\sigma^2}x^2 -\frac{1}{2\sigma^2}\mu^2 -\log \sigma\Big\}
-                \end{align*}
-                \]
-                where
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{T}(x) = \begin{bmatrix}x \\ x^2 \end{bmatrix}\)</li>
-                    <li>\(\eta = \begin{bmatrix} \frac{\mu}{\sigma^2} \\ -\frac{1}{2\sigma^2} \end{bmatrix} \)</li>
-                    <li>\(A(\eta) = \frac{\mu^2}{2\sigma^2}+\log \sigma = -\frac{\eta_1^2}{4\eta_2}-\frac{1}{2}\log(-2\eta_2)\)</li>
-                    <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\).</li>
-                </ul>
-                <br>
-                Also, the moment parameters are given by:
-                \[
-                m = \begin{bmatrix} \mu \\ \mu^2 + \sigma^2 \end{bmatrix}
-                \]
-                Note: If \(\sigma = 1\), the distribution becomes a natural exponential family such that 
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{T}(x) = x\)</li>
-                    <li>\(\eta = \mu\)</li>
-                    <li>\(A(\eta) = \frac{\mu^2}{2\sigma^2}+\log \sigma = \frac{\mu^2}{2}\)</li>
-                    <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = N(x | 0, 1)\) : Not constant.</li>
-                </ul>
-            </div>
-            <div class="proof">
-                <span class="proof-title">Example 3: Multivariate Normal Distribution(MVN)</span>
-                \[
-                \begin{align*}
-                N(x | \mu, \Sigma) &= \frac{1}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
-                                     \exp\Big\{ \frac{1}{2}x^T\Sigma^{-1}x + x^T\Sigma^{-1}\mu -\frac{1}{2}\mu^T\Sigma^{-1}\mu \Big\}\\\\
-                                   &= c \exp\Big\{x^T\Sigma^{-1}\mu -\frac{1}{2}x^T\Sigma^{-1}x \Big\}
-                \end{align*}
-                \]
-                where 
-                \[
-                c = \frac{\exp\Big\{-\frac{1}{2}\mu^T \Sigma^{-1} \mu\Big\}}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
-                \]
-                and \(\Sigma\) is a covariance matrix. 
-                Now, we represent this model using canonical parameters.
-                \[
-                N_c (x | \xi, \Lambda) = c' \exp \Big\{x^T \xi - \frac{1}{2}x^T \Lambda x \Big\}
-                \]
-                where 
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\Lambda = \Sigma^{-1}\) is a <strong>precision matrix</strong></li>
-                    <li>\(\xi = \Sigma^{-1}\mu\) is a precision-weighted mean vector</li>
-                    <li>\(c' = \frac{\exp\Big\{-\frac{1}{2}\xi^T \Lambda^{-1} \xi \Big\}}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Lambda^{-1})}}\).</li>
-                </ul>
-                <br>
-                This representation is called <strong>information form</strong> and can be converted to exponential family notation as follows:
-                \[
-                \begin{align*}
-                N_c (x | \xi, \Lambda) &= (2\pi)^{-\frac{D}{2}} \exp\Big\{\frac{1}{2}\log |\Lambda | -\frac{1}{2}\xi^T \Lambda^{-1}\xi \Big\}
-                                            \exp\Big\{-\frac{1}{2}x^T \Lambda x + x^T \xi \Big\} \\\\
-                                       &= h(x)g(\eta)\exp\Big\{-\frac{1}{2}x^T \Lambda x + x^T \xi \Big\} \\\\
-                                       &= h(x)g(\eta)\exp\Big\{-\frac{1}{2}(\sum_{i, j}x_i x_j \Lambda_{ij}) + x^T \xi \Big\} \\\\
-                                       &= h(x)g(\eta)\exp\Big\{-\frac{1}{2}\text{vec}(\Lambda)^T \text{vec}(xx^T) + x^T \xi \Big\} \\\\
-                                       &= h(x)\exp\{\eta^T \mathcal{T}(x) - A(\eta)\}
-                \end{align*}
-                \]
-                where
-                <br>
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{T}(x) = [x ; \text{vec}(xx^T)]\)</li>
-                    <li>\(\eta = [\xi ; -\frac{1}{2}\text{vec}(\Lambda)] = [\Sigma^{-1}\mu ; -\frac{1}{2}\text{vec}(\Sigma^{-1})]\)</li>
-                    <li>\(A(\eta) = -\log g(\eta) = -\frac{1}{2} \log | \Lambda | + \frac{1}{2}\xi^T \Lambda^{-1} \xi \)</li>
-                    <li>\(h(x) = (2\pi)^{-\frac{D}{2}}\).</li>
-                </ul>
-                <br>
-                The moment parameters are given by: 
-                \[
-                m = [\mu ; \mu\mu^T + \Sigma].
-                \]
-                Note: This form is NOT minimal since the matrix \(\Lambda\) is symmetric, so we can split it into lower and upper triangular matrices. However, in practice, 
-                non-minimal representation is easier to plug into algorithms and stable for certain operations. The minimal representation is 
-                optimized for mathematical derivations. 
-            </div>
-            </p>
+                <h2>The Exponential Family</h2>
+
+                <p>
+                    All members of the <strong>exponential family</strong> have conjugate priors. Before diving into Bayesian 
+                    statistics deeper, we discuss this important family of distributions. 
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Exponential Family</span>
+                    <p>
+                        The exponential family is a family of probability distributions parameterized by 
+                        <strong>natural parameters</strong>(or <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with 
+                        support over \(\mathcal{X}^D \subseteq \mathbb{R}^D\) such that 
+                        \[
+                        \begin{align*}
+                        p(x \mid \eta ) &= \frac{1}{Z(\eta)} h(x) \exp\{\eta^\top \mathcal{T}(x)\}\\\\
+                                        &= h(x) \exp\{\eta^\top \mathcal{T}(x) - A(\eta)\}
+                        \end{align*}
+                        \]
+                        where 
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(h(x)\) is a <strong>base measure</strong>, which is a scaling constant, often 1.</li>
+                        <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is <strong>sufficient statistics</strong>.</li>
+                        <li>\(Z(\eta)\) is a normalization constant (or <strong>partition function</strong>) and \( A(\eta) = \log Z(\eta) \).</li>
+                    </ul>
+                </div>
+
+                <p>
+                    Each exponential family is defined by different \(h(x)\) and \(\mathcal{T}(x)\).
+                </p>
+
+                <p>
+                    Note: the <strong>log partition function</strong> is convex over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\).
+                </p>
+
+                <p>
+                    An exponential family is said to be <strong>minimal</strong> if there is no \(\eta \in \mathbb{R}^K \setminus \{0\}\) such that 
+                    \[
+                    \eta^\top \mathcal{T}(x) = 0.
+                    \]
+                    This means that the natural parameters are independent of each other. This condition can be violated in the case of multinomial 
+                    distributions, but we can reparameterize the distribution using \(K-1\) independent parameters. 
+                </p>
+
+                <p>
+                    Let \(\eta = f(\phi)\), where \(\phi\) is some other possibly smaller set of parameters, and then 
+                    \[
+                    p(x \mid \phi ) = h(x) \exp\{ f(\phi)^\top \mathcal{T}(x) - A(f(\phi))\}.
+                    \]
+                    If the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
+                </p>
+
+                <p>
+                    If \(\eta = f(\phi) = \phi\), the model is in <strong>canonical form</strong> and in addition, if \(\mathcal{T} =x\), 
+                    we call it a <strong>natural exponential family(NEF)</strong>: 
+                    \[
+                    p(x \mid \eta ) =  h(x) \exp\{\eta^\top x - A(\eta)\}.
+                    \]
+                    Finally, we define the <strong>moment parameters</strong> as follows:
+                    \[
+                    m = \mathbb{E}[\mathcal{T}(x)] \in \mathbb{R}^K.
+                    \]
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 1:  Bernoulli Distribution</span>
+
+                    <p>
+                    \[
+                    \begin{align*}
+                    \text{Ber}(x \mid \mu) &= \mu^x (1-\mu)^{1-x} \\\\
+                                           &= \exp\{x \log (\mu) + (1-x) \log (1-\mu)\}\\\\
+                                           &= \exp\{\mathcal{T}(x)^\top \eta\}
+                    \end{align*}
+                    \]
+                    where 
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{T}(x) = [\mathbb{I}(x=1), \, \mathbb{I}(x=0)]\).</li>
+                        <li>\(\eta = [\log(\mu), \, \log(1-\mu)]\).</li>
+                        <li>\(\mu\) is the mean parameter.</li>
+                    </ul>
+                    
+                    <p>
+                        In this representation, there is a linear dependence between the features, and then we cannot define 
+                        \(\eta\) uniquely. It is common to use a <strong>minimal representation</strong> so that there is a unique 
+                        \(\eta\) associated with the distribution.
+                        \[
+                        \text{Ber}(x \mid \mu) = \exp\left\{x \log \left(\frac{\mu}{1-\mu}\right) + \log (1-\mu)\right\}
+                        \]
+                        where 
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{T}(x) = x\).</li>
+                        <li>\(\eta = \log \left(\frac{\mu}{1-\mu}\right)\).</li>
+                        <li>\(A(\eta) = -\log (1-\mu) = \log(1+ e^{\eta})\).</li>
+                        <li>\(h(x) = 1\).</li>
+                    </ul>
+                </div>
+
+                <p>
+                    Note: The mean parameter \(\mu\) can be recovered from the canonical parameter \(\eta\):
+                    \[
+                    \mu = \sigma(\eta) = \frac{1}{1+e^{-\eta}} \text{(This is a logistic function.)}
+                    \]
+                    Also, you might notice that 
+                    \[
+                    \begin{align*}
+                    \frac{dA}{d \eta} &= \frac{d}{d\eta} \log(1+ e^{\eta}) \\\\
+                                    &= \frac{e^{\eta}}{1 + e^{\eta}} \\\\
+                                    &= \frac{1}{1+e^{-\eta}} \\\\
+                                    &= \mu.
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    In general, derivatives of the log partition function generate all the <strong>cumulants</strong> of the sufficient 
+                    statistics.
+                </p>
+
+                <p>
+                    The first cumulant is given by 
+                    \[
+                    \nabla A(\eta) = \mathbb{E }[\mathcal{T}(\eta)].
+                    \]
+                    (Remember, this is called <strong>moment parameters</strong>, \(m\).)
+                </p>
+
+                <p>
+                    The second cumulant is given by  
+                    \[
+                    \nabla^2 A(\eta) = \text{Cov }[\mathcal{T}(\eta)]
+                    \]
+                    which means that the Hessian is positive definite, and thus <strong>the log partition function \(A(\eta)\) is 
+                    convex in \(\eta\)</strong>.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example 2: Normal Distribution</span>
+                    <p>
+                        \[
+                        \begin{align*}
+                        N(x | \mu, \, \sigma^2) &= \frac{1}{\sigma\sqrt{2\pi}}\exp \left\{-\frac{1}{2\sigma^2}(x - \mu)^2 \right\} \\\\
+                                                &= \frac{1}{\sqrt{2\pi}}
+                                                    \exp \left\{ \frac{\mu}{\sigma^2}x - \frac{1}{2\sigma^2}x^2 -\frac{1}{2\sigma^2}\mu^2 -\log \sigma \right\}
+                        \end{align*}
+                        \]
+                        where
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{T}(x) = \begin{bmatrix}x \\ x^2 \end{bmatrix}\)</li>
+                        <li>\(\eta = \begin{bmatrix} \frac{\mu}{\sigma^2} \\ -\frac{1}{2\sigma^2} \end{bmatrix} \)</li>
+                        <li>\(A(\eta) = \frac{\mu^2}{2\sigma^2}+\log \sigma = -\frac{\eta_1^2}{4\eta_2}-\frac{1}{2}\log(-2\eta_2)\)</li>
+                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\).</li>
+                    </ul>
+
+                    <p>
+                        Also, the moment parameters are given by:
+                        \[
+                        m = \begin{bmatrix} \mu \\ \mu^2 + \sigma^2 \end{bmatrix}.
+                        \]
+                        Note: If \(\sigma = 1\), the distribution becomes a natural exponential family such that 
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{T}(x) = x\)</li>
+                        <li>\(\eta = \mu\)</li>
+                        <li>\(A(\eta) = \frac{\mu^2}{2\sigma^2}+\log \sigma = \frac{\mu^2}{2}\)</li>
+                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = N(x \mid 0, 1)\) : Not constant.</li>
+                    </ul>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example 3: Multivariate Normal Distribution(MVN)</span>
+
+                    <p>
+                        \[
+                        \begin{align*}
+                        N(x \mid \mu, \Sigma) &= \frac{1}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
+                                                 \exp \left\{ \frac{1}{2}x^\top \Sigma^{-1}x + x^\top \Sigma^{-1}\mu -\frac{1}{2}\mu^\top \Sigma^{-1}\mu \right\}\\\\
+                                              &= c \exp\left \{x^\top \Sigma^{-1}\mu -\frac{1}{2}x^\top \Sigma^{-1}x \right\}
+                        \end{align*}
+                        \]
+                        where 
+                        \[
+                        c = \frac{\exp \left\{-\frac{1}{2}\mu^\top \Sigma^{-1} \mu\right\}}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
+                        \]
+                        and \(\Sigma\) is a covariance matrix. 
+                    </p>
+
+                    <p>
+                        Now, we represent this model using canonical parameters.
+                        \[
+                        N_c (x \mid \xi, \Lambda) = c' \exp \left\{x^\top \xi - \frac{1}{2}x^\top \Lambda x \right\}
+                        \]
+                        where 
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\Lambda = \Sigma^{-1}\) is a <strong>precision matrix</strong></li>
+                        <li>\(\xi = \Sigma^{-1}\mu\) is a precision-weighted mean vector</li>
+                        <li>\(c' = \frac{\exp \left\{-\frac{1}{2}\xi^\top \Lambda^{-1} \xi \right\}}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Lambda^{-1})}}\).</li>
+                    </ul>
+
+                    <p>
+                        This representation is called <strong>information form</strong> and can be converted to exponential family notation as follows:
+                        \[
+                        \begin{align*}
+                        N_c (x \mid \xi, \Lambda) 
+                        &= (2\pi)^{-\frac{D}{2}} \exp \left\{\frac{1}{2}\log | \Lambda | -\frac{1}{2}\xi^\top \Lambda^{-1}\xi \right\}
+                                \exp \left\{-\frac{1}{2}x^\top \Lambda x + x^\top \xi \right\} \\\\
+                        &= h(x)g(\eta)\exp \left\{-\frac{1}{2}x^\top \Lambda x + x^\top \xi \right\} \\\\
+                        &= h(x)g(\eta)\exp \left \{-\frac{1}{2}(\sum_{i, j}x_i x_j \Lambda_{ij}) + x^\top \xi \right\} \\\\
+                        &= h(x)g(\eta)\exp \left\{-\frac{1}{2}\text{vec}(\Lambda)^\top \text{vec}(xx^\top) + x^\top \xi \right\} \\\\
+                        &= h(x)\exp\{\eta^\top \mathcal{T}(x) - A(\eta)\}
+                        \end{align*}
+                        \]
+                        where
+                    </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{T}(x) = [x ; \text{vec}(xx^\top)]\)</li>
+                        <li>\(\eta = [\xi ; -\frac{1}{2}\text{vec}(\Lambda)] = [\Sigma^{-1}\mu ; -\frac{1}{2}\text{vec}(\Sigma^{-1})]\)</li>
+                        <li>\(A(\eta) = -\log g(\eta) = -\frac{1}{2} \log | \Lambda | + \frac{1}{2}\xi^\top \Lambda^{-1} \xi \)</li>
+                        <li>\(h(x) = (2\pi)^{-\frac{D}{2}}\).</li>
+                    </ul>
+
+                    <p>
+                        The moment parameters are given by: 
+                        \[
+                        m = [\mu ; \mu\mu^\top + \Sigma].
+                        \]
+                        Note: This form is NOT minimal since the matrix \(\Lambda\) is symmetric, so we can split it into lower and upper triangular matrices. 
+                        However, in practice, non-minimal representation is easier to plug into algorithms and stable for certain operations. 
+                        The minimal representation is optimized for mathematical derivations. 
+                    </p>
+                </div>
+
             </section>
 
             <section id="mle" class="section-content">
-            <h2>MLE for the Exponential Family</h2>
-            <p>
-            The likelihood of an exponential family model is given by: 
-            \[ 
-            \begin{align*}
-            p(\mathcal{D} | \eta) &= \Big\{\prod_{n=1}^N h(x_n)\Big\} \exp\Big\{\eta^T \Big[\sum_{n=1}^N \mathcal{T}(x_n)\Big] - N A(\eta)\Big\} \\\\
-                                  &\propto \exp\{\eta^T \mathcal{T}(\mathcal{D}) - N A(\eta)\}
-            \end{align*}
-            \]
-            where \(\mathcal{T}(\mathcal{D})\) are the sufficient statistics: 
-            \[
-            \mathcal{T}(\mathcal{D}) = \begin{bmatrix}\sum_{n=1}^N \mathcal{T}_1 (x_n) \\ \vdots \\ \sum_{n=1}^N \mathcal{T}_K (x_n)  \end{bmatrix}.
-            \]
-            <br>
-            The derivative of the log partition function yields the expected value of the sufficient statistic vector:
-            \[
-            \begin{align*}
-            \nabla_{\eta} \log p(\mathcal{D} | \eta) &= \nabla_{\eta} \eta^T \mathcal{T}(\mathcal{D}) - N \nabla_{\eta} A(\eta) \\\\
-                                                     &=  \mathcal{T}(\mathcal{D}) - N \mathbb{E }[\mathcal{T}(x)]
-            \end{align*}
-            \]
-            Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), which must satisfy 
-            \[
-            \mathbb{E }[\mathcal{T}(x)] = \frac{1}{N}\sum_{n=1}^N \mathcal{T}(x_n).
-            \]
-            This means that the empirical average of the sufficient statistics equals to the model's theoretical expected 
-            sufficient statistics. This principle is called <strong>moment matching</strong>. For example, in Gaussian distribution, 
-            its empirical mean(the first moment) is given by: 
-            \[
-            \bar{x} = \frac{1}{N}\sum_{n=1}^N x_n.
-            \]
-            and its expected value(theoretical moment under the model) is 
-            \[
-            \mathbb{E }[x] = \mu = \bar{x}.
-            \]
-            As we know, the MLE estimate \(\hat{\mu} = \bar{x}\), which leads to moment matching conditions. 
-            Thus, MLE for exponential family distributions naturally reduces to solving moment matching conditions, making 
-            the estimation process simpler.
-            </p>
+                <h2>MLE for the Exponential Family</h2>
+
+                <p>
+                    The likelihood of an exponential family model is given by: 
+                    \[ 
+                    \begin{align*}
+                    p(\mathcal{D} \mid \eta) 
+                    &= \left\{\prod_{n=1}^N h(x_n)\right\} \exp \left\{\eta^\top \left[\sum_{n=1}^N \mathcal{T}(x_n)\right] - N A(\eta)\right\} \\\\
+                    &\propto \exp\{\eta^\top \mathcal{T}(\mathcal{D}) - N A(\eta)\}
+                    \end{align*}
+                    \]
+                    where \(\mathcal{T}(\mathcal{D})\) are the sufficient statistics: 
+                    \[
+                    \mathcal{T}(\mathcal{D}) 
+                    = \begin{bmatrix}
+                            \sum_{n=1}^N \mathcal{T}_1 (x_n) \\ \vdots \\ \sum_{n=1}^N \mathcal{T}_K (x_n) 
+                      \end{bmatrix}.
+                    \]
+                </p>
+
+                <p>
+                    The derivative of the log partition function yields the expected value of the sufficient statistic vector:
+                    \[
+                    \begin{align*}
+                    \nabla_{\eta} \log p(\mathcal{D} \mid \eta) 
+                    &= \nabla_{\eta} \eta^\top \mathcal{T}(\mathcal{D}) - N \nabla_{\eta} A(\eta) \\\\
+                    &=  \mathcal{T}(\mathcal{D}) - N \mathbb{E }[\mathcal{T}(x)].
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), which must satisfy 
+                    \[
+                    \mathbb{E }[\mathcal{T}(x)] = \frac{1}{N}\sum_{n=1}^N \mathcal{T}(x_n).
+                    \]
+                    This means that the empirical average of the sufficient statistics equals to the model's theoretical expected 
+                    sufficient statistics. This principle is called <strong>moment matching</strong>. 
+                </p>
+
+                <p>
+                    For example, in Gaussian distribution, 
+                    its empirical mean(the first moment) is given by: 
+                    \[
+                    \bar{x} = \frac{1}{N}\sum_{n=1}^N x_n.
+                    \]
+                    and its expected value(theoretical moment under the model) is 
+                    \[
+                    \mathbb{E }[x] = \mu = \bar{x}.
+                    \]
+                </p>
+
+                <p>
+                    As we know, the MLE estimate \(\hat{\mu} = \bar{x}\), which leads to moment matching conditions. 
+                    Thus, MLE for exponential family distributions naturally reduces to solving moment matching conditions, 
+                    making the estimation process simpler.
+                </p>
             </section>
+
         </div>  
         <script src="/js/main.js"></script>  
     </body>
