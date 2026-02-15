@@ -25,7 +25,7 @@ uses_python: false
                 <a href="#ROC">Receiver Operating Characteristic Curves (ROC) Curves</a>
                 <a href="#EER">Equal Error Rate (EER)</a>
                 <a href="#PR">Precision-Recall (PR) Curves</a>
-                <a href="#imb">Class Imbalanced</a>
+                <a href="#imb">Class Imbalance</a>
             </div>
 
             <section id="intro" class="section-content">
@@ -42,7 +42,7 @@ uses_python: false
                     The setup is as follows. An <strong>agent</strong> must choose an <strong>action</strong> \(a\) from a set 
                     of possible actions \(\mathcal{A}\). The consequence of this action depends on the unknown 
                     <strong>state of nature</strong> \(h \in \mathcal{H}\), which the agent cannot observe directly. 
-                    To quantify the cost of choosing action \(a\) when the true state is \(h\), we introduce 
+                    To quantify the cost of choosing an action \(a\) when the true state is \(h\), we introduce 
                     a <strong>loss function</strong> \(l(h, a)\).
                 </p>
 
@@ -388,8 +388,9 @@ uses_python: false
                 <p>
                     The ROC curve provides a comprehensive view of the trade-off between TPR and FPR, but it can be useful to summarize 
                     this trade-off with a single number. The <strong>equal error rate (EER)</strong> is the operating point where 
-                    \(\text{FPR} = \text{FNR}\), i.e., where the two types of errors are balanced. This metric is particularly important 
-                    in applications such as biometric authentication (fingerprint or face recognition), where false acceptance and false 
+                    \(\text{FPR} = \text{FNR}\). This point represents the optimal threshold under the assumption that 
+                    <strong>the prior probabilities and the costs of both types of errors are equal</strong>. This metric is particularly 
+                    important in applications such as biometric authentication (fingerprint or face recognition), where false acceptance and false 
                     rejection carry comparable costs.
                 </p>
 
@@ -462,12 +463,13 @@ uses_python: false
                     and \(\text{FOR} + \text{NPV} = 1\).
                 </p>
                 
-                <p>
+                 <p>
                     To summarize a system's performance - especially when classes are <strong>imbalanced</strong> (i.e., when the positive class is rare) 
                     or when false positives and false negatives have different costs - we often use a <strong>precision-recall (PR) curve</strong>. This 
-                    curve plots precision against recall as the decision threshold \(\tau\).
+                    curve plots precision against recall as the decision threshold \(\tau\) varies.
                 </p>
                 
+
                 <p>
                     <strong>Imbalanced datasets</strong> appear frequently in real-world machine learning applications where one class is naturally much rarer than 
                     the other. For example, in financial transactions, fraudulent activities are rare compared to legitimate ones. The classifier must 
@@ -493,57 +495,73 @@ uses_python: false
                     This curve visually represents the trade-off between precision and recall. It is particularly valuable in situations where one 
                     class is much rarer than the other or when false alarms carry a significant cost.
                 </p>
-                
+
                 <p>
-                    Raw precision values can be noisy; therefore, an <strong>interpolated precision</strong> is often computed. For a given recall 
-                    level (e.g., at least 10%), the interpolated precision is defined as the maximum precision observed for any recall level greater 
-                    than or equal to that value. The <strong>average precision (AP)</strong> is the average of these interpolated precision values 
-                    over the entire range of recall. Conceptually, AP is equal to the area under the interpolated PR curve.
+                    A crucial difference between the ROC and PR curves is the <strong>baseline</strong> for a random classifier. While a random 
+                    classifier always yields an AUC of 0.5 on an ROC curve, the baseline for a <strong>PR curve</strong> is the fraction of 
+                    positive samples in the dataset: 
+                    \[
+                    y_{baseline} = \frac{P}{P + N}
+                    \]
+                    This makes the PR curve a much more rigorous evaluation tool for highly imbalanced datasets, as the "no-knowledge" score 
+                    can be near zero while the "perfect" score remains 1.0.
                 </p>
-                
+
                 <p>
-                    It provides a single number summary of the classifier's performance across all thresholds. Note that the AP calculated from the interpolated curve may differ 
-                    from the area under the raw PR curve.
+                    However, raw precision values can be noisy as the threshold varies. To stabilize this, <strong>interpolated precision</strong> 
+                    is often computed. For a given recall level \(r\), it is defined as the maximum precision observed for any recall level greater 
+                    than or equal to \(r\):
+                    \[
+                    \mathcal{P}_{\text{interp}}(r) = \max_{r' \geq r} \mathcal{P}(r')
+                    \]
+                    The <strong>average precision (AP)</strong> is the area under this interpolated PR curve. It provides a single-number summary 
+                    that reflects the classifier's ability to maintain high precision as the recall threshold is lowered.
                 </p>
-                
+
                 <p>
-                    In our case, the logistic regression produced an AP of 0.73, meaning that on average, when this classifier predicts positive, 
-                    about 73% of its predictions are correct, and the random Forest produced an AP of 0.93, indicating a much stronger performance.
+                    In our case, the logistic regression produced an AP of 0.73, while the random forest achieved a much stronger AP of 0.93. This 
+                    indicates that the random forest is significantly more robust at identifying positive cases without sacrificing precision.
                 </p>
-                
+
                 <p>
                     Note: In settings where multiple PR curves are generated (for example, one for each query in information retrieval or one per class in 
                     multi-class classification), the <strong>mean average precision (mAP)</strong> is computed as the mean of the AP scores over all 
                     curves. mAP offers an overall performance measure across multiple queries or classes.
                 </p>
+
             </section>
 
             <section id="imb" class="section-content">
-                <h2>Class Imbalanced</h2>
+                <h2>Class Imbalance</h2>
+
                 <p>
-                    A dataset is considered <strong>imbalanced</strong> when one class has significantly fewer examples than the other. For example, in a binary 
-                    classification task, a dataset may contain only 5% positive samples and 95% negative samples. In such cases, many traditional 
-                    evaluation metrics, like accuracy, can be misleading. A model that always predicts the majority class (negative) can achieve 
-                    high accuracy without correctly identifying minority class instances.
+                    In real-world applications, the class distribution is far from uniform. A dataset is considered <strong>imbalanced</strong> 
+                    when one class has significantly fewer examples than the other - for instance, 5% positive samples and 95% negative samples. 
+                    In such cases, naive metrics like accuracy can be highly misleading: a model that always predicts the majority 
+                    class achieves high accuracy without correctly identifying any minority class instances. 
+                    How do ROC-AUC and PR-AP behave differently under class imbalance?
                 </p>
-                
+
                 <p>
-                    The <strong>ROC-AUC metric</strong> is often <strong>insensitive</strong> to class imbalance because the TPR is defined as a ratio 
-                    within the positive samples and the FPR is defined as a ratio within the negative samples only. So, it does not matter which class 
-                    we define as positive or negative.
+                    The <strong>ROC-AUC metric</strong> is often <strong>insensitive</strong> to class imbalance because both TPR and FPR are 
+                    computed within their respective populations - TPR is a ratio within the positive samples and FPR is a ratio within the 
+                    negative samples. Consequently, the class proportions do not directly affect the ROC curve.
                 </p>
-                
+
                 <p>
-                    On the other hand, <strong>PR-AP metric</strong> is more <strong>sensitive</strong> to class imbalance. Remember that the precision is given by:
+                    On the other hand, the <strong>PR-AP metric</strong> is more <strong>sensitive</strong> to class imbalance. 
+                    This is because precision depends on both populations:
                     \[
-                    \text{Precision} = \frac{TP}{TP + FP}, 
+                    \text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}}.
                     \]
-                    which depends "both" on positive and negative samples.
+                    When the negative class vastly outnumbers the positive class, even a small false positive 
+                    rate can produce a large absolute number of false positives, significantly reducing precision.
                 </p>
-                
+
                 <p>
-                    To demonstrate this, we create a dataset where 90% of the samples belong to the negative class and only 10% belong to the positive class. 
-                    Then, we train both the logistic regression model and the random forest model again:
+                    To demonstrate this effect, we create a dataset where 90% of the samples belong to the negative 
+                    class and only 10% belong to the positive class, then train both the logistic regression and 
+                    random forest models again:
                 </p>
 
                 <div style="text-align: center;">
@@ -552,18 +570,34 @@ uses_python: false
                 </div>
 
                 <p>
-                    ROC curves remain relatively smooth, and AUC does not drop drastically, even though the dataset is highly imbalanced. 
-                    PR curves, however, show a much distinct difference, with lower AP scores, highlighting how class imbalance makes it harder to 
-                    achieve good precision and recall simultaneously. Even though random forest performs better than logistic regression, it struggles 
-                    to detect the rare positive cases effectively.
+                    The ROC curves remain relatively smooth and the AUC does not drop drastically, even though the dataset is highly 
+                    imbalanced. The PR curves, however, reveal a distinct difference, with noticeably lower AP scores. This highlights 
+                    how class imbalance makes it harder to achieve high precision and recall simultaneously. Even though the random 
+                    forest outperforms logistic regression, it still struggles to detect the rare positive cases effectively.
                 </p>
-                
+
                 <p>
-                    Note: PR curves focus on precision and recall, which directly reflect how well a model identifies the rare (minority) class. Precision, 
-                    in particular, is affected by even a small number of false positives, giving a more realistic picture of performance when the positive 
-                    class is scarce. Thus, PR-AP is usually the better choice for class imbalance problems because it directly measures performance on the 
-                    minority class.
+                    In summary, PR curves focus on precision and recall, which directly reflect how well a model identifies the minority class. 
+                    Precision, in particular, is sensitive to even a small number of false positives, providing a more realistic picture of 
+                    performance when the positive class is scarce. Thus, <strong>PR-AP is generally the preferred metric for imbalanced classification problems</strong> 
+                    because it directly measures performance on the minority class.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The evaluation framework developed in this section is essential throughout applied machine learning. 
+                        The <strong>confusion matrix</strong> underlies the training objectives for many classifiers: the 
+                        cross-entropy loss used in logistic regression and neural networks can be understood as a smooth 
+                        surrogate for the zero-one loss. <strong>ROC-AUC</strong> is the standard metric for balanced 
+                        classification tasks and is widely used in model selection. <strong>PR-AP</strong> (and its multi-class 
+                        extension, <strong>mAP</strong>) is the primary evaluation metric in object detection 
+                        and information retrieval, where positive instances are inherently rare. The 
+                        <strong>reject option</strong> introduced earlier is implemented in practice through confidence 
+                        thresholding and is increasingly important in safety-critical AI systems where abstaining from 
+                        a prediction is preferable to making an error.
+                    </p>
+                </div>
 
             </section>
 
