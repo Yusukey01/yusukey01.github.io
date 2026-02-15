@@ -312,10 +312,13 @@ uses_python: false
 
             <section id="ROC" class="section-content">
                 <h2>Receiver Operating Characteristic Curves</h2>
-                <p>
-                    Here, we normalize the confusion matrix per <strong>row</strong> to obtain \(p(\hat{y} \mid y)\). (The sum of the 
-                    entries in each row is 1.) The row-normalized confusion matrix is useful when optimizing for recall-focused tasks, 
-                    such as detecting rare events like cybersecurity threats or disease outbreaks.
+
+                 <p>
+                    Rather than evaluating a classifier at a single threshold, we can characterize its performance across all thresholds 
+                    simultaneously. The <strong>receiver operating characteristic (ROC) curve</strong> achieves this by plotting two rates 
+                    derived from the confusion matrix. To obtain these rates, we normalize the confusion matrix per <strong>row</strong>, 
+                    yielding the conditional distribution \(p(\hat{y} \mid y)\). Since each row sums to 1, these rates describe the classifier's 
+                    behavior separately within the positive and negative populations.
                 </p>
 
                 <div class="math-table-container">
@@ -349,10 +352,12 @@ uses_python: false
                 </ul>
                 
                 <p>
-                    Often, we plot the TPR vs FPR as an implicit function of \(\tau\); this plot is known as the <strong>receiver operating characteristic 
-                    (ROC) curve</strong>. The overall quality of a classifier is often summarized using the <strong>AUC(Area Under the Curve)</strong>. 
-                    A higher AUC indicates better discriminative ability across all threshold values (max = 1.0).
+                    By plotting TPR against FPR as an implicit function of \(\tau\), we obtain the <strong>ROC curve</strong>. 
+                    The overall quality of a classifier is often summarized using the <strong>AUC (Area Under the Curve)</strong>. 
+                    A higher AUC indicates better discriminative ability across all threshold values, with a maximum of 1.0 for a 
+                    perfect classifier.
                 </p>
+
                 <p>
                     The figure below compares two classifiers — one trained using logistic regression and the other using a random forest. Both classifiers 
                     provide predicted probabilities for the positive class, allowing us to vary \(\tau\) and compute the corresponding TPR and FPR. A diagonal 
@@ -379,67 +384,87 @@ uses_python: false
 
             <section id="EER" class="section-content">
                 <h2>Equal Error Rate (EER)</h2>
+
                 <p>
-                    The <strong>equal error rate (EER)</strong> is the point where <strong>FPR = FNR</strong>. This is an important threshold in 
-                    some applications (e.g., biometric authentication) where false positives and false negatives are equally costly. The EER provides 
-                    a single value to compare classifiers, particularly when precision and recall trade-offs must be balanced.
+                    The ROC curve provides a comprehensive view of the trade-off between TPR and FPR, but it can be useful to summarize 
+                    this trade-off with a single number. The <strong>equal error rate (EER)</strong> is the operating point where 
+                    \(\text{FPR} = \text{FNR}\), i.e., where the two types of errors are balanced. This metric is particularly important 
+                    in applications such as biometric authentication (fingerprint or face recognition), where false acceptance and false 
+                    rejection carry comparable costs.
                 </p>
-                
+
                 <p>
-                    Below is the EER point for our models, showing where the two error rates intersect:
+                    The figure below shows the EER point for our two models, marking where the FPR and FNR 
+                    curves intersect:
                 </p>
 
                 <div style="text-align: center;">
                     <img src="Images/eer.webp" alt="EER"  class="responsive-image">
                 </div>
-                
+
                 <p>
-                    Note: the minimum EER is 0 corresponding to the top left corner. In many real-world applications, 
-                    we might tune the threshold to minimize EER.
+                    A perfect classifier would achieve an EER of 0, corresponding to the top-left corner of the 
+                    ROC curve. In practice, one may tune the decision threshold to operate at or near the EER, 
+                    depending on the application's requirements.
                 </p>
+
+                <p>
+                    The ROC curve and EER evaluate a classifier by conditioning on the true class (i.e., how the classifier 
+                    behaves within each population). However, in many practical settings we care about a different question: 
+                    <em>given that the classifier predicted positive, how likely is it to be correct?</em> This leads us to 
+                    precision-recall analysis.
+                </p>
+
             </section>
 
             <section id="PR" class="section-content">
                 <h2>Precision-Recall (PR) Curves</h2>
+
                 <p>
-                    Next, we normalized the original confusion matrix per <strong>column</strong> to obtain \(p(y \mid \hat{y})\). 
-                    (The sum of the entries in each column is 1.) The column-normalized confusion matrix is useful when the precision 
-                    is crucial (e.g., medical diagnosis, fraud detection).
+                    Here, we normalize the confusion matrix per <strong>column</strong> to obtain \(p(y \mid \hat{y})\), which conditions 
+                    on the predicted label. The column-normalized confusion matrix answers a complementary question: 
+                    <em>among the instances predicted as positive (or negative), what fraction are truly positive (or negative)?</em> 
+                    This perspective is especially important when precision is critical, such as in medical diagnosis or fraud detection.
                 </p>
-                
+
                 <div class="math-table-container">
                     <div class="math-table-title">Table 4: Confusion Matrix Normalized per Column</div>
                     \[
                     \begin{array}{|c|c|c|}
                         \hline
-                        &  1 & 0 \\
+                        &  \hat{y} = 1 & \hat{y} = 0 \\
                         \hline
-                        1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\
+                        y = 1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\
                         \hline
-                        0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\
+                        y = 0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\
                         \hline
                     \end{array}
                     \]
                 </div>
-                
+
                 <ul style="padding-left: 40px;">
                     <li><strong>Positive predictive value (PPV)</strong> (or <strong>Precision</strong>):\[
                         \text{PPV}_{\tau} = p(y = 1 \mid \hat{y} = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
                         \] </li>
                     <li><strong>False discovery rate (FDR)</strong>:\[
-                        \text{FDR}_{\tau} = p(y = 1 \mid \hat{y} = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
+                        \text{FDR}_{\tau} = p(y = 0 \mid \hat{y} = 1, \tau) = \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
                         \]</li>
                     <li><strong>False omission rate (FOR)</strong>:\[
-                        \text{FOR}_{\tau} = p(y = 0 \mid \hat{y} = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
+                        \text{FOR}_{\tau} = p(y = 1 \mid \hat{y} = 0, \tau) = \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
                         \]</li>
                     <li><strong>Negative predictive value (NPV)</strong>:\[
                         \text{NPV}_{\tau} = p(y = 0 \mid \hat{y} = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
                         \]</li>
                 </ul>
+
+                <p>
+                    Note that within each column, the rates sum to 1: \(\text{PPV} + \text{FDR} = 1\) 
+                    and \(\text{FOR} + \text{NPV} = 1\).
+                </p>
                 
                 <p>
-                    To summarize a system's performance — especially when classes are <strong>imbalanced</strong> (i.e., when the positive class is rare) 
-                    or when false positives and false negatives have different costs — we often use a <strong>precision-recall (PR) curve</strong>. This 
+                    To summarize a system's performance - especially when classes are <strong>imbalanced</strong> (i.e., when the positive class is rare) 
+                    or when false positives and false negatives have different costs - we often use a <strong>precision-recall (PR) curve</strong>. This 
                     curve plots precision against recall as the decision threshold \(\tau\).
                 </p>
                 
