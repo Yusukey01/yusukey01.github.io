@@ -102,122 +102,146 @@ uses_python: false
 
             <section id="class" class="section-content">
                 <h2>Classification (Zero-One Loss)</h2>
+
                 <p>
-                    A common application of Bayesian decision theory is <strong>classification</strong>. 
-                    In this context, we aim to select the optimal class label for a given input \(\boldsymbol{x} \in \mathcal{X}\).
-                    <br><br>
-                    Suppose that the states of nature correspond to labels:
-                    \[
-                    \mathcal{H} = \mathcal{Y} = \{1, \cdots, C\}.
-                    \]
-                    and that the possible actions are also the class labels:
-                    \[
-                    \mathcal{A} = \mathcal{Y}.
-                    \]
-                    In this case, a typical loss function is the <strong>zero-one loss</strong>:
-                    \[
-                    l_{01} (y^*, \hat{y}) = \mathbb{I}(y^* \neq \hat{y}), 
-                    \]
-                    where \(y^*\) is the true label, and \(\hat{y}\) is the predicted label.
+                    Perhaps the most common application of Bayesian decision theory in machine learning is 
+                    <strong>classification</strong>: given an input \(\boldsymbol{x} \in \mathcal{X}\), we wish to assign 
+                    it the optimal class label. To apply the general framework, we specify the states, actions, and loss function 
+                    for this particular setting.
                 </p>
+
+                <p>
+                    Suppose that the states of nature correspond to class labels
+                    \[
+                    \mathcal{H} = \mathcal{Y} = \{1, \ldots, C\},
+                    \]
+                    and that the possible actions are also the class labels: \(\mathcal{A} = \mathcal{Y}\).
+                    A natural loss function in this context is the <strong>zero-one loss</strong>, which penalizes 
+                    misclassification equally regardless of which classes are confused.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Zero-One Loss</span>
+                    <p>
+                        The <strong>zero-one loss</strong> is defined as
+                        \[
+                        l_{01}(y^*, \hat{y}) = \mathbb{I}(y^* \neq \hat{y}),
+                        \]
+                        where \(y^*\) is the true label and \(\hat{y}\) is the predicted label.
+                    </p>
+                </div>
+
                 <p>
                     Under the zero-one loss, the posterior expected loss for choosing label \(\hat{y}\) becomes
                     \[
-                    \rho(\hat{y} \mid \boldsymbol{x}) = p(\hat{y} \neq y^* \mid \boldsymbol{x}) = 1 - p (y^* = \hat{y} \mid \boldsymbol{x}).
-                    \] 
+                    \rho(\hat{y} \mid \boldsymbol{x}) = p(\hat{y} \neq y^* \mid \boldsymbol{x}) = 1 - p(y^* = \hat{y} \mid \boldsymbol{x}).
+                    \]
                     Thus, minimizing the expected loss is equivalent to maximizing the posterior probability:
                     \[
-                    \pi (\boldsymbol{x}) = \arg \max_{y \in \mathcal{Y}} p( y \mid \boldsymbol{x} ).
+                    \pi^*(\boldsymbol{x}) = \arg \max_{y \in \mathcal{Y}} \, p(y \mid \boldsymbol{x}).
                     \]
-                    In other words, the optimal decision is to select the <strong>mode</strong> of the posterior distribution, which 
-                    is the <strong>maximum a posteriori (MAP) estimate</strong>.
+                    In other words, the optimal decision under zero-one loss is to select the <strong>mode</strong> of the posterior distribution, 
+                    which is the <strong>maximum a posteriori (MAP) estimate</strong>. This provides a decision-theoretic justification for 
+                    the MAP estimator that we encountered in <a href="bayesian.html"><strong>Part 14</strong></a>.
                 </p>
+
+                <h3>The Reject Option</h3>
+
                 <p>
-                    In some scenarios, especially when the risks associated with making an incorrect decision are high, it is prudent 
-                    to allow the system to express uncertainty. This is called the <strong>reject option</strong>. Under this approach, 
-                    the set of available actions is expanded to include the reject action:
+                    In some scenarios - particularly safety-critical applications such as medical diagnosis or autonomous 
+                    driving - the cost of an incorrect classification may be so high that it is preferable for the system 
+                    to abstain from making a decision when it is uncertain. This is formalized through the <strong>reject option</strong>.
+                </p>
+
+                <p>
+                    Under this approach, the set of available actions is expanded to include a reject action:
                     \[
                     \mathcal{A} = \mathcal{Y} \cup \{0\},
                     \]
-                    where action \(0\) represents the reject option (i.e., saying "I'm not sure").
-                </p>
-                <p>
-                    The loss function can be defined as:
+                    where action \(0\) represents the reject option (i.e., saying "I'm not sure"). The loss function 
+                    is then defined as
                     \[
-                    l(y^*, a)=
+                    l(y^*, a) =
                         \begin{cases}
-                        0 &\text{if \(y^* = a\) and \(a \in \{1, \cdots, C\}\)} \\
-                        \lambda_r &\text{if \(a = 0\)} \\
-                        \lambda_e &\text{otherwise} \\
+                        0 & \text{if } y^* = a \text{ and } a \in \{1, \ldots, C\} \\
+                        \lambda_r & \text{if } a = 0 \\
+                        \lambda_e & \text{otherwise}
                         \end{cases}
                     \]
-                    where \(\lambda_r\) is the cost of reject action, and \(\lambda_e\) is the cost of a classification error.
+                    where \(\lambda_r\) is the cost of the reject action and \(\lambda_e\) is the cost of a 
+                    classification error. For the reject option to be meaningful, we require \(0 < \lambda_r < \lambda_e\); otherwise, 
+                    rejecting is either free (and we would always reject) or more expensive than guessing (and we would never reject).
                 </p>
+
                 <p>
-                    Under this framework, instead of always choosing the label with the highest posterior probability, the optimal policy is to 
-                    choose a label only when the classifier is sufficiently confident: 
+                    Under this framework, instead of always choosing the label with the highest posterior probability, the optimal policy 
+                    chooses a label only when the classifier is sufficiently confident:
                     \[
-                    a^* = 
-                        \begin{cases} 
-                        y^*  & \text{if \(p^* > \lambda^*\)} \\
+                    a^* =
+                        \begin{cases}
+                        y^* & \text{if } p^* > \lambda^* \\
                         \text{reject} & \text{otherwise}
                         \end{cases}
                     \]
-                    where 
+                    where
                     \[
-                    \begin{align*}
-                    &p^* = p(y^* \mid x) = \max_{y \in \{1, \cdots, C\}} p(y \mid x) \\
-                    &\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}.
-                    \end{align*}
+                    p^* = \max_{y \in \{1, \ldots, C\}} p(y \mid \boldsymbol{x}), \qquad
+                    \lambda^* = 1 - \frac{\lambda_r}{\lambda_e}.
                     \]
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Proof for \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\):</span>
+                    <span class="proof-title">Proof that \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\):</span>
                     <p>
-                        The optimal decision is to choose the class label \(y\) if and only if its risk, \(R(y)\) is lower than 
-                        the risk of rejecting, \(R(\text{reject})\). In other words, we choose \(y\) if 
+                        The optimal decision is to choose the class label \(y\) if and only if its expected loss 
+                        is lower than that of rejecting. The expected loss of choosing \(y\) is
+                        \[
+                        R(y) = \lambda_e \sum_{y^* \neq y} p(y^* \mid \boldsymbol{x}) = \lambda_e [1 - p(y \mid \boldsymbol{x})],
+                        \]
+                        while the expected loss of rejecting is \(R(\text{reject}) = \lambda_r\) (since the cost \(\lambda_r\) 
+                        is incurred regardless of the true state). We choose \(y\) if
                         \[
                         \begin{align*}
-                        &R(y) < R(\text{reject}) \\\\
-                        &\Longrightarrow \lambda_e \left[\sum_{y^* \neq y} p(y^* \mid x)\right]  < \lambda_r \\\\
-                        &\Longrightarrow \lambda_e [1 - p(y \mid x)]  < \lambda_r \\\\
-                        &\Longrightarrow p(y \mid x) > 1 - \frac{\lambda_r}{\lambda_e} \\\\
+                        R(y) &< R(\text{reject}) \\\\
+                        \lambda_e [1 - p(y \mid \boldsymbol{x})] &< \lambda_r \\\\
+                        p(y \mid \boldsymbol{x}) &> 1 - \frac{\lambda_r}{\lambda_e} = \lambda^*.
                         \end{align*}
                         \]
-                        Thus, if the maximum posterior probability \(p^*\) exceeds the threshold \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\), 
-                        then the classifier should choose the corresponding label. Otherwise, it should reject.
+                        Thus, if the maximum posterior probability \(p^*\) exceeds the threshold \(\lambda^*\), 
+                        the classifier should choose the corresponding label. Otherwise, it should reject.
                     </p>
                 </div>
-        
+
             </section>
 
             <section id="CM" class="section-content">
                 <h2>Confusion Matrix</h2>
 
                 <p>
-                    In classification tasks, it's crucial to evaluate how well the model performs. A common tool for this is the 
-                    <strong>(class) confusion matrix</strong>, which summarizes the outcomes of classification decisions. The 
-                    confusion matrix captures the following:
+                    The Bayes estimator tells us what the optimal decision rule is, but in practice, we need to measure how well a 
+                    classifier actually performs on real data. The standard tool for this is the <strong>(class) confusion matrix</strong>, which 
+                    provides a complete summary of the outcomes of classification decisions. We recall the four possible outcomes from 
+                    <a href="hypothesis_testing.html"><strong>Part 10: Statistical Inference & Hypothesis Testing</strong></a>, where we first 
+                    introduced Type I and Type II errors.
                 </p>
-                
+
+                <p>
+                    For binary classification (\(y \in \{0, 1\}\)), each prediction falls into one of four categories:
+                </p>
+
                 <ul style="padding-left: 40px;">
-                    <li><strong>True Positives (TP):</strong> The number of instances correctly classified as positive.</li>
-                    <li><strong>True Negatives (TN):</strong> The number of instances correctly classified as negative.</li>
-                    <li><strong>False Positives (FP):</strong> The number of instances incorrectly classified as positive (<strong>Type I error</strong>).</li>
-                    <li><strong>False Negatives (FN):</strong> The number of instances incorrectly classified as negative (<strong>Type II error</strong>).</li>
+                    <li><strong>True Positives (TP):</strong> instances correctly classified as positive.</li>
+                    <li><strong>True Negatives (TN):</strong> instances correctly classified as negative.</li>
+                    <li><strong>False Positives (FP):</strong> instances incorrectly classified as positive (<strong>Type I error</strong>).</li>
+                    <li><strong>False Negatives (FN):</strong> instances incorrectly classified as negative (<strong>Type II error</strong>).</li>
                 </ul>
-                
+
                 <p>
-                    Understanding FP and FN is crucial because the costs associated with each error type may differ significantly depending 
-                    on the application. In safety-critical systems, a FN (missing a dangerous condition) might be far more costly than a FP 
-                    (raising an unnecessary alarm). For example, in a medical test, a FP would mean diagnosing a healthy patient as having 
-                    a disease, whereas a FN would mean missing a disease in a patient who actually has it, which is more critical in medical 
-                    fields.
-                </p>
-                
-                <p>
-                    For binary classification, the confusion matrix typically looks like this:
+                    Understanding the distinction between FP and FN is critical because the costs associated with each error type may 
+                    differ significantly depending on the application. In safety-critical systems, a false negative (missing a dangerous 
+                    condition) is typically far more costly than a false positive (raising an unnecessary alarm). For example, in medical 
+                    screening, a false positive means unnecessarily alarming a healthy patient, whereas a false negative means failing to 
+                    detect a disease in someone who needs treatment.
                 </p>
 
                 <div class="math-table-container">
@@ -226,41 +250,43 @@ uses_python: false
                         \[
                         \begin{array}{|c|c|c|}
                             \hline
-                            & \textbf{Predicted Positive} (\hat{P} = TP + FP) 
-                            & \textbf{Predicted Negative} (\hat{N} = FN + TN)  \\
+                            & \textbf{Predicted Positive} \; (\hat{P} = \text{TP} + \text{FP}) 
+                            & \textbf{Predicted Negative} \; (\hat{N} = \text{FN} + \text{TN})  \\
                             \hline
-                            \textbf{Actual Positive} (P = TP + FN)  & \textbf{TP} & \textbf{FN} \\
+                            \textbf{Actual Positive} \; (P = \text{TP} + \text{FN})  & \textbf{TP} & \textbf{FN} \\
                             \hline
-                            \textbf{Actual Negative} (N = FP + TN)  & \textbf{FP} & \textbf{TN} \\
+                            \textbf{Actual Negative} \; (N = \text{FP} + \text{TN})  & \textbf{FP} & \textbf{TN} \\
                             \hline
                         \end{array}
                         \]
                     </p>
                 </div>
-                
+
                 <p>
-                    In our context, the confusion matrix quantifies the outcomes of decisions made by the Bayes estimator, which is designed to 
-                    minimize the zero-one loss. It provides an empirical measure of the performance of that optimal policy by counting how often 
-                    the decisions (predicted labels) match or mismatch the true labels. 
+                    In the context of Bayesian decision theory, the confusion matrix quantifies the empirical performance 
+                    of the Bayes estimator (or any other decision rule) by counting how often the predicted labels match or 
+                    mismatch the true labels.
                 </p>
 
                 <p>
-                    For any fixed threshold \(\tau\), consider the decision rule:
+                    In practice, a binary classifier typically outputs a probability \(p(y = 1 \mid \boldsymbol{x})\), 
+                    and the final prediction depends on a <strong>decision threshold</strong> \(\tau \in [0, 1]\). 
+                    For any fixed threshold \(\tau\), the decision rule is
                     \[
-                    \hat{y}_{\tau}(\boldsymbol{x}) = \mathbb{I}(p(y = 1 \mid \boldsymbol{x}) \geq 1 - \tau).
+                    \hat{y}_{\tau}(\boldsymbol{x}) = \mathbb{I}\left(p(y = 1 \mid \boldsymbol{x}) \geq \tau\right).
                     \]
-                    We can compute the empirical number of them that arise from using the policy on a set \(N\) labeled examples. For example, 
+                    Given a set of \(N\) labeled examples, we can compute the empirical counts for each cell 
+                    of the confusion matrix. For example,
                     \[
-                    \text{FP}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 1, \, y_n = 0)
-                    \]
-                    and
-                    \[
-                    \text{FN}_{\tau} = \sum_{n=1}^N \mathbb{I}( \hat{y}_{\tau}(\boldsymbol{x}_n) = 0, \, y_n = 1).
+                    \begin{align*}
+                    \text{FP}_{\tau} &= \sum_{n=1}^N \mathbb{I}(\hat{y}_{\tau}(\boldsymbol{x}_n) = 1, \, y_n = 0),\\\\
+                    \text{FN}_{\tau} &= \sum_{n=1}^N \mathbb{I}(\hat{y}_{\tau}(\boldsymbol{x}_n) = 0, \, y_n = 1).
+                    \end{align*}
                     \]
                 </p>
 
                 <div class="math-table-container">
-                    <div class="math-table-title">Table 2: Threshold-dependent Confusion Matrix</div>
+                    <div class="math-table-title">Table 2: Threshold-Dependent Confusion Matrix</div>
                     \[
                     \begin{array}{|c|c|c|}
                         \hline
@@ -274,6 +300,13 @@ uses_python: false
                     \end{array}
                     \]
                 </div>
+
+                <p>
+                    Since the confusion matrix depends on the choice of \(\tau\), different thresholds lead to different trade-offs 
+                    between error types. How should we choose \(\tau\), and how can we evaluate a classifier's performance across all 
+                    possible thresholds? This motivates the ROC and PR curves developed in the following sections.
+                </p>
+
 
             </section>
 
