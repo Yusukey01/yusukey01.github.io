@@ -20,7 +20,7 @@ uses_python: false
         <div class="container">
             <div class="topic-nav">
                 <a href="#intro">Introduction</a>
-                <a href="#class">Classification (zero-one loss)</a>
+                <a href="#class">Classification (Zero-One Loss)</a>
                 <a href="#CM">Confusion Matrix</a>
                 <a href="#ROC">Receiver Operating Characteristic Curves (ROC) Curves</a>
                 <a href="#EER">Equal Error Rate (EER)</a>
@@ -32,37 +32,72 @@ uses_python: false
                 <h2>Introduction</h2>
 
                 <p>
-                    In decision theory, an <strong>agent</strong> has a set of possible actions to choose from. Each <strong>action</strong> \(a \in \mathcal{A}\) 
-                    is associated with costs and benefits that depend on the <strong>state of nature</strong> \(h \in \mathcal{H}\). 
-                    This relationship is encoded into a <strong>loss function</strong> \(l(h, a)\). 
+                    So far, our development of Bayesian statistics has focused on <em>inference</em>: given observed data, how should we update 
+                    our beliefs about unknown quantities? But inference alone does not tell us what to <em>do</em>. In many applications - medical diagnosis, 
+                    spam filtering, autonomous driving - we must ultimately choose an action based on uncertain information. <strong>Bayesian decision theory</strong> 
+                    provides the principled framework for making such optimal decisions under uncertainty.
                 </p>
 
                 <p>
-                    <strong>Bayesian decision theory</strong> is a probabilistic approach to decision-making under uncertainty. It provides a framework for making 
-                    optimal decisions based on prior knowledge and observed data. The fundamental idea is to minimize the expected risk (or loss) by 
-                    leveraging <a href="bayesian.html"><strong>Bayesian inference</strong></a>. This approach is widely used in probabilistic machine 
-                    learning models such as classification, inference, and prediction.
+                    The setup is as follows. An <strong>agent</strong> must choose an <strong>action</strong> \(a\) from a set 
+                    of possible actions \(\mathcal{A}\). The consequence of this action depends on the unknown 
+                    <strong>state of nature</strong> \(h \in \mathcal{H}\), which the agent cannot observe directly. 
+                    To quantify the cost of choosing action \(a\) when the true state is \(h\), we introduce 
+                    a <strong>loss function</strong> \(l(h, a)\).
                 </p>
 
                 <p>
-                    For any action \(a\) given evidence, which can be single observation \(\boldsymbol{x}\) or a dataset \(\mathcal{D}\), we compute the 
-                    <strong>posterior expected loss</strong>: 
-                    \[
-                    \rho(a \mid \boldsymbol{x}) = \mathbb{E}_{p(h \mid \boldsymbol{x})} [l(h, a)] = \sum_{h \in \mathcal{H}} l(h, a)p(h |\boldsymbol{x}).
-                    \]
-                    The <strong>Bayes estimator</strong> (or Bayes decision rule / optimal policy) specifies what action to take when presented with 
-                    evidence \(\boldsymbol{x}\) so as to minimize the risk (loss):
-                    \[
-                    \pi^* (\boldsymbol{x}) = \arg \min_{a \in \mathcal{A}} \mathbb{E}_{p(h \mid \boldsymbol{x})}[l(h, a)].
-                    \]
-                    Equivalently,
-                    \[
-                    \pi^* (\boldsymbol{x}) = \arg \max_{a \in \mathcal{A}} \mathbb{E}_{h}[U(h, a)],
-                    \]
-                    where \(U(h, a) = - l(h, a)\) is a <strong>utility function</strong> that is the desirability of each action in each possible state. 
-                    This formulation is useful when working in utility-based decision-making, where the focus is on maximizing expected rewards rather 
-                    than minimizing losses. (e.g., economics, game theory, and reinforcement learning)
+                    The key idea of Bayesian decision theory is to combine the loss function with the posterior distribution 
+                    \(p(h \mid \boldsymbol{x})\) obtained from observed evidence \(\boldsymbol{x}\) (or a dataset \(\mathcal{D}\)). 
+                    For any action \(a\), the <strong>posterior expected loss</strong> (or <strong>posterior risk</strong>) is defined as follows.
                 </p>
+                ................................................
+               
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Posterior Expected Loss</span>
+                    <p>
+                        Given evidence \(\boldsymbol{x}\) and a loss function \(l(h, a)\), the <strong>posterior expected loss</strong> of action 
+                        \(a \in \mathcal{A}\) is
+                        \[
+                        \rho(a \mid \boldsymbol{x}) = \mathbb{E}_{p(h \mid \boldsymbol{x})} [l(h, a)] = \sum_{h \in \mathcal{H}} l(h, a) \, p(h \mid \boldsymbol{x}).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    A rational agent should select the action that minimizes this expected loss. This leads to the central concept 
+                    of the section.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Bayes Estimator</span>
+                    <p>
+                        The <strong>Bayes estimator</strong> (or <strong>Bayes decision rule</strong> / <strong>optimal policy</strong>) 
+                        is the action that minimizes the posterior expected loss:
+                        \[
+                        \pi^*(\boldsymbol{x}) = \arg \min_{a \in \mathcal{A}} \, \mathbb{E}_{p(h \mid \boldsymbol{x})}[l(h, a)].
+                        \]
+                    </p>
+                </div>
+
+
+                <p>
+                    Equivalently, by defining the <strong>utility function</strong> \(U(h, a) = -l(h, a)\), which measures the 
+                    desirability of each action in each state, the Bayes estimator can be written as
+                    \[
+                    \pi^*(\boldsymbol{x}) = \arg \max_{a \in \mathcal{A}} \, \mathbb{E}_{h}[U(h, a)].
+                    \]
+                    This utility-maximization formulation is natural in economics, game theory, and 
+                    <a href="../Machine_learning/intro_RL.html"><strong>reinforcement learning</strong></a>, where the focus is on 
+                    maximizing expected rewards rather than minimizing losses.
+                </p>
+
+                <p>
+                    The power of this framework lies in its generality: by choosing different loss functions, we recover many 
+                    familiar estimators and decision rules as special cases. We begin with the most common setting in machine 
+                    learning - classification under zero-one loss.
+                </p>
+
             </section>
 
             <section id="class" class="section-content">
