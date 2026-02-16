@@ -29,23 +29,44 @@ uses_python: false
         <div class="container">  
             <section id="CI" class="section-content">
                 <h2>Credible Intervals</h2>
+
                 <p>
-                    In practice, a probability distribution is often a high-dimensional object, making it difficult to fully capture its characteristics. 
-                    In Bayesian statistics, we frequently summarize the uncertainty of a posterior distribution using a <strong>credible interval</strong>. 
-                    A credible interval is not the same as a <a href="hypothesis_testing.html"><strong>confidence interval</strong></a> in frequentist statistics, even though they may sometimes numerically coincide.
+                    In <a href="bayesian.html"><strong>Part 14</strong></a>, we introduced Bayesian inference and derived posterior distributions for 
+                    unknown parameters. In <a href="markov.html"><strong>Part 18</strong></a>, we developed Markov chains for modeling sequential data, 
+                    noting that Markov Chain Monte Carlo (MCMC) methods use the Markov property to sample from complex posterior distributions.
                 </p>
-                <p> 
-                    Formally, for a given significance level \(\alpha \in (0,1)\), a \(100(1-\alpha)\%\) <strong>credible interval</strong> is defined as:
-                    \[
-                    C_{\alpha}(\mathcal{D}) = (l, u) \quad \text{such that} \quad P(l \leq \theta \leq u \mid \mathcal{D}) = 1 - \alpha,
-                    \]
-                    where \(l\) and \(u\) denote the lower and upper bounds, respectively. Here, \(\mathcal{D}\) represents the observed data, and the probability is computed under the posterior distribution \(p(\theta \mid \mathcal{D})\).
-                </p>
+
                 <p>
-                    This interval contains \(1-\alpha\) of the posterior probability mass. A common choice is the <strong>central credible interval</strong>, where \(\frac{1-\alpha}{2}\) of the posterior probability lies in each tail. 
-                </p>
+                    We begin with the problem of summarizing a posterior distribution. Since a full distribution is often a high-dimensional object 
+                    that is difficult to interpret or communicate, we frequently summarize the uncertainty about a parameter using a 
+                    <strong>credible interval</strong>. It is important to note that a credible interval is fundamentally different from a 
+                    <a href="hypothesis_testing.html"><strong>confidence interval</strong></a> in frequentist statistics: a credible interval 
+                    makes a direct probability statement about the parameter given the data, whereas a confidence interval is a statement about 
+                    the long-run frequency of the procedure. Nevertheless, they may sometimes numerically coincide.
+                </p> 
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Credible Interval</span>
+                    <p>
+                        For a given level \(\alpha \in (0,1)\), a \(100(1-\alpha)\%\) <strong>credible interval</strong> 
+                        is a set \(C_{\alpha}(\mathcal{D}) = (l, u)\) such that
+                        \[
+                        P(l \leq \theta \leq u \mid \mathcal{D}) = 1 - \alpha,
+                        \]
+                        where the probability is computed under the posterior distribution \(p(\theta \mid \mathcal{D})\).
+                    </p>
+                </div>
+
                 <p>
-                    If the cumulative distribution function (cdf) \(F\) of the posterior distribution is known, the central credible interval can be computed as:
+                    This interval contains \(1-\alpha\) of the posterior probability mass. Since the definition does not uniquely 
+                    determine the interval (infinitely many intervals satisfy this condition), a common choice is the 
+                    <strong>central credible interval</strong>, which places \(\frac{\alpha}{2}\) of the posterior probability 
+                    in each tail.
+                </p>
+              
+                <p>
+                    If the cumulative distribution function (cdf) \(F\) of the posterior distribution is known, the central 
+                    credible interval can be computed as:
                     \[
                     \begin{align*}
                     l &= F^{-1}\left( \frac{\alpha}{2} \right), \\\\
@@ -54,16 +75,20 @@ uses_python: false
                     \]
                     where \(F^{-1}\) denotes the quantile function (the inverse of the cdf).
                 </p>
+
                 <p>
-                    As an example, if the posterior distribution is approximately normal with posterior mean \(\mu\) and posterior standard deviation \(\sigma\), 
-                    a rough \(95\%\) credible interval can be set as:
+                    As an example, if the posterior distribution is approximately normal with posterior mean \(\mu\) and 
+                    posterior standard deviation \(\sigma\), a rough \(95\%\) credible interval can be set as:
                     \[
                     (l, u) = (\mu - 2\sigma, \mu + 2\sigma),
                     \]
-                    because for a standard normal distribution \(\mathcal{N}(0,1)\), approximately \(95\%\) of the probability mass lies within two standard deviations from the mean.
+                    because for a standard normal distribution \(\mathcal{N}(0,1)\), approximately \(95\%\) of the probability 
+                    mass lies within two standard deviations from the mean.
                 </p>
+
                 <p>
-                    More precisely, when \(p(\theta \mid \mathcal{D}) = \mathcal{N}(\mu, \sigma^2)\) and \(\alpha = 0.05\), the central credible interval endpoints are:
+                    More precisely, when \(p(\theta \mid \mathcal{D}) = \mathcal{N}(\mu, \sigma^2)\) and \(\alpha = 0.05\), the 
+                    central credible interval endpoints are:
                     \[
                     \begin{align*}
                     l &= \mu + \sigma \Phi^{-1}\left( \frac{\alpha}{2} \right), \\\\
@@ -72,6 +97,7 @@ uses_python: false
                     \]
                     where \(\Phi\) is the cumulative distribution function (cdf) of the standard normal distribution.
                 </p>
+
                 <p>
                     In particular, if the posterior distribution is the standard normal \(p(\theta \mid \mathcal{D}) = \mathcal{N}(0,1)\), then:
                     \[
@@ -82,23 +108,55 @@ uses_python: false
                     \]
                     so the \(95\%\) credible interval is approximately \((-1.96, 1.96)\).
                 </p>
+
+                <p>
+                    The computation above relies on knowing the quantile function \(F^{-1}\) in closed form. For many posterior distributions - especially 
+                    those arising from non-conjugate models or high-dimensional problems - no such closed form is available. This motivates the use 
+                    of Monte Carlo methods.
+                </p>
+
             </section>
 
             <section id="MC" class="section-content">
                 <h2>Monte Carlo Approximation</h2>
+
+                <p>
+                    The <strong>Monte Carlo method</strong> is a general computational technique that uses random sampling to approximate quantities 
+                    that are difficult or impossible to compute analytically. The fundamental idea is simple: to estimate an expectation, draw independent 
+                    samples and compute their average.
+                </p>
+
+               <div class="theorem">
+                    <span class="theorem-title">Theorem: Monte Carlo Approximation</span>
+                    <p>
+                        Let \(\theta^{(1)}, \theta^{(2)}, \ldots, \theta^{(S)} \overset{\text{iid}}{\sim} p(\theta \mid \mathcal{D})\). 
+                        Then for any integrable function \(f\),
+                        \[
+                        \mathbb{E}_{p(\theta \mid \mathcal{D})}[f(\theta)] \approx \frac{1}{S} \sum_{s=1}^{S} f(\theta^{(s)}).
+                        \]
+                        By the <a href="convergence.html"><strong>law of large numbers</strong></a>, this approximation 
+                        converges to the true expectation as \(S \to \infty\).
+                    </p>
+                </div>
+
+                <p>
+                    This principle is broadly applicable: by choosing appropriate functions \(f\), we can approximate 
+                    posterior means (\(f(\theta) = \theta\)), posterior variances (\(f(\theta) = (\theta - \bar{\theta})^2\)), 
+                    predictive distributions, and many other quantities of interest. We now apply this idea to the specific problem of 
+                    approximating credible intervals.
+                </p>
+
                 <p> 
-                    In general, it is often difficult to compute the inverse cdf of the posterior distribution exactly. 
-                    In such cases, a simple and practical alternative is to use a <strong>Monte Carlo approximation</strong> 
-                    based on samples drawn from the posterior. 
-                </p> 
-                <p> 
-                    Suppose we can generate samples \(\theta^{(1)}, \theta^{(2)}, \dots, \theta^{(S)}\) independently from the posterior \(p(\theta \mid \mathcal{D})\).
-                    Then, to approximate a \((1-\alpha)\)% credible interval:
-                </p> 
+                    When the inverse c.d.f. of the posterior distribution is not available in closed form, a practical alternative is to 
+                    estimate the quantiles from samples. Suppose we have \(S\) independent samples \(\theta^{(1)}, \theta^{(2)}, \ldots, \theta^{(S)}\) 
+                    from the posterior \(p(\theta \mid \mathcal{D})\). To approximate a \(100(1-\alpha)\%\) central credible interval:
+                </p>
+
                 <ul style="padding-left: 40px;"> 
                     <li>Sort the samples in increasing order: \(\theta^{(1)} \leq \theta^{(2)} \leq \cdots \leq \theta^{(S)}\).</li> 
                     <li>Set the lower endpoint \(l\) to be the \(\left(\frac{\alpha}{2}\right)\)-quantile, and the upper endpoint \(u\) to be the \(\left(1 - \frac{\alpha}{2}\right)\)-quantile.</li> 
                 </ul> 
+
                 <p> 
                     More precisely, approximate:
                     \[
@@ -109,21 +167,24 @@ uses_python: false
                     \]
                     where \(\lceil \cdot \rceil\) denotes the ceiling function, rounding up to the nearest integer if necessary.
                 </p> 
+
+                <p> 
+                    Intuitively, instead of computing the inverse cdf analytically, we use the <strong>empirical cumulative distribution function (ECDF)</strong> 
+                    formed by the sorted samples to estimate the desired quantiles. As \(S \to \infty\), the empirical quantiles converge to the true quantiles 
+                    of the posterior by the <strong>Glivenko-Cantelli theorem</strong>, which guarantees that the ECDF converges uniformly to the true cdf.
+                </p>
+
                 <p> 
                     Intuitively, instead of computing the inverse cdf analytically, we use the <strong>empirical cumulative distribution function (ecdf)</strong> 
                     formed by the sorted samples to estimate the desired quantiles. 
                     As the number of samples \(S \to \infty\), the empirical quantiles converge to the true quantiles of the posterior by the law of large numbers.
-                </p>
-                <p>
-                    This Monte Carlo method is especially powerful when the posterior distribution is complex or high-dimensional, and no closed-form expression 
-                    for the cdf or its inverse is available.
                 </p>
 
             </section>
 
             <section id="demo" class="section-content">
               
-                <h2>Demo: Monte Carlo Approximation for CIs</h2>
+                <h2>Demo: Monte Carlo for Credible Intervals</h2>
                 <div id="monte_carlo_visualizer"></div>
 
                 <p>
@@ -175,34 +236,45 @@ uses_python: false
                 <h2>Highest Posterior Density (HPD)</h2>
 
                 <p>
-                    The <strong>highest posterior density (HPD)</strong> region is defined as the set of values of the parameter &theta; where the posterior 
-                    density exceeds a certain threshold \(p^*\), such that the total probability mass within this region equals the desired confidence level \(1 - \alpha\):
+                    As discussed above, central credible intervals can be suboptimal for asymmetric or multimodal posteriors because they allocate equal probability 
+                    mass to each tail regardless of where the density is concentrated. The <strong>highest posterior density (HPD)</strong> region provides a 
+                    more principled alternative by selecting the <em>smallest</em> region that contains the desired probability mass.
                 </p>
 
-                <p style="text-align: center;">
-                    \[
-                    1 - \alpha = \int_{\theta: p(\theta \mid \mathcal{D}) > p^*} p(\theta \mid \mathcal{D}) \, d\theta
-                    \]
-                    \[
-                    C_{\alpha} (\mathcal{D}) = \{\theta : p(\theta \mid \mathcal{D}) \geq p^*\}
-                    \]
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Definition (HPD Region)</span>
+                    <p>
+                        For a given level \(\alpha \in (0,1)\), the \(100(1-\alpha)\%\) <strong>highest posterior 
+                        density (HPD) region</strong> is defined as
+                        \[
+                        C_{\alpha}(\mathcal{D}) = \{\theta : p(\theta \mid \mathcal{D}) \geq p^*\},
+                        \]
+                        where the threshold \(p^*\) is the largest constant such that
+                        \[
+                        P(\theta \in C_{\alpha}(\mathcal{D}) \mid \mathcal{D}) = \int_{\theta:\, p(\theta \mid \mathcal{D}) \geq p^*} p(\theta \mid \mathcal{D}) \, d\theta = 1 - \alpha.
+                        \]
+                    </p>
+                </div>
 
                 <p>
-                    In one dimension, this HPD region corresponds to the interval(s) containing the highest probability density values, 
-                    with total mass equal to the target confidence level (e.g., 95%). In this case, HPD regions are sometimes also called 
-                    <strong>highest density intervals (HDIs)</strong>.
+                    In one dimension, the HPD region corresponds to the interval (or union of intervals) containing the values of highest 
+                    posterior density, with total mass equal to the target credibility level (e.g., 95%). In this case, HPD regions are 
+                    sometimes called <strong>highest density intervals (HDIs)</strong>.
                 </p>
 
                 <p>
                     Unlike central credible intervals, HPD regions are not required to be symmetric or centered around the mean. 
-                    This makes them especially useful when the posterior distribution is skewed or multimodal. 
-                    In such cases, HPD intervals better capture the actual regions of highest likelihood.
+                    This makes them especially useful when the posterior distribution is skewed or multimodal. In such cases, 
+                    HPD regions better capture the actual regions of highest posterior density, and for unimodal distributions, 
+                    the HPD interval is guaranteed to be the <em>shortest</em> interval containing \(1-\alpha\) probability mass.
                 </p>
 
                 <p>
-                    In the demo, you can observe that the HPD interval is often narrower than the central credible interval, and may exclude low-density regions 
-                    that the central interval mistakenly includes.
+                    In the demo above, you can observe that the HPD interval is often narrower than the central credible interval 
+                    and may exclude low-density regions that the central interval mistakenly includes.Both the central credible interval 
+                    and the HPD region require samples from the posterior distribution. In the examples above, we assumed that such samples 
+                    are readily available. In practice, however, directly sampling from the posterior is often impossible. The next 
+                    section introduces the algorithmic framework that makes posterior sampling feasible.
                 </p>
 
             </section>
