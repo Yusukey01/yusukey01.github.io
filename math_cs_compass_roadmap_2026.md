@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 2/05/2026  
+**Last Updated:** 2/16/2026  
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -12,7 +12,7 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 
 ---
 
-## Current Coverage (as of 2/05/2026)
+## Current Coverage (as of 2/16/2026)
 
 ### Section I: Linear Algebra to Algebraic Foundations (24 pages)
 - **Core Linear Algebra (Parts 1-14):** Linear equations, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry, SVD, trace/norms, Kronecker products, Woodbury identity, stochastic matrices, graph Laplacians
@@ -39,10 +39,10 @@ MATH-CS COMPASS is an educational platform bridging pure mathematics and compute
 ### Section IV: Discrete Mathematics & Algorithms (9 pages)
 - Graph theory, combinatorics, automata theory, Boolean logic, context-free languages, Turing machines, time complexity, P vs NP
 
-### Section V: Machine Learning (10 pages)
-- Intro to ML, regularized regression, classification, neural networks, autodiff, SVM, PCA & autoencoders, clustering, deep neural networks (CNNs, transformers), reinforcement learning
+### Section V: Machine Learning (11 pages)
+- Intro to ML, regularized regression, classification, neural networks, autodiff, SVM, PCA & autoencoders, clustering, deep neural networks (CNNs, transformers), reinforcement learning, Natural Gradient Descent
 
-**Total: ~86 pages completed**
+**Total: ~87 pages completed**
 
 ---
 
@@ -327,7 +327,7 @@ Extension Fields (23)                      Banach/Hilbert (23-24)
 ---
 
 ## Changelog
-
+- **2/16/2026:** Added Section V Part 11 Natural Gradient Descent
 - **2/05/2026:** Restructured algebra track with bifurcation (Extension Fields → Algebraic Extensions OR Finite Fields). Added Geometry of Symmetry (linalg-24) with D_n, SO(3), SE(3). Updated page numbering.
 - **2/03/2026:** Added Functional Analysis Bridge (Phase 1.5) with Banach spaces, Hilbert spaces, and synthesis page.
 - **2/02/2026:** Initial roadmap with metric space focus.
