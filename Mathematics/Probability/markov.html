@@ -28,111 +28,160 @@ uses_python: false
         <div class="container">  
             <section id="pgm" class="section-content">
                 <h2>Probabilistic Graphical Models</h2>
+
                 <p>
-                    A <strong>graphical model</strong> is a graph-based representation of a set of variables and their relationships (typically dependencies 
-                    or interactions). The <a href="../Discrete/intro_graph.html"><strong>graph</strong></a> helps visualize and reason about the structure of a 
-                    system composed of many interrelated parts. Here, we focus on a specific graphical model as known as a <strong>probabilistic graphical models(PGMs)</strong> 
-                    whose the vertices represent random variables, and the edges represent probabilistic dependencies among these variables. In the case where 
-                    the graph is a <strong>directed</strong> acyclic graph (DAG), the model is often called a <strong>Bayesian network</strong>. An important assumption is 
-                    is that each vertex(r.v.) \(X_i\) is <strong>conditionally independent</strong> of its non-descendants given its parents. Thus, the joint distribution 
-                    is given by: 
-                    \[
-                    P(X_1, X_2, \cdots, X_n) = \prod_{i = 1}^n P(X_i | \text{ Parents(X_i)})
-                    \]
-                    where \(n\) is the number of random variables(vertices) in the model(graph). The vertices are in <strong>topological order</strong>: 
-                    For every directed edge \(u \to v\), vertex \(u\) comes before vertex \(v\). Each term \(P(X_i | \text{ Parents}(X_i))\) is the 
-                    <strong>conditional probability distribution</strong> for vertex \(i\). 
+                    In many real-world problems, the uncertainty involves not just a single parameter but an entire system of interrelated 
+                    random variables - for instance, the words in a sentence, the states of a dynamical system, or the pixels in an image. 
+                    To model such systems efficiently, we need a way to represent the <strong>dependencies</strong> among many random variables 
+                    without specifying the full joint distribution explicitly. This is the role of <strong>probabilistic graphical models (PGMs)</strong>.
                 </p>
+
+                <p>
+                    A <strong>graphical model</strong> uses a <a href="../Discrete/intro_graph.html"><strong>graph</strong></a> to represent a collection of 
+                    random variables and their probabilistic dependencies: the vertices represent random variables, and the edges encode conditional 
+                    dependence relationships. When the graph is a <strong>directed acyclic graph (DAG)</strong>, the model is called a <strong>Bayesian network</strong>. 
+                    The key structural assumption is that each variable \(X_i\) is <strong>conditionally independent</strong> of all its non-descendants given its parents 
+                    in the DAG. This assumption yields a compact factorization of the joint distribution.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Factorization of Bayesian Networks</span>
+                    <p>
+                        Let \(X_1, X_2, \ldots, X_n\) be random variables (vertices) arranged in topological order 
+                        (i.e., for every directed edge \(X_i \to X_j\), we have \(i < j\)). The joint distribution 
+                        of a Bayesian network factorizes as
+                        \[
+                        P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid \text{Parents}(X_i)),
+                        \]
+                        where \(\text{Parents}(X_i)\) denotes the set of variables with directed edges into \(X_i\), 
+                        and a variable with no parents is conditioned on the empty set: \(P(X_i \mid \varnothing) = P(X_i)\).
+                    </p>
+                </div>
+
+                <p>
+                    This factorization reduces the number of parameters needed to specify the joint distribution from exponential 
+                    (in the number of variables) to a sum of local conditional distributions. Among all Bayesian networks, one of 
+                    the simplest and most widely used structures is the <strong>linear chain</strong>, where each variable depends 
+                    only on its immediate predecessor. This leads to the concept of a Markov chain.
+                </p>
+
             </section>
 
             <section id="lm" class="section-content">
                 <h2>Language Models</h2>
 
                 <p>
-                    For modeling <strong>sequential data</strong>, we introduce a linear-chain Bayesian network with a particular type of conditional independence. 
-                    This is called a <strong>Markov chain</strong>. The concept of the Markov chain is fundamental in various fields. while the core idea remains 
-                    the same, its applications and methods of analysis can differ depending on the field. Here, we'll explore a specific application in 
-                    the context of <strong>language modeling</strong>.
+                    A <strong>Markov chain</strong> is a linear-chain Bayesian network in which each variable depends 
+                    only on a fixed number of preceding variables. This structure is fundamental across many fields -
+                    from physics and biology to finance and natural language processing. While the core idea remains 
+                    the same, the applications and methods of analysis can differ depending on the domain. Here, we 
+                    explore Markov chains through the lens of <strong>language modeling</strong>, which provides a 
+                    concrete and intuitive setting.
                 </p>
-                
+
                 <p>
-                    Suppose our goal is to model a joint probability distribution over variable-length sequences: \(P(y_{1:T})\), where each 
-                    \(y_t \in \{1, \cdots, K\}\) represents a <strong>word</strong> from a <strong>vocabulary</strong> of size \(K\).
+                    Suppose our goal is to model a joint probability distribution over variable-length sequences \(P(y_{1:T})\), 
+                    where each \(y_t \in \{1, \ldots, K\}\) represents a <strong>word</strong> from a <strong>vocabulary</strong> of size \(K\). 
                     A language model assigns probabilities to possible sentences (sequences) of length \(T\).
                 </p>
-                <p>
-                    By the chain rule of probability, 
-                    \[
-                    \begin{align*}
-                    P(y_{1:T}) = P(y_1)P(y_2 | y_1)P(y_3 | y_2, y_1)\cdots  \\\\
-                            = \prod_{t = 1}^{T} P(y_t | y_{1 : t-1}).
-                    \end{align*}
-                    \]
-                    However, as \(T\) increases, this formulation becomes computationally expensive due to the need to condition on the 
-                    entire history. To address this, we make the <strong>Markov assumption</strong>: the next state depends "only" on the 
-                    current state.
-                </p>
-                <p>
-                    Under the <strong>first-order Markov assumption</strong>,
-                    \[
-                    \begin{align*}
-                    P(y_{1:T}) &= P(y_1)P(y_2 | y_1)P(y_3 | y_2)P(y_4 | y_3)\cdots  \\\\
-                            &=  P(y_1)\prod_{t = 2}^{T} P(y_t | y_{t-1}).
-                    \end{align*}
-                    \]
-                    This <strong>memoryless property</strong> simplifies both analysis and computation of probabilities. 
-                    The function \(P(y_t | y_{t-1})\) is called the <strong>transition function</strong> or <strong>transition kernel</strong>, 
-                    and it satisfies:
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li>\(P(y_t | y_{t-1}) \geq 0\)</li>
-                    <li>\(\sum_{k=1}^K P(y_t = k | y_{t-1} = j) = 1\) for each \(j\)</li>
-                </ul>
 
                 <p>
-                    We can represent the transition probabilities using a
-                    <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrix</strong></a>:
+                    By the chain rule of probability,
                     \[
-                    A_{jk} = P(y_t = k | y_{t-1} = j),
+                    P(y_{1:T}) = P(y_1) P(y_2 \mid y_1) P(y_3 \mid y_2, y_1) \cdots = \prod_{t = 1}^{T} P(y_t \mid y_{1:t-1}).
                     \]
-                    where each row of \(A\) sums to 1. This matrix is considered as the conditional probability Table (CPT). 
-                    Since we assume the same transition probabilities at all time steps, the model is said to be <strong>time-invariant</strong>. 
+                    However, as \(T\) increases, this formulation becomes computationally intractable: the conditioning 
+                    set grows with each time step. To address this, we make the <strong>Markov assumption</strong>: the next 
+                    state depends "only" on the current state.
                 </p>
+
+                 <div class="theorem">
+                    <span class="theorem-title">Definition: Markov Property</span>
+                    <p>
+                        A sequence of random variables \((y_1, y_2, \ldots, y_T)\) satisfies the <strong>first-order Markov 
+                        property</strong> if the conditional distribution of each variable depends only on its immediate 
+                        predecessor:
+                        \[
+                        P(y_t \mid y_1, y_2, \ldots, y_{t-1}) = P(y_t \mid y_{t-1}) \quad \text{for all } t \geq 2.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Under the first-order Markov assumption, the joint distribution simplifies to
+                    \[
+                    P(y_{1:T})  = P(y_1) \prod_{t = 2}^{T} P(y_t \mid y_{t-1}).
+                    \]
+                    This <strong>memoryless property</strong> dramatically reduces the number of parameters needed: 
+                    from \(O(K^T)\) for the full joint distribution to \(O(K^2)\) for the transition probabilities.
+
+                    The function \(P(y_t \mid y_{t-1})\) is called the <strong>transition function</strong> 
+                    (or <strong>transition kernel</strong>), and it satisfies the properties of a conditional 
+                    distribution: \(P(y_t \mid y_{t-1}) \geq 0\) and \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) 
+                    for each state \(j\).
+                </p>      
+
+                 <p>
+                    We can compactly represent all transition probabilities using a 
+                    <a href="../Linear_algebra/stochastic.html"><strong>row-stochastic matrix</strong></a> 
+                    (also called a <strong>conditional probability table (CPT)</strong>):
+                    \[
+                    A_{jk} = P(y_t = k \mid y_{t-1} = j),
+                    \]
+                    where each row of \(A\) sums to 1. When the transition probabilities do not change with 
+                    time (i.e., the same matrix \(A\) applies at every step), the model is said to be 
+                    <strong>time-homogeneous</strong> (or <strong>time-invariant</strong>).
+                </p>
+
                 <p>
                     The Markov assumption can be extended to consider the last \(M\) states( or memory length):
                     \[
-                    P(y_{1:T}) = P(y_{1 : M}) \prod_{t = M + 1}^T P(y_t | y_{t - M : t - 1}).
+                    P(y_{1:T}) = P(y_{1 : M}) \prod_{t = M + 1}^T P(y_t \mid y_{t - M : t - 1}).
                     \]
                     This is known as an <strong>M'th order Markov model</strong>. In language modeling, this is equivalent to an \(M+1\)-gram model.
                     For example, if \(M = 2\), 
                     each word depends on the two preceding words, leading to a <strong>trigram model</strong>:
                     \[
-                    P(y_t | y_{t-1}, y_{t-2}).
+                    P(y_t \mid y_{t-1}, y_{t-2}).
                     \] 
                 </p>
-                <p>
-                    Any Higher-order Markov model can be converted into the first-order Markov model by redefining the state to include the past \(M\) observations. 
-                    For \(M = 2\), define \(\tilde{y}_t = (y_{t-1}, y_t)\), then:
+
+                 <p>
+                    Any higher-order Markov model can be converted into a first-order Markov model by redefining the state to include 
+                    the past \(M\) observations. For \(M = 2\), we define \(\tilde{y}_t = (y_{t-1}, y_t)\). Then 
                     \[
                     \begin{align*}
-                    P(\tilde{y}_{1:T}) &= P(\tilde{y}_2) \prod_{t = 3}^T P(\tilde{y}_t | \tilde{y}_{t-1}) \\\\
-                                    &= P(y_1, y_2) \prod_{t = 3}^T P(y_t | y_{t-1}, y_{t-2}).
+                    P(\tilde{y}_{1:T}) &= P(\tilde{y}_2) \prod_{t = 3}^T P(\tilde{y}_t \mid \tilde{y}_{t-1}) \\\\
+                                       &= P(y_1, y_2) \prod_{t = 3}^T P(y_t \mid y_{t-1}, y_{t-2}).
                     \end{align*}
                     \]
+                    This state-space augmentation is conceptually important: it shows that the first-order Markov chain is a 
+                    universal building block for sequential models, at the cost of an expanded state space of size \(K^M\).
                 </p>
+
                 <p>
-                    In practice, with large vocabularies, modeling all possible transitions becomes infeasible, and we need additional techniques such as 
-                    <strong>neural language models</strong> to approximate the distribution efficiently. Not only language modeling, <strong>Markov chains</strong> 
-                    are widely used in <strong>sequential data modeling</strong>. Additionally, <strong>Markov Chain Monte Carlo (MCMC)</strong> methods are crucial 
-                    in Bayesian statistics for performing approximate inference when direct sampling is challenging.
+                    With large vocabularies this exponential growth in state space makes higher-order n-gram models infeasible, and 
+                    modern approaches rely on <strong>neural language models</strong> (such as recurrent networks and transformers) 
+                    to capture long-range dependencies without explicit enumeration. Beyond language modeling, Markov chains are widely 
+                    used in sequential data modeling across many domains. In Bayesian statistics, Markov Chain Monte Carlo (MCMC) methods 
+                    exploit the Markov property to construct a stochastic process that converges to a target stationary distribution, 
+                    allowing for efficient sampling from complex, high-dimensional posterior distributions
                 </p>
+
             </section>
 
             <section id="MLE" class="section-content">
                 <h2>Parameter Estimation of Markov Models</h2>
+
                 <p>
-                    The probability of any particular sequence of length \(T\) is given by 
+                    We now derive the maximum likelihood estimators for the parameters of a first-order Markov chain. Let the parameters 
+                    be \(\boldsymbol{\theta} = (\pi, A)\), where \(\pi_j = P(x_1 = j)\) is the initial state distribution and 
+                    \(A_{jk} = P(x_t = k \mid x_{t-1} = j)\) is the transition matrix. 
+                    (We switch to the notation \(x\) for observed sequences to distinguish from the language model setting above.)
+                </p>
+
+                <p>
+                    The probability of any particular sequence of length \(T\) is given by
                     \[
                     \begin{align*}
                     P(x_{1:T} | \boldsymbol\theta) &= \pi (x_1)A(x_1, x_2)\cdots A(x_{T-1}, x_T) \\\\
@@ -140,10 +189,11 @@ uses_python: false
                                         (A_{jk})^{\mathbb{I}(x_t=k,\, x_{t-1}=j)}, \tag{1}
                     \end{align*}
                     \]
-                    where \(\pi_j\) is probabilty that the first symbol is \(j\), and \(A_{jk}\) is probability of going from symbol 
-                    \(j\) to symbol \(k\). This is the transition probability matrix. In addition, \(\mathbb{I}(\cdot)\) is the 
-                    <strong>indicator function</strong>. 
+                    where \(\pi_j\) is the probability that the first symbol is \(j\), and \(A_{jk}\) is the probability of 
+                    transitioning from state \(j\) to state \(k\). The function \(\mathbb{I}(\cdot)\) is the 
+                    <strong>indicator function</strong>.
                 </p>
+              
                 <p>
                     For example, 
                     \[
@@ -155,6 +205,7 @@ uses_python: false
                     This lets us convert sums and products into counts. In Equation 1, only one transition happens at a time, so only 
                     one term contributes in each time step.
                 </p>
+
                 <p>
                     The <strong>log-likelihood</strong> of a set of sequences \(\mathcal{D} = (x_1, \cdots, x_N)\), where 
                     \(x_i = (x_{i\,1}, \cdots, x_{i \, T_{i}})\) is a sequence of length \(T_i\) is given by 
@@ -175,6 +226,7 @@ uses_python: false
                     <li>Count of transitions from \(j\) to \(k\):</li>
                     \[N_{jk}  = \sum_{i=1}^N \sum_{t=1} ^{T_i -1} \mathbb{I}(x_{i,t}  = j, x_{i, t+1} = k)\]   
                 </ul>
+
                 <p>
                     We want to obtain \(\hat{\pi}_j\) and \( \hat{A}_{jk}\) that are <strong>MLE</strong> under the constraints: 
                     \[
@@ -184,10 +236,11 @@ uses_python: false
                     \end{align*}
                     \]
                 </p>
+
                 <p>
-                    For \(\pi_i\), we introduce Lagrange multiplier \(\lambda\) and define 
+                    For \(\pi_j\), we introduce a Lagrange multiplier \(\lambda\) and define
                     \[
-                    \mathcal{L}_{\pi} = \sum_j  N_j^1 \log \pi_i + \lambda \left( 1 - \sum_j \pi_j \right).
+                    \mathcal{L}_{\pi} = \sum_j N_j^1 \log \pi_j + \lambda \left(1 - \sum_j \pi_j \right).
                     \]
                     Then
                     \[
@@ -195,6 +248,7 @@ uses_python: false
                     \Longrightarrow \pi_j = \frac{N_j^1}{\lambda}.
                     \]
                 </p>
+
                 <p>
                     Plug into the constraint \(\sum_j \pi_j = 1\), we have
                     \[
@@ -205,6 +259,7 @@ uses_python: false
                     \hat{\pi}_j = \frac{N_j^1}{\sum_{j^{\prime}} {N_{j^{\prime}}^1}}.
                     \]
                 </p>
+
                 <p>
                     For \(A_{jk}\), we introduce Lagrange multiplier \(\mu\) and define 
                     \[
@@ -216,6 +271,7 @@ uses_python: false
                     \Longrightarrow A_{jk} = \frac{N_{jk}}{\mu_j}.
                     \]
                 </p>
+
                 <p>
                     Plug into the constraint \(\sum_k A_{jk} = 1 \text{ for each } j\), we have
                     \[
@@ -226,15 +282,16 @@ uses_python: false
                     \hat{A}_{jk} = \frac{N_{jk}}{N_j}.
                     \]
                 </p>
-                </section>
+            </section>
 
             <section id="sample" class="section-content">
                 <h2>A Code Sample (MLE in Markov Models)</h2>
 
                 <p>
-                    Let's pretend we observed 14 days of weather in 10 cities (i.e., 10 sequences, each of length 14).
-                    We compute MLE estimates for start probabilities \(\pi\) and transition matrix \(A\).
-                    (Note: You can use pandas DataFrame tables for printing results.)
+                    To illustrate the MLE derivation above, we implement the estimation procedure on a synthetic weather dataset. 
+                    We simulate 14 days of weather observations across 10 cities (i.e., 10 independent sequences, each of length 14) 
+                    generated from a known transition matrix, then estimate the initial distribution \(\hat{\pi}\) and transition 
+                    matrix \(\hat{A}\) from the simulated data.
                 </p>
                         
                 <div class="code-container"> 
@@ -340,6 +397,26 @@ uses_python: false
 
             <section id="sparse" class="section-content">
                 <h2>Sparse Data & Dirichlet Prior</h2>
+
+                <p>
+                    The MLE estimates derived above are optimal when data is abundant, but in practice we 
+                    often face a <strong>sparse data problem</strong>: with a limited number of observed sequences, 
+                    many possible transitions may never be observed at all. This leads to zero probability 
+                    estimates, which are problematic - a single unseen transition would assign zero probability 
+                    to any sequence containing it, regardless of the other transitions. More broadly, sparse 
+                    data leads to overfitting, biased predictions, and inaccurate long-term behavior of the 
+                    estimated chain.
+                </p>
+
+                 <p>
+                    To address this, we use <strong>smoothing</strong> techniques that redistribute some probability 
+                    mass to unseen transitions. A principled approach is to adopt a <strong>Bayesian framework</strong> 
+                    by placing a prior distribution on the transition probabilities. A natural choice is the 
+                    <a href="mvn.html"><strong>Dirichlet distribution</strong></a>, which is conjugate to the 
+                    multinomial likelihood. The simplest case is the <strong>uniform Dirichlet prior</strong> 
+                    with \(\alpha_1 = \alpha_2 = \cdots = \alpha_K = \alpha\).
+                </p>
+
                 <p>
                     When we have a limited number of sequences (or sequence steps), many possible transitions might never be observed at all, or be 
                     observed just once or twice. This situation leads to having fewer observations relative to the number of parameters (transitions). 
@@ -347,12 +424,6 @@ uses_python: false
                     The sparse data lead to unreliable MLE estimates (overfitting, zero estimates, biased predictions, inaccurate long-term behavior). 
                     To address these issues, we often need <strong>smoothing</strong> or <strong>Bayesian approaches</strong> to generalize better. 
                     However, only smooth what we should - don't violate known structure (like true zeros).
-                </p>
-
-                <p>
-                    A simple smoothing technique is <strong>add-one smoothing</strong>  is a method used to avoid zero 
-                    estimates in cases where some transitions are never observed. In the Bayesian framework, add-one smoothing is equivalent to using a 
-                    <strong>Dirichlet prior</strong> with \(\alpha_j = 1 , \forall j\). 
                 </p>
 
                 <div class="theorem">
