@@ -184,7 +184,7 @@ uses_python: false
                     The probability of any particular sequence of length \(T\) is given by
                     \[
                     \begin{align*}
-                    P(x_{1:T} | \boldsymbol\theta) &= \pi (x_1)A(x_1, x_2)\cdots A(x_{T-1}, x_T) \\\\
+                    P(x_{1:T} \mid \boldsymbol\theta) &= \pi (x_1)A(x_1, x_2)\cdots A(x_{T-1}, x_T) \\\\
                                         &= \prod_{j=1}^K (\pi_j)^{\mathbb{I}(x_1 =j)} \prod_{t=2}^T \prod_{j=1}^K \prod_{k=1}^K 
                                         (A_{jk})^{\mathbb{I}(x_t=k,\, x_{t-1}=j)}, \tag{1}
                     \end{align*}
@@ -211,7 +211,7 @@ uses_python: false
                     \(x_i = (x_{i\,1}, \cdots, x_{i \, T_{i}})\) is a sequence of length \(T_i\) is given by 
                     \[
                     \begin{align*}
-                    \log P(\mathcal{D} | \boldsymbol\theta) &= \sum_{i=1}^N \log P(x_i | \boldsymbol\theta) \\\\
+                    \log P(\mathcal{D} \mid \boldsymbol\theta) &= \sum_{i=1}^N \log P(x_i \mid \boldsymbol\theta) \\\\
                                                 &= \sum_j  N_j^1 \log \pi_j + \sum_j \sum_k N_{jk} \log A_{jk}.
                     \end{align*}
                     \]
@@ -433,7 +433,6 @@ uses_python: false
                 </div>
 
                 <p>
-                    <p>
                     To derive this, assume that for the \(j\)-th row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). 
                     The total number of transitions from state \(j\) is
                     \[
@@ -441,7 +440,7 @@ uses_python: false
                     \]  
                     The likelihood under a multinomial model is: 
                     \[
-                    P(\{N_{jk} | A_{j:}\}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
+                    P(\{N_{jk} \mid A_{j:}\}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
                     \]
                     Now, with the uniform Dirichlet prior, we have:
                     \[
@@ -454,13 +453,13 @@ uses_python: false
                     By Bayes's rule, the posterior is proportional to the product of the likelihood and the prior:
                     \[
                     \begin{align*}
-                    P(A_{j:} | \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
+                    P(A_{j:} \mid \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
                                         &=  \prod_{k=1}^K (A_{jk})^{N_{jk} + \alpha -1}.
                     \end{align*}
                     \]
                     Thus, the posterior distribution for \(A_{j:}\) is a Dirichlet distribution:
                     \[
-                    A_{j:} | \{N_jk\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots, \, N_{jK} + \alpha).
+                    A_{j:} \mid \{N_{jk}\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots, \, N_{jK} + \alpha).
                     \]
                 </p>
                 <p>
@@ -468,7 +467,7 @@ uses_python: false
                     distribution, the posterior <strong>mean</strong> is given by:
                     \[
                     \begin{align*}
-                    E [A_{jk} | \{N_{jk}\}] &= \frac{N_{jk}+\alpha}{\sum_{i=1}^K (N_{ji}+\alpha)} \\\\
+                    E [A_{jk} \mid \{N_{jk}\}] &= \frac{N_{jk}+\alpha}{\sum_{i=1}^K (N_{ji}+\alpha)} \\\\
                                             &= \frac{N_{jk}+\alpha}{N_j + K \alpha}.
                     \end{align*}
                     \]
@@ -479,9 +478,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    However, this is not well-defined when \(\alpha =1 \). Also, in the large-sample regime, the posterior mean and the mode of the 
-                    Dirichlet distribution are nearly identical. That's why the estimator based on the posterior mean is commonly used and, 
-                    for \(\alpha =1 \), is referred to as add-one smoothing. 
+                    However, note that when \(\alpha = 1\), the mode simplifies to \(\frac{N_{jk}}{N_j}\), which is exactly the Maximum Likelihood Estimate (MLE). 
+                    This means that using the MAP estimate with a uniform prior (\(\alpha = 1\)) does not provide any smoothing effect, leaving the sparse data problem unresolved. 
+                    Furthermore, in the large-sample regime, the posterior mean and the mode of the Dirichlet distribution are nearly identical. 
+                    That's why the estimator based on the posterior mean is commonly used and, for \(\alpha = 1\), is referred to as add-one smoothing.
                 </p>
 
                 <p>
@@ -493,16 +493,18 @@ uses_python: false
                 </p>
 
                 <div class="insight-box">
-                    <h3>Connections to Machine Learning</h3>
+                    <h3>The Algorithmic Bridge</h3>
                     <p>
-                        The <strong>transition matrix</strong> formalism connects directly to the 
-                        <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> studied in linear algebra, where the 
-                        <strong>stationary distribution</strong> (the eigenvector for eigenvalue 1) describes the long-run behavior of the chain - a 
-                        concept central to algorithms like <strong>PageRank</strong>. In <strong>reinforcement learning</strong> 
-                        (<a href="../Machine_learning/intro_RL.html"><strong>Section V</strong></a>), Markov chains generalize to 
-                        <strong>Markov decision processes (MDPs)</strong>, where an agent's actions influence the transitions. 
-                        The Bayesian smoothing techniques developed here extend naturally to more complex models such as 
-                        <strong>hidden Markov models (HMMs)</strong> and <strong>conditional random fields (CRFs)</strong>.
+                        The <strong>transition matrix</strong> formalism links Markov chains directly to 
+                        <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> in linear algebra. 
+                        Here, the <strong>stationary distribution</strong> is characterized as the left eigenvector corresponding to the eigenvalue 1, 
+                        describing the long-run behavior of the system—a principle that powers the <strong>PageRank</strong> algorithm.
+                    </p>
+                    <p>
+                        In <a href="../Machine_learning/intro_RL.html"><strong>reinforcement learning</strong></a>, Markov chains 
+                        generalize to <strong>Markov decision processes (MDPs)</strong>, where an agent's actions dynamically influence transition 
+                        probabilities. Furthermore, the Bayesian framework for estimating transition counts (using Dirichlet priors) provides the foundation for 
+                        <strong>hidden Markov models (HMMs)</strong> and <strong>conditional random fields (CRFs)</strong> used in sequence modeling.
                     </p>
                 </div>
                 

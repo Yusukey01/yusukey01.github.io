@@ -174,12 +174,6 @@ uses_python: false
                     of the posterior by the <strong>Glivenko-Cantelli theorem</strong>, which guarantees that the ECDF converges uniformly to the true cdf.
                 </p>
 
-                <p> 
-                    Intuitively, instead of computing the inverse cdf analytically, we use the <strong>empirical cumulative distribution function (ecdf)</strong> 
-                    formed by the sorted samples to estimate the desired quantiles. 
-                    As the number of samples \(S \to \infty\), the empirical quantiles converge to the true quantiles of the posterior by the law of large numbers.
-                </p>
-
             </section>
 
             <section id="demo" class="section-content">
@@ -283,66 +277,84 @@ uses_python: false
                 <h2>Markov Chain Monte Carlo (MCMC)</h2>
 
                 <p>
-                    So far, our demo uses predefined distributions to illustrate how Monte Carlo methods can approximate credible intervals.
-                    However, in real Bayesian inference, the full posterior distribution \( p(\theta \mid \mathcal{D}) \) is rarely 
-                    available in closed form.
-                </p>
-    
-                <p>
-                    Instead, we typically work with the <strong>unnormalized posterior</strong>:
+                    The Monte Carlo methods described above assume that we can draw independent samples directly from the posterior distribution 
+                    \(p(\theta \mid \mathcal{D})\). In practice, however, the full posterior is rarely available in closed form. 
+                    By <a href="bayesian.html"><strong>Bayes' theorem</strong></a>, we have
                     \[
-                    p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta) \cdot p(\theta) =  p^*(\theta)
+                    p(\theta \mid \mathcal{D}) = \frac{p(\mathcal{D} \mid \theta) \, p(\theta)}{p(\mathcal{D})},
                     \]
-                    where
+                    where computing the normalizing constant (the <strong>marginal likelihood</strong> or <strong>evidence</strong>)
+                    \[
+                    p(\mathcal{D}) = \int p(\mathcal{D} \mid \theta) \, p(\theta) \, d\theta
+                    \]
+                    requires integrating over the entire parameter space, which is often intractable in high dimensions. 
+                    We can, however, easily evaluate the <strong>unnormalized posterior</strong>
+                    \[
+                    \tilde{p}(\theta) \;\triangleq\; p(\mathcal{D} \mid \theta) \cdot p(\theta) \;\propto\; p(\theta \mid \mathcal{D}),
+                    \]
+                    since this only requires evaluating the likelihood and prior at a given point \(\theta\).
+                </p>
+
+                <p>
+                    This is where <strong>Markov Chain Monte Carlo (MCMC)</strong> methods become essential. The key insight is that we 
+                    can construct a <a href="markov.html"><strong>Markov chain</strong></a> whose <strong>stationary distribution</strong> 
+                    equals the target posterior \(p(\theta \mid \mathcal{D})\), using only the unnormalized density \(\tilde{p}(\theta)\). 
+                    By running this chain for sufficiently many steps, the samples it produces approximate draws from the posterior, 
+                    enabling Monte Carlo estimation without computing \(p(\mathcal{D})\).
+                </p>
+
+                <p>
+                    Three classic MCMC algorithms are foundational to Bayesian computation:
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>\( p(\mathcal{D} \mid \theta) \): the <strong>likelihood</strong>, expressing how probable the data is given a parameter</li>
-                    <li>\( p(\theta) \): the <strong>prior</strong> belief about the parameter before seeing data</li>
+                    <li><strong>Metropolis-Hastings:</strong><br>
+                         A general-purpose algorithm that proposes new samples from a proposal distribution and accepts or rejects 
+                         them based on a ratio of unnormalized densities.
+                    </li>
+                    <li><strong>Gibbs sampling:</strong><br>
+                        A special case of Metropolis-Hastings that is efficient when the full conditional distributions are available 
+                        in closed form. It is commonly used in probabilistic graphical models.
+                    </li>
+                    <li><strong>Hamiltonian Monte Carlo (HMC):</strong><br>
+                        A gradient-based method that uses the geometry of the posterior to propose distant yet high-probability samples, 
+                        making it well-suited for high-dimensional problems. It is widely used in probabilistic programming frameworks 
+                        such as Stan and PyMC.
+                    </li>
                 </ul>
-                
-                <p>
-                    This proportionality holds because the normalizing constant \( p(\mathcal{D}) \) does not depend on \(\theta\) and can be 
-                    ignored during sampling. 
-                </p>
 
                 <p>
-                    Remember, to compute the actual <a href="bayesian.html"><strong>posterior</strong></a> \( p(\theta \mid \mathcal{D}) \), we would need to normalize \( p^*(\theta) \) by computing:
-                    \[
-                    p(\mathcal{D}) = \int p(\mathcal{D} \mid \theta) \cdot p(\theta) \, d\theta
-                    \]
-                    which is often intractable, especially in high-dimensional problems.
-                </p>
-                  
-
-                <p>
-                    This is where <strong>Markov Chain Monte Carlo (MCMC)</strong> methods become essential. MCMC algorithms construct 
-                    a <a href="markov.html"><strong>Markov chain</strong></a> whose long-run behavior (stationary distribution) approximates 
-                    the posterior distribution. This allows us to generate samples from the posterior without needing to compute the 
-                    normalization constant \( p(\mathcal{D}) \).
-                </p>
-                    
-                <p>
-                    The following are three classic MCMC methods that are foundational to Bayesian computation:
-                </p>
-                    
-                <ul style="padding-left: 40px;">
-                    <li><strong>Metropolis-Hastings:</strong> A general-purpose algorithm that proposes new samples and accepts or rejects them based on a probability ratio</li>
-                    <li><strong>Gibbs Sampling:</strong> Efficient when conditional distributions are known, commonly used in simpler models and probabilistic graphical models</li>
-                    <li><strong>Hamiltonian Monte Carlo (HMC):</strong> A gradient-based method well-suited for high-dimensional posteriors; still widely used in probabilistic programming languages like Stan and PyMC</li>
-                </ul>
-                
-                <p>
-                    While these methods are not used to train large-scale models like LLMs, they remain essential for Bayesian modeling, especially in scientific and uncertainty-aware applications. 
-                    We will revisit  each of them in the future. 
+                    It is worth noting the role of MCMC in the broader landscape of machine learning. In large-scale models such as transformers 
+                    and <strong>large language models (LLMs)</strong>, MCMC is not used for training due to its computational cost and poor scalability 
+                    in very high-dimensional parameter spaces. These models are instead trained using 
+                    <a href="../Calculus/gradient.html"><strong>gradient-based optimization</strong></a> 
+                    (e.g., stochastic gradient descent or Adam) with maximum likelihood or related objectives. 
+                    However, MCMC remains indispensable for Bayesian modeling in scientific applications, uncertainty quantification, simulation-based inference, 
+                    and decision-making under uncertainty - settings where principled uncertainty estimates are essential.
                 </p>
 
+               <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        Monte Carlo methods form the computational backbone of modern Bayesian machine learning. 
+                        <strong>Credible intervals</strong> and <strong>HPD regions</strong> provide a principled framework for 
+                        uncertainty quantification in model predictions - a necessity in safety-critical domains such as 
+                        medical diagnosis and autonomous systems. 
+                    </p>
+                    <p>
+                        While <strong>MCMC sampling</strong> serves as the gold standard for training Bayesian neural networks 
+                        (where weights are treated as distributions), the Monte Carlo principle also powers <strong>stochastic 
+                        variational inference</strong>. In this context, the <strong>reparameterization trick</strong> enables 
+                        gradient-based optimization of stochastic objectives (like the ELBO), and <strong>Monte Carlo dropout</strong> 
+                        offers a practical, scalable approximation to Bayesian inference in deep architectures.
+                    </p>
+                </div>
+
                 <p>
-                    In modern machine learning and AI - particularly in large-scale models like transformers or <strong>Large Language Models (LLMs)</strong> - MCMC is not used for training, due to 
-                    its high computational cost and poor scalability in very high-dimensional parameter spaces. These models are instead trained 
-                    using <a href="../Calculus/gradient.html">gradient-based optimization</a> (e.g., stochastic gradient descent or Adam) with maximum likelihood estimation. 
-                    However, Bayesian ideas remain important. Methods inspired by MCMC are still used for uncertainty quantification, 
-                    probabilistic modeling, simulation-based inference, and decision-making under uncertainty. 
+                    The Monte Carlo framework developed here assumes that we can sample from the target distribution (either directly or via MCMC). 
+                    In <a href="importance_sampling.html"><strong>Part 20: Importance Sampling</strong></a>, we relax this assumption: instead of 
+                    sampling from the target, we sample from a different, more convenient <em>proposal distribution</em> and correct for the 
+                    mismatch using importance weights.
                 </p>
                 
             </section>
