@@ -399,62 +399,49 @@ uses_python: false
                 <h2>Sparse Data & Dirichlet Prior</h2>
 
                 <p>
-                    The MLE estimates derived above are optimal when data is abundant, but in practice we 
-                    often face a <strong>sparse data problem</strong>: with a limited number of observed sequences, 
-                    many possible transitions may never be observed at all. This leads to zero probability 
-                    estimates, which are problematic - a single unseen transition would assign zero probability 
-                    to any sequence containing it, regardless of the other transitions. More broadly, sparse 
-                    data leads to overfitting, biased predictions, and inaccurate long-term behavior of the 
-                    estimated chain.
-                </p>
-
-                 <p>
-                    To address this, we use <strong>smoothing</strong> techniques that redistribute some probability 
-                    mass to unseen transitions. A principled approach is to adopt a <strong>Bayesian framework</strong> 
-                    by placing a prior distribution on the transition probabilities. A natural choice is the 
-                    <a href="mvn.html"><strong>Dirichlet distribution</strong></a>, which is conjugate to the 
-                    multinomial likelihood. The simplest case is the <strong>uniform Dirichlet prior</strong> 
-                    with \(\alpha_1 = \alpha_2 = \cdots = \alpha_K = \alpha\).
-                </p>
-
-                <p>
                     When we have a limited number of sequences (or sequence steps), many possible transitions might never be observed at all, or be 
                     observed just once or twice. This situation leads to having fewer observations relative to the number of parameters (transitions). 
-                    The <strong>sparse data problem</strong> in Markov chain models is a key issue, especially when working with many possible states. 
-                    The sparse data lead to unreliable MLE estimates (overfitting, zero estimates, biased predictions, inaccurate long-term behavior). 
+                    The <strong>sparse data problem</strong> in Markov chain models is a critical issue, especially when working with many possible states. 
+                    The sparse data lead to unreliable MLE estimates (e.g., overfitting, zero estimates, biased predictions, or inaccurate long-term behavior). 
                     To address these issues, we often need <strong>smoothing</strong> or <strong>Bayesian approaches</strong> to generalize better. 
-                    However, only smooth what we should - don't violate known structure (like true zeros).
+                </p>
+                <p>
+                    The simplest case is the <strong>uniform Dirichlet prior</strong> with \(\alpha_1 = \alpha_2 = \cdots = \alpha_K = \alpha\).
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Uniform Dirichlet Prior </span>
+                    <span class="theorem-title">Definition: Dirichlet Prior for Transition Probabilities</span>
                     <p>
-                        The \(j\)-th row of the transition matrix \(A\) (which represents the probabilities of transitioning from state 
-                        \(j\) to each of the \(K\) possible states) follows a <a href="mvn.html"><strong>Dirichlet distribution</strong></a> with parameters \(\alpha\):
+                        The \(j\)-th row of the transition matrix \(A\), representing the probabilities of 
+                        transitioning from state \(j\) to each of the \(K\) possible states, is given a 
+                        <strong>symmetric Dirichlet prior</strong>:
                         \[
-                        A_{j:} \sim \text{ Dir }(\alpha \: \boldsymbol{1}).
+                        A_{j:} \sim \text{Dir}(\alpha \, \boldsymbol{1}).
                         \]
                     </p>
                     <p>
-                        In this case, the <strong>MAP(Maximum A Posteriori) estimate</strong>(which is the mode of the posterior distribution) becomes 
+                        The <strong>posterior mean</strong> estimate of the transition probabilities is
                         \[
-                        \hat{A}_{jk} = \frac{N_{jk}+\alpha}{N_j + K \alpha}.
+                        \hat{A}_{jk} = \frac{N_{jk} + \alpha}{N_j + K\alpha}.
                         \]
                     </p>
                     <p>
-                        If \(\alpha = 1\), this is called <strong>add-one smoothing</strong>. Note that every state is treated "equally" 
-                        in the prior.(\(\alpha_1 = \alpha_2 = \cdots = \alpha_K\))
+                        When \(\alpha = 1\), this is called <strong>add-one (Laplace) smoothing</strong>. 
+                        The parameter \(\alpha\) acts as a <strong>pseudocount</strong>: it is as if we observed 
+                        \(\alpha\) additional transitions to each state before seeing the data.
                     </p>
-                </div> 
+                </div>
 
                 <p>
-                    Assume that for the \(j\)ith row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). The total number of transitions from state \(j\) is 
+                    <p>
+                    To derive this, assume that for the \(j\)-th row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). 
+                    The total number of transitions from state \(j\) is
                     \[
                     N_j = \sum_{k=1}^K N_{jk}
                     \]  
                     The likelihood under a multinomial model is: 
                     \[
-                    P(\{N_{jk} | A_{j:}\}) \propto  \prod_{k=1}^K (A_{jk})^{N_{jk}}.
+                    P(\{N_{jk} | A_{j:}\}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
                     \]
                     Now, with the uniform Dirichlet prior, we have:
                     \[
@@ -473,7 +460,7 @@ uses_python: false
                     \]
                     Thus, the posterior distribution for \(A_{j:}\) is a Dirichlet distribution:
                     \[
-                    A_{j:} | \{N_jk\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots \, N_{jK} + \alpha).
+                    A_{j:} | \{N_jk\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots, \, N_{jK} + \alpha).
                     \]
                 </p>
                 <p>
@@ -490,17 +477,34 @@ uses_python: false
                     \text{mode }(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
                     \]
                 </p>
+
                 <p>
                     However, this is not well-defined when \(\alpha =1 \). Also, in the large-sample regime, the posterior mean and the mode of the 
                     Dirichlet distribution are nearly identical. That's why the estimator based on the posterior mean is commonly used and, 
                     for \(\alpha =1 \), is referred to as add-one smoothing. 
                 </p>
+
                 <p>
-                    Again, note that this method assums <strong>uniform prior</strong>(each outcome is "equally" likely a priori), which is NOT realistic in complicated models. 
-                    For more complex, structured problems where capturing group-level variations is important, <strong>hierarchical Bayesian methods</strong> generally 
-                    provide a better approach, despite their increased computational cost. Hierarchical Bayesian models share statistical strength across sequences (e.g., 
-                    cities). Assume each sequence (e.g., city) has its own transition matrix, drawn from a common hyper-distribution.
+                    It is important to note that the symmetric Dirichlet prior assumes a <strong>uniform prior</strong> (each outcome is "equally" likely a priori), which 
+                    may not be realistic in complex models. For more structured problems where capturing group-level variation is important, 
+                    <strong>hierarchical Bayesian methods</strong> provide a more flexible approach: each sequence (e.g., each city in our weather example) has 
+                    its own transition matrix, but these matrices are drawn from a common hyper-distribution, allowing the model to share statistical 
+                    strength across sequences while accommodating heterogeneity.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Connections to Machine Learning</h3>
+                    <p>
+                        The <strong>transition matrix</strong> formalism connects directly to the 
+                        <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> studied in linear algebra, where the 
+                        <strong>stationary distribution</strong> (the eigenvector for eigenvalue 1) describes the long-run behavior of the chain - a 
+                        concept central to algorithms like <strong>PageRank</strong>. In <strong>reinforcement learning</strong> 
+                        (<a href="../Machine_learning/intro_RL.html"><strong>Section V</strong></a>), Markov chains generalize to 
+                        <strong>Markov decision processes (MDPs)</strong>, where an agent's actions influence the transitions. 
+                        The Bayesian smoothing techniques developed here extend naturally to more complex models such as 
+                        <strong>hidden Markov models (HMMs)</strong> and <strong>conditional random fields (CRFs)</strong>.
+                    </p>
+                </div>
                 
             </section>
         </div>
