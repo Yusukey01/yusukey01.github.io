@@ -3,9 +3,6 @@
 // Demonstrates how Variational Autoencoders encode physical uncertainty
 // as latent-space distributions — ghost arms emerge from σ during the Moment of Detachment
 
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-
 document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('simulation-container');
     if (!container) {
@@ -551,6 +548,32 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
     document.head.appendChild(styleEl);
 
+    // ========== LOAD THREE.JS ==========
+    if (!window.THREE) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        script.onload = function() {
+            const orbitScript = document.createElement('script');
+            orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+            orbitScript.onload = initializeVisualization;
+            document.head.appendChild(orbitScript);
+        };
+        document.head.appendChild(script);
+    } else if (!THREE.OrbitControls) {
+        const orbitScript = document.createElement('script');
+        orbitScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+        orbitScript.onload = initializeVisualization;
+        document.head.appendChild(orbitScript);
+    } else {
+        initializeVisualization();
+    }
+
+    function initializeVisualization() {
+        if (!THREE.OrbitControls) {
+            setTimeout(initializeVisualization, 100);
+            return;
+        }
+
     // ========== DOM REFS ==========
     const threeContainer = document.getElementById('vae-three-container');
     const stateBadge = document.getElementById('vae-state-badge');
@@ -673,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderer.toneMappingExposure = 1.0;
     threeContainer.appendChild(renderer.domElement);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.target.set(10, 15, 0);
@@ -1622,4 +1645,5 @@ document.addEventListener('DOMContentLoaded', function () {
     animate();
 
     console.log('[VAE Uncertainty Simulation] Initialized successfully');
+    } // end initializeVisualization
 });
