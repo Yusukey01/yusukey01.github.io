@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // === CONSTANTS ===
         var BW=20,BH=30,BD=20;               // box 20×30×20
-        var BP=new THREE.Vector3(20,0,0);     // box at (20,0,0)
+        var BP=new THREE.Vector3(32,0,0);     // box at (32,0,0) — far enough to prevent arm body penetration
         var L1=24,L2=22;                      // arm link lengths
         var LR=2.0,JR=2.5;                   // link/joint radii
         var FL=10,FW=1.8,FD=2.5;             // finger: 10 long, hanging down
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
         for(var i=0;i<NG;i++)V.eps.push({x:0,y:0});
 
         // IK target + grip
-        var eeT=new THREE.Vector3(5,46,0);
+        var eeT=new THREE.Vector3(8,46,0);
         var gSp=SP_OPEN;
         var boxAttached=false;
         var boxGripOff=new THREE.Vector3(); // wrist-to-box-origin offset
@@ -182,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Finger tip Y = wrist.y - FL/2 - 1.25 (bracket half) - FL/2 = wrist.y - FL - 1.25
         // For tips at box top: wrist.y = BH + FL + 1.25
         var GRASP_WRIST_Y = BH + FL + 1.25;  // = 41.25: wrist height where finger tips touch box top
-        var HOME=new THREE.Vector3(5,46,0);
-        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+18, BP.z);  // well above grasp height
+        var HOME=new THREE.Vector3(8,46,0);
+        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+22, BP.z);  // well above grasp height
         var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
 
         // === THREE.JS SCENE ===
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scene.background=new THREE.Color(0x050710);
         scene.fog=new THREE.FogExp2(0x050710,0.002);
         var cam=new THREE.PerspectiveCamera(46,W/H,0.5,500);
-        cam.position.set(55,45,50);
+        cam.position.set(60,48,55);
         var ren=new THREE.WebGLRenderer({antialias:true});
         ren.setPixelRatio(Math.min(devicePixelRatio,2));
         ren.setSize(W,H);
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         mt.appendChild(ren.domElement);
         var orb=new THREE.OrbitControls(cam,ren.domElement);
         orb.enableDamping=true;orb.dampingFactor=0.07;
-        orb.target.set(10,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
+        orb.target.set(16,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
 
         // Lights (OLED high-contrast)
         scene.add(new THREE.AmbientLight(0x2a2a44,0.45));
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 doLiftFrame(dt);
                 // Continuous safety re-check
                 if(V.sig>V.thr){setSt(ST.ABORT);break;}
-                if(P.lH>40){fullReset();setSt(ST.IDLE);}
+                if(P.lH>40){softReset();setSt(ST.IDLE);}
                 break;}
 
             case ST.ABORT:{
@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     eeT.set(lr(BP.x,HOME.x,hs),lr(GRASP_WRIST_Y+2,HOME.y,hs),lr(BP.z,HOME.z,hs));
                     gSp=SP_OPEN;
                 }
-                if(t>=d){fullReset();setSt(ST.IDLE);}
+                if(t>=d){softReset();setSt(ST.IDLE);}
                 break;}
             }
         }
@@ -512,15 +512,45 @@ document.addEventListener('DOMContentLoaded', function () {
             if(s===ST.IDLE){running=false;bGo.disabled=false;ghosts.forEach(hideGh);}
         }
 
-        function fullReset(){
+        function softReset(){
+            // Reset physics and VAE state without touching sliders (for end-of-animation)
             P.tau.set(0,0,0);P.av.set(0,0,0);P.tQ.identity();
             P.gF=0;P.lH=0;P.det=false;
             V.mu=[0,0];V.sig=0;V.kl=0;V.hist=[];
             for(var i=0;i<NG;i++)V.eps[i]={x:0,y:0};
             bxG.position.copy(BP);bxG.quaternion.identity();
-            boxAttached=false;ghosts.forEach(hideGh);
+            boxAttached=false;boxGripOff.set(0,0,0);
+            eeT.copy(HOME);gSp=SP_OPEN;
+            ghosts.forEach(hideGh);
             if(tArr){bxG.remove(tArr);tArr=null;}
             critO.classList.remove('on');
+        }
+
+        function fullReset(){
+            // Reset physics
+            P.tau.set(0,0,0);P.av.set(0,0,0);P.tQ.identity();
+            P.gF=0;P.lH=0;P.det=false;
+            // Reset VAE
+            V.mu=[0,0];V.sig=0;V.kl=0;V.hist=[];
+            for(var i=0;i<NG;i++)V.eps[i]={x:0,y:0};
+            // Reset box
+            bxG.position.copy(BP);bxG.quaternion.identity();
+            boxAttached=false;boxGripOff.set(0,0,0);
+            // Reset arm to HOME
+            eeT.copy(HOME);gSp=SP_OPEN;
+            // Remove ghosts and torque arrow
+            ghosts.forEach(hideGh);
+            if(tArr){bxG.remove(tArr);tArr=null;}
+            // Reset critical overlay
+            critO.classList.remove('on');
+            // Reset sliders to default values
+            var sliderDefaults={scx:'3',scy:'-5',scz:'2',sma:'8',sth:'1.8',sdp:'28'};
+            for(var sid in sliderDefaults){
+                var sl=document.getElementById(sid);
+                if(sl){sl.value=sliderDefaults[sid];sl.dispatchEvent(new Event('input'));}
+            }
+            // Clear latent canvas
+            lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
         }
 
         // === LATENT SPACE CANVAS ===
