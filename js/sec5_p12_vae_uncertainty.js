@@ -1,4 +1,4 @@
-// sec5_p12_vae_uncertainty.js  v7.0
+// sec5_p12_vae_uncertainty.js  v8.0
 // VAE Uncertainty in Robotic Manipulation — MATH-CS COMPASS
 // Top-down grasp: Π-gripper descends, fingers close on ±X box edges, lifts vertically
 // PRE_LIFT safety assessment → LIFT_OK or ABORT
@@ -383,8 +383,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // === LIFT LOGIC: rigid parenting — box locked to wrist ===
+        // Collision margin: the nearest X edge of the box to the arm
+        var COL_MARGIN=LR+JR+1.5; // link radius + joint radius + safety gap
+
+        function enforceClearance(){
+            // After IK, check if elbow or link1 midpoint would penetrate the box.
+            // Box near-edge X (toward robot) = bxG.x - BW/2
+            // We need elbow.x > box_near_x - margin at all times.
+            // If not, push eeT.x outward until clearance is met.
+            for(var iter=0;iter<8;iter++){
+                var ik=solveIK(eeT);
+                // Current box position based on wrist + offset
+                var boxX=ik.wrist.x+boxGripOff.x;
+                var boxNear=boxX-BW/2-COL_MARGIN;
+                // Check elbow and link1 midpoint
+                var midX=(ik.base.x+ik.elbow.x)*0.5;
+                var minArmX=Math.min(ik.elbow.x, midX);
+                if(minArmX>=boxNear) return ik; // no penetration
+                // Push eeT.x outward
+                eeT.x+=boxNear-minArmX+1;
+            }
+            return solveIK(eeT);
+        }
+
         function doLiftFrame(dt){
-            var ik=solveIK(eeT);
+            var ik=enforceClearance();
             // Box position: wrist pos + stored offset
             bxG.position.set(
                 ik.wrist.x + boxGripOff.x,
