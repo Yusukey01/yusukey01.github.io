@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function () {
         bn('scy','dcy',function(v){return v.toFixed(1);},function(v){P.com.y=v;syncCoM();cR.position.copy(cS.position);});
         bn('scz','dcz',function(v){return v.toFixed(1);},function(v){P.com.z=v;syncCoM();cR.position.copy(cS.position);});
         bn('sma','dma',function(v){return v.toFixed(1)+' kg';},function(v){P.mass=v;});
-        bn('sth','dth',function(v){return v.toFixed(2);},function(v){V.thr=v;});
+        bn('sth','dth',function(v){return v.toFixed(2);},function(v){V.thr=v;drawLat();});
         bn('sdp','ddp',function(v){return ''+v;},function(v){P.Cd=v;});
 
         // === BUTTONS ===
