@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
           '<div class="vte"><span class="vtl">Grip Force</span><span class="vtv" id="dgf">0.0 N</span></div>',
         '</div></div>',
         '<div class="vc"><div class="vch">Center of Mass Offset</div><div class="vcs">From box geometric center</div>',
-          '<div class="vsr"><label>CoM X</label><input type="range" id="scx" min="-8" max="8" step="0.5" value="3"><span id="dcx">3.0</span></div>',
-          '<div class="vsr"><label>CoM Y</label><input type="range" id="scz" min="-8" max="8" step="0.5" value="2"><span id="dcz">2.0</span></div>',
-          '<div class="vsr"><label>CoM Z</label><input type="range" id="scy" min="-12" max="0" step="0.5" value="-5"><span id="dcy">-5.0</span></div>',
+          '<div class="vsr"><label>CoM X</label><input type="range" id="scx" min="-5" max="5" step="0.5" value="2"><span id="dcx">2.0</span></div>',
+          '<div class="vsr"><label>CoM Y</label><input type="range" id="scz" min="-5" max="5" step="0.5" value="1.5"><span id="dcz">1.5</span></div>',
+          '<div class="vsr"><label>CoM Z</label><input type="range" id="scy" min="-8" max="0" step="0.5" value="-3"><span id="dcy">-3.0</span></div>',
         '</div>',
         '<div class="vc"><div class="vch">Simulation Parameters</div>',
           '<div class="vsr"><label>Box Mass</label><input type="range" id="sma" min="1" max="20" step="0.5" value="8"><span id="dma">8.0 kg</span></div>',
@@ -146,14 +146,14 @@ document.addEventListener('DOMContentLoaded', function () {
         var bGo=document.getElementById('bgo'),bRs=document.getElementById('brs');
 
         // === CONSTANTS ===
-        var BW=20,BH=30,BD=20;               // box 20×30×20
-        var BP=new THREE.Vector3(32,0,0);     // box at (32,0,0) — far enough to prevent arm body penetration
+        var BW=12,BH=18,BD=12;               // box 12×18×12 — proportional to arm
+        var BP=new THREE.Vector3(34,0,0);     // box at X=34 — pushed out so arm link clears during lift
         var L1=24,L2=22;                      // arm link lengths
         var LR=2.0,JR=2.5;                   // link/joint radii
-        var FL=10,FW=1.8,FD=1.2;             // finger: 10 long (Y), 1.8 thick (Z), 1.2 thin (X) — thin enough to not clip box
+        var FL=10,FW=1.8,FD=1.2;             // finger: 10 long (Y), 1.8 thick (Z), 1.2 thin (X)
         var BRK_W=1.0;                        // bracket bar X-width (thin)
         var SP_OPEN=BD+12;                    // open spread > BD+finger clearance
-        var SP_CLOSED=BD+FW;                  // fingers contact box ±Z faces (slight compression)
+        var SP_CLOSED=BD+FW;                  // fingers contact box ±Z faces
         var EPS_GAP=1.0;                      // vertical safety gap: bracket ceiling above box top
         var NG=5;                             // ghost arm count
         var PRE_LIFT_H=5;                     // test lift height
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // === PHYSICS ===
         var P={I:4.5,Cd:28,mass:8,g:9.81,
-            com:new THREE.Vector3(3,-5,2),
+            com:new THREE.Vector3(2,-3,1.5),
             tau:new THREE.Vector3(),av:new THREE.Vector3(),
             tQ:new THREE.Quaternion(),gF:0,lH:0,det:false};
 
@@ -186,9 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // For ceiling at BH + EPS_GAP: wrist.y = BH + EPS_GAP - 1.25
         // For finger tips at box top: wrist.y = BH + 1.25 + FL
         // Use the higher of the two to satisfy both constraints:
-        var GRASP_WRIST_Y = Math.max(BH + EPS_GAP + 1.25, BH + FL + 1.25);  // = 41.25
+        var GRASP_WRIST_Y = Math.max(BH + EPS_GAP + 1.25, BH + FL + 1.25);  // = 29.25
         var HOME=new THREE.Vector3(8,46,0);
-        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+22, BP.z);  // well above grasp height
+        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+14, BP.z);  // above grasp, within IK reach
         var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
 
         // === THREE.JS SCENE ===
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function fullReset(){
             softReset();
-            var sliderDefaults={scx:'3',scy:'-5',scz:'2',sma:'8',sth:'1.8',sdp:'28'};
+            var sliderDefaults={scx:'2',scy:'-3',scz:'1.5',sma:'8',sth:'1.8',sdp:'28'};
             for(var sid in sliderDefaults){
                 var sl=document.getElementById(sid);
                 if(sl){sl.value=sliderDefaults[sid];sl.dispatchEvent(new Event('input'));}
