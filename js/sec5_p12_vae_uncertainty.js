@@ -1,6 +1,6 @@
 // sec5_p12_vae_uncertainty.js  v8.0
 // VAE Uncertainty in Robotic Manipulation — MATH-CS COMPASS
-// Lateral side-clamp: Π-gripper fingers vertical, clamp ±X box faces
+// Top-down grasp: Π-gripper descends, fingers close on ±Z box edges, lifts vertically
 // PRE_LIFT safety assessment → LIFT_OK or ABORT
 // Offset parenting with epsilon gap to prevent mesh clipping
 
@@ -147,22 +147,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // === CONSTANTS ===
         var BW=20,BH=30,BD=20;               // box 20×30×20
-        var BP=new THREE.Vector3(32,0,0);     // box at (32,0,0)
+        var BP=new THREE.Vector3(32,0,0);     // box at (32,0,0) — far enough to prevent arm body penetration
         var L1=24,L2=22;                      // arm link lengths
         var LR=2.0,JR=2.5;                   // link/joint radii
-        var FL=22,FW=2.5,FD=16;              // finger: 22 tall (vertical), 2.5 thick (X), 16 deep (Z)
-        var BRK_H=2.5;                        // bracket bar height
-        var SP_OPEN=BW+20;                    // open spread: fingers clear box width + 20
-        var SP_CLOSED=BW+FW;                  // closed: fingers just touching ±X faces
-        var SP_GRIP=BW+1.0;                   // contact: slight compression at ±10.5
-        var EPS_GAP=1.0;                      // vertical clearance above box top
+        var FL=10,FW=1.8,FD=1.2;             // finger: 10 long (Y), 1.8 thick (Z), 1.2 thin (X) — thin enough to not clip box
+        var BRK_W=1.0;                        // bracket bar X-width (thin)
+        var SP_OPEN=BD+12;                    // open spread > BD+finger clearance
+        var SP_CLOSED=BD+FW;                  // fingers contact box ±Z faces (slight compression)
+        var EPS_GAP=1.0;                      // vertical safety gap: bracket ceiling above box top
         var NG=5;                             // ghost arm count
         var PRE_LIFT_H=5;                     // test lift height
         var PRE_LIFT_WAIT=0.5;                // σ assessment duration
-
-        // v8: Wrist Y so fingers' vertical center = box center (BH/2=15)
-        // fingerCenterY = wristY - BRK_H/2 - FL/2 => wristY = BH/2 + BRK_H/2 + FL/2 = 27.25
-        var GRASP_WRIST_Y = BH/2 + BRK_H/2 + FL/2;
 
         // === STATES ===
         var ST={IDLE:0,APPROACH:1,DESCEND:2,GRASP:3,PRE_LIFT:4,LIFT_OK:5,ABORT:6};
@@ -186,9 +181,15 @@ document.addEventListener('DOMContentLoaded', function () {
         var boxGripOff=new THREE.Vector3(); // wrist-to-box-origin offset
 
         // Key positions
+        // Finger tip Y = wrist.y - bracket_half - FL = wrist.y - 1.25 - FL
+        // Bracket ceiling = wrist.y + 1.25
+        // For ceiling at BH + EPS_GAP: wrist.y = BH + EPS_GAP - 1.25
+        // For finger tips at box top: wrist.y = BH + 1.25 + FL
+        // Use the higher of the two to satisfy both constraints:
+        var GRASP_WRIST_Y = Math.max(BH + EPS_GAP + 1.25, BH + FL + 1.25);  // = 41.25
         var HOME=new THREE.Vector3(8,46,0);
         var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+22, BP.z);  // well above grasp height
-        var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at lateral grasp height
+        var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
 
         // === THREE.JS SCENE ===
         var W=mt.clientWidth||800,H=Math.max(mt.clientHeight||520,480);
@@ -257,14 +258,15 @@ document.addEventListener('DOMContentLoaded', function () {
         var j2=new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,24,24),mJ);
         j2.castShadow=true;arm.add(j2);
 
-        // Π-GRIPPER v8: lateral side-clamp — bracket spans ±X, fingers hang -Y clamping box ±X faces
-        var bar=new THREE.Mesh(new THREE.BoxGeometry(1,BRK_H,FD),mG);
+        // Π-GRIPPER: bracket spans ±Z, fingers hang -Y from ±Z ends
+        // BRK_W=thin X, so bracket doesn't penetrate box; FD=thin X for fingers
+        var bar=new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),mG);
         bar.castShadow=true;arm.add(bar);
-        // Left finger (−X side): vertical slab
-        var fLm=new THREE.Mesh(new THREE.BoxGeometry(FW,FL,FD),mG);
+        // Front finger: hangs down from -Z end of bracket
+        var fLm=new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),mG);
         fLm.castShadow=true;arm.add(fLm);
-        // Right finger (+X side): vertical slab
-        var fRm=new THREE.Mesh(new THREE.BoxGeometry(FW,FL,FD),mG);
+        // Back finger: hangs down from +Z end of bracket
+        var fRm=new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),mG);
         fRm.castShadow=true;arm.add(fRm);
 
         // === GHOST ARMS (5 full clones) ===
@@ -274,9 +276,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 j1:new THREE.Mesh(new THREE.SphereGeometry(JR,14,14),gM()),
                 l2:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.85,LR,1,10),gM()),
                 j2:new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,14,14),gM()),
-                bar:new THREE.Mesh(new THREE.BoxGeometry(1,BRK_H,FD),gM()),
-                fL:new THREE.Mesh(new THREE.BoxGeometry(FW,FL,FD),gM()),
-                fR:new THREE.Mesh(new THREE.BoxGeometry(FW,FL,FD),gM())};
+                bar:new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),gM()),
+                fL:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM()),
+                fR:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM())};
             gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.bar,gg.fL,gg.fR];
             gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
             ghosts.push(gg);
@@ -323,24 +325,24 @@ document.addEventListener('DOMContentLoaded', function () {
             m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());
         }
 
-        // === POSE: Lateral gripper — bracket spans ±X, fingers hang -Y from ±X ends ===
+        // === POSE: Top-down gripper rotated 90° — bracket spans ±Z, fingers hang -Y ===
         function poseArm(ik,sp){
             posC(l1,ik.base,ik.elbow); j1.position.copy(ik.elbow);
             posC(l2,ik.elbow,ik.wrist); j2.position.copy(ik.wrist);
-            // Bracket bar spans ±X at wrist level
-            bar.position.copy(ik.wrist); bar.scale.x=sp; bar.quaternion.identity();
-            // Fingers hang down (−Y) from ±X bracket ends
-            var hs=sp/2, fd=BRK_H/2+FL/2;
-            fLm.position.set(ik.wrist.x-hs, ik.wrist.y-fd, ik.wrist.z); fLm.quaternion.identity();
-            fRm.position.set(ik.wrist.x+hs, ik.wrist.y-fd, ik.wrist.z); fRm.quaternion.identity();
+            // Bracket bar spans ±Z at wrist level
+            bar.position.copy(ik.wrist); bar.scale.z=sp; bar.quaternion.identity();
+            // Fingers hang down (−Y) from ±Z bracket ends
+            var hs=sp/2, fd=FL/2+1.25;
+            fLm.position.set(ik.wrist.x, ik.wrist.y-fd, ik.wrist.z-hs); fLm.quaternion.identity();
+            fRm.position.set(ik.wrist.x, ik.wrist.y-fd, ik.wrist.z+hs); fRm.quaternion.identity();
         }
         function poseGh(g,ik,sp,op){
             posC(g.l1,ik.base,ik.elbow); g.j1.position.copy(ik.elbow);
             posC(g.l2,ik.elbow,ik.wrist); g.j2.position.copy(ik.wrist);
-            g.bar.position.copy(ik.wrist); g.bar.scale.x=sp; g.bar.quaternion.identity();
-            var hs=sp/2,fd=BRK_H/2+FL/2;
-            g.fL.position.set(ik.wrist.x-hs,ik.wrist.y-fd,ik.wrist.z); g.fL.quaternion.identity();
-            g.fR.position.set(ik.wrist.x+hs,ik.wrist.y-fd,ik.wrist.z); g.fR.quaternion.identity();
+            g.bar.position.copy(ik.wrist); g.bar.scale.z=sp; g.bar.quaternion.identity();
+            var hs=sp/2,fd=FL/2+1.25;
+            g.fL.position.set(ik.wrist.x,ik.wrist.y-fd,ik.wrist.z-hs); g.fL.quaternion.identity();
+            g.fR.position.set(ik.wrist.x,ik.wrist.y-fd,ik.wrist.z+hs); g.fR.quaternion.identity();
             g.parts.forEach(function(p){p.visible=true;p.material.opacity=op;});
         }
         function hideGh(g){g.parts.forEach(function(p){p.visible=false;});}
@@ -429,17 +431,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 if(t>=d)setSt(ST.GRASP);break;}
 
             case ST.GRASP:{
-                // Fingers slide inward along X: SP_OPEN→SP_GRIP (contact at ±10.5)
+                // Fingers close from SP_OPEN→SP_CLOSED, collision-clamped
                 var d=1.0,s=sm(t/d);
                 eeT.copy(BOX_TOP_PT);
-                var raw=lr(SP_OPEN,SP_GRIP,s);
-                gSp=Math.max(raw,SP_GRIP); // never narrower than contact
+                var raw=lr(SP_OPEN,SP_CLOSED,s);
+                gSp=Math.max(raw,SP_CLOSED); // collision: never < box width
                 P.gF=s*P.mass*P.g*1.6;
                 if(t>=d){
-                    // Offset parenting: wrist-to-box with epsilon vertical gap
+                    // Compute wrist-to-box offset with epsilon vertical gap
                     var ik=solveIK(eeT);
                     boxGripOff.copy(BP).sub(ik.wrist);
-                    boxGripOff.y-=EPS_GAP; // push box down by epsilon to prevent ceiling penetration
+                    boxGripOff.y-=EPS_GAP; // push box down to prevent ceiling penetration
                     boxAttached=true;
                     setSt(ST.PRE_LIFT);
                 }break;}
@@ -450,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var liftS=sm(liftPhase/0.4);
                 P.lH=PRE_LIFT_H*liftS;
                 eeT.set(BP.x, GRASP_WRIST_Y+P.lH, BP.z);
-                gSp=SP_GRIP;
+                gSp=SP_CLOSED;
 
                 if(t>0.12&&!P.det) P.det=true;
                 if(P.det) doLiftFrame(dt);
@@ -466,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var speed=14;
                 P.lH=PRE_LIFT_H+speed*t;
                 eeT.set(BP.x, GRASP_WRIST_Y+P.lH, BP.z);
-                gSp=SP_GRIP;
+                gSp=SP_CLOSED;
                 doLiftFrame(dt);
                 // Continuous safety re-check
                 if(V.sig>V.thr){setSt(ST.ABORT);break;}
@@ -481,13 +483,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     var ls=sm(t/1.2);
                     P.lH=Math.max(0,P.lH*(1-ls));
                     eeT.set(BP.x,GRASP_WRIST_Y+P.lH,BP.z);
-                    gSp=SP_GRIP;
+                    gSp=SP_CLOSED;
                     if(P.det) doLiftFrame(dt);
                     ghosts.forEach(function(g){g.parts.forEach(function(p){p.material.opacity*=0.92;});});
                 } else if(t<1.8){
                     // Phase 2: release
                     var rs=sm((t-1.2)/0.6);
-                    gSp=lr(SP_GRIP,SP_OPEN,rs);
+                    gSp=lr(SP_CLOSED,SP_OPEN,rs);
                     eeT.set(BP.x,GRASP_WRIST_Y+2,BP.z);
                     if(boxAttached){
                         boxAttached=false;P.det=false;
@@ -631,6 +633,6 @@ document.addEventListener('DOMContentLoaded', function () {
             cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);
         });
         lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
-        console.log('[VAE Uncertainty v8.0] Lateral side-clamp + epsilon gap + PRE_LIFT safety \u2713');
+        console.log('[VAE Uncertainty v8.0] Top-down grasp + epsilon gap + PRE_LIFT safety \u2713');
     } // end boot
 });
