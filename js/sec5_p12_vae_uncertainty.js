@@ -1,4 +1,4 @@
-// sec5_p12_vae_uncertainty.js  v8.0
+// sec5_p12_vae_uncertainty.js  v8.2
 // VAE Uncertainty in Robotic Manipulation — MATH-CS COMPASS
 // Top-down grasp: Π-gripper descends, fingers close on ±Z box edges, lifts vertically
 // PRE_LIFT safety assessment → LIFT_OK or ABORT
@@ -716,6 +716,6 @@ document.addEventListener('DOMContentLoaded', function () {
             cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);
         });
         lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
-        console.log('[VAE Uncertainty v8.0] Top-down grasp + epsilon gap + PRE_LIFT safety \u2713');
+        console.log('[VAE Uncertainty v8.2] Top-down grasp + epsilon gap + PRE_LIFT safety \u2713');
     } // end boot
 });
