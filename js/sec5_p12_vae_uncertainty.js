@@ -192,8 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scene.background=new THREE.Color(0x050710);
         scene.fog=new THREE.FogExp2(0x050710,0.002);
         var cam=new THREE.PerspectiveCamera(46,W/H,0.5,500);
-        cam.up.set(0,0,1); // Z-up convention
-        cam.position.set(60,55,48);
+        cam.position.set(60,48,55);
         var ren=new THREE.WebGLRenderer({antialias:true});
         ren.setPixelRatio(Math.min(devicePixelRatio,2));
         ren.setSize(W,H);
@@ -202,30 +201,25 @@ document.addEventListener('DOMContentLoaded', function () {
         mt.appendChild(ren.domElement);
         var orb=new THREE.OrbitControls(cam,ren.domElement);
         orb.enableDamping=true;orb.dampingFactor=0.07;
-        orb.target.set(16,0,14);orb.minDistance=25;orb.maxDistance=170;orb.update();
+        orb.target.set(16,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
 
         // Lights (OLED high-contrast)
         scene.add(new THREE.AmbientLight(0x2a2a44,0.45));
         var dL=new THREE.DirectionalLight(0xffeedd,1.1);
-        dL.position.set(30,50,70);dL.castShadow=true;
+        dL.position.set(30,70,50);dL.castShadow=true;
         dL.shadow.mapSize.set(1024,1024);
         dL.shadow.camera.left=-60;dL.shadow.camera.right=60;
         dL.shadow.camera.top=60;dL.shadow.camera.bottom=-60;
         dL.shadow.camera.near=1;dL.shadow.camera.far=180;scene.add(dL);
-        var fL=new THREE.DirectionalLight(0x6680bb,0.28);fL.position.set(-30,-25,25);scene.add(fL);
-        var rL=new THREE.PointLight(0xff7700,0.4,140);rL.position.set(-20,40,50);scene.add(rL);
-        var bL=new THREE.PointLight(0x2266ff,0.2,100);bL.position.set(40,-30,30);scene.add(bL);
+        var fL=new THREE.DirectionalLight(0x6680bb,0.28);fL.position.set(-30,25,-25);scene.add(fL);
+        var rL=new THREE.PointLight(0xff7700,0.4,140);rL.position.set(-20,50,40);scene.add(rL);
+        var bL=new THREE.PointLight(0x2266ff,0.2,100);bL.position.set(40,30,-30);scene.add(bL);
 
-        // Root pivot: rotates Y-up scene content to Z-up world
-        var pivot=new THREE.Group();
-        pivot.rotation.x=-Math.PI/2; // Y→Z, Z→-Y
-        scene.add(pivot);
-
-        // Ground (inside pivot — Y-up internally, renders as Z-up)
+        // Ground
         var gnd=new THREE.Mesh(new THREE.PlaneGeometry(240,240),
             new THREE.MeshStandardMaterial({color:0x10141c,roughness:0.94,metalness:0.06}));
-        gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.1;gnd.receiveShadow=true;pivot.add(gnd);
-        pivot.add(new THREE.GridHelper(130,26,0x1c2030,0x141820));
+        gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.1;gnd.receiveShadow=true;scene.add(gnd);
+        scene.add(new THREE.GridHelper(130,26,0x1c2030,0x141820));
 
         // === MATERIALS ===
         var mM=new THREE.MeshStandardMaterial({color:0x3e4856,metalness:0.92,roughness:0.18});
@@ -237,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function gM(){return new THREE.MeshStandardMaterial({color:0xff9800,metalness:0.2,roughness:0.5,transparent:true,opacity:0,depthWrite:false});}
 
         // === PRIMARY ARM ===
-        var arm=new THREE.Group();pivot.add(arm);
+        var arm=new THREE.Group();scene.add(arm);
         // Base
         var ped=new THREE.Mesh(new THREE.CylinderGeometry(6,7.8,3.5,32),mJ);
         ped.position.set(0,1.75,0);ped.castShadow=true;arm.add(ped);
@@ -280,12 +274,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 fL:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM()),
                 fR:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM())};
             gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.bar,gg.fL,gg.fR];
-            gg.parts.forEach(function(p){p.visible=false;pivot.add(p);});
+            gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
             ghosts.push(gg);
         }
 
         // === BOX ===
-        var bxG=new THREE.Group();bxG.position.copy(BP);pivot.add(bxG);
+        var bxG=new THREE.Group();bxG.position.copy(BP);scene.add(bxG);
         var bxM=new THREE.Mesh(new THREE.BoxGeometry(BW,BH,BD),mBx);
         bxM.position.y=BH/2;bxM.castShadow=true;bxG.add(bxM);
         var bxE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BW,BH,BD)),mEd);
@@ -519,7 +513,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function softReset(){
-            // Reset physics and VAE state without touching sliders (for end-of-animation)
             P.tau.set(0,0,0);P.av.set(0,0,0);P.tQ.identity();
             P.gF=0;P.lH=0;P.det=false;
             V.mu=[0,0];V.sig=0;V.kl=0;V.hist=[];
@@ -533,29 +526,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function fullReset(){
-            // Reset physics
-            P.tau.set(0,0,0);P.av.set(0,0,0);P.tQ.identity();
-            P.gF=0;P.lH=0;P.det=false;
-            // Reset VAE
-            V.mu=[0,0];V.sig=0;V.kl=0;V.hist=[];
-            for(var i=0;i<NG;i++)V.eps[i]={x:0,y:0};
-            // Reset box
-            bxG.position.copy(BP);bxG.quaternion.identity();
-            boxAttached=false;boxGripOff.set(0,0,0);
-            // Reset arm to HOME
-            eeT.copy(HOME);gSp=SP_OPEN;
-            // Remove ghosts and torque arrow
-            ghosts.forEach(hideGh);
-            if(tArr){bxG.remove(tArr);tArr=null;}
-            // Reset critical overlay
-            critO.classList.remove('on');
-            // Reset sliders to default values
+            softReset();
             var sliderDefaults={scx:'3',scy:'-5',scz:'2',sma:'8',sth:'1.8',sdp:'28'};
             for(var sid in sliderDefaults){
                 var sl=document.getElementById(sid);
                 if(sl){sl.value=sliderDefaults[sid];sl.dispatchEvent(new Event('input'));}
             }
-            // Clear latent canvas
             lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
         }
 
