@@ -1,0 +1,231 @@
+---
+layout: default
+title: Variational Autoencoder 
+topic_id: ml-12
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Variational Autoencoder</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro"></a>
+            <a href="#demo"></a>
+            <a href="#"></a>    
+        </div>
+
+        <div class="container">  
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+                <!--Introduction here-->
+            </section>
+
+            <section id="demo" class="section-content">
+                <h2>Physical AI - VAE Uncertainty in Robotic Manipulation</h2>
+                
+                <h3>Overview</h3>
+                <p>
+                    This simulation demonstrates how a <strong>Variational Autoencoder (VAE)</strong> can be used as a real-time safety monitor during 
+                    robotic manipulation. A 2-link planar arm attempts to lift a box with an off-center mass. The VAE's posterior distribution 
+                    \(q(\mathbf{z} \mid \mathbf{x})\) encodes the robot's internal uncertainty about the physical state of the grasp. When this uncertainty exceeds a 
+                    learned threshold, the system aborts the lift to prevent a catastrophic drop.
+                </p>
+
+                <h3>The Physical Setup</h3>
+                <p>
+                    The robot is a 2-DOF revolute arm with link lengths \(L_1 = 24\) and \(L_2 = 22\), controlled by analytic inverse kinematics. 
+                    A rigid box of adjustable mass \(m\) sits on the ground plane with its <strong>center of mass (CoM)</strong> offset from its 
+                    geometric center by a user-controlled displacement \(\mathbf{c} = (c_x, c_y, c_z)\). This offset is the source of physical 
+                    uncertainty: the robot does not know the true CoM location in advance, and must infer it from sensor feedback during the lift.
+                </p>
+
+                <h3>Torque as Sensory Input</h3>
+                <p>
+                    Once the gripper secures the box and begins to lift, gravity acting on the offset CoM produces a <strong>torque</strong> about 
+                    the grip point:
+                </p>
+                <p>
+                    \[
+                    \boldsymbol{\tau} = (\mathbf{r}_{\text{CoM}} - \mathbf{r}_{\text{grip}}) \times (-mg\,\hat{\mathbf{y}})
+                    \]
+                </p>
+                <p>
+                    where \(\mathbf{r}_{\text{CoM}}\) is the world-space CoM position and \(\mathbf{r}_{\text{grip}}\) is the grip point. 
+                    This torque is the robot's primary sensory signal - it reveals how much the CoM deviates from the grip axis. 
+                    The torque vector is displayed as a green arrow on the box during the lift.
+                </p>
+
+                <h3>Rotational Dynamics</h3>
+                <p>
+                    The torque drives the box's rotational dynamics via the damped Euler equation:
+                </p>
+                <p>
+                    \[
+                    I\,\dot{\boldsymbol{\omega}} = \boldsymbol{\tau} - C_d\,\boldsymbol{\omega}
+                    \]
+                </p>
+                <p>
+                    where \(I\) is the moment of inertia, \(\boldsymbol{\omega}\) is the angular velocity, and \(C_d\) is the damping coefficient. 
+                    This produces the visible tilt of the box during lifting. Higher mass or larger CoM offset leads to larger torques, faster rotation, 
+                    and more pronounced tilt - all signals that feed into the VAE.
+                </p>
+
+                <h3>VAE Posterior:  \(q(\mathbf{z} \mid \mathbf{x})\)
+                <p>
+                    The sensory input \(\mathbf{x}\) (here, the torque feedback) is encoded into a 2D latent space \(\mathbf{z} = (z_1, z_2)\) via a 
+                    diagonal Gaussian posterior:
+                </p>
+                <p>
+                    \[
+                     q(\mathbf{z} \mid \mathbf{x}) = \mathcal{N}(\mathbf{z};\; \boldsymbol{\mu}(\mathbf{x}),\; \sigma(\mathbf{x})^2 \mathbf{I})
+                    \]
+                </p>
+                <p>
+                    The encoder maps torque to the posterior parameters as follows:
+                </p>
+                <ul>
+                    <li>\(\boldsymbol{\mu} = (0.07\,\tau_x,\; 0.07\,\tau_z)\) - the posterior mean shifts proportionally to the horizontal torque components</li>
+                    <li>\(\sigma = 0.011\,\|\boldsymbol{\tau}\|\) - the posterior spread grows with the torque magnitude</li>
+                </ul>
+                <p>
+                    The key insight is that <strong>\(\sigma\) encodes uncertainty</strong>. 
+                    When the torque is small (CoM near grip axis), \(\sigma\) is small and the robot is confident in its grasp. 
+                    When the torque is large (CoM far off-center), \(\sigma\) grows, reflecting the robot's increasing uncertainty 
+                    about whether the grasp is stable enough to complete the lift.
+                </p>
+
+                <h3>The Latent Space Visualization</h3>
+                <p>
+                    The top-right canvas shows the 2D latent space in real time:
+                </p>
+                <ul>
+                    <li><strong style="color:#64b4ff;">Blue dot</strong> at the origin - the prior \(p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})\)</li>
+                    <li><strong style="color:#ff9800;">Orange dot</strong> - the posterior mean \(\boldsymbol{\mu}\), which drifts as torque changes</li>
+                    <li><strong style="color:#ff9800;">Orange circle</strong> - the 1 \(\sigma\)  contour of the posterior distribution</li>
+                    <li><strong style="color:#ffa726;">Orange scatter points</strong> - stochastic samples \(\mathbf{z}^{(i)} \sim q(\mathbf{z} \mid \mathbf{x})\), visualized as ghost arms in 3D</li>
+                    <li><strong style="color:#ff5252;">Red dashed circle</strong> - the abort threshold on \(\sigma\) </li>
+                </ul>
+                <p>
+                    The display uses <strong>dynamic scaling</strong>: both the \(\sigma\)  circle and the threshold circle always fit 
+                    within the canvas, preserving their true ratio. When the lift fails, the orange circle is visibly larger than the 
+                    red circle, making the safety violation immediately apparent.
+                </p>
+
+                <h3>KL Divergence</h3>
+                <p>
+                    The telemetry panel also reports the KL divergence between the posterior and prior:
+                </p>
+                <p>
+                    \[
+                    D_{\mathrm{KL}}\!\left[\,q(\mathbf{z} \mid \mathbf{x})\;\|\;p(\mathbf{z})\,\right]
+                     = \frac{1}{2}\!\left(\|\boldsymbol{\mu}\|^2 + 2\sigma^2 - 2\ln\sigma^2 - 2\right)
+                    \]
+                </p>
+                <p>
+                    This quantity measures how far the posterior has diverged from the prior. A large KL divergence indicates that the 
+                    sensory feedback has pushed the robot's internal representation far from its initial beliefs - a sign of an unusual 
+                    or difficult grasp configuration.
+                </p>
+
+                <h3>Ghost Arms: Sampling Uncertainty</h3>
+                <p>
+                    The five semi-transparent <strong>ghost arms</strong> visualize samples from the posterior. Each ghost arm \(i\) receives a 
+                    perturbed end-effector target:
+                </p>
+                <p>
+                    \[
+                    \mathbf{t}^{(i)} = \mathbf{t}_{\text{primary}} + \boldsymbol{\mu} \cdot s_{\mu} + \sigma \cdot \boldsymbol{\epsilon}^{(i)} \cdot s_{\sigma}
+                    \]
+                </p>
+                <p>
+                    where \(\boldsymbol{\epsilon}^{(i)} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) are smoothed Gaussian samples 
+                    (using exponential moving average with \(\alpha = 0.92\) for visual stability). When \(\sigma\) is small, the ghosts cluster 
+                    tightly around the primary arm. When \(\sigma\) is large, they splay outward, creating a visual "cloud of possible robot states" 
+                    that communicates the degree of uncertainty.
+                </p>
+
+                <h3>The Safety Decision</h3>
+                <p>
+                    The lift sequence proceeds through a state machine:
+                </p>
+                <ol>
+                    <li><strong>APPROACH</strong> &rarr; Arm moves from home to hover above the box</li>
+                    <li><strong>DESCEND</strong> &rarr; Arm lowers to grasp height</li>
+                    <li><strong>GRASP</strong> &rarr; Fingers close on the box</li>
+                    <li><strong>PRE_LIFT</strong> &rarr; Small test lift (5 units). During this phase, the system assesses \(\sigma\) for 0.5 seconds. If \(\sigma > \sigma_{\text{thr}}\), the lift is aborted immediately.</li>
+                    <li><strong>LIFT_OK</strong> &rarr; Full lift if \(\sigma\) stayed below threshold. Continuous safety monitoring continues; an abort can still trigger if \(\sigma\) spikes during the lift.</li>
+                    <li><strong>ABORT</strong> &rarr; Three-phase emergency: lower the box, release grip, return home.</li>
+                </ol>
+                <p>
+                    The critical decision is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This is a direct analogy to how real-world 
+                    autonomous systems use learned uncertainty estimates for <strong>out-of-distribution detection</strong>: if the VAE posterior 
+                    is too diffuse, the current observation lies far from the training distribution, and the robot should not trust its control policy.
+                </p>
+
+                <h3>What the Parameters Control</h3>
+                <p>
+                    <strong>CoM Offset</strong> \((c_x, c_y, c_z)\): Shifts the center of mass away from the box's 
+                    geometric center. Larger offsets produce larger torques, higher \(\sigma\) and a higher likelihood of abort. This simulates 
+                    real-world scenarios where the load distribution inside a package is unknown.
+                </p>
+                <p>
+                    <strong>Box Mass</strong>: Scales the gravitational force \(mg\), amplifying the torque for a given CoM offset. Heavy objects 
+                    are harder to lift safely.
+                </p>
+                <p>
+                    <strong>\(sigma\) Threshold</strong>: The abort boundary. Lowering it makes the robot more cautious (aborting earlier); 
+                    raising it makes the robot more risk-tolerant. This models the engineering trade-off between safety and task completion 
+                    in autonomous systems.
+                </p>
+                <p>
+                    <strong>Damping \(C_d\): Controls how quickly the box's rotational oscillation decays. High damping suppresses 
+                    wobble; low damping allows the box to swing more freely, producing a more dynamic and potentially uncertain lift.
+                </p>
+
+                <h3>Key Takeaways</h3>
+                <p>
+                    This demo illustrates three interconnected ideas from modern physical AI:
+                </p>
+                <p>
+                    <strong>1. Uncertainty quantification through latent representations:</strong><br>
+                    The VAE does not output a single point estimate of the physical state - it outputs a <em>distribution</em>. 
+                    The spread of this distribution (\(\sigma\)) is a principled measure of epistemic uncertainty derived from sensory feedback.
+                </p>
+                <p>
+                    <strong>2. Safety-critical decision-making under uncertainty:</strong><br>
+                    Rather than blindly executing a motion plan, the robot uses its uncertainty estimate as a gating signal. When \(\sigma\) exceeds 
+                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. This is directly analogous to 
+                    uncertainty-aware reinforcement learning and Bayesian safe control.
+                </p>
+                <p>
+                    <strong>3. The connection between physics and information:</strong><br>
+                    The torque - a purely physical quantity governed by Newton's laws - becomes the input to a probabilistic inference engine. 
+                    The KL divergence between posterior and prior quantifies how much information the robot has gained (or how surprised it is) 
+                    from the physical interaction. Large KL divergence means the physical situation deviates significantly from the robot's expectations.
+                </p>
+                
+                <div id="simulation-container"></div>
+
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script> 
+        <script src="/js/sec5_p12_vae_uncertainty.js"></script>
+
+    </body>
+</html>
+
+
+
