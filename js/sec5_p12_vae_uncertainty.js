@@ -611,10 +611,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // === LATENT SPACE CANVAS ===
         function drawLat(){
             var w=lcv.width,h=lcv.height,cx=w/2,cy=h/2;
-            // Dynamic scale: largest of (σ, threshold) maps to 40% of canvas half-width
-            // so both circles always fit and their ratio is visually clear
-            var maxR=Math.max(V.sig,V.thr,0.5);
-            var sc=(w/2*0.4)/maxR; // pixels per latent unit
+            // Fixed base scale: max slider value (3.0) maps to 40% of canvas half-width
+            // Only expand if σ exceeds 3.0 (keeps red circle consistent before/after Execute)
+            var refMax=Math.max(V.sig,3.0);
+            var sc=(w/2*0.4)/refMax;
             // In DONE state, use opaque fill to prevent fading; otherwise semi-transparent for trail
             if(state===ST.DONE){lx.fillStyle='#040608';} else {lx.fillStyle='rgba(4,6,8,.14)';}
             lx.fillRect(0,0,w,h);
