@@ -625,7 +625,12 @@ document.addEventListener('DOMContentLoaded', function () {
             lx.strokeStyle='rgba(255,82,82,.25)';lx.lineWidth=1;
             lx.setLineDash([4,4]);lx.beginPath();lx.arc(cx,cy,V.thr*sc,0,Math.PI*2);lx.stroke();lx.setLineDash([]);
             if(V.sig>0.008){
-                var sr=V.sig*sc,mx=cx+V.mu[0]*sc,my=cy-V.mu[1]*sc;
+                var sr=Math.min(V.sig*sc,w/2-10); // cap radius to fit canvas
+                var rawMx=cx+V.mu[0]*sc, rawMy=cy-V.mu[1]*sc;
+                // Clamp mu position so sigma circle stays partially visible
+                var pad=Math.min(sr+10,w/2-5);
+                var mx=Math.max(pad,Math.min(w-pad,rawMx));
+                var my=Math.max(pad,Math.min(h-pad,rawMy));
                 var gr=lx.createRadialGradient(mx,my,0,mx,my,sr*2.2);
                 gr.addColorStop(0,'rgba(255,152,0,.24)');gr.addColorStop(0.5,'rgba(255,152,0,.06)');gr.addColorStop(1,'rgba(255,152,0,0)');
                 lx.fillStyle=gr;lx.beginPath();lx.arc(mx,my,sr*2.2,0,Math.PI*2);lx.fill();
