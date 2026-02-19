@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function () {
         '</div></div>',
         '<div class="vc"><div class="vch">Center of Mass Offset</div><div class="vcs">From box geometric center</div>',
           '<div class="vsr"><label>CoM X</label><input type="range" id="scx" min="-8" max="8" step="0.5" value="3"><span id="dcx">3.0</span></div>',
-          '<div class="vsr"><label>CoM Y</label><input type="range" id="scy" min="-12" max="0" step="0.5" value="-5"><span id="dcy">-5.0</span></div>',
-          '<div class="vsr"><label>CoM Z</label><input type="range" id="scz" min="-8" max="8" step="0.5" value="2"><span id="dcz">2.0</span></div>',
+          '<div class="vsr"><label>CoM Y</label><input type="range" id="scz" min="-8" max="8" step="0.5" value="2"><span id="dcz">2.0</span></div>',
+          '<div class="vsr"><label>CoM Z</label><input type="range" id="scy" min="-12" max="0" step="0.5" value="-5"><span id="dcy">-5.0</span></div>',
         '</div>',
         '<div class="vc"><div class="vch">Simulation Parameters</div>',
           '<div class="vsr"><label>Box Mass</label><input type="range" id="sma" min="1" max="20" step="0.5" value="8"><span id="dma">8.0 kg</span></div>',
@@ -192,7 +192,8 @@ document.addEventListener('DOMContentLoaded', function () {
         scene.background=new THREE.Color(0x050710);
         scene.fog=new THREE.FogExp2(0x050710,0.002);
         var cam=new THREE.PerspectiveCamera(46,W/H,0.5,500);
-        cam.position.set(60,48,55);
+        cam.up.set(0,0,1); // Z-up convention
+        cam.position.set(60,55,48);
         var ren=new THREE.WebGLRenderer({antialias:true});
         ren.setPixelRatio(Math.min(devicePixelRatio,2));
         ren.setSize(W,H);
@@ -201,25 +202,30 @@ document.addEventListener('DOMContentLoaded', function () {
         mt.appendChild(ren.domElement);
         var orb=new THREE.OrbitControls(cam,ren.domElement);
         orb.enableDamping=true;orb.dampingFactor=0.07;
-        orb.target.set(16,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
+        orb.target.set(16,0,14);orb.minDistance=25;orb.maxDistance=170;orb.update();
 
         // Lights (OLED high-contrast)
         scene.add(new THREE.AmbientLight(0x2a2a44,0.45));
         var dL=new THREE.DirectionalLight(0xffeedd,1.1);
-        dL.position.set(30,70,50);dL.castShadow=true;
+        dL.position.set(30,50,70);dL.castShadow=true;
         dL.shadow.mapSize.set(1024,1024);
         dL.shadow.camera.left=-60;dL.shadow.camera.right=60;
         dL.shadow.camera.top=60;dL.shadow.camera.bottom=-60;
         dL.shadow.camera.near=1;dL.shadow.camera.far=180;scene.add(dL);
-        var fL=new THREE.DirectionalLight(0x6680bb,0.28);fL.position.set(-30,25,-25);scene.add(fL);
-        var rL=new THREE.PointLight(0xff7700,0.4,140);rL.position.set(-20,50,40);scene.add(rL);
-        var bL=new THREE.PointLight(0x2266ff,0.2,100);bL.position.set(40,30,-30);scene.add(bL);
+        var fL=new THREE.DirectionalLight(0x6680bb,0.28);fL.position.set(-30,-25,25);scene.add(fL);
+        var rL=new THREE.PointLight(0xff7700,0.4,140);rL.position.set(-20,40,50);scene.add(rL);
+        var bL=new THREE.PointLight(0x2266ff,0.2,100);bL.position.set(40,-30,30);scene.add(bL);
 
-        // Ground
+        // Root pivot: rotates Y-up scene content to Z-up world
+        var pivot=new THREE.Group();
+        pivot.rotation.x=-Math.PI/2; // Y→Z, Z→-Y
+        scene.add(pivot);
+
+        // Ground (inside pivot — Y-up internally, renders as Z-up)
         var gnd=new THREE.Mesh(new THREE.PlaneGeometry(240,240),
             new THREE.MeshStandardMaterial({color:0x10141c,roughness:0.94,metalness:0.06}));
-        gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.1;gnd.receiveShadow=true;scene.add(gnd);
-        scene.add(new THREE.GridHelper(130,26,0x1c2030,0x141820));
+        gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.1;gnd.receiveShadow=true;pivot.add(gnd);
+        pivot.add(new THREE.GridHelper(130,26,0x1c2030,0x141820));
 
         // === MATERIALS ===
         var mM=new THREE.MeshStandardMaterial({color:0x3e4856,metalness:0.92,roughness:0.18});
@@ -231,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function gM(){return new THREE.MeshStandardMaterial({color:0xff9800,metalness:0.2,roughness:0.5,transparent:true,opacity:0,depthWrite:false});}
 
         // === PRIMARY ARM ===
-        var arm=new THREE.Group();scene.add(arm);
+        var arm=new THREE.Group();pivot.add(arm);
         // Base
         var ped=new THREE.Mesh(new THREE.CylinderGeometry(6,7.8,3.5,32),mJ);
         ped.position.set(0,1.75,0);ped.castShadow=true;arm.add(ped);
@@ -274,12 +280,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 fL:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM()),
                 fR:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM())};
             gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.bar,gg.fL,gg.fR];
-            gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
+            gg.parts.forEach(function(p){p.visible=false;pivot.add(p);});
             ghosts.push(gg);
         }
 
         // === BOX ===
-        var bxG=new THREE.Group();bxG.position.copy(BP);scene.add(bxG);
+        var bxG=new THREE.Group();bxG.position.copy(BP);pivot.add(bxG);
         var bxM=new THREE.Mesh(new THREE.BoxGeometry(BW,BH,BD),mBx);
         bxM.position.y=BH/2;bxM.castShadow=true;bxG.add(bxM);
         var bxE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BW,BH,BD)),mEd);
