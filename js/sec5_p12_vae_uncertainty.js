@@ -610,27 +610,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // === LATENT SPACE CANVAS ===
         function drawLat(){
-            var w=lcv.width,h=lcv.height,cx=w/2,cy=h/2,sc=65;
+            var w=lcv.width,h=lcv.height,cx=w/2,cy=h/2;
+            // Dynamic scale: largest of (σ, threshold) maps to 40% of canvas half-width
+            // so both circles always fit and their ratio is visually clear
+            var maxR=Math.max(V.sig,V.thr,0.5);
+            var sc=(w/2*0.4)/maxR; // pixels per latent unit
             // In DONE state, use opaque fill to prevent fading; otherwise semi-transparent for trail
             if(state===ST.DONE){lx.fillStyle='#040608';} else {lx.fillStyle='rgba(4,6,8,.14)';}
             lx.fillRect(0,0,w,h);
+            // Grid lines (fixed spacing based on current scale)
+            var gridStep=Math.max(1,Math.round(maxR/3));
             lx.strokeStyle='rgba(255,255,255,.025)';lx.lineWidth=0.5;
-            for(var i=-3;i<=3;i++){var px=cx+i*sc;
-                lx.beginPath();lx.moveTo(px,0);lx.lineTo(px,h);lx.stroke();
-                lx.beginPath();lx.moveTo(0,cy+i*sc);lx.lineTo(w,cy+i*sc);lx.stroke();}
+            for(var i=-5;i<=5;i++){var gv=i*gridStep;var px=cx+gv*sc;var py=cy-gv*sc;
+                if(px>0&&px<w){lx.beginPath();lx.moveTo(px,0);lx.lineTo(px,h);lx.stroke();}
+                if(py>0&&py<h){lx.beginPath();lx.moveTo(0,py);lx.lineTo(w,py);lx.stroke();}}
             lx.strokeStyle='rgba(255,255,255,.08)';lx.lineWidth=1;
             lx.beginPath();lx.moveTo(cx,0);lx.lineTo(cx,h);lx.stroke();
             lx.beginPath();lx.moveTo(0,cy);lx.lineTo(w,cy);lx.stroke();
-            // Threshold circle
-            lx.strokeStyle='rgba(255,82,82,.25)';lx.lineWidth=1;
-            lx.setLineDash([4,4]);lx.beginPath();lx.arc(cx,cy,V.thr*sc,0,Math.PI*2);lx.stroke();lx.setLineDash([]);
+            // Threshold circle (red dashed) — always centered at origin
+            var thrR=V.thr*sc;
+            lx.strokeStyle='rgba(255,82,82,.35)';lx.lineWidth=1.5;
+            lx.setLineDash([4,4]);lx.beginPath();lx.arc(cx,cy,thrR,0,Math.PI*2);lx.stroke();lx.setLineDash([]);
             if(V.sig>0.008){
-                var sr=Math.min(V.sig*sc,w/2-10); // cap radius to fit canvas
-                var rawMx=cx+V.mu[0]*sc, rawMy=cy-V.mu[1]*sc;
-                // Clamp mu position so sigma circle stays partially visible
-                var pad=Math.min(sr+10,w/2-5);
-                var mx=Math.max(pad,Math.min(w-pad,rawMx));
-                var my=Math.max(pad,Math.min(h-pad,rawMy));
+                var sr=V.sig*sc;
+                var mx=cx+V.mu[0]*sc, my=cy-V.mu[1]*sc;
+                // Clamp mu so sigma circle stays visible on canvas
+                var pad=Math.min(sr*0.5+10,w/2-5);
+                mx=Math.max(pad,Math.min(w-pad,mx));
+                my=Math.max(pad,Math.min(h-pad,my));
                 var gr=lx.createRadialGradient(mx,my,0,mx,my,sr*2.2);
                 gr.addColorStop(0,'rgba(255,152,0,.24)');gr.addColorStop(0.5,'rgba(255,152,0,.06)');gr.addColorStop(1,'rgba(255,152,0,0)');
                 lx.fillStyle=gr;lx.beginPath();lx.arc(mx,my,sr*2.2,0,Math.PI*2);lx.fill();
