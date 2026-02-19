@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var BP=new THREE.Vector3(34,0,0);     // box at X=34 — pushed out so arm link clears during lift
         var L1=24,L2=22;                      // arm link lengths
         var LR=2.0,JR=2.5;                   // link/joint radii
-        var FL=10,FW=1.8,FD=1.2;             // finger: 10 long (Y), 1.8 thick (Z), 1.2 thin (X)
+        var FL=6,FW=1.8,FD=1.2;              // finger: 6 long (Y), 1.8 thick (Z), 1.2 thin (X)
         var BRK_W=1.0;                        // bracket bar X-width (thin)
         var SP_OPEN=BD+12;                    // open spread > BD+finger clearance
         var SP_CLOSED=BD+FW;                  // fingers contact box ±Z faces
@@ -181,12 +181,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var boxGripOff=new THREE.Vector3(); // wrist-to-box-origin offset
 
         // Key positions
-        // Finger tip Y = wrist.y - bracket_half - FL = wrist.y - 1.25 - FL
-        // Bracket ceiling = wrist.y + 1.25
-        // For ceiling at BH + EPS_GAP: wrist.y = BH + EPS_GAP - 1.25
-        // For finger tips at box top: wrist.y = BH + 1.25 + FL
-        // Use the higher of the two to satisfy both constraints:
-        var GRASP_WRIST_Y = Math.max(BH + EPS_GAP + 1.25, BH + FL + 1.25);  // = 29.25
+        // Finger top = wrist_Y - bracket_half(1.25)
+        // Finger bottom = wrist_Y - 1.25 - FL
+        // We want finger bottom ~3 units below box top for a secure grip:
+        // wrist_Y - 1.25 - FL = BH - 3  =>  wrist_Y = BH - 3 + 1.25 + FL = 18 - 3 + 1.25 + 6 = 22.25
+        // Bracket ceiling = 22.25 + 1.25 = 23.5 — well above box top(18), no penetration
+        var GRASP_WRIST_Y = BH - 3 + 1.25 + FL;  // = 22.25
         var HOME=new THREE.Vector3(8,46,0);
         var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+14, BP.z);  // above grasp, within IK reach
         var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
