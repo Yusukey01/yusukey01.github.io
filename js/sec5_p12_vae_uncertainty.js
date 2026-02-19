@@ -184,12 +184,21 @@ document.addEventListener('DOMContentLoaded', function () {
         // Finger top = wrist_Y - bracket_half(1.25)
         // Finger bottom = wrist_Y - 1.25 - FL
         // We want finger bottom ~3 units below box top for a secure grip:
-        // wrist_Y - 1.25 - FL = BH - 3  =>  wrist_Y = BH - 3 + 1.25 + FL = 18 - 3 + 1.25 + 6 = 22.25
-        // Bracket ceiling = 22.25 + 1.25 = 23.5 — well above box top(18), no penetration
-        var GRASP_WRIST_Y = BH - 3 + 1.25 + FL;  // = 22.25
+        // gripY - 1.25 - FL = BH - 3  =>  gripY = BH - 3 + 1.25 + FL = 22.25
+        // Bracket ceiling = 22.25 + 1.25 = 23.5 — above box top(18)
+        var GRIP_Y = BH - 3 + 1.25 + FL;     // = 22.25: gripper bracket Y above box
+        var GRASP_WRIST_Y = GRIP_Y;           // alias for state machine
+
+        // Wrist offset: IK wrist sits behind the grip point (toward base)
+        // so Link2 angles downward from behind, not through the box
+        // Box near edge (toward base) = BP.x - BW/2 = 34 - 6 = 28
+        // Place wrist at X = BP.x - BW/2 - 2 = 26 (2 units clearance from box face)
+        var WRIST_X_OFF = -(BW/2 + 2);       // = -8: wrist is 8 units behind box center in X
+        // Grip point is directly above box center
+        var GRIP_PT=new THREE.Vector3(BP.x, GRIP_Y, BP.z);
         var HOME=new THREE.Vector3(8,46,0);
-        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+14, BP.z);  // above grasp, within IK reach
-        var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
+        var HOVER=new THREE.Vector3(BP.x+WRIST_X_OFF, GRIP_Y+14, BP.z);  // above box, wrist offset back
+        var BOX_TOP_PT=new THREE.Vector3(BP.x+WRIST_X_OFF, GRIP_Y, BP.z); // wrist at grasp height, offset back
 
         // === THREE.JS SCENE ===
         var W=mt.clientWidth||800,H=Math.max(mt.clientHeight||520,480);
@@ -325,24 +334,30 @@ document.addEventListener('DOMContentLoaded', function () {
             m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());
         }
 
-        // === POSE: Top-down gripper rotated 90° — bracket spans ±Z, fingers hang -Y ===
+        // === POSE: Gripper placed at grip point (above box), decoupled from IK wrist ===
+        // IK wrist is offset behind box; gripper extends forward horizontally
+        function gripPos(ik){
+            // Grip point: same Y as wrist, but X shifted forward by -WRIST_X_OFF to center over box
+            return new THREE.Vector3(ik.wrist.x - WRIST_X_OFF, ik.wrist.y, ik.wrist.z);
+        }
         function poseArm(ik,sp){
             posC(l1,ik.base,ik.elbow); j1.position.copy(ik.elbow);
             posC(l2,ik.elbow,ik.wrist); j2.position.copy(ik.wrist);
-            // Bracket bar spans ±Z at wrist level
-            bar.position.copy(ik.wrist); bar.scale.z=sp; bar.quaternion.identity();
-            // Fingers hang down (−Y) from ±Z bracket ends
+            // Gripper at grip point (above box center), not at IK wrist
+            var gp=gripPos(ik);
+            bar.position.copy(gp); bar.scale.z=sp; bar.quaternion.identity();
             var hs=sp/2, fd=FL/2+1.25;
-            fLm.position.set(ik.wrist.x, ik.wrist.y-fd, ik.wrist.z-hs); fLm.quaternion.identity();
-            fRm.position.set(ik.wrist.x, ik.wrist.y-fd, ik.wrist.z+hs); fRm.quaternion.identity();
+            fLm.position.set(gp.x, gp.y-fd, gp.z-hs); fLm.quaternion.identity();
+            fRm.position.set(gp.x, gp.y-fd, gp.z+hs); fRm.quaternion.identity();
         }
         function poseGh(g,ik,sp,op){
             posC(g.l1,ik.base,ik.elbow); g.j1.position.copy(ik.elbow);
             posC(g.l2,ik.elbow,ik.wrist); g.j2.position.copy(ik.wrist);
-            g.bar.position.copy(ik.wrist); g.bar.scale.z=sp; g.bar.quaternion.identity();
+            var gp=gripPos(ik);
+            g.bar.position.copy(gp); g.bar.scale.z=sp; g.bar.quaternion.identity();
             var hs=sp/2,fd=FL/2+1.25;
-            g.fL.position.set(ik.wrist.x,ik.wrist.y-fd,ik.wrist.z-hs); g.fL.quaternion.identity();
-            g.fR.position.set(ik.wrist.x,ik.wrist.y-fd,ik.wrist.z+hs); g.fR.quaternion.identity();
+            g.fL.position.set(gp.x,gp.y-fd,gp.z-hs); g.fL.quaternion.identity();
+            g.fR.position.set(gp.x,gp.y-fd,gp.z+hs); g.fR.quaternion.identity();
             g.parts.forEach(function(p){p.visible=true;p.material.opacity=op;});
         }
         function hideGh(g){g.parts.forEach(function(p){p.visible=false;});}
@@ -388,16 +403,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // === LIFT LOGIC: rigid parenting — box locked to wrist ===
+        // === LIFT LOGIC: rigid parenting — box locked to grip point ===
         function doLiftFrame(dt){
             var ik=solveIK(eeT);
-            // Box position: wrist pos + stored offset
+            var gp=gripPos(ik);
+            // Box position: grip point + stored offset
             bxG.position.set(
-                ik.wrist.x + boxGripOff.x,
-                ik.wrist.y + boxGripOff.y,
-                ik.wrist.z + boxGripOff.z
+                gp.x + boxGripOff.x,
+                gp.y + boxGripOff.y,
+                gp.z + boxGripOff.z
             );
-            P.tau=calcTau(ik.wrist);
+            P.tau=calcTau(gp);
             stepPhys(dt);
             bxG.quaternion.copy(P.tQ);
             showTA(P.tau.clone().multiplyScalar(0.0015));
@@ -426,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Hover → box top, Y-CLAMPED
                 var d=1.3,s=sm(t/d);
                 var rawY=lr(HOVER.y,BOX_TOP_PT.y,s);
-                eeT.set(BP.x, Math.max(rawY,GRASP_WRIST_Y), BP.z); // Y clamp: finger tips at box top
+                eeT.set(BP.x+WRIST_X_OFF, Math.max(rawY,GRASP_WRIST_Y), BP.z); // Y clamp
                 gSp=SP_OPEN;
                 if(t>=d)setSt(ST.GRASP);break;}
 
@@ -438,9 +454,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 gSp=Math.max(raw,SP_CLOSED); // collision: never < box width
                 P.gF=s*P.mass*P.g*1.6;
                 if(t>=d){
-                    // Compute wrist-to-box offset with epsilon vertical gap
+                    // Compute grip-point-to-box offset with epsilon vertical gap
                     var ik=solveIK(eeT);
-                    boxGripOff.copy(BP).sub(ik.wrist);
+                    var gp=gripPos(ik);
+                    boxGripOff.copy(BP).sub(gp);
                     boxGripOff.y-=EPS_GAP; // push box down to prevent ceiling penetration
                     boxAttached=true;
                     setSt(ST.PRE_LIFT);
@@ -451,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var liftPhase=Math.min(t,0.4);
                 var liftS=sm(liftPhase/0.4);
                 P.lH=PRE_LIFT_H*liftS;
-                eeT.set(BP.x, GRASP_WRIST_Y+P.lH, BP.z);
+                eeT.set(BP.x+WRIST_X_OFF, GRASP_WRIST_Y+P.lH, BP.z);
                 gSp=SP_CLOSED;
 
                 if(t>0.12&&!P.det) P.det=true;
@@ -467,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Full lift upward — σ was safe
                 var speed=14;
                 P.lH=PRE_LIFT_H+speed*t;
-                eeT.set(BP.x, GRASP_WRIST_Y+P.lH, BP.z);
+                eeT.set(BP.x+WRIST_X_OFF, GRASP_WRIST_Y+P.lH, BP.z);
                 gSp=SP_CLOSED;
                 doLiftFrame(dt);
                 // Continuous safety re-check
@@ -482,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Phase 1: lower box
                     var ls=sm(t/1.2);
                     P.lH=Math.max(0,P.lH*(1-ls));
-                    eeT.set(BP.x,GRASP_WRIST_Y+P.lH,BP.z);
+                    eeT.set(BP.x+WRIST_X_OFF,GRASP_WRIST_Y+P.lH,BP.z);
                     gSp=SP_CLOSED;
                     if(P.det) doLiftFrame(dt);
                     ghosts.forEach(function(g){g.parts.forEach(function(p){p.material.opacity*=0.92;});});
@@ -490,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Phase 2: release
                     var rs=sm((t-1.2)/0.6);
                     gSp=lr(SP_CLOSED,SP_OPEN,rs);
-                    eeT.set(BP.x,GRASP_WRIST_Y+2,BP.z);
+                    eeT.set(BP.x+WRIST_X_OFF,GRASP_WRIST_Y+2,BP.z);
                     if(boxAttached){
                         boxAttached=false;P.det=false;
                         bxG.position.copy(BP);bxG.quaternion.identity();
@@ -500,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     // Phase 3: return home
                     var hs=sm((t-1.8)/1.0);
-                    eeT.set(lr(BP.x,HOME.x,hs),lr(GRASP_WRIST_Y+2,HOME.y,hs),lr(BP.z,HOME.z,hs));
+                    eeT.set(lr(BP.x+WRIST_X_OFF,HOME.x,hs),lr(GRASP_WRIST_Y+2,HOME.y,hs),lr(BP.z,HOME.z,hs));
                     gSp=SP_OPEN;
                 }
                 if(t>=d){softReset();setSt(ST.IDLE);}
