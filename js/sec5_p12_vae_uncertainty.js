@@ -168,8 +168,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var PRE_LIFT_WAIT=0.5;                // σ assessment duration
 
         // === STATES ===
-        var ST={IDLE:0,APPROACH:1,DESCEND:2,GRASP:3,PRE_LIFT:4,LIFT_OK:5,ABORT:6};
-        var STN=['IDLE','APPROACH','DESCEND','GRASP','PRE_LIFT','LIFT_OK','ABORT'];
+        var ST={IDLE:0,APPROACH:1,DESCEND:2,GRASP:3,PRE_LIFT:4,LIFT_OK:5,ABORT:6,DONE:7};
+        var STN=['IDLE','APPROACH','DESCEND','GRASP','PRE_LIFT','LIFT_OK','ABORT','DONE'];
         var state=ST.IDLE,stT=0,running=false;
 
         // === PHYSICS ===
@@ -504,13 +504,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 doLiftFrame(dt);
                 // Continuous safety re-check
                 if(V.sig>V.thr){setSt(ST.ABORT);break;}
-                // Pause at top — show success, wait for Reset
+                // Pause at top — freeze and show success
                 if(P.lH>40){
                     P.lH=40;
                     eeT.set(BP.x+WRIST_X_OFF, GRASP_WRIST_Y+P.lH, BP.z);
+                    // Freeze physics so box stops drifting
+                    P.det=false;P.av.set(0,0,0);
+                    // Lock box to final grip position
+                    var ik=solveIK(eeT);var gp=gripPos(ik);
+                    bxG.position.set(gp.x+boxGripOff.x,gp.y+boxGripOff.y,gp.z+boxGripOff.z);
                     succO.classList.add('on');
                     succD.textContent='LIFT COMPLETE \u2014 \u03C3 = '+V.sig.toFixed(3)+' < threshold '+V.thr.toFixed(2);
-                    running=false;bGo.disabled=true;
+                    setSt(ST.DONE);
                 }
                 break;}
 
@@ -542,8 +547,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     eeT.set(lr(BP.x+WRIST_X_OFF,HOME.x,hs),lr(GRASP_WRIST_Y+2,HOME.y,hs),lr(BP.z,HOME.z,hs));
                     gSp=SP_OPEN;
                 }
-                if(t>=d){running=false;bGo.disabled=true;}
+                if(t>=d){
+                    // Freeze — ensure box on ground, physics stopped
+                    P.det=false;P.av.set(0,0,0);P.tau.set(0,0,0);
+                    bxG.position.copy(BP);bxG.quaternion.identity();
+                    setSt(ST.DONE);
+                }
                 break;}
+
+            case ST.DONE:
+                // Frozen — wait for user to click Reset
+                break;
             }
         }
 
@@ -552,7 +566,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if(s===ST.ABORT){
                 critO.classList.add('on');
                 critD.textContent='ABORTING LIFT \u2014 \u03C3 = '+V.sig.toFixed(3)+' > threshold '+V.thr.toFixed(2);
-            } else critO.classList.remove('on');
+            } else if(s!==ST.DONE) {
+                critO.classList.remove('on');
+            }
+            if(s===ST.DONE){running=false;bGo.disabled=true;}
             if(s===ST.IDLE){running=false;bGo.disabled=false;ghosts.forEach(hideGh);}
         }
 
@@ -632,6 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if(state===ST.PRE_LIFT)badge.classList.add('sp');
             else if(state===ST.LIFT_OK)badge.classList.add('ss');
             else if(state===ST.ABORT)badge.classList.add('sc');
+            else if(state===ST.DONE){badge.classList.add(succO.classList.contains('on')?'ss':'sc');}
             else if(state===ST.GRASP||state===ST.DESCEND)badge.classList.add('sl');
         }
 
