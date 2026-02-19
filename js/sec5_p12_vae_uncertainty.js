@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if(state===ST.DONE){lx.fillStyle='#040608';} else {lx.fillStyle='rgba(4,6,8,.14)';}
             lx.fillRect(0,0,w,h);
             // Grid lines (fixed spacing based on current scale)
-            var gridStep=Math.max(1,Math.round(maxR/3));
+            var gridStep=Math.max(1,Math.round(refMax/3));
             lx.strokeStyle='rgba(255,255,255,.025)';lx.lineWidth=0.5;
             for(var i=-5;i<=5;i++){var gv=i*gridStep;var px=cx+gv*sc;var py=cy-gv*sc;
                 if(px>0&&px<w){lx.beginPath();lx.moveTo(px,0);lx.lineTo(px,h);lx.stroke();}
