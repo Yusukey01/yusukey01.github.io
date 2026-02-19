@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // === BUTTONS ===
         bGo.addEventListener('click',function(){
             if(running)return;running=true;bGo.disabled=true;
-            fullReset();setSt(ST.APPROACH);
+            softReset();setSt(ST.APPROACH);
         });
         bRs.addEventListener('click',function(){
             fullReset();setSt(ST.IDLE);running=false;bGo.disabled=false;
