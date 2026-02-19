@@ -1,4 +1,4 @@
-// sec5_p12_vae_uncertainty.js  v8.0
+// sec5_p12_vae_uncertainty.js  v7.0
 // VAE Uncertainty in Robotic Manipulation — MATH-CS COMPASS
 // Top-down grasp: Π-gripper descends, fingers close on ±X box edges, lifts vertically
 // PRE_LIFT safety assessment → LIFT_OK or ABORT
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // === CONSTANTS ===
         var BW=20,BH=30,BD=20;               // box 20×30×20
-        var BP=new THREE.Vector3(26,0,0);     // box at (26,0,0)
+        var BP=new THREE.Vector3(32,0,0);     // box at (32,0,0) — far enough to prevent arm body penetration
         var L1=24,L2=22;                      // arm link lengths
         var LR=2.0,JR=2.5;                   // link/joint radii
         var FL=10,FW=1.8,FD=2.5;             // finger: 10 long, hanging down
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // For tips at box top: wrist.y = BH + FL + 1.25
         var GRASP_WRIST_Y = BH + FL + 1.25;  // = 41.25: wrist height where finger tips touch box top
         var HOME=new THREE.Vector3(8,46,0);
-        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+20, BP.z);  // well above grasp height
+        var HOVER=new THREE.Vector3(BP.x, GRASP_WRIST_Y+22, BP.z);  // well above grasp height
         var BOX_TOP_PT=new THREE.Vector3(BP.x, GRASP_WRIST_Y, BP.z); // wrist at safe grasp height
 
         // === THREE.JS SCENE ===
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scene.background=new THREE.Color(0x050710);
         scene.fog=new THREE.FogExp2(0x050710,0.002);
         var cam=new THREE.PerspectiveCamera(46,W/H,0.5,500);
-        cam.position.set(55,48,50);
+        cam.position.set(60,48,55);
         var ren=new THREE.WebGLRenderer({antialias:true});
         ren.setPixelRatio(Math.min(devicePixelRatio,2));
         ren.setSize(W,H);
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         mt.appendChild(ren.domElement);
         var orb=new THREE.OrbitControls(cam,ren.domElement);
         orb.enableDamping=true;orb.dampingFactor=0.07;
-        orb.target.set(13,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
+        orb.target.set(16,14,0);orb.minDistance=25;orb.maxDistance=170;orb.update();
 
         // Lights (OLED high-contrast)
         scene.add(new THREE.AmbientLight(0x2a2a44,0.45));
@@ -382,11 +382,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // === LIFT LOGIC: box rises vertically by P.lH from rest position ===
+        // === LIFT LOGIC: rigid parenting — box locked to wrist ===
         function doLiftFrame(dt){
             var ik=solveIK(eeT);
-            // Box simply rises straight up from its rest position
-            bxG.position.set(BP.x, BP.y + P.lH, BP.z);
+            // Box position: wrist pos + stored offset
+            bxG.position.set(
+                ik.wrist.x + boxGripOff.x,
+                ik.wrist.y + boxGripOff.y,
+                ik.wrist.z + boxGripOff.z
+            );
             P.tau=calcTau(ik.wrist);
             stepPhys(dt);
             bxG.quaternion.copy(P.tQ);
@@ -514,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
             V.mu=[0,0];V.sig=0;V.kl=0;V.hist=[];
             for(var i=0;i<NG;i++)V.eps[i]={x:0,y:0};
             bxG.position.copy(BP);bxG.quaternion.identity();
-            boxAttached=false;
+            boxAttached=false;boxGripOff.set(0,0,0);
             eeT.copy(HOME);gSp=SP_OPEN;
             ghosts.forEach(hideGh);
             if(tArr){bxG.remove(tArr);tArr=null;}
@@ -624,6 +628,6 @@ document.addEventListener('DOMContentLoaded', function () {
             cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);
         });
         lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
-        console.log('[VAE Uncertainty v8.0] Top-down grasp + PRE_LIFT safety \u2713');
+        console.log('[VAE Uncertainty v7.0] Top-down grasp + PRE_LIFT safety \u2713');
     } // end boot
 });
