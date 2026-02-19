@@ -269,6 +269,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Π-GRIPPER: bracket spans ±Z, fingers hang -Y from ±Z ends
         // BRK_W=thin X, so bracket doesn't penetrate box; FD=thin X for fingers
+        // Horizontal connector arm from wrist to bracket
+        var conn=new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,12),mM);
+        conn.castShadow=true;arm.add(conn);
         var bar=new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),mG);
         bar.castShadow=true;arm.add(bar);
         // Front finger: hangs down from -Z end of bracket
@@ -285,10 +288,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 j1:new THREE.Mesh(new THREE.SphereGeometry(JR,14,14),gM()),
                 l2:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.85,LR,1,10),gM()),
                 j2:new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,14,14),gM()),
+                conn:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,8),gM()),
                 bar:new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),gM()),
                 fL:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM()),
                 fR:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM())};
-            gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.bar,gg.fL,gg.fR];
+            gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.conn,gg.bar,gg.fL,gg.fR];
             gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
             ghosts.push(gg);
         }
@@ -345,6 +349,8 @@ document.addEventListener('DOMContentLoaded', function () {
             posC(l2,ik.elbow,ik.wrist); j2.position.copy(ik.wrist);
             // Gripper at grip point (above box center), not at IK wrist
             var gp=gripPos(ik);
+            // Connector arm from wrist to grip point
+            posC(conn,ik.wrist,gp);
             bar.position.copy(gp); bar.scale.z=sp; bar.quaternion.identity();
             var hs=sp/2, fd=FL/2+1.25;
             fLm.position.set(gp.x, gp.y-fd, gp.z-hs); fLm.quaternion.identity();
@@ -354,6 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
             posC(g.l1,ik.base,ik.elbow); g.j1.position.copy(ik.elbow);
             posC(g.l2,ik.elbow,ik.wrist); g.j2.position.copy(ik.wrist);
             var gp=gripPos(ik);
+            posC(g.conn,ik.wrist,gp);
             g.bar.position.copy(gp); g.bar.scale.z=sp; g.bar.quaternion.identity();
             var hs=sp/2,fd=FL/2+1.25;
             g.fL.position.set(gp.x,gp.y-fd,gp.z-hs); g.fL.quaternion.identity();
