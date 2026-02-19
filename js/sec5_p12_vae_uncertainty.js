@@ -387,12 +387,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var COL_MARGIN=LR+JR+1.5; // link radius + joint radius + safety gap
 
         function enforceClearance(){
-            // After IK, check if elbow or link1 midpoint would penetrate the box.
-            // Box near-edge X (toward robot) = bxG.x - BW/2
-            // We need elbow.x > box_near_x - margin at all times.
-            // If not, push eeT.x outward until clearance is met.
+            // Compute a safe end-effector X so that elbow/link1 don't penetrate the box.
+            // Uses a local copy — does NOT mutate eeT permanently.
+            var safeT=eeT.clone();
             for(var iter=0;iter<8;iter++){
-                var ik=solveIK(eeT);
+                var ik=solveIK(safeT);
                 // Current box position based on wrist + offset
                 var boxX=ik.wrist.x+boxGripOff.x;
                 var boxNear=boxX-BW/2-COL_MARGIN;
@@ -400,10 +399,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 var midX=(ik.base.x+ik.elbow.x)*0.5;
                 var minArmX=Math.min(ik.elbow.x, midX);
                 if(minArmX>=boxNear) return ik; // no penetration
-                // Push eeT.x outward
-                eeT.x+=boxNear-minArmX+1;
+                // Push local target outward
+                safeT.x+=boxNear-minArmX+1;
             }
-            return solveIK(eeT);
+            return solveIK(safeT);
         }
 
         function doLiftFrame(dt){
@@ -651,6 +650,6 @@ document.addEventListener('DOMContentLoaded', function () {
             cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);
         });
         lx.fillStyle='#040608';lx.fillRect(0,0,lcv.width,lcv.height);
-        console.log('[VAE Uncertainty v7.0] Top-down grasp + PRE_LIFT safety \u2713');
+        console.log('[VAE Uncertainty v8.0] Top-down grasp + PRE_LIFT safety \u2713');
     } // end boot
 });
