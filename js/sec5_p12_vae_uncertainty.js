@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // === VAE ===
         var V={mu:[0,0],sig:0,kl:0,hist:[],eps:[],thr:1.8,alp:0.92};
         for(var i=0;i<NG;i++)V.eps.push({x:0,y:0});
+        var vSnap=null; // snapshot of V at abort/success for DONE display
 
         // IK target + grip
         var eeT=new THREE.Vector3(8,46,0);
@@ -513,6 +514,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Lock box to final grip position
                     var ik=solveIK(eeT);var gp=gripPos(ik);
                     bxG.position.set(gp.x+boxGripOff.x,gp.y+boxGripOff.y,gp.z+boxGripOff.z);
+                    // Snapshot VAE for DONE display
+                    vSnap={mu:[V.mu[0],V.mu[1]],sig:V.sig,kl:V.kl,eps:V.eps.map(function(e){return{x:e.x,y:e.y};})};
                     succO.classList.add('on');
                     succD.textContent='LIFT COMPLETE \u2014 \u03C3 = '+V.sig.toFixed(3)+' < threshold '+V.thr.toFixed(2);
                     setSt(ST.DONE);
@@ -566,10 +569,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if(s===ST.ABORT){
                 critO.classList.add('on');
                 critD.textContent='ABORTING LIFT \u2014 \u03C3 = '+V.sig.toFixed(3)+' > threshold '+V.thr.toFixed(2);
+                // Snapshot VAE state at peak uncertainty for DONE display
+                vSnap={mu:[V.mu[0],V.mu[1]],sig:V.sig,kl:V.kl,eps:V.eps.map(function(e){return{x:e.x,y:e.y};})};
             } else if(s!==ST.DONE) {
                 critO.classList.remove('on');
             }
-            if(s===ST.DONE){running=false;bGo.disabled=true;}
+            if(s===ST.DONE){
+                running=false;bGo.disabled=true;
+                // Restore snapshot so latent space display shows peak values
+                if(vSnap){V.mu=[vSnap.mu[0],vSnap.mu[1]];V.sig=vSnap.sig;V.kl=vSnap.kl;
+                    for(var i=0;i<NG&&i<vSnap.eps.length;i++){V.eps[i]={x:vSnap.eps[i].x,y:vSnap.eps[i].y};}}
+            }
             if(s===ST.IDLE){running=false;bGo.disabled=false;ghosts.forEach(hideGh);}
         }
 
@@ -581,6 +591,7 @@ document.addEventListener('DOMContentLoaded', function () {
             bxG.position.copy(BP);bxG.quaternion.identity();
             boxAttached=false;boxGripOff.set(0,0,0);
             eeT.copy(HOME);gSp=SP_OPEN;
+            vSnap=null;
             ghosts.forEach(hideGh);
             if(tArr){bxG.remove(tArr);tArr=null;}
             critO.classList.remove('on');
@@ -600,7 +611,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // === LATENT SPACE CANVAS ===
         function drawLat(){
             var w=lcv.width,h=lcv.height,cx=w/2,cy=h/2,sc=65;
-            lx.fillStyle='rgba(4,6,8,.14)';lx.fillRect(0,0,w,h);
+            // In DONE state, use opaque fill to prevent fading; otherwise semi-transparent for trail
+            if(state===ST.DONE){lx.fillStyle='#040608';} else {lx.fillStyle='rgba(4,6,8,.14)';}
+            lx.fillRect(0,0,w,h);
             lx.strokeStyle='rgba(255,255,255,.025)';lx.lineWidth=0.5;
             for(var i=-3;i<=3;i++){var px=cx+i*sc;
                 lx.beginPath();lx.moveTo(px,0);lx.lineTo(px,h);lx.stroke();
