@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
         '<div class="vcw" id="vcw"><div id="vm"></div>',
           '<div class="vhb" id="vhb">STATE: IDLE</div>',
           '<div class="vco" id="vco"><div class="vci">\u26A0</div><div class="vct">CRITICAL UNCERTAINTY</div><div class="vcd" id="vcd">ABORTING LIFT</div></div>',
+          '<div class="vso" id="vso"><div class="vsi">\u2713</div><div class="vst">LIFT SUCCESSFUL</div><div class="vsd" id="vsd">Safe \u03C3 maintained</div></div>',
         '</div>',
         '<div class="vlg">',
           '<span class="vli"><i class="vd vda"></i>Primary Arm</span>',
@@ -76,6 +77,12 @@ document.addEventListener('DOMContentLoaded', function () {
 '@keyframes vcp{from{transform:scale(1);opacity:.5}to{transform:scale(1.15);opacity:1}}',
 '.vct{font-size:1.2rem;font-weight:800;color:#ff5252;letter-spacing:.16em;margin-top:5px}',
 '.vcd{font-size:.68rem;color:rgba(255,82,82,.7);margin-top:3px}',
+'.vso{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,140,30,.12);backdrop-filter:blur(3px);z-index:20;pointer-events:none;opacity:0;transition:opacity .4s}',
+'.vso.on{opacity:1}',
+'.vsi{font-size:3.4rem;color:#69f0ae;animation:vsp .65s ease-in-out infinite alternate}',
+'@keyframes vsp{from{transform:scale(1);opacity:.5}to{transform:scale(1.15);opacity:1}}',
+'.vst{font-size:1.2rem;font-weight:800;color:#69f0ae;letter-spacing:.16em;margin-top:5px}',
+'.vsd{font-size:.68rem;color:rgba(105,240,174,.7);margin-top:3px}',
 '.vlg{display:flex;gap:16px;padding:7px 14px;background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.04);flex-wrap:wrap}',
 '.vli{display:flex;align-items:center;gap:5px;font-size:.6rem;color:rgba(255,255,255,.38)}',
 '.vd{display:inline-block;width:8px;height:8px;border-radius:2px}',
@@ -137,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // === DOM ===
         var mt=document.getElementById('vm'),badge=document.getElementById('vhb'),
             critO=document.getElementById('vco'),critD=document.getElementById('vcd'),
+            succO=document.getElementById('vso'),succD=document.getElementById('vsd'),
             lcv=document.getElementById('lcv'),lx=lcv.getContext('2d');
         var $mu=document.getElementById('dmu'),$si=document.getElementById('dsig'),
             $kl=document.getElementById('dkl'),$ta=document.getElementById('dtau'),
@@ -496,7 +504,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 doLiftFrame(dt);
                 // Continuous safety re-check
                 if(V.sig>V.thr){setSt(ST.ABORT);break;}
-                if(P.lH>40){softReset();setSt(ST.IDLE);}
+                // Pause at top — show success, wait for Reset
+                if(P.lH>40){
+                    P.lH=40;
+                    eeT.set(BP.x+WRIST_X_OFF, GRASP_WRIST_Y+P.lH, BP.z);
+                    succO.classList.add('on');
+                    succD.textContent='LIFT COMPLETE \u2014 \u03C3 = '+V.sig.toFixed(3)+' < threshold '+V.thr.toFixed(2);
+                    running=false;bGo.disabled=true;
+                }
                 break;}
 
             case ST.ABORT:{
@@ -527,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     eeT.set(lr(BP.x+WRIST_X_OFF,HOME.x,hs),lr(GRASP_WRIST_Y+2,HOME.y,hs),lr(BP.z,HOME.z,hs));
                     gSp=SP_OPEN;
                 }
-                if(t>=d){softReset();setSt(ST.IDLE);}
+                if(t>=d){running=false;bGo.disabled=true;}
                 break;}
             }
         }
@@ -552,6 +567,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ghosts.forEach(hideGh);
             if(tArr){bxG.remove(tArr);tArr=null;}
             critO.classList.remove('on');
+            succO.classList.remove('on');
         }
 
         function fullReset(){
