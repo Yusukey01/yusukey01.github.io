@@ -19,17 +19,104 @@ noindex: true
         {% include section_navigation.html %}
 
         <div class="topic-nav">
-            <a href="#intro"></a>
-            <a href="#demo"></a>
-            <a href="#"></a>    
+            <a href="#intro">Introduction</a>
+            <a href="#vi">Variational Inference</a> 
+            <a href="#vae">Variational Autoencoder (VAE)</a>   
+            <a href="#demo">Physical AI - VAE Uncertainty in Robotic Manipulation</a>          
         </div>
 
         <div class="container">  
 
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
-                <!--Introduction here-->
+                <p>
+                    In the intersection of pure mathematics and autonomous systems lies the challenge of <strong>uncertainty</strong>. 
+                    While classical robotics often relies on deterministic models, real-world interaction is inherently stochastic. 
+                    Sensory noise, unobservable physical properties, and environmental variances require a framework that does not 
+                    merely calculate values, but manages probabilities.
+                </p>
+                
+                <p>
+                    The <strong>Variational Autoencoder (VAE)</strong> represents a profound synthesis of information theory and 
+                    Bayesian inference. Unlike standard autoencoders that map data to discrete points in a latent space, the VAE 
+                    learns the underlying <strong>structural manifold</strong> of the data. By encoding inputs into a continuous 
+                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma\)), the VAE provides a principled 
+                    way to quantify what the system knows - and, more importantly, what it does not.
+                </p>
             </section>
+
+            <section id="vi" class="section-content">
+                <h2>Variational Inference</h2>
+                <p>
+                    Deterministic control algorithms assume a single point-estimate for the state (e.g., "the center of mass is at coordinate \((x, y, z)\)"). 
+                    In contrast, <strong>Variational Inference (VI)</strong> treats the world as a probability distribution. This shift from "points" to "spreads" 
+                    allows the AI to quantify its own confidence.
+                </p>
+
+                <p>
+                    Since calculating the true posterior distribution is often computationally intractable, VI approximates it with a simpler distribution (usually Gaussian). 
+                    This mathematical approximation is what allows "intelligence" to be computable in real-time. The robot doesn't just guess where the weight is; it understands 
+                    the <strong>variance</strong> of its guess, which serves as a proxy for risk.
+                </p>
+
+            </section>
+
+            <section id="vae" class="section-content">
+                <h2>Variational Autoencoder (VAE)</h2>
+                <p>
+                    We create a non-linear extension of the factor analysis generative network. Replace 
+                    \[
+                    p(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid \boldsymbol{Wz}, \sigm^2 \boldsymbol{I})
+                    \]
+                    with
+                    \[
+                    p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d (\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})
+                    \]
+                    where \(f_d\) is the decoder. 
+                </p>
+                <p>
+                    Next, we create a <strong>recognition network (inference network)</strong>, which is trained simultaneously with the generative model 
+                    to approximate posterior inference. Here, we assume the posterior is Gaussian with diagonal covariance. Then we obtain 
+                    \[
+                    q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) 
+                    = \mathcal{N}(\boldsymbol{z} \mid f_{e, u} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \text{diag}(f_{e, \sigma}(\boldsymbol{x};\boldsymbol{\phi})))
+                    \]
+                    where \(f_e\) is the encoder. 
+                </p>
+                <p>
+                    In <strong>amortized inference</strong>, we train an inference network to “invert” a generative network rather than train 
+                    an optimization algorithm to infer the latent code. 
+                </p>
+                <p>
+                    Since posterior inference in a nonlinear FA model is intractable, instead of computing exact marginal likelihood \(p(\boldsymbol{x} \mid \boldsymbol{\theta})\), 
+                    we can use the inference network to compute an approximate posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\), which is used to compute the 
+                    <strong>evidence lower bound (ELBO)</strong>.
+                    For a single example \(\boldsymbol{x}\), the ELBO is given by 
+                    \[
+                    \begin{align*}
+                    &L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \\\\\
+                    &= \mathbb{E}_{q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) - \log q_{\boldsymbol{\phi}}(\boldsymbol{z}, \boldsymbol{x}) \right]\\\\
+                    &= \mathbb{E}_{q (\boldsymbol{z} \mid \boldsymbol{x}, \boldsymbol{\phi})} \left[\log p (\boldsymbol{x} \mid \boldsymbol{z}, \boldsymbol{\theta})\right]
+                        - D_{\mathbb{KL}}(q (\boldsymbol{z} \mid \boldsymbol{x}, \boldsymbol{\phi}) \| p(\boldsymbol{z})).
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    ELBO is a lower bound of the log marginal likelihood (or evidence) as can be seen from Jensen's inequality 
+                    \[
+                    \begin{align*}
+                    L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x})
+                    &= \int q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x}) \log \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{x})}{q_{\boldsymbol{\phi}}(\boldsymbol{z}, \boldsymbol{x})}\, d\boldsymbol{z} \\\\
+                    &\leq \log \int q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x}) \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{x})}{q_{\boldsymbol{\phi}}(\boldsymbol{z}, \boldsymbol{x})}\, d\boldsymbol{z} \\\\
+                    &= \log p_{\boldsymbol{\theta}}(\boldsymbol{x}).
+                    \end{align*}
+                    \]
+                    So, for fixed inference network parameters \(\boldsymbol{\phi}\), increasing the ELBO implies incresing the 
+                    log likelihood of the data. 
+                </p>
+            </section>
+            
+
 
             <section id="demo" class="section-content">
                 <h2>Physical AI - VAE Uncertainty in Robotic Manipulation</h2>
@@ -101,7 +188,7 @@ noindex: true
                 <p>
                     The encoder maps torque to the posterior parameters as follows:
                 </p>
-                <ul>
+                <ul style="padding-left: 40px;">
                     <li>\(\boldsymbol{\mu} = (0.07\,\tau_x,\; 0.07\,\tau_z)\) - the posterior mean shifts proportionally to the horizontal torque components</li>
                     <li>\(\sigma = 0.011\,\|\boldsymbol{\tau}\|\) - the posterior spread grows with the torque magnitude</li>
                 </ul>
