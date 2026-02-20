@@ -62,83 +62,226 @@ noindex: true
             </section>
 
             <section id="vae" class="section-content">
+                
                 <h2>Variational Autoencoder (VAE)</h2>
+
+                <h3>From Factor Analysis to Nonlinear Generative Models</h3>
                 <p>
-                    We create a non-linear extension of the factor analysis generative network. Replace 
+                    In classical <strong>factor analysis (FA)</strong>, we model the observed data \(\boldsymbol{x} \in \mathbb{R}^D\) as a 
+                    linear function of a latent variable \(\boldsymbol{z} \in \mathbb{R}^K\) with \(K \ll D\):
                     \[
                     p(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid \boldsymbol{Wz}, \sigma^2 \boldsymbol{I})
                     \]
-                    with
+                    where \(\boldsymbol{W} \in \mathbb{R}^{D \times K}\) is the factor loading matrix. The linearity of \(\boldsymbol{W}\) 
+                    makes posterior inference tractable: given an observation \(\boldsymbol{x}\), the posterior 
+                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) is Gaussian in closed form. However, this linearity also limits the model's 
+                    expressiveness - real-world data distributions are rarely well-captured by linear mappings.
+                </p>
+                <p>
+                    The <strong>Variational Autoencoder (VAE)</strong> extends factor analysis by replacing the linear mapping 
+                    \(\boldsymbol{Wz}\) with an arbitrary nonlinear function parameterized by a neural network:
                     \[
                     p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d (\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})
                     \]
-                    where \(f_d\) is the decoder. 
+                    where \(f_d(\cdot\,; \boldsymbol{\theta})\) is a <strong>decoder network</strong> with parameters \(\boldsymbol{\theta}\). 
+                    This nonlinear generative model can represent far richer data distributions, but it comes at a cost: 
+                    the posterior \(p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\) is no longer analytically tractable, 
+                    because computing it requires the marginal likelihood
+                    \[
+                    p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x}) = \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})}{p_{\boldsymbol{\theta}}(\boldsymbol{x})}
+                    \quad \text{where} \quad 
+                    p_{\boldsymbol{\theta}}(\boldsymbol{x}) = \int p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})\, d\boldsymbol{z}
+                    \]
+                    which involves an intractable integral over the latent space when \(f_d\) is a deep network. This intractability is the central challenge that motivates the variational approach.
                 </p>
+
+                <h3>Amortized Variational Inference</h3>
                 <p>
-                    Next, we create a <strong>recognition network (inference network)</strong>, which is trained simultaneously with the generative model 
-                    to approximate posterior inference. Here, we assume the posterior is Gaussian with diagonal covariance. Then we obtain 
+                    Since the true posterior is intractable, we introduce an <strong>approximate posterior</strong> - a 
+                    <strong>recognition network</strong> (also called the <strong>inference network</strong> or <strong>encoder</strong>) - 
+                    that is trained simultaneously with the generative model. We restrict the approximate posterior to a tractable family: 
+                    a Gaussian with diagonal covariance, yielding
                     \[
                     q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) 
-                    = \mathcal{N}(\boldsymbol{z} \mid f_{e, \mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \text{diag}(f_{e, \sigma}(\boldsymbol{x};\boldsymbol{\phi})))
+                    = \mathcal{N}\!\left(\boldsymbol{z} \;\middle|\; f_{e,\mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \text{diag}\!\left(f_{e,\sigma}(\boldsymbol{x};\boldsymbol{\phi})\right)\right)
                     \]
-                    where \(f_e\) is the encoder. 
+                    where \(f_{e,\mu}\) and \(f_{e,\sigma}\) are the encoder's output heads that produce the mean vector and the 
+                    diagonal covariance respectively, and \(\boldsymbol{\phi}\) denotes all encoder parameters.
                 </p>
                 <p>
-                    In <strong>amortized inference</strong>, we train an inference network to “invert” a generative network rather than train 
-                    an optimization algorithm to infer the latent code. 
+                    This approach is called <strong>amortized inference</strong>: rather than running a separate optimization procedure 
+                    to compute the posterior for each individual data point (as in classical variational inference), we train a single 
+                    neural network that directly maps any input \(\boldsymbol{x}\) to the parameters of its approximate posterior. 
+                    The cost of inference at test time is thus reduced to a single forward pass through the encoder, with the computational 
+                    investment "amortized" across the entire training set.
                 </p>
+
+                <h3>The Evidence Lower Bound (ELBO)</h3>
                 <p>
-                    Since posterior inference in a nonlinear FA model is intractable, instead of computing exact marginal likelihood \(p(\boldsymbol{x} \mid \boldsymbol{\theta})\), 
-                    we can use the inference network to compute an approximate posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\), which is used to compute the 
-                    <strong>evidence lower bound (ELBO)</strong>.
-                    For a single example \(\boldsymbol{x}\), the ELBO is given by 
-                    \[
-                    \begin{align*}
-                    &L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \\\\\
-                    &= \mathbb{E}_{q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) - \log q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \right]\\\\
-                    &= \mathbb{E}_{q (\boldsymbol{z} \mid \boldsymbol{x}, \boldsymbol{\phi})} \left[\log p (\boldsymbol{x} \mid \boldsymbol{z}, \boldsymbol{\theta})\right]
-                        - D_{\mathbb{KL}}\left(q (\boldsymbol{z} \mid \boldsymbol{x}, \boldsymbol{\phi}) \| p(\boldsymbol{z})\right).
-                    \end{align*}
-                    \]
+                    Since the marginal likelihood \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) is intractable, we cannot maximize it directly. 
+                    Instead, we derive a tractable lower bound. For a single observation \(\boldsymbol{x}\), define the 
+                    <strong>evidence lower bound (ELBO)</strong> as follows.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Evidence Lower Bound(ELBO)</span>
+                    <p>
+                        For a generative model \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) and 
+                        approximate posterior \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\), the ELBO is
+                        \[
+                        L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) 
+                        \triangleq \mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) - \log q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \right].
+                        \]
+                    </p>
+                </div>
+
                 <p>
-                    ELBO is a lower bound of the log marginal likelihood (or evidence) as can be seen from Jensen's inequality 
+                    To see that this is indeed a lower bound on the log-evidence, apply <strong>Jensen's inequality</strong>. 
+                    Since \(\log\) is concave, moving it outside the expectation can only increase the value:
                     \[
                     \begin{align*}
                     L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x})
-                    &= \int q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x}) \log \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
-                    &\leq \log \int q_{\phi}(\boldsymbol{z} \mid \boldsymbol{x}) \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
+                    &= \int q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \log \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
+                    &\leq \log \int q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
+                    &= \log \int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\, d\boldsymbol{z} \\\\
                     &= \log p_{\boldsymbol{\theta}}(\boldsymbol{x}).
                     \end{align*}
                     \]
-                    So, for fixed inference network parameters \(\boldsymbol{\phi}\), increasing the ELBO implies increasing the 
-                    log likelihood of the data. 
+                    That is, \(L(\boldsymbol{\theta}, \boldsymbol{\phi} \mid \boldsymbol{x}) \leq \log p_{\boldsymbol{\theta}}(\boldsymbol{x})\) 
+                    for any choice of \(q_{\boldsymbol{\phi}}\). Maximizing the ELBO with respect to both \(\boldsymbol{\theta}\) and 
+                    \(\boldsymbol{\phi}\) therefore simultaneously pushes up the log-likelihood and tightens the bound by making 
+                    \(q_{\boldsymbol{\phi}}\) a better approximation to the true posterior.
+                </p>
+
+                <h3>ELBO Decomposition: Reconstruction + Regularization</h3>
+                <p>
+                    The ELBO can be decomposed into two interpretable terms by expanding the joint 
+                    \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) = \log p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) + \log p(\boldsymbol{z})\) 
+                    and rearranging.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: ELBO Decomposition</span>
+                    <p>
+                        \[
+                        L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) 
+                        = \underbrace{\mathbb{E}_{q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}} (\boldsymbol{x} \mid \boldsymbol{z})\right]}_{\text{reconstruction}}
+                            \;-\; \underbrace{D_{\mathrm{KL}}\!\left(q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right)}_{\text{regularization}}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Expanding the joint inside the ELBO definition,
+                        \[
+                        \begin{align*}
+                        L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) 
+                        &= \mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) + \log p(\boldsymbol{z}) - \log q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\right] \\\\
+                        &= \mathbb{E}_{q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}} (\boldsymbol{x} \mid \boldsymbol{z})\right]
+                            + \mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})} \left[\log \frac{p(\boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\right] \\\\
+                        &= \mathbb{E}_{q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}} (\boldsymbol{x} \mid \boldsymbol{z})\right]
+                            - D_{\mathrm{KL}}\!\left(q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right). \quad \blacksquare
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The first term is the <strong>expected reconstruction log-likelihood</strong>: it encourages the decoder to reconstruct 
+                    the input \(\boldsymbol{x}\) from latent samples \(\boldsymbol{z} \sim q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\). 
+                    The second term is the <strong>KL divergence</strong> between the approximate posterior and the prior 
+                    \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which regularizes the latent space by penalizing 
+                    approximate posteriors that deviate from the prior. This regularization is what gives the VAE its structured, 
+                    continuous latent space - without it, the encoder could collapse each data point to an isolated delta function, 
+                    losing the ability to generate new data by sampling from \(p(\boldsymbol{z})\).
+                </p>
+
+                <h3>The Reparameterization Trick</h3>
+                <p>
+                    To train the VAE end-to-end via gradient-based optimization, we need to differentiate the ELBO with respect to 
+                    both \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\). The gradient with respect to the decoder parameters 
+                    \(\boldsymbol{\theta}\) poses no difficulty, since \(\boldsymbol{\theta}\) appears only inside the expectation. 
+                    However, differentiating with respect to the encoder parameters \(\boldsymbol{\phi}\) is problematic: the expectation 
+                    \(\mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}[\cdot]\) is taken with respect to a distribution 
+                    that itself depends on \(\boldsymbol{\phi}\), so we cannot simply interchange the gradient and the expectation.
                 </p>
                 <p>
-                    Assume the inference network estimates the parameters of a Gaussian posterior.
-                    \[
-                    \boldsymbol{z} = f_{e, u}(\boldsymbol{x}; \boldsymbol{\phi}) + f_{e, \sigma} (\boldsymbol{x}; \boldsymbol{\phi})\odot \boldsymbol{\epsilon}
-                    \]
-                    where \(\boldsymbol{\epsilon} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\).
+                    The <strong>reparameterization trick</strong> resolves this by expressing the stochastic latent variable 
+                    \(\boldsymbol{z}\) as a deterministic, differentiable transformation of a parameter-free noise variable. 
+                    Since the encoder outputs a diagonal Gaussian, we write
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Reparameterization Trick:</span>
+                    <p>
+                        Sample \(\boldsymbol{z}\) from \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\) via
+                        \[
+                        \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}} (\boldsymbol{x})\odot \boldsymbol{\epsilon}, 
+                        \quad \boldsymbol{\epsilon} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})
+                        \]
+                        where \(\mu_{\boldsymbol{\phi}} \triangleq f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi})\) and 
+                        \(\sigma_{\boldsymbol{\phi}} \triangleq f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi})\) are the encoder outputs, 
+                        and \(\odot\) denotes element-wise multiplication.
+                    </p>
+                </div>
+
                 <p>
-                    Hence, 
+                    Under this reparameterization, the ELBO becomes
                     \[
                     L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x})
                     = \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})}
-                      \left[\log p_{\theta}(\boldsymbol{x} \mid \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}}(\boldsymbol{x})\odot \boldsymbol{\epsilon})\right]
-                      - D_{\mathbb{KL}}(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \| p(\boldsymbol{z})).
+                      \!\left[\log p_{\boldsymbol{\theta}}\!\left(\boldsymbol{x} \mid \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}}(\boldsymbol{x})\odot \boldsymbol{\epsilon}\right)\right]
+                      - D_{\mathrm{KL}}\!\left(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right).
                     \]
+                    The key observation is that the expectation is now taken with respect to the fixed distribution 
+                    \(\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which does not depend on \(\boldsymbol{\phi}\). This means we 
+                    can interchange the gradient and the expectation: 
+                    \(\nabla_{\boldsymbol{\phi}} \mathbb{E}_{\boldsymbol{\epsilon}}[\cdot] = \mathbb{E}_{\boldsymbol{\epsilon}}[\nabla_{\boldsymbol{\phi}}(\cdot)]\), 
+                    and estimate the gradient via Monte Carlo sampling of \(\boldsymbol{\epsilon}\). In practice, even a single sample 
+                    per data point provides a sufficiently low-variance gradient estimate for stochastic gradient descent.
                 </p>
                 <p>
-                    This means the expectation is independent of the parameters of the model. Thus, we can push gradient insie and use 
-                    backpropagation for training by 
+                    The full VAE training objective over a dataset \(\mathcal{D}\) is therefore
                     \[
-                    \min_{\boldsymbol{\theta}, \boldsymbol{\phi}} - \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \right].
+                    \min_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \;-\, \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \right]
                     \]
-                    Often this is called <strong>reparameterization trick</strong>.
+                    which is optimized end-to-end using standard backpropagation through the reparameterized sampling step.
                 </p>
+
+                <h3>Putting It All Together</h3>
+                <p>
+                    The components developed above - the nonlinear generative model, the amortized inference network, the ELBO objective, 
+                    and the reparameterization trick - collectively define the Variational Autoencoder.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Variational Autoencoder (VAE):</span>
+                    <p>
+                        A VAE is a latent variable model consisting of:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>A <strong>prior</strong> over the latent space: \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\)</li>
+                        <li>A <strong>decoder</strong> (generative model): \(p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d(\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})\)</li>
+                        <li>An <strong>encoder</strong> (inference network): \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) = \mathcal{N}\!\left(\boldsymbol{z} \mid f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi}), \, \text{diag}(f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi}))\right)\)</li>
+                    </ol>
+                    <p>
+                        The parameters \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are trained jointly by maximizing the ELBO
+                        \[
+                        \max_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \; \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ 
+                            \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})}
+                            \!\left[\log p_{\boldsymbol{\theta}}\!\left(\boldsymbol{x} \mid \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}}(\boldsymbol{x}) \odot \boldsymbol{\epsilon}\right)\right]
+                            - D_{\mathrm{KL}}\!\left(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right)
+                        \right]
+                        \]
+                        where gradients with respect to both \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are computed via 
+                        backpropagation through the reparameterized sampling step.
+                    </p>
+                </div>
+             
             </section>
+           
             
 
 
