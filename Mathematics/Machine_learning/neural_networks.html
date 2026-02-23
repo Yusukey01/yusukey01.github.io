@@ -142,15 +142,17 @@ uses_python: false
 
             <section id="activation" class="section-content">
                 <h2>Activation Functions</h2>
+
                 <p>
                     Without a <strong>non-linear</strong> activation function, a neural network composed of multiple layers would reduce to a 
-                    single linear transformation:
+                    single affine transformation. For example, a two-layer linear network computes:
                     \[
-                    f(x ; \theta) = \theta^{(L)} \theta^{(L-1)}  \cdots \theta^{(2)} \theta^{(1)} x.
+                    f(x ; \theta) = W^{(2)}(W^{(1)} x + b^{(1)}) + b^{(2)} = (W^{(2)}W^{(1)})x + (W^{(2)}b^{(1)} + b^{(2)}) = \tilde{W}x + \tilde{b}.
                     \]
-                    This composition is still <strong>linear</strong> in \( x \), and therefore incapable of representing non-linear decision boundaries. 
-                    Non-linear activation functions are necessary to break this linearity and allow networks to approximate arbitrary functions.
+                    This composition remains an <strong>affine</strong> transformation of \( x \), and therefore is incapable of representing non-linear decision boundaries. 
+                    Non-linear activation functions are necessary to break this linearity.
                 </p>
+
                 <p>
                     Historically, a common choice was the <strong>sigmoid (logistic)</strong> activation function:
                     \[
@@ -171,9 +173,15 @@ uses_python: false
                     ReLU introduces non-linearity while preserving gradient magnitude for positive inputs. It is computationally simple and helps maintain gradient flow 
                     during training, which is why it is now a standard choice in modern neural network architectures.
                 </p>
+                
                 <p>
-                    <strong>Note:</strong> While ReLU solves the vanishing gradient problem, it can suffer from the "dying ReLU" problem where neurons become inactive (always output zero) and 
-                    stop learning. This occurs when neurons consistently receive negative inputs, causing their gradients to be permanently zero.
+                    <strong>Note:</strong> Strictly speaking, the ReLU function is not differentiable at \( a = 0 \). In practice, optimization algorithms rely on the 
+                    concept of <strong>subgradients</strong>, explicitly assigning a derivative of \( 0 \) (or sometimes \( 1 \)) at exactly \( a = 0 \).
+                </p>
+
+                <p>
+                    <strong>Note:</strong> While ReLU solves the vanishing gradient problem, it can suffer from the "dying ReLU" problem where neurons become inactive 
+                    (always output zero) and stop learning. This occurs when neurons consistently receive negative inputs, causing their gradients to be permanently zero.
                 </p>
             </section>
 
@@ -218,23 +226,25 @@ uses_python: false
                 
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm: BACKPROPAGATION</span>
-                    <strong>Consider the MLP with K layers</strong>
-                    <strong>Input:</strong> \(x \in \mathbb{R}^D\)
-                    <strong>//Forward Pass</strong>
-                    &emsp;\(x_1 = x\); 
-                    // \(f_k\) is an activation with the previous output: \(x_k\) and the parameters for this layer: \(\theta_k\) 
-                    &emsp;<strong>for \(k = 1 : K\) do</strong>
-                    &emsp;&emsp;&emsp; \(x_{k+1} = f_k(x_k, \theta_k)\); 
-                    <strong>//Backward Pass</strong>
-                    &emsp;\(u_{K+1} = 1\); //Gradient of \mathcal{L} wrt itself is 1
-                    &emsp;<strong>for \(k = K : 1\) do</strong>
-                    &emsp;&emsp;&emsp; \(g_k = u_{k+1}^\top \frac{\partial f_k (x_k, \theta_k)}{\partial \theta_k}\); //Gradient of the loss wrt \(\theta_k\)
-                    &emsp;&emsp;&emsp; \(u_k^\top = u_{k+1}^\top \frac{\partial f_k (x_k, \theta_k)}{\partial x_k}\); //Gradient of the loss wrt \(x_k\)
-                    &emsp;Output:  
-                    &emsp;&emsp;&emsp;\(\mathcal{L} = x_{K+1}\);  //Loss value (computed in forward pass)
-                    &emsp;&emsp;&emsp;\(\nabla_x \mathcal{L} = u_1\); //Gradient wrt the input
-                    &emsp;&emsp;&emsp;\(\{\nabla_{\theta} \mathcal{L} = g_k\}_{k=1}^K\); //Gradients wrt the parameters
-                </div>    
+                    <strong>Consider an MLP with L layers and a loss function \(\mathcal{L}\)</strong>
+                    <strong>Input:</strong> Data point \((x, y)\)
+                    <strong>// Forward Pass</strong>
+                    &emsp;\(z^{(0)} = x\); 
+                    &emsp;<strong>for \(\ell = 1 : L\) do</strong>
+                    &emsp;&emsp;&emsp; \(a^{(\ell)} = W^{(\ell)} z^{(\ell-1)} + b^{(\ell)}\); 
+                    &emsp;&emsp;&emsp; \(z^{(\ell)} = g_\ell(a^{(\ell)})\);
+                    &emsp;\(\hat{y} = z^{(L)}\);
+                    &emsp;Compute Loss \(\mathcal{L}(y, \hat{y})\);
+
+                    <strong>// Backward Pass</strong>
+                    &emsp;\(u^{(L)} = \nabla_{\hat{y}} \mathcal{L}\); // Gradient of the loss wrt the network output
+                    &emsp;<strong>for \(\ell = L : 1\) do</strong>
+                    &emsp;&emsp;&emsp; \(\delta^{(\ell)} = u^{(\ell)} \odot g_\ell'(a^{(\ell)})\); // Element-wise multiplication
+                    &emsp;&emsp;&emsp; \(\nabla_{W^{(\ell)}} \mathcal{L} = \delta^{(\ell)} (z^{(\ell-1)})^\top\);
+                    &emsp;&emsp;&emsp; \(\nabla_{b^{(\ell)}} \mathcal{L} = \delta^{(\ell)}\);
+                    &emsp;&emsp;&emsp; \(u^{(\ell-1)} = (W^{(\ell)})^\top \delta^{(\ell)}\); // Gradient wrt the input of the current layer
+                    <strong>Output:</strong> \(\{\nabla_{W^{(\ell)}} \mathcal{L},\; \nabla_{b^{(\ell)}} \mathcal{L}\}_{\ell=1}^L\)
+                </div>
               
             </section>
 
@@ -328,7 +338,7 @@ uses_python: false
                     Differentiation</strong></a>, we generalize backpropagation beyond sequential layers to the full framework of reverse-mode automatic 
                     differentiation on directed acyclic graphs.
                 </p>
-                
+
             </section>
 
         </div>
