@@ -28,17 +28,43 @@ uses_python: false
 
             <section id="AD" class="section-content">
                 <h2>Automatic Differentiation</h2>
+
                 <p>
-                    In multilayer perceptrons (MLPs), <strong>backpropagation</strong> is an efficient application of the chain rule to compute gradients layer by layer. 
-                    More generally, this technique is known as <strong>automatic differentiation (AD)</strong>. AD is not limited to sequential layers. It applies to arbitrary 
-                    <strong>computational graphs</strong>, which are directed acyclic graphs (DAGs) that represent how variables are computed from inputs to outputs.
+                    In <a href="neural_networks.html"><strong>Part 4</strong></a>, we introduced backpropagation as an algorithm for computing gradients 
+                    in multilayer perceptrons, exploiting the <a href="../Calculus/jacobian.html"><strong>chain rule</strong></a> to propagate gradients 
+                    layer by layer. However, modern neural network architectures - with residual connections, attention mechanisms, and dynamic control 
+                    flow - do not fit neatly into the sequential layer abstraction. We need a more general framework.
                 </p>
 
                 <p>
-                    Automatic differentiation systematically applies the chain rule over this graph structure to compute exact derivatives. 
-                    In <strong>reverse-mode AD</strong> - which underlies backpropagation - we begin at the output node and work backwards, 
-                    accumulating gradients with respect to each variable.
+                    <strong>Automatic differentiation (AD)</strong> is that framework. Rather than relying on a layer-by-layer structure, AD operates on 
+                    arbitrary <strong>computational graphs</strong>: directed acyclic graphs (DAGs) where each node represents an elementary operation 
+                    and edges encode data dependencies. Given such a graph, AD systematically applies the chain rule to compute <strong>exact</strong> derivatives 
+                    - not finite-difference approximations, and not symbolic expressions that can explode in size.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Automatic Differentiation:</span>
+                    <p>
+                        Let \(f : \mathbb{R}^n \to \mathbb{R}^m\) be a function decomposed into a sequence of elementary operations represented as 
+                        a computational graph. <strong>Automatic differentiation</strong> computes the Jacobian \(J_f \in \mathbb{R}^{m \times n}\) (or 
+                        products involving it) by applying the chain rule systematically through the graph. Two modes exist:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Forward-mode AD</strong>:<br>
+                            propagates <em>Jacobian-vector products</em> \(J_f \cdot v\) from inputs to outputs. Cost: one forward pass per input 
+                            direction. Efficient when \(n \ll m\).
+                        </li>
+                        <li><strong>Reverse-mode AD</strong>:<br>
+                            propagates <em>vector-Jacobian products</em> \(u^\top J_f\) from outputs to inputs. Cost: one backward pass per output 
+                            direction. Efficient when \(m \ll n\).
+                        </li>
+                    </ul>
+                    <p>
+                        Since neural network training involves a scalar loss (\(m = 1\)) with millions of parameters (\(n \gg 1\)), 
+                        reverse-mode AD - which is backpropagation in this context - computes the full gradient in a single backward pass.
+                    </p>
+                </div>
             </section>
 
             <section id="eg" class="section-content">
@@ -50,19 +76,16 @@ uses_python: false
                     (i.e., backpropagation).
                 </p>
 
-                
-                <p>
-                    <strong>Note:</strong> Backpropagation is the application of reverse-mode automatic differentiation to neural networks. While 
-                    the terms are often used interchangeably, "backpropagation" typically refers to the context of training neural networks with 
-                    scalar loss functions, whereas "reverse-mode AD" is the more general algorithmic framework that can handle vector-valued functions 
-                    as well.
-                </p>
-
                 <p>
                     Consider the following function
                     \[
                     f(x_1, x_2) = \log \left((x_1 + x_2)^2 + \sin(x_1 x_2) \right).
                     \]
+                    Note: For this function and its derivatives to be strictly defined in the real domain, we require the input 
+                    \((x_1, x_2)\) to satisfy \((x_1 + x_2)^2 + \sin(x_1 x_2) > 0\).
+                </p>
+
+                <p>
                     We decompose this into primitive operations:
                     \[
                     \begin{align*}
@@ -348,12 +371,21 @@ uses_python: false
 
                  <p>
                     The power of automatic differentiation lies in its systematic approach:
-                    <ol style="padding-left: 40px;">
-                        <li>Decompose complex functions into simple primitive operations</li>
-                        <li>Apply the chain rule mechanically through the computational graph</li>
-                        <li>Sum gradients when variables contribute through multiple paths</li>
-                    </ol>
+                 </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>Decompose complex functions into simple primitive operations</li>
+                    <li>Apply the chain rule mechanically through the computational graph</li>
+                    <li>Sum gradients when variables contribute through multiple paths</li>
+                </ol>
+
+                <p>
                     This process can be fully automated, making it the backbone of modern deep learning frameworks.
+                </p>
+
+                <p>
+                    Note: In AD literature, the accumulated gradient \(\frac{\partial f}{\partial x_i}\) is often denoted as the 
+                    <strong>adjoint</strong> \(\bar{x}_i\).
                 </p>
             </section>
 
@@ -375,13 +407,15 @@ uses_python: false
                 </ul>
 
                 <p>
-                These systems rely on automatic differentiation to:
+                    These systems rely on automatic differentiation to:
+                </p>
+
                 <ol style="padding-left: 40px;">
                     <li>Train neural networks by computing gradients of loss functions with respect to millions (or billions) of parameters</li>
                     <li>Optimize black-box functions in physics simulation, robotics, and finance</li>
                     <li>Perform end-to-end differentiation through control flow, dynamic loops, and even solver calls (e.g., differentiable physics)</li>
-                    </ol>
-                </p>
+                </ol>
+
             </section>
 
             <section id="code" class="section-content">
@@ -527,12 +561,12 @@ uses_python: false
                                     return f.item(), x1.grad.item(), x2.grad.item()
 
 
-                                def gradient_check(f, x1, x2, epsilon=1e-7):
+                                def gradient_check(x1, x2, epsilon=1e-7):
                                     """
                                     Numerical gradient checking using finite differences
                                     """
                                     # Compute analytical gradients
-                                    df_dx1, df_dx2 = manual_autodiff_example(x1, x2)
+                                    f_val, df_dx1, df_dx2 = manual_autodiff_example(x1, x2)
                                     
                                     print("\n" + "="*60)
                                     print("NUMERICAL GRADIENT CHECK:")
@@ -571,11 +605,21 @@ uses_python: false
                                     f_pytorch, grad_x1_pytorch, grad_x2_pytorch = pytorch_autodiff_example(x1, x2)
                                 
                                     # Numerical gradient check
-                                    gradient_check(None, x1, x2)
+                                    gradient_check(x1, x2)
                             </pre>
                         </div>
                     </div>
                 </div>
+
+                <p>
+                    With automatic differentiation providing the computational engine for gradient-based learning, we have covered the core tools of 
+                    modern ML: from <a href="regression.html"><strong>regularized regression</strong></a> through 
+                    <a href="intro_classification.html"><strong>classification</strong></a> and <a href="neural_networks.html"><strong>neural networks</strong></a>. 
+                    In <a href="svm.html"><strong>Part 6: Support Vector Machines</strong></a>, we return to classification from a  geometric perspective, 
+                    replacing probabilistic modeling with direct margin maximization - connecting to the <a href="../Calculus/duality.html"><strong>duality theory</strong></a> 
+                    and <a href="../Calculus/constrained_opt.html"><strong>constrained optimization</strong></a> developed in Section II.
+                </p>
+
             </section>
 
         </div>
