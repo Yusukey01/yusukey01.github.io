@@ -18,7 +18,7 @@ uses_python: false
         {% include section_navigation.html %}
 
         <div class="topic-nav">
-            <a href="#ridge">Ridge Regression</a></li>
+            <a href="#ridge">Ridge Regression</a>
             <a href="#Demo">Demo: Ridge Regression</a>
             <a href="#CV">Cross Validation</a>
             <a href="#b-v">Bias-Variance Tradeoff in Ridge Regression</a>
@@ -28,53 +28,47 @@ uses_python: false
         <div class="container">  
             <section id="ridge" class="section-content">
                 <h2>Ridge Regression</h2>
+
                 <p>
-                    Let's first review <a href="../Probability/linear_regression.html"><strong>linear regression</strong></a>. 
-                    Suppose we are given observed data points \({\{(x_i, y_i)\}_{i = 1}^n}\), where each \(x_i \in \mathbb{R}^d\) is a 
-                    feature vector, and \(y_i \in \mathbb{R}\) is the corresponding target value. The linear regression model assumes a 
-                    linear relationship:
+                    In <a href="../Probability/linear_regression.html"><strong>Part 11 of Section III</strong></a>, 
+                    we established the linear model: given observed data \(\{(x_i, y_i)\}_{i=1}^n\) with 
+                    \(x_i \in \mathbb{R}^d\) and \(y_i \in \mathbb{R}\), we write
                     \[
-                    y = Xw + \epsilon, 
+                    y = Xw + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2 I),
                     \]
-                    where \(X \in \mathbb{R}^{n \times d}\) is the design matrix, \(w \in \mathbb{R}^d\) is the weight vector to be estimated, 
-                    and \(\epsilon \sim \mathcal{N}(0, \sigma^2 I)\) is a Gaussian noise vector.
-                </p>
-                   
-                <p> 
-                    In linear regression, the <a href="../Probability/mle.html"><strong>maximum likelihood estimator (MLE)</strong></a> 
-                    of \(w\) coincides with the <a href="../Linear_algebra/leastsquares.html"><strong>least-squares solution</strong></a>: 
+                    where \(X \in \mathbb{R}^{n \times d}\) is the design matrix and \(w \in \mathbb{R}^d\) is the weight vector. 
+                    Under Gaussian noise, the <a href="../Probability/mle.html"><strong>maximum likelihood estimator</strong></a> 
+                    coincides with the <a href="../Linear_algebra/leastsquares.html"><strong>least-squares solution</strong></a>:
                     \[
                     \begin{align*}
                     \widehat{w}_{LS}    &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 \\\\
                                         &= \arg \min_w \|y - Xw\|_2^2 \\\\
                                         &= \arg \min_w (y - Xw)^\top (y - Xw) \\\\
-                                        &= \arg \min_w y^\top y -y^\top Xw - w^T X^T y + w^\top X^\top X w\\\\
-                                        &= \arg \min_w f(w) \\\\
+                                        &= \arg \min_w \; y^\top y - y^\top Xw - w^\top X^\top y + w^\top X^\top X w \\\\
+                                        &= \arg \min_w \; J(w).
                     \end{align*}
                     \]
-                    
                     Differentiating with respect to \(w\) and setting the gradient to zero:
                     \[
                     \begin{align*}
-                        \nabla f(w) &= -X^\top y -X^\top y + 2X^\top Xw \\\\
-                                    &= -2X^\top y + 2 X^\top X w  = 0 
+                        \nabla J(w) &= -X^\top y - X^\top y + 2X^\top Xw \\\\
+                                    &= -2X^\top y + 2 X^\top X w = 0. 
                     \end{align*}
                     \]
                     Thus, if \((X^\top X)^{-1}\) exists,
                     \[
-                    \begin{align*}
-                    \widehat{w}_{LS} &= (X^\top X)^{-1}X^\top y \\\\
-                                     &= \widehat{w}_{MLE}.
-                    \end{align*}
+                    \widehat{w}_{LS} = (X^\top X)^{-1}X^\top y = \widehat{w}_{MLE}.
                     \]
                 </p>
 
                 <p>
-                    However, when \(d \gg n\), the matrix \(X^T X\) becomes ill-conditioned or singular. This leads to a flat objective 
-                    surface in some directions, making the solution non-unique and highly sensitive to noise - a phenomenon known as 
-                    <strong>overfitting</strong>.
+                    While this estimator is optimal when \(X^\top X\) is well-conditioned, high-dimensional settings where \(d \gg n\) lead to 
+                    ill-conditioning or singularity of \(X^\top X\). The objective surface becomes flat in some directions, making the solution 
+                    non-unique and highly sensitive to noise - a phenomenon known as <strong>overfitting</strong>. Regularization addresses 
+                    this by trading a small amount of bias for a substantial reduction in variance, a principle we will formalize in the 
+                    <a href="#b-v"><strong>bias-variance decomposition</strong></a> below.
                 </p>
-
+                
                 <p>     
                     To mitigate this issue, we add a penalty term on the objective. This technique is called <strong>regularization</strong>, 
                     and the modified version of linear regression is known as <strong>ridge regression</strong>:
@@ -84,7 +78,7 @@ uses_python: false
                                         &=  \arg \min_w \|y - Xw\|_2^2 + \lambda w^\top w \\\\
                                         &= \arg \min_w (Xw -y)^\top (Xw-y)+\lambda w^\top w \\\\
                                         &= \arg \min_w y^\top y -2w^\top Xy +w^\top X^\top Xw + w^\top (\lambda I)w \\\\
-                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\
+                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\\
                                         &= \arg \min_w J(w)            
                     \end{align*}
                     \]
@@ -92,20 +86,38 @@ uses_python: false
                     \[
                     \nabla_w J(w) = -2X^\top y +2(X^\top X + \lambda I )w = 0
                     \]
-                    Solve this equation for \(w\), we obtain 
+                    Solving for \(w\), we obtain
                     \[
                     \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
                     \]
                     where \(\lambda > 0\) is the <strong>regularization parameter</strong> that controls the strength of the penalty.
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">Ridge Regression:</span>
+                    <p>
+                        <strong>Ridge regression</strong> augments the least-squares objective with a squared \(\ell_2\)-norm penalty 
+                        on the weight vector:
+                        \[
+                        \widehat{w}_{\text{ridge}} = \arg \min_w \|y - Xw\|_2^2 + \lambda \|w\|_2^2 
+                        = (X^\top X + \lambda I)^{-1} X^\top y,
+                        \]
+                        where \(\lambda > 0\) is the regularization parameter. The addition of \(\lambda I\) guarantees that 
+                        \((X^\top X + \lambda I)\) is <strong>positive definite</strong> and hence invertible, even when 
+                        \(X^\top X\) is singular.
+                    </p>
+                </div>
+
                 <p>
                     The hyperparameter \(\lambda \geq 0\) controls the strength of the regularization:
-                    <ul style="padding-left: 40px;">
-                        <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{w}_{ridge} \to \widehat{w}_{LS}\).</li>
-                        <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{w}_{ridge} \to 0\), leading to high bias but low variance.</li>
-                    </ul>
-                    <br>
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{w}_{ridge} \to \widehat{w}_{LS}\).</li>
+                    <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{w}_{ridge} \to 0\), leading to high bias but low variance.</li>
+                </ul>
+
+                <p>
                     This illustrates the classic <strong>bias-variance tradeoff</strong> in statistical learning. 
                 </p>
 
@@ -148,10 +160,10 @@ uses_python: false
                 </p>
                
                 <p>
-                    An special case of K-fold CV is <strong>Leave-One-Out Cross-Validation (LOOCV)</strong>, where the number of folds \(K\) equals the 
+                    A special case of K-fold CV is <strong>Leave-One-Out Cross-Validation (LOOCV)</strong>, where the number of folds \(K\) equals the 
                     number of data points in the training set. That is, the model is trained on all training data points except one, which is used for validation, 
                     and this process is repeated for each data point. Thus, LOOCV tends to produce a low-bias estimate of the validation error. However, 
-                    LOOCV is computationally expensive for large datasets. In contrast, smaller values of \(K\) (like 5 ~ 10) offer a good tradeoff between bias, 
+                    LOOCV is computationally expensive for large datasets. In contrast, smaller values of \(K\) (such as 5-10) offer a good tradeoff between bias, 
                     variance, and computational cost, making them a popular choice in practice.
                 </p>
 
@@ -269,21 +281,27 @@ uses_python: false
 
                 <div class="theorem">
                     <span class="theorem-title">Lasso vs Dimensionality Reduction:</span>
+                    
                     <p>
-                    Feature selection via Lasso sounds like dimentionality reduction (e.g. <a href="../Probability/covariance.html"><strong>PCA</strong></a>) 
-                    because both reduce the number of active predictors, but in fundamentally they are different. 
+                        Feature selection via Lasso sounds like dimensionality reduction (e.g., <a href="pca.html"><strong>PCA</strong></a>) 
+                        because both reduce the number of active predictors, but fundamentally they are different.
                     </p>
 
                     <p>
-                    Let's assume that We have 100 variables originally and our model uses 10 variables in the end. 
-                    <ul style="padding-left: 40px;">
-                        <li>In Lasso: the model uses 10 out of 100 <strong>original variables</strong> </li>
-                         &nbsp;&nbsp;&nbsp; If the true signal lies in a combination of many small effects, pure feature dropping can hurt performance.
-                        <li>In PCA: the model uses 10 <strong>new variables</strong></li>
-                        &nbsp;&nbsp;&nbsp;  Captures directions of maximal variance even if no single original variable is strongly predictive 
-                        and improves numerical stability when features are highly correlated, but <strong>we lose direct feature interpretability</strong>.
-                    </ul>
+                        Assume that We have 100 variables originally and our model uses 10 variables in the end. 
                     </p>
+
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Lasso</strong>:<br>
+                            The model uses 10 out of 100 <strong>original variables</strong>. 
+                            If the true signal lies in a combination of many small effects, pure feature dropping can hurt performance.
+                        </li>
+                        <li><strong>PCA</strong>:<br> 
+                            The model uses 10 <strong>new variables</strong> (linear combinations of the originals). 
+                            This captures directions of maximal variance even if no single original variable is strongly predictive 
+                            and improves numerical stability when features are highly correlated, but <strong>we lose direct feature interpretability</strong>.
+                        </li>
+                    </ul>
 
                     <p>
                         For instance, when there are more features than samples, Lasso can still fit a model by zeroing out most coefficients, 
@@ -292,6 +310,13 @@ uses_python: false
                     
                     <p>In practice you might even combine them - run PCA to a moderate number of components and then apply Lasso on those - if you need both
                         compression and <strong>sparsity</strong>.
+                    </p>
+
+                     <p>
+                        Ridge and Lasso regularization illustrate a core theme in machine learning: controlling model complexity to achieve valid generalization. 
+                        In <a href="intro_classification.html"><strong>Part 3: Intro to Classification</strong></a>, we move from predicting continuous values to 
+                        predicting discrete categories, introducing logistic regression and kernel methods that extend the linear framework into nonlinear decision 
+                        boundaries.
                     </p>
                     
                 </div>
