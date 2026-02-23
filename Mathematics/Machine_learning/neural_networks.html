@@ -29,10 +29,18 @@ uses_python: false
 
             <section id="MLP" class="section-content">
                 <h2>Multilayer Perceptron (MLP)</h2>
+
+                <p>
+                    In <a href="intro_classification.html"><strong>Part 3</strong></a>, we saw that logistic regression defines a <em>linear</em> decision boundary 
+                    and that the kernel trick can extend this to nonlinear settings - but requires choosing a fixed feature map. Neural networks take a fundamentally 
+                    different approach: they <em>learn</em> the feature representation jointly with the classifier by composing many simple, differentiable transformations. 
+                    The resulting gradients are computed via the <a href="../Calculus/jacobian.html"><strong>Chain Rule</strong></a>, which we formalize in 
+                    this page as the backpropagation algorithm.
+                </p>
+
                 <p> 
-                    The key idea of <strong>deep neural networks (DNNs)</strong> is "composing" a vast number of simple functions to 
-                    make a huge complex function. In this section, we focus on a specific type of DNN known as the <strong>multilayer perceptron (MLP)</strong>, 
-                    also referred to as a <strong>feedforward neural network (FFNN)</strong>.
+                    The key idea of <strong>deep neural networks (DNNs)</strong> is "composing" a vast number of simple functions to make a huge complex function.
+                    We focus on a specific type of DNN known as the <strong>multilayer perceptron (MLP)</strong>, also referred to as a <strong>feedforward neural network (FFNN)</strong>.
                 </p>
 
                 <p>
@@ -43,7 +51,7 @@ uses_python: false
                 
                     where each component function \( f_\ell(x) = f(x; \theta_\ell) \) represents the transformation at 
                     <strong>layer</strong> \( \ell \,\), \( x \in \mathbb{R}^D \) is an input vector with \( D \) features, and 
-                    \(\theta\) is a collection of parameters(weights and biases):
+                    \(\theta\) is a collection of parameters (weights and biases):
                     \[
                     \theta = \{ \theta_\ell \}_{\ell=1}^L \text{ ,where } \theta_\ell = \{ W^{(\ell)}, b^{(\ell)} \}.
                     \]
@@ -60,7 +68,7 @@ uses_python: false
                     \[
                     z^{(\ell)} = g_{\ell}(b^{(\ell)} + W^{(\ell)}z^{(\ell -1)}) = g_{\ell}(a^{(\ell)})
                     \]
-                    where \(a^{(\ell)}\) is called the <strong>pre-activations</strong>, and the output of the newtwork is denoted by 
+                    where \(a^{(\ell)}\) is called the <strong>pre-activations</strong>, and the output of the network is denoted by
                     \(\hat{y} = h_\theta(x) = g_L(a^{(L)})\).
                 </p>
 
@@ -76,8 +84,25 @@ uses_python: false
                     <li><strong>Recurrent Neural Networks (RNNs)</strong> and <strong>Transformers</strong> for sequential data (e.g. text)</li>
                 </ul>
 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Multilayer Perceptron</span>
+                    <p>
+                        A <strong>multilayer perceptron (MLP)</strong> with \(L\) layers defines a parameterized function 
+                        \[
+                        f(x; \theta) = f_L \circ f_{L-1} \circ \cdots \circ f_1(x),
+                        \] 
+                        where each layer computes
+                        \[
+                        z^{(\ell)} = g_\ell\!\left(W^{(\ell)} z^{(\ell-1)} + b^{(\ell)}\right),
+                        \]
+                        with \(z^{(0)} = x\), weight matrices \(W^{(\ell)} \in \mathbb{R}^{d_\ell \times d_{\ell-1}}\), bias vectors 
+                        \(b^{(\ell)} \in \mathbb{R}^{d_\ell}\), and nonlinear activation functions \(g_\ell\). The output layer 
+                        uses an activation appropriate to the task (sigmoid for binary classification, softmax for multiclass, identity for regression).
+                    </p>
+                </div>
+
                 <p>
-                    In particular, modern <strong>Large Language Models (LLMs)</strong> like GPT-4 are built upon the <a href="deep_nn.html#transformer"><strong>Transformer architecture</strong></a>. 
+                    In particular, modern <strong>Large Language Models (LLMs)</strong> are built upon the <a href="deep_nn.html#transformer"><strong>Transformer architecture</strong></a>. 
                     The Transformer's <strong>Self-Attention mechanism</strong> has largely replaced <strong>RNNs</strong> in natural language processing 
                     because it allows for global dependencies to be modeled in parallel, bypassing the sequential bottleneck and vanishing gradient issues 
                     inherent in recurrent designs.
@@ -93,7 +118,7 @@ uses_python: false
                     <ul style="padding-left: 40px;">
                         <li>
                             <strong>Inference Efficiency:</strong><br>
-                            Standard Transformers suffer from $O(L^2)$ computational complexity. In contrast, SSMs maintain <strong>linear complexity</strong> 
+                            Standard Transformers suffer from \(O(L^2)\) computational complexity. In contrast, SSMs maintain <strong>linear complexity</strong> 
                             \(O(L)\) and constant \(O(1)\) memory overhead per step during inference. This makes them ideal for <strong>embedded devices</strong> 
                             and <strong>real-time control systems</strong> where memory bandwidth is a bottleneck.
                         </li>
@@ -144,7 +169,7 @@ uses_python: false
                     \]
                     ReLU's derivative is 1 for positive inputs and 0 for negative inputs, avoiding the exponential decay of gradients that occurs with sigmoid functions. 
                     ReLU introduces non-linearity while preserving gradient magnitude for positive inputs. It is computationally simple and helps maintain gradient flow 
-                    during training, which is why it is now a standard choice in modern neural networks architectures.
+                    during training, which is why it is now a standard choice in modern neural network architectures.
                 </p>
                 <p>
                     <strong>Note:</strong> While ReLU solves the vanishing gradient problem, it can suffer from the "dying ReLU" problem where neurons become inactive (always output zero) and 
@@ -208,7 +233,7 @@ uses_python: false
                     &emsp;Output:  
                     &emsp;&emsp;&emsp;\(\mathcal{L} = x_{K+1}\);  //Loss value (computed in forward pass)
                     &emsp;&emsp;&emsp;\(\nabla_x \mathcal{L} = u_1\); //Gradient wrt the input
-                    &emsp;&emsp;&emsp;\(\{\nabla_{\theta} \mathcal{L} = g_k\}_{k=1}^K\); ///Gradients wrt the parameters
+                    &emsp;&emsp;&emsp;\(\{\nabla_{\theta} \mathcal{L} = g_k\}_{k=1}^K\); //Gradients wrt the parameters
                 </div>    
               
             </section>
@@ -260,7 +285,7 @@ uses_python: false
                     </ul>
                     </li>
                 </ul>
-                <br>
+                
                 <h3>Try Adjusting:</h3>
                 <ul style="padding-left: 40px;">
                     <li><strong>Hidden Units:</strong> More neurons allow for more complex decision boundaries</li>
@@ -291,12 +316,19 @@ uses_python: false
 
                 <p>
                     Zooming out further, GPUs themselves rely on foundational advances in <strong>semiconductor</strong> technology. Semiconductors are 
-                    materials whose conductivity can be precisely controlled, making them the backbone of all modern electronics—from GPUs and CPUs to 
+                    materials whose conductivity can be precisely controlled, making them the backbone of all modern electronics — from GPUs and CPUs to 
                     memory chips and mobile devices. By using advanced fabrication techniques and nanometer-scale engineering, manufacturers can pack 
-                    billions of <strong>transistors</strong> (the basic units of computation) onto a single chip. This density of computation enables 
-                    the incredible power of today's hardware and fuels the era of <strong>foundation models</strong>, including 
-                    <strong>large language models (LLMs)</strong> such as GPT and BERT.
+                    billions of <strong>transistors</strong> onto a single chip. This density of computation enables the incredible power of today's 
+                    hardware and fuels the era of <strong>foundation models</strong>, including <strong>large language models (LLMs)</strong>.
                 </p>
+
+                <p>
+                    With the architecture and training procedure of neural networks established, a natural question arises: how exactly are the gradients 
+                    \(\nabla_\theta J(\theta)\) computed for arbitrary computational graphs? In <a href="autodiff.html"><strong>Part 5: Automatic 
+                    Differentiation</strong></a>, we generalize backpropagation beyond sequential layers to the full framework of reverse-mode automatic 
+                    differentiation on directed acyclic graphs.
+                </p>
+                
             </section>
 
         </div>
