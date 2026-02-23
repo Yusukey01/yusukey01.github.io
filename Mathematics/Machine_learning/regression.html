@@ -258,81 +258,68 @@ uses_python: false
 
             <section id="lasso" class="section-content">
                 <h2>Lasso Regression</h2>
+
                 <p>
-                    In ridge regression objective, squared <strong>\(\ell_2\)-norm</strong>, \( \| w \|_2^2 \) is introduced as a 
-                    regularizer. Instead, here we use the \(\ell_1\) penalty (or \(\ell_1\) regularization term):
-                    \[
-                    \widehat{w}_{\text{lasso}} = \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 + \lambda \|w\|_1.
-                    \]
-                    This formulation is known as the <strong>Least absolute shrinkage & selection operator (Lasso) regression</strong>.
-                </p>
-                <p>
-                    The significance of Lasso is that it automatically performs <strong>feature selection</strong>. By penalizing the 
-                    \(\ell_1\)-norm of the weight vector, Lasso often drives many \(w_j\) to <strong>exactly zero</strong>, effectively 
-                    dropping those features from the model. Intuitively, this is because the \(\ell_1\) regularizer has “pointy” level sets, 
-                    while the \(\ell_2\) regularizer shrinks all coefficients "smoothly" toward zero but never exactly to zero.
-                </p>
-                <p>
-                    In Lasso regression, after feature selection with the optimal \(\lambda\), we have to "retrain" the objective with \(\lambda = 0\) 
-                    (i.e. solving ordinary least-squares) but only using selected features. For example, when we run Lasso, generate 
-                    an index set: 
-                    \[
-                    S = \{j : \widehat{w}_{\text{lasso}, j} \neq 0\}
-                    \]
-                    and then solve 
-                    \[
-                    \tilde{w} = \arg \min_{w_S} \sum_{i=1}^n (y_i - x_{i, S}^\top w_S)^2
-                    \]
-                    where \(x_{i, S}\) is the subvector of features in \(S\) and we set \(\tilde{w}_j = 0\) for \(j \notin S\).
+                    Ridge regression shrinks all coefficients smoothly toward zero but never sets any exactly to zero. 
+                    In many applications - particularly when most features are irrelevant - we want the model to automatically 
+                    identify and discard uninformative variables. This motivates replacing the squared \(\ell_2\) penalty with an \(\ell_1\) penalty:
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Lasso vs Dimensionality Reduction:</span>
-                    
+                    <span class="theorem-title">Lasso Regression:</span>
                     <p>
-                        Feature selection via Lasso sounds like dimensionality reduction (e.g., <a href="pca.html"><strong>PCA</strong></a>) 
-                        because both reduce the number of active predictors, but fundamentally they are different.
+                        The <strong>Least Absolute Shrinkage and Selection Operator (Lasso)</strong> 
+                        solves
+                        \[
+                        \widehat{w}_{\text{lasso}} = \arg \min_w \|y - Xw\|_2^2 + \lambda \|w\|_1,
+                        \]
+                        where \(\|w\|_1 = \sum_{j=1}^d |w_j|\) is the \(\ell_1\)-norm and 
+                        \(\lambda > 0\) controls the regularization strength.
                     </p>
-
-                    <p>
-                        Assume that We have 100 variables originally and our model uses 10 variables in the end. 
-                    </p>
-
-                    <ul style="padding-left: 40px;">
-                        <li><strong>Lasso</strong>:<br>
-                            The model uses 10 out of 100 <strong>original variables</strong>. 
-                            If the true signal lies in a combination of many small effects, pure feature dropping can hurt performance.
-                        </li>
-                        <li><strong>PCA</strong>:<br> 
-                            The model uses 10 <strong>new variables</strong> (linear combinations of the originals). 
-                            This captures directions of maximal variance even if no single original variable is strongly predictive 
-                            and improves numerical stability when features are highly correlated, but <strong>we lose direct feature interpretability</strong>.
-                        </li>
-                    </ul>
-
-                    <p>
-                        For instance, when there are more features than samples, Lasso can still fit a model by zeroing out most coefficients, 
-                        whereas PCA & regression can overfit or require careful component-selection heuristics.
-                    </p>
-                    
-                    <p>In practice you might even combine them - run PCA to a moderate number of components and then apply Lasso on those - if you need both
-                        compression and <strong>sparsity</strong>.
-                    </p>
-
-                     <p>
-                        Ridge and Lasso regularization illustrate a core theme in machine learning: controlling model complexity to achieve valid generalization. 
-                        In <a href="intro_classification.html"><strong>Part 3: Intro to Classification</strong></a>, we move from predicting continuous values to 
-                        predicting discrete categories, introducing logistic regression and kernel methods that extend the linear framework into nonlinear decision 
-                        boundaries.
-                    </p>
-                    
                 </div>
 
+                <p>
+                    The key property of Lasso is that it performs <strong>automatic feature selection</strong>.
+                    The \(\ell_1\) penalty drives many coefficients \(w_j\) to <strong>exactly zero</strong>, effectively dropping those features 
+                    from the model. Geometrically, this occurs because the \(\ell_1\) ball has corners (unlike the smooth \(\ell_2\) ball), 
+                    so the level sets of the loss function are more likely to intersect the constraint region at a vertex where 
+                    one or more coordinates vanish.
+                </p>
+
+                <p>
+                    Unlike ridge regression, the Lasso objective is not differentiable at \(w_j = 0\) due to the absolute value, so 
+                    there is no closed-form solution. In practice, Lasso is solved by coordinate descent or proximal gradient methods.
+                </p>
+
+                <p>
+                    After obtaining the Lasso solution, a common practice is to <strong>re-fit ordinary least-squares on the selected features</strong>. 
+                    Specifically, define the active set
+                    \[
+                    S = \{j : \widehat{w}_{\text{lasso}, j} \neq 0\},
+                    \]
+                    and then solve the unregularized problem restricted to these features:
+                    \[
+                    \tilde{w}_S = \arg \min_{w_S} \sum_{i=1}^n (y_i - x_{i,S}^\top w_S)^2,
+                    \]
+                    setting \(\tilde{w}_j = 0\) for \(j \notin S\). This two-stage procedure removes the shrinkage bias that Lasso 
+                    introduces on the selected coefficients.
+                </p>
+
+                <p>
+                    It is worth noting that Lasso's feature selection is fundamentally different from <a href="pca.html"><strong>dimensionality reduction via PCA</strong></a>. 
+                    Lasso selects a subset of the <em>original</em> variables, preserving interpretability but potentially missing signals that are spread across many 
+                    weakly predictive features. PCA, by contrast, constructs <em>new</em> variables (linear combinations of the originals) that capture directions of maximal 
+                    variance, improving numerical stability for correlated features at the cost of direct interpretability. In practice, one can combine both approaches - 
+                    reducing to a moderate number of principal components and then applying Lasso - when both compression and sparsity are needed.
+                </p>
+
+                 <p>
+                    Ridge and Lasso regularization illustrate a core theme in machine learning: controlling model complexity to achieve good generalization. In 
+                    <a href="intro_classification.html"><strong>Part 3: Intro to Classification</strong></a>, we move from predicting continuous values to 
+                    predicting discrete categories, introducing logistic regression and kernel methods that extend the linear framework into nonlinear decision boundaries.
+                </p>
+
             </section>
-
-    
-
-        
             
         </div>
         <script src="/js/main.js"></script> 
