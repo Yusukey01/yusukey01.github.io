@@ -27,10 +27,13 @@ uses_python: false
 
             <section id="svm" class="section-content">
                 <h2>Support Vector Machine</h2>
-                
+
                 <p>
-                    So far in both regression and classification problems, we have used <strong>probabilistic predictors</strong>. Here, 
-                    we learn a <strong>non-probabilistic</strong> method, which is known as <strong>Support Vector Machines (SVMs)</strong>.
+                    So far in both regression and classification, we have used <strong>probabilistic predictors</strong> that model \(p(y \mid x)\) 
+                    and optimize via maximum likelihood. Here, we take a fundamentally different, geometric approach: rather than modeling probabilities, 
+                    we seek the hyperplane that separates the classes with the <strong>largest possible margin</strong>. This formulation leads 
+                    naturally to a <a href="../Calculus/constrained_opt.html"><strong>constrained optimization problem</strong></a> whose 
+                    <a href="../Calculus/duality.html"><strong>dual formulation</strong></a> enables the kernel trick.
                 </p>
 
                 <p>
@@ -46,12 +49,15 @@ uses_python: false
                     \[
                     f(x) = w^\top x + w_0 \tag{1}
                     \]
-                    To obtain robust solution, we would like to <strong>maximize the margin between data points and the decision boundary</strong>.
+                    To obtain a robust solution, we would like to <strong>maximize the margin between data points and the decision boundary</strong>.
+                </p>
 
-                    <div style="text-align: center;">
-                    <img src="images/svm_boundary.png" alt="complexity"  class="responsive-image">
-                    </div>
-                    To express the distance of the closest point to the decision boundary, 
+                <div style="text-align: center;">
+                    <img src="images/svm_boundary.png" alt="SVM margin and decision boundary" class="responsive-image">
+                </div>
+
+                <p>
+                    To express the distance of the closest point to the decision boundary,
                     we introduce the orthogonal projection of any point \(x\) onto the boundary \(f(x)\):
                     \[
                     x = \text{proj}_{f(x)}x  + r \frac{w}{\| w \|} \tag{2}
@@ -79,8 +85,8 @@ uses_python: false
                     \[
                     \max_{w, w_0} \frac{1}{\| w \|} \min_{n = 1}^N \left[\tilde{y}_n \left(w^\top x_n + w_0 \right)\right].
                     \]
-                    Moreover, define a scale factor \(k\) subject to \(\tilde{y}_n f_n =1\), but the scaling does not change the 
-                    distance of points to the decision boundary (it will be canceled out by \(\frac{1}{\| w \|}\) ).
+                    Since both \(w\) and \(w_0\) can be freely rescaled without changing the decision boundary, we may normalize so that the 
+                    closest point satisfies \(\tilde{y}_n f(x_n) = 1\) exactly. Under this normalization, the margin equals \(\frac{2}{\|w\|}\).
                 </p>
 
                 <p>
@@ -88,7 +94,7 @@ uses_python: false
                     \[
                     \min_{w, w_0} \frac{1}{2}\| w \|^2 
                     \]
-                    subjec to 
+                    subject to 
                     \[
                     \tilde{y}_n (w^\top x_n + w_0) \geq 1, \quad n = 1 : N.
                     \]
@@ -108,9 +114,9 @@ uses_python: false
                     \]
                     To optimize this, we need a stationary point that satisfies:
                     \[
-                    (\hat{w}, \hat{w_0}, \hat{\alpha}) = \min_{w, w_0} \max_{\alpha} \mathcal{L}(w, w_0, \alpha).
+                    (\hat{w}, \hat{w}_0, \hat{\alpha}) = \min_{w, w_0} \max_{\alpha} \mathcal{L}(w, w_0, \alpha).
                     \]
-                    Taking derivatives wrt \(w\) and \(w_0\) and seting to zero:
+                    Taking derivatives with respect to \(w\) and \(w_0\) and setting to zero:
                     \[
                     \begin{align*}
                     \nabla_w \mathcal{L}(w, w_0, \alpha)  &= w - \sum_{n =1}^N \alpha_n \tilde{y}_n x_n  \\\\
@@ -120,14 +126,14 @@ uses_python: false
                     Then we have:
                     \[
                     \begin{align*}
-                    \hat{w} &= \sum_{n =1}^N \hat{\alpha_n} \tilde{y}_n x_n  \\\\
-                    0 &= \sum_{n =1}^N \hat{\alpha_n} \tilde{y}_n.
+                    \hat{w} &= \sum_{n =1}^N \hat{\alpha}_n \tilde{y}_n x_n  \\\\
+                    0 &= \sum_{n =1}^N \hat{\alpha}_n \tilde{y}_n.
                     \end{align*}
                     \]
                     Substitute these for the Lagrangian (3), we obtain
                     \[
                     \begin{align*}
-                     \mathcal{L}(\hat{w}, \hat{w_0}, \alpha) &= \frac{1}{2}\hat{w}^\top \hat{w} - \sum_{n =1}^N \alpha_n \tilde{y}_n \hat{w}^\top x_n
+                     \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) &= \frac{1}{2}\hat{w}^\top \hat{w} - \sum_{n =1}^N \alpha_n \tilde{y}_n \hat{w}^\top x_n
                                                                - \sum_{n =1}^N \alpha_n \tilde{y}_n w_0 + \sum_{n =1}^N  \alpha_n  \\\\
                                                              &= \frac{1}{2}\hat{w}^\top \hat{w} - \hat{w}^\top \hat{w} - 0 + \sum_{n =1}^N  \alpha_n \\\\
                                                              &= - \frac{1}{2} \sum_{i =1}^N \sum_{j = 1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j x_i^\top x_j 
@@ -136,7 +142,7 @@ uses_python: false
                     \]
                     Therefore the dual problem is:
                     \[
-                    \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w_0}, \alpha) 
+                    \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) 
                     \]
                     subject to 
                     \[
@@ -154,7 +160,7 @@ uses_python: false
                     \[
                     \alpha_n = 0 \, \text{ or } \, \tilde{y}_n (\hat{w}^\top x_n + \hat{w}_0) = 1
                     \]
-                    must hold. The points meet the second condition are called <strong>support vectors</strong>.
+                    must hold. The points satisfying the second condition are called <strong>support vectors</strong>.
                 </p>
 
                 <p>
@@ -214,7 +220,7 @@ uses_python: false
                             - \sum_{n = 1}^N \mu_n \xi_n
                     \end{align*}
                     \]
-                    where \(\alpha_n \geq 0, \text{ and } \mu_n \geq 0\) are lagrange multipliers.
+                    where \(\alpha_n \geq 0\) and \(\mu_n \geq 0\) are Lagrange multipliers.
                 </p>
 
                 <p>
@@ -229,18 +235,19 @@ uses_python: false
                     \[
                     \sum_{n=1}^N \alpha_n \tilde{y}_n = 0
                     \]
-                    These constraints imply: 
+                    These constraints partition the training points into three cases: 
                 </p>
 
                 <ul style="padding-left: 60px;">
-                    <li>If \(\alpha_n = 0\), the point is ignored.</li>
-                    <li>If \(0 < \alpha_n < C\), the point is on the margin. (\(\xi_n = 0\))</li>
-                    <li>If \(\alpha_n = C\), the point is inside the margin. In this case,</li>
-                        <ul style="padding-left: 70px;">
-                            <li>If \(\xi_n \leq 1\), the point is correctly classified.</li>
-                            <li>If \(\xi_n > 1\), the point is misclassified.</li>
+                    <li>If \(\alpha_n = 0\): the point lies outside the margin and is correctly classified (ignored by the model).</li>
+                    <li>If \(0 < \alpha_n < C\): the point is exactly on the margin boundary (\(\xi_n = 0\)). These are the <strong>support vectors</strong>.</li>
+                    <li>If \(\alpha_n = C\): the point is inside or beyond the margin.
+                        <ul style="padding-left: 40px;">
+                            <li>If \(\xi_n \leq 1\): correctly classified but inside the margin.</li>
+                            <li>If \(\xi_n > 1\): misclassified.</li>
                         </ul>
-                </ul>         
+                    </li>
+                </ul>
             </section>
 
             <section id="demo" class="section-content">
@@ -328,6 +335,14 @@ uses_python: false
                     <li>For RBF kernel, vary \(\gamma\) to see how decision boundaries become more complex</li>
                     <li>Watch how the number of support vectors changes with different parameters</li>
                 </ol>
+
+                <p>
+                    SVMs demonstrate how geometric intuition - maximizing the margin - leads to strong generalization guarantees, particularly in 
+                    high-dimensional spaces with limited data. In <a href="pca.html"><strong>Part 7: PCA & Autoencoders</strong></a>, we shift from 
+                    supervised to <strong>unsupervised learning</strong>, asking how to discover low-dimensional structure in data without any labels 
+                    - connecting <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a> to neural network-based 
+                    representation learning.
+                </p>
             </section>
 
         </div>
