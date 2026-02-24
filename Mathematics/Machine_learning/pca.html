@@ -75,10 +75,13 @@ uses_python: false
             <section id="kernel-pca" class="section-content">
                 <h2>Kernel PCA</h2>
                 <p> 
-                    Given the \(N \times D\) data matrix. PCA is a problem of determining the eigenvectors of the \(D\times D\) 
-                    covariance matrix \(X^\top X\). If \(D >> N\), working with the \(N \times N\) <strong>Gram matrix</strong> 
-                    \(K = XX^\top\) is much more efficient. The Gram matrix is just a matrix of inner products \(x_i^\top x_j\).
+                    Given an \(N \times D\) data matrix, PCA requires the eigenvectors of the \(D \times D\) 
+                    covariance matrix \(X^\top X\). If \(D \gg N\), working with the \(N \times N\) <strong>Gram matrix</strong> 
+                    \(K = \Phi \Phi^\top\) is much more efficient - its entries are inner products 
+                    \(\langle \phi(x_i), \phi(x_j) \rangle\). In the linear case, \(\phi\) is the identity and 
+                    \(K_{ij} = x_i^\top x_j\).        
                 </p>
+
                 <p>
                     <strong>Kernel PCA (KPCA)</strong> is a nonlinear generalization of classical PCA that uses the 
                     <a href="intro_classification.html"><strong>kernel trick</strong></a>, which allows us to replace 
@@ -96,7 +99,7 @@ uses_python: false
                     \[
                     V_{kPCA} = \Phi^\top U \Lambda^{-\frac{1}{2}}
                     \]
-                    where \(U\) is an orthogonal matrix containing the eigenvectors of the Gram matrix \(K = XX^\top\) with 
+                    where \(U\) is an orthogonal matrix containing the eigenvectors of the kernel (Gram) matrix \(K = \Phi \Phi^\top\) with 
                     corresponding eigenvalues in \(\Lambda\).
                 </p>
 
@@ -143,8 +146,8 @@ uses_python: false
                         \begin{align*}
                         \tilde{K}_{ij} &= \tilde{x}_i^\top \tilde{x}_j \\\\
                                         &= \left(x_i - \frac{1}{N} \sum_{k=1}^N x_k \right)\left(x_j - \frac{1}{N} \sum_{l=1}^N x_l \right) \\\\
-                                        &= x_i^\top x_j - \frac{1}{N} \sum_{l=1}^N x_i^\top x_l - \frac{1}{N} \sum_{l=1}^N x_j^\top x_k 
-                                            + \frac{1}{N^2} \sum_{k=1}^N \sum_{l =1}^N x_k^\top x_l.
+                                        &= x_i^\top x_j - \frac{1}{N} \sum_{l=1}^N x_i^\top x_l - \frac{1}{N} \sum_{k=1}^N x_k^\top x_j 
+                                            + \frac{1}{N^2} \sum_{k=1}^N \sum_{l=1}^N x_k^\top x_l.
                         \end{align*}
                         \]
                     </p>
@@ -192,10 +195,14 @@ uses_python: false
                     \[
                     \mathcal{L}(W) = \sum_{n=1}^N \| x_n - W x_n\|_2^2 
                     \]
-                    Then we obtain \(\hat{W}\), an orthogonal projection onto the first \(L\) eigenvectors of empirical covariance matrix of the data. 
+                    Then we obtain \(\hat{W}\), which acts as an orthogonal projection onto the subspace spanned by the first \(L\) eigenvectors 
+                    of the empirical covariance matrix of the data.
+                </p>
+
+                <p>
                     In general, it is known that if we introduce nonlinearities into the autoencoder, the model becomes strictly more powerful than PCA. 
-                    Moreover, autoencoders designed with deep learning architectures handle large datasets and complex structures much better than Kernel PCA, so 
-                    autoencoders have generally become more popular than Kernel PCA for nonlinear mapping in practical applications.
+                    Moreover, autoencoders designed with deep learning architectures handle large datasets and complex structures much better than Kernel 
+                    PCA, so autoencoders have generally become more popular than Kernel PCA for nonlinear mapping in practical applications.
                 </p> 
             </section>
 
@@ -256,7 +263,7 @@ uses_python: false
                 <p>
                     A remarkable result is that, as \(\sigma \to 0\), the optimal denoising function satisfies:
                     \[
-                    e(x) = r(\tilde{x}) - x \approx \nabla_{x} \log p(x).
+                    e(x) = r(\tilde{x}) - x \approx \sigma^2 \nabla_{x} \log p(x) + O(\sigma^4).
                     \]
                     This means the denoising autoencoder implicitly learns the <strong>score function</strong> 
                     (gradient of log-density), which forms a <strong>vector field</strong> over the entire feature space. 
@@ -317,6 +324,7 @@ uses_python: false
                         \(p \in \mathcal{M}\) has an open neighborhood \(U\) that is homeomorphic to \(\mathbb{R}^n\). 
                         That is, there exists a continuous bijection \(\phi : U \to \mathbb{R}^n \) with continuous inverse.
                     </p>
+
                     <p>
                         Note: Two topological spaces \(X\) and \(Y\) are <strong>homeomorphic</strong> if there exists a function \(f: X \to Y\) 
                         such that: \(f\) is a bijection, continuous, and its inverse \(f^{-1}: Y \to X \) is also continuous.
