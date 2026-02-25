@@ -271,24 +271,30 @@ uses_python: false
                 </p>
 
                 <p>
-                    Formally, given an input matrix \( X \in \mathbb{R}^{n \times d} \), each attention head applies its own learned projections to compute queries, keys, and values:
+                    Formally, given an input matrix \( \mathbf{X} \in \mathbb{R}^{n \times d} \), each attention head 
+                    applies its own learned projections:
                     \[
-                    \text{head}_i = \text{Attention}\left(\mathbf{W}_i^{(q)} \mathbf{q}, \{\mathbf{W}_i^{(k)} \mathbf{k}_j, \mathbf{W}_i^{(v)}\mathbf{v}_j\}\right) \in \mathbb{R}^{p_v},
+                    \text{head}_i = \text{Attention}\!\left(
+                        \mathbf{X} \mathbf{W}_i^{(q)},\; 
+                        \mathbf{X} \mathbf{W}_i^{(k)},\; 
+                        \mathbf{X} \mathbf{W}_i^{(v)}
+                    \right) \in \mathbb{R}^{n \times d_v},
                     \]
-                    where \( \mathbf{W}_i^{(q)}, \mathbf{W}_i^{(k)}, \mathbf{W}_i^{(v)} \in \mathbb{R}^{p_v \times d} \) are projection matrices specific to head \( i \).
+                    where 
+                    \( \mathbf{W}_i^{(q)} \in \mathbb{R}^{d \times d_k} \), 
+                    \( \mathbf{W}_i^{(k)} \in \mathbb{R}^{d \times d_k} \), and 
+                    \( \mathbf{W}_i^{(v)} \in \mathbb{R}^{d \times d_v} \) are 
+                    projection matrices specific to head \( i \). The query and key projections share dimension \( d_k \) so that their inner 
+                    product is well-defined; the value projection dimension \( d_v \) may differ.
                 </p>
 
                 <p>
-                    All heads are computed in parallel and their outputs are concatenated and linearly projected to produce the final output:
+                    All heads are computed in parallel, concatenated along the feature dimension, and linearly projected:
                     \[
-                    \text{MHA}(\mathbf{X}) = \text{MHA}\left(\mathbf{q}, \{\mathbf{k}_j, \mathbf{v}_j\}\right) 
-                        = \mathbf{W}_o  \begin{bmatrix} 
-                                    \text{head}_1 \\
-                                    \vdots \\
-                                    \text{head}_h\\
-                                \end{bmatrix}.
+                    \text{MHA}(\mathbf{X}) = \text{Concat}(\text{head}_1, \dots, \text{head}_h) \mathbf{W}_o,
                     \]
-                    where \( \mathbf{W}_o \in \mathbb{R}^{d \times hp_v} \) is a learned output projection matrix.
+                    where \( \mathbf{W}_o \in \mathbb{R}^{h d_v \times d} \) is a learned output projection. With \( h \) heads, a common 
+                    choice is \( d_k = d_v = d / h \), which ensures the total computational cost is comparable to single-head attention.
                 </p>
 
                 <p>
