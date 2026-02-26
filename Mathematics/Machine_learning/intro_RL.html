@@ -60,12 +60,14 @@ uses_python: false
 
                 <p>
                     Reinforcement learning differs fundamentally from other machine learning paradigms:
-                    <ul style="padding-left: 40px;">
-                        <li><strong>Supervised learning</strong> trains models on ground-truth input-output pairs with explicit correct labels for each input.</li>
-                        <li> <strong>Unsupervised learning</strong> discovers hidden structure or representations in unlabeled data without any feedback signal.</li>
-                        <li> <strong>Reinforcement learning</strong> uses only a scalar reward signal that provides evaluative feedback based on the agent's interaction with an environment.</li>
-                    </ul>
                 </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>Supervised learning</strong> trains models on ground-truth input-output pairs with explicit correct labels for each input.</li>
+                    <li> <strong>Unsupervised learning</strong> discovers hidden structure or representations in unlabeled data without any feedback signal.</li>
+                    <li> <strong>Reinforcement learning</strong> uses only a scalar reward signal that provides evaluative feedback based on the agent's interaction with an environment.</li>
+                </ul>
+                
               
                 <p>
                     In RL, learning is driven by trial-and-error interaction rather than labeled examples. Unlike supervised learning, there are no correct labels for each input, 
@@ -184,11 +186,11 @@ uses_python: false
                 <p>
                     The <strong>exploration-exploitation tradeoff</strong> is fundamental to reinforcement learning. An agent must 
                     balance between:
-                    <ul style="padding-left: 40px;">
+                </p>
+                <ul style="padding-left: 40px;">
                     <li><strong>Exploitation</strong>: Choosing actions that yield high rewards based on current knowledge</li>
                     <li><strong>Exploration</strong>: Trying new actions to potentially discover better strategies</li>
-                    </ul>
-                </p>
+                </ul>
 
                 <h3>\(\epsilon\)-Greedy Strategy</h3>
                 <p>
@@ -256,21 +258,21 @@ uses_python: false
                     is referred to as <strong>learning</strong>.
                 </p>
 
-                <p>
-                    We define the MDP as the tuple:
-                    \[
-                    \left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle,
-                    \]
-                    where:
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li>\(\mathcal{S}\): set of environment states</li>
-                    <li>\(\mathcal{A}\): set of available actions</li>
-                    <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
-                    <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
-                    <li>\(p_0(s_0)\): initial state distribution</li>
-                </ul>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Markov Decision Process (MDP)</span>
+                    <p>
+                        An MDP is a tuple 
+                        \(\left\langle \mathcal{S}, \mathcal{A}, p_T, p_R, p_0 \right\rangle\) 
+                        where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(\mathcal{S}\): set of environment states</li>
+                        <li>\(\mathcal{A}\): set of available actions</li>
+                        <li>\(p_T(s' \mid s, a)\): transition model (next-state distribution)</li>
+                        <li>\(p_R(r \mid s, a, s')\): reward model (stochastic reward distribution)</li>
+                        <li>\(p_0(s_0)\): initial state distribution</li>
+                    </ul>
+                </div>
                 
                 <p>
                     At time \(t = 0\), the initial state is sampled as \(s_0 \sim p_0\). At each step \(t \geq 0\), the agent observes 
@@ -321,46 +323,58 @@ uses_python: false
             <section id="value-functions" class="section-content">
                 <h2>Value Functions and Bellman Equations</h2>
 
-                <p>
-                    Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for continuing tasks. 
-                    The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, discounted by a factor \(\gamma \in [0, 1]\):
-                    \[
-                    \begin{align*}
-                    G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
-                        &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
-                        &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
-                    \end{align*}
-                    \]
-                    The discount factor \(\gamma\) ensures that the return remains finite even for infinite-horizon problems, and it gives higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Return, Value Functions, & Advantage</span>
+                    <p>
+                        Let \(\boldsymbol{\tau}\) be a trajectory of length \(T\), where \(T\) may be infinite (\(T = \infty\)) for 
+                        continuing tasks.
+                    </p>
+
+                    <p>
+                        The <strong>return</strong> at time \(t\) is defined as the total accumulated reward from that point forward, 
+                        discounted by a factor \(\gamma \in [0, 1]\):
+                        \[
+                        \begin{align*}
+                        G_t &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T - t - 1} r_{T - 1} \\\\
+                            &= \sum_{k = 0}^{T - t - 1} \gamma^k r_{t + k} \\\\
+                            &= \sum_{j = t}^{T - 1} \gamma^{j - t} r_j.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> 
+                        (or <strong>value function</strong>) under the policy \(\pi\) is defined as: 
+                        \[
+                        \begin{align*}
+                        V_{\pi}(s) &= \mathbb{E}_{\pi}\left[G_0 \mid s_0 = s\right] \\\\
+                                   &= \mathbb{E}_{\pi}\left[\sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s\right],
+                        \end{align*}
+                        \]
+                        where the expectation is over trajectories induced by the policy \(\pi\).
+                    </p>
+                    <p>
+                        The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as 
+                        \[
+                        \begin{align*}
+                        Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
+                                      &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right],
+                        \end{align*}
+                        \]
+                        which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), 
+                        compared to just following \(\pi\) from the beginning.
+                    </p>
+                    <p>
+                        The <strong>advantage function</strong>:
+                        \[
+                        A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s).
+                        \]
+                        This measures how much better action \(a\) is compared to the average action under \(\pi\) in state \(s\).
+                    </p>
+                </div>
 
                 <p>
-                    Given a stochastic policy \(\pi(a \mid s)\), the <strong>state-value function</strong> (or simply, <strong>value function</strong>) is defined as:
-                    \[
-                    \begin{align*}
-                    V_{\pi}(s) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s \right] \\\\
-                            &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s \right],
-                    \end{align*}
-                    \]
-                    where the expectation is over trajectories induced by the policy \(\pi\).
-                </p>
-
-                <p>
-                    The <strong>action-value function</strong> (or <strong>Q-function</strong>) is defined as:
-                    \[
-                    \begin{align*}
-                    Q_{\pi}(s, a) &= \mathbb{E}_{\pi} \left[ G_0 \mid s_0 = s, \, a_0 = a \right] \\\\
-                                &= \mathbb{E}_{\pi} \left[ \sum_{t = 0}^{\infty} \gamma^t r_t \mid s_0 = s, \, a_0 = a \right].
-                    \end{align*}
-                    \]
-                </p>
-
-                <p>
-                    The <strong>advantage function</strong> is defined as:
-                    \[
-                    A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s),
-                    \]
-                    which quantifies how much better it is to take action \(a\) in state \(s\) and then follow policy \(\pi\), compared to just following \(\pi\) from the beginning.
+                    The discount factor \(\gamma\) ensures the return remains finite even for infinite-horizon problems and gives higher weight 
+                    to short-term rewards, thereby encouraging the agent to achieve goals sooner.
                 </p>
 
                 <p>
@@ -633,31 +647,36 @@ uses_python: false
 
                 <h3>TD(0): One-Step Temporal Difference</h3>
                 <p>
-                    The simplest TD method, <strong>TD(0)</strong>, updates value estimates after each single step. 
-                    Suppose that the agent learns the value function \(V_{\pi}\) for a fixed policy \(\pi\).
-                    Given a state transition \((s, a, r, s')\) where \(a \sim \pi(s)\), we update the estimate \(V(s)\) as follows:
-                    \[
-                    V(s_t) \leftarrow V(s_t) + \alpha \left[ r_t + \gamma V(s_{t+1}) - V(s_t) \right]
-                    \]
-                    where:
+                    The simplest TD method, <strong>TD(0)</strong>, updates value estimates after each single step. Suppose the agent learns 
+                    the value function \(V_\pi\) for a fixed policy \(\pi\). 
+                    Given a state transition \((s_t, a_t, r_t, s_{t+1})\) where \(a_t \sim \pi(s_t)\), we update the estimate \(V(s_t)\) as follows:
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li>\(\alpha \in (0,1]\) is the learning rate</li>
-                    <li>\(r_t + \gamma V(s_{t+1})\) is the <strong>TD target</strong></li>
-                    <li>\(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is the <strong>TD error</strong></li>
-                </ul>
-                
+                <div class="theorem">
+                    <span class="theorem-title">Definition: TD(0) Update</span>
+                    <p>
+                        \[
+                        V(s_t) \leftarrow V(s_t) + \alpha\,\delta_t
+                        \]
+                        where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(\alpha \in (0,1]\) is the learning rate,</li>
+                        <li>\(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is the <strong>TD error</strong>,</li>
+                        <li>\(r_t + \gamma V(s_{t+1})\) is the <strong>TD target</strong>.</li>
+                    </ul>
+                </div>
+
 
                 <h3>n-Step TD Methods</h3>
                 <p>
                     TD methods can be generalized to look ahead multiple steps. The <strong>n-step return</strong> is defined as:
                     \[
-                    G_{t:t+n} = r_{t+1} + \gamma r_{t+2} + \cdots + \gamma^{n-1} r_{t+n} + \gamma^n V(S_{t+n})
+                    G_{t:t+n} = r_{t+1} + \gamma r_{t+2} + \cdots + \gamma^{n-1} r_{t+n} + \gamma^n V(s_{t+n})
                     \]
                     The corresponding n-step TD update becomes:
                     \[
-                    V(S_t) \leftarrow V(S_t) + \alpha [G_{t:t+n} - V(S_t)]
+                    V(s_t) \leftarrow V(s_t) + \alpha [G_{t:t+n} - V(s_t)]
                     \]
                     This provides a spectrum of methods: \(n=1\) gives TD(0), and as \(n\) increases toward the episode length, 
                     the method approaches Monte Carlo behavior by using longer actual return sequences.
@@ -681,7 +700,7 @@ uses_python: false
                     <li>When \(\lambda = 0\): Only the 1-step return is used, reducing to TD(0)</li>
                     <li>When \(\lambda = 1\): For episodic tasks, this gives Monte Carlo behavior through full credit assignment</li>
                     <li>For \(0 < \lambda < 1\): Creates a weighted blend that emphasizes shorter-term returns but includes longer-term effects</li>
-                 </ul>
+                </ul>
 
                 <p>
                     Note that TD(λ) with \(\lambda = 1\) achieves Monte Carlo-equivalent behavior through a different mechanism than 
@@ -737,28 +756,42 @@ uses_python: false
                     directly (off-policy), while the other learns the policy it follows (on-policy).
                 </p>
 
+                .................
+
                 <h3>SARSA (On-Policy TD Control)</h3>
                 <p>
-                    The agent follows a policy \(\pi\) to learn the Q-function in every step to select actions. Under a transition \((s, a, r, s')\), the TD update rule is: 
-                    \[
-                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma Q(s', a') - Q(s, a) \right]
-                    \]
-                    where \(a' \sim \pi(s')\) is the action that the agent will take in state \(s'\). This makes SARSA <strong>on-policy</strong>.
-                    <br><br>
-                    Note: SARSA is named after the augmented transition \((s, a, r, s', a')\).
+                    The agent follows a policy \(\pi\) to learn the Q-function in every step in order to select actions. 
+                    Under a transition \((s, a, r, s')\), the TD update rule is: 
                 </p>
+                <div class="theorem">
+                    <span class="theorem-title">SARSA Update:</span>
+                    <p>
+                        \[
+                        Q(s, a) \leftarrow Q(s, a) + \alpha\left[r + \gamma Q(s', a') - Q(s, a)\right]
+                        \]
+                        where \(a' \sim \pi(s')\) is the action that the agent will take in state \(s'\). This makes SARSA <strong>on-policy</strong>.
+                    </p>
+                </div>
+                <p>
+                    Note: SARSA is named after the transition tuple \((s, a, r, s', a')\).
+                </p>
+
+
 
                 <h3>Q-Learning (Off-Policy TD Control)</h3>
                 <p>
-                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, we use the greedy action in \(s'\):
-                    \[
-                    a' = \arg \max_b Q(s', b),
-                    \]
-                    making it <strong>off-policy</strong>. Thus the TD update rule for a transition \((s, a, r, s')\) is given by:  
-                    \[
-                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma \max_{b} Q(s', b) - Q(s, a) \right].
-                    \]
+                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, Q-learning uses the greedy action in \(s'\):
                 </p>
+                <div class="theorem">
+                    <span class="theorem-title">Q-Learning Update:</span>
+                    <p>
+                        \[
+                        Q(s, a) \leftarrow Q(s, a) + \alpha\left[r + \gamma \max_b Q(s', b) - Q(s, a)\right]
+                        \]
+                        The max over actions \(\arg \max_b Q(s', b)\) makes this <strong>off-policy</strong>: 
+                        the update targets the optimal Q-function regardless of the behavioral policy.
+                    </p>
+                </div>
 
                 <h3>Key Differences</h3>
 
@@ -817,20 +850,27 @@ uses_python: false
 
                 <p>
                     Repeating the same steps, we obtain the <strong>policy gradient theorem</strong>: 
-                    \[
-                    \begin{align*}
-                    \nabla_{\theta}J(\pi_{\theta}) 
-                    &= \sum_{t = 0}^{\infty} \gamma^t \mathbb{E}_{p_t(s)} \left[\sum_a \nabla_{\theta}\pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a)\right] \\\\
-                    &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s)} \left[ \sum_a \nabla_{\theta}\pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right] \\\\
-                    &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s) \pi_{\theta}(a \mid s)} \left[ \nabla_{\theta} \log \pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right]
-                    \end{align*}
-                    \]
-                    where \(p_t(s)\) is the probability of visiting state \(s\) at time \(t\) if the agent starts with \(s_0 \sim p_0\) following \(\pi_{\theta}\), and 
-                    \[
-                    p_{\pi_{\theta}}^{\infty}(s) = (1 - \gamma) \sum_{t = 0}^{\infty} \gamma^t p_t(s)
-                    \]
-                    is the normalized discounted state visitation distribution. 
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Policy Gradient Theorem</span>
+                    <p>
+                        For a parameterized policy \(\pi_\theta\), the gradient of the expected return is:
+                        \[
+                        \begin{align*}
+                        \nabla_{\theta}J(\pi_{\theta}) 
+                        &= \sum_{t = 0}^{\infty} \gamma^t \mathbb{E}_{p_t(s)} \left[\sum_a \nabla_{\theta}\pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a)\right] \\\\
+                        &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s)} \left[ \sum_a \nabla_{\theta}\pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right] \\\\
+                        &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s) \pi_{\theta}(a \mid s)} \left[ \nabla_{\theta} \log \pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right]
+                        \end{align*}
+                        \]
+                        where \(p_t(s)\) is the probability of visiting state \(s\) at time \(t\) if the agent starts with \(s_0 \sim p_0\) following \(\pi_\theta\), and
+                        \[
+                        p_{\pi_\theta}^\infty(s) = (1-\gamma)\sum_{t=0}^{\infty}\gamma^t p_t(s)
+                        \]
+                        is the normalized discounted state visitation distribution.
+                    </p>
+                </div>
 
                 <p>
                     To reduce high variance, we can introduce a baseline:
@@ -925,10 +965,10 @@ uses_python: false
                     &emsp;&emsp;<strong>repeat:</strong>
                     &emsp;&emsp;&emsp;&emsp;Sample starting state \(s_0\) of a new episode
                     &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots\) <strong>do</strong>
-                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Sample action \(a_t \sim \pi_{\theta}(\dot \mid s_t)\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Sample action \(a_t \sim \pi_{\theta}(\cdot \mid s_t)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Observe next state \(s_{t+1}\) and reward \(r_t\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = r_t + \gamma V_\mathbf{w}(s_{t+1}) - V_\mathbf{w}(s_t)\) 
-                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}(s_t)}\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}}(s_t)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha_{\mathbf{\theta}} \gamma^t \delta \nabla_{\mathbf{\theta}} \log \pi_{\mathbf{\theta}}(a_t \mid s_t) \)
                     &emsp;&emsp;<strong>until</strong> converged
                     <strong>end</strong>
