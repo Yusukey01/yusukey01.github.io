@@ -74,13 +74,21 @@ uses_python: false
 
             <section id="ResNet" class="section-content">
                 <h2>ResNet: Residual Connections</h2>
+
                 <p>
-                    <strong>ResNet</strong> is a feedforward architecture in which each layer uses a <strong>residual block</strong> of the form:
-                    \[
-                    \mathcal{F}_{\ell}' (\mathbf{x}) = \mathcal{F}_{\ell} (\mathbf{x}) + \mathbf{x}
-                    \]
-                    where \(\mathcal{F}_{\ell}\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{x}\) is added back directly.
+                    <strong>ResNet</strong> is a feedforward architecture built from <strong>residual blocks</strong>:
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Residual Block:</span>
+                    <p>
+                        \[
+                        \mathbf{z}_{\ell+1} = \mathcal{F}_\ell(\mathbf{z}_\ell) + \mathbf{z}_\ell
+                        \]
+                        where \(\mathcal{F}_\ell\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{z}_\ell\) is 
+                        added back directly via a <strong>skip connection</strong>.
+                    </p>
+                </div>
 
                 <p>
                     The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
@@ -227,18 +235,23 @@ uses_python: false
                     \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable (i.e., \(= 1\)) as the dimension \(d\) increases.  
                     This is used to compute <strong>attention weights</strong> \(\alpha_{ij}\) after applying the softmax function.
                 </p>
-               
+
                 <p>
-                    In practice, we compute attention over minibatches of \(n\) query vectors. Let:
-                    \[
-                    \mathbf{Q} \in \mathbb{R}^{n \times d}, \quad \mathbf{K} \in \mathbb{R}^{m \times d}, \quad \mathbf{V} \in \mathbb{R}^{m \times v}
-                    \]
-                    Then the attention-weighted output is computed as:
-                    \[
-                    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \mathbf{V} \in \mathbb{R}^{n \times v}
-                    \]
-                    where the softmax is applied row-wise to normalize each row of the \(n \times m\) similarity matrix.
+                    In practice, we compute attention over minibatches of \(n\) query vectors.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Scaled Dot-Product Attention:</span>
+                    <p>
+                        Given queries \(\mathbf{Q} \in \mathbb{R}^{n \times d}\), keys \(\mathbf{K} \in \mathbb{R}^{m \times d}\), and 
+                        values \(\mathbf{V} \in \mathbb{R}^{m \times v}\):
+                        \[
+                        \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) 
+                        = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}}\right)\mathbf{V} \in \mathbb{R}^{n \times v}
+                        \]
+                        where the softmax is applied row-wise, normalizing each row of the \(n \times m\) similarity matrix.
+                    </p>
+                </div>
 
            </section>
 
@@ -270,31 +283,33 @@ uses_python: false
                     multiple self-attention operations in parallel using different learned projections, called "heads." 
                 </p>
 
-                <p>
-                    Formally, given an input matrix \( \mathbf{X} \in \mathbb{R}^{n \times d} \), each attention head 
-                    applies its own learned projections:
-                    \[
-                    \text{head}_i = \text{Attention}\!\left(
-                        \mathbf{X} \mathbf{W}_i^{(q)},\; 
-                        \mathbf{X} \mathbf{W}_i^{(k)},\; 
-                        \mathbf{X} \mathbf{W}_i^{(v)}
-                    \right) \in \mathbb{R}^{n \times d_v},
-                    \]
-                    where 
-                    \( \mathbf{W}_i^{(q)} \in \mathbb{R}^{d \times d_k} \), 
-                    \( \mathbf{W}_i^{(k)} \in \mathbb{R}^{d \times d_k} \), and 
-                    \( \mathbf{W}_i^{(v)} \in \mathbb{R}^{d \times d_v} \) are 
-                    projection matrices specific to head \( i \). The query and key projections share dimension \( d_k \) so that their inner 
-                    product is well-defined; the value projection dimension \( d_v \) may differ.
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Multi-Head Attention</span>
+                    <p>
+                        Given input \(\mathbf{X} \in \mathbb{R}^{n \times d}\), each head \(i \in \{1,\ldots,h\}\) computes:
+                        \[
+                        \text{head}_i = \text{Attention}\!\left(
+                            \mathbf{X}\mathbf{W}_i^{(q)},\;
+                            \mathbf{X}\mathbf{W}_i^{(k)},\;
+                            \mathbf{X}\mathbf{W}_i^{(v)}
+                        \right) \in \mathbb{R}^{n \times d_v}
+                        \]
+                        where 
+                        \(\mathbf{W}_i^{(q)} \in \mathbb{R}^{d \times d_k}\), 
+                        \(\mathbf{W}_i^{(k)} \in \mathbb{R}^{d \times d_k}\), 
+                        \(\mathbf{W}_i^{(v)} \in \mathbb{R}^{d \times d_v}\). 
+                        The outputs are concatenated and projected:
+                        \[
+                        \text{MHA}(\mathbf{X}) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)\,\mathbf{W}_o
+                        \]
+                        where \(\mathbf{W}_o \in \mathbb{R}^{hd_v \times d}\). A common choice is \(d_k = d_v = d/h\).
+                    </p>
+                </div>
 
                 <p>
-                    All heads are computed in parallel, concatenated along the feature dimension, and linearly projected:
-                    \[
-                    \text{MHA}(\mathbf{X}) = \text{Concat}(\text{head}_1, \dots, \text{head}_h) \mathbf{W}_o,
-                    \]
-                    where \( \mathbf{W}_o \in \mathbb{R}^{h d_v \times d} \) is a learned output projection. With \( h \) heads, a common 
-                    choice is \( d_k = d_v = d / h \), which ensures the total computational cost is comparable to single-head attention.
+                    The query and key projections share dimension \(d_k\) so that their inner product is well-defined; the value 
+                    projection dimension \(d_v\) may differ. With \(h\) heads and \(d_k = d_v = d/h\), the total computational cost is 
+                    comparable to single-head attention.
                 </p>
 
                 <p>
@@ -313,23 +328,25 @@ uses_python: false
                     sine and cosine functions of varying frequencies. 
                 </p> 
 
-                <p> 
-                    The positional encoding vector for position \( i \) and dimension \( j \) is defined as follows: 
-                    \[ 
-                    p_{i, 2j} = \sin \left( \frac{i}{C^{2j/d}} \right) 
-                    \]
-                    \[ 
-                    p_{i, 2j+1} = \cos \left( \frac{i}{C^{2j/d}} \right) 
-                    \] 
-                    where: 
-                </p>
-
-                <ul style="padding-left: 40px;"> 
-                    <li>\( i \) is the position index in the sequence, starting from 0,</li> 
-                    <li>\( j \) is the dimension index in the positional encoding vector,</li> 
-                    <li>\( d \) is the total dimension of the model (e.g., 512),</li> 
-                    <li>\( C \) is a constant (usually set to 10,000) to control the frequency scale.</li> 
-                </ul> 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Sinusoidal Positional Encoding</span>
+                    <p>
+                        The positional encoding vector for position \(i\) and dimension \(j\) is defined as:
+                        \[
+                        p_{i,\,2j} = \sin\!\left(\frac{i}{C^{2j/d}}\right)
+                        \]
+                        \[
+                        p_{i,\,2j+1} = \cos\!\left(\frac{i}{C^{2j/d}}\right)
+                        \]
+                        where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(i\) is the position index in the sequence, starting from 0,</li>
+                        <li>\(j\) is the dimension index in the positional encoding vector,</li>
+                        <li>\(d\) is the total dimension of the model (e.g., 512),</li>
+                        <li>\(C\) is a constant (usually set to 10,000) to control the frequency scale.</li>
+                    </ul>
+                </div>
 
                 <p> 
                     This formulation ensures that each dimension of the positional encoding corresponds to a sinusoid of a 
