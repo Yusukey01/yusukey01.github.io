@@ -104,13 +104,20 @@ uses_python: false
                 </p>
 
                 <p>
-                    Since \(\phi_i\) can be infinite dimensional, we cannot compute \(V_{kPCA}\). Instead, we compute the projection 
-                    of a test vector \(x_*\) onto the feature space:
-                    \[
-                    \phi_*^\top V_{kPCA} = \phi_*^\top \Phi^\top U \Lambda^{-\frac{1}{2}} = k_*^\top U \Lambda^{-\frac{1}{2}}
-                    \]
-                    where \(k_* = \left[\mathcal{K}(x_* , x_1), \cdots, \mathcal{K}(x_* , x_N) \right]\).
+                    Since \(\phi_i\) can be infinite dimensional, we cannot compute \(V_{kPCA}\) directly. Instead, we express the 
+                    projection of a test vector \(x_*\) entirely in terms of kernel evaluations:
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Kernel PCA Projection:</span>
+                    <p>
+                        \[
+                        \phi_*^\top V_{kPCA} = \phi_*^\top \Phi^\top U \Lambda^{-\frac{1}{2}} = k_*^\top U \Lambda^{-\frac{1}{2}}
+                        \]
+                        where \(k_* = \left[\mathcal{K}(x_*, x_1), \cdots, \mathcal{K}(x_*, x_N)\right]\) 
+                        is the vector of kernel evaluations between the test point and all training points.
+                    </p>
+                </div>
 
                 <p>
                     Note that using \(K = \Phi \Phi^\top\) is valid only if \(\mathbb{E}[\phi_i] = 0\). However, the feature space can be 
@@ -123,21 +130,25 @@ uses_python: false
                     \[
                     \tilde{K}_{ij} =  \tilde{\phi}_i^\top \tilde{\phi}_j.
                     \]
-                    By the double centering trick, 
-                    \[
-                    \begin{align*}
-                    \tilde{K} &= C_N K C_N  \\\\
-                              &= K - \frac{1}{N}JK - \frac{1}{N}KJ + \frac{1}{N^2}1^\top K 1
-                     \end{align*}
-                    \]
-                    where 
-                    \[
-                    C_N = I_N - \frac{1}{N}1_N 1_N^\top
-                    \]
-                    is the centering matrix. 
-                    <br>
-                    Note: \(J\) denotes the \(N \times N\) all-ones matrix: \(J = 1_N 1_N^\top\).
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Double Centering Trick:</span>
+                    <p>
+                        The centered Gram matrix is computed as:
+                        \[
+                        \begin{align*}
+                        \tilde{K} &= C_N K C_N \\\\
+                                  &= K - \frac{1}{N}JK - \frac{1}{N}KJ + \frac{1}{N^2}1^\top K 1
+                        \end{align*}
+                        \]
+                        where 
+                        \[
+                        C_N = I_N - \frac{1}{N}1_N 1_N^\top
+                        \]
+                        is the centering matrix and \(J = 1_N 1_N^\top\) is the \(N \times N\) all-ones matrix.
+                    </p>
+                </div>
 
                 <div class="proof">
                     <p>
@@ -180,24 +191,26 @@ uses_python: false
                 </p>
 
                 <p>
-                    We can implement \(f_e\) and \(f_d\) by <strong>neural networks</strong>. This is called <strong>autoencoder</strong>. 
+                    We can implement \(f_e\) and \(f_d\) by <strong>neural networks</strong>. This is called an <strong>autoencoder</strong>. 
                     In particular, a linear autoencoder is equivalent to PCA:
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li>Input: \(x \in \mathbb{R}^D\)</li>
-                    <li>Hidden units: \(z = W_1 x, \quad W_1 \in \mathbb{R}^{L \times D}, \quad L < D\) </li>
-                    <li>Output: \(\hat{x} = W_2 z = W_2 W_1 x = Wx, \quad W_2 \in \mathbb{R}^{D \times L}\)</li>
-                </ul>
-
-                <p>
-                    This model is trained by minimizing the squared reconstruction error: 
-                    \[
-                    \mathcal{L}(W) = \sum_{n=1}^N \| x_n - W x_n\|_2^2 
-                    \]
-                    Then we obtain \(\hat{W}\), which acts as an orthogonal projection onto the subspace spanned by the first \(L\) eigenvectors 
-                    of the empirical covariance matrix of the data.
-                </p>
+                <div class="theorem">
+                    <span class="theorem-title">Linear Autoencoder:</span>
+                    <ul style="padding-left: 40px;">
+                        <li>Input: \(x \in \mathbb{R}^D\)</li>
+                        <li>Hidden units: \(z = W_1 x, \quad W_1 \in \mathbb{R}^{L \times D}, \quad L < D\)</li>
+                        <li>Output: \(\hat{x} = W_2 z = W_2 W_1 x = Wx, \quad W_2 \in \mathbb{R}^{D \times L}\)</li>
+                    </ul>
+                    <p>
+                        Trained by minimizing the squared reconstruction error:
+                        \[
+                        \mathcal{L}(W) = \sum_{n=1}^N \|x_n - Wx_n\|_2^2
+                        \]
+                        The optimal \(\hat{W}\) acts as an orthogonal projection onto the subspace spanned by the first \(L\) eigenvectors 
+                        of the empirical covariance matrix of the data.
+                    </p>
+                </div>
 
                 <p>
                     In general, it is known that if we introduce nonlinearities into the autoencoder, the model becomes strictly more powerful than PCA. 
@@ -228,7 +241,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>💡 Tip:</strong><br>
+                    <strong>💡Tip:</strong><br>
                     Start with the "circles" dataset to see how each method handles non-linear structure. PCA will struggle, Kernel PCA (with RBF kernel) 
                     will separate the circles, and the autoencoder will "unfold" them into a line.
                 </p>
@@ -259,17 +272,24 @@ uses_python: false
                     \]
                     where \(e(x) = r(\tilde{x}) - x \) is the residual error for a sample \(x\). 
                 </p>
-            
+                
+                <div class="theorem">
+                    <span class="theorem-title">Denoising and Score Estimation:</span>
+                    <p>
+                        As \(\sigma \to 0\), the optimal denoising function satisfies:
+                        \[
+                        e(x) = r(\tilde{x}) - x \approx \sigma^2 \nabla_x \log p(x) + O(\sigma^4).
+                        \]
+                        The denoising autoencoder implicitly learns the <strong>score function</strong> \(\nabla_x \log p(x)\) 
+                        (gradient of log-density).
+                    </p>
+                </div>
+
                 <p>
-                    A remarkable result is that, as \(\sigma \to 0\), the optimal denoising function satisfies:
-                    \[
-                    e(x) = r(\tilde{x}) - x \approx \sigma^2 \nabla_{x} \log p(x) + O(\sigma^4).
-                    \]
-                    This means the denoising autoencoder implicitly learns the <strong>score function</strong> 
-                    (gradient of log-density), which forms a <strong>vector field</strong> over the entire feature space. 
-                    At each point, this vector field indicates the direction and magnitude to move toward regions 
-                    of higher data density. The reconstruction process follows these vectors, effectively "flowing" 
-                    corrupted points back to the <strong>data manifold</strong> along the steepest ascent of the probability landscape.
+                    This score function forms a <strong>vector field</strong> over the entire feature space. At each point, this vector field 
+                    indicates the direction and magnitude to move toward regions of higher data density. The reconstruction process follows 
+                    these vectors, effectively "flowing" corrupted points back to the <strong>data manifold</strong> along the steepest ascent 
+                    of the probability landscape.
                 </p>
                 
                 <h3><strong>Data Manifolds in Our Demo:</strong></h3>
