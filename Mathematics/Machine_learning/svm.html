@@ -90,16 +90,22 @@ uses_python: false
                 </p>
 
                 <p>
-                    Note that \(\max \frac{1}{\| w \|}\) is the same as \(\min \| w \|^2\). Thus our objective becomes:
-                    \[
-                    \min_{w, w_0} \frac{1}{2}\| w \|^2 
-                    \]
-                    subject to 
-                    \[
-                    \tilde{y}_n (w^\top x_n + w_0) \geq 1, \quad n = 1 : N.
-                    \]
-                    (Factor of \(\frac{1}{2}\) is for just convenience.)
+                    Note that \(\max \frac{1}{\|w\|}\) is equivalent to \(\min \|w\|^2\). Thus our objective becomes:
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Hard-Margin SVM (Primal):</span>
+                    <p>
+                        \[
+                        \min_{w,\, w_0} \;\frac{1}{2}\|w\|^2 
+                        \]
+                        subject to
+                        \[
+                        \tilde{y}_n(w^\top x_n + w_0) \geq 1, \quad n = 1 : N.
+                        \]
+                        The factor of \(\frac{1}{2}\) is included for convenience when differentiating.
+                    </p>
+                </div>
                     
                 <p>
                     This constrained optimization problem, known as the <strong>primal problem</strong>, is difficult to solve directly. However, 
@@ -140,22 +146,30 @@ uses_python: false
                                                                 + \sum_{n =1}^N \alpha_n.
                     \end{align*}
                     \]
-                    Therefore the dual problem is:
-                    \[
-                    \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) 
-                    \]
-                    subject to 
-                    \[
-                    \sum_{n =1}^N \alpha_n \tilde{y}_n = 0 \text{ and }  \alpha_n \geq 0, \quad n = 1 : N. 
-                    \]
-                    Also, the solution must satisfy the <a href="../Calculus/constrained_opt.html"><strong>KKT conditions</strong></a>:
-                    \[
-                    \begin{align*}
-                     \alpha_n &\geq 0 \text{ (Dual feasibility) }\\\\
-                    \tilde{y}_n f(x_n) -1 &\geq 0   \text{ (Primal feasibility) }\\\\
-                    \alpha_n (\tilde{y}_n f(x_n) -1 ) &= 0  \text{ (Complementary slackness) }
-                    \end{align*}
-                    \]
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Hard-Margin SVM (Dual):</span>
+                    <p>
+                        \[
+                        \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) 
+                        \]
+                        subject to 
+                        \[
+                        \sum_{n =1}^N \alpha_n \tilde{y}_n = 0 \text{ and }  \alpha_n \geq 0, \quad n = 1 : N. 
+                        \]
+                        The solution must satisfy the <a href="../Calculus/constrained_opt.html"><strong>KKT conditions</strong></a>:
+                        \[
+                        \begin{align*}
+                         \alpha_n &\geq 0 \text{ (Dual feasibility) }\\\\
+                        \tilde{y}_n f(x_n) -1 &\geq 0   \text{ (Primal feasibility) }\\\\
+                        \alpha_n (\tilde{y}_n f(x_n) -1 ) &= 0  \text{ (Complementary slackness) }
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
                     Thus, for each data point, either 
                     \[
                     \alpha_n = 0 \, \text{ or } \, \tilde{y}_n (\hat{w}^\top x_n + \hat{w}_0) = 1
@@ -164,29 +178,39 @@ uses_python: false
                 </p>
 
                 <p>
-                    Let the set of support vectors  be \(\mathcal{S}\). To perform prediction, we use: 
+                    Let the set of support vectors be \(\mathcal{S}\). To perform prediction, we expand 
+                    \(\hat{w} = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n x_n\):
                     \[
                     \begin{align*}
-                    f(x ; \hat{w}, \hat{w}_0) &= \hat{w}^\top x + \hat{w}_0 \\\\
-                                              &= \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n x_n^\top x + \hat{w}_0.
+                    f(x;\,\hat{w}, \hat{w}_0) 
+                        &= \hat{w}^\top x + \hat{w}_0 \\\\
+                        &= \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n\, x_n^\top x + \hat{w}_0.
                     \end{align*}
                     \]
-                    By the <a href="intro_classification.html"><strong>kernel trick</strong></a>, 
-                    \[
-                    f(x) = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n \mathcal{K}(x_n, x) + \hat{w}_0
-                    \]
-                    Also, 
-                    \[
-                    \begin{align*}
-                    \hat{w}_0 &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \hat{w}^\top x_n \right) \\\\
-                              &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \alpha_m \tilde{y}_m x_m^\top x_n \right).
-                    \end{align*}
-                    \]
-                    Applying the kernel trick to the bias:
-                    \[
-                    \hat{w}_0 = \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \hat{\alpha}_m \tilde{y}_m \mathcal{K}(x_m, x_n) \right).
-                    \]
+                    By the <a href="intro_classification.html"><strong>kernel trick</strong></a>, replacing inner products with 
+                    kernel evaluations:
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">SVM Prediction (Kernel Form):</span>
+                    <p>
+                        \[
+                        f(x) = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n \mathcal{K}(x_n, x) + \hat{w}_0
+                        \]
+                        where the bias is computed from the support vectors:
+                        \[
+                        \begin{align*}
+                        \hat{w}_0 &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \hat{w}^\top x_n \right) \\\\
+                                  &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \alpha_m \tilde{y}_m x_m^\top x_n \right).
+                        \end{align*}
+                        \]
+                        Applying the kernel trick to the bias:
+                        \[
+                        \hat{w}_0 = \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \hat{\alpha}_m \tilde{y}_m \mathcal{K}(x_m, x_n) \right).
+                        \]
+                    </p>
+                </div>
+
             </section>
             
              <section id="smc" class="section-content">
@@ -197,18 +221,24 @@ uses_python: false
                     \(\forall n, \, \tilde{y}_n f_n \geq 1\). By introducing <a href="../Calculus/constrained_opt.html"><strong>slack variables</strong></a> 
                     \(\xi_n \geq 0\), we relax the constraints \(\tilde{y}_n f_n \geq 0\) with <strong>soft margin constraints</strong>:
                     \[
-                    \tilde{y}_n f_n \geq 1 - \xi_n
+                    \tilde{y}_n f_n \geq 1 - \xi_n.
                     \]
-                    Thus our objective becomes: 
-                    \[
-                    \min_{w, w_0, \xi} \frac{1}{2} \| w \|^2 + C \sum_{n =1}^N \xi_n 
-                    \]
-                    subject to 
-                    \[
-                    \xi_n \geq 0, \quad \tilde{y}_n (x_n^\top w + w_0) \geq 1 - \xi_n
-                    \]
-                    where \(C \geq 0\) is a hyper parameter that controls how many data points are allowed to violate the margin.
+                    Thus, our objective becomes: 
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Soft-Margin SVM (Primal):</span>
+                    <p>
+                        \[
+                        \min_{w,\, w_0,\, \xi} \;\frac{1}{2}\|w\|^2 + C\sum_{n=1}^N \xi_n
+                        \]
+                        subject to
+                        \[
+                        \xi_n \geq 0, \quad \tilde{y}_n(x_n^\top w + w_0) \geq 1 - \xi_n
+                        \]
+                        where \(C \geq 0\) is a hyperparameter that controls how many data points are allowed to violate the margin.
+                    </p>
+                </div>
 
                 <p>
                     The Lagrangian becomes:
