@@ -24,7 +24,7 @@ uses_python: false
             <a href="#degree">Degrees</a>
             <a href="#iso">Isomorphism</a>
             <a href="#sub">Subgraphs</a>
-            <a href="#path">Paths & Cylcles</a>
+            <a href="#path">Paths & Cycles</a>
         </div> 
 
         <div class="container">  
@@ -32,232 +32,415 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    <strong>Graph theory</strong> is a core area of discrete mathematics that focuses on the study of <strong>graphs</strong> 
-                    - mathematical "structures" made up of vertices and edges that connect them. Theoretically, it provides rigorous frameworks 
-                    to understand properties like connectivity, cycles, and network flows, offering deep insights into the underlying structure of 
-                    complex systems. On the practical side, graph theory helps model relationships in social networks, improve recommendation systems, 
-                    and it is also used in advanced techniques like graph-based machine learning models.  
+                    <strong>Graph theory</strong> is a core area of discrete mathematics that studies <strong>graphs</strong> - mathematical 
+                    structures consisting of vertices and the edges that connect them. At its heart, a graph captures the idea of 
+                    <em>relationship</em>: whenever objects are linked by some pairwise connection, a graph provides the natural abstraction. 
+                    This simple idea turns out to be extraordinarily powerful.
+                </p>
+
+                <p>
+                    On the theoretical side, graph theory supplies rigorous frameworks for understanding connectivity, cycles, network flows, 
+                    and structural decomposition, offering deep insight into the organization of complex systems. On the practical side, graphs 
+                    model relationships in social networks, optimize routing and logistics, drive recommendation engines, and form the backbone 
+                    of modern graph neural networks and knowledge graphs in machine learning.
                 </p>
             </section>
 
             <section id="graph" class="section-content">
                 <h2>Graph</h2>
                 <p>
-                    A <strong>graph</strong> is a mathematical structure used to model relationships between objects. It consists of a set of 
-                    <strong>vertices</strong> (or nodes) and a set of <strong>edges</strong> (or connections) between them. Formally, a graph is defined as:
+                    We begin with the most fundamental object of study. A graph formalizes the idea of a collection of objects 
+                    (vertices) together with pairwise connections (edges) between them.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Graph</span>
+                    <p>
+                        A <strong>graph</strong> is an ordered pair \(G = (V, E)\), where \(V\) is a set of <strong>vertices</strong> 
+                        (or nodes), and \(E\) is a set of <strong>edges</strong>, each of which connects a pair of vertices. 
+                        We write \(V(G)\) for the vertex set and \(E(G)\) for the edge set of \(G\).
+                    </p>
+                </div>
+
+                <p>
+                    In most cases, we assume graphs are finite, though infinite graphs do arise in certain theoretical contexts. 
+                    The <strong>order</strong> of \(G\) is the number of its vertices:
                     \[
-                    G = (V, E)
+                    |G| = |V(G)|.
                     \]
-                    where \(V\) is a set of <strong>vertices</strong>, denoted as \(G(V)\), and \(E\) is a set of <strong>edges</strong>, denoted as \(G(E)\).
-                    In most cases, we assume graphs are finite, but they can be infinite.
+                    Similarly, \(|E(G)|\) denotes the number of edges, sometimes called the <strong>size</strong> of \(G\).
                 </p>
 
                 <p>
-                    Typically, \(|G|\) denotes the number of vertices on the graph \(G\), which is the cardinality of the vertex set \(V(G)\), and 
-                    also we call it the <strong>order</strong> of \(G\):
-                    \[
-                    \text{the order of the graph \(G\) } = |G| = |V(G)|.
-                    \]
-                    Similarly, \(|E(G)|\) denotes the cardinality of the edge set \(E(G)\). 
+                    A vertex \(v\) is <strong>incident</strong> with an edge \(e\) if \(v \in e\); we then say that \(e\) is an 
+                    edge <em>at</em> \(v\). The two vertices incident with an edge are its <strong>ends</strong>, and an edge 
+                    <strong>joins</strong> its ends. For brevity, an edge \(\{x, y\} \in E(G)\) is typically written as \(xy \in E(G)\), 
+                    where \(x, y \in V(G)\).
                 </p>
 
                 <p>
-                    A vertex \(v\) is <strong>incident</strong> with an 
-                    edge \(e\) if \(v \in e\), then \(e\) is an edge at \(v\). The two vertices incident with an edge are its <strong>ends</strong>, and 
-                    an edge <strong>joints</strong> its ends. Usually, an edge \(\{x, y\} \in E(G) \) is denoted by \(xy \in E(G)\) 
-                    where \(x, y \in V(G)\). 
-                </p>
-
-                <p>
-                    Graphs come in different types, depending on how edges are defined:
+                    The definition above describes the simplest type of graph - an undirected, simple graph. 
+                    In practice, several important variants arise depending on how edges are defined:
                 </p>
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Undirected graph</strong>:<br>
-                        Each edge has no direction, and simply connects two vertices. Formally, edges are unordered pairs
-                        of distinct vertices:
+                        Each edge has no direction and simply connects two distinct vertices. Formally, edges are unordered pairs:
                         \[
                         E \subseteq \binom{V}{2}.
                         \]
+                        Unless stated otherwise, "graph" in this page means an undirected simple graph.
                     </li>
-                    <li><strong>Directed graph</strong>:<br>
-                        Each edge has a direction, and points from one vertex to another. Formally, edges are ordered pairs:
+                    <li><strong>Directed graph (digraph)</strong>:<br>
+                        Each edge (often called an <em>arc</em>) has a direction, pointing from one vertex to another. 
+                        Formally, edges are ordered pairs:
                         \[
                         E \subseteq V \times V.
                         \]
                     </li>
                     <li><strong>Weighted graph</strong>:<br>
-                        It assigns a numerical value (or "weight") to each edge, often representing cost, distance, or strength of the connection. 
-                        Weighted graphs are widely used in shortest path algorithms and network optimization problems. It is represented as:
+                        Each edge carries a numerical value (a "weight"), often representing cost, distance, or strength of connection. 
+                        A weighted graph is represented as 
                         \[
-                        G = (V, E, w)
+                        G = (V, E, w),
                         \]
-                        where \(w: E \to \mathbb{R}\) is a function assigning a weight to each edge. 
+                        where \(w: E \to \mathbb{R}\) is a weight function. Weighted graphs are fundamental in shortest-path algorithms 
+                        and network optimization.
                     </li>
                     <li><strong>Multigraph</strong>:<br>
-                        It allows multiple edges between the same pair of vertices. It is represented as:
+                        Multiple edges are allowed between the same pair of vertices. A multigraph is represented as 
                         \[
-                        G = (V, E, \mu)
+                        G = (V, E, \mu),
                         \]
-                        where \(mu: E \to \mathbb{N}\) is a function that assigns a multiplicity to each edge, representing how many times 
-                        the edge appears between two vertices.
+                        where \(\mu: E \to \mathbb{N}\) assigns a multiplicity to each edge, indicating how many parallel 
+                        edges exist between two vertices.
                     </li>
                 </ul>
+
+                <p>
+                    We next turn to the local structure around each vertex - the concept of adjacency and neighborhoods.
+                </p>
+
             </section>
 
             <section id="neighbors" class="section-content">
                 <h2>Neighbors</h2>
                 <p>
-                    Two vertices \(x, y \in V(G)\) are <strong>adjacent</strong> or <strong>neighbors</strong> if \(xy \in E(G)\). If every vertex 
-                    of \(G\) are pairwise adjacent, the the graph \(G\) said to be <strong>complete graph</strong>. For example, a complete graph on 3 
-                    vertices is indeed, a triangle, denoted as \(K_3\). 
+                    The notion of adjacency — which vertices are directly connected — is the most basic local property of a graph. 
+                    From adjacency, we derive neighborhoods, independence, and edge-counting between vertex subsets.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Adjacency and Neighborhood</span>
+                    <p>
+                        Two vertices \(x, y \in V(G)\) are <strong>adjacent</strong> (or <strong>neighbors</strong>) if 
+                        \(xy \in E(G)\). The <strong>neighborhood</strong> of a vertex \(x\) is the set 
+                        \[
+                        N_G(x) = \{ y \in V(G) : xy \in E(G) \},
+                        \]
+                        often written simply as \(N(x)\) when the graph \(G\) is clear from context.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Complete Graph</span>
+                    <p>
+                        A graph \(G\) is <strong>complete</strong> if every pair of distinct vertices is adjacent. 
+                        The complete graph on \(n\) vertices is denoted \(K_n\). For example, \(K_3\) is the triangle.
+                    </p>
+                </div>
+
                 <p>
-                    Note: The set of neighbors of a vertex \(x\) is the set of vertices \(y\) such that \(xy \in E(G)\). Typically, it is written as 
-                    \(N_G (x)\) (or simply \(N(x)\)).
+                    Similarly, two edges \(e \neq f\) are <strong>adjacent</strong> if they share a common endpoint. 
+                    A set of vertices (or edges) is called <strong>independent</strong> if no two of its elements are adjacent.
                 </p>
+                
                 <p>
-                    Similarly, two edges \(e \neq f\) are adjacent if they have a commom end. Also, a set of vertices(or edges) is <strong>independent</strong> 
-                    if no two of its elements are adjacent. 
-                </p>
-                <p>
-                    For any subset \(A \subseteq V(G)\), we define \(e(A)\) as the number of edges with "both endpoints" in \(A\). More generally, 
-                    given two subsets \(A, B \subseteq V(G)\) we define:
+                    It is often useful to count edges within and between subsets of vertices. For any subset 
+                    \(A \subseteq V(G)\), we define \(e(A)\) as the number of edges with both endpoints in \(A\). 
+                    More generally, given two subsets \(A, B \subseteq V(G)\), we define
                     \[
-                    e(A, B) = | \{ (a, b) \in A \times B: ab \in E(G)\} |.
+                    e(A, B) = |\{ (a, b) \in A \times B : ab \in E(G) \}|.
                     \]
-                    This represents the number of edges between the sets \(A\) and \(B\). If \(A\) and \(B\) are disjoint, then \(e(A, B)\) counts 
-                    only edges that connect vertices in \(A\) to vertices in \(B\).
+                    Since this counts <em>ordered</em> pairs, each edge with one endpoint in \(A\) and one in \(B\) 
+                    contributes 1 if the sets are disjoint, but an edge with both endpoints in \(A \cap B\) is counted twice. 
+                    When \(A\) and \(B\) are disjoint, \(e(A, B)\) simply counts the edges crossing between the two parts -
+                    a quantity central to the study of bipartite graphs and graph cuts.
+                </p>
+
+                <p>
+                    Adjacency tells us <em>which</em> vertices are connected. The natural next question is: <em>how many</em> connections 
+                    does each vertex have? This leads us to the concept of degree.
                 </p>
             </section>
 
             <section id="degree" class="section-content">
                 <h2>Degrees</h2>
                 <p>
-                    The <strong>degree</strong> of a "vertex" \(x\) is defined as the number of neighbors of \(x\) and 
-                    is denoted as \(\text{deg }_G (x) = | N_G(x) |\)(or \(\text{deg }(x)\)). Moreover, for directed graphs, we define 
-                    the <strong>in-degree</strong> \(\text{deg }^-(x)\), the number of edges directed into \(x\) and the <strong>out-degree </strong> 
-                    \(\text{deg }^+ (x)\), the number of edges directed out of \(x\).
+                    The degree of a vertex quantifies how "connected" it is within the graph. This simple count turns out to be 
+                    one of the most informative local invariants, and leads immediately to a fundamental identity — the Handshaking Lemma — 
+                    that constrains the global structure of any graph.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Degree</span>
+                    <p>
+                        For a simple graph \(G\), the <strong>degree</strong> of a vertex \(x\) is the number of its neighbors:
+                        \[
+                        \deg_G(x) = |N_G(x)|,
+                        \]
+                        written simply as \(\deg(x)\) when \(G\) is understood. For directed graphs, we distinguish the 
+                        <strong>in-degree</strong> \(\deg^-(x)\) (the number of edges directed into \(x\)) and the 
+                        <strong>out-degree</strong> \(\deg^+(x)\) (the number of edges directed out of \(x\)).
+                    </p>
+                </div>
+
                 <p>
-                    The <strong>minimum degree</strong> and <strong>maximum degree</strong> of \(G\) is written as follows respectively: 
+                    The <strong>minimum degree</strong> and <strong>maximum degree</strong> of \(G\) are denoted respectively by 
                     \[
-                    \delta(G) = \min \{\text{deg }(x) | x \in V\}
+                    \delta(G) = \min_{x \in V} \deg(x), \qquad \Delta(G) = \max_{x \in V} \deg(x).
                     \]
-                    \[
-                    \Delta(G) = \max \{\text{deg }(x) | x \in V\}
-                    \]
-                    and the <strong>average degree</strong> of a "graph" \(G\) is written as \(d(G)\), which always holds:
+                    The <strong>average degree</strong> of \(G\), written \(d(G)\), satisfies the natural inequality
                     \[
                     \delta(G) \leq d(G) \leq \Delta(G).
                     \]
-                    In addition, if every vertex of a graph have the same degree \(k\), the graph said to be <strong>\(k\)-regular</strong>.
+                    If every vertex of \(G\) has the same degree \(k\), the graph is said to be <strong>\(k\)-regular</strong>. 
+                    For example, the complete graph \(K_n\) is \((n-1)\)-regular.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Handshaking Lemma</span>
+                    <p>
+                        For any graph \(G = (V, E)\),
+                        \[
+                        \sum_{x \in V} \deg(x) = 2|E|.
+                        \]
+                    </p>
+                </div>
+
                 <p>
-                    Let \(\epsilon(G) = \frac{|E|}{|V|}\). This is the number of edges per vertex on \(G\). This ratio is related with the average 
-                    degree of \(G\) as follows:
+                    The idea is simple: each edge \(xy\) contributes exactly 1 to \(\deg(x)\) and 1 to \(\deg(y)\), 
+                    so summing all degrees counts every edge twice. 
+                    Defining \(\varepsilon(G) = |E|/|V|\), the number of edges per vertex, we can rewrite the 
+                    Handshaking Lemma as
                     \[
-                    |E| = \frac{1}{2} \sum_{x \in V} \text{deg }(x)  = \frac{1}{2} d(G) |V|
+                    d(G) = \frac{1}{|V|}\sum_{x \in V}\deg(x) = \frac{2|E|}{|V|} = 2\,\varepsilon(G).
                     \]
-                    and thus
-                    \[
-                    \frac{1}{2}d(G) = \epsilon(G) =  \frac{|E|}{|V|}.
-                    \]
-                    (Try: If we count every edge of \(G\) twice, it is equals to the sum of all vertex degrees in \(G\).)
+                    This identity connects the average degree to the edge density and will reappear when we study 
+                    the <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: Vertex Degree in Graph-Based ML</h3>
+                    <p>
+                        Vertex degree is more than a counting tool - it is a first-order structural feature that pervades graph-based machine learning. 
+                        The <strong>degree matrix</strong> \(D\), with \(D_{ii} = \deg(v_i)\), is a building block of both the 
+                        <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a> \(L = D - A\) and its normalized variants used in 
+                        <a href="../Machine_learning/clustering.html#sp"><strong>spectral clustering</strong></a>. In <strong>Graph Neural Networks (GNNs)</strong>, 
+                        the degree appears explicitly in the normalization factor \(D^{-1/2}AD^{-1/2}\) that prevents high-degree "hub" nodes from dominating the 
+                        message-passing aggregation. Even the simple degree sequence of a graph can serve as a powerful feature for graph classification tasks.
+                    </p>
+                </div>
+
+                <p>
+                    Degree is an example of a <em>graph invariant</em> - a quantity preserved by isomorphism. 
+                    This observation leads naturally to the question: when should two graphs be considered "the same"?
                 </p>
             </section>
 
             <section id="iso" class="section-content">
                 <h2>Isomorphism</h2>
                 <p>
-                    The two graphs \(G = (V, E)\) and \(G' = (V', E')\) said to be <strong>isomorphic</strong>, \(G \simeq G'\), if 
-                    there exists a bijection:
-                    \[
-                    \varphi: V \to V' , \quad  xy \in E  \iff  \forall x, y \in v, \quad \varphi(x)\varphi(y) \in E'
-                    \]
-                    Such a map \(\varphi\) is called an <strong>isomorphism</strong>. If \(G = G'\), it is called <strong>automorphism</strong>.
+                    Two graphs may look different when drawn on paper yet have identical structure. 
+                    <strong>Isomorphism</strong> makes this idea precise: two graphs are "the same" if we can relabel 
+                    the vertices of one to obtain the other, preserving all edge relationships.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Graph Isomorphism</span>
+                    <p>
+                        Two graphs \(G = (V, E)\) and \(G' = (V', E')\) are <strong>isomorphic</strong>, written 
+                        \(G \simeq G'\), if there exists a bijection \(\varphi: V \to V'\) such that 
+                        \[
+                        \forall\, x, y \in V, \quad xy \in E \iff \varphi(x)\varphi(y) \in E'.
+                        \]
+                        Such a map \(\varphi\) is called an <strong>isomorphism</strong>. An isomorphism from \(G\) to itself 
+                        (i.e., \(G = G'\)) is called an <strong>automorphism</strong>.
+                    </p>
+                </div>
+
                 <p>
-                    A class of graphs that is closed under isomorphism is called a <strong>graph property</strong>. For example, containing a 
-                    triangle(more formally, having a <strong>cycle</strong> of length 3) is a graph property. So, if a graph \(G\) contains a 
-                    triangle, then any graph isomorphic to \(G\) must also contain a triangle.
+                    Note that the condition is a biconditional (\(\iff\)): \(\varphi\) must preserve edges <em>and</em> non-edges. 
+                    A bijection that maps edges to edges but creates spurious new edges is not an isomorphism.
                 </p>
+
                 <p>
-                    If a map \(\varphi(G)\) assigns equal values to isomorphic graphs, the map is said to be a <strong>graph invariant</strong>. 
-                    For example, the number of vertices(or edges) remains unchanged under isomorphism.
+                    Isomorphism naturally gives rise to two important concepts:
                 </p>
+                <ul style="padding-left: 40px;">
+                    <li>
+                        A <strong>graph property</strong> is a class of graphs that is closed under isomorphism. 
+                        For example, "containing a triangle" (i.e., having a cycle of length 3) is a graph property: 
+                        if \(G\) contains a triangle, then so does every graph isomorphic to \(G\).
+                    </li>
+                    <li>
+                        A <strong>graph invariant</strong> is a function \(f\) defined on graphs such that 
+                        \(G \simeq G'\) implies \(f(G) = f(G')\). The number of vertices, the number of edges, and 
+                        the degree sequence are all graph invariants. Invariants are the primary tool for proving 
+                        that two graphs are <em>not</em> isomorphic: if any invariant differs, the graphs cannot be isomorphic.
+                    </li>
+                </ul>
             </section>
 
             <section id="sub" class="section-content">
                 <h2>Subgraphs</h2>
                 <p>
-                    Consider the two graphs \(G = (V, E)\) and \(G' = (V', E')\). 
-                    We can apply set operations to graphs. For example, 
+                    Just as subsets and subspaces play a central role in set theory and linear algebra, <strong>subgraphs</strong> allow us 
+                    to study the local and partial structure of a graph. We first note that set-theoretic operations extend naturally to graphs.
+                </p>
+                <p>
+                    Given two graphs \(G = (V, E)\) and \(G' = (V', E')\), we define
                     \[
-                    G \cup G' = (V \cup V', E \cup E'), \quad  G \cap G' = (V \cap V', E \cap E').
+                    G \cup G' = (V \cup V',\, E \cup E'), \qquad G \cap G' = (V \cap V',\, E \cap E').
                     \]
-                    If \(G \cap G' = \emptyset\), then they are <strong>disjoint</strong>. 
+                    If \(V \cap V' = \emptyset\) (and hence \(E \cap E' = \emptyset\)), the graphs are said to be <strong>disjoint</strong>.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Bipartite Graph</span>
+                    <p>
+                        A graph \(G = (V, E)\) is <strong>bipartite</strong> if its vertex set can be partitioned into two disjoint sets 
+                        \(U\) and \(W\) such that 
+                        \[
+                        V = U \cup W, \quad U \cap W = \emptyset, \quad E \subseteq \{\,uw : u \in U,\, w \in W\,\}.
+                        \]
+                        That is, every edge connects a vertex in \(U\) to a vertex in \(W\); no edge joins two vertices within the same part.
+                    </p>
+                </div>
+
                 <p>
-                    A graph \(G = (V, E)\) is called <strong>bipartite</strong> if its vertices can be divided into two disjoint sets \(U\) and \(W\) such that 
-                    \[
-                    V = U \cup W, \quad U \cap W = \emptyset. \quad E \subseteq U \times W.
-                    \]
-                    This means no edge exists between two vertices in the same subset. This structure is useful for example, in matching 
-                    theory such as job assignments. 
+                    Bipartite graphs arise naturally in matching problems (e.g., assigning jobs to applicants) and are 
+                    characterized by the absence of odd-length cycles — a fact we will encounter in later discussions.
                 </p>
+
                 <p>
-                    When we "delete" a vertex \(v\) from \(V(G)\), all edges incident to the vertex must be removed from \(E(G)\). We simply write 
-                    \(G - v\) instead of \(G - \{v\}\).
+                    When we <strong>delete</strong> a vertex \(v\) from \(G\), we remove \(v\) and all edges incident to it. 
+                    We write \(G - v\) for the resulting graph.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Subgraph, Induced Subgraph, and Spanning Subgraph</span>
+                    <p>
+                        Let \(G = (V, E)\) and \(G' = (V', E')\) be graphs.
+                    </p>
+                    <ul style="padding-left: 20px;">
+                        <li>
+                            \(G'\) is a <strong>subgraph</strong> of \(G\) (written \(G' \subseteq G\)) if \(V' \subseteq V\) and \(E' \subseteq E\). 
+                            In this case, \(G\) is a <strong>supergraph</strong> of \(G'\).
+                        </li>
+                        <li>
+                            \(G'\) is an <strong>induced subgraph</strong> of \(G\) if \(G' \subseteq G\) and \(G'\) contains 
+                            <em>every</em> edge of \(G\) whose both endpoints lie in \(V'\):
+                            \[
+                            G' = G[V'] = \bigl(V',\; \{xy \in E : x, y \in V'\}\bigr).
+                            \]
+                        </li>
+                        <li>
+                            \(G'\) is a <strong>spanning subgraph</strong> of \(G\) if \(V' = V\), that is, \(G'\) has the same vertex set 
+                            as \(G\) but possibly fewer edges.
+                        </li>
+                    </ul>
+                </div>
+
                 <p>
-                    If \(V' \subseteq V\) and \(E' \subseteq E\), then \(G'\) is <strong>subgraph</strong> of \(G\) and \(G\) is 
-                    <strong>supergraph</strong> of \(G'\), denoted as \(G' \subseteq G\).
+                    The distinction between a general subgraph and an induced subgraph is important: a subgraph may omit edges 
+                    between vertices it retains, while an induced subgraph must include all such edges. 
+                    We will see a concrete example illustrating this distinction at the end of this page.
                 </p>
+
                 <p>
-                    If \(G' \subseteq G\) and \(G'\) contains all edges \(xy \in E\) such that \(x, y \in V'\), then \(G'\) is called an 
-                    <strong>induced subgraph</strong> of \(G\). We say that \(V'\) induces or spans \(G'\) in \(G\), and write
-                    \[
-                    G' = G[V'] = (V', \{xy \in E | x, y \in V'\}).
-                    \]
-                    This means that if \(U \subseteq V\) is any set of vertices, then \(G[U]\) denotes the graph on \(U\) whose edges are 
-                    the edges of \(G\) with both ends belong to \(U\). 
+                    Finally, a graph \(G\) is said to be <strong>edge-maximal</strong> with respect to a given graph property 
+                    if \(G\) has the property, but adding any new edge between non-adjacent vertices destroys it. That is, 
+                    \(G + xy\) fails to have the property for every pair of non-adjacent vertices \(x, y \in V(G)\).
                 </p>
+
                 <p>
-                    If \(V'\) spans all of \(G\), or \(V' = V\), the subgraph \(G'\) is said to be <strong>spanning subgraph</strong> of \(G\).
-                </p>
-                <p>
-                    A graph \(G\) is said to be <strong>edge-maximal</strong> with a given graph property if \(G\) has the property but no graph 
-                    \(G + xy\) for non-adjacent vertices \(x, y \in G\).
+                    Subgraphs describe the "parts" of a graph. We now turn to the structures that describe 
+                    how to <em>traverse</em> a graph - paths and cycles.
                 </p>
             </section>
 
             <section id="path" class="section-content">
-                <h2>Paths & Cylcles</h2>
+                <h2>Paths & Cycles</h2>
                 <p>
-                    A <strong>path</strong> is a non-empty graph \(P = (V, E)\) of the form: 
-                    \[
-                    V = \{x_0, x_1, x_2, \cdots\, x_{k-1} x_k\}, \quad E = \{x_0 x_1, x_1 x_2, \cdots, x_{k-1}x_k\}.
-                    \]
-                    Note: Each vertex \(x_i\) is distinct. The <strong>ends</strong> \(x_0\) and \(x_k\) are linked by \(P\) and the 
-                    other vertices are called the <strong>inner vertices</strong> of \(P\).
-                </p>
-                <p>
-                    Typically, \(P_k\) refers to a \(k-1\)-edge path. So, \(k\) is the number of vertices of \(P\), not the <strong>length</strong>, which is the 
-                    number of edges of \(P\). For example, a path \(P_4\) has 4 vertices and 3 edges.
-                </p>
-                <p>
-                    For \(k \geq 3\), if \(P = x_0 \cdots x_{k-1}\) is a path, then the graph \(C_k = P + x_{k-1}x_0\) is called a <strong>\(k\)-cycle</strong>.
-                    For example, a cycle \(P = abcda\) is denoted as \(C_4\), which has 4 vertices and 4 edges. 
-                </p>
-                <p>
-                    A graph does not have cyclrs is called the <strong>acyclic graph</strong>. For example, <strong>tree</strong> is the one of the 
-                    most famous acyclic graphs in many real applications. A tree \(T = (V, E)\) is connected and acyclic. It has exactly one path between any 
-                    two vertices. So, the tree always has \(|V|\) vertices and \(|V| - 1\) edges. We will discuss this important structure more in the future.
+                    Paths and cycles are arguably the most fundamental structures in graph theory. A path captures the idea 
+                    of "getting from \(A\) to \(B\) without repeating vertices," while a cycle represents a closed traversal. 
+                    Together, they underpin connectivity, shortest-path algorithms, and the classification of graphs by their cycle structure.
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Path</span>
+                    <p>
+                        A <strong>path</strong> is a non-empty graph \(P = (V, E)\) of the form
+                        \[
+                        V = \{x_0, x_1, x_2, \ldots, x_k\}, \quad E = \{x_0 x_1,\, x_1 x_2,\, \ldots,\, x_{k-1} x_k\},
+                        \]
+                        where all vertices \(x_0, x_1, \ldots, x_k\) are distinct. The vertices \(x_0\) and \(x_k\) are the 
+                        <strong>ends</strong> of \(P\); the remaining vertices are its <strong>inner vertices</strong>. 
+                        The <strong>length</strong> of a path is its number of edges.
+                    </p>
+                </div>
+
+                <p>
+                    By convention, \(P_k\) denotes the path on \(k\) vertices (and hence \(k - 1\) edges). For example, \(P_4\) has 
+                    4 vertices and 3 edges. Note that the subscript refers to the number of vertices, not the length.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Cycle</span>
+                    <p>
+                        For \(k \geq 3\), if \(P = x_0 x_1 \cdots x_{k-1}\) is a path on \(k\) vertices, then the graph obtained 
+                        by adding the edge \(x_{k-1} x_0\) is called a <strong>\(k\)-cycle</strong>, denoted \(C_k\). 
+                        A \(k\)-cycle has \(k\) vertices and \(k\) edges.
+                    </p>
+                </div>
+
+                <p>
+                    For example, \(C_3\) is a triangle (3 vertices, 3 edges), and \(C_4\) is a square (4 vertices, 4 edges).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Acyclic Graph (Forest and Tree)</span>
+                    <p>
+                        A graph that contains no cycle is called <strong>acyclic</strong> (or a <strong>forest</strong>). 
+                        A connected acyclic graph is called a <strong>tree</strong>. A tree \(T\) on \(n\) vertices has exactly 
+                        \(n - 1\) edges, and there is a unique path between any pair of vertices.
+                    </p>
+                </div>
+
+                <p>
+                    Trees are among the most ubiquitous structures in both mathematics and computer science — from parse trees 
+                    in compilers to decision trees in machine learning. We will study trees in greater depth in future pages, including 
+                    their role in <a href="Eulerian.html"><strong>Eulerian and Hamiltonian theory</strong></a> 
+                    and spanning tree algorithms.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Paths, Cycles, and Trees in CS and ML</h3>
+                    <p>
+                        These three structures are foundation of algorithmic graph theory. <strong>Shortest paths</strong> 
+                        (Dijkstra's algorithm, Bellman-Ford) power routing in networks and are the foundation of 
+                        <em>graph distance metrics</em> used in node embedding methods like DeepWalk. 
+                        <strong>Cycle detection</strong> determines whether a graph is a tree or a DAG (directed acyclic graph), 
+                        which is critical in dependency resolution, topological sorting, and the structure of Bayesian networks. 
+                        <strong>Trees</strong> themselves underlie decision trees, random forests, and hierarchical clustering, 
+                        while <strong>spanning trees</strong> provide the minimal connected substructure of a graph - 
+                        the starting point for Kruskal's and Prim's algorithms in network design.
+                    </p>
+                </div>
+
                 <div class="proof">
-                    <span class="proof-title">Cycle & Induced Subgraph</span>
+                    <span class="proof-title">Example: Cycle & Induced Subgraph</span>
                     <p>
                         Consider the following graph:
                     </p>
@@ -274,7 +457,8 @@ uses_python: false
                         \[
                         V' = \{b, c, d, e\}, \quad E'= \{bc, be, cd, de\}.
                         \]
-                        So, we can say that the graph \(G\) contains the 4-cycle as its induced subgraph. 
+                        Since \(G' = G[\{b,c,d,e\}]\) includes all edges of \(G\) with both endpoints in \(\{b,c,d,e\}\), 
+                        it is an induced subgraph. Moreover, \(G'\) is itself a 4-cycle \(C_4\).
                     </p>
                     <p>
                         On the other hand, we can see the 5-cycle in \(G\). (Say, \(a \to c \to d \to e \to b \to a\).) This is 
