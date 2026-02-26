@@ -12,7 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
         
         <div class="hero-section">
-            <h1 class="webpage-name">Introduction to Reinforcement Learning(RL)</h1>
+            <h1 class="webpage-name">Introduction to Reinforcement Learning (RL)</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -37,7 +37,8 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
 
-                <p>
+                <p> 
+                    So far, we have studied supervised learning and unsupervised learning. We now turn to a third paradigm. 
                     <strong>Reinforcement Learning (RL)</strong> is a machine learning framework in which an <strong>agent</strong> interacts 
                     with an environment to learn a behavior that maximizes a scalar <strong>reward</strong> signal over time. 
                     Formally, the environment is typically modeled as a <strong>Markov Decision Process (MDP)</strong>, defined by a tuple 
@@ -446,12 +447,14 @@ uses_python: false
                     \[
                     V_{k+1}(s) = \max_a \left[ R(s, a) + \gamma \sum_{s'} p_T(s' \mid s, a) V_k (s') \right].
                     \]
-                    This is called <strong>Bellman backup</strong>. Each iteration reduces the maximum value function error by a 
-                    constant factor: 
+                    This is called a <strong>Bellman backup</strong>. Each iteration is a \(\gamma\)-contraction mapping 
+                    in the \(\ell_\infty\) norm, satisfying:
                     \[
-                    \max_s \| V_{k+1}(s) - V_*(s) \| \leq \gamma \max_s \| V_k (s)  - V_* (s) \|.
+                    \| V_{k+1} - V_* \|_\infty \leq \gamma \| V_k - V_* \|_\infty
                     \]
-                    So, \(V_k\) converges to \(V_*\) as \(k \to \infty\). 
+                    where \( \| V \|_\infty = \max_{s \in \mathcal{S}} |V(s)| \). Because \( 0 \leq \gamma < 1 \), 
+                    the <a href="../Calculus/completeness.html#banach"><strong>Banach Fixed-Point Theorem</strong></a> guarantees that 
+                    \(V_k\) converges to the unique optimal value function \(V_*\) as \(k \to \infty\).
                 </p>
 
                 <p>
@@ -481,23 +484,20 @@ uses_python: false
 
                 <h3>Policy Iteration (PI)</h3>
                 <p>
-                    Let \(\mathbf{v}(s) = V_{\pi}(s)\) be the value function encoded as a vector indexed by states \(s\). Also, 
-                    the reward vector is represented by 
+                    Let \(\mathbf{v} \in \mathbb{R}^{|\mathcal{S}|}\) be the value function vector where \(v_i = V_{\pi}(s_i)\). 
+                    We define the expected reward vector \(\mathbf{r}\) and the state transition matrix \(\mathbf{T}\) as:
                     \[
-                    \mathbf{r}(s) = \sum_a \pi(a \mid s) R(s, a)
+                    \mathbf{r}(s) = \sum_a \pi(a \mid s) R(s, a), \quad \mathbf{T}(s' \mid s) = \sum_a \pi(a \mid s) p_T(s' \mid s, a).
                     \]
-                    and the state transition matrix is written as 
+                    The Bellman expectation equation for policy evaluation then forms a linear system:
                     \[
-                    \mathbf{T}(s' \mid s) = \sum_a \pi(a \mid s) p_T(s' \mid s, a).
+                    \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v}.
                     \]
-                    Then Bellman's equation for policy evaluation can be represented as a linear system in \(\| \mathcal{S}\|\) unknowns:
-                    \[
-                    \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v}
-                    \]
-                    Theoretically, we can solve this by \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\), but 
-                    we can compute \(\mathbf{v}_{t+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_t\) iteratively. This process is called 
-                    <strong>policy evaluation</strong>. Once we have evaluated \(V_{\pi}\) for the policy \(\pi\), we need to find a better 
-                    policy \(\pi'\). 
+                    Theoretically, the exact solution is \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\). 
+                    Since \(\mathbf{T}\) is a row-stochastic matrix and \(0 \leq \gamma < 1\), the spectral radius 
+                    \(\rho(\gamma \mathbf{T}) < 1\), ensuring the matrix is non-singular and the <strong>Neumann series</strong> converges. 
+                    In practice, we solve this iteratively using the update \(\mathbf{v}_{k+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_k\). 
+                    Once \(V_{\pi}\) is evaluated, we proceed to <strong>policy improvement</strong> to find a superior policy \(\pi'\).
                 </p>
 
                 <p>
@@ -548,7 +548,7 @@ uses_python: false
                 <p>
                     In policy iteration algorithm, starting from an initial policy, we alternate between policy evaluation step and 
                     policy improvement step. Within finite iterations, the algorithm will converge to optimal policy since there are at 
-                    most \(\|\mathcal{A}\|^{\|\mathcal{S}\|}\) deterministic policies and every update improves the policy. 
+                    most \(|\mathcal{A}|^{|\mathcal{S}|}\) deterministic policies and every update improves the policy. 
                 </p>
 
             </section>
@@ -653,7 +653,7 @@ uses_python: false
                 <p>
                     TD methods can be generalized to look ahead multiple steps. The <strong>n-step return</strong> is defined as:
                     \[
-                    G_{t:t+n} = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1} R_{t+n} + \gamma^n V(S_{t+n})
+                    G_{t:t+n} = r_{t+1} + \gamma r_{t+2} + \cdots + \gamma^{n-1} r_{t+n} + \gamma^n V(S_{t+n})
                     \]
                     The corresponding n-step TD update becomes:
                     \[
@@ -690,7 +690,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    The\(\lambda\)-return provides a principled way to interpolate between the low variance but biased estimates of TD(0) 
+                    The \(\lambda\)-return provides a principled way to interpolate between the low variance but biased estimates of TD(0) 
                     and the high variance but unbiased estimates of Monte Carlo methods. <strong>TD(0) is thus a special case</strong> 
                     of the more general TD(\(\lambda\)) framework. Importantly, both n-step TD and TD(\(\lambda\)) can achieve Monte Carlo behavior, 
                     but through different parameterizations: n-step methods by extending the lookahead horizon (large n), 
@@ -750,13 +750,13 @@ uses_python: false
 
                 <h3>Q-Learning (Off-Policy TD Control)</h3>
                 <p>
-                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, we use a greed action in \(s'\):
+                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, we use the greedy action in \(s'\):
                     \[
                     a' = \arg \max_b Q(s', b),
                     \]
                     making it <strong>off-policy</strong>. Thus the TD update rule for a transition \((s, a, r, s')\) is given by:  
                     \[
-                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r_t + \gamma \max_{b} Q(s', b) - Q(s, a) \right].
+                    Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma \max_{b} Q(s', b) - Q(s, a) \right].
                     \]
                 </p>
 
@@ -825,7 +825,7 @@ uses_python: false
                     &= \frac{1}{1 -\gamma} \mathbb{E}_{p_{\pi_{\theta}}^{\infty}(s) \pi_{\theta}(a \mid s)} \left[ \nabla_{\theta} \log \pi_{\theta}(a \mid s) Q_{\pi_{\theta}}(s, a) \right]
                     \end{align*}
                     \]
-                    where \(p_t(s)\) is the probability of visiting s in time \(t\) is the agent starts with \(s_0 \sim p_0\) following \(\pi_{\theta}\), and 
+                    where \(p_t(s)\) is the probability of visiting state \(s\) at time \(t\) if the agent starts with \(s_0 \sim p_0\) following \(\pi_{\theta}\), and 
                     \[
                     p_{\pi_{\theta}}^{\infty}(s) = (1 - \gamma) \sum_{t = 0}^{\infty} \gamma^t p_t(s)
                     \]
@@ -853,12 +853,11 @@ uses_python: false
                     &\approx \sum_{t=0}^{T-1} \gamma^t G_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)
                     \end{align*}
                     \]
-                    where \(G_t^{(i)}\) is the return from time \(t\):
+                    where \(G_t\) is the return from time \(t\):
                     \[
-                    G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \gamma^{T-t-1} r_{T-1}.
-                    \]
-                    
-                    Here, using a baseline in the gradient estimte, we obtain the REINFORCE update rule: 
+                    G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T-t-1} r_{T-1}.
+                    \]     
+                    Here, using a baseline in the gradient estimate, we obtain the REINFORCE update rule: 
                     \[
                     \mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha \sum_{t = 0}^{T -1} \gamma^t (G_t - b(s_t)) \nabla_\theta \log \pi_\theta (a_t \mid s_t).
                     \]
@@ -873,7 +872,7 @@ uses_python: false
                     &emsp;&emsp;&emsp;&emsp;Compute \(G_t\) for all \(t \in \{0, 1, \cdots, T-1\}\)
                     &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots, T-1\) <strong>do</strong>
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = G_t - V_\mathbf{w}(s_t)\) 
-                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}(s_t)}\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}}(s_t)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{\theta} \leftarrow \mathbf{\theta} + \alpha_{\mathbf{\theta}} \gamma^t \delta \nabla_{\mathbf{\theta}} \log \pi_{\mathbf{\theta}}(a_t \mid s_t) \)
                     &emsp;&emsp;<strong>until</strong> converged
                     <strong>end</strong>
@@ -965,6 +964,17 @@ uses_python: false
                     <li><strong>DDPG (Deep Deterministic Policy Gradient)</strong>: For continuous control</li>
                     <li><strong>PPO (Proximal Policy Optimization)</strong>: Clips policy updates for stability</li>
                 </ul>
+
+                <p>
+                    Standard policy gradient methods optimize \(J(\pi_\theta)\) using the Euclidean gradient \(\nabla_\theta J\), 
+                    which assumes an isotropic parameter space. However, the parameter space of a stochastic policy is 
+                    actually a <strong>statistical manifold</strong>, where Euclidean steps can be poorly scaled if the 
+                    curvature of the distribution family varies across directions. In 
+                    <a href="natural_gd.html"><strong>Part 11: Natural Gradient Descent</strong></a>, 
+                    we introduce the <strong>Fisher information matrix</strong> as the Riemannian metric on this space, 
+                    demonstrating how natural gradients enable more stable and efficient optimization by accounting for 
+                    the underlying geometry of the policy distribution.
+                </p>
 
             </section>
 
