@@ -212,7 +212,64 @@ class TransformerFlowDemo {
     }
 
     renderUI() {
-        const svgHTML = `<svg width="350" height="540" viewBox="0 0 350 540"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#445870"/></marker><marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#69f0ae"/></marker></defs><text x="175" y="520" fill="#888" text-anchor="middle" font-size="14">Inputs</text><line id="line-in-embed" class="comp-line" x1="175" y1="500" x2="175" y2="460" marker-end="url(#arrow)"/><rect id="box-embed" class="comp-box" x="75" y="420" width="200" height="40"/><text id="text-embed" class="comp-text" x="175" y="440">Embedding</text><line id="line-embed-pos" class="comp-line" x1="175" y1="420" x2="175" y2="410" marker-end="url(#arrow)"/><rect id="box-pos" class="comp-box" x="75" y="370" width="200" height="40"/><text id="text-pos" class="comp-text" x="175" y="390">Positional Encoding</text><line id="line-pos-mha" class="comp-line" x1="175" y1="370" x2="175" y2="320" marker-end="url(#arrow)"/><rect x="40" y="155" width="270" height="195" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/><text x="55" y="175" fill="#888" font-size="12">Transformer Block</text><rect id="box-mha" class="comp-box" x="75" y="280" width="200" height="40"/><text id="text-mha" class="comp-text" x="175" y="300">Masked M-H Attention</text><line id="line-mha-norm1" class="comp-line" x1="175" y1="280" x2="175" y2="250" marker-end="url(#arrow)"/><path id="line-res1" class="comp-line" d="M 175 360 L 55 360 L 55 235 L 75 235" marker-end="url(#arrow)"/><rect id="box-norm1" class="comp-box" x="75" y="220" width="200" height="30"/><text id="text-norm1" class="comp-text" x="175" y="235">Add & Norm</text><line id="line-norm1-ffn" class="comp-line" x1="175" y1="220" x2="175" y2="200" marker-end="url(#arrow)"/><path id="line-res2" class="comp-line" d="M 175 210 L 55 210 L 55 175 L 75 175" marker-end="url(#arrow)"/><rect id="box-ffn" class="comp-box" x="75" y="170" width="200" height="30"/><text id="text-ffn" class="comp-text" x="175" y="185">Feed Forward</text><line id="line-ffn-norm2" class="comp-line" x1="175" y1="170" x2="175" y2="145"/><rect id="box-norm2" class="comp-box" x="75" y="115" width="200" height="30"/><text id="text-norm2" class="comp-text" x="175" y="130">Add & Norm</text><line id="line-norm2-linear" class="comp-line" x1="175" y1="115" x2="175" y2="85" marker-end="url(#arrow)"/><rect id="box-linear" class="comp-box" x="75" y="55" width="200" height="30"/><text id="text-linear" class="comp-text" x="175" y="70">Linear</text><line id="line-linear-softmax" class="comp-line" x1="175" y1="55" x2="175" y2="25" marker-end="url(#arrow)"/><rect id="box-softmax" class="comp-box" x="75" y="-5" width="200" height="30"/><text id="text-softmax" class="comp-text" x="175" y="10">Softmax</text><line id="line-softmax-out" class="comp-line" x1="175" y1="-5" x2="175" y2="-25" marker-end="url(#arrow)"/></svg>`;
+        // Corrected SVG Layout: All y-coordinates are positive and within the viewBox
+        const svgHTML = `
+            <svg width="350" height="560" viewBox="0 0 350 560">
+                <defs>
+                    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#445870"/></marker>
+                    <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#69f0ae"/></marker>
+                </defs>
+
+                <!-- Input -->
+                <text x="175" y="540" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
+                <line id="line-in-embed" class="comp-line" x1="175" y1="520" x2="175" y2="480" marker-end="url(#arrow)"/>
+                
+                <!-- Embedding & Pos -->
+                <rect id="box-embed" class="comp-box" x="75" y="440" width="200" height="40"/>
+                <text id="text-embed" class="comp-text" x="175" y="460">Embedding</text>
+                <line id="line-embed-pos" class="comp-line" x1="175" y1="440" x2="175" y2="430" marker-end="url(#arrow)"/>
+
+                <rect id="box-pos" class="comp-box" x="75" y="390" width="200" height="40"/>
+                <text id="text-pos" class="comp-text" x="175" y="410">Positional Encoding</text>
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="390" x2="175" y2="340" marker-end="url(#arrow)"/>
+
+                <!-- Transformer Block Boundary -->
+                <rect x="40" y="175" width="270" height="205" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
+                <text x="55" y="195" fill="#888" font-size="12">Transformer Block</text>
+
+                <!-- MHA -->
+                <rect id="box-mha" class="comp-box" x="75" y="300" width="200" height="40"/>
+                <text id="text-mha" class="comp-text" x="175" y="320">Masked M-H Attention</text>
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="300" x2="175" y2="270" marker-end="url(#arrow)"/>
+                <path id="line-res1" class="comp-line" d="M 175 380 L 55 380 L 55 255 L 75 255" marker-end="url(#arrow)"/>
+
+                <!-- Norm 1 -->
+                <rect id="box-norm1" class="comp-box" x="75" y="240" width="200" height="30"/>
+                <text id="text-norm1" class="comp-text" x="175" y="255">Add & Norm</text>
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="240" x2="175" y2="220" marker-end="url(#arrow)"/>
+                <path id="line-res2" class="comp-line" d="M 175 230 L 55 230 L 55 195 L 75 195" marker-end="url(#arrow)"/>
+
+                <!-- FFN -->
+                <rect id="box-ffn" class="comp-box" x="75" y="190" width="200" height="30"/>
+                <text id="text-ffn" class="comp-text" x="175" y="205">Feed Forward</text>
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="190" x2="175" y2="165"/>
+
+                <!-- Norm 2 -->
+                <rect id="box-norm2" class="comp-box" x="75" y="135" width="200" height="30"/>
+                <text id="text-norm2" class="comp-text" x="175" y="150">Add & Norm</text>
+                <line id="line-norm2-linear" class="comp-line" x1="175" y1="135" x2="175" y2="105" marker-end="url(#arrow)"/>
+
+                <!-- Linear -->
+                <rect id="box-linear" class="comp-box" x="75" y="75" width="200" height="30"/>
+                <text id="text-linear" class="comp-text" x="175" y="90">Linear</text>
+                <line id="line-linear-softmax" class="comp-line" x1="175" y1="75" x2="175" y2="45" marker-end="url(#arrow)"/>
+
+                <!-- Softmax -->
+                <rect id="box-softmax" class="comp-box" x="75" y="15" width="200" height="30"/>
+                <text id="text-softmax" class="comp-text" x="175" y="30">Softmax</text>
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="15" x2="175" y2="0" marker-end="url(#arrow)"/>
+            </svg>
+        `;
 
         this.container.innerHTML = `<div class="tf-demo"><div class="tf-header"><div class="tf-title">Decoder Transformer: Forward Pass</div><div class="tf-controls"><button id="tf-prev" class="tf-btn">◄ Prev</button><span id="tf-step-indicator"></span><button id="tf-next" class="tf-btn">Next ►</button></div></div><div class="tf-body"><div class="tf-svg-container">${svgHTML}</div><div class="tf-panel"><div id="tf-panel-title"></div><p id="tf-panel-desc"></p><div id="tf-matrix-viz" class="tf-matrix-viz"></div><div id="tf-tokens-container" class="tf-tokens-container"></div></div></div></div>`;
         document.getElementById('tf-prev').addEventListener('click', () => { if (this.currentStep > 0) { this.currentStep--; this.updateStep(); }});
