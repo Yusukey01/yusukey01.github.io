@@ -212,37 +212,36 @@ class TransformerFlowDemo {
     }
 
     renderUI() {
-        // Corrected SVG Layout: Expanded vertical space (height=600) and fixed Transformer Block boundary
+        // Corrected SVG Layout: Adjusted line coordinates to ensure arrows are visible and connected
         const svgHTML = `
             <svg width="350" height="600" viewBox="0 0 350 600">
                 <defs>
-                    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#445870"/></marker>
-                    <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0 0, 8 4, 0 8" fill="#69f0ae"/></marker>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#445870"/></marker>
+                    <marker id="arrow-active" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#69f0ae"/></marker>
                 </defs>
 
                 <!-- Input Text -->
-                <text x="175" y="580" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
-                <line id="line-in-embed" class="comp-line" x1="175" y1="565" x2="175" y2="530" marker-end="url(#arrow)"/>
+                <text x="175" y="585" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
+                <line id="line-in-embed" class="comp-line" x1="175" y1="570" x2="175" y2="535" marker-end="url(#arrow)"/>
                 
                 <!-- Embedding -->
                 <rect id="box-embed" class="comp-box" x="75" y="490" width="200" height="40"/>
                 <text id="text-embed" class="comp-text" x="175" y="510">Embedding</text>
-                <line id="line-embed-pos" class="comp-line" x1="175" y1="490" x2="175" y2="470" marker-end="url(#arrow)"/>
+                <line id="line-embed-pos" class="comp-line" x1="175" y1="490" x2="175" y2="475" marker-end="url(#arrow)"/>
 
                 <!-- Positional Encoding -->
                 <rect id="box-pos" class="comp-box" x="75" y="430" width="200" height="40"/>
                 <text id="text-pos" class="comp-text" x="175" y="450">Positional Encoding</text>
-                <line id="line-pos-mha" class="comp-line" x1="175" y1="430" x2="175" y2="390" marker-end="url(#arrow)"/>
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="430" x2="175" y2="395" marker-end="url(#arrow)"/>
 
-                <!-- Transformer Block Boundary (Dashed Box) -->
-                <!-- Covers MHA (350) up to Norm2 (160) -->
+                <!-- Transformer Block Boundary -->
                 <rect x="35" y="150" width="280" height="260" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
                 <text x="50" y="140" fill="#888" font-size="12">Transformer Block</text>
 
                 <!-- MHA -->
                 <rect id="box-mha" class="comp-box" x="75" y="350" width="200" height="40"/>
                 <text id="text-mha" class="comp-text" x="175" y="370">Masked M-H Attention</text>
-                <line id="line-mha-norm1" class="comp-line" x1="175" y1="350" x2="175" y2="320" marker-end="url(#arrow)"/>
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="350" x2="175" y2="325" marker-end="url(#arrow)"/>
                 
                 <!-- Residual 1 Path -->
                 <path id="line-res1" class="comp-line" d="M 175 420 L 55 420 L 55 305 L 75 305" marker-end="url(#arrow)"/>
@@ -250,12 +249,12 @@ class TransformerFlowDemo {
                 <!-- Norm 1 -->
                 <rect id="box-norm1" class="comp-box" x="75" y="290" width="200" height="30"/>
                 <text id="text-norm1" class="comp-text" x="175" y="305">Add & Norm</text>
-                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="290" x2="175" y2="270" marker-end="url(#arrow)"/>
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="290" x2="175" y2="265" marker-end="url(#arrow)"/>
 
                 <!-- FFN -->
-                <rect id="box-ffn" class="comp-box" x="75" y="230" width="200" height="30"/>
-                <text id="text-ffn" class="comp-text" x="175" y="245">Feed Forward</text>
-                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="230" x2="175" y2="200" marker-end="url(#arrow)"/>
+                <rect id="box-ffn" class="comp-box" x="75" y="220" width="200" height="40"/>
+                <text id="text-ffn" class="comp-text" x="175" y="240">Feed Forward</text>
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="220" x2="175" y2="195" marker-end="url(#arrow)"/>
                 
                 <!-- Residual 2 Path -->
                 <path id="line-res2" class="comp-line" d="M 175 280 L 55 280 L 55 175 L 75 175" marker-end="url(#arrow)"/>
@@ -263,17 +262,17 @@ class TransformerFlowDemo {
                 <!-- Norm 2 -->
                 <rect id="box-norm2" class="comp-box" x="75" y="160" width="200" height="30"/>
                 <text id="text-norm2" class="comp-text" x="175" y="175">Add & Norm</text>
-                <line id="line-norm2-linear" class="comp-line" x1="175" y1="160" x2="175" y2="120" marker-end="url(#arrow)"/>
+                <line id="line-norm2-linear" class="comp-line" x1="175" y1="160" x2="175" y2="125" marker-end="url(#arrow)"/>
 
                 <!-- Linear -->
-                <rect id="box-linear" class="comp-box" x="75" y="80" width="200" height="30"/>
-                <text id="text-linear" class="comp-text" x="175" y="95">Linear</text>
-                <line id="line-linear-softmax" class="comp-line" x1="175" y1="80" x2="175" y2="50" marker-end="url(#arrow)"/>
+                <rect id="box-linear" class="comp-box" x="75" y="80" width="200" height="40"/>
+                <text id="text-linear" class="comp-text" x="175" y="100">Linear</text>
+                <line id="line-linear-softmax" class="comp-line" x1="175" y1="80" x2="175" y2="55" marker-end="url(#arrow)"/>
 
                 <!-- Softmax -->
                 <rect id="box-softmax" class="comp-box" x="75" y="20" width="200" height="30"/>
                 <text id="text-softmax" class="comp-text" x="175" y="35">Softmax</text>
-                <line id="line-softmax-out" class="comp-line" x1="175" y1="20" x2="175" y2="5" marker-end="url(#arrow)"/>
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="20" x2="175" y2="0" marker-end="url(#arrow)"/>
             </svg>
         `;
 
