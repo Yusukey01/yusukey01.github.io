@@ -211,19 +211,19 @@ class TransformerFlowDemo {
         `;
     }
 
+    
     renderUI() {
         const svgHTML = `
             <svg width="350" height="720" viewBox="0 0 350 720">
                 <defs>
                     <!-- UP pointing arrow: 10x10 box, triangle points UP -->
                     <!-- Path: Bottom-Left(0,10) -> Top-Center(5,0) -> Bottom-Right(10,10) -->
-                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto" viewBox="0 0 10 10">
-                        <path d="M0,10 L5,0 L10,10 z" fill="#445870"/>
+                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                        <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto" viewBox="0 0 10 10">
-                        <path d="M0,10 L5,0 L10,10 z" fill="#69f0ae"/>
+                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                        <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
                     </marker>
-
                     <!-- RIGHT pointing arrow: 10x10 box, triangle points RIGHT -->
                     <!-- Path: Top-Left(0,0) -> Right-Center(10,5) -> Bottom-Left(0,10) -->
                     <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
