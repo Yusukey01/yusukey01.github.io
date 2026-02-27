@@ -212,23 +212,24 @@ class TransformerFlowDemo {
     }
 
     renderUI() {
-        
         const svgHTML = `
             <svg width="350" height="720" viewBox="0 0 350 720">
                 <defs>
-                    <!-- UP pointing arrow (default) -->
-                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto">
-                        <path d="M0,6 L5,0 L10,6 z" fill="#445870"/>
+                    <!-- UP pointing arrow: 10x10 box, triangle points UP -->
+                    <!-- Path: Bottom-Left(0,10) -> Top-Center(5,0) -> Bottom-Right(10,10) -->
+                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto" viewBox="0 0 10 10">
+                        <path d="M0,10 L5,0 L10,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto">
-                        <path d="M0,6 L5,0 L10,6 z" fill="#69f0ae"/>
+                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto" viewBox="0 0 10 10">
+                        <path d="M0,10 L5,0 L10,10 z" fill="#69f0ae"/>
                     </marker>
 
-                    <!-- RIGHT pointing arrow (for residuals) - Fixed orientation -->
-                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="0">
+                    <!-- RIGHT pointing arrow: 10x10 box, triangle points RIGHT -->
+                    <!-- Path: Top-Left(0,0) -> Right-Center(10,5) -> Bottom-Left(0,10) -->
+                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="0">
+                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
                     </marker>
                 </defs>
@@ -237,21 +238,21 @@ class TransformerFlowDemo {
                 <text x="175" y="705" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
                 
                 <!-- Arrow: Input -> Embedding -->
-                <line id="line-in-embed" class="comp-line" x1="175" y1="690" x2="175" y2="642" marker-end="url(#arrow-up)"/>
+                <line id="line-in-embed" class="comp-line" x1="175" y1="690" x2="175" y2="645" marker-end="url(#arrow-up)"/>
                 
                 <!-- 2. Embedding -->
                 <rect id="box-embed" class="comp-box" x="75" y="600" width="200" height="40"/>
                 <text id="text-embed" class="comp-text" x="175" y="620">Embedding</text>
                 
                 <!-- Arrow: Embedding -> Pos -->
-                <line id="line-embed-pos" class="comp-line" x1="175" y1="600" x2="175" y2="562" marker-end="url(#arrow-up)"/>
+                <line id="line-embed-pos" class="comp-line" x1="175" y1="600" x2="175" y2="565" marker-end="url(#arrow-up)"/>
 
                 <!-- 3. Positional Encoding -->
                 <rect id="box-pos" class="comp-box" x="75" y="520" width="200" height="40"/>
                 <text id="text-pos" class="comp-text" x="175" y="540">Positional Encoding</text>
                 
                 <!-- Arrow: Pos -> MHA -->
-                <line id="line-pos-mha" class="comp-line" x1="175" y1="520" x2="175" y2="462" marker-end="url(#arrow-up)"/>
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="520" x2="175" y2="465" marker-end="url(#arrow-up)"/>
 
                 <!-- Transformer Block Boundary -->
                 <rect x="35" y="170" width="280" height="300" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
@@ -262,42 +263,42 @@ class TransformerFlowDemo {
                 <text id="text-mha" class="comp-text" x="175" y="440">Masked M-H Attention</text>
                 
                 <!-- Arrow: MHA -> Norm1 -->
-                <line id="line-mha-norm1" class="comp-line" x1="175" y1="420" x2="175" y2="372" marker-end="url(#arrow-up)"/>
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="420" x2="175" y2="375" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 1 Path (Around MHA) -->
-                <!-- Uses explicit horizontal segment to ensure arrow points right -->
-                <path id="line-res1" class="comp-line" d="M 175 490 L 55 490 L 55 355 L 73 355" marker-end="url(#arrow-right)"/>
+                <!-- Adjusted endpoint to x=70 to allow space for arrow tip -->
+                <path id="line-res1" class="comp-line" d="M 175 490 L 55 490 L 55 355 L 65 355" marker-end="url(#arrow-right)"/>
 
                 <!-- 5. Add & Norm 1 -->
                 <rect id="box-norm1" class="comp-box" x="75" y="340" width="200" height="30"/>
                 <text id="text-norm1" class="comp-text" x="175" y="355">Add & Norm</text>
                 
                 <!-- Arrow: Norm1 -> FFN -->
-                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="340" x2="175" y2="302" marker-end="url(#arrow-up)"/>
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="340" x2="175" y2="305" marker-end="url(#arrow-up)"/>
 
                 <!-- 6. Feed Forward -->
                 <rect id="box-ffn" class="comp-box" x="75" y="260" width="200" height="40"/>
                 <text id="text-ffn" class="comp-text" x="175" y="280">Feed Forward</text>
                 
                 <!-- Arrow: FFN -> Norm2 -->
-                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="260" x2="175" y2="212" marker-end="url(#arrow-up)"/>
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="260" x2="175" y2="215" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 2 Path (Around FFN) -->
-                <path id="line-res2" class="comp-line" d="M 175 320 L 55 320 L 55 195 L 73 195" marker-end="url(#arrow-right)"/>
+                <path id="line-res2" class="comp-line" d="M 175 320 L 55 320 L 55 195 L 65 195" marker-end="url(#arrow-right)"/>
 
                 <!-- 7. Add & Norm 2 -->
                 <rect id="box-norm2" class="comp-box" x="75" y="180" width="200" height="30"/>
                 <text id="text-norm2" class="comp-text" x="175" y="195">Add & Norm</text>
                 
                 <!-- Arrow: Norm2 -> Linear -->
-                <line id="line-norm2-linear" class="comp-line" x1="175" y1="180" x2="175" y2="132" marker-end="url(#arrow-up)"/>
+                <line id="line-norm2-linear" class="comp-line" x1="175" y1="180" x2="175" y2="135" marker-end="url(#arrow-up)"/>
 
                 <!-- 8. Linear -->
                 <rect id="box-linear" class="comp-box" x="75" y="100" width="200" height="30"/>
                 <text id="text-linear" class="comp-text" x="175" y="115">Linear</text>
                 
                 <!-- Arrow: Linear -> Softmax -->
-                <line id="line-linear-softmax" class="comp-line" x1="175" y1="100" x2="175" y2="52" marker-end="url(#arrow-up)"/>
+                <line id="line-linear-softmax" class="comp-line" x1="175" y1="100" x2="175" y2="55" marker-end="url(#arrow-up)"/>
 
                 <!-- 9. Softmax -->
                 <rect id="box-softmax" class="comp-box" x="75" y="20" width="200" height="30"/>
