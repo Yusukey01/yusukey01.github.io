@@ -234,8 +234,8 @@ class TransformerFlowDemo {
                 <line id="line-pos-mha" class="comp-line" x1="175" y1="390" x2="175" y2="340" marker-end="url(#arrow)"/>
 
                 <!-- Transformer Block Boundary -->
-                <rect x="40" y="175" width="270" height="205" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
-                <text x="55" y="195" fill="#888" font-size="12">Transformer Block</text>
+                <rect x="50" y="180" width="250" height="180" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
+                <text x="65" y="200" fill="#888" font-size="12">Transformer Block</text>
 
                 <!-- MHA -->
                 <rect id="box-mha" class="comp-box" x="75" y="300" width="200" height="40"/>
