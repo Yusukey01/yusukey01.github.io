@@ -226,10 +226,10 @@ class TransformerFlowDemo {
                     </marker>
                     <!-- RIGHT pointing arrow: 10x10 box, triangle points RIGHT -->
                     <!-- Path: Top-Left(0,0) -> Right-Center(10,5) -> Bottom-Left(0,10) -->
-                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="1" refY="5" orient="auto" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="1" refY="5" orient="auto" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
                     </marker>
                 </defs>
@@ -305,7 +305,7 @@ class TransformerFlowDemo {
                 <text id="text-softmax" class="comp-text" x="175" y="35">Softmax</text>
                 
                 <!-- Output Arrow -->
-                <line id="line-softmax-out" class="comp-line" x1="175" y1="20" x2="175" y2="5" marker-end="url(#arrow-up)"/>
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="15" x2="175" y2="-5" marker-end="url(#arrow-up)"/>
             </svg>
         `;
 
