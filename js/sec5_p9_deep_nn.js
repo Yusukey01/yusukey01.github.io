@@ -212,12 +212,17 @@ class TransformerFlowDemo {
     }
 
     renderUI() {
-        // Corrected SVG Layout: Adjusted line coordinates to ensure arrows are visible and connected
+        // Corrected SVG Layout: Fixed marker scaling and line coordinates
         const svgHTML = `
             <svg width="350" height="600" viewBox="0 0 350 600">
                 <defs>
-                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#445870"/></marker>
-                    <marker id="arrow-active" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#69f0ae"/></marker>
+                    <!-- Added viewBox to marker to ensure correct scaling -->
+                    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" viewBox="0 0 12 12">
+                        <path d="M0,0 L0,12 L12,6 z" fill="#445870"/>
+                    </marker>
+                    <marker id="arrow-active" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" viewBox="0 0 12 12">
+                        <path d="M0,0 L0,12 L12,6 z" fill="#69f0ae"/>
+                    </marker>
                 </defs>
 
                 <!-- Input Text -->
