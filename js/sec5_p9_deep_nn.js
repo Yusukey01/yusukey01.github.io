@@ -211,25 +211,22 @@ class TransformerFlowDemo {
         `;
     }
 
-    
     renderUI() {
         const svgHTML = `
             <svg width="350" height="720" viewBox="0 0 350 720">
                 <defs>
-                    <!-- UP pointing arrow: 10x10 box, triangle points UP -->
-                    <!-- Path: Bottom-Left(0,10) -> Top-Center(5,0) -> Bottom-Right(10,10) -->
-                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                    <!-- Arrow pointing along +x; orient="auto" rotates to match line direction -->
+                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" viewBox="0 0 10 10">
+                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
                     </marker>
-                    <!-- RIGHT pointing arrow: 10x10 box, triangle points RIGHT -->
-                    <!-- Path: Top-Left(0,0) -> Right-Center(10,5) -> Bottom-Left(0,10) -->
-                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="1" refY="5" orient="auto" viewBox="0 0 10 10">
+
+                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
                     </marker>
-                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="1" refY="5" orient="auto" viewBox="0 0 10 10">
+                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10">
                         <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
                     </marker>
                 </defs>
@@ -266,8 +263,7 @@ class TransformerFlowDemo {
                 <line id="line-mha-norm1" class="comp-line" x1="175" y1="420" x2="175" y2="375" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 1 Path (Around MHA) -->
-                <!-- Adjusted endpoint to x=70 to allow space for arrow tip -->
-                <path id="line-res1" class="comp-line" d="M 175 490 L 55 490 L 55 355 L 65 355" marker-end="url(#arrow-right)"/>
+                <path id="line-res1" class="comp-line" d="M 175 490 L 45 490 L 45 355 L 75 355" marker-end="url(#arrow-right)"/>
 
                 <!-- 5. Add & Norm 1 -->
                 <rect id="box-norm1" class="comp-box" x="75" y="340" width="200" height="30"/>
@@ -284,7 +280,7 @@ class TransformerFlowDemo {
                 <line id="line-ffn-norm2" class="comp-line" x1="175" y1="260" x2="175" y2="215" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 2 Path (Around FFN) -->
-                <path id="line-res2" class="comp-line" d="M 175 320 L 55 320 L 55 195 L 65 195" marker-end="url(#arrow-right)"/>
+                <path id="line-res2" class="comp-line" d="M 175 320 L 45 320 L 45 195 L 75 195" marker-end="url(#arrow-right)"/>
 
                 <!-- 7. Add & Norm 2 -->
                 <rect id="box-norm2" class="comp-box" x="75" y="180" width="200" height="30"/>
