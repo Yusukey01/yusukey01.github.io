@@ -1,5 +1,5 @@
-// sec5_p9_deep_nn.js - Transformer Architecture Data Flow Demo
-// Visualizes how data flows through a single Transformer block (Self-Attention, Add & Norm, FFN)
+// sec5_p9_deep_nn.js - Transformer Autoregressive Flow Demo
+// Visualizes how data flows through a Decoder-only Transformer (like GPT) to predict the next word.
 
 class TransformerFlowDemo {
     constructor(containerId) {
@@ -13,52 +13,66 @@ class TransformerFlowDemo {
         this.steps = [
             {
                 id: 'input',
-                title: '1. Input Sequence & Embedding',
-                desc: 'A sequence of words (e.g., "The cat sat") is converted into dense vectors. <br><br><b>Formulation:</b><br> <b>X</b> = Embed(Tokens)',
+                title: '1. Input Sequence',
+                desc: 'The current sequence of words is tokenized. Today\'s LLMs (like GPT) are <b>Decoder-only</b> models. They process the entire current sequence at once.<br><br><i>Current Input: "The", "cat", "sat"</i>',
                 activeBoxes: ['box-embed'],
-                activeLines: []
-            },
-            {
-                id: 'pos',
-                title: '2. Positional Encoding',
-                desc: 'Since Self-Attention processes all tokens in parallel, we add sine/cosine positional signals to the embeddings so the model knows the word order.<br><br><b>Formulation:</b><br> <b>X</b> = <b>X</b> + PosEncoding',
-                activeBoxes: ['box-pos'],
                 activeLines: ['line-in-pos']
             },
             {
-                id: 'mha',
-                title: '3. Multi-Head Self-Attention',
-                desc: 'The input <b>X</b> is split into Queries (<i>Q</i>), Keys (<i>K</i>), and Values (<i>V</i>). Each token computes attention scores with every other token to capture context.<br><br><b>Formulation:</b><br> <b>Z</b><sub>attn</sub> = Softmax(<i>Q K</i><sup>T</sup> / &radic;d) <i>V</i>',
-                activeBoxes: ['box-mha'],
+                id: 'pos',
+                title: '2. Embedding & Positional Encoding',
+                desc: 'Words are mapped to dense vectors (Embeddings). Since the network processes everything in parallel, we add sine/cosine signals so it knows the word order.<br><br><b>X</b> = Embed(Tokens) + PosEncoding',
+                activeBoxes: ['box-pos', 'box-embed'],
                 activeLines: ['line-pos-mha']
             },
             {
-                id: 'norm1',
-                title: '4. Add & Layer Normalization 1',
-                desc: 'A <b>Residual Connection</b> adds the original input <b>X</b> to the attention output to prevent vanishing gradients. The result is then normalized.<br><br><b>Formulation:</b><br> <b>Z</b><sub>1</sub> = LayerNorm(<b>Z</b><sub>attn</sub> + <b>X</b>)',
-                activeBoxes: ['box-norm1'],
+                id: 'mha',
+                title: '3. Masked Multi-Head Attention',
+                desc: 'Each word looks at <b>past</b> words to gather context. A <b>Causal Mask</b> prevents words from looking at future tokens (e.g., "cat" cannot attend to "sat").<br><br><b>Z</b><sub>attn</sub> = Softmax(<i>Mask</i>(<i>Q K</i><sup>T</sup>)) <i>V</i>',
+                activeBoxes: ['box-mha'],
                 activeLines: ['line-mha-norm1', 'line-res1']
+            },
+            {
+                id: 'norm1',
+                title: '4. Add & Layer Normalization',
+                desc: 'The original input is added back (Residual Connection) to prevent gradients from vanishing, and the result is normalized to stabilize training.<br><br><b>Z</b><sub>1</sub> = LayerNorm(<b>Z</b><sub>attn</sub> + <b>X</b>)',
+                activeBoxes: ['box-norm1'],
+                activeLines: ['line-norm1-ffn']
             },
             {
                 id: 'ffn',
                 title: '5. Feed-Forward Network',
-                desc: 'The contextualized vectors are passed through a position-wise fully connected network with a ReLU activation. This applies non-linear transformations to each token independently.<br><br><b>Formulation:</b><br> <b>F</b> = max(0, <b>Z</b><sub>1</sub><i>W</i><sub>1</sub> + <i>b</i><sub>1</sub>)<i>W</i><sub>2</sub> + <i>b</i><sub>2</sub>',
+                desc: 'The vectors pass through a fully connected network with non-linear activation (ReLU/GELU). This is where the model accesses its "memorized knowledge".',
                 activeBoxes: ['box-ffn'],
-                activeLines: ['line-norm1-ffn']
-            },
-            {
-                id: 'norm2',
-                title: '6. Add & Layer Normalization 2',
-                desc: 'Another residual connection adds the input of the FFN to its output, followed by a final layer normalization.<br><br><b>Formulation:</b><br> <b>Z</b><sub>out</sub> = LayerNorm(<b>F</b> + <b>Z</b><sub>1</sub>)',
-                activeBoxes: ['box-norm2'],
                 activeLines: ['line-ffn-norm2', 'line-res2']
             },
             {
-                id: 'output',
-                title: '7. Block Output',
-                desc: 'The Transformer block has finished processing the sequence. These enriched, context-aware representations can now be passed to the next Transformer block, or to a final classifier/generator.<br><br><b>Result:</b><br> 1 Block Completed.',
+                id: 'norm2',
+                title: '6. Add & Layer Normalization',
+                desc: 'Another residual connection and normalization step. The Transformer Block outputs a highly contextualized vector for the <b>last token</b> ("sat").',
+                activeBoxes: ['box-norm2'],
+                activeLines: ['line-norm2-linear']
+            },
+            {
+                id: 'linear',
+                title: '7. Output Projection (Linear)',
+                desc: 'The contextualized vector of the last token is projected into the size of the entire vocabulary (e.g., 50,000 words). These are raw scores called <b>Logits</b>.',
+                activeBoxes: ['box-linear'],
+                activeLines: ['line-linear-softmax']
+            },
+            {
+                id: 'softmax',
+                title: '8. Softmax (Next Word Probabilities)',
+                desc: 'The Softmax function converts logits into a <b>probability distribution</b> (summing to 100%). <br>Based on context, words like <i>"on"</i> or <i>"down"</i> get the highest scores.',
+                activeBoxes: ['box-softmax'],
+                activeLines: ['line-softmax-out']
+            },
+            {
+                id: 'autoregressive',
+                title: '9. Autoregressive Generation',
+                desc: 'The model samples the highest probability word (<b>"on"</b>). This word is then <b>appended to the input</b> ("The cat sat on"), and the entire one-way process repeats to predict the <i>next</i> word. This is how LLMs write text!',
                 activeBoxes: [],
-                activeLines: ['line-norm2-out']
+                activeLines: []
             }
         ];
 
@@ -104,7 +118,7 @@ class TransformerFlowDemo {
             
             .tf-body {
                 display: flex;
-                gap: 30px;
+                gap: 20px;
                 align-items: stretch;
             }
             @media (max-width: 768px) {
@@ -127,55 +141,76 @@ class TransformerFlowDemo {
                 padding: 25px;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: flex-start;
             }
             .tf-step-title {
-                color: #ffa726; font-size: 1.4rem; font-weight: bold; margin-bottom: 15px;
+                color: #ffa726; font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;
             }
             .tf-step-desc {
-                font-size: 1rem; color: #ccc; line-height: 1.6;
+                font-size: 1rem; color: #ccc; line-height: 1.6; margin-bottom: 20px;
             }
             .tf-step-desc b { color: #69f0ae; }
             .tf-step-desc i { font-family: "JetBrains Mono", monospace; color: #64b4ff; font-style: normal; }
 
+            /* Tokens Display */
+            .tf-tokens-container {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: #161b22;
+                padding: 15px;
+                border-radius: 6px;
+                border: 1px solid rgba(255,255,255,0.05);
+                margin-top: auto;
+                flex-wrap: wrap;
+            }
+            .tf-token {
+                background: rgba(100, 180, 255, 0.15);
+                border: 1px solid rgba(100, 180, 255, 0.3);
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-family: "JetBrains Mono", monospace;
+                color: #fff;
+            }
+            .tf-token-new {
+                background: rgba(105, 240, 174, 0.2);
+                border: 1px solid rgba(105, 240, 174, 0.5);
+                color: #69f0ae;
+                font-weight: bold;
+                animation: popIn 0.5s ease-out;
+            }
+            @keyframes popIn {
+                0% { transform: scale(0.5); opacity: 0; }
+                80% { transform: scale(1.1); opacity: 1; }
+                100% { transform: scale(1); }
+            }
+
+            /* Probabilities Chart */
+            .tf-prob-chart {
+                display: flex; flex-direction: column; gap: 8px;
+            }
+            .tf-prob-row {
+                display: flex; align-items: center; gap: 10px;
+            }
+            .tf-prob-label { width: 45px; font-family: "JetBrains Mono", monospace; font-size: 0.9rem; text-align: right;}
+            .tf-prob-bar-bg { flex: 1; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+            .tf-prob-bar-fill { height: 100%; transition: width 0.4s ease; }
+            .tf-prob-val { width: 40px; font-size: 0.8rem; color: #888; text-align: right;}
+
             /* SVG Elements */
             .comp-box {
-                fill: #222b38;
-                stroke: #445870;
-                stroke-width: 2;
-                transition: all 0.3s;
-                rx: 6; ry: 6;
+                fill: #222b38; stroke: #445870; stroke-width: 2; transition: all 0.3s; rx: 6; ry: 6;
             }
             .comp-text {
-                fill: #bbb;
-                font-size: 14px;
-                font-weight: 500;
-                text-anchor: middle;
-                dominant-baseline: middle;
-                pointer-events: none;
-                transition: all 0.3s;
+                fill: #bbb; font-size: 14px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; pointer-events: none; transition: all 0.3s;
             }
             .comp-line {
-                stroke: #445870;
-                stroke-width: 3;
-                fill: none;
-                transition: all 0.3s;
+                stroke: #445870; stroke-width: 3; fill: none; transition: all 0.3s;
             }
-            
             /* Active States */
-            .comp-box.active {
-                fill: #ff9800;
-                stroke: #fff;
-                filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.6));
-            }
-            .comp-text.active {
-                fill: #000;
-                font-weight: bold;
-            }
-            .comp-line.active {
-                stroke: #69f0ae;
-                filter: drop-shadow(0 0 5px rgba(105, 240, 174, 0.6));
-            }
+            .comp-box.active { fill: #ff9800; stroke: #fff; filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.6)); }
+            .comp-text.active { fill: #000; font-weight: bold; }
+            .comp-line.active { stroke: #69f0ae; filter: drop-shadow(0 0 5px rgba(105, 240, 174, 0.6)); }
         `;
         document.head.appendChild(style);
     }
@@ -183,10 +218,10 @@ class TransformerFlowDemo {
     renderUI() {
         // Build the SVG Architecture
         const svgHTML = `
-            <svg width="350" height="480" viewBox="0 0 350 480">
+            <svg width="350" height="540" viewBox="0 0 350 540">
                 <defs>
                     <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <polygon points="0 0, 8 4, 0 8" fill="#445870" class="marker-arrow" />
+                        <polygon points="0 0, 8 4, 0 8" fill="#445870" />
                     </marker>
                     <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
                         <polygon points="0 0, 8 4, 0 8" fill="#69f0ae" />
@@ -194,64 +229,72 @@ class TransformerFlowDemo {
                 </defs>
 
                 <!-- Input -->
-                <text x="175" y="460" fill="#888" text-anchor="middle" font-size="14">Inputs (Words)</text>
-                <line id="line-in-pos" class="comp-line" x1="175" y1="440" x2="175" y2="400" marker-end="url(#arrow)" />
+                <text x="175" y="520" fill="#888" text-anchor="middle" font-size="14">Inputs (Words)</text>
+                <line id="line-in-pos" class="comp-line" x1="175" y1="500" x2="175" y2="460" marker-end="url(#arrow)" />
                 
                 <!-- Embedding & Pos -->
-                <rect id="box-embed" class="comp-box" x="75" y="360" width="200" height="40" />
-                <text id="text-embed" class="comp-text" x="175" y="380">Input Embedding</text>
+                <rect id="box-embed" class="comp-box" x="75" y="420" width="200" height="40" />
+                <text id="text-embed" class="comp-text" x="175" y="440">Input Embedding</text>
                 
-                <rect id="box-pos" class="comp-box" x="75" y="310" width="200" height="40" />
-                <text id="text-pos" class="comp-text" x="175" y="330">Positional Encoding</text>
+                <rect id="box-pos" class="comp-box" x="75" y="370" width="200" height="40" />
+                <text id="text-pos" class="comp-text" x="175" y="390">Positional Encoding</text>
 
                 <!-- Connection to MHA -->
-                <line id="line-pos-mha" class="comp-line" x1="175" y1="310" x2="175" y2="260" marker-end="url(#arrow)" />
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="370" x2="175" y2="320" marker-end="url(#arrow)" />
 
                 <!-- Transformer Block Boundary -->
-                <rect x="40" y="30" width="270" height="260" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10" />
-                <text x="50" y="50" fill="#888" font-size="12">Transformer Block</text>
+                <rect x="40" y="160" width="270" height="150" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10" />
+                <text x="50" y="175" fill="#888" font-size="12">Transformer Block (xN)</text>
 
                 <!-- MHA -->
-                <rect id="box-mha" class="comp-box" x="75" y="220" width="200" height="40" />
-                <text id="text-mha" class="comp-text" x="175" y="240">Multi-Head Attention</text>
+                <rect id="box-mha" class="comp-box" x="75" y="280" width="200" height="30" />
+                <text id="text-mha" class="comp-text" x="175" y="295">Masked Multi-Head Attn</text>
 
-                <line id="line-mha-norm1" class="comp-line" x1="175" y1="220" x2="175" y2="190" marker-end="url(#arrow)" />
-                
-                <!-- Residual 1 -->
-                <path id="line-res1" class="comp-line" d="M 175 285 L 55 285 L 55 170 L 75 170" marker-end="url(#arrow)" />
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="280" x2="175" y2="260" marker-end="url(#arrow)" />
+                <path id="line-res1" class="comp-line" d="M 175 345 L 55 345 L 55 245 L 75 245" marker-end="url(#arrow)" />
 
-                <!-- Add & Norm 1 -->
-                <rect id="box-norm1" class="comp-box" x="75" y="150" width="200" height="40" />
-                <text id="text-norm1" class="comp-text" x="175" y="170">Add & Layer Norm</text>
+                <!-- Norm 1 -->
+                <rect id="box-norm1" class="comp-box" x="75" y="230" width="200" height="30" />
+                <text id="text-norm1" class="comp-text" x="175" y="245">Add & Norm</text>
 
-                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="150" x2="175" y2="120" marker-end="url(#arrow)" />
-
-                <!-- Residual 2 -->
-                <path id="line-res2" class="comp-line" d="M 175 135 L 55 135 L 55 60 L 75 60" marker-end="url(#arrow)" />
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="230" x2="175" y2="210" marker-end="url(#arrow)" />
+                <path id="line-res2" class="comp-line" d="M 175 220 L 55 220 L 55 185 L 75 185" marker-end="url(#arrow)" />
 
                 <!-- FFN -->
-                <rect id="box-ffn" class="comp-box" x="75" y="80" width="200" height="40" />
-                <text id="text-ffn" class="comp-text" x="175" y="100">Feed Forward</text>
+                <rect id="box-ffn" class="comp-box" x="75" y="180" width="200" height="30" />
+                <text id="text-ffn" class="comp-text" x="175" y="195">Feed Forward</text>
 
-                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="80" x2="175" y2="60" />
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="180" x2="175" y2="150" />
 
-                <!-- Add & Norm 2 -->
-                <rect id="box-norm2" class="comp-box" x="75" y="40" width="200" height="30" />
-                <text id="text-norm2" class="comp-text" x="175" y="55">Add & Layer Norm</text>
+                <!-- Norm 2 -->
+                <rect id="box-norm2" class="comp-box" x="75" y="130" width="200" height="30" />
+                <text id="text-norm2" class="comp-text" x="175" y="145">Add & Norm</text>
 
-                <!-- Output -->
-                <line id="line-norm2-out" class="comp-line" x1="175" y1="40" x2="175" y2="15" marker-end="url(#arrow)" />
+                <!-- Connection to Linear -->
+                <line id="line-norm2-linear" class="comp-line" x1="175" y1="130" x2="175" y2="100" marker-end="url(#arrow)" />
+
+                <!-- Linear (Output Projection) -->
+                <rect id="box-linear" class="comp-box" x="75" y="70" width="200" height="30" />
+                <text id="text-linear" class="comp-text" x="175" y="85">Linear (Vocab Size)</text>
+
+                <line id="line-linear-softmax" class="comp-line" x1="175" y1="70" x2="175" y2="40" marker-end="url(#arrow)" />
+
+                <!-- Softmax -->
+                <rect id="box-softmax" class="comp-box" x="75" y="10" width="200" height="30" />
+                <text id="text-softmax" class="comp-text" x="175" y="25">Softmax (Probabilities)</text>
+                
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="10" x2="175" y2="-5" marker-end="url(#arrow)" />
             </svg>
         `;
 
         this.container.innerHTML = `
             <div class="tf-demo">
                 <div class="tf-header">
-                    <div class="tf-title">Transformer Block: Forward Pass</div>
+                    <div class="tf-title">Autoregressive LLM Forward Pass</div>
                     <div class="tf-controls">
-                        <button id="tf-prev" class="tf-btn">◄ Prev Step</button>
+                        <button id="tf-prev" class="tf-btn">◄ Prev</button>
                         <span id="tf-step-indicator" style="font-size: 0.95rem; width: 60px; text-align: center;"></span>
-                        <button id="tf-next" class="tf-btn">Next Step ►</button>
+                        <button id="tf-next" class="tf-btn">Next ►</button>
                     </div>
                 </div>
                 <div class="tf-body">
@@ -261,6 +304,30 @@ class TransformerFlowDemo {
                     <div class="tf-panel">
                         <div id="tf-panel-title" class="tf-step-title"></div>
                         <div id="tf-panel-desc" class="tf-step-desc"></div>
+                        
+                        <div id="tf-prob-area" style="display:none;">
+                            <div class="tf-prob-chart">
+                                <div class="tf-prob-row">
+                                    <div class="tf-prob-label" style="color:#69f0ae">on</div>
+                                    <div class="tf-prob-bar-bg"><div class="tf-prob-bar-fill" style="width:0%; background:#69f0ae;" id="bar-1"></div></div>
+                                    <div class="tf-prob-val" id="val-1">0%</div>
+                                </div>
+                                <div class="tf-prob-row">
+                                    <div class="tf-prob-label">down</div>
+                                    <div class="tf-prob-bar-bg"><div class="tf-prob-bar-fill" style="width:0%; background:#64b4ff;" id="bar-2"></div></div>
+                                    <div class="tf-prob-val" id="val-2">0%</div>
+                                </div>
+                                <div class="tf-prob-row">
+                                    <div class="tf-prob-label">quietly</div>
+                                    <div class="tf-prob-bar-bg"><div class="tf-prob-bar-fill" style="width:0%; background:#64b4ff;" id="bar-3"></div></div>
+                                    <div class="tf-prob-val" id="val-3">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tf-tokens-container" id="tf-tokens">
+                            <!-- Tokens injected dynamically -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -291,7 +358,6 @@ class TransformerFlowDemo {
         document.querySelectorAll('.comp-text').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.comp-line').forEach(el => {
             el.classList.remove('active');
-            // Reset marker color
             if(el.hasAttribute('marker-end')) el.setAttribute('marker-end', 'url(#arrow)');
         });
 
@@ -310,6 +376,43 @@ class TransformerFlowDemo {
                 if(line.hasAttribute('marker-end')) line.setAttribute('marker-end', 'url(#arrow-active)');
             }
         });
+
+        // Update UI logic (Probabilities and Tokens)
+        const probArea = document.getElementById('tf-prob-area');
+        const tokenContainer = document.getElementById('tf-tokens');
+        
+        // Render Sequence
+        if (this.currentStep < 7) {
+            probArea.style.display = 'none';
+            tokenContainer.innerHTML = `
+                <div class="tf-token">The</div>
+                <div class="tf-token">cat</div>
+                <div class="tf-token">sat</div>
+            `;
+        } else if (this.currentStep === 7) {
+            // Softmax: Show probabilities
+            probArea.style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('bar-1').style.width = '65%'; document.getElementById('val-1').innerText = '65%';
+                document.getElementById('bar-2').style.width = '20%'; document.getElementById('val-2').innerText = '20%';
+                document.getElementById('bar-3').style.width = '10%'; document.getElementById('val-3').innerText = '10%';
+            }, 50);
+            tokenContainer.innerHTML = `
+                <div class="tf-token">The</div>
+                <div class="tf-token">cat</div>
+                <div class="tf-token">sat</div>
+            `;
+        } else if (this.currentStep === 8) {
+            // Autoregressive: append "on"
+            probArea.style.display = 'block';
+            tokenContainer.innerHTML = `
+                <div class="tf-token">The</div>
+                <div class="tf-token">cat</div>
+                <div class="tf-token">sat</div>
+                <div class="tf-token tf-token-new">on</div>
+                <div style="color: #64b4ff; font-weight:bold; margin-left:10px;">&olarr; Loop!</div>
+            `;
+        }
     }
 }
 
