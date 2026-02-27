@@ -1,362 +1,319 @@
-// sec5_p9_deep_nn.js - Mathematical Transformer Architecture Demo
-// Visualizes the exact matrix operations (Q, K, V, Softmax) inside a Transformer block
+// sec5_p9_deep_nn.js - Transformer Architecture Data Flow Demo
+// Visualizes how data flows through a single Transformer block (Self-Attention, Add & Norm, FFN)
 
-class TransformerDemo {
+class TransformerFlowDemo {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
             console.error(`[TransformerDemo] Container #${containerId} not found`);
             return;
         }
-        
-        // --- 1. Matrix Operations Utility ---
-        this.Mat = {
-            mul: (A, B) => A.map(row => B[0].map((_, i) => row.reduce((sum, val, j) => sum + val * B[j][i], 0))),
-            add: (A, B) => A.map((row, i) => row.map((val, j) => val + B[i][j])),
-            transpose: A => A[0].map((_, i) => A.map(row => row[i])),
-            scale: (A, s) => A.map(row => row.map(val => val * s)),
-            softmax: A => A.map(row => {
-                const max = Math.max(...row);
-                const exps = row.map(v => Math.exp(v - max));
-                const sum = exps.reduce((a, b) => a + b, 0);
-                return exps.map(v => v / sum);
-            }),
-            format: (A, prec=2) => {
-                if (!Array.isArray(A[0])) A = [A];
-                return `<table class="matrix-table">` + 
-                       A.map(row => `<tr>${row.map(val => `<td>${val.toFixed(prec)}</td>`).join('')}</tr>`).join('') +
-                       `</table>`;
+
+        // Define the steps of the forward pass
+        this.steps = [
+            {
+                id: 'input',
+                title: '1. Input Sequence & Embedding',
+                desc: 'A sequence of words (e.g., "The cat sat") is converted into dense vectors. <br><br><b>Formulation:</b><br> <b>X</b> = Embed(Tokens)',
+                activeBoxes: ['box-embed'],
+                activeLines: []
+            },
+            {
+                id: 'pos',
+                title: '2. Positional Encoding',
+                desc: 'Since Self-Attention processes all tokens in parallel, we add sine/cosine positional signals to the embeddings so the model knows the word order.<br><br><b>Formulation:</b><br> <b>X</b> = <b>X</b> + PosEncoding',
+                activeBoxes: ['box-pos'],
+                activeLines: ['line-in-pos']
+            },
+            {
+                id: 'mha',
+                title: '3. Multi-Head Self-Attention',
+                desc: 'The input <b>X</b> is split into Queries (<i>Q</i>), Keys (<i>K</i>), and Values (<i>V</i>). Each token computes attention scores with every other token to capture context.<br><br><b>Formulation:</b><br> <b>Z</b><sub>attn</sub> = Softmax(<i>Q K</i><sup>T</sup> / &radic;d) <i>V</i>',
+                activeBoxes: ['box-mha'],
+                activeLines: ['line-pos-mha']
+            },
+            {
+                id: 'norm1',
+                title: '4. Add & Layer Normalization 1',
+                desc: 'A <b>Residual Connection</b> adds the original input <b>X</b> to the attention output to prevent vanishing gradients. The result is then normalized.<br><br><b>Formulation:</b><br> <b>Z</b><sub>1</sub> = LayerNorm(<b>Z</b><sub>attn</sub> + <b>X</b>)',
+                activeBoxes: ['box-norm1'],
+                activeLines: ['line-mha-norm1', 'line-res1']
+            },
+            {
+                id: 'ffn',
+                title: '5. Feed-Forward Network',
+                desc: 'The contextualized vectors are passed through a position-wise fully connected network with a ReLU activation. This applies non-linear transformations to each token independently.<br><br><b>Formulation:</b><br> <b>F</b> = max(0, <b>Z</b><sub>1</sub><i>W</i><sub>1</sub> + <i>b</i><sub>1</sub>)<i>W</i><sub>2</sub> + <i>b</i><sub>2</sub>',
+                activeBoxes: ['box-ffn'],
+                activeLines: ['line-norm1-ffn']
+            },
+            {
+                id: 'norm2',
+                title: '6. Add & Layer Normalization 2',
+                desc: 'Another residual connection adds the input of the FFN to its output, followed by a final layer normalization.<br><br><b>Formulation:</b><br> <b>Z</b><sub>out</sub> = LayerNorm(<b>F</b> + <b>Z</b><sub>1</sub>)',
+                activeBoxes: ['box-norm2'],
+                activeLines: ['line-ffn-norm2', 'line-res2']
+            },
+            {
+                id: 'output',
+                title: '7. Block Output',
+                desc: 'The Transformer block has finished processing the sequence. These enriched, context-aware representations can now be passed to the next Transformer block, or to a final classifier/generator.<br><br><b>Result:</b><br> 1 Block Completed.',
+                activeBoxes: [],
+                activeLines: ['line-norm2-out']
             }
-        };
-
-        // --- 2. Model Parameters (Toy Example: d=4) ---
-        this.d = 4;
-        this.tokens = ["The", "cat", "sat"];
-        
-        // Input Embeddings (X) [3 x 4]
-        this.X = [
-            [ 0.5,  0.1, -0.2,  0.8], // The
-            [-0.4,  0.9,  0.5, -0.1], // cat
-            [ 0.2, -0.3,  0.8,  0.4]  // sat
         ];
 
-        // Weight Matrices (W_q, W_k, W_v) [4 x 4]
-        // Chosen specifically to highlight "cat" and "sat" relationship
-        this.W_q = [
-            [ 1.0,  0.0, -0.5,  0.2],
-            [ 0.0,  1.2,  0.1, -0.3],
-            [-0.5,  0.1,  1.0,  0.0],
-            [ 0.2, -0.3,  0.0,  0.8]
-        ];
-        
-        this.W_k = [
-            [ 0.8,  0.1, -0.2,  0.0],
-            [ 0.1,  0.9,  0.3, -0.1],
-            [-0.2,  0.3,  1.1,  0.2],
-            [ 0.0, -0.1,  0.2,  0.7]
-        ];
+        this.currentStep = 0;
 
-        this.W_v = [
-            [ 0.5, -0.1,  0.0,  0.2],
-            [ 0.1,  0.6, -0.2,  0.0],
-            [ 0.0,  0.2,  0.8, -0.1],
-            [-0.2,  0.0,  0.1,  0.9]
-        ];
-
-        // --- 3. Compute Forward Pass ---
-        this.Q = this.Mat.mul(this.X, this.W_q);
-        this.K = this.Mat.mul(this.X, this.W_k);
-        this.V = this.Mat.mul(this.X, this.W_v);
-        
-        this.scores = this.Mat.mul(this.Q, this.Mat.transpose(this.K));
-        this.scaled_scores = this.Mat.scale(this.scores, 1 / Math.sqrt(this.d));
-        this.attention_weights = this.Mat.softmax(this.scaled_scores);
-        
-        this.Z = this.Mat.mul(this.attention_weights, this.V);
-
-        // --- 4. State Management ---
-        this.state = {
-            step: 0,
-            maxSteps: 5
-        };
-
-        // Inject Styles
         this.injectStyles();
-        
-        // Render Initial UI
         this.renderUI();
         this.updateStep();
     }
 
     injectStyles() {
-        if (document.getElementById('transformer-math-styles')) return;
+        if (document.getElementById('tf-flow-styles')) return;
         const style = document.createElement('style');
-        style.id = 'transformer-math-styles';
+        style.id = 'tf-flow-styles';
         style.textContent = `
             .tf-demo {
                 background: rgba(10, 14, 22, 0.95);
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 8px;
                 padding: 20px;
-                font-family: 'JetBrains Mono', 'Fira Code', monospace;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 color: #e8ecf1;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
             }
             .tf-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 20px;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                padding-bottom: 10px;
+                padding-bottom: 15px;
             }
-            .tf-title { font-size: 1.1rem; font-weight: bold; color: #64b4ff; }
-            .tf-controls { display: flex; gap: 10px; }
+            .tf-title { font-size: 1.2rem; font-weight: bold; color: #64b4ff; }
+            .tf-controls { display: flex; gap: 10px; align-items: center; }
             .tf-btn {
                 background: #1a2333; color: #64b4ff;
                 border: 1px solid #64b4ff; border-radius: 4px;
-                padding: 5px 15px; cursor: pointer; transition: 0.2s;
+                padding: 6px 16px; cursor: pointer; transition: 0.2s; font-weight: bold;
             }
             .tf-btn:hover:not(:disabled) { background: #64b4ff; color: #000; }
-            .tf-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555; color: #555; }
+            .tf-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; }
             
-            .tf-content {
+            .tf-body {
+                display: flex;
+                gap: 30px;
+                align-items: stretch;
+            }
+            @media (max-width: 768px) {
+                .tf-body { flex-direction: column; }
+            }
+            .tf-svg-container {
+                flex: 1;
+                background: #0d1117;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px 0;
+            }
+            .tf-panel {
+                flex: 1;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 8px;
+                padding: 25px;
                 display: flex;
                 flex-direction: column;
-                gap: 20px;
-                min-height: 400px;
+                justify-content: center;
             }
             .tf-step-title {
-                color: #ffa726; font-size: 1.2rem; margin-bottom: 10px;
+                color: #ffa726; font-size: 1.4rem; font-weight: bold; margin-bottom: 15px;
             }
             .tf-step-desc {
-                font-family: sans-serif; font-size: 0.9rem; color: #aaa; margin-bottom: 15px;
-                line-height: 1.5;
+                font-size: 1rem; color: #ccc; line-height: 1.6;
             }
-            .tf-math-container {
-                display: flex; align-items: center; justify-content: center;
-                gap: 15px; flex-wrap: wrap;
-                background: #0d1117; padding: 20px; border-radius: 6px;
+            .tf-step-desc b { color: #69f0ae; }
+            .tf-step-desc i { font-family: "JetBrains Mono", monospace; color: #64b4ff; font-style: normal; }
+
+            /* SVG Elements */
+            .comp-box {
+                fill: #222b38;
+                stroke: #445870;
+                stroke-width: 2;
+                transition: all 0.3s;
+                rx: 6; ry: 6;
             }
-            .tf-matrix-box {
-                display: flex; flex-direction: column; align-items: center;
+            .comp-text {
+                fill: #bbb;
+                font-size: 14px;
+                font-weight: 500;
+                text-anchor: middle;
+                dominant-baseline: middle;
+                pointer-events: none;
+                transition: all 0.3s;
             }
-            .tf-matrix-label {
-                margin-bottom: 8px; font-weight: bold; color: #69f0ae;
+            .comp-line {
+                stroke: #445870;
+                stroke-width: 3;
+                fill: none;
+                transition: all 0.3s;
             }
-            .matrix-table {
-                border-collapse: collapse; background: #161b22;
-                border-left: 2px solid #555; border-right: 2px solid #555;
-            }
-            .matrix-table td {
-                padding: 6px 10px; text-align: right;
-                font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05);
-            }
-            .tf-operator { font-size: 1.5rem; color: #888; font-weight: bold; }
             
-            /* Heatmap colors for Attention Weights */
-            .heatmap-td { color: #fff; font-weight: bold; }
+            /* Active States */
+            .comp-box.active {
+                fill: #ff9800;
+                stroke: #fff;
+                filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.6));
+            }
+            .comp-text.active {
+                fill: #000;
+                font-weight: bold;
+            }
+            .comp-line.active {
+                stroke: #69f0ae;
+                filter: drop-shadow(0 0 5px rgba(105, 240, 174, 0.6));
+            }
         `;
         document.head.appendChild(style);
     }
 
     renderUI() {
+        // Build the SVG Architecture
+        const svgHTML = `
+            <svg width="350" height="480" viewBox="0 0 350 480">
+                <defs>
+                    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                        <polygon points="0 0, 8 4, 0 8" fill="#445870" class="marker-arrow" />
+                    </marker>
+                    <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                        <polygon points="0 0, 8 4, 0 8" fill="#69f0ae" />
+                    </marker>
+                </defs>
+
+                <!-- Input -->
+                <text x="175" y="460" fill="#888" text-anchor="middle" font-size="14">Inputs (Words)</text>
+                <line id="line-in-pos" class="comp-line" x1="175" y1="440" x2="175" y2="400" marker-end="url(#arrow)" />
+                
+                <!-- Embedding & Pos -->
+                <rect id="box-embed" class="comp-box" x="75" y="360" width="200" height="40" />
+                <text id="text-embed" class="comp-text" x="175" y="380">Input Embedding</text>
+                
+                <rect id="box-pos" class="comp-box" x="75" y="310" width="200" height="40" />
+                <text id="text-pos" class="comp-text" x="175" y="330">Positional Encoding</text>
+
+                <!-- Connection to MHA -->
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="310" x2="175" y2="260" marker-end="url(#arrow)" />
+
+                <!-- Transformer Block Boundary -->
+                <rect x="40" y="30" width="270" height="260" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10" />
+                <text x="50" y="50" fill="#888" font-size="12">Transformer Block</text>
+
+                <!-- MHA -->
+                <rect id="box-mha" class="comp-box" x="75" y="220" width="200" height="40" />
+                <text id="text-mha" class="comp-text" x="175" y="240">Multi-Head Attention</text>
+
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="220" x2="175" y2="190" marker-end="url(#arrow)" />
+                
+                <!-- Residual 1 -->
+                <path id="line-res1" class="comp-line" d="M 175 285 L 55 285 L 55 170 L 75 170" marker-end="url(#arrow)" />
+
+                <!-- Add & Norm 1 -->
+                <rect id="box-norm1" class="comp-box" x="75" y="150" width="200" height="40" />
+                <text id="text-norm1" class="comp-text" x="175" y="170">Add & Layer Norm</text>
+
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="150" x2="175" y2="120" marker-end="url(#arrow)" />
+
+                <!-- Residual 2 -->
+                <path id="line-res2" class="comp-line" d="M 175 135 L 55 135 L 55 60 L 75 60" marker-end="url(#arrow)" />
+
+                <!-- FFN -->
+                <rect id="box-ffn" class="comp-box" x="75" y="80" width="200" height="40" />
+                <text id="text-ffn" class="comp-text" x="175" y="100">Feed Forward</text>
+
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="80" x2="175" y2="60" />
+
+                <!-- Add & Norm 2 -->
+                <rect id="box-norm2" class="comp-box" x="75" y="40" width="200" height="30" />
+                <text id="text-norm2" class="comp-text" x="175" y="55">Add & Layer Norm</text>
+
+                <!-- Output -->
+                <line id="line-norm2-out" class="comp-line" x1="175" y1="40" x2="175" y2="15" marker-end="url(#arrow)" />
+            </svg>
+        `;
+
         this.container.innerHTML = `
             <div class="tf-demo">
                 <div class="tf-header">
-                    <div class="tf-title">Self-Attention Mathematical Trace</div>
+                    <div class="tf-title">Transformer Block: Forward Pass</div>
                     <div class="tf-controls">
-                        <button id="tf-prev" class="tf-btn">◄ Prev</button>
-                        <span id="tf-step-count" style="align-self: center; font-size: 0.9rem;"></span>
-                        <button id="tf-next" class="tf-btn">Next ►</button>
+                        <button id="tf-prev" class="tf-btn">◄ Prev Step</button>
+                        <span id="tf-step-indicator" style="font-size: 0.95rem; width: 60px; text-align: center;"></span>
+                        <button id="tf-next" class="tf-btn">Next Step ►</button>
                     </div>
                 </div>
-                <div id="tf-content" class="tf-content"></div>
+                <div class="tf-body">
+                    <div class="tf-svg-container">
+                        ${svgHTML}
+                    </div>
+                    <div class="tf-panel">
+                        <div id="tf-panel-title" class="tf-step-title"></div>
+                        <div id="tf-panel-desc" class="tf-step-desc"></div>
+                    </div>
+                </div>
             </div>
         `;
+
         document.getElementById('tf-prev').addEventListener('click', () => {
-            if (this.state.step > 0) { this.state.step--; this.updateStep(); }
+            if (this.currentStep > 0) { this.currentStep--; this.updateStep(); }
         });
         document.getElementById('tf-next').addEventListener('click', () => {
-            if (this.state.step < this.state.maxSteps) { this.state.step++; this.updateStep(); }
+            if (this.currentStep < this.steps.length - 1) { this.currentStep++; this.updateStep(); }
         });
-    }
-
-    // Helper to add word labels to matrices
-    withLabels(matrixHTML, isAttention = false) {
-        const rows = matrixHTML.split('<tr>');
-        let newHtml = rows[0]; // `<table ...>`
-        for(let i=1; i<rows.length; i++) {
-            newHtml += `<tr><td style="color:#ffa726; border:none; padding-right:15px;">${this.tokens[i-1]}</td>` + rows[i];
-        }
-        return newHtml;
-    }
-
-    // Special formatting for attention matrix to act as heatmap
-    formatAttention(A) {
-        let html = `<table class="matrix-table" style="border:none;">`;
-        // Header
-        html += `<tr><td style="border:none;"></td>` + this.tokens.map(t => `<td style="color:#ffa726; border:none; text-align:center;">${t}</td>`).join('') + `</tr>`;
-        
-        A.forEach((row, i) => {
-            html += `<tr><td style="color:#ffa726; border:none; padding-right:15px;">${this.tokens[i]}</td>`;
-            row.forEach(val => {
-                // Map 0-1 to a blue-ish intensity
-                const intensity = Math.floor(val * 255);
-                const bg = `rgba(100, 180, 255, ${val.toFixed(2)})`;
-                html += `<td class="heatmap-td" style="background:${bg}; border:1px solid #333;">${val.toFixed(3)}</td>`;
-            });
-            html += `</tr>`;
-        });
-        html += `</table>`;
-        return html;
     }
 
     updateStep() {
-        document.getElementById('tf-prev').disabled = this.state.step === 0;
-        document.getElementById('tf-next').disabled = this.state.step === this.state.maxSteps;
-        document.getElementById('tf-step-count').innerText = `Step ${this.state.step} / ${this.state.maxSteps}`;
+        // Update Buttons
+        document.getElementById('tf-prev').disabled = (this.currentStep === 0);
+        document.getElementById('tf-next').disabled = (this.currentStep === this.steps.length - 1);
+        document.getElementById('tf-step-indicator').innerText = `${this.currentStep + 1} / ${this.steps.length}`;
 
-        const content = document.getElementById('tf-content');
-        let html = '';
+        const stepData = this.steps[this.currentStep];
 
-        switch(this.state.step) {
-            case 0:
-                html = `
-                    <div class="tf-step-title">Step 0: Input Embeddings (X)</div>
-                    <div class="tf-step-desc">
-                        We start with a sequence of 3 words: <strong>"The", "cat", "sat"</strong>.<br>
-                        Each word has been converted into a dense vector of dimension \(d=4\).<br>
-                        This matrix \(\mathbf{X} \in \mathbb{R}^{3 \times 4}\) is the input to the Self-Attention layer.
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Input Matrix X</div>
-                            ${this.withLabels(this.Mat.format(this.X))}
-                        </div>
-                    </div>
-                `;
-                break;
-            case 1:
-                html = `
-                    <div class="tf-step-title">Step 1: Compute Q, K, V</div>
-                    <div class="tf-step-desc">
-                        The input \(\mathbf{X}\) is multiplied by three learned weight matrices 
-                        \(\mathbf{W}^Q, \mathbf{W}^K, \mathbf{W}^V\) to produce the <strong>Queries (Q)</strong>, <strong>Keys (K)</strong>, and <strong>Values (V)</strong>.<br>
-                        \(\mathbf{Q} = \mathbf{X}\mathbf{W}^Q, \quad \mathbf{K} = \mathbf{X}\mathbf{W}^K, \quad \mathbf{V} = \mathbf{X}\mathbf{W}^V\)
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Queries (Q)</div>
-                            ${this.withLabels(this.Mat.format(this.Q))}
-                        </div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Keys (K)</div>
-                            ${this.withLabels(this.Mat.format(this.K))}
-                        </div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Values (V)</div>
-                            ${this.withLabels(this.Mat.format(this.V))}
-                        </div>
-                    </div>
-                `;
-                break;
-            case 2:
-                html = `
-                    <div class="tf-step-title">Step 2: Compute Attention Scores</div>
-                    <div class="tf-step-desc">
-                        We calculate how much each word should attend to every other word by taking the dot product of their Queries and Keys: 
-                        \(\mathbf{Q}\mathbf{K}^\top\).<br>
-                        For example, the score between "cat" (Query) and "sat" (Key) is high, indicating a strong relationship.
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Q</div>
-                            ${this.Mat.format(this.Q)}
-                        </div>
-                        <div class="tf-operator">×</div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">K^T</div>
-                            ${this.Mat.format(this.Mat.transpose(this.K))}
-                        </div>
-                        <div class="tf-operator">=</div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Scores (Q K^T)</div>
-                            ${this.withLabels(this.Mat.format(this.scores))}
-                        </div>
-                    </div>
-                `;
-                break;
-            case 3:
-                html = `
-                    <div class="tf-step-title">Step 3: Scale and Softmax</div>
-                    <div class="tf-step-desc">
-                        To prevent gradients from vanishing, we scale the scores by \(\frac{1}{\sqrt{d}}\) (here \(1/\sqrt{4} = 0.5\)).<br>
-                        Then, we apply the <strong>Softmax</strong> function to each row so the weights sum to 1.0. 
-                        Notice how "cat" pays significant attention to "sat".
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Attention Weights (\(\alpha\))</div>
-                            ${this.formatAttention(this.attention_weights)}
-                        </div>
-                    </div>
-                `;
-                break;
-            case 4:
-                html = `
-                    <div class="tf-step-title">Step 4: Compute Final Output (Z)</div>
-                    <div class="tf-step-desc">
-                        Finally, we multiply the Attention Weights by the Values matrix \(\mathbf{V}\): 
-                        \(\mathbf{Z} = \alpha \mathbf{V}\).<br>
-                        The output for each word is now a <strong>context-aware</strong> mixture of all other words' Values.
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">\(\alpha\)</div>
-                            ${this.Mat.format(this.attention_weights)}
-                        </div>
-                        <div class="tf-operator">×</div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">V</div>
-                            ${this.Mat.format(this.V)}
-                        </div>
-                        <div class="tf-operator">=</div>
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Contextualized Output (Z)</div>
-                            ${this.withLabels(this.Mat.format(this.Z))}
-                        </div>
-                    </div>
-                `;
-                break;
-            case 5:
-                html = `
-                    <div class="tf-step-title">Summary: The Self-Attention Equation</div>
-                    <div class="tf-step-desc">
-                        We have successfully traced the core equation of the Transformer architecture:
-                        <div style="font-size:1.3rem; text-align:center; padding:15px; margin: 15px 0; background:rgba(100,180,255,0.1); border-radius:8px;">
-                            \(\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}}\right)\mathbf{V}\)
-                        </div>
-                        This output \(\mathbf{Z}\) is then passed through a Residual Connection (\(\mathbf{Z} + \mathbf{X}\)), Layer Normalization, and a Feed-Forward network to complete one full Transformer block.
-                    </div>
-                    <div class="tf-math-container">
-                        <div class="tf-matrix-box">
-                            <div class="tf-matrix-label">Final Output Matrix Z</div>
-                            ${this.withLabels(this.Mat.format(this.Z))}
-                        </div>
-                    </div>
-                `;
-                break;
-        }
+        // Update Panel Text
+        document.getElementById('tf-panel-title').innerHTML = stepData.title;
+        document.getElementById('tf-panel-desc').innerHTML = stepData.desc;
 
-        content.innerHTML = html;
-        // Trigger MathJax to re-render the injected math formulas
-        if (window.MathJax) {
-            window.MathJax.typesetPromise([content]);
-        }
+        // Reset all SVG active states
+        document.querySelectorAll('.comp-box').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.comp-text').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.comp-line').forEach(el => {
+            el.classList.remove('active');
+            // Reset marker color
+            if(el.hasAttribute('marker-end')) el.setAttribute('marker-end', 'url(#arrow)');
+        });
+
+        // Apply active states for current step
+        stepData.activeBoxes.forEach(id => {
+            const box = document.getElementById(id);
+            const text = document.getElementById(id.replace('box-', 'text-'));
+            if (box) box.classList.add('active');
+            if (text) text.classList.add('active');
+        });
+
+        stepData.activeLines.forEach(id => {
+            const line = document.getElementById(id);
+            if (line) {
+                line.classList.add('active');
+                if(line.hasAttribute('marker-end')) line.setAttribute('marker-end', 'url(#arrow-active)');
+            }
+        });
     }
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new TransformerDemo('transformer_demo');
+    new TransformerFlowDemo('transformer_demo');
 });
