@@ -39,13 +39,13 @@ class TransformerFlowDemo {
             {
                 id: 'mha',
                 title: '3. Masked Multi-Head Attention',
-                desc: 'The core of the Transformer. The model calculates similarity scores between all token pairs to understand context. A mask prevents tokens from "seeing" future tokens.<br><br><b>Core Calculation:</b> Scores = Softmax(Mask(Q K<sup>T</sup> / &radic;d_k)) V',
+                desc: 'The model calculates similarity <b>Scores</b> via dot-products of Queries and Keys. After scaling, masking, and Softmax, we get <b>Attention Weights</b>. Finally, we compute a weighted sum of the Values (V).<br><br><b>Core Calculation:</b> Z<sub>attn</sub> = Softmax(Mask(Q K<sup>T</sup> / &radic;d_k)) V',
                 activeBoxes: ['box-mha'], activeLines: ['line-mha-norm1', 'line-res1'],
                 matrix_viz: {
                     op: '×',
                     A_dims: [this.config.num_tokens, this.config.d_model], A_label: 'Q',
                     B_dims: [this.config.d_model, this.config.num_tokens], B_label: 'K^T',
-                    C_dims: [this.config.num_tokens, this.config.num_tokens], C_label: 'Attention Scores'
+                    C_dims: [this.config.num_tokens, this.config.num_tokens], C_label: 'Attention Weights'
                 }
             },
             {
@@ -63,7 +63,7 @@ class TransformerFlowDemo {
             {
                 id: 'ffn',
                 title: '5. Feed-Forward Network',
-                desc: 'The contextualized vectors are passed through a simple two-layer neural network. This is often where the model recalls factual knowledge.<br><br><b>Calculation:</b> ReLU(Z W<sub>1</sub> + b<sub>1</sub>) W<sub>2</sub> + b<sub>2</sub>',
+                desc: 'The contextualized vectors are passed through a fully connected network. This layer transforms features position-wise using weights W<sub>1</sub> and W<sub>2</sub>.',
                 activeBoxes: ['box-ffn'], activeLines: ['line-ffn-norm2', 'line-res2'],
                 matrix_viz: {
                     op: '×',
@@ -75,14 +75,14 @@ class TransformerFlowDemo {
             {
                 id: 'norm2',
                 title: '6. Add & Layer Normalization',
-                desc: 'A second residual connection and normalization step. The block now outputs refined, context-aware vectors for each token.',
+                desc: 'A second residual connection and normalization step. The block outputs refined, context-aware vectors.',
                 activeBoxes: ['box-norm2'], activeLines: ['line-norm2-linear'],
                 matrix_viz: { op: 'result', A_dims: [this.config.num_tokens, this.config.d_model], A_label: 'Block Output' }
             },
             {
                 id: 'linear',
                 title: '7. Output Projection (Linear)',
-                desc: 'The vector for the <b>last</b> token ("sat") is passed through a final linear layer that projects it to the size of the vocabulary. The output values are called <b>Logits</b>.',
+                desc: 'The final vector is projected into <b>Logits</b> (raw scores) representing the vocabulary size.',
                 activeBoxes: ['box-linear'], activeLines: ['line-linear-softmax'],
                 matrix_viz: {
                     op: '×',
@@ -94,14 +94,14 @@ class TransformerFlowDemo {
             {
                 id: 'softmax',
                 title: '8. Softmax',
-                desc: 'The Softmax function converts the logits into a probability distribution over the entire vocabulary. The token with the highest probability is our prediction for the next word.',
+                desc: 'The Softmax function converts <b>Logits</b> into a probability distribution over the vocabulary. The token with the highest probability becomes the prediction.',
                 activeBoxes: ['box-softmax'], activeLines: ['line-softmax-out'],
                 matrix_viz: { op: 'softmax' }
             },
             {
                 id: 'autoregressive',
                 title: '9. Autoregressive Loop',
-                desc: 'The model predicts <b>"on"</b>. This word is appended to the input, forming "The cat sat on". The entire one-way process repeats to generate the next word. This is the essence of autoregressive LLMs.',
+                desc: 'The model predicts <b>"on"</b>. This word is appended to the input, forming "The cat sat on". The process repeats.',
                 activeBoxes: [], activeLines: [],
                 matrix_viz: { op: 'loop' }
             }
@@ -133,12 +133,12 @@ class TransformerFlowDemo {
             .tf-step-title { color: #ffa726; font-size: 1.3rem; font-weight: bold; margin: 0 0 10px 0; }
             .tf-step-desc { font-size: 0.95rem; color: #ccc; line-height: 1.6; margin: 0; }
             .tf-step-desc b { color: #69f0ae; } .tf-step-desc i { font-family: "JetBrains Mono", monospace; color: #64b4ff; font-style: normal; }
-            .tf-matrix-viz { margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; background: #161b22; padding: 20px; border-radius: 8px; min-height: 150px; }
+            .tf-matrix-viz { margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; background: #111820; padding: 24px; border-radius: 8px; min-height: 150px; border: 1px solid rgba(255,255,255,0.06); }
             .pseudo-matrix { display: flex; flex-direction: column; align-items: center; }
-            .matrix-label { font-family: "JetBrains Mono", monospace; margin-bottom: 8px; font-size: 0.8rem; color: #888; }
-            .matrix-grid { display: grid; gap: 4px; border: 1px solid #444; padding: 4px; background: rgba(0,0,0,0.2); }
-            .matrix-cell { width: 6px; height: 6px; background-color: #30363d; border-radius: 1px; }
-            .viz-op { font-size: 2rem; font-weight: bold; color: #555; }
+            .matrix-label { font-family: "JetBrains Mono", monospace; margin-bottom: 10px; font-size: 0.78rem; color: #9daab8; letter-spacing: 0.02em; }
+            .matrix-grid { display: grid; gap: 2px; border: 1px solid rgba(100, 180, 255, 0.2); padding: 3px; background: rgba(0,0,0,0.3); border-radius: 3px; }
+            .matrix-cell { width: 8px; height: 8px; background-color: rgba(100, 180, 255, 0.25); border-radius: 1px; }
+            .viz-op { font-size: 1.6rem; font-weight: bold; color: rgba(100, 180, 255, 0.5); }
             .tf-prob-chart { width: 100%; display: flex; flex-direction: column; gap: 8px; }
             .tf-prob-row { display: flex; align-items: center; gap: 10px; }
             .tf-prob-label { width: 45px; font-family: "JetBrains Mono", monospace; font-size: 0.9rem; text-align: right;}
