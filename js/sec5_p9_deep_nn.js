@@ -301,7 +301,7 @@ class TransformerFlowDemo {
                 <text id="text-softmax" class="comp-text" x="175" y="35">Softmax</text>
                 
                 <!-- Output Arrow -->
-                <line id="line-softmax-out" class="comp-line" x1="175" y1="15" x2="175" y2="-5" marker-end="url(#arrow-up)"/>
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="18" x2="175" y2="5" marker-end="url(#arrow-up)"/>
             </svg>
         `;
 
