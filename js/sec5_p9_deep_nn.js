@@ -216,34 +216,44 @@ class TransformerFlowDemo {
         const svgHTML = `
             <svg width="350" height="720" viewBox="0 0 350 720">
                 <defs>
-                    <!-- Marker definition: refX adjusted to ensure tip touches the box exactly -->
-                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#445870"/></marker>
-                    <marker id="arrow-active" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#69f0ae"/></marker>
+                    <!-- UP pointing arrow (default) -->
+                    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto">
+                        <path d="M0,6 L5,0 L10,6 z" fill="#445870"/>
+                    </marker>
+                    <marker id="arrow-up-active" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto">
+                        <path d="M0,6 L5,0 L10,6 z" fill="#69f0ae"/>
+                    </marker>
+
+                    <!-- RIGHT pointing arrow (for residuals) - Fixed orientation -->
+                    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="0">
+                        <path d="M0,0 L10,5 L0,10 z" fill="#445870"/>
+                    </marker>
+                    <marker id="arrow-right-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="0">
+                        <path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/>
+                    </marker>
                 </defs>
 
                 <!-- 1. Input Text -->
-                <text x="175" y="700" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
+                <text x="175" y="705" fill="#888" text-anchor="middle" font-size="14">Inputs</text>
                 
                 <!-- Arrow: Input -> Embedding -->
-                <line id="line-in-embed" class="comp-line" x1="175" y1="685" x2="175" y2="648" marker-end="url(#arrow)"/>
+                <line id="line-in-embed" class="comp-line" x1="175" y1="690" x2="175" y2="642" marker-end="url(#arrow-up)"/>
                 
                 <!-- 2. Embedding -->
                 <rect id="box-embed" class="comp-box" x="75" y="600" width="200" height="40"/>
                 <text id="text-embed" class="comp-text" x="175" y="620">Embedding</text>
                 
                 <!-- Arrow: Embedding -> Pos -->
-                <line id="line-embed-pos" class="comp-line" x1="175" y1="600" x2="175" y2="568" marker-end="url(#arrow)"/>
+                <line id="line-embed-pos" class="comp-line" x1="175" y1="600" x2="175" y2="562" marker-end="url(#arrow-up)"/>
 
                 <!-- 3. Positional Encoding -->
                 <rect id="box-pos" class="comp-box" x="75" y="520" width="200" height="40"/>
                 <text id="text-pos" class="comp-text" x="175" y="540">Positional Encoding</text>
                 
                 <!-- Arrow: Pos -> MHA -->
-                <!-- Gap increased to accommodate residual split -->
-                <line id="line-pos-mha" class="comp-line" x1="175" y1="520" x2="175" y2="468" marker-end="url(#arrow)"/>
+                <line id="line-pos-mha" class="comp-line" x1="175" y1="520" x2="175" y2="462" marker-end="url(#arrow-up)"/>
 
                 <!-- Transformer Block Boundary -->
-                <!-- Covers from MHA (420) up to Norm2 (180) -->
                 <rect x="35" y="170" width="280" height="300" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
                 <text x="50" y="160" fill="#888" font-size="12">Transformer Block</text>
 
@@ -252,50 +262,49 @@ class TransformerFlowDemo {
                 <text id="text-mha" class="comp-text" x="175" y="440">Masked M-H Attention</text>
                 
                 <!-- Arrow: MHA -> Norm1 -->
-                <line id="line-mha-norm1" class="comp-line" x1="175" y1="420" x2="175" y2="378" marker-end="url(#arrow)"/>
+                <line id="line-mha-norm1" class="comp-line" x1="175" y1="420" x2="175" y2="372" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 1 Path (Around MHA) -->
-                <!-- Starts from line below MHA (y=495 approx), goes around to Norm1 input (y=365 approx) -->
-                <path id="line-res1" class="comp-line" d="M 175 495 L 55 495 L 55 365 L 67 365" marker-end="url(#arrow)"/>
+                <!-- Uses explicit horizontal segment to ensure arrow points right -->
+                <path id="line-res1" class="comp-line" d="M 175 490 L 55 490 L 55 355 L 73 355" marker-end="url(#arrow-right)"/>
 
                 <!-- 5. Add & Norm 1 -->
                 <rect id="box-norm1" class="comp-box" x="75" y="340" width="200" height="30"/>
                 <text id="text-norm1" class="comp-text" x="175" y="355">Add & Norm</text>
                 
                 <!-- Arrow: Norm1 -> FFN -->
-                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="340" x2="175" y2="308" marker-end="url(#arrow)"/>
+                <line id="line-norm1-ffn" class="comp-line" x1="175" y1="340" x2="175" y2="302" marker-end="url(#arrow-up)"/>
 
                 <!-- 6. Feed Forward -->
                 <rect id="box-ffn" class="comp-box" x="75" y="260" width="200" height="40"/>
                 <text id="text-ffn" class="comp-text" x="175" y="280">Feed Forward</text>
                 
                 <!-- Arrow: FFN -> Norm2 -->
-                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="260" x2="175" y2="218" marker-end="url(#arrow)"/>
+                <line id="line-ffn-norm2" class="comp-line" x1="175" y1="260" x2="175" y2="212" marker-end="url(#arrow-up)"/>
                 
                 <!-- Residual 2 Path (Around FFN) -->
-                <!-- Starts from Norm1 output (y=325 approx), goes around to Norm2 input (y=205 approx) -->
-                <path id="line-res2" class="comp-line" d="M 175 325 L 55 325 L 55 205 L 67 205" marker-end="url(#arrow)"/>
+                <path id="line-res2" class="comp-line" d="M 175 320 L 55 320 L 55 195 L 73 195" marker-end="url(#arrow-right)"/>
 
                 <!-- 7. Add & Norm 2 -->
                 <rect id="box-norm2" class="comp-box" x="75" y="180" width="200" height="30"/>
                 <text id="text-norm2" class="comp-text" x="175" y="195">Add & Norm</text>
                 
                 <!-- Arrow: Norm2 -> Linear -->
-                <line id="line-norm2-linear" class="comp-line" x1="175" y1="180" x2="175" y2="138" marker-end="url(#arrow)"/>
+                <line id="line-norm2-linear" class="comp-line" x1="175" y1="180" x2="175" y2="132" marker-end="url(#arrow-up)"/>
 
                 <!-- 8. Linear -->
                 <rect id="box-linear" class="comp-box" x="75" y="100" width="200" height="30"/>
                 <text id="text-linear" class="comp-text" x="175" y="115">Linear</text>
                 
                 <!-- Arrow: Linear -> Softmax -->
-                <line id="line-linear-softmax" class="comp-line" x1="175" y1="100" x2="175" y2="58" marker-end="url(#arrow)"/>
+                <line id="line-linear-softmax" class="comp-line" x1="175" y1="100" x2="175" y2="52" marker-end="url(#arrow-up)"/>
 
                 <!-- 9. Softmax -->
                 <rect id="box-softmax" class="comp-box" x="75" y="20" width="200" height="30"/>
                 <text id="text-softmax" class="comp-text" x="175" y="35">Softmax</text>
                 
                 <!-- Output Arrow -->
-                <line id="line-softmax-out" class="comp-line" x1="175" y1="20" x2="175" y2="5" marker-end="url(#arrow)"/>
+                <line id="line-softmax-out" class="comp-line" x1="175" y1="20" x2="175" y2="5" marker-end="url(#arrow-up)"/>
             </svg>
         `;
 
@@ -323,9 +332,17 @@ class TransformerFlowDemo {
              tokenContainer.innerHTML = `<div class="tf-token">The</div><div class="tf-token">cat</div><div class="tf-token">sat</div><div class="tf-token tf-token-new">on</div>`;
         }
 
-        // SVG Highlighting
+        // SVG Highlighting Logic
         document.querySelectorAll('.comp-box, .comp-text, .comp-line').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.comp-line[marker-end]').forEach(el => el.setAttribute('marker-end', 'url(#arrow)'));
+        
+        // Reset all markers to default colors
+        document.querySelectorAll('.comp-line').forEach(el => {
+            const markerAttr = el.getAttribute('marker-end');
+            if (markerAttr && markerAttr.includes('active')) {
+                // Remove "-active" suffix to revert to default
+                el.setAttribute('marker-end', markerAttr.replace('-active', ''));
+            }
+        });
 
         stepData.activeBoxes.forEach(id => {
             const box = document.getElementById(id); if (box) box.classList.add('active');
@@ -335,7 +352,13 @@ class TransformerFlowDemo {
             const line = document.getElementById(id);
             if (line) {
                 line.classList.add('active');
-                if(line.hasAttribute('marker-end')) line.setAttribute('marker-end', 'url(#arrow-active)');
+                // Apply active marker color
+                const currentMarker = line.getAttribute('marker-end');
+                if (currentMarker && !currentMarker.includes('active')) {
+                    // url(#arrow-up) -> url(#arrow-up-active)
+                    const activeMarker = currentMarker.replace(')', '-active)');
+                    line.setAttribute('marker-end', activeMarker);
+                }
             }
         });
     }
