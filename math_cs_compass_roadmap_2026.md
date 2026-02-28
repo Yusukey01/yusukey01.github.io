@@ -18,11 +18,11 @@ Our ultimate destinations are the two pillars of next-generation AI architecture
 
 ## Current Coverage (as of 2/27/2026)
 
-### Section I: Linear Algebra to Algebraic Foundations (24 pages)
+### Section I: Linear Algebra to Algebraic Foundations (25 pages)
 - **Core Linear Algebra (Parts 1-14):** Linear equations, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry, SVD, trace/norms, Kronecker products, Woodbury identity, stochastic matrices, graph Laplacians
 - **Abstract Algebra (Parts 15-22):** Groups, cyclic/permutation groups, structural group theory (cosets, Lagrange, normal subgroups, isomorphism theorems), classification of finite abelian groups, rings & fields, ideals & factor rings, polynomial rings, Integral domains (ED ⊂ PID ⊂ UFD hierarchy)
-- **Field Theory (Parts 23-24):** Extension Fields, Geometry of Symmetry (Dihedral Groups, SO(3)/SE(3) introduction)
-- **Upcoming:** Algebraic Extensions (GDL path), Finite Fields (Crypto path)
+- **Field Theory (Parts 23-25):** Extension Fields, Geometry of Symmetry (Dihedral Groups, SO(3)/SE(3) introduction, Algebraic Extensions)
+- **Upcoming:**  Finite Fields (Crypto path)
 
 ### Section II: Calculus to Optimization & Analysis (22 pages)
 - **Derivatives (Parts 1-5):** Gradients, Jacobians, matrix calculus, scalar functions of matrices
@@ -49,7 +49,7 @@ Our ultimate destinations are the two pillars of next-generation AI architecture
 - **Unsupervised Learning (Parts 7-8):** PCA & Autoencoders, Clustering
 - **Physical AI & Uncertainty (Parts 10-12):** Reinforcement learning, Natural Gradient Descent, Variational Autoencoders (VAE)
 
-**Total: 88 pages completed**
+**Total: 89 pages completed**
 
 ---
 
@@ -121,9 +121,9 @@ Quivers & Categories (IV)                     Stochastic Processes & FIM (III)
 |-------|------------------------------|-------------------------|
 | Jan | Integral Domains ✅ | Metric Spaces (intro) ✅ |
 | Feb | Extension Fields, Geom of Symmetry ✅ | Convergence, Completeness, VAE ✅ |
-| Mar | **Network Flow, Random Walks (IV)** | Metric Equivalence, Homeomorphisms |
+| Mar | **Network Flow, Random Walks (IV)** | Metric Equivalence, Homeomorphisms ✅ |
 | Apr | **Discrete Geometry, Simplicial Comp.** | Normed & Banach Spaces |
-| May | Algebraic Extensions / Finite Fields | Hilbert Spaces & RKHS |
+| May | Algebraic Extensions✅ / Finite Fields | Hilbert Spaces & RKHS |
 | Jun | **Intro to Quivers & Category Theory** | Synthesis Page |
 | Jul | **String Diagrams (Categorical AI)** | Topological Spaces |
 | Aug | Lie Algebras | Smooth Manifolds |
