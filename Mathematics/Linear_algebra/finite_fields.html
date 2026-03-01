@@ -1,0 +1,207 @@
+---
+layout: default
+title: Finite Fields
+topic_id: linalg-26
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+       
+        <div class="hero-section">
+            <h1 class="webpage-name">Finite Fields</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#classification">Classification</a>
+            <a href="#structure">Structure</a>
+            <a href="#subfield">Subfields</a>
+        </div> 
+
+        <div class="container">
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+
+                <p>
+                    Throughout calculus and continuous optimization, we rely on infinite fields like the real numbers \(\mathbb{R}\) or 
+                    complex numbers \(\mathbb{C}\). However, in digital computing, continuous numbers are often approximated using floating-point 
+                    arithmetic, which inherently introduces precision loss. When we require an algebraic structure where addition, subtraction, 
+                    multiplication, and division are exact and bounded within a discrete memory space, we must turn to finite structures.
+                </p>
+            
+                <p>
+                    Enter <strong>finite fields</strong>, also known as <strong>Galois fields</strong> (denoted \(GF(q)\)), named after the French 
+                    mathematician Évariste Galois. Finite fields are the crown jewel of abstract algebra for computer scientists. Because they possess 
+                    exactly a finite number of elements, operations never "overflow" into infinity or require decimals. This absolute precision makes 
+                    finite fields the indestructible mathematical engine powering modern cryptography (like the AES standard), error-correcting codes 
+                    (like those in QR codes), and digital signal processing.
+                </p>
+
+            </section>
+
+            <section id="classification" class="section-content">
+                <h2>Classification</h2>
+
+                <p>
+                    A fundamental question arises: for which integers \(q\) does a field of exactly \(q\) elements exist? For instance, 
+                    can we construct a field with exactly 10 elements to naturally map to our decimal system? The answer is determined by 
+                    the Classification Theorem, which tightly constrains the possible sizes of finite fields to prime powers.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Classification of Finite Fields</span>
+                    <p>
+                        Every finite field has prime-power order. Moreover, for each prime \(p\) and each positive integer \(n\), 
+                        there exists s unique finite field of order \(p^n\) up to isomorphism.
+                    </p>
+                </div>
+
+                <p>
+                    This theorem dictates that a field of size 10 is mathematically impossible, as 10 is not a prime power. Conversely, 
+                    it guarantees the existence of a unique field of size \(2^8 = 256\).
+                </p>
+
+                <p>
+                    This structural guarantee is highly consequential for computing. Because an 8-bit byte inherently has 256 distinct states, 
+                    we can map any byte directly to an element in \(GF(2^8)\). This algebraic mapping enables cryptographic algorithms to securely 
+                    add, multiply, and compute inverses of bytes without ever exceeding the 8-bit space constraint.
+                </p>
+
+            </section>
+
+            <section id="structure" class="section-content">
+                <h2>Structure</h2>
+
+                <p>
+                    To utilize \(GF(p^n)\) effectively, we must understand the behavior of its elements under algebraic operations. 
+                    The following theorem explicitly defines the underlying group structures of a finite field.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Structure of Finite Fields</span>
+                    <p>
+                        As a group under addition, \(GF(p^n)\) is isomorphic to 
+                        \[
+                        \underbrace{\mathbb{Z}_p \oplus \mathbb{Z}_p \oplus \ldots \oplus \mathbb{Z}_p}_{n \text{ factors }}.
+                        \]
+                    </p>
+                    <p>
+                        As a group under multiplication, the set of nonzero elements of \(GF(p^n)\) is isomorphic to \(\mathbb{Z}_{p^n - 1}\) 
+                        and is cyclic. 
+                    </p>
+                </div>
+
+                <p>
+                    <strong>The Additive Structure:</strong><br>
+                    The additive group indicates that elements of \(GF(p^n)\) can be treated as \(n\)-dimensional vectors over \(\mathbb{Z}_p\). 
+                    When \(p=2\) (the binary case), polynomial addition modulo 2 is equivalent to the <strong>bitwise XOR</strong> operation. 
+                    This allows for highly efficient hardware implementations, as addition in \(GF(2^n)\) requires no carry propagation.
+                </p>
+                
+                <p>
+                    <strong>The Multiplicative Structure:</strong><br>
+                    Because the multiplicative group is cyclic, there exists at least one generator (primitive element) \(g\). Every nonzero element 
+                    in the field can be expressed as \(g^k\) for some integer \(k\). This predictable cyclic behavior forms the mathematical basis for 
+                    <strong>discrete logarithm cryptography</strong>, such as the Diffie-Hellman key exchange algorithm.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Degree of \(GF(p^n)\)</span>
+                    <p>
+                        \[
+                        [GF(p^n): GF(p)] = n.
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: \(GF(p^n)\) Contains an Element of Degree \(n\)</span>
+                    <p>
+                        Let \(a\) be a generator of the group of nonzero elements of \(GF(p^n)\) under multiplication. Then 
+                        \(a\) is algebraic over \(GF(p)\) of degree \(n\).
+                    </p>
+                </div>
+
+                <p>
+                    These corollaries connect finite fields directly to the theory of Algebraic Extensions. Just as \(\mathbb{C}\) is constructed 
+                    by adjoining a root of an irreducible polynomial to \(\mathbb{R}\), \(GF(p^n)\) is constructed by taking an irreducible 
+                    polynomial of degree \(n\) over \(\mathbb{Z}_p\) and adjoining its root.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Zeros of an Irreducible over \(\mathbb{Z}_p\)</span>
+                    <p>
+                        Let \(f(x) \in \mathbb{Z}_p[x]\) be an ireducible polynomial over \(\mathbb{Z}_p\) of degree \(d\) and let 
+                        \(a\) be a zero of \(f(x)\) in some extension field \(E\) of \(\mathbb{Z}_p\). Then \(a, a^p, a^{p^2}, \ldots, a^{p^{d-1}}) 
+                        are the zeros of \(f(x)\) and they are distinct. 
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Splitting Field of an Irreducible Polynomial Over \(\mathbb{Z}_p\)</span>
+                    <p>
+                        If \(f(x)\) is an irreducible polynomial over \(\mathbb{Z}_p\) and \(a\) is a zero of \(f(x)\) in some extension field 
+                        of \(\mathbb{Z}_p\), then \(\mathbb{Z}_p(a)\) is the splitting field of \(f(x)\) over \(\mathbb{Z}_p\).
+                    </p>
+                </div>
+
+                <p>
+                    This reveals a remarkable property of fields of characteristic \(p\): if one root \(a\) of an irreducible polynomial is known, 
+                    the remaining roots are generated simply by repeatedly taking the \(p\)-th power. The mapping \(x \mapsto x^p\) is a field 
+                    automorphism known as the <strong>Frobenius automorphism</strong>, which plays a critical role in polynomial factorization 
+                    algorithms over finite fields.
+                </p>
+
+            </section>
+
+            <section id="subfield" class="section-content">
+                <h2>Subfields</h2>
+
+                <p>
+                    Just as we can track the dimensions of vector spaces, we can track how smaller finite fields nest inside larger ones. 
+                    This creates a highly structured "lattice" of fields, which is heavily utilized when optimizing cryptographic hardware 
+                    to save space and power.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Subfields of a Finite Field</span>
+                    <p>
+                        For each divisor \(d\) of \(n\), \(GF(p^n)\) has a unique subfield of order \(p^d\). Moreover, 
+                        these are the only subfields of \(GF(p^n)\).
+                    </p>
+                </div>
+
+                <p>
+                    For instance, does \(GF(2^8)\) contain a subfield of size \(2^4\)? Yes, because 4 divides 8. Does it contain a subfield of size \(2^3\)? 
+                    No, because 3 does not divide 8. This strict divisibility condition defines the exact structural dependencies within the field.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Degrees of Irreducible Factors of \(x^{p^n} - x\) over \(\mathbb{Z}_p\)</span>
+                    <p>
+                        The Degree of an irreducible factors of \(x^{p^n} - x\) over \(\mathbb{Z}_p\) divides \(n\).
+                    </p>
+                </div>
+           
+                <p>
+                    The polynomial \(x^{p^n} - x\) completely characterizes the elements of \(GF(p^n)\). As a consequence of Lagrange's theorem on 
+                    the multiplicative group, every element in \(GF(p^n)\) is a root of this exact polynomial. Thus, \(x^{p^n} - x\) factors into 
+                    the product of all monic irreducible polynomials over \(\mathbb{Z}_p\) whose degrees divide \(n\). This theorem elegantly ties 
+                    together the concepts of polynomial factorization, extension degrees, and field sizes into one unified algebraic structure.
+                </p>
+
+            </section>
+            
+        </div>
+
+        <script src="/js/main.js"></script>
+
+    </body>
+</html>
