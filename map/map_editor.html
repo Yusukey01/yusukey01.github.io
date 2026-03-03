@@ -71,7 +71,7 @@
     <div id="root"></div>
     
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo, useEffect, useCallback } = React;
 
         const SECTION_COLORS = {
             'HOME': '#888888',
@@ -192,6 +192,25 @@
             return { tiles, rawData: data, topicGroupNames: foundGroups };
         }
 
+        const buttonBaseStyle = {
+            width: '100%',
+            padding: '8px 12px',
+            border: 'none',
+            borderRadius: '4px',
+            color: 'white',
+            cursor: 'pointer',
+            fontWeight: '500',
+            textAlign: 'left',
+            transition: 'all 0.2s',
+        };
+
+        const analysisButtonStyles = {
+            fullChain: { ...buttonBaseStyle, backgroundColor: '#0e7490' }, // Teal
+            keystones: { ...buttonBaseStyle, backgroundColor: '#be185d' }, // Pink/Magenta
+            orphans: { ...buttonBaseStyle, backgroundColor: '#b45309' },   // Amber/Orange
+            clear: { ...buttonBaseStyle, backgroundColor: '#4b5563' }      // Gray
+        };
+
         function HexMapEditor() {
             const [tiles, setTiles] = useState([]);
             const [originalData, setOriginalData] = useState(null); // Holds the full JSON structure
@@ -210,66 +229,60 @@
             const [history, setHistory] = useState([]); // For Undo/Redo
             const [historyIndex, setHistoryIndex] = useState(-1); // For Undo/Redo
             const [analysisMode, setAnalysisMode] = useState(null); // For visual analysis
+            const [dragState, setDragState] = useState(null); // For dragging tiles
 
             const hexSize = 28;
 
             // --- Undo/Redo Logic ---
             // Function to save the current state to history
-            const saveHistory = (newTiles) => {
+            const saveHistory = useCallback((newTiles) => {
                 const newHistory = history.slice(0, historyIndex + 1);
-                newHistory.push(newTiles.map(({ q, r, id }) => ({ q, r, id }))); // Store minimal data
+                newHistory.push(newTiles.map(({ q, r, id }) => ({ q, r, id })));
                 setHistory(newHistory);
                 setHistoryIndex(newHistory.length - 1);
-            };
+            }, [history, historyIndex]);
 
             // Undo function
-            const undo = () => {
+            const undo = useCallback(() => {
                 if (historyIndex > 0) {
-                    const prevIndex = historyIndex - 1;
-                    const prevState = history[prevIndex];
+                    const newIndex = historyIndex - 1;
                     setTiles(currentTiles => 
                         currentTiles.map(tile => {
-                            const historyTile = prevState.find(ht => ht.id === tile.id);
+                            const historyTile = history[newIndex].find(ht => ht.id === tile.id);
                             return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
                         })
                     );
-                    setHistoryIndex(prevIndex);
+                    setHistoryIndex(newIndex);
                 }
-            };
+            }, [history, historyIndex]);
 
             // Redo function
-            const redo = () => {
+            const redo = useCallback(() => {
                 if (historyIndex < history.length - 1) {
-                    const nextIndex = historyIndex + 1;
-                    const nextState = history[nextIndex];
+                    const newIndex = historyIndex + 1;
                     setTiles(currentTiles => 
                         currentTiles.map(tile => {
-                            const historyTile = nextState.find(ht => ht.id === tile.id);
+                            const historyTile = history[newIndex].find(ht => ht.id === tile.id);
                             return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
                         })
                     );
-                    setHistoryIndex(nextIndex);
+                    setHistoryIndex(newIndex);
                 }
-            };
-            // --- Undo/Redo Logic ---
-
+            }, [history, historyIndex]);
 
             // ---  Multi-Select Logic ---
             const handleTileClick = (e, tile) => {
                 if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                    // Multi-select mode
                     setSelectedIds(prev => 
                         prev.includes(tile.id) ? prev.filter(id => id !== tile.id) : [...prev, tile.id]
                     );
-                    setSelectedTile(null); // Clear single selection
+                    setSelectedTile(null);
                 } else {
-                    // Single select mode
                     setSelectedTile(tile);
-                    setSelectedIds([tile.id]); // Also set as the start of a multi-selection
+                    setSelectedIds([tile.id]);
                 }
             };
             
-
             // --- Analysis Logic ---
             const getAnalysisHighlights = (tile) => {
                 if (!tile || !analysisMode) return { upstream: [], downstream: [] };
@@ -304,28 +317,36 @@
                 return { upstream: Array.from(upstream), downstream: Array.from(downstream) };
             };
 
-            const analysisHighlights = useMemo(() => {
-                if (!selectedTile || !analysisMode) return { upstream: [], downstream: [] };
-                return getAnalysisHighlights(selectedTile);
+           const analysisHighlights = useMemo(() => {
+                if (!selectedTile || !analysisMode) return { upstream: new Set(), downstream: new Set() };
+                const upstream = new Set();
+                const queue = [...(selectedTile.prereqs || [])];
+                while(queue.length > 0) {
+                    const id = queue.pop();
+                    if (!upstream.has(id)) {
+                        upstream.add(id);
+                        const t = tiles.find(tile => tile.id === id);
+                        if (t?.prereqs) queue.push(...t.prereqs);
+                    }
+                }
+                const downstream = new Set(tiles.filter(t => t.prereqs?.includes(selectedTile.id)).map(t => t.id));
+                return { upstream, downstream };
             }, [selectedTile, analysisMode, tiles]);
 
             const keystoneTiles = useMemo(() => {
-                if (analysisMode !== 'keystones') return [];
-                const counts = {};
-                tiles.forEach(t => {
-                    (t.prereqs || []).forEach(pId => {
-                        counts[pId] = (counts[pId] || 0) + 1;
-                    });
-                });
-                const maxCount = Math.max(0, ...Object.values(counts));
-                return Object.keys(counts).filter(id => counts[id] > maxCount * 0.5); // Highlight top 50%
+                if (analysisMode !== 'keystones') return new Set();
+                const counts = tiles.reduce((acc, t) => {
+                    (t.prereqs || []).forEach(pId => { acc[pId] = (acc[pId] || 0) + 1; });
+                    return acc;
+                }, {});
+                const max = Math.max(0, ...Object.values(counts));
+                return new Set(Object.keys(counts).filter(id => counts[id] > max * 0.6));
             }, [analysisMode, tiles]);
 
             const orphanTiles = useMemo(() => {
-                if (analysisMode !== 'orphans') return [];
-                const allPrereqs = new Set();
-                tiles.forEach(t => (t.prereqs || []).forEach(pId => allPrereqs.add(pId)));
-                return tiles.filter(t => !allPrereqs.has(t.id) && t.section !== 'HOME').map(t => t.id);
+                if (analysisMode !== 'orphans') return new Set();
+                const allPrereqs = new Set(tiles.flatMap(t => t.prereqs || []));
+                return new Set(tiles.filter(t => !allPrereqs.has(t.id) && t.section !== 'HOME').map(t => t.id));
             }, [analysisMode, tiles]);
 
             /**
@@ -372,7 +393,7 @@
             };
             
             //load dara
-            useEffect(() => {
+           useEffect(() => {
                 loadCurriculumData()
                     .then(({ tiles, rawData, topicGroupNames }) => {
                         setTiles(tiles);
@@ -407,8 +428,8 @@
                 
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, []); // Empty dependency array ensures this runs only once
-            
+            }, [redo, undo]); // Add dependencies
+
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
             }, [tiles, showReserved]);
@@ -498,91 +519,62 @@
                 return `M${points.join('L')}Z`;
             };
             
-
             const renderTile = (tile, isEmpty = false) => {
-                const isDragging = draggingId && selectedIds.includes(tile.id);
-                const pos = isDragging && dragHex ? { q: tile.q + dragHex.q, r: tile.r + dragHex.r } : tile;
-                const { x, y } = hexToPixel(pos.q, pos.r);
-
+                const isDragging = dragState?.ids.includes(tile.id);
+                const pos = isDragging ? {q: tile.q + dragState.deltaHex.q, r: tile.r + dragState.deltaHex.r} : tile;
+                const {x, y} = hexToPixel(pos.q, pos.r);
                 const color = SECTION_COLORS[tile.section] || '#888';
                 
-                // --- Highlighting Logic ---
-                const isSingleSelected = selectedTile && selectedTile.id === tile.id;
+                const isSingleSelected = selectedTile?.id === tile.id;
                 const isMultiSelected = selectedIds.includes(tile.id);
-
-                const isUpstream = analysisHighlights.upstream.includes(tile.id);
-                const isDownstream = analysisHighlights.downstream.includes(tile.id);
-                const isKeystone = keystoneTiles.includes(tile.id);
-                const isOrphan = orphanTiles.includes(tile.id);
+                const isUpstream = analysisHighlights.upstream.has(tile.id);
+                const isDownstream = analysisHighlights.downstream.has(tile.id);
+                const isKeystone = keystoneTiles.has(tile.id);
+                const isOrphan = orphanTiles.has(tile.id);
                 
                 let opacity = isEmpty ? 0.3 : 1;
                 let stroke = 'rgba(255,255,255,0.3)';
                 let strokeWidth = 1;
 
                 if (analysisMode) {
-                    if (isSingleSelected) {
-                        stroke = '#fff'; strokeWidth = 2.5;
-                    } else if (isUpstream) {
-                        stroke = '#ffeb3b'; strokeWidth = 2; // Yellow for prereqs
-                    } else if (isDownstream) {
-                        stroke = '#80deea'; strokeWidth = 2; // Cyan for dependents
-                    } else if (isKeystone) {
-                        stroke = '#f48fb1'; strokeWidth = 2.5; // Pink for keystones
-                    } else if (isOrphan) {
-                        stroke = '#e57373'; strokeWidth = 2; // Red for orphans
-                    } else {
-                        opacity = 0.2;
-                    }
-                } else if (selectedIds.length > 0) {
-                    if (!isMultiSelected) opacity = 0.2;
+                    if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
+                    else if (isUpstream) { stroke = '#ffeb3b'; strokeWidth = 2; }
+                    else if (isDownstream) { stroke = '#80deea'; strokeWidth = 2; }
+                    else if (isKeystone) { stroke = '#f48fb1'; strokeWidth = 2.5; }
+                    else if (isOrphan) { stroke = '#e57373'; strokeWidth = 2; }
+                    else opacity = 0.2;
+                } else if (selectedIds.length > 0 && !isMultiSelected) {
+                    opacity = 0.2;
                 }
 
-                if (isMultiSelected) {
-                    stroke = '#fff'; strokeWidth = 2;
-                }
-                if (isSingleSelected) {
-                    stroke = '#fff'; strokeWidth = 2.5;
-                }
-                
-                if (isDragging) {
-                    stroke = '#00e5ff';
-                }
+                if (isMultiSelected) { stroke = '#fff'; strokeWidth = 2; }
+                if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
+                if (isDragging) { stroke = '#00e5ff'; }
 
                 return (
-                    <g
-                        key={`${tile.id}`}
-                        onMouseDown={(e) => {
+                    <g key={tile.id} 
+                    onClick={(e) => handleTileClick(e, tile)}
+                    onMouseDown={(e) => {
                             e.stopPropagation();
-                            // If clicking an already selected tile, start drag for the whole group
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
-                            setDraggingId(idsToDrag[0]); // Use first selected as drag anchor
-
-                            const pt = e.currentTarget.ownerSVGElement.createSVGPoint();
-                            pt.x = e.clientX; pt.y = e.clientY;
-                            const cursor = pt.matrixTransform(e.currentTarget.ownerSVGElement.getScreenCTM().inverse());
-                            const { x, y } = hexToPixel(tile.q, tile.r);
-                            setDragOffset({ x: cursor.x - x, y: cursor.y - y });
-                        }}
-                        onClick={(e) => handleTileClick(e, tile)}
-                    >
-                        <path
-                            d={hexPath(x, y, hexSize * 0.88)}
-                            fill={color}
-                            fillOpacity={opacity}
-                            stroke={stroke}
-                            strokeWidth={strokeWidth}
-                            strokeDasharray={isEmpty || tile.isReserved ? '3,2' : 'none'}
-                        />
+                            const anchorTile = tiles.find(t => t.id === idsToDrag[0]);
+                            setDragState({
+                                ids: idsToDrag,
+                                anchor: anchorTile,
+                                startPos: { x: e.clientX, y: e.clientY },
+                                deltaHex: { q: 0, r: 0 }
+                            });
+                    }}>
+                        <path d={hexPath(x, y, hexSize * 0.88)} fill={color} fillOpacity={opacity} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={isEmpty || tile.isReserved ? '3,2' : 'none'} />
                         {!isEmpty && (
-                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6"
-                                fontWeight={tile.isReserved ? 'normal' : 'bold'} opacity={tile.isReserved ? 0.6 : opacity}>
-                                {tile.isReserved ? '?' : tile.id.replace(/^[a-z]+-/, '')}
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6" fontWeight="bold" opacity={tile.isReserved ? 0.6 : opacity}>
+                                {tile.isReserved ? '?' : tile.id.split('-').pop()}
                             </text>
                         )}
                     </g>
                 );
             };
-
+            
             if (loading) {
                 return <div className="container"><div className="loading">Loading curriculum.json...</div></div>;
             }
@@ -641,61 +633,30 @@
                             <svg
                                 viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                                 onMouseMove={(e) => {
-                                    if (!draggingId) return;
-
-                                    const pt = e.currentTarget.createSVGPoint();
-                                    pt.x = e.clientX; pt.y = e.clientY;
-                                    const cursor = pt.matrixTransform(e.currentTarget.getScreenCTM().inverse());
-                                    
-                                    // Calculate the delta from the drag anchor
-                                    const anchorTile = tiles.find(t => t.id === draggingId);
-                                    const anchorPos = hexToPixel(anchorTile.q, anchorTile.r);
-
-                                    const targetPos = { x: cursor.x - dragOffset.x, y: cursor.y - dragOffset.y };
-                                    const deltaPixel = { x: targetPos.x - anchorPos.x, y: targetPos.y - anchorPos.y };
-                                    const deltaHex = pixelToHex(deltaPixel.x, deltaPixel.y);
-
-                                    setDragHex(deltaHex);
+                                    if (!dragState) return;
+                                    const dx = e.clientX - dragState.startPos.x;
+                                    const dy = e.clientY - dragState.startPos.y;
+                                    setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy) }));
                                 }}
 
-                                onMouseUp={(e) => {
-                                    if (!draggingId || !dragHex) {
-                                        setDraggingId(null);
-                                        return;
-                                    }
+                                onMouseUp={() => {
+                                    if (dragState?.deltaHex.q !== 0 || dragState?.deltaHex.r !== 0) {
+                                        const { ids, deltaHex } = dragState;
+                                        const targetPositions = new Set(ids.map(id => {
+                                            const t = tiles.find(ti => ti.id === id);
+                                            return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
+                                        }));
+                                        const collision = tiles.some(t => !ids.includes(t.id) && targetPositions.has(`${t.q},${t.r}`));
 
-                                    // Check if any target position is already occupied by a non-selected tile
-                                    const occupiedByOthers = selectedIds.some(id => {
-                                        const sourceTile = tiles.find(t => t.id === id);
-                                        if (!sourceTile) return false;
-                                        const targetQ = sourceTile.q + dragHex.q;
-                                        const targetR = sourceTile.r + dragHex.r;
-                                        const occupant = occupiedMap.get(`${targetQ},${targetR}`);
-                                        return occupant && !selectedIds.includes(occupant.id);
-                                    });
-
-                                    if (occupiedByOthers) {
-                                        // Collision detected, cancel move
-                                        setDraggingId(null);
-                                        setDragHex(null);
-                                        // Maybe add a visual indicator for collision failure
-                                        return;
-                                    }
-
-                                    const newTiles = tiles.map(t => {
-                                        if (selectedIds.includes(t.id)) {
-                                            // This is one of the tiles being moved
-                                            return { ...t, q: t.q + dragHex.q, r: t.r + dragHex.r };
+                                        if (!collision) {
+                                            const newTiles = tiles.map(t => ids.includes(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                            setTiles(newTiles);
+                                            saveHistory(newTiles);
                                         }
-                                        return t;
-                                    });
-
-                                    setTiles(newTiles);
-                                    saveHistory(newTiles); // Save state for Undo
-
-                                    setDraggingId(null);
-                                    setDragHex(null);
+                                    }
+                                    setDragState(null);
                                 }}
+
                                 onMouseLeave={() => {
                                     setDraggingId(null);
                                     setDragHex(null);
@@ -745,13 +706,35 @@
                             <div className="info-box">
                                 <h3>Analysis Tools</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <button onClick={() => setAnalysisMode('full_chain')}>Show Full Chain</button>
-                                    <button onClick={() => setAnalysisMode('keystones')} >Find Keystones</button>
-                                    <button onClick={() => setAnalysisMode('orphans')} >Find Orphans</button>
-                                    {analysisMode && <button onClick={() => setAnalysisMode(null)} style={{background: '#555'}}>Clear Analysis</button>}
+                                    <button 
+                                        onClick={() => setAnalysisMode(analysisMode === 'full_chain' ? null : 'full_chain')} 
+                                        style={analysisButtonStyles.fullChain}
+                                    >
+                                        🔗 Show Full Chain
+                                    </button>
+                                    <button 
+                                        onClick={() => setAnalysisMode(analysisMode === 'keystones' ? null : 'keystones')} 
+                                        style={analysisButtonStyles.keystones}
+                                    >
+                                        💎 Find Keystones
+                                    </button>
+                                    <button 
+                                        onClick={() => setAnalysisMode(analysisMode === 'orphans' ? null : 'orphans')} 
+                                        style={analysisButtonStyles.orphans}
+                                    >
+                                        💔 Find Orphans
+                                    </button>
+                                    {analysisMode && 
+                                        <button 
+                                            onClick={() => setAnalysisMode(null)} 
+                                            style={analysisButtonStyles.clear}
+                                        >
+                                            ❌ Clear Analysis
+                                        </button>
+                                    }
                                 </div>
                                 <p style={{fontSize: '0.7rem', color: '#6b7280', marginTop: '8px'}}>
-                                    Select a single tile first to see its prerequisite chain.
+                                    Select a tile to see its chain. Keystones/Orphans apply to the whole map.
                                 </p>
                             </div>
 
