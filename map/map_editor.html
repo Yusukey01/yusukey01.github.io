@@ -561,7 +561,7 @@
 
                 return (
                     <g key={tile.id} 
-                    onClick={(e) => handleTileClick(e, tile)}
+                    onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
                     onMouseDown={(e) => {
                             e.stopPropagation();
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
@@ -570,7 +570,8 @@
                                 ids: idsToDrag,
                                 anchor: anchorTile,
                                 startPos: { x: e.clientX, y: e.clientY },
-                                deltaHex: { q: 0, r: 0 }
+                                deltaHex: { q: 0, r: 0 },
+                                moved: false
                             });
                     }}>
                         <path d={hexPath(x, y, hexSize * 0.88)} fill={color} fillOpacity={opacity} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={isEmpty || tile.isReserved ? '3,2' : 'none'} />
@@ -642,28 +643,34 @@
                                 viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
                                 onMouseMove={(e) => {
                                     if (!dragState) return;
+                                    const dx_screen = e.clientX - dragState.startPos.x;
+                                    const dy_screen = e.clientY - dragState.startPos.y;
+                                    if (!dragState.moved && Math.hypot(dx_screen, dy_screen) < 3) return;
                                     const svg = e.currentTarget;
                                     const rect = svg.getBoundingClientRect();
                                     const scaleX = viewBox.width / rect.width;
                                     const scaleY = viewBox.height / rect.height;
-                                    const dx = (e.clientX - dragState.startPos.x) * scaleX;
-                                    const dy = (e.clientY - dragState.startPos.y) * scaleY;
-                                    setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy) }));
+                                    const dx = dx_screen * scaleX;
+                                    const dy = dy_screen * scaleY;
+                                    setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy), moved: true }));
                                 }}
 
                                 onMouseUp={() => {
-                                    if (dragState && (dragState.deltaHex.q !== 0 || dragState.deltaHex.r !== 0)) {
+                                    if (dragState?.moved && dragState.deltaHex) {
                                         const { ids, deltaHex } = dragState;
-                                        const targetPositions = new Set(ids.map(id => {
-                                            const t = tiles.find(ti => ti.id === id);
-                                            return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
-                                        }));
-                                        const collision = tiles.some(t => !ids.includes(t.id) && targetPositions.has(`${t.q},${t.r}`));
+                                        if (deltaHex.q !== 0 || deltaHex.r !== 0) {
+                                            const idSet = new Set(ids);
+                                            const targetPositions = new Set(ids.map(id => {
+                                                const t = tiles.find(ti => ti.id === id);
+                                                return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
+                                            }));
+                                            const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
 
-                                        if (!collision) {
-                                            const newTiles = tiles.map(t => ids.includes(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
-                                            setTiles(newTiles);
-                                            saveHistory(newTiles);
+                                            if (!collision) {
+                                                const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                                setTiles(newTiles);
+                                                saveHistory(newTiles);
+                                            }
                                         }
                                     }
                                     setDragState(null);
