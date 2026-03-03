@@ -226,47 +226,29 @@
             const [dragHex, setDragHex] = useState(null);
 
             const [selectedIds, setSelectedIds] = useState([]); // For multi-select
-            const historyRef = React.useRef([]); // For Undo/Redo
-            const historyIndexRef = React.useRef(-1); // For Undo/Redo
+            const undoStack = React.useRef([]); // undo stack
             const [analysisMode, setAnalysisMode] = useState(null); // For visual analysis
             const [dragState, setDragState] = useState(null); // For dragging tiles
 
-            const [addReservedTarget, setAddReservedTarget] = useState(null); // {q, r} of empty slot clicked
+            const [addReservedTarget, setAddReservedTarget] = useState(null);
 
             const hexSize = 28;
 
-            // --- Undo/Redo Logic ---
-            const saveHistory = useCallback((newTiles) => {
-                const trimmed = historyRef.current.slice(0, historyIndexRef.current + 1);
-                trimmed.push(newTiles.map(({ q, r, id }) => ({ q, r, id })));
-                historyRef.current = trimmed;
-                historyIndexRef.current = trimmed.length - 1;
+            // --- Undo Logic ---
+            const saveHistory = useCallback((currentTilesBeforeChange) => {
+                undoStack.current.push(currentTilesBeforeChange.map(({ q, r, id }) => ({ q, r, id })));
+                if (undoStack.current.length > 50) undoStack.current.shift();
             }, []);
 
             const undo = useCallback(() => {
-                if (historyIndexRef.current > 0) {
-                    historyIndexRef.current -= 1;
-                    const snapshot = historyRef.current[historyIndexRef.current];
-                    setTiles(currentTiles =>
-                        currentTiles.map(tile => {
-                            const ht = snapshot.find(h => h.id === tile.id);
-                            return ht ? { ...tile, q: ht.q, r: ht.r } : tile;
-                        })
-                    );
-                }
-            }, []);
-
-            const redo = useCallback(() => {
-                if (historyIndexRef.current < historyRef.current.length - 1) {
-                    historyIndexRef.current += 1;
-                    const snapshot = historyRef.current[historyIndexRef.current];
-                    setTiles(currentTiles =>
-                        currentTiles.map(tile => {
-                            const ht = snapshot.find(h => h.id === tile.id);
-                            return ht ? { ...tile, q: ht.q, r: ht.r } : tile;
-                        })
-                    );
-                }
+                const snapshot = undoStack.current.pop();
+                if (!snapshot) return;
+                setTiles(currentTiles =>
+                    currentTiles.map(tile => {
+                        const ht = snapshot.find(h => h.id === tile.id);
+                        return ht ? { ...tile, q: ht.q, r: ht.r } : tile;
+                    })
+                );
             }, []);
 
             // ---  Multi-Select Logic ---
@@ -302,9 +284,9 @@
                     reservedIndex: existingCount,
                     topicGroup: null
                 };
+                saveHistory(tiles);
                 const newTiles = [...tiles, newTile];
                 setTiles(newTiles);
-                saveHistory(newTiles);
                 setAddReservedTarget(null);
                 setSelectedTile(newTile);
                 setSelectedIds([newTile.id]);
@@ -313,9 +295,9 @@
             const deleteSelectedReserved = useCallback(() => {
                 const toDelete = new Set(selectedIds.filter(id => tiles.find(t => t.id === id)?.isReserved));
                 if (toDelete.size === 0) return;
+                saveHistory(tiles);
                 const newTiles = tiles.filter(t => !toDelete.has(t.id));
                 setTiles(newTiles);
-                saveHistory(newTiles);
                 setSelectedTile(null);
                 setSelectedIds([]);
             }, [selectedIds, tiles, saveHistory]);
@@ -438,8 +420,7 @@
                         setTopicGroupNames(topicGroupNames);
                         setLoading(false);
 
-                        historyRef.current = [tiles.map(({ q, r, id }) => ({ q, r, id }))];
-                        historyIndexRef.current = 0;
+                        undoStack.current = [];
                     })
                     .catch(err => {
                         setError(err.message);
@@ -448,18 +429,14 @@
             }, []); // Empty — runs once
 
             // Keyboard shortcuts (separate effect)
-            useEffect(() => {
+           useEffect(() => {
                 const handleKeyDown = (e) => {
                     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
                     const isCtrl = isMac ? e.metaKey : e.ctrlKey;
 
                     if (isCtrl && e.key === 'z') {
                         e.preventDefault();
-                        if (e.shiftKey) {
-                            redo();
-                        } else {
-                            undo();
-                        }
+                        undo();
                     }
                     if (e.key === 'Delete' || e.key === 'Backspace') {
                         e.preventDefault();
@@ -469,10 +446,10 @@
                         setAddReservedTarget(null);
                     }
                 };
-    
+                
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [redo, undo, deleteSelectedReserved]);
+            }, [undo, deleteSelectedReserved]);
             
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
@@ -682,7 +659,7 @@
                         <span>🖱 <b>Drag</b> tile to move</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
                         <span>⌨️ <b>Ctrl/⌘+Click</b> multi-select</span>
-                        <span>↩️ <b>Ctrl+Z</b> undo · <b>Ctrl+Shift+Z</b> redo</span>
+                        <span>↩️ <b>Ctrl+Z</b> undo</span>
                         <span>➕ Click <b>empty slot</b> to add reserved</span>
                         <span>🗑 Select reserved + <b>Delete</b> to remove</span>
                     </div>
@@ -706,48 +683,48 @@
                                 }}
 
                                onMouseUp={() => {
-                                if (dragState?.moved && dragState.deltaHex) {
-                                    const { ids, deltaHex } = dragState;
-                                    if (deltaHex.q !== 0 || deltaHex.r !== 0) {
-                                        const idSet = new Set(ids);
+                                    if (dragState?.moved && dragState.deltaHex) {
+                                        const { ids, deltaHex } = dragState;
+                                        if (deltaHex.q !== 0 || deltaHex.r !== 0) {
+                                            const idSet = new Set(ids);
 
-                                        // Single tile drag — check for swap target
-                                        if (ids.length === 1) {
-                                            const dragged = tiles.find(t => t.id === ids[0]);
-                                            const targetQ = dragged.q + deltaHex.q;
-                                            const targetR = dragged.r + deltaHex.r;
-                                            const targetTile = tiles.find(t => t.id !== dragged.id && t.q === targetQ && t.r === targetR);
+                                            // Single tile drag — check for swap target
+                                            if (ids.length === 1) {
+                                                const dragged = tiles.find(t => t.id === ids[0]);
+                                                const targetQ = dragged.q + deltaHex.q;
+                                                const targetR = dragged.r + deltaHex.r;
+                                                const targetTile = tiles.find(t => t.id !== dragged.id && t.q === targetQ && t.r === targetR);
 
-                                            if (targetTile) {
-                                                // Swap positions
-                                                const newTiles = tiles.map(t => {
-                                                    if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r };
-                                                    if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r };
-                                                    return t;
-                                                });
+                                                if (targetTile) {
+                                                    // Swap positions
+                                                    const newTiles = tiles.map(t => {
+                                                        if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r };
+                                                        if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r };
+                                                        return t;
+                                                    });
+                                                    saveHistory(tiles);
+                                                    setTiles(newTiles);
+                                                    setDragState(null);
+                                                    return;
+                                                }
+                                            }
+
+                                            // Multi-tile or no collision — normal move
+                                            const targetPositions = new Set(ids.map(id => {
+                                                const t = tiles.find(ti => ti.id === id);
+                                                return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
+                                            }));
+                                            const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
+
+                                            if (!collision) {
+                                                const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                                saveHistory(tiles);
                                                 setTiles(newTiles);
-                                                saveHistory(newTiles);
-                                                setDragState(null);
-                                                return;
                                             }
                                         }
-
-                                        // Multi-tile or no collision — normal move
-                                        const targetPositions = new Set(ids.map(id => {
-                                            const t = tiles.find(ti => ti.id === id);
-                                            return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
-                                        }));
-                                        const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
-
-                                        if (!collision) {
-                                            const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
-                                            setTiles(newTiles);
-                                            saveHistory(newTiles);
-                                        }
                                     }
-                                }
-                                setDragState(null);
-                            }}
+                                    setDragState(null);
+                                }}
 
                                 onMouseLeave={() => {
                                     setDraggingId(null);
