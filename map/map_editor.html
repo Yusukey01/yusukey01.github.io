@@ -231,6 +231,8 @@
             const [analysisMode, setAnalysisMode] = useState(null); // For visual analysis
             const [dragState, setDragState] = useState(null); // For dragging tiles
 
+            const [addReservedTarget, setAddReservedTarget] = useState(null); // {q, r} of empty slot clicked
+
             const hexSize = 28;
 
             // --- Undo/Redo Logic ---
@@ -279,7 +281,14 @@
             }, [historyIndex]);
 
             // ---  Multi-Select Logic ---
-            const handleTileClick = (e, tile) => {
+           const handleTileClick = (e, tile) => {
+                if (tile.section === 'EMPTY') {
+                    setAddReservedTarget({ q: tile.q, r: tile.r });
+                    setSelectedTile(null);
+                    setSelectedIds([]);
+                    return;
+                }
+                setAddReservedTarget(null);
                 if (e.shiftKey || e.ctrlKey || e.metaKey) {
                     setSelectedIds(prev => 
                         prev.includes(tile.id) ? prev.filter(id => id !== tile.id) : [...prev, tile.id]
@@ -290,6 +299,37 @@
                     setSelectedIds([tile.id]);
                 }
             };
+
+            // --- Add / Delete Reserved Tiles ---
+            const addReservedTile = (section, q, r) => {
+                const existingCount = tiles.filter(t => t.isReserved && t.section === section).length;
+                const newTile = {
+                    id: `${section}-reserved-${Date.now()}`,
+                    section,
+                    title: 'Coming Soon',
+                    url: null,
+                    q, r,
+                    isReserved: true,
+                    reservedIndex: existingCount,
+                    topicGroup: null
+                };
+                const newTiles = [...tiles, newTile];
+                setTiles(newTiles);
+                saveHistory(newTiles);
+                setAddReservedTarget(null);
+                setSelectedTile(newTile);
+                setSelectedIds([newTile.id]);
+            };
+
+            const deleteSelectedReserved = useCallback(() => {
+                const toDelete = new Set(selectedIds.filter(id => tiles.find(t => t.id === id)?.isReserved));
+                if (toDelete.size === 0) return;
+                const newTiles = tiles.filter(t => !toDelete.has(t.id));
+                setTiles(newTiles);
+                saveHistory(newTiles);
+                setSelectedTile(null);
+                setSelectedIds([]);
+            }, [selectedIds, tiles, saveHistory]);
             
             // --- Analysis Logic ---
             const getAnalysisHighlights = (tile) => {
@@ -363,21 +403,22 @@
             const exportToJson = () => {
                 if (!originalData) return;
 
-                // Create a deep copy of the original JSON to preserve all text/metadata
                 const exportData = JSON.parse(JSON.stringify(originalData));
 
-                // Synchronize coordinates from the current 'tiles' state back into the JSON structure
+                // Reset all reservedSlots — will rebuild from current tiles
+                Object.keys(exportData.sections).forEach(key => {
+                    exportData.sections[key].reservedSlots = [];
+                });
+
                 tiles.forEach(tile => {
                     if (tile.section === 'HOME') {
                         exportData.homeNode.mapCoords = { q: tile.q, r: tile.r };
                     } else if (tile.isReserved) {
-                        // Sync reserved slots using the stored index
                         const section = exportData.sections[tile.section];
-                        if (section && section.reservedSlots[tile.reservedIndex]) {
-                            section.reservedSlots[tile.reservedIndex] = { q: tile.q, r: tile.r };
+                        if (section) {
+                            section.reservedSlots.push({ q: tile.q, r: tile.r });
                         }
                     } else {
-                        // Sync regular parts by matching ID
                         const section = exportData.sections[tile.section];
                         if (section && section.parts) {
                             const part = section.parts.find(p => p.id === tile.id);
@@ -388,7 +429,6 @@
                     }
                 });
 
-                // Generate and trigger download
                 const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -399,7 +439,7 @@
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
             };
-            
+
             // Load data (once only)
             useEffect(() => {
                 loadCurriculumData()
@@ -433,13 +473,19 @@
                             undo();
                         }
                     }
+                    if (e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        deleteSelectedReserved();
+                    }
+                    if (e.key === 'Escape') {
+                        setAddReservedTarget(null);
+                    }
                 };
-                
+    
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [redo, undo]);
-          
-
+            }, [redo, undo, deleteSelectedReserved]);
+            
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
             }, [tiles, showReserved]);
@@ -565,7 +611,7 @@
                 if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
                 if (isDragging) { stroke = '#00e5ff'; }
                 if (isSwapTarget) { stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1; }
-                
+
                 return (
                     <g key={tile.id} 
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
@@ -718,7 +764,27 @@
                         </div>
                         
                         <div className="info-panel">
-                            {selectedTile ? (
+                            {addReservedTarget ? (
+                                <div className="info-box">
+                                    <h3>📍 Add Reserved Tile</h3>
+                                    <p style={{ marginBottom: '8px' }}><span className="label">Position:</span> q={addReservedTarget.q}, r={addReservedTarget.r}</p>
+                                    <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginBottom: '8px' }}>Select a section:</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => (
+                                            <button key={key}
+                                                style={{ ...buttonBaseStyle, backgroundColor: SECTION_COLORS[key], fontSize: '0.75rem' }}
+                                                onClick={() => addReservedTile(key, addReservedTarget.q, addReservedTarget.r)}>
+                                                {key}: {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        style={{ ...buttonBaseStyle, backgroundColor: '#4b5563', marginTop: '8px', textAlign: 'center', fontSize: '0.75rem' }}
+                                        onClick={() => setAddReservedTarget(null)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : selectedTile ? (
                                 <div className="info-box">
                                     <h3>
                                         {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : '📄 ' + selectedTile.id}
@@ -732,6 +798,13 @@
                                     {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
                                     {selectedTile.topicGroup && (
                                         <p><span className="label">Topic Group:</span> <span style={{ color: '#60a5fa' }}>{topicGroupNames[selectedTile.topicGroup] || selectedTile.topicGroup}</span></p>
+                                    )}
+                                    {selectedTile.isReserved && (
+                                        <button
+                                            style={{ ...buttonBaseStyle, backgroundColor: '#dc2626', marginTop: '8px', textAlign: 'center', fontSize: '0.75rem' }}
+                                            onClick={deleteSelectedReserved}>
+                                            🗑 Delete Reserved Tile
+                                        </button>
                                     )}
                                 </div>
                             ) : (
