@@ -35,36 +35,47 @@
         .main-content { display: flex; gap: 16px; }
         .map-container { 
             flex: 1; background: #030712; border-radius: 8px; 
-            overflow: auto; max-height: 65vh; min-height: 400px;
-            height: calc(100vh - 120px);
-            max-height: none;
+            overflow: auto; height: calc(100vh - 160px);
+            min-height: 500px;
         }
         .map-container svg { 
             width: 100%;
             height: 100%;
-            min-height: 600px;
+            min-height: 800px;
         }
-        .info-panel { width: 280px; flex-shrink: 0; }
-        .info-box { background: #1f2937; padding: 12px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 12px; }
-        .info-box h3 { font-size: 0.875rem; margin-bottom: 8px; }
+        .info-panel { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+        .info-box { background: #1f2937; padding: 12px; border-radius: 8px; font-size: 0.75rem; }
+        .info-box h3 { font-size: 0.875rem; margin-bottom: 8px; border-bottom: 1px solid #374151; padding-bottom: 4px; }
         .info-box p { margin-bottom: 4px; }
         .info-box .label { color: #9ca3af; }
-        .info-box .available { color: #4ade80; margin-top: 8px; font-weight: 500; }
-        .info-box .reserved { color: #facc15; margin-top: 8px; }
-        .info-box .url-link { 
-            color: #60a5fa; text-decoration: none; word-break: break-all; 
-            display: block; margin-top: 4px; font-size: 0.7rem;
-        }
-        .info-box .url-link:hover { text-decoration: underline; }
-        .stats { font-size: 0.75rem; color: #9ca3af; }
+        .info-box .url-link { color: #60a5fa; text-decoration: none; word-break: break-all; font-size: 0.7rem; }
         .section-stats { display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .section-stats .count-reserved { color: #6b7280; }
+        .count-reserved { color: #6b7280; }
         svg text { user-select: none; pointer-events: none; }
         svg g { cursor: pointer; }
         svg g:hover path { filter: brightness(1.2); }
         .loading { text-align: center; padding: 40px; color: #9ca3af; }
-        .error { text-align: center; padding: 40px; color: #ef4444; }
-        .error code { display: block; margin-top: 12px; font-size: 0.8rem; color: #9ca3af; }
+        
+        /* Export Button Styling */
+        .export-section { margin-top: auto; padding-top: 12px; }
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .export-btn:hover { background-color: #059669; transform: translateY(-1px); }
+        .export-btn:active { transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -74,223 +85,137 @@
         const { useState, useMemo, useEffect } = React;
 
         const SECTION_COLORS = {
-            'HOME': '#888888',
-            'I': '#1565c0',
-            'II': '#2e7d32',
-            'III': "#00838f",
-            'IV': '#6a1b9a',
-            'V': '#ef6c00',
-            'EMPTY': '#2a2a2a'
+            'HOME': '#888888', 'I': '#1565c0', 'II': '#2e7d32',
+            'III': "#00838f", 'IV': '#6a1b9a', 'V': '#ef6c00', 'EMPTY': '#2a2a2a'
         };
 
         const SECTION_NAMES = {
-            'HOME': 'Home',
-            'I': 'Linear Algebra to Algebraic Foundations',
-            'II': 'Calculus to Optimization & Analysis',
-            'III': 'Probability & Statistics',
-            'IV': 'Discrete Math',
-            'V': 'Machine Learning'
+            'HOME': 'Home', 'I': 'Algebraic Structures', 'II': 'Calculus & Analysis',
+            'III': 'Probability & Statistics', 'IV': 'Discrete Math', 'V': 'Machine Learning'
         };
         
-        // Short names for compact displays
         const SECTION_SHORT_NAMES = {
-            'HOME': 'Home',
-            'I': 'LinAlg & Algebra',
-            'II': 'Calculus & Opt',
-            'III': 'Probability',
-            'IV': 'Discrete',
-            'V': 'ML'
+            'HOME': 'Home', 'I': 'LinAlg', 'II': 'Calc', 'III': 'Prob', 'IV': 'Disc', 'V': 'ML'
         };
 
         /**
-         * Load curriculum data from JSON file - same logic as compass.html
+         * Dynamic data loading and topic group extraction
          */
         async function loadCurriculumData() {
-            // Try multiple paths to support different folder structures
-            const paths = [
-                '../data/curriculum.json',
-                './data/curriculum.json',
-                '/data/curriculum.json',
-                'curriculum.json'
-            ];
-            
-            let data = null;
-            let lastError = null;
-            
-            for (const path of paths) {
-                try {
-                    const response = await fetch(path);
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log(`Loaded curriculum from: ${path}`);
-                        break;
-                    }
-                } catch (e) {
-                    lastError = e;
-                }
-            }
-            
-            if (!data) {
-                throw new Error(`Could not load curriculum.json. Tried: ${paths.join(', ')}`);
-            }
+            const response = await fetch('../data/curriculum.json');
+            const data = await response.json();
             
             const tiles = [];
-            const sectionColors = data.sectionColors || {};
-            sectionColors['HOME'] = '#888888';
-            
-            // Add home node
+            const foundGroups = {}; // To store dynamic topic group names
+
+            // Helper to format ID to Title Case
+            const formatGroupName = (id) => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            // 1. Process Home Node
             if (data.homeNode) {
                 tiles.push({
-                    id: data.homeNode.id,
-                    section: 'HOME',
-                    title: data.homeNode.title,
-                    url: data.homeNode.url,
-                    q: data.homeNode.mapCoords.q,
-                    r: data.homeNode.mapCoords.r
+                    id: data.homeNode.id, section: 'HOME', title: data.homeNode.title,
+                    url: data.homeNode.url, q: data.homeNode.mapCoords.q, r: data.homeNode.mapCoords.r
                 });
             }
             
-            // Add all parts from all sections
+            // 2. Process Sections
             Object.entries(data.sections).forEach(([sectionId, section]) => {
                 section.parts.forEach(part => {
                     tiles.push({
-                        id: part.id,
-                        section: sectionId,
-                        title: part.title,
-                        url: section.baseUrl + part.url,
-                        q: part.mapCoords.q,
-                        r: part.mapCoords.r,
-                        prereqs: part.prereqs || [],
-                        keywords: part.keywords || [],
+                        id: part.id, section: sectionId, title: part.title,
+                        url: section.baseUrl + part.url, q: part.mapCoords.q, r: part.mapCoords.r,
+                        prereqs: part.prereqs || [], keywords: part.keywords || [],
                         topicGroup: part.topicGroup || null
                     });
+                    if (part.topicGroup) foundGroups[part.topicGroup] = formatGroupName(part.topicGroup);
                 });
                 
-                // Add reserved slots
+                // 3. Process Reserved Slots
                 if (section.reservedSlots) {
                     section.reservedSlots.forEach((slot, index) => {
                         tiles.push({
-                            id: `${sectionId}-reserved-${index}`,
-                            section: sectionId,
-                            title: 'Coming Soon',
-                            url: null,
-                            q: slot.q,
-                            r: slot.r,
-                            isReserved: true,
-                            topicGroup: null
+                            id: `${sectionId}-reserved-${index}`, section: sectionId,
+                            title: 'Coming Soon', url: null, q: slot.q, r: slot.r,
+                            isReserved: true, reservedIndex: index 
                         });
                     });
                 }
             });
             
-            return { tiles, sectionColors };
+            return { tiles, rawData: data, topicGroupNames: foundGroups };
         }
-
-        // Topic group display names
-        const TOPIC_GROUP_NAMES = {
-            'core-linalg': 'Core Linear Algebra',
-            'abstract-algebra': 'Abstract Algebra',
-            'derivatives': 'Derivatives',
-            'numerical': 'Numerical Methods',
-            'optimization': 'Optimization',
-            'analysis': 'Analysis & Integration',
-            'fourier': 'Fourier Analysis',
-            'foundations': 'Probability Foundations',
-            'distributions': 'Distributions',
-            'multivariate': 'Multivariate Statistics',
-            'inference': 'Statistical Inference',
-            'information': 'Information Theory',
-            'bayesian': 'Bayesian Methods',
-            'gaussian-process': 'Gaussian Processes',
-            'graph-theory': 'Graph Theory',
-            'combinatorics': 'Combinatorics',
-            'computation': 'Theory of Computation',
-            'boolean': 'Boolean Logic',
-            'ml-foundations': 'ML Foundations',
-            'neural-networks': 'Neural Networks',
-            'dimensionality': 'Dimensionality Reduction',
-            'reinforcement-learning': 'Reinforcement Learning'
-        };
 
         function HexMapEditor() {
             const [tiles, setTiles] = useState([]);
+            const [originalData, setOriginalData] = useState(null);
+            const [topicGroupNames, setTopicGroupNames] = useState({});
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [selectedTile, setSelectedTile] = useState(null);
             const [showEmptySlots, setShowEmptySlots] = useState(true);
             const [showReserved, setShowReserved] = useState(true);
             const [highlightSection, setHighlightSection] = useState(null);
-            const [highlightTopicGroup, setHighlightTopicGroup] = useState(null);
             const [draggingId, setDraggingId] = useState(null);
             const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
             const [dragHex, setDragHex] = useState(null);
 
             const hexSize = 28;
 
-            const swapOrMove = (dragId, q, r) => {
-                setTiles(prev => {
-                    const targetKey = `${q},${r}`;
-                    const targetTile = prev.find(t => `${t.q},${t.r}` === targetKey && t.id !== dragId);
-
-                    return prev.map(t => {
-                        if (t.id === dragId) {
-                            return { ...t, q, r };
-                        }
-                        if (targetTile && t.id === targetTile.id) {
-                            const source = prev.find(x => x.id === dragId);
-                            return { ...t, q: source.q, r: source.r };
-                        }
-                        return t;
-                    });
-                });
-            };
- 
-            // Load data on mount
+            // Load logic
             useEffect(() => {
                 loadCurriculumData()
-                    .then(({ tiles }) => {
-                        setTiles(tiles);
+                    .then(res => {
+                        setTiles(res.tiles);
+                        setOriginalData(res.rawData);
+                        setTopicGroupNames(res.topicGroupNames);
                         setLoading(false);
                     })
-                    .catch(err => {
-                        setError(err.message);
-                        setLoading(false);
-                    });
+                    .catch(err => { setError(err.message); setLoading(false); });
             }, []);
-            
-            const activeTiles = useMemo(() => {
-                return tiles.filter(t => showReserved || !t.isReserved);
-            }, [tiles, showReserved]);
-            
-            const occupiedMap = useMemo(() => {
-                const map = new Map();
-                activeTiles.forEach(tile => map.set(`${tile.q},${tile.r}`, tile));
-                return map;
-            }, [activeTiles]);
-            
-            const emptySlots = useMemo(() => {
-                const slots = [];
-                const checked = new Set();
-                const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
-                
-                activeTiles.forEach(tile => {
-                    neighbors.forEach(([dq, dr]) => {
-                        const nq = tile.q + dq, nr = tile.r + dr;
-                        const key = `${nq},${nr}`;
-                        if (!occupiedMap.has(key) && !checked.has(key)) {
-                            checked.add(key);
-                            const borderingSection = new Set();
-                            neighbors.forEach(([ddq, ddr]) => {
-                                const neighbor = occupiedMap.get(`${nq + ddq},${nr + ddr}`);
-                                if (neighbor && !neighbor.isReserved) borderingSection.add(neighbor.section);
-                            });
-                            slots.push({ q: nq, r: nr, section: 'EMPTY', borderingSection: Array.from(borderingSection) });
+
+            /**
+             * Merges current visual positions back into the original JSON structure.
+             */
+            const downloadUpdatedJson = () => {
+                if (!originalData) return;
+
+                // Deep copy the original data to preserve all text/metadata
+                const newJson = JSON.parse(JSON.stringify(originalData));
+
+                // Iterate through our flat tile array and update the source nested structure
+                tiles.forEach(tile => {
+                    if (tile.section === 'HOME') {
+                        newJson.homeNode.mapCoords = { q: tile.q, r: tile.r };
+                    } else if (tile.isReserved) {
+                        // Sync reserved slots using the stored index
+                        const section = newJson.sections[tile.section];
+                        if (section && section.reservedSlots[tile.reservedIndex]) {
+                            section.reservedSlots[tile.reservedIndex] = { q: tile.q, r: tile.r };
                         }
-                    });
+                    } else {
+                        // Sync regular parts by matching ID
+                        const section = newJson.sections[tile.section];
+                        const part = section.parts.find(p => p.id === tile.id);
+                        if (part) {
+                            part.mapCoords = { q: tile.q, r: tile.r };
+                        }
+                    }
                 });
-                return slots;
-            }, [occupiedMap, activeTiles]);
-            
+
+                // Generate file download
+                const blob = new Blob([JSON.stringify(newJson, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'curriculum.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            // Hex Math Helpers
             const hexToPixel = (q, r) => ({
                 x: hexSize * Math.sqrt(3) * (q + r / 2),
                 y: hexSize * (3 / 2) * r
@@ -299,304 +224,177 @@
             const pixelToHex = (x, y) => {
                 const q = (Math.sqrt(3)/3 * x - 1/3 * y) / hexSize;
                 const r = (2/3 * y) / hexSize;
-
-                let x1 = q;
-                let z1 = r;
-                let y1 = -x1 - z1;
-
-                let rx = Math.round(x1);
-                let ry = Math.round(y1);
-                let rz = Math.round(z1);
-
-                const x_diff = Math.abs(rx - x1);
-                const y_diff = Math.abs(ry - y1);
-                const z_diff = Math.abs(rz - z1);
-
-                if (x_diff > y_diff && x_diff > z_diff) {
-                    rx = -ry - rz;
-                } else if (y_diff > z_diff) {
-                    ry = -rx - rz;
-                } else {
-                    rz = -rx - ry;
-                }
-
+                let x1 = q, z1 = r, y1 = -x1 - z1;
+                let rx = Math.round(x1), ry = Math.round(y1), rz = Math.round(z1);
+                const x_diff = Math.abs(rx - x1), y_diff = Math.abs(ry - y1), z_diff = Math.abs(rz - z1);
+                if (x_diff > y_diff && x_diff > z_diff) rx = -ry - rz;
+                else if (y_diff > z_diff) ry = -rx - rz;
+                else rz = -rx - ry;
                 return { q: rx, r: rz };
             };
 
+            const activeTiles = useMemo(() => tiles.filter(t => showReserved || !t.isReserved), [tiles, showReserved]);
             
+            const occupiedMap = useMemo(() => {
+                const map = new Map();
+                activeTiles.forEach(tile => map.set(`${tile.q},${tile.r}`, tile));
+                return map;
+            }, [activeTiles]);
+
+            const emptySlots = useMemo(() => {
+                const slots = [];
+                const checked = new Set();
+                const neighbors = [[1,0], [-1,0], [0,1], [0,-1], [1,-1], [-1,1]];
+                activeTiles.forEach(tile => {
+                    neighbors.forEach(([dq, dr]) => {
+                        const nq = tile.q + dq, nr = tile.r + dr, key = `${nq},${nr}`;
+                        if (!occupiedMap.has(key) && !checked.has(key)) {
+                            checked.add(key);
+                            const borders = new Set();
+                            neighbors.forEach(([ddq, ddr]) => {
+                                const n = occupiedMap.get(`${nq+ddq},${nr+ddr}`);
+                                if (n && !n.isReserved) borders.add(n.section);
+                            });
+                            slots.push({ q: nq, r: nr, section: 'EMPTY', borderingSection: Array.from(borders) });
+                        }
+                    });
+                });
+                return slots;
+            }, [occupiedMap, activeTiles]);
+
             const viewBox = useMemo(() => {
-                const allTiles = [...activeTiles, ...emptySlots];
-                if (allTiles.length === 0) return { x: -100, y: -100, width: 200, height: 200 };
-                
+                const all = [...activeTiles, ...emptySlots];
+                if (!all.length) return { x: -100, y: -100, width: 200, height: 200 };
                 let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                allTiles.forEach(tile => {
-                    const { x, y } = hexToPixel(tile.q, tile.r);
+                all.forEach(t => {
+                    const { x, y } = hexToPixel(t.q, t.r);
                     minX = Math.min(minX, x); maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y); maxY = Math.max(maxY, y);
                 });
-                const padding = hexSize * 2;
-                return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+                const p = hexSize * 3;
+                return { x: minX - p, y: minY - p, width: maxX - minX + p * 2, height: maxY - minY + p * 2 };
             }, [emptySlots, activeTiles]);
-            
-            const hexPath = (cx, cy, size) => {
-                const points = [];
-                for (let i = 0; i < 6; i++) {
-                    const angle = (Math.PI / 6) + (i * Math.PI / 3);
-                    points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
-                }
-                return `M${points.join('L')}Z`;
-            };
-            
-            const renderTile = (tile, isEmpty = false) => {
 
+            const renderTile = (tile, isEmpty = false) => {
                 const isDragging = draggingId === tile.id;
                 const pos = isDragging && dragHex ? dragHex : tile;
                 const { x, y } = hexToPixel(pos.q, pos.r);
-
-                const color = SECTION_COLORS[tile.section] || '#888';
-                const isReserved = tile.isReserved;
-                const isHighlightedBySection = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
                 const isSelected = selectedTile && selectedTile.q === tile.q && selectedTile.r === tile.r;
-
-                // Highlight tiles in the same topic group as selected tile
-                const isSameTopicGroup = selectedTile && selectedTile.topicGroup && tile.topicGroup === selectedTile.topicGroup;
-                const isPrereqOfSelected = selectedTile && selectedTile.prereqs && selectedTile.prereqs.includes(tile.id);
+                const isHighlighted = highlightSection && (tile.section === highlightSection || (isEmpty && tile.borderingSection?.includes(highlightSection)));
                 
-                let opacity = isEmpty ? 0.3 : 1;
-                
-                // Apply section filter
-                if (highlightSection && !isHighlightedBySection) {
-                    opacity = 0.3;
-                }
-                
-                // When a tile is selected, highlight topic group and prereqs
+                let opacity = isEmpty ? 0.2 : 1;
+                if (highlightSection && !isHighlighted) opacity = 0.2;
                 if (selectedTile && !isEmpty) {
-                    if (isSelected || isSameTopicGroup || isPrereqOfSelected) {
-                        opacity = 1;
-                    } else {
-                        opacity = 0.2;
-                    }
+                    const isRelated = isSelected || (selectedTile.topicGroup && tile.topicGroup === selectedTile.topicGroup) || selectedTile.prereqs?.includes(tile.id);
+                    if (!isRelated) opacity = 0.2;
                 }
-                
-                if (isReserved) opacity = Math.min(opacity, 0.35);
-                
-                // Glow effect for selected tile and its prereqs
-                const hasGlow = isSelected || isPrereqOfSelected;
-                
+                if (tile.isReserved) opacity = Math.min(opacity, 0.4);
+
                 return (
-                    <g
-                        key={`${tile.id}`}
-                        onMouseDown={(e) => {
-                            e.stopPropagation();
-                            setDraggingId(tile.id);
-
-                            const pt = e.currentTarget.ownerSVGElement.createSVGPoint();
-                            pt.x = e.clientX;
-                            pt.y = e.clientY;
-                            const cursor = pt.matrixTransform(e.currentTarget.ownerSVGElement.getScreenCTM().inverse());
-
-                            const { x, y } = hexToPixel(tile.q, tile.r);
-                            setDragOffset({ x: cursor.x - x, y: cursor.y - y });
-                        }}
-                        onClick={() => setSelectedTile(tile)}
-                    >
-
-                        <path
-                            d={hexPath(x, y, hexSize * 0.88)}
-                            fill={color}
-                            fillOpacity={opacity}
-                            stroke={isDragging ? '#00e5ff' : isSelected ? '#fff' : isPrereqOfSelected ? '#ffeb3b' : isEmpty ? '#444' : isReserved ? '#666' : 'rgba(255,255,255,0.3)'}
-                            strokeWidth={isSelected ? 2.5 : isPrereqOfSelected ? 2 : 1}
-                            strokeDasharray={isEmpty || isReserved ? '3,2' : 'none'}
-                        />
+                    <g key={tile.id} onClick={() => setSelectedTile(tile)} onMouseDown={(e) => {
+                        e.stopPropagation(); setDraggingId(tile.id);
+                        const pt = e.currentTarget.ownerSVGElement.createSVGPoint();
+                        pt.x = e.clientX; pt.y = e.clientY;
+                        const cursor = pt.matrixTransform(e.currentTarget.ownerSVGElement.getScreenCTM().inverse());
+                        const { x: tx, y: ty } = hexToPixel(tile.q, tile.r);
+                        setDragOffset({ x: cursor.x - tx, y: cursor.y - ty });
+                    }}>
+                        <path d={`M${[0,1,2,3,4,5].map(i => {
+                            const a = (Math.PI/6)+(i*Math.PI/3);
+                            return `${x+(hexSize*0.88)*Math.cos(a)},${y+(hexSize*0.88)*Math.sin(a)}`;
+                        }).join('L')}Z`} 
+                        fill={SECTION_COLORS[tile.section]} fillOpacity={opacity}
+                        stroke={isDragging ? '#00e5ff' : isSelected ? '#fff' : 'rgba(255,255,255,0.2)'} 
+                        strokeWidth={isSelected ? 2 : 1} strokeDasharray={isEmpty || tile.isReserved ? '3,2' : 'none'} />
                         {!isEmpty && (
-                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6"
-                                fontWeight={isReserved ? 'normal' : 'bold'} fontStyle={isReserved ? 'italic' : 'normal'} opacity={isReserved ? 0.6 : opacity}>
-                                {isReserved ? '?' : tile.id.replace(/^[a-z]+-/, '')}
-                            </text>
-                        )}
-                        {isEmpty && (
-                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="#555" fontSize="5">
-                                {tile.q},{tile.r}
+                            <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="6" fontWeight="bold" opacity={tile.isReserved ? 0.5 : opacity}>
+                                {tile.isReserved ? '?' : tile.id.split('-').pop()}
                             </text>
                         )}
                     </g>
                 );
             };
-            
-            if (loading) {
-                return <div className="container"><div className="loading">Loading curriculum.json...</div></div>;
-            }
-            
-            if (error) {
-                return (
-                    <div className="container">
-                        <div className="error">
-                            Failed to load curriculum data
-                            <code>{error}</code>
-                            <p style={{ marginTop: '16px', fontSize: '0.8rem', color: '#9ca3af' }}>
-                                Make sure this file is in your project's /tools/ or /map/ folder,<br/>
-                                and curriculum.json is in /data/ folder.
-                            </p>
-                        </div>
-                    </div>
-                );
-            }
-            
-            const realTiles = activeTiles.filter(t => !t.isReserved);
-            const reservedTiles = activeTiles.filter(t => t.isReserved);
-            
+
+            if (loading) return <div className="loading">Initializing Editor...</div>;
+
             return (
                 <div className="container">
-                    <h1>MATH-CS COMPASS - Map Layout Editor</h1>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h1>MATH-CS COMPASS - Map Layout Editor</h1>
+                        <div className="stats">92 Active Tiles | Drag to move, Shift-drag to swap</div>
+                    </div>
                     
                     <div className="controls">
-                        <label>
-                            <input type="checkbox" checked={showEmptySlots} onChange={(e) => setShowEmptySlots(e.target.checked)} />
-                            Empty slots
-                        </label>
-                        <label>
-                            <input type="checkbox" checked={showReserved} onChange={(e) => setShowReserved(e.target.checked)} />
-                            Reserved
-                        </label>
+                        <label><input type="checkbox" checked={showEmptySlots} onChange={e => setShowEmptySlots(e.target.checked)} /> Show Grid</label>
+                        <label><input type="checkbox" checked={showReserved} onChange={e => setShowReserved(e.target.checked)} /> Show Reserved</label>
                         <div className="filter-group">
-                            <span className="filter-label">Filter:</span>
                             <button className={`filter-btn ${!highlightSection ? 'active' : ''}`} onClick={() => setHighlightSection(null)}>All</button>
-                            {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key]) => (
-                                <button key={key} className={`filter-btn ${highlightSection === key ? 'active' : ''}`}
-                                    style={{ backgroundColor: highlightSection === key ? SECTION_COLORS[key] : undefined }}
-                                    onClick={() => setHighlightSection(key === highlightSection ? null : key)}>
-                                    {key}
-                                </button>
+                            {['I','II','III','IV','V'].map(k => (
+                                <button key={k} className={`filter-btn ${highlightSection === k ? 'active' : ''}`} style={{ background: highlightSection === k ? SECTION_COLORS[k] : ''}} onClick={() => setHighlightSection(k === highlightSection ? null : k)}>{k}</button>
                             ))}
                         </div>
                     </div>
-                    
-                    <div className="legend">
-                        {Object.entries(SECTION_NAMES).map(([key, name]) => (
-                            <div key={key} className="legend-item">
-                                <div className="legend-color" style={{ backgroundColor: SECTION_COLORS[key] }}></div>
-                                <span>{key}: {name}</span>
-                            </div>
-                        ))}
-                    </div>
-                    
+
                     <div className="main-content">
                         <div className="map-container">
-                            <svg
-                                viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-                                onMouseMove={(e) => {
+                            <svg viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+                                onMouseMove={e => {
                                     if (!draggingId) return;
-
                                     const pt = e.currentTarget.createSVGPoint();
-                                    pt.x = e.clientX;
-                                    pt.y = e.clientY;
+                                    pt.x = e.clientX; pt.y = e.clientY;
                                     const cursor = pt.matrixTransform(e.currentTarget.getScreenCTM().inverse());
-
-                                    const hex = pixelToHex(
-                                        cursor.x - dragOffset.x,
-                                        cursor.y - dragOffset.y
-                                    );
-
-                                    setDragHex(hex);   // only preview
+                                    setDragHex(pixelToHex(cursor.x - dragOffset.x, cursor.y - dragOffset.y));
                                 }}
-
                                 onMouseUp={() => {
-                                    if (!draggingId || !dragHex) {
-                                        setDraggingId(null);
-                                        return;
-                                    }
-
-                                    setTiles(prev => {
-                                        const source = prev.find(t => t.id === draggingId);
-                                        const target = prev.find(t => t.q === dragHex.q && t.r === dragHex.r && t.id !== draggingId);
-
-                                        return prev.map(t => {
-                                            if (t.id === draggingId) return { ...t, q: dragHex.q, r: dragHex.r };
-                                            if (target && t.id === target.id) return { ...t, q: source.q, r: source.r };
-                                            return t;
+                                    if (draggingId && dragHex) {
+                                        setTiles(prev => {
+                                            const source = prev.find(t => t.id === draggingId);
+                                            const target = prev.find(t => t.q === dragHex.q && t.r === dragHex.r && t.id !== draggingId);
+                                            return prev.map(t => {
+                                                if (t.id === draggingId) return { ...t, q: dragHex.q, r: dragHex.r };
+                                                if (target) return { ...t, q: source.q, r: source.r }; // Swap logic
+                                                return t;
+                                            });
                                         });
-                                    });
-
-                                    setDraggingId(null);
-                                    setDragHex(null);
-                                }}
-                                onMouseLeave={() => {
-                                    setDraggingId(null);
-                                    setDragHex(null);
-                                }}
-                            >
-
-                                <defs>
-                                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a1a1a" strokeWidth="0.5"/>
-                                    </pattern>
-                                </defs>
-                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
-                                {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
-                                {activeTiles.map(tile => renderTile(tile, false))}
+                                    }
+                                    setDraggingId(null); setDragHex(null);
+                                }}>
+                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="#030712" />
+                                {showEmptySlots && emptySlots.map(t => renderTile(t, true))}
+                                {activeTiles.map(t => renderTile(t, false))}
                             </svg>
                         </div>
-                        
+
                         <div className="info-panel">
-                            {selectedTile ? (
-                                <div className="info-box">
-                                    <h3>
-                                        {selectedTile.section === 'EMPTY' ? '📍 Empty Slot' : selectedTile.isReserved ? '🔮 Reserved' : '📄 ' + selectedTile.id}
-                                    </h3>
-                                    {selectedTile.section !== 'EMPTY' && (
-                                        <p style={{ fontSize: '1rem', fontWeight: 'bold', margin: '8px 0', color: SECTION_COLORS[selectedTile.section] }}>
-                                            {selectedTile.title}
-                                        </p>
-                                    )}
-                                    <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
-                                    {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
-                                    {selectedTile.topicGroup && (
-                                        <p><span className="label">Topic Group:</span> <span style={{ color: '#60a5fa' }}>{TOPIC_GROUP_NAMES[selectedTile.topicGroup] || selectedTile.topicGroup}</span></p>
-                                    )}
-                                    {selectedTile.url && (
-                                        <p>
-                                            <span className="label">URL:</span>
-                                            <a className="url-link" href={selectedTile.url} target="_blank" rel="noopener noreferrer">
-                                                {selectedTile.url}
-                                            </a>
-                                        </p>
-                                    )}
-                                    {selectedTile.prereqs && selectedTile.prereqs.length > 0 && (
-                                        <p><span className="label">Prereqs:</span> <span style={{ color: '#facc15' }}>{selectedTile.prereqs.join(', ')}</span></p>
-                                    )}
-                                    {selectedTile.borderingSection && <p><span className="label">Borders:</span> {selectedTile.borderingSection.join(', ') || 'None'}</p>}
-                                    {selectedTile.section === 'EMPTY' && <p className="available">✓ Available for new tile</p>}
-                                    {selectedTile.isReserved && <p className="reserved">⏳ Placeholder for future content</p>}
-                                </div>
-                            ) : (
-                                <div className="info-box" style={{ color: '#9ca3af' }}>Click a tile to see details</div>
-                            )}
-                            
-                            <div className="stats">
-                                <p>Active: {realTiles.length} | Reserved: {reservedTiles.length} | Empty: {emptySlots.length}</p>
+                            <div className="info-box">
+                                <h3>Selection Details</h3>
+                                {selectedTile ? (
+                                    <>
+                                        <p style={{ color: SECTION_COLORS[selectedTile.section], fontWeight: 'bold' }}>{selectedTile.title}</p>
+                                        <p><span className="label">ID:</span> {selectedTile.id}</p>
+                                        <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
+                                        <p><span className="label">Group:</span> {topicGroupNames[selectedTile.topicGroup] || 'None'}</p>
+                                    </>
+                                ) : <p style={{ color: '#6b7280' }}>Click a tile to view properties</p>}
                             </div>
-                            
-                            <div className="info-box" style={{ marginTop: '12px' }}>
-                                <h3 style={{ marginBottom: '8px' }}>By Section:</h3>
-                                {Object.entries(SECTION_SHORT_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => {
-                                    const count = realTiles.filter(t => t.section === key).length;
-                                    const reserved = reservedTiles.filter(t => t.section === key).length;
-                                    return (
-                                        <div key={key} className="section-stats">
-                                            <span style={{ color: SECTION_COLORS[key] }}>{name}:</span>
-                                            <span>{count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}</span>
-                                        </div>
-                                    );
-                                })}
+
+                            <div className="info-box">
+                                <h3>Counts by Section</h3>
+                                {['I','II','III','IV','V'].map(k => (
+                                    <div key={k} className="section-stats">
+                                        <span style={{ color: SECTION_COLORS[k] }}>{SECTION_SHORT_NAMES[k]}:</span>
+                                        <span>{tiles.filter(t => t.section === k && !t.isReserved).length} <small className="count-reserved">({tiles.filter(t => t.section === k && t.isReserved).length})</small></span>
+                                    </div>
+                                ))}
                             </div>
-                            
-                            <div className="info-box" style={{ marginTop: '12px', fontSize: '0.7rem', color: '#6b7280' }}>
-                                <p><strong>Tips:</strong></p>
-                                <p>• Data loads from curriculum.json</p>
-                                <p>• Swap tiles by swapping their mapCoords</p>
-                                <p>• Change section when moving to different region</p>
-                                <p>• Empty slots auto-expand at edges</p>
+
+                            <div className="export-section">
+                                <button className="export-btn" onClick={downloadUpdatedJson}>
+                                    💾 Download curriculum.json
+                                </button>
+                                <p style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '8px', textAlign: 'center' }}>
+                                    Organize your map, download this file, and replace the one in your <code>data/</code> folder.
+                                </p>
                             </div>
                         </div>
                     </div>
