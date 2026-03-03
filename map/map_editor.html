@@ -236,39 +236,47 @@
             // --- Undo/Redo Logic ---
             // Function to save the current state to history
             const saveHistory = useCallback((newTiles) => {
-                const newHistory = history.slice(0, historyIndex + 1);
-                newHistory.push(newTiles.map(({ q, r, id }) => ({ q, r, id })));
-                setHistory(newHistory);
-                setHistoryIndex(newHistory.length - 1);
-            }, [history, historyIndex]);
+                setHistory(prevHistory => {
+                    const trimmed = prevHistory.slice(0, historyIndex + 1);
+                    trimmed.push(newTiles.map(({ q, r, id }) => ({ q, r, id })));
+                    return trimmed;
+                });
+                setHistoryIndex(prev => prev + 1);
+            }, [historyIndex]);
 
             // Undo function
-            const undo = useCallback(() => {
-                if (historyIndex > 0) {
-                    const newIndex = historyIndex - 1;
-                    setTiles(currentTiles => 
-                        currentTiles.map(tile => {
-                            const historyTile = history[newIndex].find(ht => ht.id === tile.id);
-                            return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
-                        })
-                    );
-                    setHistoryIndex(newIndex);
-                }
-            }, [history, historyIndex]);
+           const undo = useCallback(() => {
+                setHistory(prevHistory => {
+                    if (historyIndex > 0) {
+                        const newIndex = historyIndex - 1;
+                        setTiles(currentTiles => 
+                            currentTiles.map(tile => {
+                                const historyTile = prevHistory[newIndex].find(ht => ht.id === tile.id);
+                                return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
+                            })
+                        );
+                        setHistoryIndex(newIndex);
+                    }
+                    return prevHistory;
+                });
+            }, [historyIndex]);
 
             // Redo function
             const redo = useCallback(() => {
-                if (historyIndex < history.length - 1) {
-                    const newIndex = historyIndex + 1;
-                    setTiles(currentTiles => 
-                        currentTiles.map(tile => {
-                            const historyTile = history[newIndex].find(ht => ht.id === tile.id);
-                            return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
-                        })
-                    );
-                    setHistoryIndex(newIndex);
-                }
-            }, [history, historyIndex]);
+                setHistory(prevHistory => {
+                    if (historyIndex < prevHistory.length - 1) {
+                        const newIndex = historyIndex + 1;
+                        setTiles(currentTiles => 
+                            currentTiles.map(tile => {
+                                const historyTile = prevHistory[newIndex].find(ht => ht.id === tile.id);
+                                return historyTile ? { ...tile, q: historyTile.q, r: historyTile.r } : tile;
+                            })
+                        );
+                        setHistoryIndex(newIndex);
+                    }
+                    return prevHistory;
+                });
+            }, [historyIndex]);
 
             // ---  Multi-Select Logic ---
             const handleTileClick = (e, tile) => {
