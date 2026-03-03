@@ -220,7 +220,7 @@
             const [selectedTile, setSelectedTile] = useState(null);
             const [showEmptySlots, setShowEmptySlots] = useState(true);
             const [showReserved, setShowReserved] = useState(true);
-            const [highlightSection, setHighlightSection] = useState(null);
+            const [highlightSections, setHighlightSections] = useState(new Set());
             const [draggingId, setDraggingId] = useState(null);
             const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
             const [dragHex, setDragHex] = useState(null);
@@ -562,8 +562,8 @@
                 let strokeWidth = 1;
 
                 // Section filter highlight
-                if (highlightSection && !isEmpty) {
-                    if (tile.section !== highlightSection) {
+                if (highlightSections.size > 0 && !isEmpty) {
+                    if (!highlightSections.has(tile.section)) {
                         opacity = 0.15;
                     } else {
                         stroke = '#fff'; strokeWidth = 1.5;
@@ -650,11 +650,15 @@
                         </label>
                         <span style={{ color: '#6b7280', fontSize: '0.7rem', marginLeft: '4px' }}>│</span>
                         <span style={{ color: '#9ca3af', fontSize: '0.7rem' }}>Filter:</span>
-                        <button className={`filter-btn ${!highlightSection ? 'active' : ''}`} onClick={() => setHighlightSection(null)} style={{ padding: '2px 8px' }}>All</button>
+                        <button className={`filter-btn ${highlightSections.size === 0 ? 'active' : ''}`} onClick={() => setHighlightSections(new Set())} style={{ padding: '2px 8px' }}>All</button>
                         {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => (
-                            <button key={key} className={`filter-btn ${highlightSection === key ? 'active' : ''}`}
-                                style={{ padding: '2px 8px', backgroundColor: highlightSection === key ? SECTION_COLORS[key] : undefined }}
-                                onClick={() => setHighlightSection(key === highlightSection ? null : key)}
+                            <button key={key} className={`filter-btn ${highlightSections.has(key) ? 'active' : ''}`}
+                                style={{ padding: '2px 8px', backgroundColor: highlightSections.has(key) ? SECTION_COLORS[key] : undefined }}
+                                onClick={() => setHighlightSections(prev => {
+                                    const next = new Set(prev);
+                                    next.has(key) ? next.delete(key) : next.add(key);
+                                    return next;
+                                })}
                                 title={name}>
                                 {key}
                             </button>
