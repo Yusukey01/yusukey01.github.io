@@ -531,6 +531,10 @@
             
             const renderTile = (tile, isEmpty = false) => {
                 const isDragging = dragState?.ids?.includes(tile.id) ?? false;
+                const isSwapTarget = !isDragging && dragState?.moved && dragState?.ids?.length === 1 && (() => {
+                    const src = tiles.find(t => t.id === dragState.ids[0]);
+                    return src && tile.q === src.q + dragState.deltaHex.q && tile.r === src.r + dragState.deltaHex.r;
+                })();
                 const pos = isDragging ? {q: tile.q + dragState.deltaHex.q, r: tile.r + dragState.deltaHex.r} : tile;
                 const {x, y} = hexToPixel(pos.q, pos.r);
                 const color = SECTION_COLORS[tile.section] || '#888';
@@ -560,7 +564,8 @@
                 if (isMultiSelected) { stroke = '#fff'; strokeWidth = 2; }
                 if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
                 if (isDragging) { stroke = '#00e5ff'; }
-
+                if (isSwapTarget) { stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1; }
+                
                 return (
                     <g key={tile.id} 
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
@@ -657,26 +662,49 @@
                                     setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy), moved: true }));
                                 }}
 
-                                onMouseUp={() => {
-                                    if (dragState?.moved && dragState.deltaHex) {
-                                        const { ids, deltaHex } = dragState;
-                                        if (deltaHex.q !== 0 || deltaHex.r !== 0) {
-                                            const idSet = new Set(ids);
-                                            const targetPositions = new Set(ids.map(id => {
-                                                const t = tiles.find(ti => ti.id === id);
-                                                return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
-                                            }));
-                                            const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
+                               onMouseUp={() => {
+                                if (dragState?.moved && dragState.deltaHex) {
+                                    const { ids, deltaHex } = dragState;
+                                    if (deltaHex.q !== 0 || deltaHex.r !== 0) {
+                                        const idSet = new Set(ids);
 
-                                            if (!collision) {
-                                                const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                        // Single tile drag — check for swap target
+                                        if (ids.length === 1) {
+                                            const dragged = tiles.find(t => t.id === ids[0]);
+                                            const targetQ = dragged.q + deltaHex.q;
+                                            const targetR = dragged.r + deltaHex.r;
+                                            const targetTile = tiles.find(t => t.id !== dragged.id && t.q === targetQ && t.r === targetR);
+
+                                            if (targetTile) {
+                                                // Swap positions
+                                                const newTiles = tiles.map(t => {
+                                                    if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r };
+                                                    if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r };
+                                                    return t;
+                                                });
                                                 setTiles(newTiles);
                                                 saveHistory(newTiles);
+                                                setDragState(null);
+                                                return;
                                             }
                                         }
+
+                                        // Multi-tile or no collision — normal move
+                                        const targetPositions = new Set(ids.map(id => {
+                                            const t = tiles.find(ti => ti.id === id);
+                                            return `${t.q + deltaHex.q},${t.r + deltaHex.r}`;
+                                        }));
+                                        const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
+
+                                        if (!collision) {
+                                            const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                            setTiles(newTiles);
+                                            saveHistory(newTiles);
+                                        }
                                     }
-                                    setDragState(null);
-                                }}
+                                }
+                                setDragState(null);
+                            }}
 
                                 onMouseLeave={() => {
                                     setDraggingId(null);
