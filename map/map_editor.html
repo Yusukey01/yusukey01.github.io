@@ -400,8 +400,8 @@
                 URL.revokeObjectURL(url);
             };
             
-            //load dara
-           useEffect(() => {
+            // Load data (once only)
+            useEffect(() => {
                 loadCurriculumData()
                     .then(({ tiles, rawData, topicGroupNames }) => {
                         setTiles(tiles);
@@ -409,7 +409,6 @@
                         setTopicGroupNames(topicGroupNames);
                         setLoading(false);
 
-                        // Initialize history for Undo/Redo
                         const initialHistory = [tiles.map(({ q, r, id }) => ({ q, r, id }))];
                         setHistory(initialHistory);
                         setHistoryIndex(0);
@@ -418,8 +417,10 @@
                         setError(err.message);
                         setLoading(false);
                     });
+            }, []); // Empty — runs once
 
-                // Add keyboard shortcuts for Undo/Redo
+            // Keyboard shortcuts (separate effect)
+            useEffect(() => {
                 const handleKeyDown = (e) => {
                     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
                     const isCtrl = isMac ? e.metaKey : e.ctrlKey;
@@ -436,7 +437,8 @@
                 
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [redo, undo]); // Add dependencies
+            }, [redo, undo]);
+          
 
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
