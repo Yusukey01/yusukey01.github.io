@@ -561,7 +561,7 @@
             50% { transform: translateY(-8px) scale(1.02); }
         }
 
-        .gate-image {
+       .gate-image {
             position: absolute;
             top: 0;
             left: 0;
@@ -569,7 +569,8 @@
             height: 100%;
             object-fit: contain;
             opacity: 0;
-            transition: opacity 0.15s ease-in-out;
+            transition: opacity 0.25s ease-in-out;
+            will-change: opacity;
             filter: drop-shadow(0 0 20px rgba(0, 180, 220, 0.3));
         }
 
@@ -2230,52 +2231,88 @@ async function init() {
 
 /**
  * Play the gate animation sequence: gate_0 -> gate_1 -> gate_2 -> expand
+ * Uses transitionend events to ensure each stage is fully visible.
  */
 function playGateAnimation() {
     return new Promise((resolve) => {
         const overlay = document.getElementById('gate-overlay');
         const container = document.getElementById('gate-container');
         const glow = document.getElementById('gate-glow');
-        const gate0 = document.getElementById('gate-0');
-        const gate1 = document.getElementById('gate-1');
-        const gate2 = document.getElementById('gate-2');
-        
-        // Timeline (adjusted for reliable visibility):
-        // 0ms: gate_0 visible (already active)
-        // 400ms: transition to gate_1 (gate_0 visible for 400ms)
-        // 800ms: transition to gate_2 (gate_1 visible for 400ms)
-        // 1100ms: expand animation starts
-        // 1500ms: fade out overlay
-        // 1700ms: complete
-        
-        // Transition to gate_1
-        setTimeout(() => {
-            gate0.classList.remove('active');
-            gate1.classList.add('active');
-        }, 400);
-        
-        // Transition to gate_2
-        setTimeout(() => {
-            gate1.classList.remove('active');
-            gate2.classList.add('active');
-        }, 800);
-        
-        // Start expand animation
-        setTimeout(() => {
+        const gates = [
+            document.getElementById('gate-0'),
+            document.getElementById('gate-1'),
+            document.getElementById('gate-2')
+        ];
+
+        // Minimum display time per gate (ms) — guarantees visibility even if
+        // transitionend fires instantly (e.g. image was already cached).
+        const MIN_HOLD = 350;
+
+        /**
+         * Wait for a gate image to fully fade in, respecting a minimum hold time.
+         * Returns a promise that resolves once BOTH the CSS transition has ended
+         * AND the minimum hold period has elapsed.
+         */
+        function showGate(gate) {
+            return new Promise((res) => {
+                let transitionDone = false;
+                let holdDone = false;
+                const done = () => { if (transitionDone && holdDone) res(); };
+
+                // Listen for the opacity transition completing
+                const onEnd = (e) => {
+                    if (e.propertyName === 'opacity') {
+                        gate.removeEventListener('transitionend', onEnd);
+                        transitionDone = true;
+                        done();
+                    }
+                };
+                gate.addEventListener('transitionend', onEnd);
+
+                // Safety: if transitionend never fires (e.g. opacity was already 1,
+                // or the element is display:none), resolve after a generous timeout.
+                setTimeout(() => { transitionDone = true; done(); }, 600);
+
+                // Minimum hold timer
+                setTimeout(() => { holdDone = true; done(); }, MIN_HOLD);
+
+                gate.classList.add('active');
+            });
+        }
+
+        // Preload gate images before starting the sequence
+        const images = Array.from(document.querySelectorAll('.gate-image'));
+        const preloadPromises = images.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise((res) => {
+                img.onload = res;
+                img.onerror = res; // don't block on broken images
+            });
+        });
+
+        Promise.all(preloadPromises).then(async () => {
+            // gate_0 is already .active — hold it for MIN_HOLD
+            await new Promise((r) => setTimeout(r, MIN_HOLD));
+
+            // gate_0 -> gate_1
+            gates[0].classList.remove('active');
+            await showGate(gates[1]);
+
+            // gate_1 -> gate_2
+            gates[1].classList.remove('active');
+            await showGate(gates[2]);
+
+            // Expand + fade out
             container.classList.add('expanding');
             glow.classList.add('expanding');
-        }, 1100);
-        
-        // Fade out overlay
-        setTimeout(() => {
+
+            await new Promise((r) => setTimeout(r, 300));
             overlay.classList.add('fade-out');
-        }, 1400);
-        
-        // Complete - hide overlay entirely
-        setTimeout(() => {
+
+            await new Promise((r) => setTimeout(r, 400));
             overlay.classList.add('hidden');
             resolve();
-        }, 1800);
+        });
     });
 }
 
