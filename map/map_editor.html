@@ -467,21 +467,21 @@
                     occupiedCoords.add('0,0');
                 }
 
-                // Helper to score a candidate hex for a specific tile
+               // Helper to score a candidate hex for a specific tile
                 const scoreCandidate = (q, r, tile) => {
                     let score = 0;
-                    const distFromCenter = hexDistance(0, 0, q, r);
                     
-                    // A. Sector Alignment (Gentle Guidance)
-                    // Return to gentle guidance, not too strict, to allow natural spreading.
+                    // A. Strict Sector Alignment (Absolute Territory)
                     const targetAngle = SECTION_TARGET_ANGLES[tile.section];
                     if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
                         const angle = getHexAngle(q, r);
                         const angDiff = angleDifference(angle, targetAngle);
-                        score += (Math.PI - angDiff) * 10; 
+                        // Massive penalty for deviating from the assigned section slice
+                        score -= angDiff * 150; 
                     }
 
-                    // B. Depth Tracking
+                    // B. Distance from center based on Depth
+                    const distFromCenter = hexDistance(0, 0, q, r);
                     const targetDepth = depthMap.get(tile.id) || 1;
                     score -= Math.abs(distFromCenter - targetDepth) * 5;
 
@@ -493,20 +493,16 @@
                                 const dist = hexDistance(q, r, pTile.q, pTile.r);
                                 
                                 if (pTile.section === tile.section) {
-                                    // Strong attraction to parents within the same section.
-                                    if (dist === 1) score += 50;
+                                    // Strong attraction to parents within the SAME section
+                                    if (dist === 1) score += 80;
                                     else score -= dist * 10;
                                 } else {
-                                    // Weak attraction to parents in different sections 
-                                    // (prevents invading other territories).
-                                    if (dist === 1) score += 10;
-                                    else score -= dist * 2;
+                                    // Weak attraction to parents in DIFFERENT sections
+                                    // We want them to flow generally from the parent, but NOT invade their territory
+                                    score -= dist * 2;
                                 }
                             }
                         });
-                    } else if (tile.section !== 'HOME' && !tile.isReserved) {
-                        // Root tiles (no prereqs) prefer to sit next to HOME.
-                        if (distFromCenter === 1) score += 40;
                     }
 
                     // D. Topic Group Cohesion
@@ -514,12 +510,12 @@
                         const sameGroupTiles = placedTiles.filter(t => t.topicGroup === tile.topicGroup);
                         sameGroupTiles.forEach(pTile => {
                             const dist = hexDistance(q, r, pTile.q, pTile.r);
-                            if (dist === 1) score += 30;
-                            else if (dist === 2) score += 5;
+                            if (dist === 1) score += 40;
+                            else if (dist === 2) score += 10;
                         });
                     }
                     
-                    // E. Soft Separation (Create buffer zones)
+                    // E. Hard Separation between different sections (Create buffer zones)
                     let touchingOtherSection = false;
                     const neighbors = getHexNeighbors(q, r);
                     neighbors.forEach(n => {
@@ -527,20 +523,20 @@
                         const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
                         if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
                             touchingOtherSection = true;
+                            // Extreme penalty for touching a different section's tile
+                            score -= 200; 
                         }
                     });
-
-                    // Fix for isolated HOME: allow mixing at distance 1.
-                    if (touchingOtherSection) {
-                        if (distFromCenter > 1) {
-                            // Apply penalty at distance > 1 to create gaps between sections.
-                            score -= 30; 
-                        }
+                    
+                    // If it touches another section AND is far from HOME, punish it even more
+                    // to force clear borders in the outer edges.
+                    if (touchingOtherSection && distFromCenter > 2) {
+                         score -= 300;
                     }
 
                     return score;
                 };
-
+                
                 // Place each tile
                 for (const tile of sortedTiles) {
                     let bestHex = null;
