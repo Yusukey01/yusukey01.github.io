@@ -255,6 +255,7 @@
             const [dragState, setDragState] = useState(null); // For dragging tiles
 
             const [addReservedTarget, setAddReservedTarget] = useState(null);
+            const [selectionBox, setSelectionBox] = useState(null);
 
             const hexSize = 28;
 
@@ -536,7 +537,7 @@
 
                     return score;
                 };
-                
+
                 // Place each tile
                 for (const tile of sortedTiles) {
                     let bestHex = null;
@@ -905,21 +906,88 @@
                         <div className="map-container">
                             <svg
                                 viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-                                onMouseMove={(e) => {
-                                    if (!dragState) return;
-                                    const dx_screen = e.clientX - dragState.startPos.x;
-                                    const dy_screen = e.clientY - dragState.startPos.y;
-                                    if (!dragState.moved && Math.hypot(dx_screen, dy_screen) < 3) return;
+                                onMouseDown={(e) => {
+                                    // Start Box Selection if clicked on the SVG background
                                     const svg = e.currentTarget;
                                     const rect = svg.getBoundingClientRect();
                                     const scaleX = viewBox.width / rect.width;
                                     const scaleY = viewBox.height / rect.height;
+                                    const x = (e.clientX - rect.left) * scaleX + viewBox.x;
+                                    const y = (e.clientY - rect.top) * scaleY + viewBox.y;
+
+                                    setSelectionBox({
+                                        startX: x,
+                                        startY: y,
+                                        currentX: x,
+                                        currentY: y,
+                                        isCtrl: e.shiftKey || e.ctrlKey || e.metaKey
+                                    });
+                                }}
+                                onMouseMove={(e) => {
+                                    const svg = e.currentTarget;
+                                    const rect = svg.getBoundingClientRect();
+                                    const scaleX = viewBox.width / rect.width;
+                                    const scaleY = viewBox.height / rect.height;
+
+                                    // Handle Box Selection
+                                    if (selectionBox) {
+                                        const x = (e.clientX - rect.left) * scaleX + viewBox.x;
+                                        const y = (e.clientY - rect.top) * scaleY + viewBox.y;
+                                        setSelectionBox(prev => ({ ...prev, currentX: x, currentY: y }));
+                                        return;
+                                    }
+
+                                    // Handle Tile Dragging
+                                    if (!dragState) return;
+                                    const dx_screen = e.clientX - dragState.startPos.x;
+                                    const dy_screen = e.clientY - dragState.startPos.y;
+                                    if (!dragState.moved && Math.hypot(dx_screen, dy_screen) < 3) return;
+                                    
                                     const dx = dx_screen * scaleX;
                                     const dy = dy_screen * scaleY;
                                     setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy), moved: true }));
                                 }}
+                                onMouseUp={() => {
+                                    // Finish Box Selection
+                                    if (selectionBox) {
+                                        const minX = Math.min(selectionBox.startX, selectionBox.currentX);
+                                        const maxX = Math.max(selectionBox.startX, selectionBox.currentX);
+                                        const minY = Math.min(selectionBox.startY, selectionBox.currentY);
+                                        const maxY = Math.max(selectionBox.startY, selectionBox.currentY);
 
-                               onMouseUp={() => {
+                                        // Find all active tiles inside the selection box
+                                        const selectedInBox = [];
+                                        activeTiles.forEach(tile => {
+                                            const {x, y} = hexToPixel(tile.q, tile.r);
+                                            if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+                                                selectedInBox.push(tile.id);
+                                            }
+                                        });
+
+                                        if (selectionBox.isCtrl) {
+                                            // Toggle selection for multi-select
+                                            setSelectedIds(prev => {
+                                                const newSet = new Set(prev);
+                                                selectedInBox.forEach(id => {
+                                                    if (newSet.has(id)) newSet.delete(id);
+                                                    else newSet.add(id);
+                                                });
+                                                return Array.from(newSet);
+                                            });
+                                        } else {
+                                            // New selection
+                                            setSelectedIds(selectedInBox);
+                                            if (selectedInBox.length === 1) {
+                                                setSelectedTile(tiles.find(t => t.id === selectedInBox[0]));
+                                            } else {
+                                                setSelectedTile(null);
+                                            }
+                                        }
+                                        setSelectionBox(null);
+                                        return;
+                                    }
+
+                                    // Finish Tile Dragging
                                     if (dragState?.moved && dragState.deltaHex) {
                                         const { ids, deltaHex } = dragState;
                                         if (deltaHex.q !== 0 || deltaHex.r !== 0) {
@@ -933,7 +1001,6 @@
                                                 const targetTile = tiles.find(t => t.id !== dragged.id && t.q === targetQ && t.r === targetR);
 
                                                 if (targetTile) {
-                                                    // Swap positions
                                                     const newTiles = tiles.map(t => {
                                                         if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r };
                                                         if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r };
@@ -962,15 +1029,29 @@
                                     }
                                     setDragState(null);
                                 }}
-
                                 onMouseLeave={() => {
                                     setDraggingId(null);
                                     setDragHex(null);
+                                    setSelectionBox(null); // Cancel box selection if mouse leaves SVG
                                 }}
                             >
                                 <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
                                 {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
                                 {activeTiles.map(tile => renderTile(tile, false))}
+                                {/* Render the Selection Box */}
+                                {selectionBox && (
+                                    <rect 
+                                        x={Math.min(selectionBox.startX, selectionBox.currentX)}
+                                        y={Math.min(selectionBox.startY, selectionBox.currentY)}
+                                        width={Math.abs(selectionBox.currentX - selectionBox.startX)}
+                                        height={Math.abs(selectionBox.currentY - selectionBox.startY)}
+                                        fill="rgba(139, 92, 246, 0.15)"
+                                        stroke="#8b5cf6"
+                                        strokeWidth={1.5 * (viewBox.width / 800)} // Scale line width based on zoom
+                                        strokeDasharray="4,4"
+                                        pointerEvents="none" // Prevent the box from blocking mouse events
+                                    />
+                                )}
                             </svg>
                         </div>
                         
