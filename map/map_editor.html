@@ -403,6 +403,7 @@
                             if (part) {
                                 part.mapCoords = { q: tile.q, r: tile.r };
                                 part.topicGroup = tile.topicGroup || null;
+                                part.prereqs = tile.prereqs || [];
                             }
                         }
                     }
@@ -843,6 +844,63 @@
                                                     }
                                                 }}
                                             />
+                                        </div>
+                                    )}
+                                    {!selectedTile.isReserved && selectedTile.section !== 'EMPTY' && (
+                                        <div style={{ marginTop: '8px' }}>
+                                            <span className="label">Prereqs:</span>
+                                            {(selectedTile.prereqs && selectedTile.prereqs.length > 0) ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                                                    {selectedTile.prereqs.map(pId => {
+                                                        const pTile = tiles.find(t => t.id === pId);
+                                                        return (
+                                                            <div key={pId} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#374151', borderRadius: '4px', padding: '3px 6px' }}>
+                                                                <span style={{ flex: 1, fontSize: '0.65rem', color: pTile ? SECTION_COLORS[pTile.section] : '#9ca3af' }}>
+                                                                    {pId}{pTile ? ` — ${pTile.title}` : ' (not found)'}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newPrereqs = selectedTile.prereqs.filter(id => id !== pId);
+                                                                        const newTiles = tiles.map(t => t.id === selectedTile.id ? { ...t, prereqs: newPrereqs } : t);
+                                                                        setTiles(newTiles);
+                                                                        setSelectedTile(prev => ({ ...prev, prereqs: newPrereqs }));
+                                                                    }}
+                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: '0 2px' }}
+                                                                >✕</button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <p style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '2px' }}>None</p>
+                                            )}
+                                            <div style={{ marginTop: '4px' }}>
+                                                <select
+                                                    value=""
+                                                    onChange={(e) => {
+                                                        if (!e.target.value) return;
+                                                        const newId = e.target.value;
+                                                        if (selectedTile.prereqs?.includes(newId)) return;
+                                                        const newPrereqs = [...(selectedTile.prereqs || []), newId];
+                                                        const newTiles = tiles.map(t => t.id === selectedTile.id ? { ...t, prereqs: newPrereqs } : t);
+                                                        setTiles(newTiles);
+                                                        setSelectedTile(prev => ({ ...prev, prereqs: newPrereqs }));
+                                                    }}
+                                                    style={{ width: '100%', background: '#374151', color: '#fff', border: '1px solid #4b5563', borderRadius: '4px', padding: '4px 6px', fontSize: '0.65rem' }}
+                                                >
+                                                    <option value="">+ Add prereq...</option>
+                                                    {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME' && k !== 'EMPTY').map(([secKey, secName]) => (
+                                                        <optgroup key={secKey} label={`${secKey}: ${secName}`}>
+                                                            {tiles
+                                                                .filter(t => t.section === secKey && !t.isReserved && t.id !== selectedTile.id && !(selectedTile.prereqs || []).includes(t.id))
+                                                                .map(t => (
+                                                                    <option key={t.id} value={t.id}>{t.id} — {t.title}</option>
+                                                                ))
+                                                            }
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </div>
                                     )}
                                     {selectedTile.isReserved && (
