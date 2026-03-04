@@ -478,18 +478,20 @@
                         const angle = getHexAngle(q, r);
                         const angDiff = angleDifference(angle, targetAngle);
                         
-                        let anglePenalty = angDiff * 150;
-                        if (distFromCenter === 1) anglePenalty *= 0.1; 
-                        else if (distFromCenter === 2) anglePenalty *= 0.5; 
+                        // Angle penalty. Never weaken this, even near the center.
+                        score -= angDiff * 150;
                         
-                        score -= anglePenalty; 
+                        // Bonus for being perfectly aligned with the target angle
+                        if (angDiff < 0.5) {
+                            score += 50;
+                        }
                     }
 
                     // B. Distance from center based on Depth
                     const targetDepth = depthMap.get(tile.id) || 1;
-                    score -= Math.abs(distFromCenter - targetDepth) * 5;
+                    score -= Math.abs(distFromCenter - targetDepth) * 15;
 
-                    // C. Prereq Proximity (Smart Gravity)
+                    // C. Prereq Proximity & Root Placement
                     if (tile.prereqs && tile.prereqs.length > 0) {
                         tile.prereqs.forEach(pId => {
                             const pTile = placedTiles.find(t => t.id === pId);
@@ -497,16 +499,22 @@
                                 const dist = hexDistance(q, r, pTile.q, pTile.r);
                                 
                                 if (pTile.section === tile.section) {
-                                    if (dist === 1) score += 80;
-                                    else score -= dist * 10;
+                                    // Huge reward for being adjacent to a parent in the SAME section (build chains)
+                                    if (dist === 1) score += 100;
+                                    else score -= dist * 20;
                                 } else {
-                                    score -= dist * 2;
+                                    // Parent is in a DIFFERENT section. They depend on it, but don't need to be physically close.
+                                    // Prioritize staying in their own territory.
+                                    score -= dist * 1; 
                                 }
                             }
                         });
-                    } else if (tile.section !== 'HOME') {
-                         // close to home
-                         if (distFromCenter === 1) score += 50;
+                    } else if (tile.section !== 'HOME' && !tile.isReserved) {
+                        // This is a root tile for its section (no prerequisites)
+                        if (distFromCenter === 1) {
+                            // Force it to sit directly adjacent to HOME (distance 1)
+                            score += 300; 
+                        }
                     }
 
                     // D. Topic Group Cohesion
@@ -515,30 +523,31 @@
                         sameGroupTiles.forEach(pTile => {
                             const dist = hexDistance(q, r, pTile.q, pTile.r);
                             if (dist === 1) score += 40;
-                            else if (dist === 2) score += 10;
                         });
                     }
                     
                     // E. Hard Separation between different sections (Create buffer zones)
-                    let touchingOtherSection = false;
+                    let foreignNeighbors = 0;
                     const neighbors = getHexNeighbors(q, r);
                     neighbors.forEach(n => {
                         const nKey = `${n.q},${n.r}`;
                         const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
                         if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
-                            touchingOtherSection = true;
-                            
-                            if (distFromCenter <= 2) {
-                                score -= 10; //around Home
-                            } else {
-                                score -= 200; //outer
-                            }
+                            foreignNeighbors++;
                         }
                     });
 
+                    if (foreignNeighbors > 0) {
+                        // It's physically unavoidable for tiles at distance 1 to touch other sections around HOME.
+                        // However, if they touch foreign sections at distance > 1 (outer rings), apply a massive penalty.
+                        if (distFromCenter > 1) {
+                            score -= 200 * foreignNeighbors;
+                        }
+                    }
+
                     return score;
                 };
-
+                
                 // Place each tile
                 for (const tile of sortedTiles) {
                     let bestHex = null;
