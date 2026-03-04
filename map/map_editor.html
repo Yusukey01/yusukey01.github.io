@@ -470,18 +470,22 @@
                 // Helper to score a candidate hex for a specific tile
                 const scoreCandidate = (q, r, tile) => {
                     let score = 0;
+                    const distFromCenter = hexDistance(0, 0, q, r);
                     
                     // A. Strict Sector Alignment (Absolute Territory)
                     const targetAngle = SECTION_TARGET_ANGLES[tile.section];
                     if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
                         const angle = getHexAngle(q, r);
                         const angDiff = angleDifference(angle, targetAngle);
-                        // Massive penalty for deviating from the assigned section slice
-                        score -= angDiff * 150; 
+                        
+                        let anglePenalty = angDiff * 150;
+                        if (distFromCenter === 1) anglePenalty *= 0.1; 
+                        else if (distFromCenter === 2) anglePenalty *= 0.5; 
+                        
+                        score -= anglePenalty; 
                     }
 
                     // B. Distance from center based on Depth
-                    const distFromCenter = hexDistance(0, 0, q, r);
                     const targetDepth = depthMap.get(tile.id) || 1;
                     score -= Math.abs(distFromCenter - targetDepth) * 5;
 
@@ -493,16 +497,16 @@
                                 const dist = hexDistance(q, r, pTile.q, pTile.r);
                                 
                                 if (pTile.section === tile.section) {
-                                    // Strong attraction to parents within the SAME section
                                     if (dist === 1) score += 80;
                                     else score -= dist * 10;
                                 } else {
-                                    // Weak attraction to parents in DIFFERENT sections
-                                    // We want them to flow generally from the parent, but NOT invade their territory
                                     score -= dist * 2;
                                 }
                             }
                         });
+                    } else if (tile.section !== 'HOME') {
+                         // close to home
+                         if (distFromCenter === 1) score += 50;
                     }
 
                     // D. Topic Group Cohesion
@@ -523,16 +527,14 @@
                         const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
                         if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
                             touchingOtherSection = true;
-                            // Extreme penalty for touching a different section's tile
-                            score -= 200; 
+                            
+                            if (distFromCenter <= 2) {
+                                score -= 10; //around Home
+                            } else {
+                                score -= 200; //outer
+                            }
                         }
                     });
-                    
-                    // If it touches another section AND is far from HOME, punish it even more
-                    // to force clear borders in the outer edges.
-                    if (touchingOtherSection && distFromCenter > 2) {
-                         score -= 300;
-                    }
 
                     return score;
                 };
