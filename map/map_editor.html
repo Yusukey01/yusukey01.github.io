@@ -402,6 +402,7 @@
                             const part = section.parts.find(p => p.id === tile.id);
                             if (part) {
                                 part.mapCoords = { q: tile.q, r: tile.r };
+                                part.topicGroup = tile.topicGroup || null;
                             }
                         }
                     }
@@ -805,8 +806,43 @@
                                     )}
                                     <p><span className="label">Coords:</span> q={selectedTile.q}, r={selectedTile.r}</p>
                                     {selectedTile.section !== 'EMPTY' && <p><span className="label">Section:</span> {SECTION_NAMES[selectedTile.section]}</p>}
-                                    {selectedTile.topicGroup && (
-                                        <p><span className="label">Topic Group:</span> <span style={{ color: '#60a5fa' }}>{topicGroupNames[selectedTile.topicGroup] || selectedTile.topicGroup}</span></p>
+                                    {!selectedTile.isReserved && selectedTile.section !== 'EMPTY' && (
+                                        <div style={{ marginTop: '8px' }}>
+                                            <span className="label">Topic Group:</span>
+                                            <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                                                <select
+                                                    value={selectedTile.topicGroup || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value || null;
+                                                        const newTiles = tiles.map(t => t.id === selectedTile.id ? { ...t, topicGroup: val } : t);
+                                                        setTiles(newTiles);
+                                                        setSelectedTile(prev => ({ ...prev, topicGroup: val }));
+                                                    }}
+                                                    style={{ flex: 1, background: '#374151', color: '#fff', border: '1px solid #4b5563', borderRadius: '4px', padding: '4px 6px', fontSize: '0.7rem' }}
+                                                >
+                                                    <option value="">None</option>
+                                                    {Object.entries(topicGroupNames).map(([key, name]) => (
+                                                        <option key={key} value={key}>{name} ({key})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="or type new group-id"
+                                                style={{ width: '100%', marginTop: '4px', background: '#374151', color: '#fff', border: '1px solid #4b5563', borderRadius: '4px', padding: '4px 6px', fontSize: '0.65rem' }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && e.target.value.trim()) {
+                                                        const newGroup = e.target.value.trim().toLowerCase().replace(/\s+/g, '-');
+                                                        const newTiles = tiles.map(t => t.id === selectedTile.id ? { ...t, topicGroup: newGroup } : t);
+                                                        setTiles(newTiles);
+                                                        setSelectedTile(prev => ({ ...prev, topicGroup: newGroup }));
+                                                        const formatGroupName = (id) => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                                        setTopicGroupNames(prev => ({ ...prev, [newGroup]: formatGroupName(newGroup) }));
+                                                        e.target.value = '';
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     )}
                                     {selectedTile.isReserved && (
                                         <button
