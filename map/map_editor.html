@@ -62,6 +62,13 @@
         svg text { user-select: none; pointer-events: none; }
         svg g { cursor: pointer; }
         svg g:hover path { filter: brightness(1.2); }
+        @keyframes prereq-pulse {
+            0%, 100% { stroke-opacity: 1; stroke-width: 2.5; }
+            50% { stroke-opacity: 0.3; stroke-width: 1.5; }
+        }
+        svg g.prereq-glow path {
+            animation: prereq-pulse 1.2s ease-in-out infinite;
+        }
         .loading { text-align: center; padding: 40px; color: #9ca3af; }
         .error { text-align: center; padding: 40px; color: #ef4444; }
         .error code { display: block; margin-top: 12px; font-size: 0.8rem; color: #9ca3af; }
@@ -581,6 +588,13 @@
                     }
                 }
 
+                // Prereq highlight — pulse prereqs of selected tile
+                const isPrereq = !isEmpty && selectedTile && !selectedTile.isReserved
+                    && selectedTile.prereqs?.includes(tile.id);
+                if (isPrereq && !analysisMode) {
+                    stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1;
+                }
+
                 if (analysisMode) {
                     if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
                     else if (isUpstream) { stroke = '#ffeb3b'; strokeWidth = 2; }
@@ -598,7 +612,7 @@
                 if (isSwapTarget) { stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1; }
 
                 return (
-                    <g key={tile.id} 
+                    <g key={tile.id} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
                     onMouseDown={(e) => {
                             e.stopPropagation();
