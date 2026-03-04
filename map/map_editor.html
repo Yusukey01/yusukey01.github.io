@@ -20,15 +20,6 @@
         .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
         .controls label { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; cursor: pointer; }
         .controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-        .filter-group { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
-        .filter-label { font-size: 0.75rem; color: #9ca3af; }
-        .filter-btn { 
-            padding: 4px 8px; font-size: 0.75rem; border: none; border-radius: 4px; 
-            cursor: pointer; transition: all 0.15s;
-        }
-        .filter-btn.active { background: #fff; color: #000; }
-        .filter-btn:not(.active) { background: #374151; color: #fff; opacity: 0.7; }
-        .filter-btn:hover { opacity: 1; }
         .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.75rem; margin-bottom: 12px; }
         .legend-item { display: flex; align-items: center; gap: 4px; }
         .legend-color { width: 12px; height: 12px; border-radius: 3px; }
@@ -666,21 +657,6 @@
                             <input type="checkbox" checked={showReserved} onChange={(e) => setShowReserved(e.target.checked)} />
                             Reserved
                         </label>
-                        <span style={{ color: '#6b7280', fontSize: '0.7rem', marginLeft: '4px' }}>│</span>
-                        <span style={{ color: '#9ca3af', fontSize: '0.7rem' }}>Filter:</span>
-                        <button className={`filter-btn ${highlightSections.size === 0 ? 'active' : ''}`} onClick={() => setHighlightSections(new Set())} style={{ padding: '2px 8px' }}>All</button>
-                        {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => (
-                            <button key={key} className={`filter-btn ${highlightSections.has(key) ? 'active' : ''}`}
-                                style={{ padding: '2px 8px', backgroundColor: highlightSections.has(key) ? SECTION_COLORS[key] : undefined }}
-                                onClick={() => setHighlightSections(prev => {
-                                    const next = new Set(prev);
-                                    next.has(key) ? next.delete(key) : next.add(key);
-                                    return next;
-                                })}
-                                title={name}>
-                                {key}
-                            </button>
-                        ))}
                     </div>
 
                     <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -906,13 +882,32 @@
                             )}
                             
                             <div className="info-box">
-                                <h3 style={{ marginBottom: '8px' }}>By Section:</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                    <h3 style={{ margin: 0 }}>Sections</h3>
+                                    {highlightSections.size > 0 && (
+                                        <button
+                                            onClick={() => setHighlightSections(new Set())}
+                                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '0.65rem' }}
+                                        >Clear filter</button>
+                                    )}
+                                </div>
                                 {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => {
                                     const count = tiles.filter(t => t.section === key && !t.isReserved).length;
                                     const reserved = tiles.filter(t => t.section === key && t.isReserved).length;
+                                    const isActive = highlightSections.has(key);
                                     return (
-                                        <div key={key} className="section-stats">
-                                            <span style={{ color: SECTION_COLORS[key] }}>{name}:</span>
+                                        <div key={key} className="section-stats"
+                                            onClick={() => setHighlightSections(prev => {
+                                                const next = new Set(prev);
+                                                next.has(key) ? next.delete(key) : next.add(key);
+                                                return next;
+                                            })}
+                                            style={{ cursor: 'pointer', padding: '3px 6px', borderRadius: '4px', marginBottom: '2px',
+                                                background: isActive ? `${SECTION_COLORS[key]}22` : 'transparent',
+                                                borderLeft: isActive ? `3px solid ${SECTION_COLORS[key]}` : '3px solid transparent',
+                                                opacity: highlightSections.size > 0 && !isActive ? 0.4 : 1,
+                                                transition: 'all 0.15s' }}>
+                                            <span style={{ color: SECTION_COLORS[key] }}>{key}: {name}</span>
                                             <span>{count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}</span>
                                         </div>
                                     );
