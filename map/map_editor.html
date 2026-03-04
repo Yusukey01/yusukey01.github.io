@@ -89,6 +89,42 @@
             'IV': 'Discrete Mathematics & Algorithms',
             'V': 'Machine Learning'
         };
+
+        // --- AUTO-LAYOUT UTILITIES ---
+        // Define ideal radial angles for each section (SVG y-axis points DOWN)
+        // Top is -π/2, Bottom is π/2, Right is 0, Left is ±π
+        const SECTION_TARGET_ANGLES = {
+            'I': -Math.PI * 0.75,  // Top-Left (-135 deg)
+            'II': -Math.PI * 0.25, // Top-Right (-45 deg)
+            'III': Math.PI * 0.15, // Right-ish (27 deg)
+            'IV': Math.PI * 0.85,  // Left-ish (153 deg)
+            'V': Math.PI * 0.5     // Bottom (90 deg)
+        };
+
+        // Hex grid distance (Manhattan distance on hex grid)
+        const hexDistance = (q1, r1, q2, r2) => {
+            return (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
+        };
+
+        // Get 6 neighbors for a hex
+        const getHexNeighbors = (q, r) => [
+            {q: q+1, r: r}, {q: q-1, r: r}, {q: q, r: r+1},
+            {q: q, r: r-1}, {q: q+1, r: r-1}, {q: q-1, r: r+1}
+        ];
+
+        // Convert hex to pixel just for angle calculations (assumes size 1)
+        const getHexAngle = (q, r) => {
+            const x = Math.sqrt(3) * (q + r / 2);
+            const y = (3 / 2) * r;
+            return Math.atan2(y, x);
+        };
+        
+        // Shortest angular distance between two angles in radians
+        const angleDifference = (a1, a2) => {
+            let diff = Math.abs(a1 - a2) % (2 * Math.PI);
+            return diff > Math.PI ? (2 * Math.PI) - diff : diff;
+        };
+        
         
         /**
          * Load curriculum data from JSON file - same logic as compass.html
@@ -355,6 +391,187 @@
                 const allPrereqs = new Set(tiles.flatMap(t => t.prereqs || []));
                 return new Set(tiles.filter(t => !allPrereqs.has(t.id) && t.section !== 'HOME').map(t => t.id));
             }, [analysisMode, tiles]);
+            
+
+            // --- AUTO-LAYOUT CORE LOGIC ---
+            const performAutoLayout = () => {
+                setLoading(true);
+                
+                // 1. Separate HOME and other tiles
+                const homeTile = tiles.find(t => t.section === 'HOME');
+                const otherTiles = tiles.filter(t => t.section !== 'HOME');
+                
+                // 2. Topological Sort (Calculate Depth)
+                const depthMap = new Map();
+                if (homeTile) depthMap.set(homeTile.id, 0);
+                
+                let remaining = [...otherTiles];
+                let currentDepth = 1;
+                let changed = true;
+                
+                while (remaining.length > 0 && changed) {
+                    changed = false;
+                    const nextBatch = [];
+                    const stillRemaining = [];
+                    
+                    for (const tile of remaining) {
+                        const prereqs = tile.prereqs || [];
+                        // Check if all prereqs have a calculated depth
+                        const allPrereqsResolved = prereqs.every(p => depthMap.has(p));
+                        // Reserved tiles have no prereqs, treat them as leaf nodes of their section
+                        if (tile.isReserved || allPrereqsResolved) {
+                            nextBatch.push(tile);
+                        } else {
+                            stillRemaining.push(tile);
+                        }
+                    }
+                    
+                    for (const tile of nextBatch) {
+                        // Depth is max depth of prereqs + 1. If no prereqs, base it on section or default
+                        let maxPrereqDepth = 0;
+                        if (tile.prereqs && tile.prereqs.length > 0) {
+                            maxPrereqDepth = Math.max(...tile.prereqs.map(p => depthMap.get(p) || 0));
+                        } else if (tile.isReserved) {
+                            // Push reserved tiles slightly outward
+                            maxPrereqDepth = currentDepth + 1; 
+                        }
+                        depthMap.set(tile.id, Math.max(currentDepth, maxPrereqDepth + 1));
+                    }
+                    
+                    if (nextBatch.length > 0) {
+                        changed = true;
+                        currentDepth++;
+                        remaining = stillRemaining;
+                    }
+                }
+                
+                // Assign arbitrary depth to orphans/cycles just to place them
+                remaining.forEach(t => depthMap.set(t.id, currentDepth + 1));
+                
+                // Sort by depth, then by section, then by TopicGroup to cluster them
+                const sortedTiles = [...otherTiles].sort((a, b) => {
+                    const depthDiff = (depthMap.get(a.id) || 0) - (depthMap.get(b.id) || 0);
+                    if (depthDiff !== 0) return depthDiff;
+                    if (a.section !== b.section) return a.section.localeCompare(b.section);
+                    const groupA = a.topicGroup || 'zz';
+                    const groupB = b.topicGroup || 'zz';
+                    return groupA.localeCompare(groupB);
+                });
+
+                // 3. Placement Engine
+                const placedTiles = [];
+                const occupiedCoords = new Set();
+                
+                if (homeTile) {
+                    placedTiles.push({ ...homeTile, q: 0, r: 0 });
+                    occupiedCoords.add('0,0');
+                }
+
+                // Helper to score a candidate hex for a specific tile
+                const scoreCandidate = (q, r, tile) => {
+                    let score = 0;
+                    
+                    // A. Section Sector Alignment
+                    const targetAngle = SECTION_TARGET_ANGLES[tile.section];
+                    if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
+                        const angle = getHexAngle(q, r);
+                        const angDiff = angleDifference(angle, targetAngle);
+                        // Reward being close to target angle
+                        score += (Math.PI - angDiff) * 10; 
+                    }
+
+                    // B. Distance from center based on Depth
+                    const distFromCenter = hexDistance(0, 0, q, r);
+                    const targetDepth = depthMap.get(tile.id) || 1;
+                    // Reward being at roughly the correct distance layer (allow slight overlapping)
+                    score -= Math.abs(distFromCenter - targetDepth) * 5;
+
+                    // C. Prereq Proximity
+                    if (tile.prereqs && tile.prereqs.length > 0) {
+                        tile.prereqs.forEach(pId => {
+                            const pTile = placedTiles.find(t => t.id === pId);
+                            if (pTile) {
+                                const dist = hexDistance(q, r, pTile.q, pTile.r);
+                                if (dist === 1) score += 50; // Ideal: adjacent
+                                else score -= dist * 10;     // Penalty for distance
+                            }
+                        });
+                    }
+
+                    // D. Topic Group Cohesion
+                    if (tile.topicGroup && !tile.isReserved) {
+                        const sameGroupTiles = placedTiles.filter(t => t.topicGroup === tile.topicGroup);
+                        sameGroupTiles.forEach(pTile => {
+                            const dist = hexDistance(q, r, pTile.q, pTile.r);
+                            if (dist === 1) score += 30;
+                            else if (dist === 2) score += 5;
+                        });
+                    }
+                    
+                    // E. Separation between different sections (create buffer)
+                    const neighbors = getHexNeighbors(q, r);
+                    neighbors.forEach(n => {
+                        const nKey = `${n.q},${n.r}`;
+                        const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
+                        if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
+                            score -= 20; // Penalty for touching different sections
+                        }
+                    });
+
+                    return score;
+                };
+
+                // Place each tile
+                for (const tile of sortedTiles) {
+                    let bestHex = null;
+                    let bestScore = -Infinity;
+                    
+                    // Generate candidates: adjacent to any already placed tile
+                    const candidates = new Set();
+                    if (placedTiles.length === 0) {
+                        candidates.add({q:0, r:0});
+                    } else {
+                        placedTiles.forEach(pt => {
+                            getHexNeighbors(pt.q, pt.r).forEach(n => {
+                                if (!occupiedCoords.has(`${n.q},${n.r}`)) {
+                                    candidates.add(`${n.q},${n.r}`);
+                                }
+                            });
+                        });
+                        // Also add some outer ring candidates just in case
+                        placedTiles.forEach(pt => {
+                            getHexNeighbors(pt.q, pt.r).forEach(n1 => {
+                                getHexNeighbors(n1.q, n1.r).forEach(n2 => {
+                                    if (!occupiedCoords.has(`${n2.q},${n2.r}`)) {
+                                        candidates.add(`${n2.q},${n2.r}`);
+                                    }
+                                });
+                            });
+                        });
+                    }
+
+                    // Evaluate candidates
+                    candidates.forEach(candStr => {
+                        const [q, r] = candStr.split(',').map(Number);
+                        const score = scoreCandidate(q, r, tile);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestHex = {q, r};
+                        }
+                    });
+
+                    // Place the tile
+                    if (bestHex) {
+                        placedTiles.push({ ...tile, q: bestHex.q, r: bestHex.r });
+                        occupiedCoords.add(`${bestHex.q},${bestHex.r}`);
+                    }
+                }
+
+                saveHistory(tiles);
+                setTiles(placedTiles);
+                setTimeout(() => setLoading(false), 300); // slight delay to show UI update
+            };
+            
 
             /**
              * Function to export current tile layout to a JSON file
@@ -947,6 +1164,23 @@
                                 <p style={{fontSize: '0.7rem', color: '#6b7280', marginTop: '8px'}}>
                                     Select a tile to see its chain. Keystones/Orphans apply to the whole map.
                                 </p>
+                            </div>
+                            
+                            <div className="info-box">
+                                <h3>Auto Layout</h3>
+                                <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
+                                    Automatically arrange tiles based on prerequisites, sections, and topic groups.
+                                </p>
+                                <button 
+                                    style={{ width: '100%', padding: '8px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                                    onClick={() => {
+                                        if(window.confirm("This will completely rearrange all tiles on the map. You can press Ctrl+Z to undo. Proceed?")) {
+                                            runAutoLayout();
+                                        }
+                                    }}
+                                >
+                                    ✨ Run Auto Layout
+                                </button>
                             </div>
 
                             <div className="info-box" style={{ marginTop: 'auto' }}>
