@@ -472,26 +472,20 @@
                     let score = 0;
                     const distFromCenter = hexDistance(0, 0, q, r);
                     
-                    // A. Strict Sector Alignment (Absolute Territory)
+                    // A. Sector Alignment (Gentle Guidance)
+                    // Return to gentle guidance, not too strict, to allow natural spreading.
                     const targetAngle = SECTION_TARGET_ANGLES[tile.section];
                     if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
                         const angle = getHexAngle(q, r);
                         const angDiff = angleDifference(angle, targetAngle);
-                        
-                        // Angle penalty. Never weaken this, even near the center.
-                        score -= angDiff * 150;
-                        
-                        // Bonus for being perfectly aligned with the target angle
-                        if (angDiff < 0.5) {
-                            score += 50;
-                        }
+                        score += (Math.PI - angDiff) * 10; 
                     }
 
-                    // B. Distance from center based on Depth
+                    // B. Depth Tracking
                     const targetDepth = depthMap.get(tile.id) || 1;
-                    score -= Math.abs(distFromCenter - targetDepth) * 15;
+                    score -= Math.abs(distFromCenter - targetDepth) * 5;
 
-                    // C. Prereq Proximity & Root Placement
+                    // C. Prereq Proximity (Smart Gravity)
                     if (tile.prereqs && tile.prereqs.length > 0) {
                         tile.prereqs.forEach(pId => {
                             const pTile = placedTiles.find(t => t.id === pId);
@@ -499,22 +493,20 @@
                                 const dist = hexDistance(q, r, pTile.q, pTile.r);
                                 
                                 if (pTile.section === tile.section) {
-                                    // Huge reward for being adjacent to a parent in the SAME section (build chains)
-                                    if (dist === 1) score += 100;
-                                    else score -= dist * 20;
+                                    // Strong attraction to parents within the same section.
+                                    if (dist === 1) score += 50;
+                                    else score -= dist * 10;
                                 } else {
-                                    // Parent is in a DIFFERENT section. They depend on it, but don't need to be physically close.
-                                    // Prioritize staying in their own territory.
-                                    score -= dist * 1; 
+                                    // Weak attraction to parents in different sections 
+                                    // (prevents invading other territories).
+                                    if (dist === 1) score += 10;
+                                    else score -= dist * 2;
                                 }
                             }
                         });
                     } else if (tile.section !== 'HOME' && !tile.isReserved) {
-                        // This is a root tile for its section (no prerequisites)
-                        if (distFromCenter === 1) {
-                            // Force it to sit directly adjacent to HOME (distance 1)
-                            score += 300; 
-                        }
+                        // Root tiles (no prereqs) prefer to sit next to HOME.
+                        if (distFromCenter === 1) score += 40;
                     }
 
                     // D. Topic Group Cohesion
@@ -522,32 +514,33 @@
                         const sameGroupTiles = placedTiles.filter(t => t.topicGroup === tile.topicGroup);
                         sameGroupTiles.forEach(pTile => {
                             const dist = hexDistance(q, r, pTile.q, pTile.r);
-                            if (dist === 1) score += 40;
+                            if (dist === 1) score += 30;
+                            else if (dist === 2) score += 5;
                         });
                     }
                     
-                    // E. Hard Separation between different sections (Create buffer zones)
-                    let foreignNeighbors = 0;
+                    // E. Soft Separation (Create buffer zones)
+                    let touchingOtherSection = false;
                     const neighbors = getHexNeighbors(q, r);
                     neighbors.forEach(n => {
                         const nKey = `${n.q},${n.r}`;
                         const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
                         if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
-                            foreignNeighbors++;
+                            touchingOtherSection = true;
                         }
                     });
 
-                    if (foreignNeighbors > 0) {
-                        // It's physically unavoidable for tiles at distance 1 to touch other sections around HOME.
-                        // However, if they touch foreign sections at distance > 1 (outer rings), apply a massive penalty.
+                    // Fix for isolated HOME: allow mixing at distance 1.
+                    if (touchingOtherSection) {
                         if (distFromCenter > 1) {
-                            score -= 200 * foreignNeighbors;
+                            // Apply penalty at distance > 1 to create gaps between sections.
+                            score -= 30; 
                         }
                     }
 
                     return score;
                 };
-                
+
                 // Place each tile
                 for (const tile of sortedTiles) {
                     let bestHex = null;
