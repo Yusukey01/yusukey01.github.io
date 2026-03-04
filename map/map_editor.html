@@ -471,29 +471,36 @@
                 const scoreCandidate = (q, r, tile) => {
                     let score = 0;
                     
-                    // A. Section Sector Alignment
+                    // A. Strict Sector Alignment (Absolute Territory)
                     const targetAngle = SECTION_TARGET_ANGLES[tile.section];
                     if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
                         const angle = getHexAngle(q, r);
                         const angDiff = angleDifference(angle, targetAngle);
-                        // Reward being close to target angle
-                        score += (Math.PI - angDiff) * 10; 
+                        // Massive penalty for deviating from the assigned section slice
+                        score -= angDiff * 150; 
                     }
 
                     // B. Distance from center based on Depth
                     const distFromCenter = hexDistance(0, 0, q, r);
                     const targetDepth = depthMap.get(tile.id) || 1;
-                    // Reward being at roughly the correct distance layer (allow slight overlapping)
                     score -= Math.abs(distFromCenter - targetDepth) * 5;
 
-                    // C. Prereq Proximity
+                    // C. Prereq Proximity (Smart Gravity)
                     if (tile.prereqs && tile.prereqs.length > 0) {
                         tile.prereqs.forEach(pId => {
                             const pTile = placedTiles.find(t => t.id === pId);
                             if (pTile) {
                                 const dist = hexDistance(q, r, pTile.q, pTile.r);
-                                if (dist === 1) score += 50; // Ideal: adjacent
-                                else score -= dist * 10;     // Penalty for distance
+                                
+                                if (pTile.section === tile.section) {
+                                    // Strong attraction to parents within the SAME section
+                                    if (dist === 1) score += 80;
+                                    else score -= dist * 10;
+                                } else {
+                                    // Weak attraction to parents in DIFFERENT sections
+                                    // We want them to flow generally from the parent, but NOT invade their territory
+                                    score -= dist * 2;
+                                }
                             }
                         });
                     }
@@ -503,20 +510,29 @@
                         const sameGroupTiles = placedTiles.filter(t => t.topicGroup === tile.topicGroup);
                         sameGroupTiles.forEach(pTile => {
                             const dist = hexDistance(q, r, pTile.q, pTile.r);
-                            if (dist === 1) score += 30;
-                            else if (dist === 2) score += 5;
+                            if (dist === 1) score += 40;
+                            else if (dist === 2) score += 10;
                         });
                     }
                     
-                    // E. Separation between different sections (create buffer)
+                    // E. Hard Separation between different sections (Create buffer zones)
+                    let touchingOtherSection = false;
                     const neighbors = getHexNeighbors(q, r);
                     neighbors.forEach(n => {
                         const nKey = `${n.q},${n.r}`;
                         const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
                         if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
-                            score -= 20; // Penalty for touching different sections
+                            touchingOtherSection = true;
+                            // Extreme penalty for touching a different section's tile
+                            score -= 200; 
                         }
                     });
+                    
+                    // If it touches another section AND is far from HOME, punish it even more
+                    // to force clear borders in the outer edges.
+                    if (touchingOtherSection && distFromCenter > 2) {
+                         score -= 300;
+                    }
 
                     return score;
                 };
