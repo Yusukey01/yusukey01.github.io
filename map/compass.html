@@ -705,6 +705,7 @@
         <img id="tessera-laughing" src="../images/tessera/tessera_laughing.png" alt="Tessera laughing">
         <img id="tessera-shocked" src="../images/tessera/tessera_shocked.png" alt="Tessera shocked">
         <img id="tessera-ease" src="../images/tessera/tessera_ease.png" alt="Tessera ease">
+        <img id="tessera-research" src="../images/tessera/tessera_research.png" alt="Tessera research" class="tessera-expression">
     </div>
     <div id="tessera-name">TESSERA</div>
 </div>
@@ -895,6 +896,21 @@ async function loadCurriculumData() {
                 prereqs: []
             });
         }
+
+        if (data.researchNode) {
+            knowledgeData.push({
+                id: data.researchNode.id,
+                section: 'RESEARCH',
+                title: data.researchNode.title,
+                url: data.researchNode.url,
+                q: data.researchNode.mapCoords.q,
+                r: data.researchNode.mapCoords.r,
+                prereqs: [],
+                isResearch: true,
+                tesseraExpression: 'research',
+                tesseraMessage: "The hidden laboratory... where the math becomes real."
+            });
+        }
         
         Object.entries(data.sections).forEach(([sectionId, section]) => {
             section.parts.forEach(part => {
@@ -1028,7 +1044,8 @@ function setTesseraExpression(expression) {
         worried: document.getElementById('tessera-worried'),
         laughing: document.getElementById('tessera-laughing'),
         shocked: document.getElementById('tessera-shocked'),
-        ease: document.getElementById('tessera-ease')
+        ease: document.getElementById('tessera-ease'),
+        research: document.getElementById('tessera-research')
     };
     
     // Remove active class from all
@@ -1119,13 +1136,16 @@ function updateTesseraForTile(tile) {
 
     // Custom message from curriculum.json - random expression (happy to share)
     if (tile.tesseraMessage) {
-        const tileExpressions = ['wave', 'confident', 'shocked', 'proud', 'ease', 'surprised', 'excited'];
-        const randomExpression = tileExpressions[Math.floor(Math.random() * tileExpressions.length)];
-        setTesseraExpression(randomExpression);
+        if (tile.tesseraExpression) {
+            setTesseraExpression(tile.tesseraExpression);
+        } else {
+            const tileExpressions = ['wave', 'confident', 'shocked', 'proud', 'ease', 'surprised', 'excited'];
+            const randomExpression = tileExpressions[Math.floor(Math.random() * tileExpressions.length)];
+            setTesseraExpression(randomExpression);
+        }
         updateTesseraMessage(tile.tesseraMessage);
         return;
     }
-    
     // Fallback for tiles without custom messages (shouldn't happen if curriculum.json is complete)
     setTesseraExpression('idle');
     updateTesseraMessage(`Exploring: ${tile.title}`);
@@ -1284,7 +1304,9 @@ function triggerExitAnimation(url) {
 /**
  * Draw hexagon with enhanced visuals
  */
-function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, isReserved = false, entryProgress = 1, isHovered = false, isSearchMatch = false, isHome = false) {
+function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = false, isIdleBlinking = false, 
+                        isReserved = false, entryProgress = 1, isHovered = false, isSearchMatch = false, isHome = false, 
+                        isResearch = false) {
     ctx.save();
     
     // Entry animation: scale and fade in
@@ -1326,6 +1348,15 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
         const pulsePhase = (Math.sin(Date.now() / 800) + 1) / 2;
         ctx.shadowColor = 'rgba(200, 200, 220, ' + (0.4 + pulsePhase * 0.4) + ')';
         ctx.shadowBlur = 15 + pulsePhase * 10;
+        finalAlpha = 1;
+    }
+
+    // Research tile: amber pulse + orbiting particles
+    if (isResearch) {
+        const t = Date.now();
+        const pulsePhase = (Math.sin(t / 1000) + 1) / 2;
+        ctx.shadowColor = 'rgba(240, 165, 0, ' + (0.3 + pulsePhase * 0.5) + ')';
+        ctx.shadowBlur = 12 + pulsePhase * 14;
         finalAlpha = 1;
     }
 
@@ -1682,8 +1713,9 @@ function render() {
         // Search results override
         if (searchQuery && searchResults.length > 0) {
             alpha = isSearchMatch ? 1.0 : 0.15;
-            // But keep Home visible
+            // But keep Home & Research visible
             if (tile.id === 'home') alpha = Math.max(alpha, 0.5);
+            if (tile.isResearch) alpha = Math.max(alpha, 0.8);
         }
 
         // Section highlight (from legend click)
@@ -1701,7 +1733,10 @@ function render() {
 
         const color = SECTION_COLORS[tile.section] || '#888888';
         const isHome = tile.id === 'home';
-        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, animProgress, isHovered, isSearchMatch || isSectionHighlight, isHome);
+        const isResearch = tile.isResearch === true;
+        drawHexagon(x, y, scale * 0.95, color, alpha, glow, tile.id === blinkTileId, isIdleBlinking, isReserved, animProgress, 
+                    isHovered, isSearchMatch || isSectionHighlight, isHome, isResearch
+        );
         
         // Part number background
         const partMatch = tile.id.match(/-(\d+)$/);
@@ -1742,6 +1777,33 @@ function render() {
             ctx.restore();
         }
     });
+
+    // Research tile: orbiting particles
+    const researchTile = knowledgeData.find(t => t.isResearch);
+    if (researchTile && !exitAnimationActive) {
+        const { x: rx, y: ry } = getPixelCoords(researchTile.q, researchTile.r);
+        const t = Date.now();
+        const orbitRadius = scale * 1.25;
+        const particles = [
+            { speed: 0.0008, offset: 0,           size: 2.5 },
+            { speed: -0.0012, offset: Math.PI * 0.7, size: 2.0 },
+            { speed: 0.0006, offset: Math.PI * 1.4, size: 1.5 }
+        ];
+        ctx.save();
+        particles.forEach(p => {
+            const angle = t * p.speed + p.offset;
+            const px = rx + orbitRadius * Math.cos(angle);
+            const py = ry + orbitRadius * Math.sin(angle);
+            const trailAlpha = 0.5 + 0.3 * Math.sin(t * 0.003 + p.offset);
+            ctx.beginPath();
+            ctx.arc(px, py, p.size * (scale / 50), 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 201, 71, ' + trailAlpha + ')';
+            ctx.shadowColor = 'rgba(240, 165, 0, 0.6)';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+        });
+        ctx.restore();
+    }
     
     // Draw prerequisite connections and particles (not during exit animation)
     if (activeTile && !exitAnimationActive) {
