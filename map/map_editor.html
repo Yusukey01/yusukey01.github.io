@@ -73,6 +73,7 @@
 
         const SECTION_COLORS = {
             'HOME': '#888888',
+            'RESEARCH': '#f0a500',
             'I': '#1565c0',
             'II': '#2e7d32',
             'III': "#00838f",
@@ -83,6 +84,7 @@
 
         const SECTION_NAMES = {
             'HOME': 'Home',
+            'RESEARCH': 'Research',
             'I': 'Linear Algebra to Algebraic Foundations',
             'II': 'Calculus to Optimization & Analysis',
             'III': 'Probability & Statistics',
@@ -171,6 +173,19 @@
                     url: data.homeNode.url,
                     q: data.homeNode.mapCoords.q,
                     r: data.homeNode.mapCoords.r
+                });
+            }
+
+            // Add research node
+            if (data.researchNode) {
+                tiles.push({
+                    id: data.researchNode.id,
+                    section: 'RESEARCH',
+                    title: data.researchNode.title,
+                    url: data.researchNode.url,
+                    q: data.researchNode.mapCoords.q,
+                    r: data.researchNode.mapCoords.r,
+                    isResearch: true
                 });
             }
             
@@ -390,7 +405,7 @@
             const orphanTiles = useMemo(() => {
                 if (analysisMode !== 'orphans') return new Set();
                 const allPrereqs = new Set(tiles.flatMap(t => t.prereqs || []));
-                return new Set(tiles.filter(t => !allPrereqs.has(t.id) && t.section !== 'HOME').map(t => t.id));
+                return new Set(tiles.filter(t => !allPrereqs.has(t.id) && t.section !== 'HOME' && t.section !== 'RESEARCH').map(t => t.id));
             }, [analysisMode, tiles]);
             
 
@@ -398,9 +413,10 @@
             const performAutoLayout = () => {
                 setLoading(true);
                 
-                // 1. Separate HOME and other tiles
+                // 1. Separate HOME, RESEARCH, and other tiles
                 const homeTile = tiles.find(t => t.section === 'HOME');
-                const otherTiles = tiles.filter(t => t.section !== 'HOME');
+                const researchTile = tiles.find(t => t.section === 'RESEARCH');
+                const otherTiles = tiles.filter(t => t.section !== 'HOME' && t.section !== 'RESEARCH');
                 
                 // 2. Topological Sort (Calculate Depth)
                 const depthMap = new Map();
@@ -467,6 +483,8 @@
                     placedTiles.push({ ...homeTile, q: 0, r: 0 });
                     occupiedCoords.add('0,0');
                 }
+
+                if (researchTile) placedTiles.push(researchTile);
 
                // Helper to score a candidate hex for a specific tile
                 const scoreCandidate = (q, r, tile) => {
@@ -606,6 +624,8 @@
                 tiles.forEach(tile => {
                     if (tile.section === 'HOME') {
                         exportData.homeNode.mapCoords = { q: tile.q, r: tile.r };
+                    } else if (tile.section === 'RESEARCH') {
+                        exportData.researchNode.mapCoords = { q: tile.q, r: tile.r };
                     } else if (tile.isReserved) {
                         const section = exportData.sections[tile.section];
                         if (section) {
@@ -1063,7 +1083,7 @@
                                     <p style={{ marginBottom: '8px' }}><span className="label">Position:</span> q={addReservedTarget.q}, r={addReservedTarget.r}</p>
                                     <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginBottom: '8px' }}>Select a section:</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME').map(([key, name]) => (
+                                        {Object.entries(SECTION_NAMES).filter(([k]) => k !== 'HOME' && k !== 'RESEARCH').map(([key, name]) => (
                                             <button key={key}
                                                 style={{ ...buttonBaseStyle, backgroundColor: SECTION_COLORS[key], fontSize: '0.75rem' }}
                                                 onClick={() => addReservedTile(key, addReservedTarget.q, addReservedTarget.r)}>
