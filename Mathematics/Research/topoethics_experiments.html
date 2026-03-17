@@ -1,0 +1,392 @@
+---
+layout: default
+title: "Topoethics: Numerical Verification"
+topic_id: research-note-sup
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        <div class="hero-section research-hero">
+            <h1 class="webpage-name">Numerical Verification</h1>
+        </div>
+
+        <div class="topic-nav">
+            <a href="#scope">Scope</a>
+            <a href="#exp1">Exp 1: Lorenz</a>
+            <a href="#exp2">Exp 2: Hénon</a>
+            <a href="#exp3">Exp 3: Coupled Rössler</a>
+            <a href="#map">Verification Map</a>
+            <a href="#limitations">Limitations</a>
+        </div>
+
+        <div class="container">
+
+          
+            <section id="scope" class="section-content">
+                <h2>Scope and Methodology</h2>
+
+                <p>
+                    <a href="topoethics_axioms.html">Notes 01</a>-<a href="topoethics_layers.html">04</a> walked 
+                    through the paper's theoretical structure: axioms, proofs, refutations, and consequences. This 
+                    supplement presents the numerical experiments that verify the <em>deductive chain</em>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">What These Experiments Do and Do Not Show</span>
+                    <p>
+                        We select dynamical systems that <strong>satisfy the paper's axioms</strong> and verify 
+                        numerically that the predicted phenomena—irreversible divergence, global permeation, 
+                        irreplaceability—occur as the theory requires.
+                    </p>
+                    <p>
+                        These experiments validate <strong>axioms \( \Rightarrow \) theorems</strong>. They do 
+                        <em>not</em> establish <strong>real world \( \Rightarrow \) axioms</strong>. Whether human 
+                        societies satisfy these axioms remains an open empirical question.
+                    </p>
+                </div>
+
+                <p>
+                    All code uses fixed random seeds (master seed = 42) and is fully reproducible. Source code 
+                    and raw data are available at the Zenodo repository accompanying the paper.
+                </p>
+            </section>
+
+        
+            <section id="exp1" class="section-content">
+                <h2>Experiment 1: Irreversible Divergence (Lorenz System)</h2>
+
+                <h3>What It Tests</h3>
+                <p>
+                    <a href="topoethics_irreversibility.html#divergence">Proposition 9</a>: any non-zero impulse 
+                    creates a permanent trajectory separation that never converges to zero.
+                </p>
+
+                <h3>Setup</h3>
+                <p>
+                    The Lorenz system (\( \sigma = 10, \rho = 28, \beta = 8/3 \)) satisfies Axiom 1 (smooth 
+                    manifold, locally Lipschitz vector field) and Axiom 3 (\( \lambda_{\max} \approx 0.906 \)). 
+                    The attractor is bounded with empirically measured diameter \( D \approx 59.7 \).
+                </p>
+                <p>
+                    After discarding a transient of \( t = 100 \) time units, we record a reference state 
+                    \( X_0 \) on the attractor. Two trajectories are integrated—one from \( X_0 \) (null 
+                    intervention) and one from \( X_0 + (\varepsilon, 0, 0) \) (impulse)—for \( T = 80 \) time 
+                    units using RK45 with tolerances \( \mathit{rtol} = 10^{-13} \), \( \mathit{atol} = 10^{-14} \). 
+                    Six perturbation magnitudes are tested: 
+                    \( \varepsilon \in \{10^{0}, 10^{-2}, 10^{-4}, 10^{-6}, 10^{-8}, 10^{-10}\} \).
+                </p>
+
+                <h3>Result</h3>
+                <p>
+                    Every perturbation magnitude produces exponential growth followed by saturation at the 
+                    attractor diameter. No perturbation decays to zero, including the smallest 
+                    (\( \varepsilon = 10^{-10} \)), which saturates at \( \max \delta \approx 53.7 \)—comparable 
+                    to the attractor diameter \( D \approx 59.7 \).
+                </p>
+                <p>
+                    Numerical integrity was validated by comparing the \( \varepsilon = 10^{-10} \) run under RK45 
+                    against DOP853 (\( \mathit{rtol} = 10^{-14} \), \( \mathit{atol} = 10^{-15} \)). Within the 
+                    exponential growth regime (\( \delta < 10^{-4} \)), the maximum relative error between the 
+                    two \( \delta(t) \) curves is \( 8.9 \times 10^{-4} \), confirming that the observed growth 
+                    is genuine Lyapunov divergence rather than numerical error amplification.
+                </p>
+                <p>
+                    A direction scan over 50 random perturbation directions (all with \( \|I\| = 10^{-6} \)) 
+                    confirms that all directions produce exponential growth and saturation. 20 of 50 exhibit 
+                    transient contraction before growth, illustrating the "generic" qualifier in 
+                    Proposition 9(b). The mean finite-time growth rate is \( 0.41 \pm 0.23 \), below the 
+                    infinite-time \( \lambda_{\max} \approx 0.91 \)—expected behavior for finite-time Lyapunov 
+                    exponents along non-optimal directions.
+                </p>
+
+                <h3>What It Means</h3>
+                <p>
+                    Within the Lorenz system: Proposition 9(a)-(c) is confirmed—every nonzero impulse produces 
+                    permanent trajectory separation. No minimum impulse threshold exists below which influence is 
+                    "rounded away," directly refuting Counter-Argument 1 (noise attenuation) and Counter-Argument 4 
+                    (truncation fallacy). The Lyapunov prediction horizon 
+                    (\( T_L \sim 1/\lambda_{\max} \approx 1.1 \) Lorenz time units) is far shorter than the 
+                    saturation time, confirming the separation of intervention from control 
+                    (<a href="topoethics_refutations.html#ca3">Note 03, Section 3</a>).
+                </p>
+            </section>
+
+           
+            <section id="exp2" class="section-content">
+                <h2>Experiment 2: Topological Mixing (Hénon Map)</h2>
+
+                <h3>What It Tests</h3>
+                <p>
+                    <a href="topoethics_irreversibility.html#permeation">Proposition 11</a>: the influence of 
+                    any impulse eventually reaches every region of the state space—and remains structurally 
+                    embedded, not merely transiently spread.
+                </p>
+
+                <h3>Setup</h3>
+                <p>
+                    The Hénon map (\( a = 1.4, b = 0.3 \)) satisfies Axiom 3 
+                    (\( \lambda_{\max} \approx 0.42 \)).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Caveat on Topological Mixing</h3>
+                    <p>
+                        Topological mixing of the Hénon attractor at these parameters is supported by extensive 
+                        numerical evidence but is <em>not rigorously proven</em>. The Benedicks-Carleson theorem 
+                        establishes the existence of a strange attractor with an SRB measure for a positive-measure 
+                        set of parameters near \( (a=2, b=0) \), but whether \( (1.4, 0.3) \) lies in this set 
+                        remains open. This experiment demonstrates the qualitative mixing behavior; it does not 
+                        constitute a proof that the Hénon map satisfies the mixing axiom.
+                    </p>
+                </div>
+
+                <p>
+                    An ensemble of \( N_{\text{ens}} = 10{,}000 \) points is initialized in a disk of radius 
+                    \( \varepsilon = 10^{-6} \) centered on an attractor point \( X_0 \). All points are iterated 
+                    under the Hénon map, and coverage of a 5,000-point reference attractor is measured at each 
+                    snapshot via a nearest-neighbor metric.
+                </p>
+
+                <h3>Result</h3>
+                <p>
+                    At \( n = 0 \) the ensemble is a point-like cluster; by \( n = 50 \) it covers the full 
+                    visible structure of the attractor. The nearest-neighbor coverage ratio reaches 
+                    \( C(50) = 0.926 \) and stabilizes near \( C(1000) = 0.932 \). The ceiling below 1.0 is a 
+                    finite-ensemble artifact: 10,000 points cannot densely fill a fractal of dimension 
+                    \( \approx 1.26 \) at the resolution of the reference set.
+                </p>
+                <p>
+                    To test whether the influence is <em>structurally permanent</em> (not merely spatially spread), 
+                    two ensembles are compared: one initialized at \( X_0 \) (null) and one at 
+                    \( X_0 + (0.01, 0) \) (impulse). The Jensen-Shannon divergence (JSD) between their occupancy 
+                    histograms starts at \( \ln 2 \approx 0.693 \) (fully distinguishable) and decreases as both 
+                    ensembles spread, but settles at \( \text{JSD} \approx 0.016 > 0 \) after \( n = 100 \).
+                </p>
+
+                <h3>What It Means</h3>
+                <p>
+                    The positive residual JSD at full coverage confirms that the two distributions are 
+                    <em>permanently distinguishable</em>: the impulse is structurally embedded in the attractor's 
+                    measure, not merely a transient amplitude difference. This is the coffee-and-milk analogy 
+                    from <a href="topoethics_axioms.html#axiom-3">Note 01</a>, quantified: the milk's whiteness 
+                    (signal amplitude) vanishes, but the molecular arrangement (JSD \( > 0 \)) is permanently 
+                    and globally altered.
+                </p>
+            </section>
+
+           
+            <section id="exp3" class="section-content">
+                <h2>Experiment 3: Irreplaceability (Coupled Rössler Network)</h2>
+
+                <h3>What It Tests</h3>
+                <p>
+                    <a href="topoethics_irreversibility.html#divergence">Corollary 10</a> (no replaceable 
+                    individual), <a href="topoethics_layers.html#persistence">Proposition 14</a> (persistence 
+                    of influence beyond death), and <a href="topoethics_layers.html#death">Remark 16</a> 
+                    (chaos survives dimension reduction). This experiment also directly tests 
+                    <a href="topoethics_refutations.html#ca2">Counter-Argument 2</a> (historical homeostasis).
+                </p>
+
+                <h3>Setup</h3>
+                <p>
+                    Twenty Rössler oscillators (\( a = 0.2, b = 0.2, c = 5.7 \)) are coupled on a 
+                    Watts-Strogatz network (\( k = 4, p = 0.3 \)) with diffusive coupling 
+                    \( \sigma_c = 0.02 \). The system lives in \( \mathbb{R}^{60} \) and satisfies Axiom 1 
+                    (smooth ODE, locally Lipschitz) and Axiom 3: the maximal Lyapunov exponent of the full 
+                    system is \( \lambda_{\max} = 0.082 > 0 \), computed via the Benettin algorithm with 
+                    analytically derived Jacobian over \( T = 1{,}000 \) time units.
+                </p>
+                <p>
+                    The coupling strength \( \sigma_c = 0.02 \) was selected to ensure that chaos is preserved 
+                    (\( \lambda_{\max} > 0 \)) and oscillators interact meaningfully but are not synchronized 
+                    (mean pairwise Pearson correlation \( = 0.53 \)).
+                </p>
+                <p>
+                    Five scenarios are tested for each of five target agents \( k^* \) (two high-degree, 
+                    two low-degree, one median-degree):
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li><strong>A (baseline):</strong> All 20 oscillators evolve normally.</li>
+                    <li><strong>B (removal):</strong> Agent \( k^* \) is permanently deleted; the system evolves 
+                        in \( \mathbb{R}^{57} \).</li>
+                    <li><strong>C1 (immediate replacement):</strong> At \( t = 0 \), \( k^* \) is replaced by 
+                        a new oscillator with identical parameters and coupling but a different initial condition.</li>
+                    <li><strong>C2 (delayed replacement):</strong> \( k^* \) is removed at \( t = 0 \) and a 
+                        replacement is inserted at \( t = \Delta\tau \) 
+                        (\( \Delta\tau \in \{10, 50, 200\} \)).</li>
+                    <li><strong>C3 (displaced replacement):</strong> Same as C2, but the replacement connects 
+                        to different neighbors in the network (same degree, different nodes).</li>
+                </ol>
+
+                <h3>Result</h3>
+                <p>
+                    <strong>All scenarios diverge.</strong> Every scenario—from the most idealized replacement (C1) 
+                    to the most realistic (C3)—produces macroscopic, permanent divergence (max \( \delta \) between 
+                    40 and 75, comparable to the system's attractor scale). No agent is replaceable, regardless of 
+                    network degree.
+                </p>
+                <p>
+                    <strong>Persistence of past influence.</strong> The metric 
+                    \( \Delta_{\text{persist}}(t) = \|X_B(t) - \pi_{-k^*}(X_{C1}(t))\| \) measures whether the 
+                    surviving agents are in different states depending on whether \( k^* \) was removed or replaced. 
+                    For all five agents, \( \Delta_{\text{persist}}(t) > 0 \) at all \( t > 0 \) and grows to 
+                    macroscopic values. The removed agent's past influence is permanently encoded in the surviving 
+                    agents' states—it cannot be erased by inserting a replacement.
+                </p>
+                <p>
+                    <strong>Delay sweep.</strong> For all five agents and all three delay values 
+                    (\( \Delta\tau \in \{10, 50, 200\} \)), the trajectory separation under Scenario C2 remains 
+                    macroscopic (range: 12.2-53.1), with no systematic return toward zero. The timing of 
+                    replacement does not restore homeostasis.
+                </p>
+                <p>
+                    <strong>Lyapunov survival.</strong> Removing agent \( k^* = 8 \) from the 20-oscillator 
+                    system yields a 19-oscillator system with \( \lambda_{\max} = 0.053 > 0 \). Chaos persists 
+                    in the reduced system, consistent with Remark 16 (robust chaos).
+                </p>
+
+                <h3>What It Means</h3>
+                <p>
+                    Within the coupled Rössler system:
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li><strong>Corollary 10 confirmed:</strong> no replacement—whether immediate, delayed, or 
+                        displaced—restores the original trajectory.</li>
+                    <li><strong>Proposition 14 confirmed:</strong> past influence persists in the surviving 
+                        agents' states beyond the removed agent's lifetime.</li>
+                    <li><strong>Remark 16 confirmed:</strong> chaos survives dimension reduction.</li>
+                    <li><strong>Counter-Argument 2 refuted:</strong> historical homeostasis does not hold, even 
+                        under the most favorable conditions (immediate replacement with identical functional 
+                        role and network position).</li>
+                </ol>
+
+                <div class="insight-box">
+                    <h3>The Real World Can Only Diverge Further</h3>
+                    <p>
+                        Scenario C1 is the <em>most generous possible</em> replacement: identical parameters, 
+                        identical coupling, identical network position, instantaneous substitution. It still 
+                        produces macroscopic divergence. In reality, replacements differ in capability, timing, 
+                        and context simultaneously. If the idealized case fails to restore the trajectory, the 
+                        realistic case can only fail harder.
+                    </p>
+                </div>
+            </section>
+
+           
+            <section id="map" class="section-content">
+                <h2>Verification Map</h2>
+
+                <p>
+                    The following table maps each experiment to the paper's propositions and counter-arguments.
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Experiment</th>
+                            <th>Proposition</th>
+                            <th>Counter-Arg.</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1 (divergence)</td>
+                            <td>Prop. 9, Cor. 10</td>
+                            <td>CA1 (noise), CA4 (truncation)</td>
+                            <td>Pass</td>
+                        </tr>
+                        <tr>
+                            <td>1 (direction scan)</td>
+                            <td>Prop. 9(b)</td>
+                            <td>—</td>
+                            <td>Pass</td>
+                        </tr>
+                        <tr>
+                            <td>2 (mixing)</td>
+                            <td>Prop. 11</td>
+                            <td>CA1 (structural embedding)</td>
+                            <td>Pass*</td>
+                        </tr>
+                        <tr>
+                            <td>3 (removal)</td>
+                            <td>Prop. 14, Cor. 15</td>
+                            <td>—</td>
+                            <td>Pass</td>
+                        </tr>
+                        <tr>
+                            <td>3 (replacement C1-C3)</td>
+                            <td>Cor. 10</td>
+                            <td>CA2 (homeostasis)</td>
+                            <td>Pass</td>
+                        </tr>
+                        <tr>
+                            <td>3 (persistence)</td>
+                            <td>Prop. 14</td>
+                            <td>CA1, CA2</td>
+                            <td>Pass</td>
+                        </tr>
+                        <tr>
+                            <td>3 (Lyapunov survival)</td>
+                            <td>Remark 16</td>
+                            <td>—</td>
+                            <td>Pass</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 0.9em; color: var(--text-secondary, #666);">
+                    *Depends on the numerically supported but unproven topological mixing of the Hénon 
+                    attractor at \( (a = 1.4, b = 0.3) \).
+                </p>
+            </section>
+
+            
+            <section id="limitations" class="section-content">
+                <h2>Limitations</h2>
+
+                <p>
+                    These limitations are not caveats added for politeness. They define the exact boundary of 
+                    what the experiments establish.
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                        <strong>Scope boundary.</strong> These experiments verify the deductive chain under the 
+                        axioms; they do not establish that any real-world system satisfies the axioms.
+                    </li>
+                    <li>
+                        <strong>Hénon mixing.</strong> Experiment 2 depends on the topological mixing of the 
+                        Hénon attractor at \( (a = 1.4, b = 0.3) \), which is numerically supported but not 
+                        rigorously proven.
+                    </li>
+                    <li>
+                        <strong>Coverage ceiling.</strong> The 93% coverage in Experiment 2 reflects 
+                        finite-ensemble sampling on a fractal (dimension \( \approx 1.26 \)), not a failure of mixing.
+                    </li>
+                    <li>
+                        <strong>Finite-time growth rates.</strong> The mean measured growth rate in Experiment 1 
+                        (\( 0.41 \)) is below \( \lambda_{\max} \approx 0.91 \). This is standard behavior for 
+                        finite-time Lyapunov exponents along non-optimal directions and does not indicate a 
+                        discrepancy with the theory.
+                    </li>
+                    <li>
+                        <strong>Scenario ordering.</strong> The predicted ordering 
+                        \( \delta_{C3} \geq \delta_{C2} \geq \delta_{C1} \) is not strictly observed after 
+                        attractor-scale saturation. All scenarios produce comparable divergence; the qualitative 
+                        conclusion (all replacements fail) is robust.
+                    </li>
+                    <li>
+                        <strong>System scale.</strong> \( N = 20 \) oscillators is far below the dimensionality 
+                        of any real social system. This is a consequence of the scope boundary: we verify the 
+                        mathematics, not the sociology.
+                    </li>
+                </ol>
+            </section>
+
+        </div>
+        <script src="/js/main.js"></script> 
+    </body>
+</html>
