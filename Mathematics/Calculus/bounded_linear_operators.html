@@ -54,18 +54,24 @@ noindex: true
                 <div class="proof">
                     <span class="proof-title">Counter Example: The Derivative Operator</span>
                     <p>
-                        Consider the differentiation operator \(T(f) = f'\) acting on smooth functions.
-                        Let \(f_k(t) = \sin(kt)\).
+                        Let \(X = C^1([0, \pi])\) be the space of continuously differentiable functions, and \(Y = C^0([0, \pi])\) be the space of continuous functions. 
+                        Equip both spaces with the <strong>supremum norm</strong> (maximum value): \(\|f\|_\infty = \max |f(t)|\).
                     </p>
                     <p>
-                        The "size" (maximum value) of the input is always \(\|f_k\| = 1\), regardless of \(k\).
+                        Consider the differentiation operator \(T(f) = f'\).
+                        Let \(f_k(t) = \sin(kt)\). The "size" of the input is always \(\|f_k\|_\infty = 1\), regardless of \(k\).
                         However, applying the operator gives:
                         \[
                         T(f_k) = \frac{d}{dt}\sin(kt) = k\cos(kt)
                         \]
-                        The "size" of the output is \(\|Tf_k\| = k\). As \(k \to \infty\), the output explodes to infinity even 
-                        though the input stays small. This means the differentiation operator is <strong>unbounded</strong> 
-                        (and thus discontinuous).
+                        The size of the output is \(\|Tf_k\|_\infty = k\). As \(k \to \infty\), the output explodes to infinity even 
+                        though the input stays bounded. Thus, under the supremum norm, the differentiation operator is <strong>unbounded</strong>.
+                    </p>
+                    <p>
+                        <em>A profound lesson in Functional Analysis:</em> Boundedness depends entirely on the chosen norm. 
+                        If we change the norm on the input space \(X\) to \(\|f\|_{C^1} = \|f\|_\infty + \|f'\|_\infty\), 
+                        then \(\|Tf\|_\infty = \|f'\|_\infty \leq \|f\|_\infty + \|f'\|_\infty = \|f\|_{C^1}\). 
+                        Suddenly, the exact same operator becomes bounded (with \(M=1\))!
                     </p>
                 </div>
 
@@ -165,7 +171,7 @@ noindex: true
                 <h3>Finite Dimensions: Automatic Boundedness</h3>
                 <p>
                     Recall from <a href="intro_analysis.html#dimensions"><strong>Part 23</strong></a> that in finite-dimensional spaces, 
-                    all norms are topologically equivalent. This equivalence has a powerful consequence:
+                    all norms are topologically equivalent. This equivalence, combined with topology, has a powerful consequence:
                 </p>
 
                 <div class="theorem">
@@ -175,6 +181,14 @@ noindex: true
                         (for any normed space \(Y\)) is bounded.
                     </p>
                 </div>
+
+                <p>
+                    Why is this true? In finite dimensions, any linear map can be represented by a matrix, which is clearly a continuous function 
+                    (it is just a polynomial of coordinates). By the 
+                    <a href="compactness.html#heine-borel"><strong>Heine-Borel Theorem</strong></a>, the closed unit ball in finite dimensions 
+                    is <strong>compact</strong>. The Extreme Value Theorem guarantees that a continuous function on a compact set must achieve a finite 
+                    maximum. Therefore, the "maximum gain" over the unit ball is always finite.
+                </p>
 
                 <p>
                     This is why, in your Linear Algebra courses, the question of "is this matrix continuous?" never arose — it was 
@@ -215,7 +229,7 @@ noindex: true
                 <div class="theorem">
                     <span class="theorem-title">Proposition: Equivalent Formulations of the Operator Norm</span>
                     <p>
-                        The following expressions all equal \(\|T\|\):
+                        The following expressions all equal \(\|T\|\) (assuming \(X \neq \{0\}\)):
                     </p>
                     <p>
                         \[
@@ -265,15 +279,19 @@ noindex: true
                     <h3>Connection to Gradient Flow and Backpropagation</h3>
                     <p>
                         While layer gains affect the forward pass, submultiplicativity strictly governs the <strong>backward pass</strong>. 
-                        In a network with \(L\) layers, backpropagation computes gradients by multiplying a sequence of Jacobians 
-                        \(\mathbf{J}_1, \ldots, \mathbf{J}_L\). The operator norm of this product satisfies:
+                        In a neural network, the Jacobian \(\mathbf{J}_\ell\) of layer \(\ell\) can be decomposed via the chain rule as 
+                        \(\mathbf{J}_\ell = \mathbf{D}_\ell \mathbf{W}_\ell\), where \(\mathbf{W}_\ell\) is the weight matrix and \(\mathbf{D}_\ell\) 
+                        is the diagonal matrix of the activation function's derivatives.
+                    </p>
+                    <p>
+                        Standard activation functions like ReLU or Tanh are 1-Lipschitz continuous, meaning their derivatives never exceed 1. 
+                        Therefore, \(\|\mathbf{D}_\ell\|_{\text{op}} \leq 1\). By submultiplicativity, the norm of the entire gradient through \(L\) layers is bounded by:
                         \[
-                        \left\|\prod_{\ell=1}^{L} \mathbf{J}_\ell \right\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{J}_\ell\|_{\text{op}}.
+                        \left\|\prod_{\ell=1}^{L} \mathbf{J}_\ell \right\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{D}_\ell\|_{\text{op}} \|\mathbf{W}_\ell\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{W}_\ell\|_{\text{op}}.
                         \]
-                        If each \(\|\mathbf{J}_\ell\|_{\text{op}} > 1\), the gradient explodes exponentially. If each \(\|\mathbf{J}_\ell\|_{\text{op}} < 1\), it vanishes. 
-                        Techniques like <strong>orthogonal initialization</strong> (setting \(\|\mathbf{W}_\ell\|_{\text{op}} \approx 1\)) 
-                        and <strong>spectral normalization</strong> (explicitly dividing \(\mathbf{W}\) by \(\sigma_{\max}\)) 
-                        are direct applications of controlling the operator norm to guarantee stable gradient flow.
+                        This reveals a profound architectural beauty: <strong>the burden of preventing exploding/vanishing gradients falls entirely on the operator norm of the weight matrices \(\mathbf{W}_\ell\)</strong>. 
+                        Techniques like <strong>orthogonal initialization</strong> (\(\|\mathbf{W}_\ell\|_{\text{op}} \approx 1\)) 
+                        and <strong>spectral normalization</strong> are direct applications of this theory to guarantee stable gradient flow.
                     </p>
                 </div>
             </section>
@@ -315,9 +333,13 @@ noindex: true
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Completeness of \(\mathcal{B}(X, Y)\)</span>
-                    <p>
+                     <p>
                         If \(X\) is a normed space and \(Y\) is a <strong>Banach space</strong>, then 
                         \(\mathcal{B}(X, Y)\) is also a <strong>Banach space</strong>.
+                    </p>
+                    <p>
+                        <em>Note:</em> The completeness of the input space \(X\) is entirely irrelevant for this theorem. 
+                        The operator space \(\mathcal{B}(X, Y)\) inherits its completeness strictly from the codomain \(Y\).
                     </p>
                 </div>
 
