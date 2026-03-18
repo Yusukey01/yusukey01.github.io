@@ -22,6 +22,7 @@ noindex: true
             <a href="#intro">From Matrices to Operators</a>
             <a href="#boundedness">Boundedness & Continuity</a>
             <a href="#norm">The Operator Norm</a>
+            <a href="#bxy">The Space B(X,Y)</a>
             <a href="#affine">Affine Subspaces vs Manifolds</a>
         </div>  
 
@@ -69,73 +70,381 @@ noindex: true
                 </div>
 
                  <p>
-                    This means the differentiation operator is linear but <strong>unbounded</strong> (and thus discontinuous). 
                     Because calculus and optimization require continuity, we must restrict our focus to the class of operators that behave well: 
                     <strong>bounded linear operators</strong>.
                  </p>
-                 
             </section>
 
          
             <section id="boundedness" class="section-content">
                 <h2>Boundedness & Continuity</h2>
 
+                <p>
+                    In <a href="intro_analysis.html"><strong>Part 23</strong></a>, we established that Banach and Hilbert spaces are the proper 
+                    "stages" for doing calculus in infinite dimensions. Now, we need to identify the "actors" — the maps between these spaces — 
+                    that are well-behaved enough for analysis. The key idea is deceptively simple: we want operators that do not amplify inputs 
+                    by an arbitrarily large factor.
+                </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Definition: Bounded Linear Operator</span>
                     <p>
-                       
+                        Let \(X\) and \(Y\) be normed spaces. A linear operator \(T: X \to Y\) is called <strong>bounded</strong> if there 
+                        exists a constant \(M \geq 0\) such that
+                        \[
+                        \|T(x)\|_Y \leq M \|x\|_X \quad \text{for all } x \in X.
+                        \]
+                    </p>
+                    <p>
+                        In other words, \(T\) has a finite "maximum gain." It cannot stretch any input by more than a factor of \(M\).
                     </p>
                 </div>
 
+                <p>
+                    This definition captures an analogy from engineering: think of a bounded operator as an amplifier with a finite gain knob. 
+                    No matter what signal you feed in, the output power is controlled. The derivative operator from Section 1, by contrast, 
+                    is an amplifier with no gain limit — feeding in higher-frequency signals produces arbitrarily large outputs.
+                </p>
+
+                <p>
+                    The following theorem is arguably the most important result in this chapter. It tells us that for linear maps, 
+                    "bounded" and "continuous" are <strong>exactly the same concept</strong>. This is remarkable because boundedness 
+                    is an algebraic/analytic condition, while continuity is a topological one.
+                </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Theorem: Bounded ⟺ Continuous</span>
                     <p>
-                       
+                        Let \(T: X \to Y\) be a linear operator between normed spaces. The following are equivalent:
+                    </p>
+                    <p>
+                        (a) \(T\) is <strong>continuous at every point</strong> of \(X\).<br>
+                        (b) \(T\) is <strong>continuous at 0</strong>.<br>
+                        (c) \(T\) is <strong>bounded</strong>.
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        <strong>(a) ⟹ (b)</strong> is trivial (continuity everywhere implies continuity at \(0\)).
+                    </p>
+                    <p>
+                        <strong>(b) ⟹ (c):</strong> If \(T\) is continuous at \(0\), then there exists \(\delta > 0\) such that 
+                        \(\|x\| < \delta \implies \|Tx\| < 1\). For any nonzero \(x \in X\), the vector 
+                        \(z = \frac{\delta}{2} \cdot \frac{x}{\|x\|}\) satisfies \(\|z\| < \delta\), so \(\|Tz\| < 1\). 
+                        By linearity:
+                        \[
+                        \left\| T\!\left(\frac{\delta}{2} \cdot \frac{x}{\|x\|}\right) \right\| = \frac{\delta}{2\|x\|} \|Tx\| < 1
+                        \implies \|Tx\| < \frac{2}{\delta}\|x\|.
+                        \]
+                        Thus \(T\) is bounded with \(M = 2/\delta\).
+                    </p>
+                    <p>
+                        <strong>(c) ⟹ (a):</strong> If \(\|Tx\| \leq M\|x\|\), then for any sequence \(x_n \to x\):
+                        \[
+                        \|Tx_n - Tx\| = \|T(x_n - x)\| \leq M\|x_n - x\| \to 0.
+                        \]
+                        So \(T\) is (Lipschitz) continuous everywhere. \(\square\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Connection to Forward Pass Stability</h3>
+                    <p>
+                        Every layer of a neural network is a composition of a linear map (the weight matrix \(\mathbf{W}\)) followed 
+                        by a nonlinear activation. The linear part \(x \mapsto \mathbf{W}x\) is a bounded linear operator on 
+                        \(\mathbb{R}^n\), and its "gain" is precisely its operator norm. When we pass inputs forward through many layers, 
+                        the total stretch of the signal is bounded by the product of the individual gains. 
+                        Ensuring these operators remain strictly bounded is the mathematical foundation of 
+                        <a href="continuity.html#lipschitz"><strong>Lipschitz-constrained networks</strong></a>, which are essential for 
+                        training stable Generative Adversarial Networks (GANs) and ensuring robustness against adversarial attacks.
+                    </p>
+                </div>
+
+                <h3>Finite Dimensions: Automatic Boundedness</h3>
+                <p>
+                    Recall from <a href="intro_analysis.html#dimensions"><strong>Part 23</strong></a> that in finite-dimensional spaces, 
+                    all norms are topologically equivalent. This equivalence has a powerful consequence:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Every Linear Operator on Finite-Dimensional Spaces is Bounded</span>
+                    <p>
+                        If \(X\) is a finite-dimensional normed space, then <strong>every</strong> linear operator \(T: X \to Y\) 
+                        (for any normed space \(Y\)) is bounded.
+                    </p>
+                </div>
+
+                <p>
+                    This is why, in your Linear Algebra courses, the question of "is this matrix continuous?" never arose — it was 
+                    always automatically true. The concept of boundedness only becomes nontrivial, and absolutely essential, in 
+                    infinite-dimensional function spaces.
+                </p>
             </section>
 
             <section id="norm" class="section-content">
                 <h2>The Operator Norm</h2>
 
+                <p>
+                    We know that a bounded operator has a finite "maximum gain." The <strong>operator norm</strong> makes this 
+                    precise by defining the <em>smallest</em> such gain constant — the tightest possible bound on how much \(T\) 
+                    can stretch any input.
+                </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Definition: The Operator Norm</span>
                     <p>
-                       
+                        Let \(T: X \to Y\) be a bounded linear operator between normed spaces. The <strong>operator norm</strong> of \(T\) is:
+                        \[
+                        \|T\| = \sup_{\substack{x \in X \\ x \neq 0}} \frac{\|Tx\|_Y}{\|x\|_X}.
+                        \]
                     </p>
                 </div>
 
+                <p>
+                    Intuitively, \(\|T\|\) answers the question: <em>"What is the maximum factor by which \(T\) can amplify 
+                    any input?"</em> This supremum is taken over all nonzero inputs — it finds the "worst-case stretch."
+                </p>
+
+                <p>
+                    The following equivalent characterizations are used constantly in practice. Each captures the same idea 
+                    from a slightly different geometric perspective:
+                </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Proposition: Equivalent Formulations of the Operator Norm</span>
                     <p>
-                       
+                        The following expressions all equal \(\|T\|\):
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \|T\| &= \sup_{\|x\| \leq 1} \|Tx\| && \text{(supremum over the closed unit ball)} \\
+                        &= \sup_{\|x\| = 1} \|Tx\| && \text{(supremum over the unit sphere)} \\
+                        &= \inf \{ M \geq 0 : \|Tx\| \leq M\|x\| \text{ for all } x \in X \} && \text{(smallest bounding constant)}
+                        \end{align*}
+                        \]
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Example: Operator Norm of a Matrix</span>
+                    <p>
+                        For a matrix \(\mathbf{A} \in \mathbb{R}^{m \times n}\) acting on \((\mathbb{R}^n, \|\cdot\|_2) \to (\mathbb{R}^m, \|\cdot\|_2)\), 
+                        the operator norm equals the <strong>largest singular value</strong>:
+                        \[
+                        \|\mathbf{A}\|_{\text{op}} = \sigma_{\max}(\mathbf{A}) = \sqrt{\lambda_{\max}(\mathbf{A}^T\mathbf{A})}.
+                        \]
+                    </p>
+                    <p>
+                        This connects directly to the <a href="../Linear_algebra/symmetry.html#svd"><strong>Singular Value Decomposition (SVD)</strong></a>. 
+                        The SVD decomposes \(\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma} \mathbf{V}^T\), and the operator norm is simply the largest diagonal entry of \(\boldsymbol{\Sigma}\). 
+                        In this light, <strong>the operator norm is the infinite-dimensional generalization of the largest singular value</strong>.
+                    </p>
+                </div>
+
+                <h3>Key Properties of the Operator Norm</h3>
+                <p>
+                    The operator norm satisfies the standard axioms of a norm (non-negativity, homogeneity, triangle inequality), 
+                    but it also has a crucial <strong>submultiplicativity</strong> property that is essential for studying compositions:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Submultiplicativity</span>
+                    <p>
+                        If \(T: X \to Y\) and \(S: Y \to Z\) are bounded linear operators, then the composition \(S \circ T: X \to Z\) 
+                        is bounded and
+                        \[
+                        \|S \circ T\| \leq \|S\| \cdot \|T\|.
+                        \]
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Connection to Gradient Flow and Backpropagation</h3>
+                    <p>
+                        While layer gains affect the forward pass, submultiplicativity strictly governs the <strong>backward pass</strong>. 
+                        In a network with \(L\) layers, backpropagation computes gradients by multiplying a sequence of Jacobians 
+                        \(\mathbf{J}_1, \ldots, \mathbf{J}_L\). The operator norm of this product satisfies:
+                        \[
+                        \left\|\prod_{\ell=1}^{L} \mathbf{J}_\ell \right\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{J}_\ell\|_{\text{op}}.
+                        \]
+                        If each \(\|\mathbf{J}_\ell\|_{\text{op}} > 1\), the gradient explodes exponentially. If each \(\|\mathbf{J}_\ell\|_{\text{op}} < 1\), it vanishes. 
+                        Techniques like <strong>orthogonal initialization</strong> (setting \(\|\mathbf{W}_\ell\|_{\text{op}} \approx 1\)) 
+                        and <strong>spectral normalization</strong> (explicitly dividing \(\mathbf{W}\) by \(\sigma_{\max}\)) 
+                        are direct applications of controlling the operator norm to guarantee stable gradient flow.
+                    </p>
+                </div>
             </section>
-          
+
+            <section id="bxy" class="section-content">
+                <h2>The Space \(\mathcal{B}(X, Y)\) & Completeness</h2>
+
+                <p>
+                    A remarkable feature of functional analysis is that <strong>operators themselves form a vector space</strong>. 
+                    Just as we add and scale functions pointwise, we can add and scale operators:
+                    \[
+                    (S + T)(x) = S(x) + T(x), \qquad (\alpha T)(x) = \alpha \cdot T(x).
+                    \]
+                    If we collect all bounded linear operators from \(X\) to \(Y\) and equip this collection with the operator norm, 
+                    we obtain a normed space of its own.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: The Space \(\mathcal{B}(X, Y)\)</span>
+                    <p>
+                        Let \(X\) and \(Y\) be normed spaces. The set
+                        \[
+                        \mathcal{B}(X, Y) = \{ T: X \to Y \mid T \text{ is linear and bounded} \}
+                        \]
+                        equipped with the operator norm \(\|T\| = \sup_{\|x\| \leq 1} \|Tx\|\) is a <strong>normed vector space</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    This construction is a hallmark of the "functional analysis philosophy": we study maps between spaces by 
+                    turning those maps <em>into points of a new space</em>, and then we apply the same analytical tools 
+                    (norms, convergence, completeness) to this new space of operators.
+                </p>
+
+                <p>
+                    The next theorem tells us <strong>when</strong> this space of operators is complete. The answer is elegant: 
+                    the operators inherit completeness from their codomain.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Completeness of \(\mathcal{B}(X, Y)\)</span>
+                    <p>
+                        If \(X\) is a normed space and \(Y\) is a <strong>Banach space</strong>, then 
+                        \(\mathcal{B}(X, Y)\) is also a <strong>Banach space</strong>.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        Let \(\{T_n\}\) be a Cauchy sequence in \(\mathcal{B}(X, Y)\). For each fixed \(x \in X\):
+                        \[
+                        \|T_n(x) - T_m(x)\|_Y = \|(T_n - T_m)(x)\|_Y \leq \|T_n - T_m\|_{\text{op}} \cdot \|x\|_X.
+                        \]
+                        Since \(\{T_n\}\) is Cauchy in the operator norm, \(\{T_n(x)\}\) is a Cauchy sequence in \(Y\). 
+                        Because \(Y\) is complete (Banach), each \(T_n(x)\) converges to some limit. We define 
+                        \(T(x) = \lim_{n \to \infty} T_n(x)\). One then verifies that \(T\) is linear, bounded, 
+                        and that \(\|T_n - T\|_{\text{op}} \to 0\). \(\square\)
+                    </p>
+                </div>
+
+                <h3>The Special Case: \(X^* = \mathcal{B}(X, \mathbb{F})\)</h3>
+                <p>
+                    When the codomain is the scalar field \(\mathbb{F}\) (which is always complete), we get a particularly 
+                    important instance:
+                    \[
+                    X^* = \mathcal{B}(X, \mathbb{F})
+                    \]
+                    is always a Banach space, regardless of whether \(X\) itself is complete. This space \(X^*\) is the 
+                    <strong>topological dual space</strong> of \(X\) — the space of all continuous linear functionals. 
+                    We introduced functionals at the end of <a href="intro_analysis.html#functionals"><strong>Part 23</strong></a>; 
+                    the dual space will be the central object of the 
+                    <strong>next chapter (calc-25: Dual Spaces & Riesz Representation)</strong>.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Function Space Optimization</h3>
+                    <p>
+                        The completeness of \(\mathcal{B}(X, Y)\) guarantees that if we have a sequence of "improving" operators 
+                        (e.g., a sequence of trained neural network weight configurations converging in operator norm), the limit 
+                        is a <strong>valid bounded operator</strong> that remains in the space. Without this result, there would be 
+                        no guarantee that the "best" operator obtained by an optimization process actually exists within our 
+                        working space — the same foundational role that completeness of \(L^2\) plays for function approximation.
+                    </p>
+                </div>
+            </section>
+
             <section id="affine" class="section-content">
-                <h2>Affine Subspaces vs Manifolds</h2>
+                <h2>Affine Subspaces vs Manifolds: A Terminological Warning</h2>
+
+                <p>
+                    Before we proceed further in this curriculum, we must address a terminological issue that causes 
+                    significant confusion when students transition from classical functional analysis textbooks to modern 
+                    Geometric Deep Learning (GDL) literature.
+                </p>
+
+                <p>
+                    Many classical texts (such as John B. Conway's <em>A Course in Functional Analysis</em>) use the term 
+                    <strong>"linear manifold"</strong> to refer to what is more precisely called an <strong>affine subspace</strong> 
+                    (or a "translated subspace," or a "coset" of a subspace).
+                </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Definition: Affine Subspace</span>
                     <p>
-                       
+                        Let \(X\) be a vector space and \(M \subseteq X\) a subspace. An <strong>affine subspace</strong> 
+                        (or <strong>flat</strong>) is a set of the form
+                        \[
+                        x_0 + M = \{ x_0 + m : m \in M \}
+                        \]
+                        for some fixed \(x_0 \in X\). This is simply the subspace \(M\) shifted by the vector \(x_0\).
                     </p>
                 </div>
 
+                <p>
+                    An affine subspace is a <strong>flat</strong> object — it has no curvature. It is the infinite-dimensional 
+                    analogue of a plane that does not pass through the origin in \(\mathbb{R}^3\).
+                </p>
+
                 <div class="theorem">
-                    <span class="theorem-title">Definition: </span>
+                    <span class="theorem-title">Definition: Manifold (Topological / Smooth)</span>
                     <p>
-                       
+                        A <strong>manifold</strong> is a topological space that <em>locally</em> resembles Euclidean space 
+                        \(\mathbb{R}^n\) near each point. A <strong>smooth manifold</strong> additionally carries a 
+                        differentiable structure, enabling calculus on curved spaces.
+                    </p>
+                    <p>
+                        Key examples include spheres \(S^n\), the rotation group \(SO(3)\), and the space of 
+                        positive definite matrices — all of which have intrinsic <strong>curvature</strong>.
                     </p>
                 </div>
 
+                <p>
+                    The distinction is critical:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Affine subspace:</strong> Flat, globally linear structure. Lives inside a vector space. 
+                        No curvature.
+                    </li>
+                    <li>
+                        <strong>Manifold:</strong> Potentially curved, only locally linear. Does not need an ambient vector space. 
+                        Has rich geometric structure (tangent spaces, geodesics, curvature).
+                    </li>
+                </ul>
+
+                <div class="insight-box">
+                    <h3>Why This Matters for GDL</h3>
+                    <p>
+                        In Geometric Deep Learning, "manifold" always refers to curved spaces: the sphere \(S^2\) for 
+                        omnidirectional images, the Lie group \(SO(3)\) for 3D rotations in 
+                        <a href="../Linear_algebra/dihedral_group.html"><strong>robotics</strong></a>, or the statistical manifold of 
+                        probability distributions for 
+                        <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>. 
+                        If you encounter "linear manifold" in a functional analysis text, mentally replace it with 
+                        <strong>"affine subspace"</strong> to avoid confusing the flat, algebraic concept with the curved, 
+                        geometric one that dominates the later portions of this curriculum.
+                    </p>
+                </div>
+
+                <p>
+                    With this clarification in place, we have now assembled the essential toolkit of bounded linear operators 
+                    and their norms. In the <strong>next chapter</strong>, we turn to the most important special case: 
+                    when the codomain is the scalar field. These are the <strong>continuous linear functionals</strong>, 
+                    and collecting them gives us the <strong>Dual Space</strong> \(X^*\) — the gateway to understanding 
+                    why gradients are covectors and to the Riesz Representation Theorem.
+                </p>
             </section>
 
         </div>
-
 
         <script src="/js/main.js"></script>
     </body>
