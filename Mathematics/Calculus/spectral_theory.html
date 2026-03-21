@@ -1,0 +1,737 @@
+---
+layout: default
+title: "Spectral Theory of Compact Operators"
+topic_id: calc-27
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Spectral Theory of Compact Operators</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#spectrum">From Eigenvalues to the Spectrum</a>
+            <a href="#adjoint">The Adjoint & Self-Adjoint Operators</a>
+            <a href="#compact">Compact Operators</a>
+            <a href="#spectral-theorem">The Spectral Theorem</a>
+            <a href="#applications">Functional PCA & The Path to Kernels</a>
+        </div>  
+
+        <div class="container">   
+
+        
+            <section id="spectrum" class="section-content">
+                <h2>From Eigenvalues to the Spectrum</h2>
+
+                <p>
+                    In <a href="../Linear_algebra/eigenvectors.html"><strong>Eigenvalues & Eigenvectors</strong></a>, 
+                    we learned that every square matrix \(A \in \mathbb{R}^{n \times n}\) has eigenvalues — 
+                    scalars \(\lambda\) for which \(A\mathbf{v} = \lambda\mathbf{v}\) has a nonzero solution. 
+                    Equivalently, \(\lambda\) is an eigenvalue if and only if the operator \(A - \lambda I\) 
+                    is <strong>not invertible</strong>, i.e., \(\det(A - \lambda I) = 0\). 
+                    In finite dimensions, every linear operator has at least one eigenvalue (over \(\mathbb{C}\)), 
+                    and the <a href="../Linear_algebra/symmetry.html#sym"><strong>Spectral Theorem for Symmetric Matrices</strong></a> 
+                    guarantees that symmetric matrices possess a complete orthonormal eigenbasis.
+                </p>
+
+                <p>
+                    In infinite dimensions, the situation is far more subtle. The characteristic polynomial 
+                    \(\det(T - \lambda I) = 0\) is no longer available — determinants are not defined for 
+                    operators on infinite-dimensional spaces. We must replace this algebraic criterion with 
+                    a topological one: <em>invertibility of the operator \(T - \lambda I\)</em>.
+                </p>
+
+                <h3>The Resolvent and Spectrum</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Resolvent Set and Spectrum</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a Banach space and \(T \in \mathcal{B}(\mathcal{X})\) a bounded 
+                        linear operator. The <strong>resolvent set</strong> of \(T\) is
+                        \[
+                        \rho(T) = \bigl\{\lambda \in \mathbb{C} : (T - \lambda I) \text{ has a bounded inverse in } \mathcal{B}(\mathcal{X})\bigr\}.
+                        \]
+                        The <strong>spectrum</strong> of \(T\) is its complement:
+                        \[
+                        \sigma(T) = \mathbb{C} \setminus \rho(T).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    In finite dimensions, the spectrum equals the set of eigenvalues. In infinite dimensions, 
+                    the operator \(T - \lambda I\) can fail to be invertible in fundamentally different ways, 
+                    giving rise to three distinct parts of the spectrum.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Decomposition of the Spectrum</span>
+                    <p>
+                        The spectrum \(\sigma(T)\) decomposes into three disjoint parts:
+                    </p>
+                    <p>
+                        <strong>(a) Point Spectrum</strong> \(\sigma_p(T)\): The set of \(\lambda\) for which 
+                        \(T - \lambda I\) is <strong>not injective</strong>. These are the <em>true eigenvalues</em> — 
+                        there exists a nonzero \(x\) with \(Tx = \lambda x\).
+                    </p>
+                    <p>
+                        <strong>(b) Continuous Spectrum</strong> \(\sigma_c(T)\): The set of \(\lambda\) for which 
+                        \(T - \lambda I\) is injective, has <strong>dense range</strong>, but is <strong>not surjective</strong>. 
+                        The "inverse" exists on a dense subspace but is unbounded.
+                    </p>
+                    <p>
+                        <strong>(c) Residual Spectrum</strong> \(\sigma_r(T)\): The set of \(\lambda\) for which 
+                        \(T - \lambda I\) is injective but does <strong>not</strong> have dense range.
+                    </p>
+                </div>
+
+                <p>
+                    The continuous spectrum is the genuinely new phenomenon of infinite dimensions. 
+                    Let us see it in action.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: The Right Shift Operator on \(\ell^2\)</span>
+                    <p>
+                        Define the <strong>right shift</strong> \(S : \ell^2 \to \ell^2\) by 
+                        \(S(x_1, x_2, x_3, \ldots) = (0, x_1, x_2, x_3, \ldots)\).
+                    </p>
+                    <p>
+                        This operator has <strong>no eigenvalues</strong>: if \(S\mathbf{x} = \lambda\mathbf{x}\), 
+                        then \(0 = \lambda x_1\), \(x_1 = \lambda x_2\), \(x_2 = \lambda x_3\), etc. 
+                        For \(\lambda = 0\), we get \(\mathbf{x} = 0\). For \(\lambda \neq 0\), 
+                        we get \(x_n = x_1 / \lambda^{n-1}\), which is not square-summable unless \(x_1 = 0\). 
+                        So \(\sigma_p(S) = \emptyset\).
+                    </p>
+                    <p>
+                        Yet the spectrum is nonempty: one can show that \(\sigma(S) = \{\lambda \in \mathbb{C} : |\lambda| \leq 1\}\), 
+                        the entire closed unit disk. The boundary \(\{|\lambda| = 1\}\) contributes to the 
+                        continuous and residual spectra — a phenomenon with no finite-dimensional counterpart.
+                    </p>
+                </div>
+
+                <p>
+                    This example reveals why infinite-dimensional spectral theory requires new tools. 
+                    A general bounded operator on a Hilbert space may have spectrum that is a continuous 
+                    "smear" rather than a discrete set of points. To recover the clean, discrete 
+                    eigenvalue structure of finite-dimensional linear algebra, we need to impose 
+                    additional structure on our operators.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to the Graph Laplacian</h3>
+                    <p>
+                        In <a href="../Linear_algebra/graph_laplacian.html"><strong>Graph Laplacians & Spectral Methods</strong></a> 
+                        and <a href="../Machine_learning/clustering.html#sp"><strong>Spectral Clustering</strong></a>, 
+                        we exploited the eigenvalues and eigenvectors of the (finite) graph Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) 
+                        to partition data. The Spectral Theorem for symmetric matrices guaranteed that \(\mathbf{L}\) is 
+                        orthogonally diagonalizable. This chapter generalizes that machinery to 
+                        <em>continuous</em> operators on infinite-dimensional spaces — replacing the 
+                        discrete graph Laplacian with integral operators, and finite eigenvectors with 
+                        eigenfunctions.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <section id="adjoint" class="section-content">
+                <h2>The Adjoint & Self-Adjoint Operators</h2>
+
+                <p>
+                    In finite-dimensional linear algebra, the transpose (or conjugate transpose) of a matrix 
+                    plays a central role — symmetric matrices (\(A = A^T\)) have real eigenvalues and 
+                    orthogonal eigenvectors. We now generalize this to Hilbert spaces using the inner product.
+                </p>
+
+                <h3>The Hilbert Space Adjoint</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Existence of the Adjoint</span>
+                    <p>
+                        Let \(\mathcal{H}\) be a Hilbert space and \(T \in \mathcal{B}(\mathcal{H})\). 
+                        There exists a unique operator \(T^* \in \mathcal{B}(\mathcal{H})\), 
+                        called the <strong>adjoint</strong> of \(T\), satisfying
+                        \[
+                        \langle Tx, y \rangle = \langle x, T^* y \rangle \quad \text{for all } x, y \in \mathcal{H}.
+                        \]
+                        Moreover, \(\|T^*\| = \|T\|\).
+                    </p>
+                </div>
+
+                <p>
+                    The existence of \(T^*\) follows from the 
+                    <a href="dual_spaces.html#riesz"><strong>Riesz Representation Theorem</strong></a>: 
+                    for each fixed \(y\), the map \(x \mapsto \langle Tx, y \rangle\) is a continuous 
+                    linear functional on \(\mathcal{H}\). By Riesz, there exists a unique vector — which we 
+                    call \(T^* y\) — such that \(\langle Tx, y \rangle = \langle x, T^* y \rangle\). 
+                    The map \(y \mapsto T^* y\) is linear, and the bound \(\|T^*\| = \|T\|\) follows from 
+                    the isometry of the Riesz map.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Adjoints of Familiar Operators</span>
+                    <p>
+                        <strong>Matrices:</strong> For \(A \in \mathbb{C}^{m \times n}\) acting on 
+                        \(\mathbb{C}^n\), the adjoint is the conjugate transpose: \(A^* = \overline{A}^T\). 
+                        Over \(\mathbb{R}\), this is simply \(A^T\).
+                    </p>
+                    <p>
+                        <strong>Integral operators:</strong> If \(T : L^2([a,b]) \to L^2([a,b])\) is defined by
+                        \[
+                        (Tf)(x) = \int_a^b K(x, t)\, f(t)\, dt,
+                        \]
+                        then the adjoint is
+                        \[
+                        (T^* g)(t) = \int_a^b \overline{K(x, t)}\, g(x)\, dx.
+                        \]
+                        That is, the kernel is "transposed and conjugated": \(K^*(t, x) = \overline{K(x, t)}\).
+                    </p>
+                </div>
+
+                <h3>Self-Adjoint Operators</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Self-Adjoint (Hermitian) Operator</span>
+                    <p>
+                        A bounded operator \(T \in \mathcal{B}(\mathcal{H})\) is <strong>self-adjoint</strong> 
+                        if \(T = T^*\), i.e.,
+                        \[
+                        \langle Tx, y \rangle = \langle x, Ty \rangle \quad \text{for all } x, y \in \mathcal{H}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Self-adjoint operators are the infinite-dimensional generalization of real symmetric 
+                    (or Hermitian) matrices. They inherit the crucial spectral properties:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Spectral Properties of Self-Adjoint Operators</span>
+                    <p>
+                        Let \(T = T^* \in \mathcal{B}(\mathcal{H})\). Then:
+                    </p>
+                    <p>
+                        <strong>(a)</strong> Every eigenvalue of \(T\) is <strong>real</strong>.
+                    </p>
+                    <p>
+                        <strong>(b)</strong> Eigenvectors corresponding to distinct eigenvalues are <strong>orthogonal</strong>.
+                    </p>
+                    <p>
+                        <strong>(c)</strong> The entire spectrum \(\sigma(T) \subseteq \mathbb{R}\).
+                    </p>
+                    <p>
+                        <strong>(d)</strong> \(\|T\| = \sup_{\|x\| = 1} |\langle Tx, x \rangle|\), and both 
+                        \(\inf_{\|x\|=1} \langle Tx, x \rangle\) and \(\sup_{\|x\|=1} \langle Tx, x \rangle\) 
+                        belong to \(\sigma(T)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (a) and (b):</span>
+                    <p>
+                        <strong>(a)</strong> If \(Tx = \lambda x\) with \(x \neq 0\), then 
+                        \(\lambda \langle x, x \rangle = \langle Tx, x \rangle = \langle x, Tx \rangle 
+                        = \overline{\lambda} \langle x, x \rangle\). Since \(\langle x, x \rangle \neq 0\), 
+                        we get \(\lambda = \overline{\lambda}\), so \(\lambda \in \mathbb{R}\).
+                    </p>
+                    <p>
+                        <strong>(b)</strong> If \(Tx = \lambda x\) and \(Ty = \mu y\) with \(\lambda \neq \mu\), 
+                        then \(\lambda \langle x, y \rangle = \langle Tx, y \rangle = \langle x, Ty \rangle = \mu \langle x, y \rangle\). 
+                        Since \(\lambda \neq \mu\), we conclude \(\langle x, y \rangle = 0\). \(\square\)
+                    </p>
+                </div>
+
+                <p>
+                    Property (d) is particularly important — it says the operator norm of a self-adjoint 
+                    operator is determined by its <strong>quadratic form</strong> \(\langle Tx, x \rangle\), 
+                    the infinite-dimensional analogue of the Rayleigh quotient from 
+                    <a href="../Linear_algebra/symmetry.html#qf"><strong>quadratic forms</strong></a>.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Quantum Mechanics</h3>
+                    <p>
+                        In quantum mechanics, observables (position, momentum, energy) are modeled as 
+                        self-adjoint operators on a Hilbert space. The requirement that eigenvalues be real 
+                        (property (a)) ensures that measurement outcomes are real numbers. 
+                        The orthogonality of eigenvectors (property (b)) ensures that distinct measurement 
+                        outcomes correspond to mutually exclusive states — the mathematical basis of the 
+                        <a href="dual_spaces.html#braket"><strong>Bra-Ket formalism</strong></a>.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <section id="compact" class="section-content">
+                <h2>Compact Operators: "Almost Finite-Dimensional"</h2>
+
+                <p>
+                    The right shift example in <a href="#spectrum">Section 1</a> showed that a general 
+                    bounded operator can have a continuous spectrum with no eigenvalues at all. 
+                    To recover the discrete, diagonalizable structure of finite-dimensional linear algebra, 
+                    we restrict our attention to a special class of operators that are, in a precise sense, 
+                    "close to finite-dimensional."
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Compact Operator</span>
+                    <p>
+                        A bounded linear operator \(T : \mathcal{X} \to \mathcal{Y}\) between normed spaces 
+                        is called <strong>compact</strong> if it maps every bounded set in \(\mathcal{X}\) 
+                        to a <strong>relatively compact</strong> (precompact) set in \(\mathcal{Y}\). 
+                        Equivalently, for every bounded sequence \(\{x_n\}\) in \(\mathcal{X}\), 
+                        the image sequence \(\{Tx_n\}\) has a <strong>convergent subsequence</strong> in \(\mathcal{Y}\).
+                    </p>
+                </div>
+
+                <p>
+                    Recall from <a href="intro_analysis.html#dimensions"><strong>Intro to Functional Analysis</strong></a> 
+                    that in infinite dimensions, bounded sequences need not have convergent subsequences — 
+                    the closed unit ball is not compact. A compact operator "repairs" this: it 
+                    compresses the infinite-dimensional unit ball into a set that <em>is</em> 
+                    (relatively) compact. In other words, it "squashes away" the infinite-dimensional 
+                    directions, leaving behind something that behaves like a finite-dimensional object.
+                </p>
+
+                <h3>Finite-Rank Operators</h3>
+
+                <p>
+                    The simplest compact operators are those with finite-dimensional range.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Finite-Rank Operator</span>
+                    <p>
+                        An operator \(T \in \mathcal{B}(\mathcal{X}, \mathcal{Y})\) is <strong>finite-rank</strong> 
+                        if \(\dim(\operatorname{Range}(T)) < \infty\). Every finite-rank operator is compact 
+                        (its image lies in a finite-dimensional subspace, where Heine-Borel applies).
+                    </p>
+                </div>
+
+                <p>
+                    The deep connection between compact and finite-rank operators is captured by the following 
+                    approximation property:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Compact Operators as Limits of Finite-Rank Operators</span>
+                    <p>
+                        Let \(\mathcal{H}\) be a Hilbert space. An operator \(T \in \mathcal{B}(\mathcal{H})\) 
+                        is compact if and only if there exists a sequence of finite-rank operators \(\{T_n\}\) 
+                        such that \(\|T - T_n\| \to 0\).
+                    </p>
+                </div>
+
+                <p>
+                    This is the functional-analytic analogue of the 
+                    <a href="../Linear_algebra/symmetry.html#svd"><strong>truncated SVD</strong></a>: 
+                    a compact operator can be approximated arbitrarily well by operators with 
+                    finite-dimensional range, just as any matrix can be approximated by low-rank matrices 
+                    obtained by discarding small singular values.
+                </p>
+
+                <h3>The Canonical Example: Integral Operators</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Hilbert-Schmidt Integral Operators</span>
+                    <p>
+                        Let \(K : [a,b] \times [a,b] \to \mathbb{R}\) be a square-integrable kernel, meaning
+                        \[
+                        \int_a^b \int_a^b |K(x,t)|^2 \, dx\, dt < \infty.
+                        \]
+                        The <strong>integral operator</strong> defined by
+                        \[
+                        (Tf)(x) = \int_a^b K(x, t)\, f(t)\, dt
+                        \]
+                        is a <strong>compact</strong> operator on \(L^2([a,b])\). 
+                        Such operators are called <strong>Hilbert-Schmidt operators</strong>, and they form 
+                        a two-sided ideal in \(\mathcal{B}(L^2)\).
+                    </p>
+                    <p>
+                        The Hilbert-Schmidt norm is
+                        \[
+                        \|T\|_{\text{HS}} = \left(\int_a^b \int_a^b |K(x,t)|^2 \, dx\, dt\right)^{1/2},
+                        \]
+                        and it satisfies \(\|T\| \leq \|T\|_{\text{HS}}\) 
+                        (the operator norm is bounded by the Hilbert-Schmidt norm).
+                    </p>
+                </div>
+
+                <p>
+                    These integral operators are the "continuous matrices" of functional analysis. 
+                    The kernel function \(K(x,t)\) plays the role of the matrix entries \(a_{ij}\), 
+                    and the integral replaces the finite sum. When the kernel is symmetric 
+                    (\(K(x,t) = K(t,x)\)), the integral operator is self-adjoint — the 
+                    continuous analogue of a symmetric matrix.
+                </p>
+
+                <h3>Key Properties of Compact Operators</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Properties of Compact Operators</span>
+                    <p>
+                        <strong>(a)</strong> The set of compact operators \(\mathcal{K}(\mathcal{X}, \mathcal{Y})\) 
+                        is a <strong>closed subspace</strong> of \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\).
+                    </p>
+                    <p>
+                        <strong>(b)</strong> If \(T\) is compact and \(S\) is bounded, then both \(ST\) and \(TS\) 
+                        are compact (compact operators form a <strong>two-sided ideal</strong> in \(\mathcal{B}(\mathcal{H})\)).
+                    </p>
+                    <p>
+                        <strong>(c)</strong> If \(T\) is compact, then \(T^*\) is compact (Schauder's theorem).
+                    </p>
+                    <p>
+                        <strong>(d)</strong> The identity operator \(I\) on an infinite-dimensional space is 
+                        <strong>never</strong> compact (since the closed unit ball is not compact).
+                    </p>
+                </div>
+
+                <p>
+                    Property (d) highlights the key distinction: compact operators are the "well-behaved" 
+                    operators that do not include the identity — they necessarily "lose dimensions" 
+                    in the sense that their image cannot contain an open set.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Machine Learning: Kernel Matrices as Finite Approximations</h3>
+                    <p>
+                        In <a href="../Machine_learning/pca.html#kernel-pca"><strong>Kernel PCA</strong></a>, 
+                        we compute the Gram matrix \(K_{ij} = k(x_i, x_j)\) for \(N\) data points 
+                        and extract its eigenvectors. This \(N \times N\) matrix is a 
+                        <strong>finite-rank approximation</strong> of the underlying integral operator 
+                        \((Tf)(x) = \int k(x, t) f(t)\, d\mu(t)\) on the function space. 
+                        The theorem above guarantees that as \(N \to \infty\), the finite Gram matrix 
+                        converges (in operator norm) to the true compact operator — justifying why 
+                        kernel methods work with finite data.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <section id="spectral-theorem" class="section-content">
+                <h2>The Spectral Theorem for Compact Self-Adjoint Operators</h2>
+
+                <p>
+                    We now arrive at the central result of this chapter — the infinite-dimensional 
+                    generalization of the 
+                    <a href="../Linear_algebra/symmetry.html#sym"><strong>Spectral Theorem for Symmetric Matrices</strong></a>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Spectral Theorem (Compact Self-Adjoint Operators)</span>
+                    <p>
+                        Let \(\mathcal{H}\) be a separable Hilbert space and 
+                        \(T = T^* \in \mathcal{B}(\mathcal{H})\) a compact, self-adjoint operator. Then:
+                    </p>
+                    <p>
+                        <strong>(a)</strong> There exists a finite or countably infinite orthonormal sequence 
+                        of eigenvectors \(\{e_n\}_{n=1}^N\) (\(N \leq \infty\)) with corresponding 
+                        <strong>real</strong> eigenvalues \(\{\lambda_n\}\), such that
+                        \[
+                        Tx = \sum_{n=1}^{N} \lambda_n \langle x, e_n \rangle \, e_n \quad \text{for all } x \in \mathcal{H}.
+                        \]
+                    </p>
+                    <p>
+                        <strong>(b)</strong> If \(N = \infty\), then \(\lambda_n \to 0\) as \(n \to \infty\).
+                    </p>
+                    <p>
+                        <strong>(c)</strong> Each nonzero eigenvalue has <strong>finite multiplicity</strong> 
+                        (its eigenspace is finite-dimensional).
+                    </p>
+                    <p>
+                        <strong>(d)</strong> The only possible accumulation point of \(\{\lambda_n\}\) is \(0\).
+                    </p>
+                    <p>
+                        <strong>(e)</strong> The eigenvectors \(\{e_n\}\) together with an orthonormal basis for 
+                        \(\ker(T)\) form a complete orthonormal basis for \(\mathcal{H}\).
+                    </p>
+                </div>
+
+                <blockquote style="border-left: 4px solid #2ecc71; background-color: rgba(46, 204, 113, 0.05); font-style: italic;">
+                    The Spectral Theorem resurrects the full power of finite-dimensional diagonalization: 
+                    a compact self-adjoint operator is completely determined by its eigenvalues and eigenvectors, 
+                    just as a symmetric matrix is determined by \(A = Q\Lambda Q^T\). 
+                    The only new feature is that the eigenvalues must decay to zero — the 
+                    "price" of being compact in infinite dimensions.
+                </blockquote>
+
+                <h3>Comparison: Finite vs. Infinite Dimensions</h3>
+
+                <table style="font-size: 0.95rem;">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Symmetric Matrix \(A \in \mathbb{R}^{n \times n}\)</th>
+                            <th>Compact Self-Adjoint \(T \in \mathcal{B}(\mathcal{H})\)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Eigenvalues</td>
+                            <td>Finitely many (\(n\)), all real</td>
+                            <td>Countably many, all real, \(\lambda_n \to 0\)</td>
+                        </tr>
+                        <tr>
+                            <td>Eigenvectors</td>
+                            <td>Orthonormal basis for \(\mathbb{R}^n\)</td>
+                            <td>Orthonormal basis for \(\overline{\operatorname{Range}(T)}\)</td>
+                        </tr>
+                        <tr>
+                            <td>Decomposition</td>
+                            <td>\(A = Q\Lambda Q^T = \sum_{i=1}^{n} \lambda_i \mathbf{v}_i \mathbf{v}_i^T\)</td>
+                            <td>\(Tx = \sum_{n=1}^{\infty} \lambda_n \langle x, e_n \rangle \, e_n\)</td>
+                        </tr>
+                        <tr>
+                            <td>Truncation</td>
+                            <td>Low-rank approximation (truncated SVD)</td>
+                            <td>Finite-rank approximation (\(\|T - T_k\| \leq |\lambda_{k+1}|\))</td>
+                        </tr>
+                        <tr>
+                            <td>Zero eigenvalue</td>
+                            <td>Indicates rank deficiency</td>
+                            <td>Always in \(\sigma(T)\) if \(\dim(\mathcal{H}) = \infty\)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Proof Sketch</h3>
+
+                <p>
+                    The proof proceeds by an iterative maximization argument that parallels the 
+                    Rayleigh quotient construction from finite-dimensional linear algebra.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        <strong>Step 1: Find the first eigenvector.</strong> 
+                        Since \(T\) is self-adjoint, \(\|T\| = \sup_{\|x\|=1} |\langle Tx, x \rangle|\). 
+                        By <a href="weak_topologies.html#reflexivity"><strong>weak compactness</strong></a> 
+                        of the unit ball (the space is reflexive) and compactness of \(T\), there exists 
+                        \(e_1\) with \(\|e_1\| = 1\) achieving 
+                        \(|\langle Te_1, e_1 \rangle| = \|T\|\). Set \(\lambda_1 = \langle Te_1, e_1 \rangle\). 
+                        A variational argument shows \(Te_1 = \lambda_1 e_1\).
+                    </p>
+                    <p>
+                        <strong>Step 2: Restrict and repeat.</strong> 
+                        The subspace \(\{e_1\}^\perp\) is invariant under \(T\) (because \(T\) is self-adjoint). 
+                        The restriction \(T|_{\{e_1\}^\perp}\) is still compact and self-adjoint, 
+                        so we repeat Step 1 to find \(e_2\) with \(|\lambda_2| = \|T|_{\{e_1\}^\perp}\| \leq |\lambda_1|\).
+                    </p>
+                    <p>
+                        <strong>Step 3: Convergence to zero.</strong> 
+                        The sequence \(\{|\lambda_n|\}\) is nonincreasing and bounded below by 0, so it converges. 
+                        If it converged to some \(\epsilon > 0\), the orthonormal sequence \(\{e_n\}\) would satisfy 
+                        \(\|Te_m - Te_n\|^2 = \lambda_m^2 + \lambda_n^2 \geq 2\epsilon^2\), contradicting 
+                        the compactness of \(T\) (which requires \(\{Te_n\}\) to have a convergent subsequence). 
+                        Hence \(\lambda_n \to 0\). \(\square\)
+                    </p>
+                </div>
+
+                <p>
+                    Notice that Step 1 uses the Rayleigh quotient characterization, Step 2 uses the 
+                    orthogonal complement (Hilbert space structure), and Step 3 uses compactness 
+                    to force the eigenvalues to decay. Each ingredient is essential.
+                </p>
+
+                <h3>The Singular Value Decomposition in Infinite Dimensions</h3>
+
+                <p>
+                    Just as the <a href="../Linear_algebra/symmetry.html#svd"><strong>finite-dimensional SVD</strong></a> 
+                    extends the Spectral Theorem from symmetric to general matrices, 
+                    there is an infinite-dimensional SVD for compact operators.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Singular Value Decomposition (Compact Operators)</span>
+                    <p>
+                        Let \(T \in \mathcal{B}(\mathcal{H})\) be a compact operator (not necessarily self-adjoint). 
+                        Then there exist orthonormal sequences \(\{e_n\}\) and \(\{f_n\}\) and a nonincreasing 
+                        sequence of nonnegative reals \(\sigma_1 \geq \sigma_2 \geq \cdots \geq 0\) 
+                        (the <strong>singular values</strong>) such that
+                        \[
+                        Tx = \sum_{n=1}^{\infty} \sigma_n \langle x, e_n \rangle \, f_n.
+                        \]
+                        The singular values are the eigenvalues of \((T^*T)^{1/2}\), and \(\sigma_n \to 0\).
+                    </p>
+                </div>
+
+                <p>
+                    This is the precise infinite-dimensional analogue of \(A = U\Sigma V^T\). 
+                    The \(\{e_n\}\) are the "right singular vectors," the \(\{f_n\}\) are the 
+                    "left singular vectors," and the \(\sigma_n\) decay to zero because \(T\) is compact.
+                </p>
+
+            </section>
+
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- SECTION 5: Functional PCA & The Path to Kernels                -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <section id="applications" class="section-content">
+                <h2>Functional PCA & The Path to Kernels</h2>
+
+                <p>
+                    The Spectral Theorem is not merely an abstract result — it is the mathematical engine 
+                    behind several of the most important algorithms in machine learning and statistics. 
+                    In this final section, we connect the theory to three concrete applications.
+                </p>
+
+                <h3>Application 1: The Karhunen-Loève Expansion (Functional PCA)</h3>
+
+                <p>
+                    In <a href="../Probability/covariance.html#pca"><strong>PCA</strong></a>, we performed 
+                    eigendecomposition on the covariance matrix \(\Sigma \in \mathbb{R}^{n \times n}\) 
+                    of a finite-dimensional random vector. But what if our data consists of 
+                    <em>random functions</em> — e.g., time series, curves, or images viewed as functions 
+                    on a domain?
+                </p>
+
+                <p>
+                    Let \(X(t)\) be a centered stochastic process on \([a,b]\) with covariance function 
+                    \(C(s, t) = \mathbb{E}[X(s) X(t)]\). The <strong>covariance operator</strong> 
+                    \(\mathcal{C} : L^2([a,b]) \to L^2([a,b])\) is defined by
+                    \[
+                    (\mathcal{C}f)(s) = \int_a^b C(s, t)\, f(t)\, dt.
+                    \]
+                    This is a Hilbert-Schmidt integral operator with a symmetric, positive semi-definite kernel, 
+                    so it is compact and self-adjoint. The Spectral Theorem applies directly.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Karhunen-Loève Expansion</span>
+                    <p>
+                        Let \(X(t)\) be a centered, square-integrable stochastic process on \([a,b]\) with 
+                        continuous covariance function \(C(s,t)\). Let \(\{\lambda_n, e_n\}\) be the eigenvalues 
+                        and eigenfunctions of the covariance operator \(\mathcal{C}\). Then
+                        \[
+                        X(t) = \sum_{n=1}^{\infty} Z_n \, e_n(t),
+                        \]
+                        where \(Z_n = \langle X, e_n \rangle = \int_a^b X(t) e_n(t)\, dt\) are uncorrelated 
+                        random variables with \(\mathbb{E}[Z_n] = 0\) and \(\text{Var}(Z_n) = \lambda_n\). 
+                        The convergence is in \(L^2\).
+                    </p>
+                </div>
+
+                <p>
+                    This is literally <strong>infinite-dimensional PCA</strong>. The eigenfunctions 
+                    \(\{e_n\}\) are the principal components (the directions of maximum variance), 
+                    the eigenvalues \(\lambda_n\) give the variance in each direction, 
+                    and the random coefficients \(Z_n\) are the "scores." 
+                    The decay \(\lambda_n \to 0\) guarantees that truncating after \(k\) terms 
+                    captures most of the variance — the continuous analogue of the scree plot.
+                </p>
+
+                <h3>Application 2: Spectral Clustering via the Continuous Laplacian</h3>
+
+                <p>
+                    In <a href="../Machine_learning/clustering.html#sp"><strong>Spectral Clustering</strong></a>, 
+                    we used eigenvectors of the discrete graph Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) 
+                    to embed data into a low-dimensional space and then applied K-means. The continuous 
+                    analogue replaces the graph with a smooth domain and the discrete Laplacian 
+                    with the <strong>Laplace-Beltrami operator</strong> \(\Delta\) on a manifold.
+                </p>
+
+                <p>
+                    The Laplace-Beltrami operator (with appropriate boundary conditions) is self-adjoint 
+                    and has compact resolvent, so its eigenfunctions \(\{e_n\}\) form an orthonormal 
+                    basis for \(L^2\) on the manifold, with eigenvalues \(0 = \lambda_0 \leq \lambda_1 \leq \cdots \to \infty\). 
+                    The first few eigenfunctions — the "low-frequency modes" — capture the large-scale 
+                    geometry of the manifold, precisely as the Fiedler vector captures the main partition 
+                    of a graph in the discrete case.
+                </p>
+
+                <div class="insight-box">
+                    <h3>From Graphs to Manifolds: The Convergence</h3>
+                    <p>
+                        As the number of data points \(N \to \infty\) and the graph becomes denser, 
+                        the discrete graph Laplacian converges (in a suitable sense) to the 
+                        Laplace-Beltrami operator on the underlying data manifold. 
+                        The eigenvectors of the Gram matrix converge to the eigenfunctions of 
+                        the continuous operator. This is the rigorous justification for spectral clustering: 
+                        the discrete algorithm is a finite-sample approximation of a well-defined 
+                        continuous operation, and the Spectral Theorem guarantees that the continuous 
+                        object has the orthogonal eigenfunction structure we need.
+                    </p>
+                </div>
+
+                <h3>Application 3: The Bridge to Mercer's Theorem and RKHS</h3>
+
+                <p>
+                    Consider a continuous, symmetric, positive semi-definite kernel 
+                    \(K : [a,b] \times [a,b] \to \mathbb{R}\). The integral operator
+                    \[
+                    (T_K f)(x) = \int_a^b K(x, t)\, f(t)\, dt
+                    \]
+                    is compact, self-adjoint, and positive (all eigenvalues \(\lambda_n \geq 0\)). 
+                    By the Spectral Theorem:
+                    \[
+                    K(x, t) = \sum_{n=1}^{\infty} \lambda_n \, e_n(x) \, e_n(t),
+                    \]
+                    where the convergence is absolute and uniform.
+                </p>
+
+                <p>
+                    This eigenfunction expansion has a profound consequence: the kernel \(K\) defines 
+                    an implicit <strong>feature map</strong>
+                    \[
+                    \Phi(x) = \bigl(\sqrt{\lambda_1}\, e_1(x),\; \sqrt{\lambda_2}\, e_2(x),\; \ldots\bigr) \in \ell^2,
+                    \]
+                    such that \(K(x, t) = \langle \Phi(x), \Phi(t) \rangle_{\ell^2}\). 
+                    The kernel "trick" — computing inner products in a high-dimensional feature space 
+                    without ever forming \(\Phi\) explicitly — is mathematically grounded in this 
+                    spectral decomposition.
+                </p>
+
+                <blockquote style="border-left: 4px solid #64b4ff; background-color: rgba(100, 180, 255, 0.05); font-style: italic;">
+                    This is the content of <strong>Mercer's Theorem</strong>, which we will state and prove 
+                    rigorously in the next chapter 
+                    (<a href="rkhs.html"><strong>RKHS & Kernel Methods</strong></a>). 
+                    The Spectral Theorem of the present chapter provides the engine; 
+                    Mercer's Theorem adds the fuel — positivity of the kernel — to build 
+                    the Reproducing Kernel Hilbert Space.
+                </blockquote>
+
+                <h3>Summary: The Spectral Thread</h3>
+
+                <p>
+                    Let us trace the spectral idea through our entire curriculum:
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li><strong>Finite-dimensional</strong> 
+                        (<a href="../Linear_algebra/symmetry.html"><strong>Symmetry & SVD</strong></a>): 
+                        \(A = Q\Lambda Q^T\). Discrete eigenvalues, finite eigenvectors. Powers PCA, SVD.</li>
+                    <li><strong>Discrete infinite</strong> 
+                        (<a href="../Linear_algebra/graph_laplacian.html"><strong>Graph Laplacians</strong></a>): 
+                        \(\mathbf{L} = \mathbf{D} - \mathbf{W}\). Discrete eigenvalues of growing matrices. 
+                        Powers Spectral Clustering, Graph Fourier Transform.</li>
+                    <li><strong>Continuous infinite</strong> (this chapter): 
+                        \(Tx = \sum \lambda_n \langle x, e_n \rangle e_n\). Countable eigenvalues decaying to 0. 
+                        Powers Functional PCA, continuous Laplacians.</li>
+                    <li><strong>Next</strong> : 
+                        Mercer's Theorem converts the spectral decomposition of a positive kernel 
+                        into an explicit feature space — the mathematical foundation of 
+                        SVMs, Gaussian Processes, and Kernel PCA.</li>
+                </ol>
+
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+    </body>
+</html>

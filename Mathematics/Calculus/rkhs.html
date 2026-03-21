@@ -1,0 +1,584 @@
+---
+layout: default
+title: "RKHS & Kernel Methods"
+topic_id: calc-28
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">RKHS & Kernel Methods</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#evaluation">Point Evaluation & The Need for RKHS</a>
+            <a href="#rkhs">Reproducing Kernel Hilbert Spaces</a>
+            <a href="#mercer">Mercer's Theorem</a>
+            <a href="#complexity">RKHS Norm & Function Complexity</a>
+            <a href="#representer">The Representer Theorem & Grand Synthesis</a>
+        </div>  
+
+        <div class="container">   
+
+           
+            <section id="evaluation" class="section-content">
+                <h2>Point Evaluation & The Need for RKHS</h2>
+
+                <p>
+                    Throughout the Functional Analysis series — from 
+                    <a href="intro_analysis.html"><strong>Banach & Hilbert Spaces</strong></a> through 
+                    <a href="spectral_theory.html"><strong>Spectral Theory</strong></a> — we have 
+                    treated functions as "points" in abstract infinite-dimensional spaces. We measured 
+                    their "length" via norms, their "angle" via inner products, and their "spectrum" 
+                    via eigenvalue decomposition. But there is one seemingly innocent operation we have 
+                    not yet examined: <strong>evaluating a function at a point</strong>.
+                </p>
+
+                <p>
+                    Given a function \(f\) in some Hilbert space \(\mathcal{H}\), define the 
+                    <strong>point evaluation functional</strong> at \(x \in \mathcal{X}\):
+                    \[
+                    \delta_x : \mathcal{H} \to \mathbb{R}, \qquad \delta_x(f) = f(x).
+                    \]
+                    This is clearly linear: \(\delta_x(\alpha f + \beta g) = \alpha f(x) + \beta g(x)\). 
+                    The critical question is: <em>is it continuous?</em>
+                </p>
+
+                <p>
+                    In \(L^2([a,b])\), the answer is <strong>no</strong>. Functions in \(L^2\) are equivalence 
+                    classes defined up to sets of measure zero — changing a function at a single point 
+                    does not change its \(L^2\) norm. Consequently, point evaluation is not a 
+                    <a href="bounded_linear_operators.html#bounded"><strong>bounded linear functional</strong></a> 
+                    on \(L^2\), and \(\delta_x \notin (L^2)^*\). We cannot meaningfully "evaluate" an 
+                    \(L^2\) function at a point.
+                </p>
+
+                <p>
+                    This is a serious problem for machine learning. In supervised learning, we <em>must</em> 
+                    evaluate our model \(f\) at data points \(x_1, \ldots, x_N\) to compute the loss:
+                    \[
+                    \mathcal{L}(f) = \sum_{i=1}^{N} \ell\bigl(y_i,\, f(x_i)\bigr) + \lambda \|f\|_{\mathcal{H}}^2.
+                    \]
+                    If point evaluation is not continuous, this expression is not well-defined as a 
+                    functional on \(\mathcal{H}\). We need a Hilbert space where point evaluation is 
+                    always bounded.
+                </p>
+
+                <blockquote style="border-left: 4px solid #64b4ff; background-color: rgba(100, 180, 255, 0.05); font-style: italic;">
+                    A <strong>Reproducing Kernel Hilbert Space (RKHS)</strong> is precisely a Hilbert space of functions 
+                    in which point evaluation is a continuous linear functional for every point in the domain. 
+                    This single requirement — that \(\delta_x \in \mathcal{H}^*\) for all \(x\) — has 
+                    extraordinary consequences, connecting the 
+                    <a href="dual_spaces.html#riesz"><strong>Riesz Representation Theorem</strong></a>, 
+                    <a href="spectral_theory.html#spectral-theorem"><strong>Spectral Theory</strong></a>, 
+                    and regularized optimization into a single coherent framework.
+                </blockquote>
+
+            </section>
+
+
+            <section id="rkhs" class="section-content">
+                <h2>Reproducing Kernel Hilbert Spaces</h2>
+
+                <p>
+                    Suppose \(\mathcal{H}\) is a Hilbert space of functions \(f : \mathcal{X} \to \mathbb{R}\) 
+                    in which point evaluation is continuous: for every \(x \in \mathcal{X}\), the functional 
+                    \(\delta_x(f) = f(x)\) satisfies \(\delta_x \in \mathcal{H}^*\). By the 
+                    <a href="dual_spaces.html#riesz"><strong>Riesz Representation Theorem</strong></a>, 
+                    there exists a unique element \(K_x \in \mathcal{H}\) such that
+                    \[
+                    f(x) = \delta_x(f) = \langle f,\, K_x \rangle_{\mathcal{H}} \quad \text{for all } f \in \mathcal{H}.
+                    \]
+                    The function \(K_x\) is the <strong>Riesz representative</strong> of the evaluation 
+                    functional at \(x\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Reproducing Kernel</span>
+                    <p>
+                        Let \(\mathcal{H}\) be a Hilbert space of functions on a set \(\mathcal{X}\) 
+                        in which all point evaluations are continuous. The <strong>reproducing kernel</strong> is 
+                        the function \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) defined by
+                        \[
+                        K(x, x') = \langle K_x,\, K_{x'} \rangle_{\mathcal{H}} = K_{x'}(x).
+                        \]
+                        The pair \((\mathcal{H}, K)\) is called a 
+                        <strong>Reproducing Kernel Hilbert Space (RKHS)</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Two properties follow immediately from this definition and are so fundamental that 
+                    they deserve explicit naming.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: The Reproducing Property</span>
+                    <p>
+                        For every \(f \in \mathcal{H}\) and every \(x' \in \mathcal{X}\):
+                        \[
+                        f(x') = \langle f,\, K(\cdot, x') \rangle_{\mathcal{H}}.
+                        \]
+                        In particular, setting \(f = K(\cdot, x)\):
+                        \[
+                        K(x, x') = \langle K(\cdot, x),\, K(\cdot, x') \rangle_{\mathcal{H}}.
+                        \]
+                        That is, the kernel <strong>reproduces itself</strong> under the inner product — 
+                        hence the name.
+                    </p>
+                </div>
+
+                <p>
+                    The reproducing property says: to evaluate a function \(f\) at a point \(x'\), 
+                    take the inner product of \(f\) with the kernel "centered at \(x'\)." 
+                    The kernel function \(K(\cdot, x')\) acts as a "probe" that extracts the value of 
+                    \(f\) at the point \(x'\).
+                </p>
+
+                <h3>Positive Definiteness: The Characterization</h3>
+
+                <p>
+                    Not every symmetric function \(K(x, x')\) is a reproducing kernel. The kernel must be 
+                    <strong>positive definite</strong> — the same condition that appeared in 
+                    <a href="../Probability/gaussian_process.html#kernel"><strong>Gaussian Processes</strong></a> 
+                    as the requirement for a valid covariance function.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Positive Definite Kernel (Mercer Kernel)</span>
+                    <p>
+                        A symmetric function \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) is 
+                        <strong>positive definite</strong> if for all \(N \in \mathbb{N}\), all 
+                        \(x_1, \ldots, x_N \in \mathcal{X}\), and all \(c_1, \ldots, c_N \in \mathbb{R}\):
+                        \[
+                        \sum_{i=1}^{N} \sum_{j=1}^{N} c_i c_j K(x_i, x_j) \geq 0.
+                        \]
+                        Equivalently, the <strong>Gram matrix</strong> \(\mathbf{K}_{ij} = K(x_i, x_j)\) 
+                        is positive semi-definite for every finite collection of points.
+                    </p>
+                </div>
+
+                <p>
+                    The deep connection between positive definite kernels and RKHS is captured by the 
+                    following theorem, which establishes a perfect one-to-one correspondence.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Moore-Aronszajn</span>
+                    <p>
+                        For every positive definite kernel \(K\) on a set \(\mathcal{X}\), there exists a 
+                        <strong>unique</strong> Hilbert space \(\mathcal{H}_K\) of functions on \(\mathcal{X}\) 
+                        for which \(K\) is the reproducing kernel. Conversely, every RKHS has a unique 
+                        reproducing kernel.
+                    </p>
+                </div>
+
+                <p>
+                    The proof constructs \(\mathcal{H}_K\) explicitly: start with the span of all 
+                    functions of the form \(K(\cdot, x)\), define the inner product via 
+                    \(\langle K(\cdot, x), K(\cdot, x') \rangle = K(x, x')\), 
+                    and take the completion. The reproducing property is then built in by construction.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to the Kernel Trick</h3>
+                    <p>
+                        The <a href="../Machine_learning/intro_classification.html#kernel"><strong>kernel trick</strong></a> 
+                        in <a href="../Machine_learning/svm.html"><strong>SVMs</strong></a> replaces inner 
+                        products \(\langle \phi(x), \phi(x') \rangle\) with kernel evaluations \(K(x, x')\). 
+                        The Moore-Aronszajn theorem tells us exactly what is happening: 
+                        \(K(x, x') = \langle K(\cdot, x), K(\cdot, x') \rangle_{\mathcal{H}_K}\), 
+                        so the "feature map" is \(\phi(x) = K(\cdot, x) \in \mathcal{H}_K\). 
+                        The kernel trick is not a computational shortcut — it is the reproducing property 
+                        of an RKHS.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <section id="mercer" class="section-content">
+                <h2>Mercer's Theorem</h2>
+
+                <p>
+                    In <a href="spectral_theory.html#applications"><strong>Spectral Theory</strong></a>, 
+                    we saw that a compact, self-adjoint, positive operator on a Hilbert space admits a 
+                    spectral decomposition into eigenfunctions. Mercer's Theorem applies this machinery 
+                    to the integral operator defined by a positive definite kernel, providing an explicit 
+                    eigenfunction expansion of the kernel itself.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Mercer's Theorem</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a compact subset of \(\mathbb{R}^d\) equipped with a 
+                        finite Borel measure \(\mu\), and let \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) 
+                        be a continuous, symmetric, positive definite kernel. 
+                        Define the integral operator \(T_K : L^2(\mathcal{X}, \mu) \to L^2(\mathcal{X}, \mu)\) by
+                        \[
+                        (T_K f)(x) = \int_{\mathcal{X}} K(x, x')\, f(x')\, d\mu(x').
+                        \]
+                        Then \(T_K\) is compact, self-adjoint, and positive, and there exist 
+                        orthonormal eigenfunctions \(\{e_n\}_{n=1}^\infty\) in \(L^2(\mathcal{X}, \mu)\) 
+                        with eigenvalues \(\lambda_1 \geq \lambda_2 \geq \cdots > 0\), \(\lambda_n \to 0\), 
+                        such that
+                        \[
+                        K(x, x') = \sum_{n=1}^{\infty} \lambda_n \, e_n(x) \, e_n(x').
+                        \]
+                        The convergence is <strong>absolute and uniform</strong> on 
+                        \(\mathcal{X} \times \mathcal{X}\).
+                    </p>
+                </div>
+
+                <p>
+                    Let us unpack why each ingredient is necessary:
+                </p>
+                <ol style="padding-left: 40px;">
+                    <li><strong>Continuity + symmetry of \(K\)</strong>: Guarantees that \(T_K\) is a 
+                        <a href="spectral_theory.html#compact"><strong>Hilbert-Schmidt operator</strong></a>, 
+                        hence compact.</li>
+                    <li><strong>Positive definiteness</strong>: Ensures all eigenvalues are nonnegative 
+                        (so \(T_K\) is a positive operator).</li>
+                    <li><strong>The Spectral Theorem</strong> 
+                        (<a href="spectral_theory.html#spectral-theorem"><strong>calc-27</strong></a>): 
+                        Provides the eigenfunction decomposition 
+                        \(T_K f = \sum \lambda_n \langle f, e_n \rangle e_n\).</li>
+                    <li><strong>Mercer's contribution</strong>: The eigenfunction expansion of the 
+                        <em>operator</em> lifts to a pointwise expansion of the <em>kernel function</em>, 
+                        with uniform convergence.</li>
+                </ol>
+
+                <h3>The Feature Map from Mercer's Theorem</h3>
+
+                <p>
+                    The Mercer expansion immediately yields an explicit feature map into \(\ell^2\):
+                    \[
+                    \Phi(x) = \bigl(\sqrt{\lambda_1}\, e_1(x),\; \sqrt{\lambda_2}\, e_2(x),\; \ldots\bigr) \in \ell^2,
+                    \]
+                    and the kernel is recovered as the inner product:
+                    \[
+                    K(x, x') = \langle \Phi(x),\, \Phi(x') \rangle_{\ell^2} = \sum_{n=1}^{\infty} \lambda_n \, e_n(x) \, e_n(x').
+                    \]
+                </p>
+
+                <p>
+                    This is the rigorous justification for the 
+                    <a href="../Machine_learning/intro_classification.html#kernel"><strong>kernel trick</strong></a>: 
+                    the kernel evaluates an inner product in an infinite-dimensional feature space 
+                    <em>without ever computing the feature map \(\Phi\) explicitly</em>. 
+                    The eigenvalues \(\lambda_n \to 0\) ensure that the feature map lands in \(\ell^2\) 
+                    (the squared norms are summable), and the rate of decay of \(\lambda_n\) controls the 
+                    "effective dimensionality" of the feature space.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: The RBF (Gaussian) Kernel</span>
+                    <p>
+                        The radial basis function kernel 
+                        \(K(x, x') = \exp\bigl(-\|x - x'\|^2 / (2\sigma^2)\bigr)\) 
+                        is continuous, symmetric, and positive definite. Its Mercer eigenfunctions are 
+                        related to Hermite functions, and the eigenvalues decay 
+                        <strong>exponentially</strong>: \(\lambda_n \sim C \cdot r^n\) for some 
+                        \(0 < r < 1\). This rapid decay explains why the 
+                        <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>Random Fourier Feature</strong></a> 
+                        approximation works well in practice — only the first few eigenfunctions carry 
+                        significant weight.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Connection to Gaussian Processes</h3>
+                    <p>
+                        In a <a href="../Probability/gaussian_process.html"><strong>Gaussian Process</strong></a> 
+                        with covariance function \(K\), the Mercer expansion gives the 
+                        <a href="spectral_theory.html#applications"><strong>Karhunen-Loève expansion</strong></a>:
+                        \[
+                        f(x) = \sum_{n=1}^{\infty} Z_n \sqrt{\lambda_n}\, e_n(x), \qquad Z_n \sim \mathcal{N}(0, 1) \text{ i.i.d.}
+                        \]
+                        Each draw from the GP is a random function whose "complexity" is governed by the 
+                        eigenvalue decay. Smooth kernels (fast decay) produce smooth sample paths; 
+                        rough kernels (slow decay) produce rough paths. The RKHS norm 
+                        (introduced in the next section) measures the complexity of the <em>mean function</em> 
+                        of the posterior GP.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <section id="complexity" class="section-content">
+                <h2>RKHS Norm & Function Complexity</h2>
+
+                <p>
+                    A central utility of the RKHS framework for machine learning is that the RKHS norm 
+                    provides a mathematically precise notion of function "smoothness" or "complexity." 
+                    This connects directly to 
+                    <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>.
+                </p>
+
+                <h3>The RKHS Inner Product via Mercer Eigenfunctions</h3>
+
+                <p>
+                    Suppose the kernel \(K\) has the Mercer expansion 
+                    \(K(x, x') = \sum_{n=1}^\infty \lambda_n e_n(x) e_n(x')\). 
+                    Any function \(f \in \mathcal{H}_K\) can be expanded as 
+                    \(f(x) = \sum_{n=1}^\infty f_n \, e_n(x)\), where \(f_n = \langle f, e_n \rangle_{L^2}\) 
+                    are the generalized Fourier coefficients.
+                </p>
+
+                <p>
+                    The RKHS inner product is <strong>not</strong> the \(L^2\) inner product. Instead, it 
+                    <em>reweights</em> each eigencomponent by the inverse of the eigenvalue:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: RKHS Inner Product and Norm</span>
+                    <p>
+                        For \(f = \sum_n f_n \, e_n\) and \(g = \sum_n g_n \, e_n\) in \(\mathcal{H}_K\):
+                        \[
+                        \langle f, g \rangle_{\mathcal{H}_K} = \sum_{n=1}^{\infty} \frac{f_n \, g_n}{\lambda_n}.
+                        \]
+                        The RKHS norm is therefore
+                        \[
+                        \|f\|_{\mathcal{H}_K}^2 = \sum_{n=1}^{\infty} \frac{f_n^2}{\lambda_n}.
+                        \]
+                        A function \(f\) belongs to \(\mathcal{H}_K\) if and only if 
+                        \(\sum_n f_n^2 / \lambda_n < \infty\).
+                    </p>
+                </div>
+
+                <p>
+                    The division by \(\lambda_n\) is the key insight. Since \(\lambda_n \to 0\), 
+                    the <em>higher-order</em> eigenfunctions (those corresponding to small eigenvalues) 
+                    are <strong>penalized more heavily</strong> in the RKHS norm. A function that relies 
+                    heavily on high-frequency components will have a large RKHS norm, while a function 
+                    concentrated on the first few eigenmodes will have a small norm.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Regularization: Why \(\|f\|_{\mathcal{H}_K}^2\) Controls Complexity</h3>
+                    <p>
+                        When we add \(\lambda \|f\|_{\mathcal{H}_K}^2\) to our loss function, we are 
+                        penalizing functions that use high-frequency eigenfunctions. This is the 
+                        infinite-dimensional analogue of 
+                        <a href="../Machine_learning/regression.html#ridge"><strong>Ridge regression</strong></a>: 
+                        in finite dimensions, \(\|w\|^2 = \sum w_i^2\) penalizes large weights equally; 
+                        in the RKHS, \(\|f\|_{\mathcal{H}_K}^2 = \sum f_n^2 / \lambda_n\) penalizes 
+                        components in "hard" directions (small \(\lambda_n\)) more than "easy" ones 
+                        (large \(\lambda_n\)).
+                    </p>
+                    <p>
+                        This is analogous to the quadratic form \(\mathbf{f}^T \mathbf{K}^{-1} \mathbf{f}\) 
+                        that appears in GP regression — the inverse kernel matrix penalizes predictions 
+                        that deviate from the prior's "smooth" subspace.
+                    </p>
+                </div>
+
+                <h3>RKHS Functions are "Smoother" than \(L^2\) Functions</h3>
+
+                <p>
+                    The membership condition \(\sum f_n^2 / \lambda_n < \infty\) is 
+                    <em>strictly stronger</em> than the \(L^2\) condition \(\sum f_n^2 < \infty\) 
+                    (since \(\lambda_n \to 0\)). Therefore:
+                    \[
+                    \mathcal{H}_K \subsetneq L^2(\mathcal{X}, \mu).
+                    \]
+                    The RKHS consists of "smoother" functions — those whose high-frequency components 
+                    decay fast enough to compensate for the shrinking eigenvalues. 
+                    The faster the eigenvalues \(\lambda_n\) decay, the smaller (and smoother) 
+                    the RKHS becomes.
+                </p>
+
+                <p>
+                    This also explains why point evaluation is continuous in an RKHS but not in \(L^2\). 
+                    The extra smoothness required for RKHS membership ensures that functions are 
+                    "nice enough" to be evaluated pointwise — unlike generic \(L^2\) functions, 
+                    which are only defined up to measure-zero modifications.
+                </p>
+
+            </section>
+
+
+            <section id="representer" class="section-content">
+                <h2>The Representer Theorem & Grand Synthesis</h2>
+
+                <p>
+                    We now arrive at the theorem that ties the entire Functional Analysis series together: 
+                    the <strong>Representer Theorem</strong>. It tells us that even though the RKHS 
+                    \(\mathcal{H}_K\) is infinite-dimensional, the solution to any regularized 
+                    empirical risk minimization problem lives in a <strong>finite-dimensional subspace</strong> 
+                    spanned by the kernel functions at the data points.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: The Representer Theorem</span>
+                    <p>
+                        Let \(\mathcal{H}_K\) be an RKHS on \(\mathcal{X}\) with kernel \(K\), 
+                        let \(\{(x_i, y_i)\}_{i=1}^N\) be training data, and consider the regularized problem
+                        \[
+                        \min_{f \in \mathcal{H}_K} \left[\sum_{i=1}^{N} \ell\bigl(y_i,\, f(x_i)\bigr) + \lambda \|f\|_{\mathcal{H}_K}^2\right],
+                        \]
+                        where \(\ell\) is any loss function and \(\lambda > 0\). Then the minimizer 
+                        \(f^*\) has the form
+                        \[
+                        f^*(x) = \sum_{i=1}^{N} \alpha_i \, K(x, x_i)
+                        \]
+                        for some coefficients \(\alpha_1, \ldots, \alpha_N \in \mathbb{R}\).
+                    </p>
+                </div>
+
+                <p>
+                    This is a remarkable dimension reduction: the optimization was posed over the 
+                    entire infinite-dimensional space \(\mathcal{H}_K\), yet the answer lies in the 
+                    \(N\)-dimensional subspace \(\operatorname{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_N)\}\).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        Decompose any \(f \in \mathcal{H}_K\) as 
+                        \(f = f_\parallel + f_\perp\), where 
+                        \(f_\parallel \in \operatorname{span}\{K(\cdot, x_i)\}_{i=1}^N\) and 
+                        \(f_\perp\) is orthogonal to this subspace.
+                    </p>
+                    <p>
+                        By the reproducing property, \(f(x_i) = \langle f, K(\cdot, x_i) \rangle_{\mathcal{H}_K}\). 
+                        Since \(f_\perp\) is orthogonal to every \(K(\cdot, x_i)\):
+                        \[
+                        f(x_i) = f_\parallel(x_i) + \underbrace{\langle f_\perp, K(\cdot, x_i) \rangle}_{= 0} = f_\parallel(x_i).
+                        \]
+                        So \(f_\perp\) does not affect the data-fit term. However, by Pythagoras:
+                        \[
+                        \|f\|_{\mathcal{H}_K}^2 = \|f_\parallel\|_{\mathcal{H}_K}^2 + \|f_\perp\|_{\mathcal{H}_K}^2 \geq \|f_\parallel\|_{\mathcal{H}_K}^2.
+                        \]
+                        Adding any nonzero \(f_\perp\) strictly increases the regularization penalty 
+                        without improving the data fit. Hence the minimizer satisfies 
+                        \(f_\perp = 0\). \(\square\)
+                    </p>
+                </div>
+
+                <h3>From the Representer Theorem to Kernel Algorithms</h3>
+
+                <p>
+                    With \(f^*(x) = \sum_{i=1}^N \alpha_i K(x, x_i)\), the infinite-dimensional problem 
+                    reduces to a finite-dimensional optimization over \(\boldsymbol{\alpha} \in \mathbb{R}^N\). 
+                    The reproducing property gives
+                    \[
+                    f^*(x_j) = \sum_{i=1}^N \alpha_i K(x_j, x_i) = (\mathbf{K}\boldsymbol{\alpha})_j
+                    \]
+                    where \(\mathbf{K}_{ij} = K(x_i, x_j)\) is the Gram matrix, and
+                    \[
+                    \|f^*\|_{\mathcal{H}_K}^2 = \boldsymbol{\alpha}^T \mathbf{K} \boldsymbol{\alpha}.
+                    \]
+                    The regularized problem becomes
+                    \[
+                    \min_{\boldsymbol{\alpha} \in \mathbb{R}^N} \left[\sum_{i=1}^N \ell\bigl(y_i,\, (\mathbf{K}\boldsymbol{\alpha})_i\bigr) + \lambda \, \boldsymbol{\alpha}^T \mathbf{K} \boldsymbol{\alpha}\right].
+                    \]
+                    For the squared loss \(\ell(y, \hat{y}) = (y - \hat{y})^2\), this is 
+                    <strong>Kernel Ridge Regression</strong>, with closed-form solution 
+                    \(\boldsymbol{\alpha} = (\mathbf{K} + \lambda I)^{-1} \mathbf{y}\).
+                    For the hinge loss, it is the kernel 
+                    <a href="../Machine_learning/svm.html"><strong>SVM</strong></a>.
+                </p>
+
+                <h3>The Grand Synthesis: calc-23 to calc-28</h3>
+
+                <p>
+                    Let us now trace how every chapter in the Functional Analysis series contributed 
+                    to this final result.
+                </p>
+
+                <table style="font-size: 0.95rem;">
+                    <thead>
+                        <tr>
+                            <th>Chapter</th>
+                            <th>Key Contribution</th>
+                            <th>Role in RKHS Theory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="intro_analysis.html"><strong>calc-23</strong></a></td>
+                            <td>Hilbert spaces, completeness, \(L^p\) spaces</td>
+                            <td>RKHS is a Hilbert space; \(L^2\) is the ambient space for Mercer's integral operator</td>
+                        </tr>
+                        <tr>
+                            <td><a href="bounded_linear_operators.html"><strong>calc-24</strong></a></td>
+                            <td>Bounded operators, continuity = boundedness</td>
+                            <td>Point evaluation must be bounded (continuous); 
+                                integral operators are bounded</td>
+                        </tr>
+                        <tr>
+                            <td><a href="dual_spaces.html"><strong>calc-25</strong></a></td>
+                            <td>Dual spaces, Riesz Representation</td>
+                            <td>\(\delta_x \in \mathcal{H}^*\) implies existence of 
+                                \(K_x = \delta_x^\sharp\) via Riesz — the reproducing kernel</td>
+                        </tr>
+                        <tr>
+                            <td><a href="weak_topologies.html"><strong>calc-26</strong></a></td>
+                            <td>Weak compactness, existence of minimizers</td>
+                            <td>Guarantees that the regularized problem 
+                                \(\min(\text{loss} + \lambda\|f\|^2)\) has a solution in 
+                                \(\mathcal{H}_K\)</td>
+                        </tr>
+                        <tr>
+                            <td><a href="spectral_theory.html"><strong>calc-27</strong></a></td>
+                            <td>Spectral Theorem, eigenfunction expansion</td>
+                            <td>Provides Mercer's eigenfunction decomposition of \(K\) 
+                                and the explicit feature map \(\Phi\)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>calc-28</strong> (this chapter)</td>
+                            <td>RKHS, Mercer, Representer Theorem</td>
+                            <td>Unifies everything: infinite-dimensional optimization 
+                                reduces to finite-dimensional kernel algebra</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Looking Ahead: From Function Spaces to Manifolds</h3>
+
+                <p>
+                    This chapter concludes the Functional Analysis block of MATH-CS COMPASS. 
+                    We have traveled from the abstract definition of normed spaces (calc-23) to a 
+                    complete, rigorous understanding of why kernel methods work (calc-28). 
+                    The tools we have built — Hilbert space structure, duality, weak topologies, 
+                    spectral decomposition, and now RKHS — form the analytical foundation for 
+                    everything that follows.
+                </p>
+
+                <p>
+                    The next stage of the curriculum moves from <em>function spaces</em> to 
+                    <em>geometric spaces</em>. The Musical Isomorphisms 
+                    (\(\sharp\) and \(\flat\)) from 
+                    <a href="dual_spaces.html#musical"><strong>calc-25</strong></a> will generalize 
+                    from a single inner product to a <strong>Riemannian metric tensor</strong> that varies 
+                    from point to point. The spectral methods of calc-27 will become the eigenvalues of 
+                    the <strong>Laplace-Beltrami operator</strong> on smooth manifolds. 
+                    And the reproducing property of RKHS will find its echo in the 
+                    <strong>equivariance</strong> constraints of Geometric Deep Learning: 
+                    just as the kernel encodes the "right" notion of similarity in function space, 
+                    the group action encodes the "right" notion of symmetry on geometric domains.
+                </p>
+
+                <blockquote style="border-left: 4px solid #2ecc71; background-color: rgba(46, 204, 113, 0.05); font-style: italic;">
+                    The Functional Analysis series has given us the <strong>language</strong> of 
+                    infinite-dimensional mathematics. The geometry series will give us its 
+                    <strong>shape</strong>.
+                </blockquote>
+
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+    </body>
+</html>
