@@ -218,19 +218,19 @@ uses_python: false
                 </p>
 
                 <div class="pseudocode">
-                    <span class="pseudocode-title">Algorithm: BST-Search</span>
-                    <strong>Input:</strong> BST root \(v\), target key \(x\);
-                    <strong>Output:</strong> node with key \(x\), or \(\texttt{null}\);
-                    <strong>begin</strong>
-                    &emsp;<strong>if</strong> \(v = \texttt{null}\):
-                    &emsp;&emsp;<strong>return</strong> \(\texttt{null}\);
-                    &emsp;<strong>if</strong> \(k(v) = x\):
-                    &emsp;&emsp;<strong>return</strong> \(v\);
-                    &emsp;<strong>if</strong> \(x < k(v)\):
-                    &emsp;&emsp;<strong>return</strong> BST-Search\((v.L,\, x)\);
-                    &emsp;<strong>else</strong>:
-                    &emsp;&emsp;<strong>return</strong> BST-Search\((v.R,\, x)\);
-                    <strong>end</strong>
+                <span class="pseudocode-title">Algorithm: BST-Search</span>
+                <strong>Input:</strong> BST root \(v\), target key \(x\);
+                <strong>Output:</strong> node with key \(x\), or \(\texttt{null}\);
+                <strong>begin</strong>
+                &emsp;<strong>if</strong> \(v = \texttt{null}\):
+                &emsp;&emsp;<strong>return</strong> \(\texttt{null}\);
+                &emsp;<strong>if</strong> \(k(v) = x\):
+                &emsp;&emsp;<strong>return</strong> \(v\);
+                &emsp;<strong>if</strong> \(x < k(v)\):
+                &emsp;&emsp;<strong>return</strong> BST-Search\((v.L,\, x)\);
+                &emsp;<strong>else</strong>:
+                &emsp;&emsp;<strong>return</strong> BST-Search\((v.R,\, x)\);
+                <strong>end</strong>
                 </div>
 
                 <div class="theorem">
@@ -694,7 +694,7 @@ uses_python: false
                     <li>Record the label of the unique neighbor of \(\ell\). 
                         This is the first entry \(a_1\) of the Prüfer sequence.</li>
                     <li>Remove \(\ell\) and its incident edge from \(T\).</li>
-                    <li>Repeat steps 1-3 on the resulting tree with \(n - 1\) vertices, recording \(a_2\), then 
+                    <li>Repeat steps 1–3 on the resulting tree with \(n - 1\) vertices, recording \(a_2\), then 
                         \(a_3\), and so on.</li>
                     <li>Stop after \(n - 2\) iterations. At this point, exactly 2 vertices remain (connected by 
                         a single edge).</li>
@@ -748,17 +748,55 @@ uses_python: false
                     those whose degree has been decremented to 1 after all entries are processed.
                 </p>
 
-                <div class="proof">
-                    <span class="proof-title">Proof of Cayley's Formula:</span>
+                <p>
+                    This observation has a powerful consequence: it reduces the counting of trees with a 
+                    <em>prescribed degree sequence</em> to a problem about arrangements of symbols in a sequence.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Degree-Constrained Tree Counting</span>
                     <p>
-                        The encoding map sends each labeled tree on \([n]\) to a unique Prüfer sequence in \([n]^{n-2}\), 
-                        and the decoding map recovers the original tree. Since encoding and decoding are mutual 
-                        inverses, this establishes a bijection:
+                        The number of labeled trees on \([n]\) in which vertex \(v\) has degree \(d_v\) 
+                        (where \(d_v \geq 1\) and \(\sum_{v=1}^{n} d_v = 2(n-1)\)) is the 
+                        <a href="intro_combinatorics.html#count"><strong>multinomial coefficient</strong></a>
                         \[
-                        \{\text{labeled trees on } [n]\} \;\longleftrightarrow\; [n]^{n-2}.
+                        \binom{n-2}{d_1 - 1,\; d_2 - 1,\; \ldots,\; d_n - 1} 
+                        = \frac{(n-2)!}{(d_1 - 1)!\,(d_2 - 1)! \cdots (d_n - 1)!}.
                         \]
-                        The set \([n]^{n-2}\) has \(n^{n-2}\) elements (each of the \(n - 2\) positions has \(n\) choices). 
-                        Therefore the number of labeled trees on \([n]\) is \(n^{n-2}\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Under the Prüfer bijection, vertex \(v\) appears exactly \(d_v - 1\) times in the 
+                        sequence of length \(n - 2\). The number of sequences with this prescribed multiplicity 
+                        is precisely the multinomial coefficient above — it counts the ways to arrange 
+                        \(d_1 - 1\) copies of symbol \(1\), \(d_2 - 1\) copies of symbol \(2\), etc., 
+                        in a sequence of length \(\sum (d_v - 1) = 2(n-1) - n = n - 2\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of Cayley's Formula (two approaches):</span>
+                    <p>
+                        <strong>Direct counting.</strong> The Prüfer bijection establishes 
+                        \(\{\text{labeled trees on } [n]\} \longleftrightarrow [n]^{n-2}\). 
+                        The set \([n]^{n-2}\) has \(n^{n-2}\) elements (each of the \(n-2\) positions 
+                        has \(n\) choices), giving the result immediately.
+                    </p>
+                    <p>
+                        <strong>Via the multinomial theorem.</strong> Alternatively, we sum the 
+                        degree-constrained formula over all valid degree sequences. Setting 
+                        \(e_v = d_v - 1\), the sum becomes
+                        \[
+                        \sum_{\substack{e_1, \ldots, e_n \geq 0 \\ e_1 + \cdots + e_n = n-2}} 
+                        \frac{(n-2)!}{e_1! \cdots e_n!} 
+                        = (\underbrace{1 + 1 + \cdots + 1}_{n})^{n-2} = n^{n-2}
+                        \]
+                        by the multinomial theorem. This second approach is more powerful: it not only 
+                        proves Cayley's formula but reveals how the \(n^{n-2}\) trees are distributed 
+                        across degree sequences. \(\blacksquare\)
                     </p>
                 </div>
 
@@ -771,17 +809,17 @@ uses_python: false
                 </p>
 
                 <div class="pseudocode">
-                    <span class="pseudocode-title">Algorithm: Prüfer Encoding</span>
-                    <strong>Input:</strong> labeled tree \(T\) on vertex set \([n]\);
-                    <strong>Output:</strong> Prüfer sequence \((a_1, \ldots, a_{n-2})\);
-                    <strong>begin</strong>
-                    &emsp;<strong>for</strong> \(i = 1\) <strong>to</strong> \(n - 2\):
-                    &emsp;&emsp;\(\ell \leftarrow\) smallest leaf in \(T\);
-                    &emsp;&emsp;\(a_i \leftarrow\) neighbor of \(\ell\) in \(T\);
-                    &emsp;&emsp;remove \(\ell\) and its edge from \(T\);
-                    &emsp;<strong>end for</strong>
-                    &emsp;<strong>return</strong> \((a_1, a_2, \ldots, a_{n-2})\);
-                    <strong>end</strong>
+                <span class="pseudocode-title">Algorithm: Prüfer Encoding</span>
+                <strong>Input:</strong> labeled tree \(T\) on vertex set \([n]\);
+                <strong>Output:</strong> Prüfer sequence \((a_1, \ldots, a_{n-2})\);
+                <strong>begin</strong>
+                &emsp;<strong>for</strong> \(i = 1\) <strong>to</strong> \(n - 2\):
+                &emsp;&emsp;\(\ell \leftarrow\) smallest leaf in \(T\);
+                &emsp;&emsp;\(a_i \leftarrow\) neighbor of \(\ell\) in \(T\);
+                &emsp;&emsp;remove \(\ell\) and its edge from \(T\);
+                &emsp;<strong>end for</strong>
+                &emsp;<strong>return</strong> \((a_1, a_2, \ldots, a_{n-2})\);
+                <strong>end</strong>
                 </div>
 
                 <div class="insight-box">
