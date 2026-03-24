@@ -107,10 +107,13 @@ uses_python: false
                 </div>
 
                 <p>
-                    A binary tree is called <strong>balanced</strong> if for every vertex, the heights of its left and right 
-                    subtrees differ by at most one. A balanced binary tree on \(n\) vertices has height 
-                    \(\Theta(\log n)\), since at depth \(d\) there are at most \(2^d\) vertices, giving 
-                    \(n \leq 2^{h+1} - 1\) and hence \(h \geq \lceil \log_2(n+1) \rceil - 1\).
+                    A binary tree is called <strong>height-balanced</strong> (or <strong>AVL-balanced</strong>) if for 
+                    every vertex, the heights of its left and right subtrees differ by at most one. A height-balanced 
+                    binary tree on \(n\) vertices has height \(\Theta(\log n)\): the lower bound 
+                    \(h \geq \lceil \log_2(n+1) \rceil - 1\) follows because at depth \(d\) there are at most 
+                    \(2^d\) vertices (giving \(n \leq 2^{h+1} - 1\)), and the upper bound \(h = O(\log n)\) 
+                    follows from the balance condition, which forces the number of vertices to grow at least 
+                    exponentially with height.
                 </p>
 
                 <h3>Spanning Trees</h3>
@@ -483,12 +486,19 @@ uses_python: false
                 </div>
 
                 <p>
-                    <strong>Bijection: binary trees \(\leftrightarrow\) Dyck paths.</strong> Given a binary tree on 
-                    \(n\) nodes, perform a depth-first traversal. Each time we descend to a child, record an up-step; 
-                    each time we backtrack to a parent, record a down-step. The resulting sequence has \(n\) up-steps 
-                    and \(n\) down-steps (each edge is traversed once in each direction), and the path never goes below 
-                    the \(x\)-axis because we never backtrack past the root. This map is reversible: a Dyck path 
-                    uniquely reconstructs the tree.
+                    <strong>Bijection: binary trees \(\leftrightarrow\) Dyck paths.</strong> We define a recursive 
+                    encoding. Given a binary tree \(T\) on \(n\) nodes with root \(r\), left subtree \(L\), and 
+                    right subtree \(R\), encode \(T\) as
+                    \[
+                    \texttt{encode}(T) = \text{"("} \;\cdot\; \texttt{encode}(L) \;\cdot\; \text{")"} \;\cdot\; \texttt{encode}(R),
+                    \]
+                    with the empty tree mapping to the empty string. Each node contributes exactly one "(" and one ")", 
+                    so the result is a string of length \(2n\). Interpreting "(" as an up-step and ")" as a down-step 
+                    yields a Dyck path of semilength \(n\): the path never dips below the \(x\)-axis because at 
+                    every prefix, the recursive nesting ensures that the number of opening parentheses is at least 
+                    the number of closing parentheses. The encoding is invertible: scanning the string from left to 
+                    right, the first "(" corresponds to the root, the balanced substring immediately following it 
+                    encodes \(L\), the matching ")" closes the root, and the remaining substring encodes \(R\).
                 </p>
 
                 <p>
@@ -563,25 +573,29 @@ uses_python: false
                     The first several values are:
                     \[
                     S_n \colon \; 1,\, 2,\, 6,\, 22,\, 90,\, 394,\, \ldots \qquad
-                    s_n \colon \; 1,\, 1,\, 2,\, 6,\, 22,\, 90,\, \ldots
+                    s_n \colon \; 1,\, 1,\, 3,\, 11,\, 45,\, 197,\, \ldots
                     \]
-                    One observes that \(S_n = 2\, s_n\) for \(n \geq 1\) — each Schröder path is obtained from a 
-                    small Schröder path by an optional insertion of flat steps on the \(x\)-axis, and the factor of 
-                    2 arises from this extra degree of freedom at the ground level.
+                    One observes that \(S_n = 2\, s_n\) for \(n \geq 1\). The distinction is that large 
+                    Schröder paths permit flat steps on the \(x\)-axis while small Schröder paths forbid them; 
+                    the precise factor of 2 can be established by a decomposition argument at the first return 
+                    to the \(x\)-axis.
                 </p>
 
                 <p>
-                    In terms of tree enumeration, the large Schröder numbers count <strong>plane trees</strong> 
+                    In terms of tree enumeration, the little Schröder numbers \(s_n\) count <strong>plane trees</strong> 
                     (ordered rooted trees where each internal vertex has \(\geq 2\) children) on \(n + 1\) leaves. 
-                    Where the Catalan numbers count binary trees (exactly 2 children per internal node), the Schröder 
-                    numbers count the more general case where branching can vary — each internal node may have 2, 3, 
-                    or more children, but at least 2.
+                    For instance, \(s_2 = 3\) counts the three plane trees with 3 leaves: the root with 3 
+                    children (all leaves), and the two trees where the root has 2 children with one being an 
+                    internal node bearing 2 leaves. Where the Catalan numbers count full binary trees 
+                    (exactly 2 children per internal node), the little Schröder numbers count the more general 
+                    case where branching can vary — each internal node may have 2, 3, or more children, 
+                    but at least 2.
                 </p>
 
                 <p>
                     The large Schröder numbers satisfy the recurrence
                     \[
-                    (n+1)\, S_{n+1} = 3(2n+1)\, S_n - (n-1)\, S_{n-1}, \qquad S_0 = 1,\; S_1 = 2.
+                    (n+2)\, S_{n+1} = 3(2n+1)\, S_n - (n-1)\, S_{n-1}, \qquad S_0 = 1,\; S_1 = 2.
                     \]
                     There is also a convolution-type recurrence that mirrors the Catalan case:
                     \[
@@ -608,9 +622,12 @@ uses_python: false
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>Catalan</strong> \(C_n\): binary trees — each internal node has exactly 2 children.</li>
-                    <li><strong>Motzkin</strong> \(M_n\): unary-binary trees — each internal node has 1 or 2 children.</li>
-                    <li><strong>Schröder</strong> \(S_n\): plane trees — each internal node has \(\geq 2\) children.</li>
+                    <li><strong>Catalan</strong> \(C_n\): full binary trees — each internal node has exactly 2 children 
+                        (\(n\) internal nodes, \(n+1\) leaves).</li>
+                    <li><strong>Motzkin</strong> \(M_n\): unary-binary trees — each internal node has 1 or 2 children 
+                        (\(n\) edges).</li>
+                    <li><strong>Little Schröder</strong> \(s_n\): plane trees — each internal node has \(\geq 2\) children 
+                        (\(n+1\) leaves).</li>
                 </ul>
 
                 <div class="insight-box">
@@ -674,7 +691,7 @@ uses_python: false
                 </p>
                 <ol style="padding-left: 40px;">
                     <li>Find the leaf with the <em>smallest</em> label. Call it \(\ell\).</li>
-                    <li>Record the label of the neighbor of \(\ell\) (i.e., the parent of \(\ell\) in any rooting). 
+                    <li>Record the label of the unique neighbor of \(\ell\). 
                         This is the first entry \(a_1\) of the Prüfer sequence.</li>
                     <li>Remove \(\ell\) and its incident edge from \(T\).</li>
                     <li>Repeat steps 1-3 on the resulting tree with \(n - 1\) vertices, recording \(a_2\), then 
@@ -702,11 +719,11 @@ uses_python: false
                         Neighbor of \(2\) is \(1\). Record \(a_3 = 1\). Remove vertex \(2\).
                     </p>
                     <p>
-                        <strong>Step 4.</strong> Leaves: \(\{6\}\). Smallest leaf: \(6\). 
-                        Neighbor of \(6\) is \(3\). Record \(a_4 = 3\). Remove vertex \(6\).
+                        <strong>Step 4.</strong> Leaves: \(\{1, 6\}\). Smallest leaf: \(1\). 
+                        Neighbor of \(1\) is \(3\). Record \(a_4 = 3\). Remove vertex \(1\).
                     </p>
                     <p>
-                        Remaining vertices: \(\{1, 3\}\). The Prüfer sequence is \((2, 2, 1, 3)\).
+                        Remaining vertices: \(\{3, 6\}\). The Prüfer sequence is \((2, 2, 1, 3)\).
                     </p>
                 </div>
 
