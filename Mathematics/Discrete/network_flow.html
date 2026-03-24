@@ -246,6 +246,21 @@ uses_python: false
                     The total running time is \(O(|V| \cdot |E|)\): we perform \(|V| - 1\) passes over all \(|E|\) edges.
                 </p>
 
+                <div class="insight-box">
+                    <h3>Negative Cycles and Currency Arbitrage</h3>
+                    <p>
+                        Bellman-Ford's ability to detect negative-weight cycles has a striking application in finance. 
+                        Consider a network of currencies where each directed edge \((u,v)\) carries the exchange rate 
+                        \(r(u,v)\). Setting \(w(u,v) = -\log r(u,v)\) transforms multiplicative gains into additive 
+                        weights: a cycle \(C\) with \(\prod r(e) > 1\) (a profitable round-trip) becomes a 
+                        negative-weight cycle with \(\sum w(e) < 0\). Thus, Bellman-Ford on the log-transformed graph 
+                        detects <strong>arbitrage opportunities</strong> — situations where a sequence of currency 
+                        exchanges yields a net profit. The same principle applies to decentralized exchanges (DEXs) 
+                        in DeFi, where token swap rates across liquidity pools form exactly such a weighted digraph, 
+                        and arbitrage bots run variants of Bellman-Ford in real time.
+                    </p>
+                </div>
+
                 <h3>Greedy vs. Dynamic Programming</h3>
                 <p>
                     Dijkstra and Bellman-Ford embody the two great paradigms of discrete optimization. 
@@ -254,6 +269,17 @@ uses_python: false
                     defers commitment, exploring all possible relaxations — slower, but correct under weaker assumptions. 
                     This trade-off between exploiting structural assumptions for speed and maintaining generality 
                     recurs throughout algorithm design and optimization theory.
+                </p>
+
+                <p>
+                    A natural extension of the greedy paradigm is the <strong>A* algorithm</strong>, which augments 
+                    Dijkstra's strategy with a <strong>heuristic function</strong> \(h(v)\) estimating the remaining 
+                    distance from \(v\) to the goal. Instead of extracting the vertex minimizing \(d[v]\), A* extracts 
+                    the vertex minimizing \(d[v] + h(v)\), directing the search toward the target. When \(h\) is 
+                    <em>admissible</em> (never overestimates true distance) and <em>consistent</em> (satisfies a 
+                    triangle inequality), A* retains optimality while dramatically reducing the number of vertices 
+                    explored. This makes A* the algorithm of choice for robotic path planning, autonomous navigation, 
+                    and game AI — settings where spatial heuristics provide powerful guidance that pure Dijkstra cannot exploit.
                 </p>
 
                 <div class="insight-box">
@@ -353,7 +379,11 @@ uses_python: false
                 <p>
                     An <strong>augmenting path</strong> is a path from \(s\) to \(t\) in the residual graph \(G_f\). If such 
                     a path \(P\) exists, we can increase the flow by \(\Delta = \min_{e \in P} c_f(e) > 0\) by pushing 
-                    \(\Delta\) units along \(P\). This is the foundation of the Ford-Fulkerson method.
+                    \(\Delta\) units along \(P\). When the augmenting path traverses a <strong>backward edge</strong> 
+                    \((v,u)\) — corresponding to an original edge \((u,v)\) carrying positive flow — pushing flow along 
+                    it effectively <em>cancels</em> previously assigned flow on \((u,v)\), redirecting that capacity to 
+                    a more profitable route. This ability to "undo" earlier decisions is precisely what allows the 
+                    method to escape locally suboptimal flow assignments and converge to a global maximum.
                 </p>
 
                 <div class="pseudocode">
@@ -537,7 +567,10 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        <strong>Stationarity.</strong> We verify \(\boldsymbol{\pi} P = \boldsymbol{\pi}\). For each \(v \in V\),
+                        <strong>Stationarity.</strong> First, \(\boldsymbol{\pi}\) is indeed a probability distribution: 
+                        by the <a href="intro_graph.html#degree"><strong>Handshaking Lemma</strong></a> 
+                        \(\sum_{v \in V} \deg(v) = 2m\), so \(\sum_{v} \pi_v = \sum_{v} \deg(v)/(2m) = 1\). 
+                        We verify \(\boldsymbol{\pi} P = \boldsymbol{\pi}\). For each \(v \in V\),
                         \[
                         \begin{align*}
                         (\boldsymbol{\pi} P)_v &= \sum_{u \in V} \pi_u \cdot P_{uv} \\
@@ -591,6 +624,9 @@ uses_python: false
                     The eigenvalues of \(L_{\text{rw}}\) are \(0 = \mu_1 \leq \mu_2 \leq \cdots \leq \mu_n\), where 
                     \(\mu_i = 1 - \lambda_i\) and \(1 = \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n > -1\) are the 
                     eigenvalues of \(P\) (the lower bound \(\lambda_n > -1\) holds because the graph is non-bipartite). 
+                    On a bipartite graph, by contrast, \(\lambda_n = -1\): the walker oscillates between the two 
+                    vertex classes with period 2, so the distribution never settles but instead alternates indefinitely — 
+                    this is the spectral signature of periodicity. 
                     The rate of convergence to stationarity is controlled by
                     \[
                     \bar{\lambda} = \max\bigl(|\lambda_2|,\, |\lambda_n|\bigr),
@@ -659,7 +695,8 @@ uses_python: false
                         <strong>PageRank</strong> modifies the simple random walk with a <strong>teleportation</strong> 
                         mechanism: at each step, with probability \(\alpha\) the walker follows a random edge, and with 
                         probability \(1 - \alpha\) it jumps to a uniformly random vertex. The transition matrix becomes 
-                        \(P_{\text{PR}} = \alpha P + (1 - \alpha)\frac{1}{n}\mathbf{1}\mathbf{1}^\top\), and its stationary 
+                        \(P_{\text{PR}} = \alpha P + (1 - \alpha)\frac{1}{n}\mathbf{1}\mathbf{1}^\top\), 
+                        where \(\mathbf{1} \in \mathbb{R}^n\) is the all-ones column vector, and its stationary 
                         distribution ranks vertices by a blend of local connectivity and global accessibility.
                     </p>
                     <p>
