@@ -117,10 +117,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#e53935', // red
         '#1e88e5', // blue
         '#43a047', // green
-        '#ffb300', // amber
-        '#8e24aa'  // purple (5th color)
+        '#ffb300'  // amber
     ];
-    const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Amber', 'Purple'];
+    const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Amber'];
     const UNCOLORED = -1;
 
     // ================================================================
