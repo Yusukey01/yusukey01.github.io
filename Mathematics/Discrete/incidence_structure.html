@@ -1,0 +1,625 @@
+---
+layout: default
+title: "Incidence Structure & Cycle/Cut Spaces"
+topic_id: disc-13
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Incidence Structure & Cycle/Cut Spaces</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#orientation">Orienting Edges</a>
+            <a href="#incidence-matrix">The Incidence Matrix</a>
+            <a href="#cycle-cut">Cycle Space &amp; Cut Space</a>
+            <a href="#laplacian-revisited">The Graph Laplacian Revisited</a>
+        </div> 
+
+        <div class="container">  
+
+            <section id="orientation" class="section-content">
+                <h2>Orienting Edges</h2>
+
+                <p>
+                    In <a href="planar_graphs.html"><strong>Planar Graphs &amp; Euler's Formula</strong></a>, 
+                    we studied graphs embedded in surfaces — a geometric perspective that revealed the face 
+                    structure and the Euler characteristic \(\chi = V - E + F = 2\). We now shift from geometry 
+                    to algebra: by assigning directions to edges, we convert a graph into an object that 
+                    <a href="../Linear_algebra/vector_spaces.html"><strong>linear algebra</strong></a> can act on. 
+                    This algebraic encoding will let us decompose the edge space \(\mathbb{R}^E\) into 
+                    orthogonal subspaces, recover the 
+                    <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a> from first 
+                    principles, and lay the foundation for the 
+                    <strong>boundary operator</strong> that drives simplicial homology.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Oriented Graph</span>
+                    <p>
+                        Let \(G = (V, E)\) be an undirected graph. An <strong>orientation</strong> of \(G\) is an 
+                        assignment, for each edge \(\{u, v\} \in E\), of one of the two possible directions: 
+                        either \(u \to v\) or \(v \to u\). The resulting directed graph is called an 
+                        <strong>oriented graph</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The choice of orientation is entirely arbitrary. Every undirected edge \(\{u, v\}\) has two 
+                    possible orientations, and for a graph with \(|E|\) edges there are \(2^{|E|}\) possible 
+                    orientations. The central theme of this page is that the algebraic objects we construct — 
+                    the cycle space, the cut space, and the graph Laplacian — are all <em>independent of which 
+                    orientation we choose</em>.
+                </p>
+
+                <p>
+                    This independence is our first encounter with <strong>gauge freedom</strong>: the orientation 
+                    is a "coordinate choice" imposed on the graph to make the algebra work, and all intrinsic 
+                    quantities are invariant under that choice. Choosing a different orientation for an edge 
+                    merely flips the sign of the corresponding column in the incidence matrix we are about to 
+                    define — and sign flips cancel out in every quantity that matters.
+                </p>
+
+                <p>
+                    We can already see a shadow of this principle in 
+                    <a href="intro_combinatorics.html"><strong>Combinatorics</strong></a>: swapping the 
+                    orientation of an edge is an <em>odd permutation</em> of its endpoints, introducing a 
+                    factor of \(-1\). When we generalize from edges to higher-dimensional simplices in the 
+                    sequel on <strong>Simplicial Complexes</strong>, we will define 
+                    <em>oriented simplices</em> by \([a, b] = -[b, a]\), making the sign rule explicit. 
+                    For now, the intuition is that orientation is bookkeeping, not geometry.
+                </p>
+
+            </section>
+
+            <section id="incidence-matrix" class="section-content">
+                <h2>The Incidence Matrix</h2>
+
+                <p>
+                    With an orientation in hand, we can encode the graph in a matrix. This matrix records 
+                    which vertex each edge leaves and which it enters — nothing more and nothing less. 
+                    Yet from this simple encoding, the entire theory of flows and potentials on graphs will emerge.
+                </p>
+
+                <h3>Definition and Structure</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Oriented Incidence Matrix</span>
+                    <p>
+                        Let \(G\) be a graph with vertex set \(V = \{v_1, \ldots, v_n\}\) and edge set 
+                        \(E = \{e_1, \ldots, e_m\}\), equipped with an orientation. The <strong>oriented 
+                        incidence matrix</strong> is the matrix \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\) 
+                        whose \((i, j)\)-entry is
+                        \[
+                        B_{ij} = \begin{cases}
+                        +1 & \text{if edge } e_j \text{ leaves vertex } v_i, \\
+                        -1 & \text{if edge } e_j \text{ enters vertex } v_i, \\
+                        \;\;\,0 & \text{otherwise.}
+                        \end{cases}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Each column of \(\boldsymbol{B}\) contains exactly one \(+1\) and one \(-1\) (and \(n - 2\) 
+                    zeros), corresponding to the tail and head of the oriented edge. This immediately gives a 
+                    fundamental structural observation.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Column Sums of \(\boldsymbol{B}\)</span>
+                    <p>
+                        Every column of \(\boldsymbol{B}\) sums to zero. Equivalently, the all-ones vector 
+                        \(\mathbf{1} \in \mathbb{R}^n\) satisfies
+                        \[
+                        \mathbf{1}^\top \boldsymbol{B} = \mathbf{0}^\top,
+                        \]
+                        and hence \(\mathbf{1} \in \ker(\boldsymbol{B}^\top)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For each edge \(e_j\), the column \(\boldsymbol{B}_{:,j}\) has exactly one entry 
+                        equal to \(+1\) and one equal to \(-1\), so the sum of entries is \(+1 + (-1) = 0\). 
+                        Since \(\mathbf{1}^\top \boldsymbol{B}\) computes column sums, the result follows.
+                    </p>
+                </div>
+
+                <h3>Example: The Triangle Graph \(K_3\)</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Example:</span>
+                    <p>
+                        Consider \(K_3\) on vertices \(\{a, b, c\}\), with edges oriented as 
+                        \(e_1 = a \to b\), \(e_2 = a \to c\), \(e_3 = b \to c\). The oriented incidence 
+                        matrix is
+                        \[
+                        \boldsymbol{B} = 
+                        \begin{array}{c}
+                        \phantom{-}a \\[2pt] \phantom{-}b \\[2pt] \phantom{-}c
+                        \end{array}
+                        \begin{pmatrix}
+                        +1 & +1 & \phantom{+}0 \\
+                        -1 & \phantom{+}0 & +1 \\
+                        \phantom{+}0 & -1 & -1
+                        \end{pmatrix}
+                        \begin{array}{c}
+                        \leftarrow e_1 \\[2pt] \leftarrow e_2 \\[2pt] \leftarrow e_3
+                        \end{array}
+                        \]
+                    </p>
+                    <p>
+                        Each column sums to zero, as expected. If we reverse the orientation of \(e_1\) to 
+                        \(b \to a\), the first column becomes \((-1, +1, 0)^\top\) — only a sign change. 
+                        All subsequent constructions (cycle space, Laplacian) will absorb this sign.
+                    </p>
+                </div>
+
+                <h3>Gradient and Divergence: Two Readings of \(\boldsymbol{B}\)</h3>
+
+                <p>
+                    The incidence matrix encodes two fundamental operations from vector calculus, translated 
+                    into the discrete setting of graphs. The interpretation depends on whether we apply 
+                    \(\boldsymbol{B}\) or its transpose \(\boldsymbol{B}^\top\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Discrete Divergence (\(\boldsymbol{B}\boldsymbol{x}\))</span>
+                    <p>
+                        Let \(\boldsymbol{x} \in \mathbb{R}^m\) assign a scalar value \(x_j\) to each edge \(e_j\) 
+                        (interpreted as a <strong>flow</strong> along the oriented direction). Then 
+                        \((\boldsymbol{B}\boldsymbol{x})_i\) computes the <strong>net outflow</strong> 
+                        (divergence) at vertex \(v_i\):
+                        \[
+                        (\boldsymbol{B}\boldsymbol{x})_i = \sum_{\substack{e_j \text{ leaves } v_i}} x_j 
+                        \;-\; \sum_{\substack{e_j \text{ enters } v_i}} x_j.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Flow conservation at vertex \(v_i\) — the condition that nothing is created or destroyed — 
+                    is therefore \((\boldsymbol{B}\boldsymbol{x})_i = 0\). This is exactly 
+                    <strong>Kirchhoff's current law</strong> from circuit theory, and it is the algebraic 
+                    form of the conservation constraint we encountered in 
+                    <a href="network_flow.html"><strong>Network Flow</strong></a>: for every internal vertex, 
+                    flow in equals flow out.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Discrete Gradient (\(\boldsymbol{B}^\top \boldsymbol{y}\))</span>
+                    <p>
+                        Let \(\boldsymbol{y} \in \mathbb{R}^n\) assign a scalar value \(y_i\) to each vertex 
+                        \(v_i\) (interpreted as a <strong>potential</strong>). Then 
+                        \((\boldsymbol{B}^\top \boldsymbol{y})_j\) computes the <strong>potential difference</strong> 
+                        along edge \(e_j\):
+                        \[
+                        (\boldsymbol{B}^\top \boldsymbol{y})_j = y_{\text{tail}(e_j)} - y_{\text{head}(e_j)}.
+                        \]
+                        This is the <strong>discrete gradient</strong> of the vertex potential \(\boldsymbol{y}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The \(j\)-th row of \(\boldsymbol{B}^\top\) is the transpose of the \(j\)-th column 
+                        of \(\boldsymbol{B}\), which has \(+1\) at the tail and \(-1\) at the head of \(e_j\). 
+                        Therefore 
+                        \((\boldsymbol{B}^\top \boldsymbol{y})_j = (+1) \cdot y_{\text{tail}} + (-1) \cdot y_{\text{head}} 
+                        = y_{\text{tail}} - y_{\text{head}}\).
+                    </p>
+                </div>
+
+                <p>
+                    Thus \(\boldsymbol{B}^\top\) maps vertex signals to edge signals by taking differences, 
+                    and \(\boldsymbol{B}\) maps edge signals to vertex signals by computing net outflows. These 
+                    are the discrete analogues of the gradient operator \(\nabla\) and the divergence operator 
+                    \(\nabla \cdot\), respectively.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Discrete Calculus and Musical Isomorphisms</h3>
+                    <p>
+                        The pair \((\boldsymbol{B}^\top, \boldsymbol{B})\) realizes, on a finite graph, the 
+                        same algebraic structure that appears in continuous calculus: the <strong>gradient</strong> 
+                        maps 0-forms (functions on vertices) to 1-forms (functions on edges), and the 
+                        <strong>divergence</strong> maps 1-forms back to 0-forms. In 
+                        <a href="../Calculus/dual_spaces.html#musical"><strong>Dual Spaces</strong></a>, 
+                        we encountered the <strong>musical isomorphisms</strong> \(\sharp\) and \(\flat\), which 
+                        translate between vectors and covectors via the inner product. The continuous Laplacian 
+                        \(\Delta f = \nabla \cdot (\nabla f)\) composes divergence with gradient — and in 
+                        Section 4 we will see that the graph Laplacian arises from exactly the same composition: 
+                        \(\boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top\). The incidence matrix \(\boldsymbol{B}\) is 
+                        the discrete skeleton underlying the full machinery of exterior calculus.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="cycle-cut" class="section-content">
+                <h2>Cycle Space and Cut Space</h2>
+
+                <p>
+                    The incidence matrix encodes the graph, and the fundamental theorem of linear algebra 
+                    tells us that any matrix carves its domain into two orthogonal pieces: the kernel and 
+                    the row space. Applied to \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\), this 
+                    decomposition splits the edge space \(\mathbb{R}^m\) into two subspaces with beautiful 
+                    combinatorial interpretations: <strong>cycles</strong> and <strong>cuts</strong>.
+                </p>
+
+                <h3>The Cycle Space</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Cycle Space</span>
+                    <p>
+                        The <strong>cycle space</strong> (or <strong>1-cycle space</strong>) of \(G\) is the 
+                        null space of the incidence matrix:
+                        \[
+                        Z_1(G) = \ker(\boldsymbol{B}) = \{\boldsymbol{x} \in \mathbb{R}^m : \boldsymbol{B}\boldsymbol{x} = \mathbf{0}\} \;\subset\; \mathbb{R}^m.
+                        \]
+                        A vector \(\boldsymbol{x} \in Z_1(G)\) is called a <strong>cycle flow</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The condition \(\boldsymbol{B}\boldsymbol{x} = \mathbf{0}\) says that the net divergence 
+                    at every vertex is zero: the flow \(\boldsymbol{x}\) is a <strong>closed circulation</strong> 
+                    with no sources or sinks. This is flow conservation at every vertex simultaneously — 
+                    Kirchhoff's law without exceptions.
+                </p>
+
+                <p>
+                    Note the distinction between two different null spaces associated with 
+                    \(\boldsymbol{B}\). The cycle space \(Z_1 = \ker(\boldsymbol{B}) \subset \mathbb{R}^m\) 
+                    lives in the <strong>edge space</strong> and consists of divergence-free flows. The 
+                    left null space \(\ker(\boldsymbol{B}^\top) \subset \mathbb{R}^n\) lives in the 
+                    <strong>vertex space</strong> and consists of vectors constant on each connected component 
+                    (as we showed: \(\mathbf{1} \in \ker(\boldsymbol{B}^\top)\)). These are fundamentally 
+                    different objects in different ambient spaces.
+                </p>
+
+                <p>
+                    The notation \(Z_1\) is deliberate. In the sequel on <strong>Homology</strong>, we will 
+                    define \(Z_k = \ker(\partial_k)\) for the boundary operator \(\partial_k\). The graph 
+                    case is \(k = 1\): the incidence matrix \(\boldsymbol{B}\), viewed as a map from 
+                    1-chains (\(\mathbb{R}^m\)) to 0-chains (\(\mathbb{R}^n\)), plays the role of 
+                    \(\partial_1\), and cycle flows are 1-cycles: \(Z_1 = \ker(\partial_1) = \ker(\boldsymbol{B})\).
+                </p>
+
+                <h3>The Cut Space</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Cut Space</span>
+                    <p>
+                        The <strong>cut space</strong> of \(G\) is the image of \(\boldsymbol{B}^\top\) 
+                        viewed as a map from \(\mathbb{R}^n\) to \(\mathbb{R}^m\):
+                        \[
+                        B_1(G) = \operatorname{im}(\boldsymbol{B}^\top) \;\subset\; \mathbb{R}^m.
+                        \]
+                        A vector \(\boldsymbol{z} \in B_1(G)\) is called a <strong>potential flow</strong> 
+                        (or <strong>exact flow</strong>).
+                    </p>
+                </div>
+
+                <p>
+                    A potential flow \(\boldsymbol{z} = \boldsymbol{B}^\top \boldsymbol{y}\) is one that 
+                    arises as the gradient of some vertex potential \(\boldsymbol{y}\). On each edge, the flow 
+                    value is simply the potential difference between the endpoints. Such flows are the "trivial" 
+                    circulations — they are created by a global potential function, not by any genuine 
+                    topological cycle in the graph.
+                </p>
+
+                <p>
+                    A note on notation: in <strong>Intro to Homology</strong>, 
+                    \(B_k = \operatorname{im}(\partial_{k+1})\) will denote the space of \(k\)-boundaries. 
+                    For graphs, \(\operatorname{im}(\partial_2) = \{0\}\) (there are no 2-cells), so the 
+                    homological \(B_1\) is trivial and no ambiguity arises. The cut space 
+                    \(B_1(G) = \operatorname{im}(\boldsymbol{B}^\top)\) is a distinct concept — it consists of 
+                    exact 1-forms (gradients of vertex potentials), which in the language of cohomology are 
+                    <strong>coboundaries</strong>. The notational distinction will sharpen once we encounter 
+                    simplicial complexes with non-trivial 2-faces, where \(\operatorname{im}(\partial_2) \neq \{0\}\) 
+                    and the two roles of "\(B_1\)" diverge.
+                </p>
+
+                <h3>Orthogonal Decomposition</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Orthogonal Decomposition of the Edge Space</span>
+                    <p>
+                        The edge space of a graph decomposes as a direct sum of orthogonal subspaces:
+                        \[
+                        \mathbb{R}^m = Z_1(G) \;\oplus\; B_1(G) = \ker(\boldsymbol{B}) \;\oplus\; \operatorname{im}(\boldsymbol{B}^\top).
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        This is a direct application of the 
+                        <a href="../Linear_algebra/vector_spaces.html"><strong>fundamental theorem of linear 
+                        algebra</strong></a>: for any matrix \(\boldsymbol{M}\), the null space of 
+                        \(\boldsymbol{M}\) and the column space of \(\boldsymbol{M}^\top\) are orthogonal 
+                        complements in the domain. Taking \(\boldsymbol{M} = \boldsymbol{B}\) with domain 
+                        \(\mathbb{R}^m\), we have \(\ker(\boldsymbol{B})^\perp = \operatorname{im}(\boldsymbol{B}^\top)\), 
+                        which gives the stated decomposition.
+                    </p>
+                </div>
+
+                <p>
+                    Every edge flow can be uniquely written as the sum of a circulation (divergence-free) 
+                    and a potential flow (gradient of a vertex function). This is the graph-theoretic analogue 
+                    of the <strong>Helmholtz decomposition</strong> in vector calculus, which decomposes a 
+                    vector field into a divergence-free component (curl of something) and a curl-free component 
+                    (gradient of something). On a graph, the cycle space plays the role of divergence-free 
+                    fields, and the cut space plays the role of curl-free (= exact) fields.
+                </p>
+
+                <h3>Dimension Counting</h3>
+
+                <p>
+                    The <a href="../Linear_algebra/vector_spaces.html"><strong>rank-nullity theorem</strong></a> 
+                    applied to \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\) gives
+                    \[
+                    \operatorname{rank}(\boldsymbol{B}) + \dim(\ker(\boldsymbol{B})) = m.
+                    \]
+                    Since the cycle space is \(Z_1 = \ker(\boldsymbol{B})\) and the cut space is 
+                    \(B_1 = \operatorname{im}(\boldsymbol{B}^\top)\), and since 
+                    \(\operatorname{rank}(\boldsymbol{B}) = \operatorname{rank}(\boldsymbol{B}^\top) = \dim(B_1)\), 
+                    we need to determine \(\operatorname{rank}(\boldsymbol{B})\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Rank of the Incidence Matrix</span>
+                    <p>
+                        Let \(G\) be a graph with \(n\) vertices, \(m\) edges, and \(c\) connected components. Then
+                        \[
+                        \operatorname{rank}(\boldsymbol{B}) = n - c.
+                        \]
+                        Consequently:
+                        \[
+                        \dim(Z_1) = m - n + c, \qquad \dim(B_1) = n - c.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The left null space of \(\boldsymbol{B}\) — i.e., 
+                        \(\ker(\boldsymbol{B}^\top) \subset \mathbb{R}^n\) — consists of vectors 
+                        \(\boldsymbol{y}\) such that \(\boldsymbol{B}^\top \boldsymbol{y} = \mathbf{0}\). 
+                        By the discrete gradient interpretation, this means 
+                        \(y_u = y_v\) for every edge \(\{u, v\}\), i.e., \(\boldsymbol{y}\) is constant on 
+                        each connected component. Therefore 
+                        \(\dim(\ker(\boldsymbol{B}^\top)) = c\), and by the rank-nullity theorem applied 
+                        to \(\boldsymbol{B}^\top \in \mathbb{R}^{m \times n}\):
+                        \[
+                        \operatorname{rank}(\boldsymbol{B}^\top) + \dim(\ker(\boldsymbol{B}^\top)) = n,
+                        \]
+                        giving \(\operatorname{rank}(\boldsymbol{B}) = n - c\). The dimension formulas follow 
+                        from \(\dim(Z_1) = m - \operatorname{rank}(\boldsymbol{B}) = m - n + c\) 
+                        and \(\dim(B_1) = \operatorname{rank}(\boldsymbol{B}) = n - c\).
+                    </p>
+                </div>
+
+                <h3>Connection to Euler's Formula</h3>
+
+                <p>
+                    For a <strong>connected</strong> planar graph (\(c = 1\)), the dimension of the cycle space is
+                    \[
+                    \dim(Z_1) = m - n + 1.
+                    \]
+                    By <a href="planar_graphs.html#euler-formula"><strong>Euler's formula</strong></a>, 
+                    \(V - E + F = 2\), so \(F = 2 - V + E = 2 - n + m\), and therefore
+                    \[
+                    \dim(Z_1) = m - n + 1 = F - 1.
+                    \]
+                    The dimension of the cycle space equals the number of <strong>bounded faces</strong> in 
+                    any planar embedding.
+                </p>
+
+                <p>
+                    This is the algebraic content of Euler's formula. The proof of Euler's formula in 
+                    <a href="planar_graphs.html#euler-formula"><strong>Planar Graphs</strong></a> added 
+                    non-tree edges one at a time, each creating a new face and a new independent cycle. We 
+                    now see that this correspondence is exact: the non-tree edges form a basis for \(Z_1\), 
+                    and each basis vector corresponds to a face boundary.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: \(K_3\)</span>
+                    <p>
+                        For \(K_3\), we have \(n = 3\), \(m = 3\), \(c = 1\). Then 
+                        \(\dim(Z_1) = 3 - 3 + 1 = 1\). The single independent cycle is 
+                        \(\boldsymbol{x} = (1, -1, 1)^\top\) (using the orientation from our earlier example), 
+                        representing the cycle \(a \to b \to c \to a\). The first edge \(e_1 = a \to b\) 
+                        and third edge \(e_3 = b \to c\) are traversed in their assigned direction (coefficient 
+                        \(+1\)), while the second edge \(e_2 = a \to c\) is traversed backwards (as 
+                        \(c \to a\)), giving coefficient \(-1\).
+                    </p>
+                    <p>
+                        Verification: \(\boldsymbol{B}\boldsymbol{x} = 
+                        \begin{pmatrix} +1 & +1 & 0 \\ -1 & 0 & +1 \\ 0 & -1 & -1 \end{pmatrix}
+                        \begin{pmatrix} 1 \\ -1 \\ 1 \end{pmatrix} = 
+                        \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}\). &#10003;
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example: \(K_4\)</span>
+                    <p>
+                        For \(K_4\), we have \(n = 4\), \(m = 6\), \(c = 1\). Then 
+                        \(\dim(Z_1) = 6 - 4 + 1 = 3\), and \(\dim(B_1) = 4 - 1 = 3\). The edge 
+                        space \(\mathbb{R}^6\) splits evenly: 3 dimensions of cycles and 3 dimensions 
+                        of cuts. In a planar embedding, \(K_4\) has \(F = 4\) faces, and the 
+                        3 independent cycles correspond to the 3 bounded triangular faces (\(F - 1 = 3\)).
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="laplacian-revisited" class="section-content">
+                <h2>The Graph Laplacian Revisited</h2>
+
+                <p>
+                    In <a href="../Linear_algebra/graph_laplacian.html"><strong>Graph Laplacians and 
+                    Spectral Methods</strong></a>, the Laplacian was defined as \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\), 
+                    where \(\boldsymbol{D}\) is the degree matrix and \(\boldsymbol{A}\) the adjacency matrix. 
+                    This was the <em>matrix perspective</em>: start with the adjacency structure and construct 
+                    a difference operator. We now arrive at the same matrix from the <em>discrete calculus 
+                    perspective</em>: compose the gradient with the divergence.
+                </p>
+
+                <h3>\(\boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top\): Two Roads to One Matrix</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Laplacian as \(\boldsymbol{B}\boldsymbol{B}^\top\)</span>
+                    <p>
+                        Let \(\boldsymbol{B}\) be the oriented incidence matrix of a graph \(G\). Then the 
+                        (unnormalized) graph Laplacian satisfies
+                        \[
+                        \boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top = \boldsymbol{D} - \boldsymbol{A},
+                        \]
+                        regardless of which orientation was chosen for \(G\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We compute \((\boldsymbol{B}\boldsymbol{B}^\top)_{ij}\) by summing over edges:
+                        \[
+                        (\boldsymbol{B}\boldsymbol{B}^\top)_{ij} = \sum_{k=1}^{m} B_{ik} \, B_{jk}.
+                        \]
+                    </p>
+                    <p>
+                        <strong>Case \(i = j\):</strong> For each edge \(e_k\) incident to \(v_i\), we have 
+                        \(B_{ik} = \pm 1\) (depending on direction), so \(B_{ik}^2 = 1\). For edges not 
+                        incident to \(v_i\), \(B_{ik} = 0\). Thus 
+                        \((\boldsymbol{B}\boldsymbol{B}^\top)_{ii} = \deg(v_i)\).
+                    </p>
+                    <p>
+                        <strong>Case \(i \neq j\), \(\{v_i, v_j\} \in E\):</strong> Let \(e_k\) be the edge 
+                        connecting \(v_i\) and \(v_j\). One of them is the tail (\(+1\)) and the other is the 
+                        head (\(-1\)), so \(B_{ik} \cdot B_{jk} = (+1)(-1) = -1\). For all other edges, at 
+                        least one of \(B_{ik}, B_{jk}\) is zero. Thus 
+                        \((\boldsymbol{B}\boldsymbol{B}^\top)_{ij} = -1\).
+                    </p>
+                    <p>
+                        <strong>Case \(i \neq j\), \(\{v_i, v_j\} \notin E\):</strong> No edge is simultaneously 
+                        incident to both \(v_i\) and \(v_j\), so all terms vanish: 
+                        \((\boldsymbol{B}\boldsymbol{B}^\top)_{ij} = 0\).
+                    </p>
+                    <p>
+                        This matches \(L_{ij} = D_{ij} - A_{ij}\) entry by entry. Orientation 
+                        independence follows because reversing the orientation of any edge \(e_k\) negates 
+                        <em>both</em> \(B_{ik}\) and \(B_{jk}\) simultaneously, leaving their product unchanged.
+                    </p>
+                </div>
+
+                <p>
+                    This is a satisfying convergence: two completely different starting points — the 
+                    combinatorial definition \(\boldsymbol{D} - \boldsymbol{A}\) from 
+                    <a href="../Linear_algebra/graph_laplacian.html#fundamentals"><strong>linalg-14</strong></a>, 
+                    and the discrete calculus factorization \(\boldsymbol{B}\boldsymbol{B}^\top\) from the 
+                    incidence matrix — lead to the same matrix. The factorization reveals 
+                    <em>why</em> the Laplacian has the structure it does: it is the composition 
+                    \(\text{divergence} \circ \text{gradient}\).
+                </p>
+
+                <h3>Dirichlet Energy Revisited</h3>
+
+                <p>
+                    The factorization \(\boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top\) also clarifies the 
+                    <a href="../Linear_algebra/graph_laplacian.html#fundamentals"><strong>Dirichlet energy</strong></a> 
+                    from a new perspective. For a vertex signal \(\boldsymbol{y} \in \mathbb{R}^n\):
+                    \[
+                    \boldsymbol{y}^\top \boldsymbol{L} \boldsymbol{y} 
+                    = \boldsymbol{y}^\top \boldsymbol{B}\boldsymbol{B}^\top \boldsymbol{y} 
+                    = \|\boldsymbol{B}^\top \boldsymbol{y}\|^2 
+                    = \sum_{e_j \in E} (y_{\text{tail}(e_j)} - y_{\text{head}(e_j)})^2.
+                    \]
+                    The Dirichlet energy is simply the squared norm of the discrete gradient of 
+                    \(\boldsymbol{y}\). It measures how much \(\boldsymbol{y}\) varies across edges — the 
+                    total "roughness" of the signal on the graph.
+                </p>
+
+                <h3>The Laplacian as Discrete \(\Delta\)</h3>
+
+                <p>
+                    In continuous calculus, the Laplacian of a function \(f\) is 
+                    \(\Delta f = \nabla \cdot (\nabla f)\) — the divergence of the gradient. The 
+                    factorization \(\boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top\) is the exact 
+                    discrete parallel: \(\boldsymbol{B}^\top\) is the discrete gradient (mapping vertex 
+                    potentials to edge differences) and \(\boldsymbol{B}\) is the discrete divergence 
+                    (mapping edge flows to vertex net outflows). Their composition is the discrete Laplacian.
+                </p>
+
+                <h3>Preview: Higher-Order Laplacians</h3>
+
+                <p>
+                    The graph Laplacian is a special case of a much larger structure. In the graph setting, 
+                    we have a single boundary operator \(\partial_1\) (the incidence matrix 
+                    \(\boldsymbol{B}\), viewed as a map from 1-chains to 0-chains), and the Laplacian is
+                    \[
+                    \boldsymbol{L}_0 = \partial_1 \partial_1^\top.
+                    \]
+                    In a <strong>simplicial complex</strong> — the higher-dimensional generalization of a 
+                    graph, to be studied in the sequel — there are boundary operators \(\partial_k\) at 
+                    each dimension, and the <strong>\(k\)-th Hodge Laplacian</strong> is
+                    \[
+                    \boldsymbol{L}_k = \partial_{k+1}\partial_{k+1}^\top + \partial_k^\top \partial_k.
+                    \]
+                    The graph Laplacian \(\boldsymbol{L}_0\) is the \(k = 0\) case. For a graph 
+                    (a purely 1-dimensional complex), there are no 2-simplices, so \(\partial_2\) does not 
+                    exist and the first term vanishes. For the second term, we adopt the convention 
+                    \(\partial_0 = 0\) (the trivial map on 0-chains), which makes 
+                    \(\partial_0^\top \partial_0 = 0\) as well. We are left with 
+                    \(\boldsymbol{L}_0 = \partial_1 \partial_1^\top\).
+                </p>
+
+                <p>
+                    Similarly, the condition \(\partial^2 = 0\) — the cornerstone of homology theory — holds 
+                    vacuously in the graph case: with the convention \(\partial_0 = 0\), the composition 
+                    \(\partial_0 \circ \partial_1 = 0\) is automatic. In the simplicial setting, the 
+                    composition \(\partial_{k-1} \circ \partial_k = 0\) for \(k \geq 2\) becomes a non-trivial 
+                    sign-cancellation result with deep consequences. This is the story that lies ahead.
+                </p>
+
+                <div class="insight-box">
+                    <h3>From Graph Neural Networks to Simplicial Neural Networks</h3>
+                    <p>
+                        In <a href="../Linear_algebra/graph_laplacian.html#signal"><strong>Graph Signal 
+                        Processing</strong></a>, we saw that GNN message passing operates on the eigenfunctions 
+                        of \(\boldsymbol{L}_0\) — the <strong>Graph Fourier basis</strong>. This is spectral 
+                        convolution on vertices, governed by the 0-th Laplacian. But many real-world signals live 
+                        on <em>edges</em> (traffic flow on road networks, current in circuits) or even on 
+                        <em>triangles</em> (flux through mesh faces). The higher-order Hodge Laplacians 
+                        \(\boldsymbol{L}_k\) extend spectral analysis to these settings, enabling 
+                        <strong>Simplicial Neural Networks</strong> (SNNs) that perform message passing along 
+                        \(\partial_k\)-defined adjacencies. The incidence matrix \(\boldsymbol{B}\) we studied 
+                        here is the discrete structure that makes this generalization possible: it is the 
+                        \(k = 1\) instance of the boundary operator around which the entire theory is built.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>    
+    </body>
+</html>
