@@ -1,0 +1,695 @@
+---
+layout: default
+title: Planar Graphs & Euler's Formula
+topic_id: disc-12
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Planar Graphs & Euler's Formula</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#planar-graphs">Planar Graphs</a>
+            <a href="#euler-formula">Euler's Formula</a>
+            <a href="#kuratowski">Kuratowski's Theorem</a>
+            <a href="#dual-graphs">Dual Graphs</a>
+            <a href="#graph-coloring">Graph Coloring</a>
+        </div> 
+
+        <div class="container">  
+
+            <section id="planar-graphs" class="section-content">
+                <h2>Planar Graphs</h2>
+
+                <p>
+                    Throughout <a href="intro_graph.html"><strong>Introduction to Graph Theory</strong></a> and 
+                    the pages that followed, we treated graphs as purely combinatorial objects — sets of vertices 
+                    and edges, with no reference to geometry or space. We asked questions about 
+                    <a href="intro_graph.html#path"><strong>paths</strong></a>, 
+                    <a href="Eulerian.html"><strong>Eulerian and Hamiltonian cycles</strong></a>, 
+                    <a href="trees_and_enumeration.html"><strong>trees</strong></a>, and 
+                    <a href="network_flow.html"><strong>flows</strong></a> — all of which depend only on the 
+                    abstract structure \(G = (V, E)\). We now ask a fundamentally different kind of question: 
+                    <em>can a graph be drawn in the plane without edges crossing?</em>
+                </p>
+
+                <p>
+                    This is the first point in Section IV where geometry enters the picture. The answer depends not only 
+                    on the combinatorics of \(G\) but on the topology of the surface on which we attempt to embed it. 
+                    This shift — from the purely combinatorial to the topological — opens a path that will eventually 
+                    lead us to simplicial complexes and homology.
+                </p>
+
+                <h3>Planar and Plane Graphs</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Plane Graph</span>
+                    <p>
+                        A <strong>plane graph</strong> is a graph \(G = (V, E)\) together with a specific drawing in 
+                        the plane \(\mathbb{R}^2\) in which:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>Each vertex \(v \in V\) is mapped to a distinct point in \(\mathbb{R}^2\).</li>
+                        <li>Each edge \(\{u, v\} \in E\) is drawn as a continuous arc connecting \(u\) and \(v\).</li>
+                        <li>No two edges share a point except at a common endpoint.</li>
+                    </ul>
+                    <p>
+                        A graph \(G\) is called <strong>planar</strong> if it admits at least one such drawing. The 
+                        drawing itself is called a <strong>planar embedding</strong> (or <strong>plane embedding</strong>) 
+                        of \(G\).
+                    </p>
+                </div>
+
+                <p>
+                    The distinction matters: a <em>planar graph</em> is an abstract graph with a certain property, 
+                    while a <em>plane graph</em> is a concrete drawing. The same planar graph can have many different 
+                    plane embeddings. For our purposes, the key is that a planar embedding carves the plane into 
+                    well-defined regions.
+                </p>
+
+                <h3>Faces</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Face</span>
+                    <p>
+                        Given a plane graph \(G\), the <strong>faces</strong> of the embedding are the connected 
+                        regions of \(\mathbb{R}^2 \setminus G\) — that is, the maximal connected components of 
+                        the plane after removing all vertices and edges. Exactly one face is unbounded; it is called 
+                        the <strong>outer face</strong> (or <strong>infinite face</strong>).
+                    </p>
+                </div>
+
+                <p>
+                    Consider the complete graph \(K_4\). In its standard planar embedding (a triangle with one 
+                    vertex inside), there are exactly four faces: three bounded triangular regions and one unbounded 
+                    outer face (itself bounded by three edges). We write \(F = 4\), and together with \(V = 4\) 
+                    vertices and \(E = 6\) edges, we have \(V - E + F = 4 - 6 + 4 = 2\). This is not a coincidence.
+                </p>
+
+                <p>
+                    Every face is bounded by a closed walk of edges called its <strong>boundary</strong>. In a simple, 
+                    2-connected plane graph, each face boundary is a cycle. In general, a face boundary may traverse 
+                    an edge twice (once from each side) if removing that edge would disconnect the graph.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Faces as Proto-Simplices</h3>
+                    <p>
+                        The notion of a face is our first encounter with a concept that transcends dimension 1 in 
+                        graph theory. A graph has vertices (0-dimensional) and edges (1-dimensional). A plane embedding 
+                        adds <em>faces</em> (2-dimensional regions). This triple \((V, E, F)\) — counting objects 
+                        by dimension — foreshadows the <strong>f-vector</strong> \((f_0, f_1, f_2, \ldots)\) of 
+                        a simplicial complex, where \(f_k\) counts the \(k\)-dimensional simplices. Planar graphs 
+                        are, in a precise sense, the 2-dimensional beginning of a story that extends to arbitrary dimension.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="euler-formula" class="section-content">
+                <h2>Euler's Formula</h2>
+
+                <p>
+                    Leonhard Euler discovered in 1752 that for any connected plane graph, the quantities \(V\), 
+                    \(E\), and \(F\) are bound by a remarkable identity. This is one of the most beautiful 
+                    results in all of mathematics, connecting combinatorics, geometry, and — as we shall see — topology.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Euler's Formula for Planar Graphs</span>
+                    <p>
+                        Let \(G\) be a connected plane graph with \(V\) vertices, \(E\) edges, and \(F\) faces. Then
+                        \[
+                        V - E + F = 2.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Choose any 
+                        <a href="trees_and_enumeration.html#rooted-trees"><strong>spanning tree</strong></a> \(T\) 
+                        of \(G\). Since \(T\) is a tree on \(V\) vertices, it has \(V - 1\) edges 
+                        (as established in <a href="trees_and_enumeration.html"><strong>Trees &amp; Enumeration</strong></a>). 
+                        As a plane graph, \(T\) has no cycles and therefore exactly one face (the entire complement 
+                        is connected), so \(V - (V-1) + 1 = 2\). The formula holds for \(T\).
+                    </p>
+                    <p>
+                        Now consider any edge \(e \in E(G) \setminus E(T)\). Since \(T\) is a spanning tree 
+                        and \(e \notin E(T)\), the edge \(e\) lies in the interior of some face and connects 
+                        two vertices already connected by a path in \(T\). Adding \(e\) back into the plane graph 
+                        splits that face into two — the cycle formed by \(e\) together with the unique \(T\)-path 
+                        between its endpoints separates the face. Thus adding \(e\) increases both \(E\) and \(F\) 
+                        by exactly 1, leaving \(V - E + F\) unchanged. Adding the remaining 
+                        \(E - (V - 1)\) edges one by one, each preserving the alternating sum, gives 
+                        \(V - E + F = 2\) for the full graph \(G\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>Consequences for Edge Density</h3>
+
+                <p>
+                    Euler's formula constrains how many edges a planar graph can have. The argument hinges on the 
+                    observation that every face is bounded by at least 3 edges (in a simple graph with \(V \geq 3\)), 
+                    and every edge borders at most 2 faces.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Edge Bound for Planar Graphs</span>
+                    <p>
+                        Let \(G\) be a simple connected planar graph with \(V \geq 3\) vertices and \(E\) edges. Then
+                        \[
+                        E \leq 3V - 6.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        In any plane embedding, each face is bounded by at least 3 edges, and each edge borders at most 
+                        2 faces. Counting edge-face incidences: \(2E \geq 3F\), so \(F \leq \frac{2}{3}E\). Substituting 
+                        into Euler's formula: \(2 = V - E + F \leq V - E + \frac{2}{3}E = V - \frac{1}{3}E\), 
+                        giving \(E \leq 3V - 6\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Edge Bound for Triangle-Free Planar Graphs</span>
+                    <p>
+                        If \(G\) is a simple connected triangle-free planar graph with \(V \geq 3\), then
+                        \[
+                        E \leq 2V - 4.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        If \(G\) is triangle-free, every face is bounded by at least 4 edges (a cycle of length 
+                        \(\geq 4\)). Then \(2E \geq 4F\), so \(F \leq \frac{1}{2}E\). Euler gives 
+                        \(2 \leq V - E + \frac{1}{2}E = V - \frac{1}{2}E\), hence \(E \leq 2V - 4\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>Non-Planarity of \(K_5\) and \(K_{3,3}\)</h3>
+
+                <p>
+                    These corollaries immediately settle two fundamental non-planarity results.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: \(K_5\) is Non-Planar</span>
+                    <p>
+                        The complete graph \(K_5\) has \(V = 5\) and 
+                        \(E = \binom{5}{2} = 10\). The edge bound gives \(E \leq 3(5) - 6 = 9\). 
+                        Since \(10 > 9\), \(K_5\) is not planar.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: \(K_{3,3}\) is Non-Planar</span>
+                    <p>
+                        The complete bipartite graph \(K_{3,3}\) has \(V = 6\) and \(E = 9\). Since 
+                        \(K_{3,3}\) is <a href="intro_graph.html#sub"><strong>bipartite</strong></a>, it contains no 
+                        odd cycles and in particular is triangle-free. The triangle-free bound gives 
+                        \(E \leq 2(6) - 4 = 8\). Since \(9 > 8\), \(K_{3,3}\) is not planar.
+                    </p>
+                </div>
+
+                <h3>Minimum Degree Bound</h3>
+
+                <p>
+                    A further consequence of the edge bound is a structural constraint on vertex degrees.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Every Planar Graph Has a Vertex of Degree \(\leq 5\)</span>
+                    <p>
+                        Let \(G\) be a simple planar graph. Then \(G\) contains a vertex \(v\) with 
+                        \(\deg(v) \leq 5\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        It suffices to prove the claim for each connected component of \(G\), so assume 
+                        \(G\) is connected with \(V \geq 3\). Suppose for contradiction that every vertex 
+                        has degree \(\geq 6\). By the 
+                        <a href="intro_graph.html#degree"><strong>Handshaking Lemma</strong></a>, 
+                        \(2E = \sum_{v} \deg(v) \geq 6V\), so \(E \geq 3V\). But \(E \leq 3V - 6 < 3V\) 
+                        for any connected planar graph with \(V \geq 3\), a contradiction. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    This innocent-looking corollary is the engine behind the graph coloring results in the 
+                    final section of this page.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Euler Characteristic as a Topological Invariant</h3>
+                    <p>
+                        The quantity \(\chi = V - E + F\) is called the <strong>Euler characteristic</strong>. 
+                        For any connected plane graph, \(\chi = 2\). Remarkably, this value depends only on the 
+                        topology of the surface — the sphere \(S^2\) (which is topologically equivalent to the 
+                        plane plus a point at infinity) has \(\chi = 2\) regardless of how we triangulate or 
+                        embed a graph on it. This is a shadow of a much deeper fact: Euler characteristic is a 
+                        <strong>topological invariant</strong>, unchanged by continuous deformations 
+                        (<a href="../Calculus/homeomorphism.html"><strong>homeomorphisms</strong></a>). 
+                        The alternating sum \(\chi = f_0 - f_1 + f_2\) generalizes to simplicial complexes 
+                        of arbitrary dimension as \(\chi(K) = \sum_{k} (-1)^k f_k\), and the deep reason that 
+                        \(\chi\) is invariant — the <strong>Euler-Poincaré theorem</strong> — connects it to 
+                        homology groups. These ideas lie ahead.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="kuratowski" class="section-content">
+                <h2>Kuratowski's Theorem and Graph Minors</h2>
+
+                <p>
+                    Euler's formula gives <em>necessary</em> conditions for planarity (edge bounds), but not 
+                    sufficient ones — a graph can satisfy \(E \leq 3V - 6\) and still be non-planar. The complete 
+                    characterization of planarity is one of the jewels of graph theory.
+                </p>
+
+                <h3>Subdivisions</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Subdivision</span>
+                    <p>
+                        A <strong>subdivision</strong> of a graph \(H\) is any graph obtained by replacing 
+                        edges of \(H\) with paths — that is, inserting degree-2 vertices along edges. 
+                        If \(G\) contains a subgraph that is a subdivision of \(H\), we say \(G\) contains 
+                        an <strong>\(H\)-subdivision</strong> (or an \(H\)-topological minor).
+                    </p>
+                </div>
+
+                <p>
+                    Subdivisions preserve planarity: inserting degree-2 vertices into a planar drawing does not 
+                    create crossings, and removing them does not eliminate crossings. Thus, a graph containing 
+                    a \(K_5\)- or \(K_{3,3}\)-subdivision cannot be planar.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Kuratowski's Theorem (1930)</span>
+                    <p>
+                        A graph \(G\) is planar if and only if it contains no subdivision of \(K_5\) and no 
+                        subdivision of \(K_{3,3}\).
+                    </p>
+                </div>
+
+                <p>
+                    The "only if" direction is clear: \(K_5\) and \(K_{3,3}\) are non-planar, and subdivisions 
+                    preserve non-planarity. The "if" direction — that these are the <em>only</em> obstructions — is 
+                    deep and non-trivial. We state it without proof.
+                </p>
+
+                <p>
+                    Kuratowski's theorem characterizes planarity in terms of forbidden substructures, but does 
+                    not immediately yield an efficient algorithm. The algorithmic question — given \(G\), determine 
+                    whether it is planar and construct an embedding if so — was resolved by Hopcroft and Tarjan 
+                    (1974), who gave a linear-time \(O(V)\) planarity testing algorithm based on depth-first 
+                    search. This remains one of the landmark results in algorithmic graph theory.
+                </p>
+
+                <h3>Graph Minors</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Minor</span>
+                    <p>
+                        A graph \(H\) is a <strong>minor</strong> of \(G\), written \(H \preceq G\), if \(H\) can be 
+                        obtained from \(G\) by a sequence of:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Edge deletion:</strong> removing an edge.</li>
+                        <li><strong>Vertex deletion:</strong> removing a vertex and all its incident edges.</li>
+                        <li><strong>Edge contraction:</strong> merging the two endpoints of an edge into a single vertex.</li>
+                    </ul>
+                    <p>
+                        A graph property is <strong>minor-closed</strong> if whenever \(G\) has the property 
+                        and \(H \preceq G\), then \(H\) also has the property.
+                    </p>
+                </div>
+
+                <p>
+                    Planarity is minor-closed: deleting vertices/edges and contracting edges in a plane graph 
+                    preserves planarity. The minor relation is more general than the subdivision relation 
+                    (every topological minor is a minor, but not conversely), leading to an equivalent 
+                    characterization.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Wagner's Theorem (1937)</span>
+                    <p>
+                        A graph \(G\) is planar if and only if it has no \(K_5\) minor and no \(K_{3,3}\) minor.
+                    </p>
+                </div>
+
+                <p>
+                    Wagner's theorem can be viewed as an instance of a far more general phenomenon:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Robertson-Seymour Graph Minor Theorem (2004)</span>
+                    <p>
+                        In any infinite sequence of graphs \(G_1, G_2, G_3, \ldots\), there exist indices \(i < j\) 
+                        such that \(G_i\) is a minor of \(G_j\). Equivalently, every minor-closed graph property 
+                        is characterized by a <em>finite</em> set of forbidden minors.
+                    </p>
+                </div>
+
+                <p>
+                    The proof of the Robertson-Seymour theorem spans 23 papers published over two decades. For planarity, 
+                    the finite forbidden set is simply \(\{K_5, K_{3,3}\}\). For other surfaces, the forbidden 
+                    minor sets are larger but still finite. This theorem guarantees that every "topological" graph 
+                    property has a finite combinatorial certificate.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Subgraph Patterns and GNN Expressivity</h3>
+                    <p>
+                        The detection of subgraph patterns is central to the expressivity of 
+                        <strong>Graph Neural Networks (GNNs)</strong>. The classical Weisfeiler-Leman (WL) 
+                        isomorphism test — which upper-bounds the distinguishing power of message-passing 
+                        GNNs — cannot distinguish certain non-isomorphic graphs that differ only in their 
+                        subgraph structure. Higher-order WL tests and equivariant architectures improve expressivity 
+                        by tracking \(k\)-tuples of vertices, effectively detecting richer local patterns. 
+                        The graph minor and subdivision relations provide a natural vocabulary for describing 
+                        the structural motifs that distinguish graphs, and understanding which such motifs 
+                        a network can and cannot detect is a frontier question in geometric deep learning.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="dual-graphs" class="section-content">
+                <h2>Dual Graphs and the Bridge to Higher Dimensions</h2>
+
+                <p>
+                    A planar embedding reveals not only the graph itself but also a <em>dual</em> structure 
+                    that interchanges vertices and faces. This duality is a recurring motif in mathematics — 
+                    from <a href="../Calculus/dual_spaces.html"><strong>dual spaces</strong></a> in functional 
+                    analysis to Poincaré duality in algebraic topology. Here, we see its combinatorial incarnation.
+                </p>
+
+                <h3>The Dual Graph</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Dual Graph</span>
+                    <p>
+                        Let \(G\) be a connected plane graph. The <strong>dual graph</strong> \(G^*\) is constructed as follows:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>Place one vertex of \(G^*\) inside each face of \(G\).</li>
+                        <li>For each edge \(e\) of \(G\), draw an edge of \(G^*\) crossing \(e\) and connecting 
+                            the two faces that \(e\) borders.</li>
+                    </ul>
+                    <p>
+                        The dual satisfies \(V(G^*) = F(G)\), \(E(G^*) = E(G)\), and \(F(G^*) = V(G)\).
+                    </p>
+                </div>
+
+                <p>
+                    Notice that the vertex-face duality swaps the roles of \(V\) and \(F\) while preserving \(E\). 
+                    Applying Euler's formula to \(G^*\): \(V(G^*) - E(G^*) + F(G^*) = F - E + V = 2\), 
+                    confirming that the formula is self-dual.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Double Dual</span>
+                    <p>
+                        For a connected plane graph \(G\), \((G^*)^* \cong G\).
+                    </p>
+                </div>
+
+                <p>
+                    The dual graph captures complementary structural information. If \(T\) is a spanning tree 
+                    of \(G\), then the edges of \(G^*\) corresponding to \(E(G) \setminus E(T)\) form a 
+                    spanning tree of \(G^*\). This <strong>complementary tree</strong> principle connects tree 
+                    enumeration (Cayley's formula, Kirchhoff's matrix tree theorem from 
+                    <a href="trees_and_enumeration.html#cayley"><strong>Trees &amp; Enumeration</strong></a>) to 
+                    the dual perspective. In 3D computer vision, triangle meshes have a natural dual where 
+                    each triangular face becomes a vertex; convolution operations on this dual graph process 
+                    face-level data (such as surface normals), complementing vertex-level message passing in 
+                    graph neural networks.
+                </p>
+
+                <h3>The f-Vector Perspective</h3>
+
+                <p>
+                    We now introduce notation that anticipates the higher-dimensional generalization. Define the 
+                    <strong>f-vector</strong> of a plane graph \(G\) as the triple
+                    \[
+                    f = (f_0, f_1, f_2) = (V, E, F).
+                    \]
+                    Euler's formula becomes the alternating sum
+                    \[
+                    f_0 - f_1 + f_2 = 2.
+                    \]
+                    For a simplicial complex \(K\) of dimension \(d\), the f-vector is 
+                    \((f_0, f_1, \ldots, f_d)\) where \(f_k\) counts the \(k\)-simplices, and the Euler 
+                    characteristic is \(\chi(K) = \sum_{k=0}^{d} (-1)^k f_k\). Euler's formula for 
+                    plane graphs is the \(d = 2\) case of this general pattern.
+                </p>
+
+                <h3>Beyond the Plane: Surface Embeddings</h3>
+
+                <p>
+                    Every planar graph can be drawn on the sphere \(S^2\) without crossings (project from 
+                    the plane to the sphere, placing the outer face around the north pole), and conversely. 
+                    More interesting is what happens when we embed graphs on surfaces of higher genus.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Euler's Formula for Orientable Surfaces</span>
+                    <p>
+                        Let \(G\) be a connected graph embedded on an orientable surface \(\Sigma_g\) of genus \(g\) 
+                        (a sphere with \(g\) handles). Then
+                        \[
+                        V - E + F = 2 - 2g.
+                        \]
+                        The right-hand side, \(\chi(\Sigma_g) = 2 - 2g\), is the <strong>Euler characteristic</strong> 
+                        of the surface.
+                    </p>
+                </div>
+
+                <p>
+                    For the sphere (\(g = 0\)), \(\chi = 2\) — recovering the planar formula. For the torus 
+                    (\(g = 1\)), \(\chi = 0\). For the double torus (\(g = 2\)), \(\chi = -2\). As we add 
+                    handles, the Euler characteristic decreases by 2 each time, reflecting the increasing 
+                    topological complexity of the surface.
+                </p>
+
+                <p>
+                    This has a concrete consequence: the edge bound \(E \leq 3V - 6\) becomes 
+                    \(E \leq 3V + 6(g - 1)\) on \(\Sigma_g\), allowing more edges. For example, 
+                    the complete graph \(K_7\) — which has \(E = 21\) and violates the planar bound 
+                    \(3(7) - 6 = 15\) — can be embedded on the torus (\(g = 1\)), where the bound is 
+                    \(3(7) + 6(0) = 21\). And indeed, \(K_7\) embeds on the torus.
+                </p>
+
+                <div class="insight-box">
+                    <h3>From Surfaces to Simplicial Complexes</h3>
+                    <p>
+                        A graph embedded on a surface is intrinsically a 2-dimensional object: it has 
+                        vertices (dimension 0), edges (dimension 1), and faces (dimension 2). To study 
+                        these higher-dimensional structures systematically — without the crutch of a specific 
+                        embedding surface — we need a purely combinatorial language for "shapes of any 
+                        dimension." This is precisely what <strong>simplicial complexes</strong> provide. 
+                        The oriented edges and face boundaries of a plane graph become special cases of 
+                        <strong>oriented simplices</strong> and the <strong>boundary operator</strong>, and the 
+                        face-counting we performed here generalizes to the full f-vector and Euler characteristic 
+                        of an abstract complex.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="graph-coloring" class="section-content">
+                <h2>Graph Coloring</h2>
+
+                <p>
+                    We conclude with one of the most celebrated applications of Euler's formula: the 
+                    coloring of planar graphs. A <strong>proper \(k\)-coloring</strong> of a graph is 
+                    an assignment of colors from a palette of \(k\) colors to the vertices such that no 
+                    two adjacent vertices share the same color. The minimum \(k\) for which a proper 
+                    \(k\)-coloring exists is the <strong>chromatic number</strong> \(\chi(G)\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Proper Coloring and Chromatic Number</span>
+                    <p>
+                        A <strong>proper \(k\)-coloring</strong> of \(G = (V, E)\) is a function 
+                        \(c \colon V \to \{1, 2, \ldots, k\}\) such that \(c(u) \neq c(v)\) whenever 
+                        \(\{u, v\} \in E\). The <strong>chromatic number</strong> is 
+                        \[
+                        \chi(G) = \min\{k : G \text{ admits a proper } k\text{-coloring}\}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The chromatic number \(\chi(G)\) is distinct from the Euler characteristic, though 
+                    they share the same notation — context always disambiguates. Note that \(\chi(G) \geq \omega(G)\), 
+                    where \(\omega(G)\) is the <strong>clique number</strong> (size of the largest 
+                    complete subgraph), since any clique requires all distinct colors.
+                </p>
+
+                <h3>The Six and Five Color Theorems</h3>
+
+                <p>
+                    We can immediately obtain a weak coloring bound from the degree constraint.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Six Color Theorem</span>
+                    <p>
+                        Every simple planar graph is 6-colorable: \(\chi(G) \leq 6\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Induct on \(V\). If \(V \leq 6\), the result is trivial. For \(V > 6\), we know 
+                        \(G\) has a vertex \(v\) with \(\deg(v) \leq 5\) (by the minimum degree corollary of 
+                        Euler's formula). Remove \(v\) and its edges to obtain \(G' = G - v\), which is still 
+                        planar. By the induction hypothesis, \(G'\) is 6-colorable. Since \(v\) has at most 5 
+                        neighbors, they use at most 5 colors, so at least one of the 6 colors is available 
+                        for \(v\). Restoring \(v\) with this color gives a proper 6-coloring of \(G\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    Improving from 6 to 5 requires a more delicate argument due to Alfred Kempe (1879). 
+                    The key idea is that when we are short of colors, we can <em>rearrange</em> existing 
+                    colors to free one up.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Five Color Theorem</span>
+                    <p>
+                        Every simple planar graph is 5-colorable: \(\chi(G) \leq 5\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Induct on \(V\). The base case is trivial. For the inductive step, let \(v\) be a vertex 
+                        with \(\deg(v) \leq 5\). If \(\deg(v) \leq 4\), the argument from the Six Color Theorem 
+                        works directly — remove \(v\), 5-color \(G - v\), and a color is available for \(v\).
+                    </p>
+                    <p>
+                        So suppose \(\deg(v) = 5\), and let \(v_1, v_2, v_3, v_4, v_5\) be its neighbors in 
+                        clockwise order around \(v\) in the planar embedding. Remove \(v\); by induction, 
+                        5-color \(G - v\). If the five neighbors use at most 4 distinct colors, a color is 
+                        available for \(v\). So suppose all five colors appear: \(c(v_i) = i\) for \(i = 1, \ldots, 5\).
+                    </p>
+                    <p>
+                        Define a <strong>Kempe chain</strong>: for colors \(i\) and \(j\), let \(K_{i,j}\) be the 
+                        connected component of the subgraph induced by vertices colored \(i\) or \(j\) that 
+                        contains \(v_i\). Consider two cases:
+                    </p>
+                    <p>
+                        <strong>Case 1:</strong> \(v_1\) and \(v_3\) are <em>not</em> connected by a path using 
+                        only colors 1 and 3 (i.e., \(v_3 \notin K_{1,3}\)). Then swap colors 1 and 3 in \(K_{1,3}\) 
+                        — this is still a proper coloring (the swap preserves properness within the chain and 
+                        cannot affect vertices outside it). Now \(v_1\) has color 3, and color 1 is free 
+                        for \(v\).
+                    </p>
+                    <p>
+                        <strong>Case 2:</strong> \(v_1\) and \(v_3\) are connected by a Kempe chain \(K_{1,3}\). 
+                        Then there exists a path \(P\) from \(v_1\) to \(v_3\) using only vertices colored 
+                        1 or 3. Since the graph is planar, the closed curve formed by \(P\) together with 
+                        the edges \(vv_1\) and \(vv_3\) separates \(v_2\) from \(v_4\) (they lie on opposite 
+                        sides, because \(v_1, v_3\) are non-consecutive neighbors of \(v\) in the cyclic 
+                        planar order). This means \(v_2\) and \(v_4\) cannot be connected 
+                        by a 2-4 Kempe chain (it would have to cross the closed curve, which is impossible 
+                        in a planar embedding). So we are in Case 1 for the pair \((v_2, v_4)\): swap colors 
+                        2 and 4 in the Kempe chain containing \(v_2\), freeing color 2 for \(v\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>The Four Color Theorem</h3>
+
+                <p>
+                    Kempe originally claimed in 1879 to have proved the stronger result — that four colors 
+                    always suffice. His proof attempted to extend the Kempe chain argument to four colors, 
+                    performing two independent color swaps simultaneously. Heawood showed in 1890 that the 
+                    first swap can alter the structure of the second Kempe chain, invalidating the argument — 
+                    a subtlety that does not arise in the five-color case, where a single swap always suffices. 
+                    Heawood salvaged the Five Color Theorem from Kempe's method, but the correct proof 
+                    of the Four Color Theorem had to wait nearly a century.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Four Color Theorem (Appel-Haken, 1976)</span>
+                    <p>
+                        Every simple planar graph is 4-colorable: \(\chi(G) \leq 4\).
+                    </p>
+                </div>
+
+                <p>
+                    The proof by Kenneth Appel and Wolfgang Haken was the first major theorem to rely 
+                    essentially on computer assistance. Their strategy was to identify an 
+                    <strong>unavoidable set</strong> of configurations — a finite collection such that every 
+                    planar graph must contain at least one — and then verify that each configuration is 
+                    <strong>reducible</strong> (its presence implies 4-colorability). The verification of 
+                    reducibility required checking 1,476 configurations by computer, a calculation that took 
+                    over 1,000 hours. A simplified proof by Robertson, Sanders, Seymour, and Thomas (1997) 
+                    reduced this to 633 configurations.
+                </p>
+
+                <p>
+                    The gap between 5 and 4 is vast. The Five Color Theorem is a one-page proof using 
+                    Kempe chains. The Four Color Theorem required decades of effort and computer verification. 
+                    This disparity illustrates a recurring theme in combinatorics: small improvements in 
+                    bounds can require fundamentally different techniques.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Graph Coloring in Computer Science</h3>
+                    <p>
+                        Determining the chromatic number of an arbitrary graph is 
+                        <a href="p_vs_np.html"><strong>NP-hard</strong></a> — even deciding whether 
+                        \(\chi(G) \leq 3\) is NP-complete. Despite this worst-case intractability, graph coloring 
+                        has pervasive applications. In <strong>compiler optimization</strong>, 
+                        register allocation reduces to graph coloring: variables that are simultaneously "live" 
+                        share an edge in the <em>interference graph</em>, and colors represent CPU registers. 
+                        In <strong>scheduling</strong>, coloring models conflict avoidance — exams sharing students 
+                        cannot occupy the same time slot. In <strong>wireless networks</strong>, frequency channels 
+                        are assigned to transmitters via coloring of the interference graph to avoid signal overlap. 
+                        The Four Color Theorem itself guarantees that any map can be printed with just four ink colors, 
+                        which can be viewed through the dual graph: countries are vertices, shared borders are edges, 
+                        and a proper 4-coloring assigns non-conflicting colors.
+                    </p>
+                </div>
+
+                <h3>Interactive Demo: Planar Graph Coloring</h3>
+
+                <div id="graph-coloring-demo">
+                    <!-- Interactive graph coloring visualization will be injected by sec4_p12_graph_coloring.js -->
+                </div>
+
+            </section>
+
+        </div>
+        <script src="/js/main.js"></script>    
+    </body>
+</html>
