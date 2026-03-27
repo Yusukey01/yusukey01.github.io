@@ -6,15 +6,14 @@
 
 ---
 
-## Project Overview
-
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML. 
 
-Our ultimate destinations are the two pillars of next-generation AI architecture:
+Our ultimate destinations are the three pillars of next-generation AI architecture:
 1. **Geometric Deep Learning (GDL):** Unifying network architectures through symmetry, invariance, and continuous manifolds (Lie Groups, Gauges).
 2. **Categorical Deep Learning (CDL):** Unifying network operations through compositionality, structural abstraction, and discrete relationships (Category Theory, Quivers, String Diagrams).
+3. **Quantum Machine Learning (QML):** Unifying quantum computation and statistical learning through Hilbert space geometry, unitary operators (Fourier), and quantum natural gradients.
 
-**Architectural Principle:** There is no isolated "Geometry" section. Geometric concepts are inherently distributed across our foundational sections: Algebraic structures (Lie Groups) belong to **Section I**, Continuous topological/metric structures (Smooth Manifolds) belong to **Section II**, and combinatorial/mesh structures (Simplicial Complexes, DDG) belong to **Section IV**. They synthesize in **Section V** (Machine Learning).
+**Architectural Principle:** There is no isolated "Geometry" or "Physics" section. Geometric and Quantum concepts are inherently distributed across our foundational sections: Algebraic structures (Lie Groups, Tensor Products) belong to **Section I**, Continuous topological/metric structures (Smooth Manifolds, Hilbert Spaces, Unitary Operators) belong to **Section II**, and combinatorial/mesh structures (Simplicial Complexes, DDG) belong to **Section IV**. They synthesize in **Section V** (Machine Learning).
 
 ---
 
@@ -43,7 +42,7 @@ Our ultimate destinations are the two pillars of next-generation AI architecture
 
 ---
 
-## The Grand Convergence: GDL and CDL
+## The Grand Convergence: GDL, CDL, and QML
 
 With the completion of `disc-15` (Intro to Homology), the discrete topology track is complete. We now systematically build the continuous and algebraic geometric layers within their respective sections before unifying them in Section V.
 
@@ -54,11 +53,14 @@ With the completion of `disc-15` (Intro to Homology), the discrete topology trac
     Simplicial Complexes & ∂ₖ (disc-14)           Functional Analysis & RKHS (calc-23~28)
     Intro to Homology (disc-15) ✅                           │
               │                                              ▼
-              │                            ┌─ TOPOLOGY & MANIFOLDS (Next) ─┐
-              │                            │ calc-29: Topological Spaces   │
-              │                            │ calc-30: Smooth Manifolds     │
-              │                            │ calc-31: Riemannian Metrics   │
-              │                            └───────────────┬───────────────┘
+              │                            ┌─ PURE ANALYSIS & TOPOLOGY (Next) ─┐
+              │                            │ calc-29: Topological Spaces       │
+              │                            │ calc-30: Lp Spaces & Riesz-Fischer│
+              │                            │ calc-31: Fourier in Hilbert Spaces│
+              │                            ├─ MANIFOLDS ───────────────────────┤
+              │                            │ calc-32: Smooth Manifolds         │
+              │                            │ calc-33: Riemannian Metrics       │
+              │                            └───────────────┬───────────────────┘
               ▼                                            │
     ┌───────────────────────────────┐                      │
     │ CATEGORY THEORY ARC           │                      │
@@ -77,47 +79,44 @@ With the completion of `disc-15` (Intro to Homology), the discrete topology trac
               │    │ linalg-27: Lie Groups & Lie Algebras          │
               │    │ linalg-28: Representation Theory (Intro)      │
               │    └───────────────────────┬───────────────────────┘
-              ▼                            ▼
-    ┌───────────────────┐        ┌───────────────────┐
-    │ SECTION V (ML)    │        │ SECTION V (ML)    │
-    │ ml-14: CATEGORICAL│        │ ml-13: GEOMETRIC  │
-    │ DEEP LEARNING     │ ◀────▶ │ DEEP LEARNING     │
-    └───────────────────┘        └───────────────────┘
+              ▼                            ▼                       ▼
+    ┌───────────────────┐        ┌───────────────────┐        ┌───────────────────┐
+    │ SECTION V (ML)    │        │ SECTION V (ML)    │        │ SECTION V (ML)    │
+    │ ml-14: CATEGORICAL│ ◀────▶ │ ml-13: GEOMETRIC  │ ◀────▶ │ ml-15: QUANTUM    │
+    │ DEEP LEARNING     │        │ DEEP LEARNING     │        │ MACHINE LEARNING  │
+    └───────────────────┘        └───────────────────┘        └───────────────────┘
 
 ---
 
 ## Immediate Next Steps (Phase 2: Continuous Geometry in Section II)
 
-We pause Section IV and shift to Section II to prepare the continuous geometry required by **John M. Lee's *Introduction to Smooth Manifolds***.
+We pause Section IV and shift to Section II to prepare the advanced analysis and continuous geometry required for GDL and QML.
 
 ### 1. `calc-29`: Topological Spaces & Manifold Prerequisites
 - **Goal:** Bridge Metric Spaces (`calc-16~22`) to axiomatic topology.
-- **Gap Analysis (What Lee requires vs. what we have):**
-  *(Note: Open/closed sets, convergence, continuity, and compactness are already covered in calc-16~22).*
-  The following pending concepts must be introduced:
-  - Axiomatic definition of topology (open-set axioms)
-  - Basis for a topology, second countability
-  - Hausdorff (T₂) separation axiom
-  - Product, Quotient, and Subspace (induced) topologies
-  - Paracompactness and Partitions of Unity
-- **Proposed Structure (1–2 Pages):**
-  1. **Axiomatic Definition:** Why we generalize beyond metrics.
-  2. **Basis & Second Countability:** Lindelöf properties.
-  3. **Separation Axioms:** Why manifolds require Hausdorff.
-  4. **Constructions:** Subspace, product, and quotient topologies (e.g., torus as quotient).
-  5. **Paracompactness & Partitions of Unity:** Stitching local structures into global ones.
+- **Topics:** Axiomatic definition of topology, Basis & Second countability, Hausdorff (T₂) separation axiom, Product/Quotient/Subspace topologies, Paracompactness and Partitions of Unity.
 
-### 2. `calc-30`: Smooth Manifolds & Tangent Spaces
+### 2. `calc-30`: Lp Spaces & Riesz-Fischer
+- **Goal:** Formalize the completeness of function spaces, closing the "holes" left by Riemann integration, which is essential for probability and quantum mechanics.
+- **Topics:** Hölder's inequality, Minkowski's inequality, Riesz-Fischer theorem (Completeness of Lp).
+- **Narrative:** Why probability and quantum mechanics require a complete space.
+
+### 3. `calc-31`: Fourier Analysis in Hilbert Spaces
+- **Goal:** Elevate Fourier analysis from engineering tools to pure functional analysis, laying the groundwork for Quantum Fourier Transform.
+- **Topics:** Plancherel's Theorem (Fourier as a unitary operator on L²), Riemann-Lebesgue Lemma, Heisenberg's Uncertainty Principle as a mathematical theorem.
+- **Narrative:** Connection to Shor's algorithm and the computational supremacy of quantum mechanics.
+
+### 4. `calc-32`: Smooth Manifolds & Tangent Spaces
 - **Goal:** Introduce the core objects of differential geometry.
-- **Topics:** Topological manifolds, Smooth structures (Atlases & Charts), Tangent vectors (as derivations), The Tangent Bundle, Pushforwards (Differential).
+- **Topics:** Topological manifolds, Smooth structures (Atlases & Charts), Tangent vectors (as derivations), The Tangent Bundle, Pushforwards.
 
-### 3. `calc-31`: Riemannian Metrics & Geodesics
+### 5. `calc-33`: Riemannian Metrics & Geodesics
 - **Goal:** Introduce geometry (distance, angles, curvature) on manifolds.
 - **Topics:** Inner products on tangent spaces, The metric tensor ($g$), Geodesics, and the continuous Laplace-Beltrami operator $\Delta_g$.
 
 ---
 
-## Phase 3: The Confluence (Summer 2026)
+## Phase 3: The Confluence (Summer/Autumn 2026)
 
 ### Algebraic Geometry in Section I
 - **`linalg-27`: Lie Groups & Lie Algebras**
@@ -125,30 +124,18 @@ We pause Section IV and shift to Section II to prepare the continuous geometry r
 
 ### Discrete Differential Geometry (DDG) in Section IV
 - **`disc-18`: Discrete Exterior Calculus & Hodge Theory**
-  - Translating `calc-31` (Continuous) onto `disc-14` (Simplicial Complexes).
+  - Translating `calc-33` (Continuous) onto `disc-14` (Simplicial Complexes).
   - Cotangent weights, the Discrete Hodge Star, and the Hodge Decomposition theorem ($H_k \cong \ker \Delta_k$).
 
 ### Category Theory in Section IV
 - **`disc-16`: Quivers and Directed Graphs** (Bridge to categories).
 - **`disc-17`: Intro to Category Theory** (Categories, Functors, Natural Transformations).
-
 ---
 
 ## Deferred & Optional Items (Non-Blocking)
 
-These items were identified during the Functional Analysis block completion but are deferred to maintain momentum toward GDL/CDL.
-
-### 1. Lebesgue Integration Supplement (Priority: Medium)
-- **Context:** `calc-25` (Dual Spaces) references Hölder's inequality and Lₚ duality but defers the proof.
-- **Content:** Hölder's/Minkowski's inequalities, Lₚ completeness (Riesz-Fischer), dual of Lₚ via Radon-Nikodym.
-- **Placement:** New page `calc-12b` (between Lebesgue and Metric Spaces). 
-- **Trigger:** Only if Lₚ duality detailed proof is strictly required for measure-theoretic probability.
-
-### 2. Fourier Analysis in Pure Math (Priority: Low-Medium)
-- **Context:** Current Fourier pages (`calc-14`, `calc-15`) are engineering-focused.
-- **Content:** Plancherel Theorem (L² isometry of Fourier transform) and Riemann-Lebesgue Lemma. This cleanly applies `calc-23` (Hilbert spaces) and connects to `calc-27` (Spectral theory).
-- **Placement:** New page `calc-15b`.
-- **Trigger:** Natural pause between topology and manifolds.
+- *None at this time.* 
+(Previous deferred items regarding Lebesgue and Fourier analysis were promoted to the core curriculum (`calc-30`, `calc-31`) to rigorously support the new QML track)
 
 ---
 
@@ -157,16 +144,12 @@ These items were identified during the Functional Analysis block completion but 
 | Month | Sections I & IV (Algebra & Discrete) | Section II (Analysis / Geometry) | Section V (ML) |
 |-------|--------------------------------------|----------------------------------|----------------|
 | **Mar** | `disc-12`~`14` (Simplicial) ✅       | `calc-24`~`28` (FA Block) ✅     | — |
-| **Apr** | `disc-15` (Homology) ✅              | —                                | — |
-| **May** | —                                    | **`calc-29`** (Topological Spaces) <br> **`calc-30`** (Smooth Manifolds) | — |
-| **Jun** | —                                    | **`calc-31`** (Riemannian Metrics) | — |
+| **Apr** | `disc-15` (Homology)               | —                                | — |
+| **May** | —                                    | **`calc-29`** (Topological Spaces) <br> **`calc-30`** (Lp Spaces & Riesz-Fischer) <br> **`calc-31`** (Fourier in Hilbert Spaces) | — |
+| **Jun** | —                                    | **`calc-32`** (Smooth Manifolds) <br> **`calc-33`** (Riemannian Metrics) | — |
 | **Jul** | **`linalg-27`** (Lie Groups) <br> **`disc-18`** (Discrete Ext. Calculus) | — | — |
 | **Aug** | **`disc-16`~`17`** (Category Theory) | —                                | **`ml-13`** (GDL) |
-| **Sep** | **`disc-19`** (String Diagrams)      | Fiber Bundles & Gauge Theory (Optional) | **`ml-14`** (CDL) |
-
-**Optional Insertions Pipeline:**
-- *Lebesgue supplement (Hölder/Minkowski)*: Insert if needed for advanced probability.
-- *Fourier in L² (Plancherel)*: Insert after `calc-29` before Laplace-Beltrami if time permits.
+| **Sep** | **`disc-19`** (String Diagrams)      | Fiber Bundles & Gauge Theory (Optional) | **`ml-14`** (CDL) <br> **`ml-15`** (QML) |
 
 ---
 
@@ -183,10 +166,12 @@ To ensure rigorous quality and consistency across the curriculum, the following 
 4. **Critical AI Usage:** Third-party AI suggestions must be evaluated critically, not accepted wholesale.
 5. **Zero Tolerance for Proof Gaps:** Circular reasoning, incomplete definitions, and missing logical bridges must be explicitly addressed.
 6. **Forward Links:** For unwritten pages, use descriptive text only (no `<a href>`). Convert to actual links only when the target page is created.
+7. **Narrative & UI Integration:** Utilize `Insight Box` and the knowledge map's `Tessera` to continuously link abstract theorems (e.g., Banach-Alaoglu, Riesz-Fischer) to their ultimate historical or AI/QML applications without breaking the formal proofs in the main text.
 
 ---
 
 ## Changelog
+- **Late April 2026:** Elevated Lp completeness and pure Fourier analysis to the core curriculum (`calc-30`, `calc-31`) following strategic review. Added Quantum Machine Learning (QML) as the third ultimate destination of Section V. Shifted Manifolds to `calc-32`, `calc-33`.
 - **4/15/2026:** Verified `curriculum_light.json` to confirm 102 completed pages. Officially marked `disc-12` ~ `disc-15` (Homology arc) as complete. Refined Architectural Alignment: Ensured geometric topics are strictly distributed across existing sections (Section I, II, IV) leading to convergence in Section V. Restored missing detailed requirements for `calc-29`, deferred tasks, and development principles from March planning.
 - **3/20/2026:** Completed full Functional Analysis block (calc-24 through calc-28). Updated schedule to reflect completion and next phase (Topological Spaces → Lee preparation). Added gap analysis for Lee prerequisites. 
 - **3/03/2026:** Consolidated Intro to Functional Analysis into `calc-23`. Added Section I-25, 26 (Algebraic Extensions, Finite Fields).
