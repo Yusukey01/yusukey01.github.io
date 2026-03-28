@@ -67,16 +67,16 @@ Rather than a linear convergence diagram with terminal goals, the curriculum for
 ```
 SECTION I (Algebra)          SECTION II (Analysis)          SECTION III (Probability)     SECTION IV (Discrete)
 ═══════════════════          ═════════════════════          ═════════════════════════     ═════════════════════
-Groups & Rings               Metric Spaces (calc-16~22)    Foundations & Inference       Graphs & Combinatorics
-(linalg-15~22)                     │                       (prob-1~13) ✅                (disc-01~11)
+Groups & Rings               Metric Spaces (calc-16~22)✅    Foundations & Inference       Graphs & Combinatorics
+(linalg-15~22)✅                     │                       (prob-1~13) ✅                (disc-01~11)✅
      │                             │                              │                            │
-Geometry of Symmetry         Functional Analysis            Bayesian & Stochastic         Planar Graphs & Euler
-(linalg-24: Dₙ,SO(3),SE(3)) (calc-23~28: FA Block) ✅     (prob-14~21) ✅               (disc-12)
+Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochastic         Planar Graphs & Euler
+(linalg-24: Dₙ,SO(3),SE(3)) (calc-23~28: FA Block) ✅     (prob-14~21) ✅               (disc-12)✅
      │                             │                              │                            │
      │                       ┌─────┴──────────────┐              │                       Incidence & ∂₁
-     │                       │                    │              │                       (disc-13)
+     │                       │                    │              │                       (disc-13)✅
      │                calc-29: Topological   calc-30: Lp         │                       Simplicial Complexes
-     │                Spaces (axioms,        Spaces &            │                       (disc-14)
+     │                Spaces (axioms,        Spaces &            │                       (disc-14)✅
      │                basis, Hausdorff,      Riesz-Fischer       │                            │
      │                product/quotient)      (Hölder,            │                       Intro to Homology
      │                       │               Minkowski)          │                       (disc-15) ✅
