@@ -386,57 +386,26 @@ uses_python: false
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     
     <script>
-        // Save original mermaid source for re-rendering
-        document.querySelectorAll('.mermaid').forEach(function(el) {
-            if (!el.getAttribute('data-original-code')) {
-                el.setAttribute('data-original-code', el.textContent.trim());
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            securityLevel: 'loose',
+            fontFamily: 'inherit',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
             }
         });
 
-        function renderMermaidForTheme() {
-            var darkSheet = document.getElementById('dark-theme-stylesheet');
-            var isDark = darkSheet && !darkSheet.disabled;
-            
-            var config = {
-                startOnLoad: false,
-                securityLevel: 'loose',
-                fontFamily: 'inherit',
-                flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
-            };
-
-            if (isDark) {
-                config.theme = 'dark';
-                config.themeVariables = {
-                    darkMode: true,
-                    background: 'transparent',
-                    primaryTextColor: '#f1f5f9',
-                    lineColor: 'rgba(255,255,255,0.4)',
-                    edgeLabelBackground: 'transparent',
-                    clusterBkg: 'rgba(255,255,255,0.03)',
-                    clusterBorder: 'rgba(255,255,255,0.2)'
-                };
-            } else {
-                config.theme = 'neutral';
-            }
-
-            // Reset and re-render
-            document.querySelectorAll('.mermaid').forEach(function(el) {
-                var code = el.getAttribute('data-original-code');
-                if (code) {
-                    el.removeAttribute('data-processed');
-                    el.innerHTML = code;
-                }
-            });
-            mermaid.initialize(config);
-            mermaid.run();
-        }
-
-        // Initial render
-        renderMermaidForTheme();
-
-        // Re-render when theme toggles
-        document.getElementById('theme-toggle').addEventListener('click', function() {
-            setTimeout(renderMermaidForTheme, 150);
+        // Force-remove fill from edge label background rects after Mermaid renders
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.mermaid .edgeLabel rect, .mermaid rect.labelBkg').forEach(function(rect) {
+                    rect.setAttribute('fill', 'transparent');
+                    rect.style.fill = 'transparent';
+                });
+            }, 500);
         });
     </script>
 </body>
