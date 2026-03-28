@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 3/28/2026
+**Last Updated:** 3/28/2026 
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -315,6 +315,50 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 
 ---
 
+## Reference Map: Books × Pages
+
+Which books serve which pages. All references are listed on the site-wide index; this map tracks primary usage for development planning.
+
+### Currently on index.html (18 books + 3 new additions)
+
+| Book | Primary Pages (existing) | Primary Pages (planned) | Notes |
+|------|-------------------------|------------------------|-------|
+| Boyd & Vandenberghe — *Convex Optimization* | calc-07 (KKT), calc-08 (Duality) | — | Complete for current needs |
+| Bronstein et al. — *Geometric Deep Learning* | Insight Boxes across site | ml-13 (GNN), ml-14 (Equivariant NN), ml-15 (GDL overview) | The "destination viewpoint" text; referenced but not followed as primary textbook |
+| Cormen et al. — *Introduction to Algorithms* | disc-01~11 | — | Complete for current needs |
+| **Conway — *A Course in Functional Analysis*** | **calc-23~28 (entire FA block)** | **calc-30 (Lp), calc-31 (Fourier/Hilbert)** | **Primary reference for all of Section II advanced analysis** |
+| Lay — *Linear Algebra and Its Applications* | linalg-01~10 | — | Complete for current needs |
+| Diestel — *Graph Theory* | disc-01, disc-12 (Planar Graphs) | — | Complete for current needs |
+| **Durrett — *Probability: Theory and Examples*** | prob-13 (Convergence) | **prob-22 (Measure-Theoretic Probability)** | **Primary reference for measure-theoretic probability; convergence theorems (MCT, DCT, Fatou)** |
+| Gallian — *Contemporary Abstract Algebra* | linalg-15~22 (Groups through Integral Domains) | — | Complete for current needs |
+| Horn & Johnson — *Matrix Analysis* | linalg-09~13 (SVD, Trace, Kronecker, etc.) | — | Complete for current needs |
+| **Lee — *Introduction to Smooth Manifolds*** | — | **calc-29 (Topological Spaces, Appendix A), calc-32 (Smooth Manifolds, Ch.1-3), calc-33 (Riemannian Metrics)** | **Primary reference for the manifold track; calc-29 uses Appendix A exclusively** |
+| Menezes et al. — *Handbook of Applied Cryptography* | linalg-26 (Finite Fields) | — | Niche; only if crypto pages expand |
+| Merris — *Combinatorics* | disc-02 (Combinatorics) | — | Complete for current needs |
+| Murphy Book 1 — *Probabilistic ML: Introduction* | ml-01~08 | ml-13 (GNN) | General ML reference |
+| Murphy Book 2 — *Probabilistic ML: Advanced* | ml-09~12 (NGD, VAE), prob-16 (FIM) | ml-14 (Equivariant NN) | Covers information geometry at applied level; sufficient until Amari is needed |
+| O'Searcoid — *Metric Spaces* | calc-16~22 (entire Metric Spaces block) | — | Complete for current needs |
+| Sipser — *Introduction to the Theory of Computation* | disc-05~09 (Automata through P vs NP) | — | Complete for current needs |
+| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15 (Fourier Series, FFT) | **calc-31 (Fourier in Hilbert Spaces — Plancherel, Riemann-Lebesgue)** | **Also covers Lp basics useful for calc-30** |
+| **Stillwell — *Naive Lie Theory*** | linalg-24 (Geometry of Symmetry) | **linalg-27 (Lie Groups & Lie Algebras)** | **Accessible intro; supplement with Lee Ch.7+ for rigorous treatment** |
+
+### New additions to index.html
+
+| Book | Primary Pages (planned) | Notes |
+|------|------------------------|-------|
+| **Edelsbrunner & Harer — *Computational Topology*** | disc-14 (Simplicial Complexes), disc-15 (Homology) — retroactive reference | Persistent homology / TDA if that track opens; primary CS-oriented topology text |
+| **Fong & Spivak — *An Invitation to Applied Category Theory*** | **disc-16 (Quivers), disc-17 (Category Theory), ml-16 (CDL overview)** | **Primary reference for the applied category / CDL track; string diagrams covered here** |
+| **Leinster — *Basic Category Theory*** | **disc-17 (Category Theory) — adjunctions, universal properties** | **Rigorous pure complement to Fong & Spivak; free PDF on arXiv** |
+
+### Not yet on index.html (acquire when triggered)
+
+| Book | Trigger | Pages |
+|------|---------|-------|
+| Amari — *Information Geometry and Its Applications* (2016) | After calc-32/33 (manifolds) if information geometry page is planned | Future info geometry page; deepens ml-12 (NGD) |
+| Nielsen & Chuang — *Quantum Computation and Quantum Information* (2010) | If a dedicated quantum computation page is planned | Future quantum pages; supplements calc-31 (Fourier/Hilbert) |
+
+---
+
 ## Changelog
 
 - **3/28/2026:** Major roadmap revision following strategic review.
@@ -328,7 +372,8 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
   - Replaced linear convergence diagram with web-of-mutual-reinforcement dependency map (now includes Section III).
   - Added Filename Registry for forward links.
   - Introduced linalg-27 (Lie Groups) into Phase 2 interleaved with analysis pages.
-- **3/15/2026:** Verified curriculum to confirm 102 completed pages. Marked disc-12~15 complete.
+  - Added Reference Map: full book × page mapping for existing 18 references + 3 new additions (Edelsbrunner & Harer, Fong & Spivak, Leinster) + 2 future acquisitions (Amari, Nielsen & Chuang).
+- **3/27/2026:** Verified curriculum to confirm 102 completed pages. Marked disc-12~15 complete.
 - **3/20/2026:** Completed FA block (calc-24~28). Added Lee gap analysis and deferred items.
 - **3/03/2026:** Consolidated Intro to Functional Analysis into calc-23. Added linalg-25, 26.
 - **3/01/2026:** Added Section I-25, 26 (Algebraic Extensions, Finite Fields).
