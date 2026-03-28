@@ -68,11 +68,11 @@ Rather than a linear convergence diagram with terminal goals, the curriculum for
 SECTION I (Algebra)          SECTION II (Analysis)          SECTION III (Probability)     SECTION IV (Discrete)
 ═══════════════════          ═════════════════════          ═════════════════════════     ═════════════════════
 Groups & Rings               Metric Spaces (calc-16~22)✅    Foundations & Inference       Graphs & Combinatorics
-(linalg-15~22)✅                     │                       (prob-1~13) ✅                (disc-01~11)✅
-     │                             │                              │                            │
+(linalg-15~22)✅                   │                          (prob-1~13) ✅                (disc-01~11)✅
+     │                             │                             │                            │
 Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochastic         Planar Graphs & Euler
 (linalg-24: Dₙ,SO(3),SE(3)) (calc-23~28: FA Block) ✅     (prob-14~21) ✅               (disc-12)✅
-     │                             │                              │                            │
+     │                             │                             │                            │
      │                       ┌─────┴──────────────┐              │                       Incidence & ∂₁
      │                       │                    │              │                       (disc-13)✅
      │                calc-29: Topological   calc-30: Lp         │                       Simplicial Complexes
@@ -81,24 +81,24 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                product/quotient)      (Hölder,            │                       Intro to Homology
      │                       │               Minkowski)          │                       (disc-15) ✅
      │                       │                    │              │                            │
-     │                       │                    ├──────── prob-22: Measure-             │
-     │                       │                    │         Theoretic Probability          │
-     │                       │                    │         (RV as measurable fn,          │
-     │                       │                    │          convergence thms,             │
-     │                       │               calc-31:        Fubini)                       │
-     │                       │               Fourier in           │                            │
-     │                       │               Hilbert Spaces       │                            │
+     │                       │                    ├──────── prob-22: Measure-                 │
+     │                       │                    │         Theoretic Probability             │
+     │                       │                    │         (RV as measurable fn,             │
+     │                       │                    │          convergence thms,                │
+     │                       │               calc-31:        Fubini)                          │
+     │                       │               Fourier in          │                            │
+     │                       │               Hilbert Spaces      │                            │
      ├───────────────────────┤                    │              │                            │
      │                       │                    │              │                            │
 linalg-27: Lie Groups  calc-32: Smooth            │              │                       disc-16: Quivers
-& Lie Algebras ◀──────▶ Manifolds &               │              │                       disc-17: Categories
-     │                  Tangent Spaces             │              │                            │
+& Lie Algebras ◀──────▶ Manifolds &              │              │                       disc-17: Categories
+     │                  Tangent Spaces            │              │                            │
      │                       │                    │              │                            │
 linalg-28: Represent.  calc-33: Riemannian        │              │                       disc-18: Discrete
 Theory (Intro)         Metrics & Geodesics        │              │                       Ext. Calculus (DEC)
      │                       │                    │              │                            │
      ▼                       ▼                    ▼              ▼                            ▼
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
                            SECTION V: Application Viewpoints
                            (each ◈ motivates return to deeper foundations)
