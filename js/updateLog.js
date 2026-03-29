@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
     /* ── Constants ── */
-    var INITIAL_COUNT = 8;
+    var INITIAL_COUNT = 5;
     var LOAD_MORE_COUNT = 10;
     var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -199,7 +199,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 head.appendChild(badge);
                 monthDiv.appendChild(head);
 
-                /* Entries */
+                /* Entries in grid */
+                var grid = el("div", "ul-grid");
                 var remaining = visibleCount - totalRendered;
                 var toShow = group.items.slice(0, remaining);
 
@@ -252,10 +253,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         entry.appendChild(el("span", "ul-arrow", { textContent: "→" }));
                     }
 
-                    monthDiv.appendChild(entry);
+                    grid.appendChild(entry);
                     totalRendered++;
                 });
 
+                monthDiv.appendChild(grid);
                 timeline.appendChild(monthDiv);
             });
         }
