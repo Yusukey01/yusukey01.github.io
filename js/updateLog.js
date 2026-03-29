@@ -264,9 +264,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         root.appendChild(timeline);
 
-        /* — Show more button — */
-        if (totalRendered < filtered.length) {
-            var moreWrap = el("div", "ul-more");
+        /* — Footer buttons: Show more / Collapse — */
+        var footerWrap = el("div", "ul-more");
+        var hasMore = totalRendered < filtered.length;
+        var isExpanded = visibleCount > INITIAL_COUNT;
+
+        if (hasMore) {
             var remaining = filtered.length - totalRendered;
             var moreBtn = el("button", "ul-more-btn", {
                 textContent: "Show more (" + remaining + " remaining)"
@@ -275,8 +278,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 visibleCount += LOAD_MORE_COUNT;
                 render();
             });
-            moreWrap.appendChild(moreBtn);
-            root.appendChild(moreWrap);
+            footerWrap.appendChild(moreBtn);
+        }
+
+        if (isExpanded) {
+            var collapseBtn = el("button", "ul-more-btn ul-collapse-btn", {
+                textContent: "▲ Collapse"
+            });
+            collapseBtn.addEventListener("click", function () {
+                visibleCount = INITIAL_COUNT;
+                render();
+                /* Scroll the update-notice container back into view */
+                var notice = root.closest(".update-notice");
+                if (notice) notice.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+            footerWrap.appendChild(collapseBtn);
+        }
+
+        if (hasMore || isExpanded) {
+            root.appendChild(footerWrap);
         }
     }
 
