@@ -313,7 +313,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Init: fetch and render ── */
-    fetch("updates.json")
+    fetch('/data/updates.json')
         .then(function (response) {
             if (!response.ok) throw new Error("HTTP " + response.status);
             return response.json();
