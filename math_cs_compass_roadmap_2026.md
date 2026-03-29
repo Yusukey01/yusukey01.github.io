@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 3/28/2026 
+**Last Updated:** 3/29/2026 
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -31,7 +31,7 @@ There is no isolated "Geometry" or "Physics" section. Geometric and quantum conc
 
 ---
 
-## Current Coverage (as of 4/27/2026)
+## Current Coverage (as of 3/28/2026)
 
 ### Section I: Linear Algebra to Algebraic Foundations (26 pages) ✅
 - **Core Linear Algebra (14 pages):** Linear systems, transformations, matrix algebra, determinants, vector spaces, eigenvalues, orthogonality, least squares, symmetry/SVD, trace/norms, Kronecker, Woodbury, stochastic matrices, graph Laplacians.
@@ -78,8 +78,8 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                calc-29: Topological   calc-30: Lp         │                       Simplicial Complexes
      │                Spaces (axioms,        Spaces &            │                       (disc-14)✅
      │                basis, Hausdorff,      Riesz-Fischer       │                            │
-     │                product/quotient)      (Hölder,            │                       Intro to Homology
-     │                       │               Minkowski)          │                       (disc-15) ✅
+     │                product/quotient)✅      (Hölder,          │                       Intro to Homology
+     │                       │               Minkowski)✅        │                       (disc-15) ✅
      │                       │                    │              │                            │
      │                       │                    ├──────── prob-22: Measure-                 │
      │                       │                    │         Theoretic Probability             │
@@ -219,13 +219,13 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 | Connectedness, path-connectedness | ✅ calc-20 | Ch. 4 (Lee) | — |
 | Compactness, Heine-Borel, sequential | ✅ calc-21 | Ch. 4 (Lee) | — |
 | Homeomorphism, topological invariants | ✅ calc-22 | Ch. 2 (Lee) | — |
-| **Axiomatic topology (open-set axioms)** | ❌ Mentioned but not formal | Ch. 2 definition of manifold | **calc-29 §1** |
-| **Basis for a topology, second countable** | ❌ | Ch. 2 (manifold definition) | **calc-29 §2** |
-| **Hausdorff separation axiom** | ❌ | Ch. 2 (manifold definition) | **calc-29 §3** |
-| **Product topology** | ❌ | Ch. 2 (products of manifolds) | **calc-29 §4** |
-| **Quotient topology** | ❌ | Ch. 3 (quotient manifolds, Lie groups) | **calc-29 §4** |
-| **Subspace (induced) topology** | ❌ Implicit | Ch. 2 (submanifolds) | **calc-29 §4** |
-| **Paracompactness, partition of unity** | ❌ | Ch. 2 (existence of Riemannian metrics) | **calc-29 §5** |
+| **Axiomatic topology (open-set axioms)** | ❌ Mentioned but not formal | Ch. 2 definition of manifold | **calc-29 §1** ✅ |
+| **Basis for a topology, second countable** | ❌ | Ch. 2 (manifold definition) | **calc-29 §2** ✅ |
+| **Hausdorff separation axiom** | ❌ | Ch. 2 (manifold definition) | **calc-29 §3** ✅ |
+| **Product topology** | ❌ | Ch. 2 (products of manifolds) | **calc-29 §4** ✅ |
+| **Quotient topology** | ❌ | Ch. 3 (quotient manifolds, Lie groups) | **calc-29 §4** ✅ |
+| **Subspace (induced) topology** | ❌ Implicit | Ch. 2 (submanifolds) | **calc-29 §4** ✅ |
+| **Paracompactness, partition of unity** | ❌ | Ch. 2 (existence of Riemannian metrics) | **calc-29 §5** ✅ |
 
 ---
 
@@ -235,8 +235,8 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 |-------|---------------------|-------------------------------|--------------------------|----------------------|----------------|
 | **Mar** | Algebraic Ext / Finite Fields ✅ | FA Block (calc-24~28) ✅ | — | disc-12~14 (Simplicial) ✅ | — |
 | **Apr** | — | — | — | disc-15 (Homology) ✅ | — |
-| **May** | — | **calc-29** (Topological Spaces) | — | — | — |
-| **Jun** | **linalg-27** (Lie Groups) | **calc-30** (Lp & Riesz-Fischer) | **prob-22** (Measure-Theoretic Probability) | — | — |
+| **May** | — | **calc-29** (Topological Spaces)✅ | — | — | — |
+| **Jun** | **linalg-27** (Lie Groups) | **calc-30** (Lp & Riesz-Fischer)✅ | **prob-22** (Measure-Theoretic Probability) | — | — |
 | **Jul** | — | **calc-31** (Fourier in Hilbert Spaces) | — | — | **ml-13** (GNN) |
 | **Aug** | linalg-28 (Rep Theory) | **calc-32** (Smooth Manifolds) | — | — | ml-14 (Equivariant NN) |
 | **Sep** | — | **calc-33** (Riemannian Metrics) | — | disc-16~17 (Quivers, Categories) | — |
@@ -297,10 +297,10 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 
 | Page ID | Planned Filename | Status |
 |---------|-----------------|--------|
-| calc-27 | `spectral_theory.html` | Draft |
-| calc-28 | `rkhs.html` | Draft |
-| calc-29 | `topological_spaces.html` | Skeleton |
-| calc-30 | `lp_spaces.html` | Planned |
+| calc-27 | `spectral_theory.html` |  ✅ |
+| calc-28 | `rkhs.html` | ✅ |
+| calc-29 | `topological_spaces.html` |  ✅ |
+| calc-30 | `lp_spaces.html` | Draft  |
 | calc-31 | `fourier_hilbert.html` | Planned |
 | calc-32 | `smooth_manifolds.html` | Planned |
 | calc-33 | `riemannian_metrics.html` | Planned |
@@ -360,7 +360,7 @@ Which books serve which pages. All references are listed on the site-wide index;
 ---
 
 ## Changelog
-
+- **3/29/2026:**Finished calc-29 and calc-30.
 - **3/28/2026:** Major roadmap revision following strategic review.
   - Replaced "three pillars / terminal goals" framing with "three application domains as viewpoints" philosophy.
   - Removed QML as a named destination; quantum computation emerges naturally from Fourier/Lp/spectral track.
