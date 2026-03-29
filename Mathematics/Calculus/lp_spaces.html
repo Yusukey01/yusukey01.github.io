@@ -1,0 +1,1206 @@
+---
+layout: default
+title: "Lp Spaces & Riesz-Fischer"
+topic_id: calc-30
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">\(L^p\) Spaces & Riesz-Fischer</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#equivalence">From Functions to Equivalence Classes</a>
+            <a href="#holder">Young's & Hölder's Inequality</a>
+            <a href="#minkowski">Minkowski's Inequality & the \(L^p\) Norm</a>
+            <a href="#riesz-fischer">The Riesz-Fischer Theorem</a>
+            <a href="#convergence">Convergence in \(L^p\)</a>
+            <a href="#applications">Why Complete Function Spaces Are Essential</a>
+        </div>  
+
+        <div class="container">   
+
+            <p>
+                In <a href="intro_analysis.html"><strong>Intro to Functional Analysis</strong></a>, 
+                we introduced the \(L^p\) spaces as the most important examples of Banach spaces in 
+                analysis and machine learning. We stated that \(\|f\|_p = \bigl(\int |f|^p \, d\mu\bigr)^{1/p}\) 
+                defines a norm, that the resulting space is complete, and that the dual of \(L^p\) is \(L^q\) 
+                (where \(1/p + 1/q = 1\)). In the 
+                <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a> chapter, 
+                we relied on Hölder's inequality — without proof — to justify the pairing 
+                \(\varphi_g(f) = \int fg \, d\mu\) in the duality table.
+            </p>
+
+            <p>
+                All three of these claims were left unproven. This chapter settles the debt in full:
+            </p>
+
+            <ol style="padding-left: 40px;">
+                <li>\(\|\cdot\|_p\) is genuinely a norm — not merely a seminorm — once we 
+                    pass to equivalence classes of functions equal 
+                    <a href="lebesgue.html#c_f"><strong>almost everywhere</strong></a>.</li>
+                <li>The triangle inequality for this norm (Minkowski's inequality) follows from 
+                    Hölder's inequality, which in turn follows from the elementary Young's inequality.</li>
+                <li>The resulting normed space is complete: the <strong>Riesz-Fischer theorem</strong> 
+                    guarantees that every Cauchy sequence in \(L^p\) converges in \(L^p\).</li>
+            </ol>
+
+            <p>
+                The chain of implications is: <strong>Young → Hölder → Minkowski → Norm → Riesz-Fischer → Banach space</strong>. 
+                Each link depends logically on the preceding one. We follow this chain from beginning to end.
+            </p>
+
+
+            <section id="equivalence" class="section-content">
+                <h2>From Functions to Equivalence Classes</h2>
+
+                <p>
+                    Let \((\Omega, \mathcal{F}, \mu)\) be a 
+                    <a href="measure.html#pm"><strong>measure space</strong></a>. 
+                    In <a href="intro_analysis.html#banach"><strong>Intro to Functional Analysis</strong></a>, 
+                    we defined the \(L^p\) space as the collection of measurable functions \(f\) with 
+                    \(\int |f|^p \, d\mu < \infty\), equipped with the quantity
+                    \[
+                    \|f\|_p \;=\; \left( \int_\Omega |f|^p \, d\mu \right)^{1/p}.
+                    \]
+                    For this to be a valid norm, three axioms must hold: 
+                    (i) \(\|f\|_p \geq 0\) with equality if and only if \(f = 0\), 
+                    (ii) \(\|\alpha f\|_p = |\alpha| \cdot \|f\|_p\), and 
+                    (iii) \(\|f + g\|_p \leq \|f\|_p + \|g\|_p\).
+                    Axiom (ii) is straightforward from the linearity of the integral. But axiom (i) immediately 
+                    presents a problem.
+                </p>
+
+                <h3>The Seminorm Problem</h3>
+
+                <p>
+                    Suppose \(\|f\|_p = 0\). Then \(\int |f|^p \, d\mu = 0\), and since \(|f|^p \geq 0\), 
+                    this forces \(|f(x)|^p = 0\) for 
+                    <a href="lebesgue.html#c_f"><strong>almost every</strong></a> \(x \in \Omega\) — that is, 
+                    \(f(x) = 0\) except on a set of 
+                    <a href="measure.html#leb"><strong>measure zero</strong></a>. 
+                    But this does <em>not</em> mean \(f\) is the zero function. It means only that \(f = 0\) 
+                    <strong>almost everywhere (a.e.)</strong>.
+                </p>
+
+                <p>
+                    For a concrete example, recall the Dirichlet function from 
+                    <a href="lebesgue.html#c_f"><strong>Lebesgue Integration</strong></a>:
+                    \[
+                    f(x) = \chi_{\mathbb{Q}}(x) = 
+                    \begin{cases} 
+                    1 & \text{if } x \in \mathbb{Q}, \\
+                    0 & \text{if } x \notin \mathbb{Q}.
+                    \end{cases}
+                    \]
+                    Since \(\mu(\mathbb{Q}) = 0\), we have \(\|f\|_p = 0\) for every \(1 \leq p \leq \infty\), 
+                    yet \(f\) is not the zero function — it equals \(1\) at every rational point. The quantity 
+                    \(\|\cdot\|_p\) therefore fails to distinguish \(f\) from the zero function. 
+                    In the language of normed space theory, \(\|\cdot\|_p\) is a <strong>seminorm</strong>, 
+                    not a norm: it satisfies \(\|f\|_p = 0\) without \(f = 0\).
+                </p>
+
+                <h3>The Equivalence Relation</h3>
+
+                <p>
+                    The resolution is a standard algebraic maneuver: we <em>quotient out</em> the 
+                    ambiguity. We declare two measurable functions to be "the same" if they differ only 
+                    on a negligible set.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Equality Almost Everywhere</span>
+                    <p>
+                        Let \(f, g : \Omega \to \mathbb{F}\) (\(\mathbb{F} = \mathbb{R}\) or \(\mathbb{C}\)) 
+                        be measurable functions. We say \(f\) and \(g\) are 
+                        <strong>equal almost everywhere</strong>, written \(f = g\) a.e., if
+                        \[
+                        \mu\bigl(\{x \in \Omega : f(x) \neq g(x)\}\bigr) = 0.
+                        \]
+                        The relation \(f \sim g \iff f = g\) a.e. is an equivalence relation on 
+                        the set of measurable functions.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Verification:</span>
+                    <p>
+                        We verify the three axioms of an equivalence relation.
+                    </p>
+                    <p>
+                        <strong>Reflexivity:</strong> \(\{x : f(x) \neq f(x)\} = \emptyset\), which has measure zero.
+                    </p>
+                    <p>
+                        <strong>Symmetry:</strong> \(\{x : f(x) \neq g(x)\} = \{x : g(x) \neq f(x)\}\), 
+                        so \(\mu\) of the two sets is the same.
+                    </p>
+                    <p>
+                        <strong>Transitivity:</strong> Suppose \(f = g\) a.e. and \(g = h\) a.e. 
+                        Let \(N_1 = \{x : f(x) \neq g(x)\}\) and \(N_2 = \{x : g(x) \neq h(x)\}\). 
+                        If \(f(x) \neq h(x)\), then either \(f(x) \neq g(x)\) or \(g(x) \neq h(x)\), so 
+                        \(\{x : f(x) \neq h(x)\} \subseteq N_1 \cup N_2\). Since 
+                        <a href="measure.html#sigma"><strong>\(\sigma\)-algebras</strong></a> are closed under 
+                        finite unions, \(N_1 \cup N_2\) is measurable, and by the 
+                        <strong>subadditivity of measures</strong>, 
+                        \(\mu(N_1 \cup N_2) \leq \mu(N_1) + \mu(N_2) = 0\).
+                    </p>
+                </div>
+
+                <h3>The Formal Definition of \(L^p\)</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: The \(L^p\) Space (Rigorous)</span>
+                    <p>
+                        Let \((\Omega, \mathcal{F}, \mu)\) be a measure space and \(1 \leq p < \infty\). Define
+                        \[
+                        \mathscr{L}^p(\Omega, \mathcal{F}, \mu) \;=\; 
+                        \bigl\{\, f : \Omega \to \mathbb{F} \;\big|\; f \text{ is measurable and } 
+                        \textstyle\int_\Omega |f|^p \, d\mu < \infty \,\bigr\}.
+                        \]
+                        The <strong>\(L^p\) space</strong> is the quotient
+                        \[
+                        L^p(\Omega, \mathcal{F}, \mu) \;=\; \mathscr{L}^p(\Omega, \mathcal{F}, \mu) \,\big/\!\sim
+                        \]
+                        where \(f \sim g \iff f = g\) a.e. Each element of \(L^p\) is an 
+                        <strong>equivalence class</strong> \([f]\) of functions that agree almost everywhere.
+                    </p>
+                </div>
+
+                <p>
+                    Following universal convention, we write \(f \in L^p\) rather than \([f] \in L^p\), 
+                    understanding that "\(f\)" refers to the equivalence class and not to any particular 
+                    representative. This notational abuse is harmless because all quantities we care 
+                    about — the norm \(\|f\|_p\), integrals \(\int fg \, d\mu\), and convergence statements — 
+                    are invariant under modification on sets of measure zero. 
+                    When we write \(f = 0\) in \(L^p\), we mean \(f(x) = 0\) for \(\mu\)-almost every \(x\).
+                </p>
+
+                <p>
+                    We similarly define \(L^\infty(\Omega, \mathcal{F}, \mu)\) as the space of equivalence classes 
+                    of essentially bounded measurable functions, equipped with the 
+                    <a href="intro_analysis.html#banach"><strong>essential supremum</strong></a> norm 
+                    \(\|f\|_\infty = \inf\{C \geq 0 : |f(x)| \leq C \text{ a.e.}\}\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Sequence Spaces</h3>
+                    <p>
+                        The sequence spaces \(\ell^p\) introduced in 
+                        <a href="intro_analysis.html#banach"><strong>Intro to Functional Analysis</strong></a> 
+                        are a special case of \(L^p\). If we take \(\Omega = \mathbb{N}\), 
+                        \(\mathcal{F} = 2^{\mathbb{N}}\) (all subsets), and \(\mu\) = counting measure 
+                        (\(\mu(\{n\}) = 1\) for each \(n\)), then \(L^p(\mathbb{N}, \mu)\) is exactly \(\ell^p\). 
+                        In this setting, the equivalence class issue is trivial — since every singleton 
+                        \(\{n\}\) has positive measure, two sequences are equal a.e. if and only if they 
+                        are identical. Every theorem we prove for \(L^p\) in this chapter therefore 
+                        specializes to \(\ell^p\) automatically.
+                    </p>
+                </div>
+
+                <p>
+                    With the quotient construction in hand, the seminorm \(\|\cdot\|_p\) on \(\mathscr{L}^p\) 
+                    descends to a <em>genuine</em> norm on \(L^p\): if \(\|[f]\|_p = 0\), then \(f = 0\) a.e., 
+                    which means \([f]\) is the zero element of the quotient space. 
+                    The remaining norm axiom — the triangle inequality \(\|f + g\|_p \leq \|f\|_p + \|g\|_p\) — 
+                    is the content of <strong>Minkowski's inequality</strong>, which requires 
+                    <strong>Hölder's inequality</strong> as an intermediate step. 
+                    We turn to these now.
+                </p>
+
+            </section>
+
+
+            <section id="holder" class="section-content">
+                <h2>Young's & Hölder's Inequality</h2>
+
+                <p>
+                    The proof chain begins with an elementary inequality about real numbers, 
+                    which we then "integrate" to obtain the central inequality of \(L^p\) theory.
+                </p>
+
+                <h3>Hölder Conjugates</h3>
+
+                <p>
+                    Throughout this section, we fix an exponent \(1 < p < \infty\) and define its 
+                    <strong>Hölder conjugate</strong> \(q\) by the relation
+                    \[
+                    \frac{1}{p} + \frac{1}{q} = 1, 
+                    \qquad \text{equivalently} \quad q = \frac{p}{p - 1}.
+                    \]
+                    The pair \((p, q)\) is symmetric: the conjugate of \(q\) is \(p\). 
+                    The extreme cases are \(p = 1, q = \infty\) and \(p = \infty, q = 1\), which we 
+                    treat separately where needed. Note also that \(p = q = 2\) is the unique self-conjugate case — 
+                    the setting of <a href="intro_analysis.html#hilbert"><strong>Hilbert spaces</strong></a> 
+                    and the Cauchy-Schwarz inequality.
+                </p>
+
+                <p>
+                    The algebraic identity \((p - 1)q = p\) (equivalently, \(p/q = p - 1\)) will appear 
+                    repeatedly in the proofs below. It is worth verifying once: from \(1/q = 1 - 1/p = (p-1)/p\), 
+                    we get \(q = p/(p-1)\), so \((p-1)q = p\).
+                </p>
+
+                <h3>Young's Inequality</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Young's Inequality</span>
+                    <p>
+                        Let \(1 < p < \infty\) and let \(q\) be its Hölder conjugate. For all 
+                        \(a, b \geq 0\),
+                        \[
+                        ab \;\leq\; \frac{a^p}{p} + \frac{b^q}{q}.
+                        \]
+                        Equality holds if and only if \(a^p = b^q\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        If \(a = 0\) or \(b = 0\), both sides are zero and the inequality is trivial. 
+                        Assume \(a, b > 0\).
+                    </p>
+                    <p>
+                        The key observation is that the exponential function \(t \mapsto e^t\) is <strong>convex</strong>. 
+                        Equivalently, the logarithm \(t \mapsto \log t\) is <strong>concave</strong> on \((0, \infty)\). 
+                        By the definition of concavity, for any \(\lambda \in (0, 1)\) and \(u, v > 0\),
+                        \[
+                        \log\bigl(\lambda u + (1 - \lambda) v\bigr) \;\geq\; \lambda \log u + (1 - \lambda) \log v 
+                        \;=\; \log\bigl(u^\lambda v^{1-\lambda}\bigr).
+                        \]
+                        Since \(\log\) is increasing, this gives the 
+                        <strong>weighted AM-GM inequality</strong>:
+                        \[
+                        u^\lambda \, v^{1 - \lambda} \;\leq\; \lambda u + (1 - \lambda) v.
+                        \]
+                    </p>
+                    <p>
+                        Now set \(\lambda = 1/p\), \(1 - \lambda = 1/q\), \(u = a^p\), and \(v = b^q\):
+                        \[
+                        (a^p)^{1/p} (b^q)^{1/q} \;\leq\; \frac{a^p}{p} + \frac{b^q}{q},
+                        \]
+                        which simplifies to \(ab \leq \frac{a^p}{p} + \frac{b^q}{q}\).
+                    </p>
+                    <p>
+                        Since \(\log\) is <em>strictly</em> concave, equality holds if and only if \(u = v\), i.e., \(a^p = b^q\).
+                    </p>
+                </div>
+
+                <p>
+                    Young's inequality is a pointwise statement about real numbers. 
+                    Its power emerges when we "integrate both sides" — which is exactly what happens 
+                    in the proof of Hölder's inequality.
+                </p>
+
+                <h3>Hölder's Inequality</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Hölder's Inequality</span>
+                    <p>
+                        Let \(1 \leq p \leq \infty\) and let \(q\) be its Hölder conjugate. 
+                        If \(f \in L^p\) and \(g \in L^q\), then \(fg \in L^1\) and
+                        \[
+                        \|fg\|_1 \;=\; \int_\Omega |f g| \, d\mu 
+                        \;\leq\; \|f\|_p \, \|g\|_q.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Case \(p = 1, q = \infty\):</strong> 
+                        By the definition of the essential supremum, \(|g(x)| \leq \|g\|_\infty\) 
+                        for a.e. \(x\). Therefore \(|f(x) g(x)| \leq |f(x)| \cdot \|g\|_\infty\) a.e. 
+                        Integrating both sides gives \(\int |fg| \, d\mu \leq \|g\|_\infty \int |f| \, d\mu 
+                        = \|f\|_1 \|g\|_\infty\).
+                    </p>
+                    <p>
+                        <strong>Case \(1 < p < \infty\):</strong> 
+                        If \(\|f\|_p = 0\) or \(\|g\|_q = 0\), then \(f = 0\) a.e. or \(g = 0\) a.e., 
+                        so \(fg = 0\) a.e. and both sides are zero. Assume \(\|f\|_p > 0\) and \(\|g\|_q > 0\).
+                    </p>
+                    <p>
+                        <strong>Normalization.</strong> Define
+                        \[
+                        \tilde{f} = \frac{|f|}{\|f\|_p}, \qquad 
+                        \tilde{g} = \frac{|g|}{\|g\|_q}.
+                        \]
+                        Then \(\|\tilde{f}\|_p = 1\) and \(\|\tilde{g}\|_q = 1\). 
+                        Applying Young's inequality pointwise:
+                        \[
+                        \tilde{f}(x) \, \tilde{g}(x) 
+                        \;\leq\; \frac{\tilde{f}(x)^p}{p} + \frac{\tilde{g}(x)^q}{q}
+                        \quad \text{for all } x.
+                        \]
+                    </p>
+                    <p>
+                        Integrating over \(\Omega\):
+                        \[
+                        \int_\Omega \tilde{f} \, \tilde{g} \, d\mu 
+                        \;\leq\; \frac{1}{p} \int_\Omega \tilde{f}^p \, d\mu 
+                        + \frac{1}{q} \int_\Omega \tilde{g}^q \, d\mu 
+                        \;=\; \frac{1}{p} + \frac{1}{q} \;=\; 1.
+                        \]
+                    </p>
+                    <p>
+                        Substituting back \(\tilde{f} = |f|/\|f\|_p\) and \(\tilde{g} = |g|/\|g\|_q\):
+                        \[
+                        \frac{1}{\|f\|_p \, \|g\|_q} \int_\Omega |f g| \, d\mu \;\leq\; 1,
+                        \]
+                        which gives \(\int |fg| \, d\mu \leq \|f\|_p \, \|g\|_q\) as claimed.
+                    </p>
+                </div>
+
+                <p>
+                    The normalization trick is the heart of the proof: by scaling \(f\) and \(g\) to have 
+                    unit norm, we reduce a statement about integrals to a pointwise application of Young's 
+                    inequality, and the "integration" step becomes trivial.
+                </p>
+
+                <h3>Equality Conditions and Special Cases</h3>
+
+                <p>
+                    Equality in Hölder's inequality holds if and only if 
+                    \(|f(x)|^p / \|f\|_p^p = |g(x)|^q / \|g\|_q^q\) for a.e. \(x\), 
+                    i.e., \(|f|^p\) and \(|g|^q\) are proportional as functions. In other words, 
+                    there exist constants \(\alpha, \beta \geq 0\) (not both zero) such that 
+                    \(\alpha |f(x)|^p = \beta |g(x)|^q\) a.e.
+                </p>
+
+                <p>
+                    When \(p = q = 2\), Hölder's inequality reduces to:
+                    \[
+                    \int_\Omega |fg| \, d\mu \;\leq\; \|f\|_2 \, \|g\|_2.
+                    \]
+                    This is precisely the <strong>Cauchy-Schwarz inequality</strong> for \(L^2\), 
+                    the infinite-dimensional generalization of the bound \(|\mathbf{u} \cdot \mathbf{v}| 
+                    \leq \|\mathbf{u}\| \, \|\mathbf{v}\|\) from 
+                    <a href="intro_analysis.html#hilbert"><strong>Hilbert spaces</strong></a>. 
+                    Hölder's inequality thus provides a single, unified framework that encompasses 
+                    Cauchy-Schwarz as its most symmetric special case.
+                </p>
+
+                <h3>The One Direction of \(L^p\) Duality</h3>
+
+                <p>
+                    Hölder's inequality immediately settles one half of the duality claim from 
+                    <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a>. 
+                    For any fixed \(g \in L^q\), the map
+                    \[
+                    \varphi_g : L^p \to \mathbb{F}, \qquad \varphi_g(f) = \int_\Omega f \, g \, d\mu
+                    \]
+                    is a well-defined, linear, and bounded functional on \(L^p\), with 
+                    \(\|\varphi_g\|_{(L^p)^*} \leq \|g\|_q\). 
+                    (One can show that equality holds, so the embedding \(L^q \hookrightarrow (L^p)^*\) 
+                    is isometric.) This establishes the "easy direction" of the isomorphism 
+                    \((L^p)^* \cong L^q\) for \(1 \leq p < \infty\): 
+                    every element of \(L^q\) gives rise to a continuous functional on \(L^p\).
+                </p>
+
+                <p>
+                    The converse — that <em>every</em> continuous functional on \(L^p\) arises from 
+                    some \(g \in L^q\) — is substantially harder and requires the 
+                    <strong>Radon-Nikodym theorem</strong>, a tool from measure theory that we will 
+                    develop after the measure-theoretic probability foundations are in place.
+                </p>
+
+            </section>
+
+
+            <section id="minkowski" class="section-content">
+                <h2>Minkowski's Inequality & the \(L^p\) Norm</h2>
+
+                <p>
+                    We now use Hölder's inequality to prove the triangle inequality for \(\|\cdot\|_p\), 
+                    completing the verification that \(L^p\) is a normed space.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Minkowski's Inequality</span>
+                    <p>
+                        Let \(1 \leq p \leq \infty\). If \(f, g \in L^p\), then \(f + g \in L^p\) and
+                        \[
+                        \|f + g\|_p \;\leq\; \|f\|_p + \|g\|_p.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Case \(p = 1\):</strong> 
+                        By the pointwise triangle inequality, \(|f(x) + g(x)| \leq |f(x)| + |g(x)|\). 
+                        Integrating directly gives 
+                        \(\|f + g\|_1 \leq \|f\|_1 + \|g\|_1\).
+                    </p>
+                    <p>
+                        <strong>Case \(p = \infty\):</strong> 
+                        We have \(|f(x) + g(x)| \leq |f(x)| + |g(x)| \leq \|f\|_\infty + \|g\|_\infty\) 
+                        for a.e. \(x\). Taking the essential supremum on the left gives the result.
+                    </p>
+                    <p>
+                        <strong>Case \(1 < p < \infty\):</strong> 
+                        First, observe that \(f + g \in L^p\): since 
+                        \(|f(x) + g(x)| \leq |f(x)| + |g(x)| \leq 2\max(|f(x)|, |g(x)|)\), 
+                        we have
+                        \[
+                        |f + g|^p \;\leq\; 2^p \max(|f|^p,\, |g|^p) \;\leq\; 2^p(|f|^p + |g|^p).
+                        \]
+                        Integrating gives 
+                        \(\int |f+g|^p \, d\mu \leq 2^p(\|f\|_p^p + \|g\|_p^p) < \infty\), 
+                        so \(\|f+g\|_p\) is finite.
+                    </p>
+                    <p>
+                        Now assume \(\|f + g\|_p > 0\) (otherwise the inequality is trivial). 
+                        We begin by splitting \(|f + g|^p\):
+                        \[
+                        |f + g|^p \;=\; |f + g|^{p-1} \cdot |f + g| 
+                        \;\leq\; |f + g|^{p-1} |f| \;+\; |f + g|^{p-1} |g|.
+                        \]
+                    </p>
+                    <p>
+                        We now apply Hölder's inequality to each term on the right. 
+                        The key observation is that \(|f + g|^{p-1} \in L^q\), because
+                        \[
+                        \int_\Omega \bigl(|f + g|^{p-1}\bigr)^q \, d\mu 
+                        \;=\; \int_\Omega |f + g|^{(p-1)q} \, d\mu 
+                        \;=\; \int_\Omega |f + g|^{p} \, d\mu 
+                        \;=\; \|f + g\|_p^p,
+                        \]
+                        where we used the identity \((p - 1)q = p\). Therefore 
+                        \(\bigl\| |f+g|^{p-1} \bigr\|_q = \|f+g\|_p^{p/q}\).
+                    </p>
+                    <p>
+                        Applying Hölder's inequality to each term:
+                        \[
+                        \int |f + g|^{p-1} |f| \, d\mu 
+                        \;\leq\; \bigl\||f+g|^{p-1}\bigr\|_q \cdot \|f\|_p 
+                        \;=\; \|f+g\|_p^{p/q} \cdot \|f\|_p,
+                        \]
+                        and similarly for the term with \(|g|\). Adding:
+                        \[
+                        \|f + g\|_p^p 
+                        \;=\; \int |f+g|^p \, d\mu 
+                        \;\leq\; \|f+g\|_p^{p/q} \bigl(\|f\|_p + \|g\|_p\bigr).
+                        \]
+                    </p>
+                    <p>
+                        Dividing both sides by \(\|f+g\|_p^{p/q} > 0\):
+                        \[
+                        \|f + g\|_p^{p - p/q} \;\leq\; \|f\|_p + \|g\|_p.
+                        \]
+                        Since \(p - p/q = p(1 - 1/q) = p \cdot (1/p) = 1\), the left side is simply 
+                        \(\|f + g\|_p\), completing the proof.
+                    </p>
+                </div>
+
+                <p>
+                    <strong>Equality condition</strong> (\(1 < p < \infty\)): 
+                    Equality in Minkowski's inequality holds if and only if \(f\) and \(g\) are 
+                    <strong>positively linearly dependent</strong> a.e. — that is, there exist 
+                    constants \(\alpha, \beta \geq 0\) (not both zero) such that 
+                    \(\alpha f(x) = \beta g(x)\) for a.e. \(x\). This follows from the 
+                    equality condition of Hölder's inequality applied in the proof above. 
+                    In the language of geometry, Minkowski's inequality 
+                    is strict whenever \(f\) and \(g\) point in genuinely different "directions" 
+                    in \(L^p\) — a manifestation of the <strong>strict convexity</strong> of the 
+                    \(L^p\) norm for \(1 < p < \infty\).
+                </p>
+
+                <h3>\(L^p\) Is a Normed Space</h3>
+
+                <p>
+                    Let us now summarize the complete verification of the norm axioms 
+                    for \(\|\cdot\|_p\) on \(L^p(\Omega, \mathcal{F}, \mu)\):
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li><strong>Positive definiteness:</strong> \(\|f\|_p \geq 0\), and 
+                        \(\|f\|_p = 0 \iff f = 0\) in \(L^p\) (i.e., \(f = 0\) a.e.). 
+                        This is where the equivalence class construction of 
+                        <a href="#equivalence"><strong>§1</strong></a> is essential — without it, 
+                        \(\|\cdot\|_p\) would only be a seminorm.</li>
+                    <li><strong>Absolute homogeneity:</strong> 
+                        \(\|\alpha f\|_p = |\alpha| \cdot \|f\|_p\) for all \(\alpha \in \mathbb{F}\). 
+                        This follows immediately from \(\int |\alpha f|^p = |\alpha|^p \int |f|^p\).</li>
+                    <li><strong>Triangle inequality:</strong> 
+                        \(\|f + g\|_p \leq \|f\|_p + \|g\|_p\). 
+                        This is Minkowski's inequality, proven above.</li>
+                </ol>
+
+                <p>
+                    Therefore \(\bigl(L^p(\Omega, \mathcal{F}, \mu),\, \|\cdot\|_p\bigr)\) is a 
+                    <strong>normed vector space</strong> for every \(1 \leq p \leq \infty\). 
+                    The remaining question — the deepest one — is whether this normed space is 
+                    <a href="completeness.html#complete"><strong>complete</strong></a>: does every 
+                    Cauchy sequence in \(L^p\) converge to a limit that is itself in \(L^p\)?
+                    This is the content of the <strong>Riesz-Fischer theorem</strong>, to which 
+                    we turn next.
+                </p>
+
+            </section>
+
+
+            <section id="riesz-fischer" class="section-content">
+                <h2>The Riesz-Fischer Theorem</h2>
+
+                <p>
+                    We have established that \(L^p\) is a normed space. Completeness — the property 
+                    that every Cauchy sequence converges within the space — is what elevates a normed 
+                    space to a <a href="intro_analysis.html#banach"><strong>Banach space</strong></a>. 
+                    In <a href="completeness.html#complete"><strong>Completeness</strong></a>, we studied 
+                    this property for general metric spaces. Now we prove it concretely for \(L^p\).
+                </p>
+
+                <p>
+                    The proof relies on three fundamental convergence theorems from 
+                    <a href="lebesgue.html"><strong>Lebesgue integration</strong></a>. 
+                    We state them precisely here for reference, as they are the essential 
+                    tools of the argument.
+                </p>
+
+                <h3>Toolkit from Lebesgue Integration</h3>
+
+                <p>
+                    The following three theorems govern the interchange of limits and integrals. 
+                    They were introduced conceptually in 
+                    <a href="lebesgue.html#gm"><strong>Lebesgue Integration</strong></a>; 
+                    we now state them in the precise form needed for the completeness proof. 
+                    All functions below are measurable on a measure space 
+                    \((\Omega, \mathcal{F}, \mu)\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Monotone Convergence Theorem (MCT)</span>
+                    <p>
+                        Let \((g_n)\) be a sequence of measurable functions satisfying 
+                        \(0 \leq g_1(x) \leq g_2(x) \leq \cdots\) for a.e. \(x \in \Omega\). 
+                        Define \(g(x) = \lim_{n \to \infty} g_n(x)\) (which exists in \([0, \infty]\) 
+                        by monotonicity). Then
+                        \[
+                        \int_\Omega g \, d\mu \;=\; \lim_{n \to \infty} \int_\Omega g_n \, d\mu.
+                        \]
+                        In words: for nonnegative increasing sequences, the integral of the limit 
+                        equals the limit of the integrals.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Fatou's Lemma</span>
+                    <p>
+                        Let \((g_n)\) be a sequence of measurable functions satisfying 
+                        \(g_n(x) \geq 0\) for a.e. \(x\). Then
+                        \[
+                        \int_\Omega \liminf_{n \to \infty} g_n \, d\mu 
+                        \;\leq\; \liminf_{n \to \infty} \int_\Omega g_n \, d\mu.
+                        \]
+                        In words: the integral of the \(\liminf\) is bounded above by the 
+                        \(\liminf\) of the integrals. The inequality can be strict — passing limits 
+                        through integrals can "lose mass."
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Dominated Convergence Theorem (DCT)</span>
+                    <p>
+                        Let \((f_n)\) be a sequence of measurable functions such that 
+                        \(f_n(x) \to f(x)\) for a.e. \(x\). Suppose there exists a 
+                        <strong>dominating function</strong> \(h \in L^1(\mu)\) with 
+                        \(|f_n(x)| \leq h(x)\) for a.e. \(x\) and all \(n\). Then 
+                        \(f \in L^1(\mu)\) and
+                        \[
+                        \lim_{n \to \infty} \int_\Omega f_n \, d\mu \;=\; \int_\Omega f \, d\mu.
+                        \]
+                        In words: under pointwise convergence with a uniform integrable bound, 
+                        limits and integrals commute.
+                    </p>
+                </div>
+
+                <p>
+                    The MCT requires monotonicity but imposes no integrability bound — it even allows 
+                    the limit to be infinite. Fatou's lemma relaxes monotonicity to mere nonnegativity, 
+                    at the cost of an inequality rather than equality. The DCT trades the nonnegativity 
+                    assumption for a dominating function, recovering full equality. Together, these 
+                    three tools form the backbone of measure-theoretic analysis.
+                </p>
+
+                <h3>The Theorem</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Riesz-Fischer</span>
+                    <p>
+                        For \(1 \leq p \leq \infty\), the space 
+                        \(L^p(\Omega, \mathcal{F}, \mu)\) is <strong>complete</strong>. 
+                        That is, \(L^p\) is a Banach space.
+                    </p>
+                </div>
+
+                <p>
+                    The full proof for \(1 \leq p < \infty\) is a beautiful application of the 
+                    convergence theorems above. Rather than present every detail, we expose the 
+                    <strong>architecture</strong> of the proof — the strategy and key steps — so that 
+                    the logical structure is transparent. This architecture reappears in virtually 
+                    every completeness proof in modern analysis (Sobolev spaces, Besov spaces, 
+                    Hardy spaces), making it one of the most important proof patterns to internalize.
+                </p>
+
+                <h3>Proof Architecture (\(1 \leq p < \infty\))</h3>
+
+                <p>
+                    <strong>The challenge:</strong> We are given a Cauchy sequence \((f_n)\) in \(L^p\) and must 
+                    produce a limit function \(f \in L^p\) with \(\|f_n - f\|_p \to 0\). The difficulty is that 
+                    \(L^p\) convergence is an integral condition — it says nothing directly about pointwise 
+                    behavior. We need to bridge from integral estimates to pointwise convergence and back.
+                </p>
+
+                <p>
+                    <strong>Key Lemma (Absolute Summability Criterion).</strong> 
+                    A normed space is complete if and only if every <em>absolutely summable</em> series 
+                    converges. That is, \(\sum_{k=1}^{\infty} \|h_k\| < \infty\) implies that the 
+                    partial sums \(\sum_{k=1}^{N} h_k\) converge in norm. This equivalent formulation 
+                    is often easier to work with than the Cauchy sequence definition directly, because 
+                    summability conditions mesh naturally with the MCT.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        <strong>Step 1 — Extract a fast subsequence.</strong> 
+                        Since \((f_n)\) is Cauchy, for each \(k \geq 1\) there exists \(n_k\) such that 
+                        \(\|f_m - f_n\|_p < 2^{-k}\) for all \(m, n \geq n_k\). 
+                        By choosing \(n_1 < n_2 < n_3 < \cdots\), we obtain a subsequence \((f_{n_k})\) with
+                        \[
+                        \|f_{n_{k+1}} - f_{n_k}\|_p \;<\; 2^{-k} \quad \text{for all } k \geq 1.
+                        \]
+                        In particular, the "differences" \(h_k = f_{n_{k+1}} - f_{n_k}\) satisfy 
+                        \(\sum_{k=1}^{\infty} \|h_k\|_p < \sum_{k=1}^{\infty} 2^{-k} = 1 < \infty\).
+                    </p>
+                    <p>
+                        <strong>Step 2 — Construct a dominating function via MCT.</strong> 
+                        Define the partial sums of absolute values:
+                        \[
+                        G_N(x) \;=\; |f_{n_1}(x)| + \sum_{k=1}^{N} |f_{n_{k+1}}(x) - f_{n_k}(x)|.
+                        \]
+                        The sequence \((G_N)\) is nonnegative and increasing, so \((G_N^p)\) is 
+                        also nonnegative and increasing. Applying the 
+                        <strong>Monotone Convergence Theorem</strong> to \(G_N^p\):
+                        \[
+                        \int_\Omega G^p \, d\mu \;=\; \lim_{N \to \infty} \int_\Omega G_N^p \, d\mu,
+                        \]
+                        where \(G(x) = \lim_{N \to \infty} G_N(x)\). 
+                        Taking \(p\)-th roots, \(\|G\|_p = \lim_{N \to \infty} \|G_N\|_p\).
+                        By Minkowski's inequality (applied finitely many times):
+                        \[
+                        \|G_N\|_p \;\leq\; \|f_{n_1}\|_p + \sum_{k=1}^{N} \|h_k\|_p 
+                        \;\leq\; \|f_{n_1}\|_p + 1.
+                        \]
+                        Therefore \(\|G\|_p \leq \|f_{n_1}\|_p + 1 < \infty\), which means 
+                        \(G \in L^p\). In particular, \(G(x) < \infty\) for a.e. \(x\).
+                    </p>
+                    <p>
+                        <strong>Step 3 — Obtain a pointwise limit.</strong> 
+                        At every point where \(G(x) < \infty\) (which is a.e.), the telescoping series
+                        \[
+                        f_{n_1}(x) + \sum_{k=1}^{\infty} \bigl(f_{n_{k+1}}(x) - f_{n_k}(x)\bigr)
+                        \]
+                        converges absolutely (its partial sums are bounded by \(G(x)\)). 
+                        The partial sums of this series are exactly \(f_{n_K}(x)\), so we may define
+                        \[
+                        f(x) \;=\; \lim_{K \to \infty} f_{n_K}(x) \quad \text{for a.e. } x.
+                        \]
+                        Since \(|f(x)| \leq G(x)\) a.e. and \(G \in L^p\), we have \(f \in L^p\).
+                    </p>
+                    <p>
+                        <strong>Step 4 — Prove \(L^p\) convergence of the subsequence.</strong> 
+                        We have \(f_{n_K}(x) \to f(x)\) a.e., so \(|f_{n_K} - f|^p \to 0\) a.e. 
+                        Furthermore, 
+                        \[
+                        |f_{n_K}(x) - f(x)|^p \;\leq\; \bigl(|f_{n_K}(x)| + |f(x)|\bigr)^p 
+                        \;\leq\; (2G(x))^p,
+                        \]
+                        and \((2G)^p \in L^1\) because \(G \in L^p\). 
+                        By the <strong>Dominated Convergence Theorem</strong>:
+                        \[
+                        \|f_{n_K} - f\|_p^p \;=\; \int |f_{n_K} - f|^p \, d\mu \;\to\; 0 
+                        \quad \text{as } K \to \infty.
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 5 — Lift from the subsequence to the full sequence.</strong> 
+                        We now know \(f_{n_K} \to f\) in \(L^p\). To show \(f_n \to f\) in \(L^p\), 
+                        we use the fact that \((f_n)\) is Cauchy. For any \(\epsilon > 0\), choose 
+                        \(N_0\) such that \(\|f_m - f_n\|_p < \epsilon/2\) for all \(m, n \geq N_0\), 
+                        and choose \(K\) such that \(n_K \geq N_0\) and 
+                        \(\|f_{n_K} - f\|_p < \epsilon/2\). Then for all \(n \geq N_0\):
+                        \[
+                        \|f_n - f\|_p \;\leq\; \|f_n - f_{n_K}\|_p + \|f_{n_K} - f\|_p 
+                        \;<\; \frac{\epsilon}{2} + \frac{\epsilon}{2} \;=\; \epsilon.
+                        \]
+                        This is a standard argument: if a Cauchy sequence has a convergent 
+                        subsequence, then the full sequence converges to the same limit.
+                    </p>
+                </div>
+
+                <h3>The Case \(p = \infty\)</h3>
+
+                <p>
+                    For \(L^\infty\), the argument is simpler and does not require the MCT. 
+                    If \((f_n)\) is Cauchy in \(L^\infty\), then for each \(\epsilon > 0\) there exists 
+                    \(N\) such that \(\|f_m - f_n\|_\infty < \epsilon\) for all \(m, n \geq N\). 
+                    This means \(|f_m(x) - f_n(x)| < \epsilon\) for a.e. \(x\), outside an 
+                    exceptional null set \(E_{m,n}\). Taking the countable union 
+                    \(E = \bigcup_{m,n} E_{m,n}\) (which is still a null set), we find that 
+                    \((f_n(x))\) is a Cauchy sequence in \(\mathbb{F}\) for every \(x \notin E\). 
+                    Since \(\mathbb{F}\) is complete, \(f_n(x) \to f(x)\) pointwise on \(\Omega \setminus E\), 
+                    and the uniform bound passes to the limit: \(\|f_n - f\|_\infty \to 0\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why the Proof Architecture Matters</h3>
+                    <p>
+                        The five-step pattern above — extract a fast subsequence, build a dominating 
+                        function, obtain pointwise convergence, apply DCT, lift to the full 
+                        sequence — is not specific to \(L^p\). It is the standard template for 
+                        proving completeness of function spaces throughout analysis. Sobolev spaces 
+                        \(W^{k,p}\), which arise in the study of partial differential equations and 
+                        physics-informed neural networks, are proven complete by the same strategy: 
+                        reduce the problem to \(L^p\) completeness of the function and its derivatives. 
+                        Understanding the architecture once equips you to recognize and deploy it 
+                        wherever function space completeness is needed.
+                    </p>
+                </div>
+
+                <h3>An Important Corollary</h3>
+
+                <p>
+                    The Riesz-Fischer proof yields more than just completeness. Step 4 produced a 
+                    subsequence \((f_{n_K})\) that converges to \(f\) both in \(L^p\) and pointwise a.e. 
+                    This is worth recording as an independent result:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Subsequence with Pointwise Convergence</span>
+                    <p>
+                        If \(f_n \to f\) in \(L^p\) (\(1 \leq p \leq \infty\)), then there exists 
+                        a subsequence \((f_{n_k})\) such that \(f_{n_k}(x) \to f(x)\) for a.e. \(x\).
+                    </p>
+                </div>
+
+                <p>
+                    This corollary connects \(L^p\) convergence (an integral condition) back to 
+                    pointwise behavior (a condition on individual points). As we will see in the 
+                    next section, the converse does <em>not</em> hold: pointwise a.e. convergence 
+                    alone does not imply \(L^p\) convergence, and \(L^p\) convergence does not 
+                    imply full pointwise a.e. convergence (only a subsequence is guaranteed).
+                </p>
+
+            </section>
+
+
+            <section id="convergence" class="section-content">
+                <h2>Convergence in \(L^p\) — A Hierarchy of Modes</h2>
+
+                <p>
+                    With \(L^p\) established as a Banach space, we can study convergence within it. 
+                    But \(L^p\) convergence is only one of several natural notions of convergence 
+                    for sequences of measurable functions. Understanding how these notions relate 
+                    to one another is essential for working effectively with function spaces — 
+                    and for bridging to probability theory, where the same hierarchy reappears 
+                    under different names.
+                </p>
+
+                <h3>Four Notions of Convergence</h3>
+
+                <p>
+                    Let \((f_n)\) be a sequence of measurable functions on \((\Omega, \mathcal{F}, \mu)\) 
+                    and let \(f\) be a measurable function. We consider four modes of convergence:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Modes of Convergence</span>
+                    <p>
+                        <strong>(i) \(L^p\) convergence:</strong> 
+                        \(f_n \to f\) in \(L^p\) if \(\|f_n - f\|_p \to 0\).
+                    </p>
+                    <p>
+                        <strong>(ii) Pointwise a.e. convergence:</strong> 
+                        \(f_n \to f\) a.e. if \(f_n(x) \to f(x)\) for all \(x\) outside a 
+                        set of measure zero.
+                    </p>
+                    <p>
+                        <strong>(iii) Convergence in measure:</strong> 
+                        \(f_n \to f\) in measure if, for every \(\epsilon > 0\),
+                        \[
+                        \mu\bigl(\{x \in \Omega : |f_n(x) - f(x)| > \epsilon\}\bigr) \;\to\; 0 
+                        \quad \text{as } n \to \infty.
+                        \]
+                    </p>
+                    <p>
+                        <strong>(iv) Uniform convergence a.e.:</strong> 
+                        There exists a null set \(E\) such that \(f_n \to f\) 
+                        uniformly on \(\Omega \setminus E\), i.e., 
+                        \(\sup_{x \notin E} |f_n(x) - f(x)| \to 0\).
+                    </p>
+                </div>
+
+                <p>
+                    These are ordered roughly from "strongest" to "weakest" in terms of what they 
+                    guarantee. Uniform a.e. convergence is the strongest (it is equivalent to 
+                    \(L^\infty\) convergence); convergence in measure is the weakest of the four. 
+                    The precise logical implications are as follows.
+                </p>
+
+                <h3>The Implication Map</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Relations Between Modes of Convergence</span>
+                    <p>
+                        The following implications hold:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(L^p\) convergence \(\Rightarrow\) convergence in measure.</li>
+                        <li>\(L^p\) convergence \(\Rightarrow\) some subsequence converges a.e. 
+                            (the Riesz-Fischer corollary above).</li>
+                        <li>Pointwise a.e. convergence + domination by \(h \in L^p\) 
+                            \(\Rightarrow\) \(L^p\) convergence (the DCT).</li>
+                        <li>Convergence in measure \(\Rightarrow\) some subsequence converges a.e.</li>
+                    </ol>
+                    <p>
+                        No other implications hold in general. In particular:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(L^p\) convergence does <strong>not</strong> imply pointwise a.e. convergence.</li>
+                        <li>Pointwise a.e. convergence does <strong>not</strong> imply \(L^p\) convergence 
+                            (without domination).</li>
+                        <li>Pointwise a.e. convergence does <strong>not</strong> imply convergence in measure 
+                            (on infinite measure spaces).</li>
+                    </ul>
+                    <p>
+                        On <strong>finite measure spaces</strong> (such as probability spaces), the 
+                        picture tightens: pointwise a.e. convergence <em>does</em> imply convergence 
+                        in measure, and <strong>Egorov's theorem</strong> guarantees that for every 
+                        \(\epsilon > 0\), there exists a measurable set \(E\) with 
+                        \(\mu(E) < \epsilon\) such that \(f_n \to f\) <em>uniformly</em> on 
+                        \(\Omega \setminus E\). This "almost uniform convergence" will 
+                        reappear naturally when we study convergence of random variables in the 
+                        setting of measure-theoretic probability.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (1): \(L^p\) convergence \(\Rightarrow\) convergence in measure.</span>
+                    <p>
+                        This follows from the <strong>Chebyshev-Markov inequality</strong>. 
+                        For any \(\epsilon > 0\):
+                        \[
+                        \mu\bigl(\{|f_n - f| > \epsilon\}\bigr) 
+                        \;=\; \mu\bigl(\{|f_n - f|^p > \epsilon^p\}\bigr) 
+                        \;\leq\; \frac{1}{\epsilon^p} \int_\Omega |f_n - f|^p \, d\mu 
+                        \;=\; \frac{\|f_n - f\|_p^p}{\epsilon^p}.
+                        \]
+                        If \(\|f_n - f\|_p \to 0\), the right side tends to zero, so 
+                        \(f_n \to f\) in measure.
+                    </p>
+                </div>
+
+                <h3>The Traveling Bump: Why \(L^p\) Does Not Imply A.E.</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Counterexample:</span>
+                    <p>
+                        Consider the interval \([0, 1]\) with Lebesgue measure. 
+                        We construct a sequence of indicator functions that converges to zero in 
+                        \(L^p\) but does not converge at any point.
+                    </p>
+                    <p>
+                        Enumerate the intervals 
+                        \([0, 1],\; [0, 1/2],\; [1/2, 1],\; [0, 1/3],\; [1/3, 2/3],\; [2/3, 1],\; 
+                        [0, 1/4],\; \ldots\)
+                        and let \(f_n = \chi_{I_n}\) where \(I_n\) is the \(n\)-th interval in this 
+                        enumeration. Then \(\|f_n\|_p = |I_n|^{1/p} \to 0\) as \(n \to \infty\), 
+                        so \(f_n \to 0\) in \(L^p\).
+                    </p>
+                    <p>
+                        However, for every \(x \in [0, 1]\), the sequence \((f_n(x))\) takes the value 
+                        \(1\) infinitely often and the value \(0\) infinitely often (since the 
+                        intervals sweep across \([0,1]\) repeatedly with decreasing widths). 
+                        Therefore \(f_n(x)\) does not converge for any \(x\) — not even on a set 
+                        of full measure.
+                    </p>
+                </div>
+
+                <p>
+                    This counterexample shows that \(L^p\) convergence is fundamentally an 
+                    <em>average</em> condition: it says the integrated \(p\)-th power of the 
+                    difference is small, but it does not control where the function is large on any 
+                    given day. The Riesz-Fischer corollary guarantees only that a 
+                    <em>subsequence</em> converges pointwise a.e. — the full sequence may oscillate 
+                    wildly at each point.
+                </p>
+
+                <h3>The \(L^p\) Dominated Convergence Theorem</h3>
+
+                <p>
+                    The standard DCT gives conditions under which pointwise convergence implies 
+                    \(L^1\) convergence. We now state the natural \(L^p\) generalization, which 
+                    follows immediately by applying the standard DCT to \(|f_n - f|^p\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: \(L^p\)-Dominated Convergence</span>
+                    <p>
+                        Let \(1 \leq p < \infty\). Suppose \(f_n \to f\) a.e., and there exists 
+                        \(h \in L^p\) such that \(|f_n(x)| \leq h(x)\) for a.e. \(x\) and all \(n\). 
+                        Then \(f \in L^p\) and
+                        \[
+                        \|f_n - f\|_p \;\to\; 0 \quad \text{as } n \to \infty.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Since \(|f_n| \leq h\) a.e. and \(f_n \to f\) a.e., we also have 
+                        \(|f| \leq h\) a.e., so \(f \in L^p\). Now consider 
+                        \(|f_n - f|^p \leq (|f_n| + |f|)^p \leq (2h)^p\) a.e. 
+                        Since \(h \in L^p\), we have \((2h)^p \in L^1\). Also 
+                        \(|f_n - f|^p \to 0\) a.e. Applying the standard DCT to the sequence 
+                        \(|f_n - f|^p\) with dominating function \((2h)^p\), we conclude 
+                        \(\int |f_n - f|^p \, d\mu \to 0\).
+                    </p>
+                </div>
+
+                <h3>Looking Ahead: Probability and Convergence</h3>
+
+                <p>
+                    The hierarchy of convergence modes we have just developed has a direct parallel 
+                    in probability theory. When the measure space is a probability space 
+                    \((\Omega, \mathcal{F}, \mathbb{P})\) and the functions are random variables:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>A.e. convergence</strong> becomes 
+                        <strong>almost sure (a.s.) convergence</strong>.</li>
+                    <li><strong>Convergence in measure</strong> becomes 
+                        <strong>convergence in probability</strong>.</li>
+                    <li><strong>\(L^p\) convergence</strong> becomes 
+                        <strong>\(L^p\) convergence of random variables</strong>, i.e., 
+                        \(\mathbb{E}[|X_n - X|^p] \to 0\).</li>
+                </ul>
+
+                <p>
+                    A fourth mode — <strong>convergence in distribution</strong> — has no direct 
+                    analogue in the function-space setting and is inherently probabilistic. 
+                    The full picture, including the relationships between these probabilistic 
+                    modes of convergence and their role in the law of large numbers and central 
+                    limit theorem, is the subject of a future chapter on 
+                    <strong>measure-theoretic probability</strong>.
+                </p>
+
+            </section>
+
+
+            <section id="applications" class="section-content">
+                <h2>Why Complete Function Spaces Are Essential</h2>
+
+                <p>
+                    We have now proven that \(L^p\) is a Banach space: a normed vector space in which 
+                    every Cauchy sequence converges. In 
+                    <a href="completeness.html#complete"><strong>Completeness</strong></a>, we motivated 
+                    this property for general metric spaces as the absence of "holes." But for function 
+                    spaces, completeness carries a far more concrete significance: it guarantees that 
+                    <em>the result of a limiting operation is still a legitimate object in the space</em> — 
+                    a function with finite energy, a probability distribution with finite moments, 
+                    or a physically meaningful quantum state.
+                </p>
+
+                <p>
+                    We close this chapter by examining three domains where completeness of \(L^p\) is not 
+                    a mathematical luxury but an absolute necessity.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Probability Theory: Finite Moments and Estimation</h3>
+                    <p>
+                        In probability, a random variable \(X\) on a probability space 
+                        \((\Omega, \mathcal{F}, \mathbb{P})\) is simply a measurable function 
+                        \(X : \Omega \to \mathbb{R}\). Saying \(X \in L^p(\Omega, \mathbb{P})\) 
+                        means precisely that the \(p\)-th moment is finite:
+                        \[
+                        \mathbb{E}\bigl[|X|^p\bigr] \;=\; \int_\Omega |X|^p \, d\mathbb{P} \;<\; \infty.
+                        \]
+                        The case \(p = 2\) is especially important: \(X \in L^2\) means that both the 
+                        mean and the variance are finite, and \(L^2(\Omega, \mathbb{P})\) is a 
+                        <a href="intro_analysis.html#hilbert"><strong>Hilbert space</strong></a> 
+                        with inner product \(\langle X, Y \rangle = \mathbb{E}[XY]\).
+                    </p>
+                    <p>
+                        Completeness of \(L^2\) guarantees that the 
+                        <strong>orthogonal projection</strong> onto any closed subspace exists. 
+                        This is the mathematical foundation of <strong>least-squares estimation</strong>: 
+                        the conditional expectation \(\mathbb{E}[X \mid \mathcal{G}]\) is the 
+                        \(L^2\)-projection of \(X\) onto the subspace of \(\mathcal{G}\)-measurable 
+                        random variables. Without completeness, the projection might not land 
+                        inside the space — the "best estimate" might not exist as a random variable 
+                        with finite variance.
+                    </p>
+                    <p>
+                        Hölder's inequality also takes on a probabilistic reading: for random 
+                        variables \(X \in L^p\) and \(Y \in L^q\),
+                        \[
+                        \mathbb{E}[|XY|] \;\leq\; 
+                        \bigl(\mathbb{E}[|X|^p]\bigr)^{1/p} \, \bigl(\mathbb{E}[|Y|^q]\bigr)^{1/q}.
+                        \]
+                        This bounds the expectation of a product in terms of individual moment 
+                        conditions — a tool used constantly in proving concentration inequalities, 
+                        convergence theorems, and the convergence rates of estimators.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Signal Processing: Finite Energy and Fourier Reconstruction</h3>
+                    <p>
+                        In signal processing, a signal \(f : \mathbb{R} \to \mathbb{C}\) has 
+                        <strong>finite energy</strong> if
+                        \[
+                        \|f\|_2^2 \;=\; \int_{-\infty}^{\infty} |f(t)|^2 \, dt \;<\; \infty.
+                        \]
+                        The space of finite-energy signals is exactly \(L^2(\mathbb{R})\). 
+                        <a href="fourier_transform.html#properties"><strong>Plancherel's theorem</strong></a> 
+                        states that the Fourier transform preserves this energy:
+                        \[
+                        \|f\|_{L^2}^2 \;=\; \frac{1}{2\pi}\|\hat{f}\|_{L^2}^2.
+                        \]
+                        In other words, the (normalized) Fourier transform is a 
+                        <strong>unitary operator</strong> on \(L^2(\mathbb{R})\) — it is an isometry 
+                        that maps \(L^2\) onto itself.
+                    </p>
+                    <p>
+                        But unitarity is only meaningful if the space is <em>complete</em>. 
+                        If \(L^2\) had "holes," the Fourier transform of a finite-energy signal might 
+                        land outside the space — there would be frequency representations that 
+                        correspond to no legitimate time-domain signal, or vice versa. Completeness 
+                        ensures that the Fourier transform is a bijection on \(L^2\), that every 
+                        finite-energy spectrum reconstructs a finite-energy signal, and that 
+                        <a href="fourier_series.html#parseval"><strong>Parseval's identity</strong></a> 
+                        holds with exact equality. The entire mathematical framework of spectral 
+                        analysis rests on the Riesz-Fischer theorem.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Quantum Mechanics: Wave Functions and Unitary Evolution</h3>
+                    <p>
+                        In quantum mechanics, the state of a particle is described by a 
+                        <strong>wave function</strong> \(\psi \in L^2(\mathbb{R}^3)\) satisfying the 
+                        normalization condition \(\|\psi\|_2 = 1\). The physical interpretation is 
+                        Born's rule: \(|\psi(x)|^2\) is the probability density for finding the 
+                        particle at position \(x\). The \(L^2\) norm being \(1\) ensures that 
+                        probabilities sum to \(1\).
+                    </p>
+                    <p>
+                        Time evolution is governed by the Schrödinger equation, whose solution is 
+                        a one-parameter family of <strong>unitary operators</strong> 
+                        \(U(t) = e^{-iHt/\hbar}\) acting on \(L^2(\mathbb{R}^3)\). 
+                        Unitarity means \(\|U(t)\psi\|_2 = \|\psi\|_2 = 1\) for all \(t\) — 
+                        probability is conserved under time evolution.
+                    </p>
+                    <p>
+                        If \(L^2\) were not complete, the time evolution of a quantum state 
+                        could converge to a limit that is <em>not</em> a valid wave function — 
+                        it would have infinite energy or fail to be square-integrable, making 
+                        the probability interpretation collapse. Completeness guarantees that 
+                        unitary evolution stays within the space of physical states, and that 
+                        the spectral decomposition of observables (the 
+                        <a href="spectral_theory.html#spectral-theorem"><strong>spectral theorem</strong></a>) 
+                        produces well-defined measurement outcomes. In this sense, the Riesz-Fischer 
+                        theorem is not merely a mathematical convenience — it is a precondition 
+                        for the logical consistency of quantum theory.
+                    </p>
+                </div>
+
+                <h3>The Common Thread</h3>
+
+                <p>
+                    Across all three domains, the pattern is the same. Each field relies on 
+                    <strong>limiting operations</strong> — expectations of infinite sums, inverse 
+                    Fourier transforms, time evolution of differential equations — and completeness 
+                    is the guarantee that these limits remain <em>within the space of objects that 
+                    have physical or mathematical meaning</em>. An estimator with finite variance. 
+                    A signal with finite energy. A quantum state with total probability one.
+                </p>
+
+                <p>
+                    In <a href="completeness.html"><strong>Completeness</strong></a>, we described 
+                    a complete metric space as one "without holes." Here we see what that metaphor 
+                    means concretely for function spaces: a "hole" in \(L^p\) would be a sequence of 
+                    perfectly legitimate functions — each with finite \(p\)-th integral — whose limit 
+                    escapes to something infinite, undefined, or physically meaningless. The 
+                    Riesz-Fischer theorem seals every such hole.
+                </p>
+
+                <h3>Looking Ahead</h3>
+
+                <p>
+                    This chapter has established \(L^p\) as a Banach space and settled the proof 
+                    debts deferred from 
+                    <a href="intro_analysis.html"><strong>Intro to Functional Analysis</strong></a> 
+                    and <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a>. 
+                    The road ahead branches in two complementary directions:
+                </p>
+
+                <p>
+                    Historically, the theorem that bears the names of Frigyes Riesz and Ernst Fischer 
+                    was originally proven (independently, in 1907) for the case \(p = 2\) alone: 
+                    they showed that \(L^2\) is complete, and that the map sending a function 
+                    to its Fourier coefficients is an isometric isomorphism between \(L^2\) and 
+                    \(\ell^2\). The generalization to all \(1 \leq p \leq \infty\) came later, but 
+                    the original \(L^2\) result remains the most consequential — it is what makes 
+                    Fourier analysis in Hilbert spaces possible.
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Fourier analysis in Hilbert spaces</strong> will take the special 
+                        case \(p = 2\) and develop its Hilbert space structure in full — the inner 
+                        product, Plancherel's theorem as a unitary equivalence, and the 
+                        Heisenberg uncertainty principle as a theorem about noncommuting operators 
+                        on \(L^2\).
+                    </li>
+                    <li>
+                        <strong>Measure-theoretic probability</strong> will reinterpret the 
+                        convergence theorems (MCT, DCT, Fatou) and the \(L^p\) hierarchy in 
+                        the language of random variables and expectations, closing the gap between 
+                        the measure-theoretic foundations of 
+                        <a href="measure.html"><strong>Measure Theory</strong></a> / 
+                        <a href="lebesgue.html"><strong>Lebesgue Integration</strong></a> and the 
+                        probabilistic reasoning used throughout Section III.
+                    </li>
+                </ul>
+
+                <p>
+                    Both paths build directly on the completeness of \(L^p\) proven here — the first 
+                    by specializing to the richest structure (\(L^2\) as a Hilbert space), the second 
+                    by specializing to the richest interpretation (\(L^p\) of random variables on a 
+                    probability space).
+                </p>
+
+            </section>
+
+
+        </div>
+
+        <script src="/js/main.js"></script>
+    </body>
+</html>
