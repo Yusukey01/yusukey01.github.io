@@ -22,227 +22,1499 @@ noindex: true
             <a href="#axioms">From Metrics to Axioms</a>
             <a href="#basis">Bases & Countability</a>
             <a href="#separation">Hausdorff & Separation</a>
-            <a href="#constructions">Subspace, Product & Quotient Topologies</a>
+            <a href="#constructions">Subspace, Product & Quotient</a>
             <a href="#paracompact">Paracompactness & Partitions of Unity</a>
         </div>  
 
         <div class="container">   
 
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- SECTION 1: From Metrics to Axioms                              -->
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- 
-                PURPOSE: Bridge from calc-16~22 (metric spaces) to abstract topology.
-                
-                KEY CONTENT:
-                - Recall: in calc-16, we defined "topology" as the collection of open sets 
-                  determined by a metric. Now we abstract away the metric.
-                - Axiomatic definition: A topology τ on X is a collection of subsets 
-                  satisfying (1) ∅, X ∈ τ, (2) arbitrary unions, (3) finite intersections.
-                - (X, τ) = topological space. Open sets = elements of τ.
-                - Closed sets, closure, interior — same definitions as calc-16 but 
-                  without reference to ε-balls.
-                - Continuous map: f⁻¹(V) ∈ τ_X for every V ∈ τ_Y 
-                  (generalize calc-18's ε-δ definition).
-                - Homeomorphism: same definition as calc-22, now in this generality.
-                - Key examples: discrete topology, indiscrete topology, cofinite topology.
-                - NON-metrizable example: why this generalization matters.
-                
-                CS CONNECTION: Topological data analysis (TDA) — persistent homology 
-                uses abstract simplicial complexes with non-metrizable topology.
-                
-                LINKS: calc-16 (metric_space.html#opcl), calc-18 (continuity.html), 
-                       calc-22 (homeomorphism.html)
-                
-                LEE REFERENCE: Appendix A, pp. 599–607 ("Topological Spaces" through 
-                "Continuous Maps")
-            -->
             <section id="axioms" class="section-content">
                 <h2>From Metrics to Axioms</h2>
 
                 <p>
-                    <!-- TODO: Content after reading Lee Appendix A pp. 599–607 -->
+                    Throughout our study of <a href="metric_space.html"><strong>metric spaces</strong></a>, 
+                    we have relied on a distance function \(d\) to define open sets, continuity, convergence, 
+                    and compactness. Yet a recurring observation has emerged: many of these properties depend 
+                    not on the specific numerical values of \(d\), but only on 
+                    <em>which sets are declared open</em>. In 
+                    <a href="metric_space.html#opcl"><strong>Metric Spaces</strong></a>, 
+                    we noted that the collection of open subsets determined by \(d\) forms a structure 
+                    called the <strong>topology</strong> of \((X, d)\). In 
+                    <a href="continuity.html#continuity"><strong>Continuity</strong></a>, 
+                    we showed that a function is continuous if and only if preimages of open sets are open — 
+                    a characterization that never mentions \(\epsilon\) or \(\delta\) directly. In 
+                    <a href="homeomorphism.html#equi"><strong>Homeomorphism</strong></a>, 
+                    we identified topological invariants: properties preserved under bijections that 
+                    respect open sets in both directions.
                 </p>
+
+                <p>
+                    The natural question is: <em>can we build a theory of "spaces" starting directly from 
+                    open sets, without assuming a metric at all?</em> The answer is yes, and this 
+                    generalization is not merely aesthetic. There are important spaces in mathematics 
+                    and computer science — function spaces with weak topologies, 
+                    quotient spaces arising from symmetry groups, and configuration spaces in robotics — 
+                    that carry a natural notion of "nearness" but <em>no natural metric</em>. To study 
+                    these spaces, we need a framework that retains the power of open-set reasoning 
+                    while discarding the assumption that distances exist.
+                </p>
+
+                <h3>The Three Axioms</h3>
+
+                <p>
+                    Let us extract the essential properties of open sets in metric spaces. 
+                    In <a href="metric_space.html#opcl"><strong>Metric Spaces</strong></a>, we defined 
+                    a set \(U\) to be open if every point of \(U\) is an interior point — equivalently, 
+                    if \(U\) contains an open ball around each of its points. From this definition, 
+                    three structural properties follow.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Properties of Open Sets in Metric Spaces</span>
+                    <p>
+                        Let \((X, d)\) be a metric space, and let \(\tau_d\) denote the collection of 
+                        all open subsets of \(X\). Then:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(\emptyset \in \tau_d\) and \(X \in \tau_d\).</li>
+                        <li>If \(\{U_\alpha\}_{\alpha \in A}\) is any collection of sets in \(\tau_d\), 
+                            then \(\displaystyle\bigcup_{\alpha \in A} U_\alpha \in \tau_d\).</li>
+                        <li>If \(U_1, U_2, \ldots, U_n \in \tau_d\) is a finite collection, 
+                            then \(\displaystyle\bigcap_{k=1}^{n} U_k \in \tau_d\).</li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        (1) The empty set \(\emptyset\) is open vacuously (there are no points to check). 
+                        The whole space \(X\) is open because every point \(x \in X\) satisfies 
+                        \(\mathcal{B}(x; r) \subseteq X\) for any \(r > 0\).
+                    </p>
+                    <p>
+                        (2) Suppose each \(U_\alpha\) is open and \(x \in \bigcup_\alpha U_\alpha\). 
+                        Then \(x \in U_\beta\) for some index \(\beta\), so there exists \(r > 0\) with 
+                        \(\mathcal{B}(x; r) \subseteq U_\beta \subseteq \bigcup_\alpha U_\alpha\). 
+                        Hence the union is open.
+                    </p>
+                    <p>
+                        (3) Suppose \(U_1, \ldots, U_n\) are open and \(x \in \bigcap_{k=1}^n U_k\). 
+                        For each \(k\), there exists \(r_k > 0\) with \(\mathcal{B}(x; r_k) \subseteq U_k\). 
+                        Setting \(r = \min\{r_1, \ldots, r_n\} > 0\) (here we use finiteness — a minimum of 
+                        finitely many positive numbers is positive), we get 
+                        \(\mathcal{B}(x; r) \subseteq \bigcap_{k=1}^n U_k\).
+                    </p>
+                </div>
+
+                <p>
+                    The finiteness restriction in (3) is essential. Consider the family 
+                    \(\{(-1/n, 1/n)\}_{n=1}^{\infty}\) in \(\mathbb{R}\). Each interval is open, but 
+                    \(\bigcap_{n=1}^{\infty} (-1/n, 1/n) = \{0\}\), a single point, which is not open 
+                    in \(\mathbb{R}\). An infinite intersection of open sets can collapse to something 
+                    that is no longer open.
+                </p>
+
+                <p>
+                    These three properties are the only structure we need. We now promote them 
+                    from theorems about metric spaces to <em>axioms</em> defining a new kind of space.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Topological Space</span>
+                    <p>
+                        A <strong>topological space</strong> is a pair \((X, \tau)\) where \(X\) is a set 
+                        and \(\tau\) is a collection of subsets of \(X\), called a <strong>topology</strong> 
+                        on \(X\), satisfying:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(\emptyset \in \tau\) and \(X \in \tau\).</li>
+                        <li>\(\tau\) is closed under arbitrary unions: if 
+                            \(\{U_\alpha\}_{\alpha \in A} \subseteq \tau\), then 
+                            \(\bigcup_{\alpha \in A} U_\alpha \in \tau\).</li>
+                        <li>\(\tau\) is closed under finite intersections: if 
+                            \(U_1, \ldots, U_n \in \tau\), then 
+                            \(\bigcap_{k=1}^{n} U_k \in \tau\).</li>
+                    </ol>
+                    <p>
+                        The elements of \(\tau\) are called <strong>open sets</strong>. 
+                        A subset \(F \subseteq X\) is <strong>closed</strong> if its complement 
+                        \(X \setminus F\) is open. We say that \(\tau\) is a topology 
+                        <strong>on</strong> \(X\), and that \((X, \tau)\) is a topological space.
+                    </p>
+                </div>
+
+                <p>
+                    Every metric space \((X, d)\) gives rise to a topological space \((X, \tau_d)\), 
+                    but the converse is far from true. There exist topological spaces that cannot be 
+                    realized as metric spaces — we will see a concrete example shortly. This is 
+                    precisely the power of the abstraction: it captures a strictly larger universe of spaces.
+                </p>
+
+                <h3>Neighborhoods, Closure, and Interior</h3>
+
+                <p>
+                    In <a href="metric_space.html#bound"><strong>Metric Spaces</strong></a>, 
+                    we defined closure, interior, and boundary using the distance function. 
+                    In a general topological space, we no longer have distances, 
+                    but we can reformulate each concept purely in terms of open sets.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Neighborhood</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space and \(x \in X\). 
+                        A <strong>neighborhood</strong> of \(x\) is any subset 
+                        \(N \subseteq X\) such that there exists an open set \(U \in \tau\) 
+                        with \(x \in U \subseteq N\). If \(N\) is itself open, we call it 
+                        an <strong>open neighborhood</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    In many topology texts (including Lee's <em>Introduction to Smooth 
+                    Manifolds</em>, which we follow for the manifold chapters), a neighborhood 
+                    need not be open — it only needs to <em>contain</em> an open set around 
+                    the point. In practice, most arguments pass immediately to an open 
+                    neighborhood contained in \(N\), so the distinction rarely affects proofs. 
+                    We will use "neighborhood" in this general sense throughout. 
+                    In a metric space, every neighborhood contains an open ball, and every open ball 
+                    is a neighborhood, so the two notions coincide. In a general topological space, 
+                    neighborhoods are all we have.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Interior, Closure, and Boundary</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space and \(S \subseteq X\).
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>The <strong>interior</strong> of \(S\) is 
+                            \[
+                            S^\circ = \operatorname{int}(S) = \bigcup \{ U \in \tau : U \subseteq S \},
+                            \]
+                            the largest open set contained in \(S\).
+                        </li>
+                        <li>The <strong>closure</strong> of \(S\) is 
+                            \[
+                            \overline{S} = \operatorname{cl}(S) = \bigcap \{ F \subseteq X : F \supseteq S \text{ and } F \text{ is closed} \},
+                            \]
+                            the smallest closed set containing \(S\).
+                        </li>
+                        <li>The <strong>boundary</strong> of \(S\) is 
+                            \(\partial S = \overline{S} \setminus S^\circ\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    These definitions are consistent with the metric-space versions from 
+                    <a href="metric_space.html#bound"><strong>Metric Spaces</strong></a>. 
+                    In a metric space, the interior \(S^\circ\) consists of all points having an 
+                    open ball within \(S\), and the closure \(\overline{S}\) consists of all points 
+                    whose every open ball intersects \(S\). The general definitions above reproduce 
+                    these characterizations without mentioning balls.
+                </p>
+
+                <h3>Continuity in Topological Spaces</h3>
+
+                <p>
+                    The topological definition of continuity — which we already established as the 
+                    "correct" formulation in 
+                    <a href="continuity.html#continuity"><strong>Continuity</strong></a> — 
+                    transfers immediately to this setting.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Continuous Map</span>
+                    <p>
+                        Let \((X, \tau_X)\) and \((Y, \tau_Y)\) be topological spaces. A function 
+                        \(f : X \to Y\) is <strong>continuous</strong> if for every open set 
+                        \(V \in \tau_Y\), the preimage \(f^{-1}(V)\) belongs to \(\tau_X\).
+                    </p>
+                </div>
+
+                <p>
+                    This is identical to the global topological characterization from 
+                    <a href="continuity.html#continuity"><strong>Continuity</strong></a>, 
+                    now stated without the assumption that \(X\) and \(Y\) are metric spaces. 
+                    Similarly, a <strong>homeomorphism</strong> is a bijection 
+                    \(f : X \to Y\) such that both \(f\) and \(f^{-1}\) are continuous — exactly 
+                    the definition from 
+                    <a href="homeomorphism.html#equi"><strong>Homeomorphism</strong></a>, 
+                    lifted to this generality.
+                </p>
+
+                <h3>Fundamental Examples</h3>
+
+                <p>
+                    To build intuition for the flexibility (and potential pathology) of 
+                    topological spaces, we consider several examples. The first two are extreme 
+                    cases that bracket every possible topology on a given set.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: Discrete and Indiscrete Topologies</span>
+                    <p>
+                        Let \(X\) be any nonempty set.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>The <strong>discrete topology</strong> on \(X\) is 
+                            \(\tau_{\text{disc}} = \mathcal{P}(X)\), the power set. Every subset 
+                            is open. This is the topology induced by the discrete metric 
+                            \(d(x,y) = \begin{cases} 0 & x=y \\ 1 & x \neq y \end{cases}\).
+                        </li>
+                        <li>The <strong>indiscrete topology</strong> (or trivial topology) on \(X\) is 
+                            \(\tau_{\text{ind}} = \{\emptyset, X\}\). Only the empty set and the 
+                            whole space are open. If \(|X| \geq 2\), this topology is 
+                            <strong>not metrizable</strong>: any metric on \(X\) would produce 
+                            disjoint open balls \(\mathcal{B}(x; r)\) and \(\mathcal{B}(y; r)\) 
+                            for distinct \(x, y\) and sufficiently small \(r\), yielding 
+                            open sets other than \(\emptyset\) and \(X\) — contradicting 
+                            \(\tau_{\text{ind}} = \{\emptyset, X\}\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    For any topology \(\tau\) on \(X\), we have 
+                    \(\tau_{\text{ind}} \subseteq \tau \subseteq \tau_{\text{disc}}\). 
+                    When \(\tau \subseteq \tau'\), we say \(\tau\) is <strong>coarser</strong> 
+                    (fewer open sets) and \(\tau'\) is <strong>finer</strong> (more open sets). 
+                    A finer topology declares more sets to be open, making it easier for functions 
+                    into the space to be continuous but harder for functions out of the space to be continuous.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: The Cofinite Topology</span>
+                    <p>
+                        Let \(X\) be any set. Define 
+                        \(\tau_{\text{cof}} = \{U \subseteq X : X \setminus U \text{ is finite}\} \cup \{\emptyset\}\).
+                        This is a topology. For arbitrary unions: if all \(U_\alpha = \emptyset\), 
+                        the union is \(\emptyset \in \tau_{\text{cof}}\). Otherwise, some 
+                        \(U_\beta\) has finite complement, and 
+                        \(X \setminus \bigcup_\alpha U_\alpha = \bigcap_\alpha (X \setminus U_\alpha) 
+                        \subseteq X \setminus U_\beta\), which is finite. 
+                        For finite intersections: if any \(U_k = \emptyset\), then 
+                        \(\bigcap_{k=1}^n U_k = \emptyset \in \tau_{\text{cof}}\). 
+                        Otherwise, each \(X \setminus U_k\) is finite, and 
+                        \(X \setminus \bigcap_{k=1}^n U_k = \bigcup_{k=1}^n (X \setminus U_k)\) 
+                        is a finite union of finite sets, which is finite.
+                    </p>
+                    <p>
+                        On a finite set, the cofinite topology coincides with the discrete topology. 
+                        On an infinite set, it is strictly coarser than the discrete topology and 
+                        is <strong>not metrizable</strong>: any two nonempty open sets intersect 
+                        (their complements are finite, so neither complement can contain the other's 
+                        infinite open set), which means the space is not Hausdorff.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why Non-Metrizable Spaces Matter</h3>
+                    <p>
+                        At this point one might ask: if metric spaces already cover \(\mathbb{R}^n\), 
+                        function spaces, and most spaces in applied mathematics, why bother with 
+                        non-metrizable spaces at all?
+                    </p>
+                    <p>
+                        The answer lies in our own recent work. In 
+                        <a href="weak_topologies.html#banach-alaoglu"><strong>Weak Topologies & 
+                        Banach-Alaoglu</strong></a>, we proved that the closed unit ball of the dual 
+                        space \(\mathcal{X}^*\) is compact in the weak* topology. The proof relied 
+                        on embedding \(\mathcal{X}^*\) into a product space 
+                        \(\prod_{x \in \mathcal{X}} [-\|x\|, \|x\|]\) and invoking Tychonoff's 
+                        theorem. But we used the product topology and Tychonoff's theorem as 
+                        unproven black boxes — tools from general topology that metric-space theory 
+                        alone cannot provide. This chapter repays that debt: we will define the 
+                        product topology rigorously in 
+                        <a href="#product">Section 4</a> and state Tychonoff's theorem 
+                        with its proper context.
+                    </p>
+                </div>
 
             </section>
 
 
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- SECTION 2: Bases & Countability                                -->
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!--
-                PURPOSE: Define basis for a topology. Establish first/second countability.
-                These are prerequisites for Lee's manifold definition (Ch. 1, p. 2):
-                "A topological manifold is a second-countable Hausdorff space that is 
-                locally Euclidean."
-                
-                KEY CONTENT:
-                - Basis B for τ: every open set is a union of basis elements.
-                  In metric spaces, open balls form a basis (already known from calc-16).
-                - Basis criterion: B is a basis iff (1) covers X, (2) for B₁∩B₂, 
-                  every point has a basis element inside the intersection.
-                - Generated topology: given any collection B satisfying the criterion, 
-                  there is a unique topology for which B is a basis.
-                - First countable: every point has a countable neighborhood basis.
-                  All metric spaces are first countable (balls with rational radii).
-                - Second countable: the topology itself has a countable basis.
-                  R^n is second countable (balls with rational centers and radii).
-                  Lindelöf property follows from second countability.
-                - Why manifolds require second countability: 
-                  (1) paracompactness (Section 5), (2) embeddability in R^N (Whitney),
-                  (3) excludes pathological examples (long line).
-                
-                CS CONNECTION: Countable basis → separability → the weak* topology 
-                on bounded sets is metrizable (calc-26, Banach-Alaoglu metrizability caveat).
-                
-                LEE REFERENCE: Appendix A, pp. 607–611 ("Bases" through "Countability 
-                and Separability")
-            -->
             <section id="basis" class="section-content">
                 <h2>Bases & Countability</h2>
 
                 <p>
-                    <!-- TODO: Content after reading Lee Appendix A pp. 607–611 -->
+                    Specifying a topology by listing all open sets is usually impractical — 
+                    the standard topology on \(\mathbb{R}\) contains uncountably many open sets. 
+                    Instead, we describe a topology through a smaller collection of "building blocks" 
+                    from which all open sets can be constructed.
+                </p>
+
+                <h3>Basis for a Topology</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Basis</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space. A collection 
+                        \(\mathcal{B} \subseteq \tau\) is a <strong>basis</strong> for \(\tau\) if 
+                        every open set \(U \in \tau\) can be written as a union of elements 
+                        of \(\mathcal{B}\). Equivalently, for every \(U \in \tau\) and every 
+                        \(x \in U\), there exists \(B \in \mathcal{B}\) with \(x \in B \subseteq U\).
+                    </p>
+                </div>
+
+                <p>
+                    We already know the prototypical example: in a metric space \((X, d)\), 
+                    the collection of all open balls 
+                    \(\mathcal{B} = \{\mathcal{B}(x; r) : x \in X,\; r > 0\}\) 
+                    is a basis for the metric topology \(\tau_d\). This was stated in 
+                    <a href="metric_space.html#ball"><strong>Metric Spaces</strong></a>, where 
+                    we noted that "every open set can be expressed as a union of open balls."
+                </p>
+
+                <p>
+                    The power of the basis concept is that we can also go in the reverse direction: 
+                    start with a collection of sets satisfying certain properties, and 
+                    <em>generate</em> a topology from them.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Basis Criterion</span>
+                    <p>
+                        Let \(X\) be a set and \(\mathcal{B}\) a collection of subsets of \(X\) 
+                        satisfying:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li><strong>(Covering)</strong> For every \(x \in X\), there exists 
+                            \(B \in \mathcal{B}\) with \(x \in B\).</li>
+                        <li><strong>(Refinement)</strong> If \(B_1, B_2 \in \mathcal{B}\) and 
+                            \(x \in B_1 \cap B_2\), then there exists \(B_3 \in \mathcal{B}\) 
+                            with \(x \in B_3 \subseteq B_1 \cap B_2\).</li>
+                    </ol>
+                    <p>
+                        Then the collection 
+                        \[
+                        \tau_{\mathcal{B}} = \left\{ U \subseteq X : \text{for every } x \in U, 
+                        \text{ there exists } B \in \mathcal{B} \text{ with } x \in B \subseteq U \right\}
+                        \]
+                        is a topology on \(X\), and \(\mathcal{B}\) is a basis for \(\tau_{\mathcal{B}}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We verify the three axioms. The empty set \(\emptyset\) belongs to 
+                        \(\tau_{\mathcal{B}}\) vacuously. The whole space \(X\) belongs because 
+                        the covering condition guarantees every point lies in some basis element.
+                    </p>
+                    <p>
+                        For arbitrary unions: if each \(U_\alpha \in \tau_{\mathcal{B}}\) and 
+                        \(x \in \bigcup_\alpha U_\alpha\), then \(x \in U_\beta\) for some 
+                        \(\beta\), so there exists \(B \in \mathcal{B}\) with 
+                        \(x \in B \subseteq U_\beta \subseteq \bigcup_\alpha U_\alpha\).
+                    </p>
+                    <p>
+                        For finite intersections, it suffices to handle the case of two sets 
+                        (the general case follows by induction). Suppose 
+                        \(U_1, U_2 \in \tau_{\mathcal{B}}\) and \(x \in U_1 \cap U_2\). 
+                        Then there exist \(B_1, B_2 \in \mathcal{B}\) with 
+                        \(x \in B_1 \subseteq U_1\) and \(x \in B_2 \subseteq U_2\). 
+                        By the refinement condition, there exists \(B_3 \in \mathcal{B}\) with 
+                        \(x \in B_3 \subseteq B_1 \cap B_2 \subseteq U_1 \cap U_2\).
+                    </p>
+                </div>
+
+                <p>
+                    The basis criterion gives us a systematic recipe: to construct a topology, 
+                    it suffices to specify a basis and verify two conditions, rather than 
+                    checking the full topology axioms on an unwieldy collection.
+                </p>
+
+                <h3>Countability Axioms</h3>
+
+                <p>
+                    Not all topological spaces are equally well-behaved. The <em>countability 
+                    axioms</em> impose size constraints on the topology that ensure many familiar 
+                    tools from metric-space analysis remain valid.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: First Countable and Second Countable</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(X\) is <strong>first countable</strong> if every point \(x \in X\) 
+                            has a <strong>countable neighborhood basis</strong>: a countable 
+                            collection \(\{U_n\}_{n=1}^{\infty}\) of open neighborhoods of \(x\) 
+                            such that every neighborhood of \(x\) contains some \(U_n\).
+                        </li>
+                        <li>\(X\) is <strong>second countable</strong> if \(\tau\) itself 
+                            admits a <strong>countable basis</strong>: a countable collection 
+                            \(\mathcal{B}\) that is a basis for \(\tau\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    Second countability is strictly stronger: a countable basis for the whole 
+                    topology provides, in particular, a countable neighborhood basis at each point.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: Countability in Familiar Spaces</span>
+                    <p>
+                        Every metric space is first countable: at any point \(x\), the collection 
+                        \(\{\mathcal{B}(x; 1/n)\}_{n=1}^{\infty}\) is a countable neighborhood basis.
+                    </p>
+                    <p>
+                        The space \(\mathbb{R}^n\) with the standard metric is second countable: 
+                        the collection of open balls with rational centers and rational radii,
+                        \[
+                        \mathcal{B} = \{\mathcal{B}(\mathbf{q}; r) : \mathbf{q} \in \mathbb{Q}^n,\; r \in \mathbb{Q}^+\},
+                        \]
+                        is countable (a countable product of countable sets is countable) and forms 
+                        a basis for the standard topology. For any open set \(U\) and any 
+                        \(x \in U\), there exists a rational point \(\mathbf{q}\) and rational 
+                        radius \(r\) with \(x \in \mathcal{B}(\mathbf{q}; r) \subseteq U\), 
+                        by the density of \(\mathbb{Q}^n\) in \(\mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <h3>Separability and the Lindelöf Property</h3>
+
+                <p>
+                    Second countability has powerful consequences that connect to concepts 
+                    we have already encountered.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Separable Space</span>
+                    <p>
+                        A topological space \(X\) is <strong>separable</strong> if it contains a 
+                        countable dense subset: a countable set \(D \subseteq X\) such that 
+                        \(\overline{D} = X\).
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Second Countable Implies Separable</span>
+                    <p>
+                        Every second countable space is separable.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(\mathcal{B} = \{B_n\}_{n=1}^{\infty}\) be a countable basis. 
+                        For each nonempty \(B_n\), choose a point \(x_n \in B_n\). 
+                        The set \(D = \{x_n\}\) is countable. For any open set \(U\) and 
+                        any \(x \in U\), there exists \(B_n \subseteq U\), so 
+                        \(x_n \in U\). Thus every open set meets \(D\), which means 
+                        \(\overline{D} = X\).
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Lindelöf Property</span>
+                    <p>
+                        Every second countable space is <strong>Lindelöf</strong>: every open 
+                        cover has a <em>countable</em> subcover.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(\{U_\alpha\}\) be an open cover of \(X\), and let 
+                        \(\mathcal{B} = \{B_n\}\) be a countable basis. For each \(x \in X\), 
+                        choose \(U_\alpha\) containing \(x\) and then \(B_n\) with 
+                        \(x \in B_n \subseteq U_\alpha\). The set 
+                        \(\mathcal{B}' = \{B_n \in \mathcal{B} : B_n \subseteq U_\alpha \text{ for some } \alpha\}\) 
+                        is countable and covers \(X\). For each \(B_n \in \mathcal{B}'\), choose one 
+                        \(U_{\alpha(n)}\) containing it. Then \(\{U_{\alpha(n)}\}\) is a countable subcover.
+                    </p>
+                </div>
+
+                <p>
+                    The Lindelöf property bridges second countability and 
+                    <a href="compactness.html"><strong>compactness</strong></a>: 
+                    a second countable space is compact if and only if every countable 
+                    open cover has a finite subcover.
+                </p>
+
+                <h3>Why Manifolds Require Second Countability</h3>
+
+                <p>
+                    As we will see in a later chapter on smooth manifolds, 
+                    a topological manifold is defined as a space that is 
+                    <em>Hausdorff</em>, <em>second countable</em>, and 
+                    <em>locally Euclidean</em>. Why demand second countability specifically? 
+                    There are three reasons:
+                </p>
+
+                <p>
+                    First, combined with the other manifold axioms, second countability 
+                    guarantees <strong>paracompactness</strong> (which we develop in 
+                    <a href="#paracompact">Section 5</a>), the technical condition that enables 
+                    partitions of unity — the tool for stitching local constructions into global 
+                    objects like Riemannian metrics. Second, second countability is precisely the 
+                    condition needed for the <strong>Whitney Embedding Theorem</strong>, which 
+                    guarantees that every smooth manifold can be embedded in some \(\mathbb{R}^N\). 
+                    Third, it excludes pathological counterexamples such as the <em>long line</em> — 
+                    a space that is locally Euclidean and Hausdorff but "too large" to embed in 
+                    any \(\mathbb{R}^N\).
+                </p>
+
+                <h3>A Remark on Sequences and Nets</h3>
+
+                <p>
+                    In our study of 
+                    <a href="limit_convergence.html"><strong>Limits & Convergence</strong></a>, 
+                    sequences were the primary tool: a sequence \((x_n)\) converges to \(x\) 
+                    in a metric space if \(d(x_n, x) \to 0\). In a general topological space, 
+                    we say \(x_n \to x\) if every neighborhood of \(x\) contains all but finitely 
+                    many terms of the sequence.
+                </p>
+
+                <p>
+                    However, in general topological spaces, <em>sequences alone are not sufficient</em> 
+                    to detect all topological structure. For instance, there exist non-closed sets 
+                    \(S\) in certain topological spaces such that no sequence in \(S\) converges 
+                    to a point outside \(S\) — the sequential closure is strictly smaller than the 
+                    topological closure. The correct generalization is a <strong>net</strong>: 
+                    a function from a <em>directed set</em> (a generalization of \(\mathbb{N}\) 
+                    with its usual ordering) into the space. In the theory of nets, 
+                    a set is closed if and only if it contains all limits of convergent nets, 
+                    recovering the full power of the closure operation.
+                </p>
+
+                <p>
+                    The reassuring fact is: <strong>in first countable spaces, sequences suffice</strong>. 
+                    A set is closed if and only if it is sequentially closed, and a function is 
+                    continuous if and only if it preserves sequential convergence. 
+                    Since every metric space is first countable (and every second countable space 
+                    is first countable), all sequence-based arguments from 
+                    <a href="limit_convergence.html"><strong>Limits & Convergence</strong></a> 
+                    through <a href="compactness.html"><strong>Compactness</strong></a> 
+                    remain valid in the spaces we will encounter on the path to manifolds. 
+                    We will not develop the full theory of nets here, but awareness of this subtlety 
+                    is important when working with spaces that are not first countable, such as 
+                    certain function spaces with the weak* topology.
                 </p>
 
             </section>
 
 
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- SECTION 3: Hausdorff & Separation                              -->
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!--
-                PURPOSE: Define separation axioms, focusing on Hausdorff (T₂).
-                This is the other half of Lee's manifold definition.
-                
-                KEY CONTENT:
-                - T₁: points are closed (every finite set is closed).
-                - T₂ (Hausdorff): distinct points have disjoint neighborhoods.
-                  Every metric space is Hausdorff (use ε = d(x,y)/2).
-                - Why Hausdorff matters for manifolds:
-                  (1) limits of sequences are unique,
-                  (2) compact subsets are closed,
-                  (3) excludes pathological gluing (line with two origins).
-                - Example of non-Hausdorff space: line with two origins 
-                  (important for understanding why Lee's definition excludes it).
-                - In Hausdorff spaces: compact = closed + "finite-like" 
-                  (generalizes calc-21's Heine-Borel intuition).
-                
-                CS CONNECTION: Quotient spaces (next section) can fail to be Hausdorff 
-                even when the original space is — this is a real pitfall in 
-                constructing manifolds as quotients (e.g., orbifolds in GDL).
-                
-                LEE REFERENCE: Appendix A, pp. 611–614 ("Separation and Countability 
-                Axioms"); also Ch. 1, p. 2 (manifold definition discussion)
-            -->
             <section id="separation" class="section-content">
                 <h2>Hausdorff & Separation</h2>
 
                 <p>
-                    <!-- TODO: Content after reading Lee Appendix A pp. 611–614 -->
+                    The axioms of a topological space are remarkably permissive — 
+                    they allow spaces where distinct points are "topologically 
+                    indistinguishable." To exclude such pathologies, we impose 
+                    <strong>separation axioms</strong>: conditions that ensure the topology 
+                    has enough open sets to tell points apart. The most important of these 
+                    for our purposes is the <strong>Hausdorff</strong> condition.
                 </p>
+
+                <h3>The Separation Hierarchy</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: \(T_1\) and \(T_2\) (Hausdorff) Spaces</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(X\) is a <strong>\(T_1\)-space</strong> if for every pair of 
+                            distinct points \(x \neq y\), there exists an open set \(U\) 
+                            containing \(x\) but not \(y\). Equivalently, every singleton 
+                            \(\{x\}\) is a closed set.
+                        </li>
+                        <li>\(X\) is a <strong>\(T_2\)-space</strong> (or <strong>Hausdorff</strong>) 
+                            if for every pair of distinct points \(x \neq y\), there exist 
+                            disjoint open sets \(U\) and \(V\) with \(x \in U\) and \(y \in V\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    Every \(T_2\) space is \(T_1\) (if \(U\) and \(V\) are disjoint with 
+                    \(x \in U\) and \(y \in V\), then \(U\) contains \(x\) but not \(y\)). 
+                    The converse fails: the cofinite topology on an infinite set is \(T_1\) 
+                    (every finite set is closed, so every singleton is closed) 
+                    but not Hausdorff (any two nonempty open sets have nonempty intersection, 
+                    since their complements are finite).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Every Metric Space is Hausdorff</span>
+                    <p>
+                        If \((X, d)\) is a metric space, then \((X, \tau_d)\) is Hausdorff.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(x \neq y\) in \(X\), and set \(r = d(x, y)/2 > 0\). 
+                        Then \(U = \mathcal{B}(x; r)\) and \(V = \mathcal{B}(y; r)\) are disjoint 
+                        open sets: if \(z \in U \cap V\), the triangle inequality gives 
+                        \(d(x, y) \leq d(x, z) + d(z, y) < r + r = d(x, y)\), 
+                        a contradiction.
+                    </p>
+                </div>
+
+                <h3>Why Hausdorff Matters</h3>
+
+                <p>
+                    The Hausdorff condition is not a mere technicality — it has 
+                    profound consequences for the behavior of limits and compact sets.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Uniqueness of Limits</span>
+                    <p>
+                        In a Hausdorff space, limits of convergent sequences (and more generally, 
+                        nets) are unique: if \(x_n \to x\) and \(x_n \to y\), then \(x = y\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Suppose \(x \neq y\). By the Hausdorff condition, choose disjoint open sets 
+                        \(U \ni x\) and \(V \ni y\). Since \(x_n \to x\), there exists \(N_1\) with 
+                        \(x_n \in U\) for all \(n \geq N_1\). Since \(x_n \to y\), there exists \(N_2\) 
+                        with \(x_n \in V\) for all \(n \geq N_2\). For \(n \geq \max(N_1, N_2)\), 
+                        we get \(x_n \in U \cap V = \emptyset\), a contradiction.
+                    </p>
+                </div>
+
+                <p>
+                    In a non-Hausdorff space, a sequence can converge to multiple limits 
+                    simultaneously — a catastrophic failure for any theory built on limits 
+                    (calculus, optimization, convergence of algorithms).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Compact Subsets of Hausdorff Spaces are Closed</span>
+                    <p>
+                        If \(X\) is a Hausdorff space and \(K \subseteq X\) is compact, 
+                        then \(K\) is closed.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We show that \(X \setminus K\) is open. Let \(x \in X \setminus K\). 
+                        For each \(y \in K\), the Hausdorff condition provides disjoint open sets 
+                        \(U_y \ni x\) and \(V_y \ni y\). The collection \(\{V_y\}_{y \in K}\) 
+                        covers \(K\), so by compactness there exist \(y_1, \ldots, y_n\) with 
+                        \(K \subseteq V_{y_1} \cup \cdots \cup V_{y_n}\). 
+                        Set \(U = U_{y_1} \cap \cdots \cap U_{y_n}\). 
+                        Then \(U\) is a finite intersection of open sets containing \(x\), 
+                        so \(U\) is an open neighborhood of \(x\). Moreover, \(U\) is disjoint 
+                        from \(V_{y_1} \cup \cdots \cup V_{y_n} \supseteq K\), so 
+                        \(U \subseteq X \setminus K\). Since \(x\) was arbitrary, 
+                        \(X \setminus K\) is open.
+                    </p>
+                </div>
+
+                <p>
+                    This generalizes a fact we relied on in 
+                    <a href="compactness.html"><strong>Compactness</strong></a>: 
+                    in \(\mathbb{R}^n\), compact sets are closed and bounded (Heine-Borel). 
+                    The "closed" part holds in any Hausdorff space; the "bounded" part is a 
+                    metric-specific addition. In a general Hausdorff space, compactness 
+                    captures the essential meaning of "finite-like" behavior: 
+                    compact subsets are closed, and in particular, compact Hausdorff spaces 
+                    are as well-behaved as one could hope for.
+                </p>
+
+                <h3>The Line with Two Origins: A Cautionary Tale</h3>
+
+                <p>
+                    To appreciate why the Hausdorff condition is explicitly required in the 
+                    definition of a manifold, consider the following pathological example.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: The Line with Two Origins</span>
+                    <p>
+                        Take two copies of the real line, \(\mathbb{R} \times \{a\}\) and 
+                        \(\mathbb{R} \times \{b\}\), and glue them together by identifying 
+                        \((x, a)\) with \((x, b)\) for every \(x \neq 0\). 
+                        (We describe the construction informally here; the quotient topology 
+                        is defined precisely in <a href="#quotient">Section 4</a>.) 
+                        The resulting space 
+                        \(L\) has a single copy of each nonzero real number, but 
+                        <em>two distinct origins</em>: the points \(0_a = (0, a)\) and 
+                        \(0_b = (0, b)\) are not identified.
+                    </p>
+                    <p>
+                        This space is locally Euclidean of dimension 1: every point has a 
+                        neighborhood homeomorphic to an open interval in \(\mathbb{R}\). 
+                        It is also second countable. However, \(L\) is <strong>not Hausdorff</strong>: 
+                        any open set containing \(0_a\) must contain an interval 
+                        \((-\epsilon, \epsilon) \times \{a\}\), and any open set containing \(0_b\) 
+                        must contain \((-\delta, \delta) \times \{b\}\). After gluing, these sets 
+                        overlap at all nonzero points in 
+                        \((-\min(\epsilon, \delta),\, \min(\epsilon, \delta))\). 
+                        The two origins cannot be separated by disjoint open sets.
+                    </p>
+                </div>
+
+                <p>
+                    The line with two origins is locally indistinguishable from \(\mathbb{R}\), 
+                    yet globally pathological: sequences can converge to two different limits, 
+                    and compact subsets need not be closed. This is exactly the kind of space 
+                    that the Hausdorff axiom in the manifold definition is designed to exclude. 
+                    When we construct new spaces via quotients in 
+                    <a href="#quotient">Section 4</a>, we will need to verify the Hausdorff 
+                    condition carefully — it is not automatically inherited.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Lie Groups and Geometric Deep Learning</h3>
+                    <p>
+                        In the theory of Lie groups, one frequently forms quotient spaces 
+                        \(G/H\) where \(H\) is a closed subgroup of a Lie group \(G\). 
+                        The quotient topology on \(G/H\) is Hausdorff precisely because 
+                        \(H\) is closed — this is a theorem, not automatic. 
+                        If \(H\) were not closed, the quotient could exhibit pathologies 
+                        like the line with two origins: locally smooth, globally ill-defined. 
+                        In Geometric Deep Learning, symmetry groups act on feature spaces, 
+                        and the orbit space (the quotient by the group action) must be 
+                        Hausdorff for the resulting representations to be well-defined. 
+                        The separation axioms are not abstract formalism — they are the 
+                        gatekeepers ensuring that "quotienting by symmetry" produces a 
+                        meaningful space.
+                    </p>
+                </div>
 
             </section>
 
 
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- SECTION 4: Subspace, Product & Quotient Topologies             -->
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!--
-                PURPOSE: Three fundamental constructions for building new topological 
-                spaces from old ones. All three appear constantly in Lee Ch. 1–3.
-                
-                KEY CONTENT:
-                
-                (a) Subspace topology:
-                - Definition: τ_S = {U ∩ S : U ∈ τ}. The "inherited" topology.
-                - Already used implicitly in calc-16~22 (subsets of metric spaces).
-                - Key property: inclusion map i: S ↪ X is continuous.
-                - Lee uses this for submanifolds (Ch. 5+).
-                
-                (b) Product topology:
-                - Definition: basis consists of products U₁ × U₂ of open sets.
-                - Finite products: product of metric spaces is metrizable.
-                - Projection maps π_i are continuous and open.
-                - Product of Hausdorff = Hausdorff. Product of second countable 
-                  (countable products) = second countable.
-                - Tychonoff's theorem: product of compact = compact (used in 
-                  calc-26 Banach-Alaoglu proof!). State but don't re-prove.
-                - Lee uses this for product manifolds (M × N).
-                
-                (c) Quotient topology:
-                - Definition: U open in X/~ iff π⁻¹(U) open in X.
-                - Quotient map π: X → X/~ is continuous and surjective by construction.
-                - WARNING: quotient of Hausdorff may not be Hausdorff.
-                - Key examples:
-                  * Circle S¹ = [0,1]/(0 ~ 1)
-                  * Torus T² = R²/Z²
-                  * Real projective space RP^n = S^n/(x ~ -x)
-                  * Möbius band
-                - Lee uses this extensively for Lie group quotients G/H (Ch. 7+).
-                
-                CS CONNECTION: 
-                - Product topology: parameter spaces of multi-component models 
-                  (each factor is a manifold — e.g., SE(3) ≅ SO(3) ⋉ R³).
-                - Quotient topology: orbifolds in GDL, gauge equivalence classes 
-                  in physics-informed neural networks.
-                
-                LEE REFERENCE: Appendix A, pp. 614–623 ("Subspaces" through 
-                "Quotient Spaces"); also Ch. 3 pp. 56–64 for manifold examples.
-            -->
             <section id="constructions" class="section-content">
                 <h2>Subspace, Product & Quotient Topologies</h2>
 
                 <p>
-                    <!-- TODO: Content after reading Lee Appendix A pp. 614–623 -->
+                    With the language of topological spaces, separation, and countability 
+                    in hand, we turn to the three fundamental <em>constructions</em> for 
+                    building new topological spaces from existing ones. Every manifold 
+                    we will encounter is assembled from these operations: submanifolds 
+                    inherit the subspace topology, product manifolds like 
+                    \(M \times N\) carry the product topology, and orbit spaces like 
+                    \(G/H\) are formed via quotients. Mastering these constructions now 
+                    is essential for the chapters ahead.
                 </p>
+
+                
+                <h3 id="subspace">Subspace Topology</h3>
+
+                <p>
+                    Throughout <a href="metric_space.html"><strong>Metric Spaces</strong></a> 
+                    through <a href="homeomorphism.html"><strong>Homeomorphism</strong></a>, 
+                    we freely worked with subsets of metric spaces — open intervals in 
+                    \(\mathbb{R}\), spheres in \(\mathbb{R}^n\), closed subspaces of 
+                    Banach spaces — always assuming that the "natural" topology on a subset 
+                    is the one inherited from the ambient space. Let us now make this precise.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Subspace Topology</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space and \(S \subseteq X\). 
+                        The <strong>subspace topology</strong> (or <strong>induced topology</strong>) 
+                        on \(S\) is
+                        \[
+                        \tau_S = \{ U \cap S : U \in \tau \}.
+                        \]
+                        The pair \((S, \tau_S)\) is called a <strong>subspace</strong> of \(X\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Verification:</span>
+                    <p>
+                        We check the three axioms. (1) \(\emptyset = \emptyset \cap S \in \tau_S\) 
+                        and \(S = X \cap S \in \tau_S\). 
+                        (2) If \(\{U_\alpha \cap S\}\) is a family in \(\tau_S\), then 
+                        \(\bigcup_\alpha (U_\alpha \cap S) = (\bigcup_\alpha U_\alpha) \cap S \in \tau_S\) 
+                        since \(\bigcup_\alpha U_\alpha \in \tau\). 
+                        (3) Similarly, a finite intersection 
+                        \(\bigcap_{k=1}^n (U_k \cap S) = (\bigcap_{k=1}^n U_k) \cap S \in \tau_S\).
+                    </p>
+                </div>
+
+                <p>
+                    The subspace topology is characterized by a universal property: the 
+                    <strong>inclusion map</strong> \(\iota : S \hookrightarrow X\) defined by 
+                    \(\iota(s) = s\) is continuous, and \(\tau_S\) is the coarsest topology 
+                    on \(S\) for which this holds. Moreover, a function \(f : Y \to S\) 
+                    (from any topological space \(Y\)) is continuous if and only if the 
+                    composition \(\iota \circ f : Y \to X\) is continuous. This means we 
+                    can check continuity of maps into subspaces by checking continuity 
+                    into the ambient space — a technique we have used implicitly 
+                    throughout the metric-space chapters.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Inheritance of Properties</span>
+                    <p>
+                        Let \(S\) be a subspace of \(X\).
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>If \(X\) is Hausdorff, then \(S\) is Hausdorff.</li>
+                        <li>If \(X\) is first (resp. second) countable, then so is \(S\).</li>
+                    </ul>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For the Hausdorff property: if \(s_1 \neq s_2\) in \(S\), choose 
+                        disjoint open sets \(U_1 \ni s_1\) and \(U_2 \ni s_2\) in \(X\). 
+                        Then \(U_1 \cap S\) and \(U_2 \cap S\) are disjoint open sets in 
+                        \(\tau_S\) separating \(s_1\) and \(s_2\). For countability: 
+                        if \(\mathcal{B}\) is a (countable) basis for \(\tau\), then 
+                        \(\{B \cap S : B \in \mathcal{B}\}\) is a (countable) basis for \(\tau_S\).
+                    </p>
+                </div>
+
+                
+                <h3 id="open-closed-maps">Open Maps and Closed Maps</h3>
+
+                <p>
+                    Before defining the product and quotient topologies, we need 
+                    a concept that complements continuity. A continuous map pulls 
+                    open sets <em>back</em> through preimages; an <strong>open map</strong> 
+                    pushes open sets <em>forward</em> through images.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Open Map and Closed Map</span>
+                    <p>
+                        Let \(f : X \to Y\) be a map between topological spaces.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(f\) is an <strong>open map</strong> if for every open set 
+                            \(U \subseteq X\), the image \(f(U)\) is open in \(Y\).</li>
+                        <li>\(f\) is a <strong>closed map</strong> if for every closed set 
+                            \(F \subseteq X\), the image \(f(F)\) is closed in \(Y\).</li>
+                    </ul>
+                </div>
+
+                <p>
+                    A continuous bijection is a homeomorphism if and only if it is 
+                    an open map (equivalently, a closed map). In general, continuity alone 
+                    does not imply that a map is open or closed — these are independent properties. 
+                    We will see immediately that projection maps from product spaces are 
+                    both continuous and open, while quotient maps are continuous but 
+                    not necessarily open.
+                </p>
+
+                
+                <h3 id="product">Product Topology</h3>
+
+                <p>
+                    Given topological spaces \((X_1, \tau_1)\) and \((X_2, \tau_2)\), 
+                    we want to topologize the Cartesian product \(X_1 \times X_2\) in a way 
+                    that respects both factor topologies. The correct construction uses 
+                    the basis machinery from <a href="#basis">Section 2</a>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Product Topology (Finite Case)</span>
+                    <p>
+                        Let \((X_1, \tau_1)\) and \((X_2, \tau_2)\) be topological spaces. 
+                        The <strong>product topology</strong> on \(X_1 \times X_2\) is the 
+                        topology generated by the basis
+                        \[
+                        \mathcal{B} = \{ U_1 \times U_2 : U_1 \in \tau_1,\; U_2 \in \tau_2 \}.
+                        \]
+                        More generally, for a finite product \(X_1 \times \cdots \times X_n\), 
+                        the basis consists of all products 
+                        \(U_1 \times \cdots \times U_n\) with each \(U_i \in \tau_i\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Verification of the Basis Criterion:</span>
+                    <p>
+                        (Covering) For any \((x_1, x_2) \in X_1 \times X_2\), the set 
+                        \(X_1 \times X_2\) itself is a basis element. 
+                        (Refinement) If \((x_1, x_2) \in (U_1 \times U_2) \cap (V_1 \times V_2)\), 
+                        then \((x_1, x_2) \in (U_1 \cap V_1) \times (U_2 \cap V_2)\), 
+                        which is a basis element contained in the intersection.
+                    </p>
+                </div>
+
+                <p>
+                    The <strong>projection maps</strong> \(\pi_i : X_1 \times X_2 \to X_i\) 
+                    defined by \(\pi_i(x_1, x_2) = x_i\) are the natural "coordinate extraction" 
+                    functions. They have two important properties.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Projections are Continuous and Open</span>
+                    <p>
+                        Each projection \(\pi_i : X_1 \times X_2 \to X_i\) is continuous 
+                        and an open map.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Continuity: for \(U_1 \in \tau_1\), we have 
+                        \(\pi_1^{-1}(U_1) = U_1 \times X_2\), which is open in the product 
+                        topology.
+                    </p>
+                    <p>
+                        Openness: it suffices to check on basis elements. We have 
+                        \(\pi_1(U_1 \times U_2) = U_1\) (assuming \(U_2 \neq \emptyset\)), 
+                        which is open in \(X_1\). Since images commute with unions, 
+                        \(\pi_1\) maps arbitrary open sets to open sets.
+                    </p>
+                </div>
+
+                <p>
+                    The product topology is also characterized by a universal property: 
+                    it is the coarsest topology on \(X_1 \times X_2\) making both projections 
+                    continuous. Equivalently, a function \(f : Y \to X_1 \times X_2\) 
+                    (written in components as \(f(y) = (f_1(y), f_2(y))\)) is continuous 
+                    if and only if each component \(f_i : Y \to X_i\) is continuous.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Product Preserves Hausdorff and Second Countability</span>
+                    <p>
+                        Let \(X_1, \ldots, X_n\) be topological spaces.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>If each \(X_i\) is Hausdorff, then 
+                            \(X_1 \times \cdots \times X_n\) is Hausdorff.</li>
+                        <li>If each \(X_i\) is second countable, then 
+                            \(X_1 \times \cdots \times X_n\) is second countable.</li>
+                    </ul>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (for two factors):</span>
+                    <p>
+                        Hausdorff: suppose \((x_1, x_2) \neq (y_1, y_2)\). Then \(x_i \neq y_i\) 
+                        for some \(i\). Choose disjoint open sets \(U \ni x_i\) and 
+                        \(V \ni y_i\) in \(X_i\). Then \(\pi_i^{-1}(U)\) and \(\pi_i^{-1}(V)\) 
+                        are disjoint open sets in the product separating the two points.
+                    </p>
+                    <p>
+                        Second countable: if \(\mathcal{B}_1\) and \(\mathcal{B}_2\) are 
+                        countable bases for \(X_1\) and \(X_2\), then 
+                        \(\{B_1 \times B_2 : B_1 \in \mathcal{B}_1,\; B_2 \in \mathcal{B}_2\}\) 
+                        is a countable basis for the product topology 
+                        (a countable product of countable sets is countable).
+                    </p>
+                </div>
+
+                <h4>Infinite Products and Tychonoff's Theorem</h4>
+
+                <p>
+                    For an arbitrary (possibly infinite or uncountable) family of spaces 
+                    \(\{X_\alpha\}_{\alpha \in A}\), the product topology on 
+                    \(\prod_{\alpha \in A} X_\alpha\) is defined as the coarsest topology 
+                    making every projection \(\pi_\alpha\) continuous. A basis consists of 
+                    sets of the form \(\prod_{\alpha \in A} U_\alpha\) where 
+                    \(U_\alpha \in \tau_\alpha\) for each \(\alpha\) and 
+                    \(U_\alpha = X_\alpha\) for all but <em>finitely many</em> indices. 
+                    This "finitely many constraints" condition is essential — the alternative 
+                    (the <em>box topology</em>, which allows all factors to be proper open sets 
+                    simultaneously) is too fine and fails to preserve compactness.
+                </p>
+
+                <p>
+                    The decisive theorem for infinite products is one of the deepest results 
+                    in general topology.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Tychonoff's Theorem</span>
+                    <p>
+                        An arbitrary product \(\prod_{\alpha \in A} X_\alpha\) of compact 
+                        topological spaces is compact in the product topology.
+                    </p>
+                </div>
+
+                <p>
+                    Tychonoff's theorem is logically equivalent to the Axiom of Choice. 
+                    Its proof (typically via Zorn's lemma or the theory of ultrafilters) 
+                    lies outside our scope, but we have already seen its power: 
+                    in <a href="weak_topologies.html#banach-alaoglu"><strong>Weak Topologies & 
+                    Banach-Alaoglu</strong></a>, the proof of the Banach-Alaoglu theorem 
+                    embedded the closed unit ball of \(\mathcal{X}^*\) into 
+                    \(\prod_{x \in \mathcal{X}} [-\|x\|, \|x\|]\) — a product of compact 
+                    intervals — and invoked Tychonoff to conclude compactness. 
+                    With the product topology now rigorously defined, that argument 
+                    stands on solid ground.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: Finite Products of Metric Spaces</span>
+                    <p>
+                        If \((X_1, d_1)\) and \((X_2, d_2)\) are metric spaces, the product 
+                        topology on \(X_1 \times X_2\) is metrizable. For instance, the metric 
+                        \[
+                        d\bigl((x_1, x_2),\, (y_1, y_2)\bigr) 
+                        = \max\{d_1(x_1, y_1),\, d_2(x_2, y_2)\}
+                        \]
+                        induces the product topology. (The metrics 
+                        \(d_1 + d_2\) and \(\sqrt{d_1^2 + d_2^2}\) also work — they are 
+                        all topologically equivalent.) This confirms that our metric-space 
+                        intuition for \(\mathbb{R}^n = \mathbb{R} \times \cdots \times \mathbb{R}\) 
+                        is consistent with the product topology.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Connection to Parameter Spaces in Deep Learning</h3>
+                    <p>
+                        In multi-component models, the parameter space is naturally a product. 
+                        For a robotic arm with \(n\) joints, each joint's configuration lives 
+                        in a copy of \(S^1\) (rotation) or \(\mathbb{R}\) (translation), 
+                        and the full configuration space is a product 
+                        \(S^1 \times \cdots \times S^1 \times \mathbb{R}^k\). 
+                        The product topology ensures that "small changes in each joint" 
+                        correspond to "small changes in the overall configuration" — 
+                        the correct notion of continuity for control algorithms and for 
+                        learning policies over configuration spaces.
+                    </p>
+                </div>
+
+              
+                <h3 id="quotient">Quotient Topology</h3>
+
+                <p>
+                    The subspace and product constructions build larger spaces from 
+                    existing pieces. The quotient construction goes in the opposite 
+                    direction: it <em>collapses</em> parts of a space together, 
+                    identifying points according to an equivalence relation. This is 
+                    how circles, tori, projective spaces, and Lie group quotients are 
+                    formed — it is the most powerful and the most dangerous of the three 
+                    constructions, because the resulting space can lose properties 
+                    (like Hausdorff separation) that the original space possessed.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Quotient Topology</span>
+                    <p>
+                        Let \((X, \tau)\) be a topological space and \(\sim\) an equivalence 
+                        relation on \(X\). Let \(X/{\sim}\) denote the set of equivalence 
+                        classes, and let \(\pi : X \to X/{\sim}\) be the <strong>quotient map</strong> 
+                        sending each point to its equivalence class: \(\pi(x) = [x]\). 
+                        The <strong>quotient topology</strong> on \(X/{\sim}\) is
+                        \[
+                        \tau_{X/\sim} = \{ V \subseteq X/{\sim} : \pi^{-1}(V) \in \tau \}.
+                        \]
+                        A set of equivalence classes is open if and only if the union of 
+                        those classes is open in \(X\).
+                    </p>
+                </div>
+
+                <p>
+                    By construction, \(\pi\) is continuous and surjective. The quotient 
+                    topology is the <em>finest</em> topology on \(X/{\sim}\) making \(\pi\) 
+                    continuous — it declares a set open unless doing so would force 
+                    \(\pi\) to be discontinuous.
+                </p>
+
+                <p>
+                    The quotient topology also has a universal property: a function 
+                    \(f : X/{\sim} \to Y\) is continuous if and only if \(f \circ \pi : X \to Y\) 
+                    is continuous. This "passing to the quotient" technique is used constantly 
+                    in manifold theory and algebra.
+                </p>
+
+                <h4>Key Examples</h4>
+
+                <p>
+                    The following examples illustrate how familiar geometric objects arise 
+                    as quotient spaces. Each will reappear when we study smooth manifolds.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: The Circle \(S^1\)</span>
+                    <p>
+                        Take the interval \([0, 1]\) and identify the endpoints: \(0 \sim 1\). 
+                        The quotient space \([0, 1]/{\sim}\) is homeomorphic to the 
+                        circle \(S^1\). The quotient map \(\pi : [0, 1] \to S^1\) 
+                        can be realized concretely as \(\pi(t) = e^{2\pi i t}\).
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: The Torus \(T^2\)</span>
+                    <p>
+                        Define an equivalence relation on \(\mathbb{R}^2\) by 
+                        \((x, y) \sim (x + m, y + n)\) for all \((m, n) \in \mathbb{Z}^2\). 
+                        The quotient space \(\mathbb{R}^2 / \mathbb{Z}^2\) is the 
+                        <strong>torus</strong> \(T^2 \cong S^1 \times S^1\). 
+                        Equivalently, take the unit square \([0,1]^2\) and glue opposite 
+                        edges: left to right and top to bottom.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Example: Real Projective Space \(\mathbb{R}P^n\)</span>
+                    <p>
+                        Define an equivalence relation on the sphere \(S^n\) by 
+                        \(x \sim -x\) (identifying antipodal points). The quotient space 
+                        \(S^n / {\sim}\) is the <strong>real projective space</strong> 
+                        \(\mathbb{R}P^n\). It parametrizes lines through the origin in 
+                        \(\mathbb{R}^{n+1}\): each line intersects \(S^n\) in exactly two 
+                        antipodal points, and the quotient collapses each pair to a single point.
+                    </p>
+                </div>
+
+                <h4>The Hausdorff Warning</h4>
+
+                <p>
+                    Unlike the subspace and product constructions, the quotient construction 
+                    does <strong>not</strong> automatically preserve the Hausdorff property. 
+                    We saw this in <a href="#separation">Section 3</a>: the line with two 
+                    origins is a quotient of two copies of \(\mathbb{R}\) (both Hausdorff) 
+                    that fails to be Hausdorff. This is not merely a curiosity — it is a 
+                    genuine obstacle in manifold theory.
+                </p>
+
+                <p>
+                    The critical condition is:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Hausdorff Quotients by Group Actions</span>
+                    <p>
+                        Let \(G\) be a compact topological group acting continuously on a 
+                        Hausdorff space \(X\). Then the orbit space \(X/G\) is Hausdorff.
+                    </p>
+                    <p>
+                        In the Lie group setting: if \(G\) is a Lie group and 
+                        \(H \leq G\) is a <strong>closed</strong> subgroup, then 
+                        the quotient space \(G/H\) is Hausdorff.
+                    </p>
+                </div>
+
+                <p>
+                    We state this theorem without proof — the first statement uses the 
+                    fact that compact group actions are "proper" (a notion we will not 
+                    formalize here), and the second generalizes beyond compact subgroups 
+                    using the theory of Lie groups. Both will be developed in the 
+                    chapter on Lie groups. The key takeaway is that 
+                    "closedness of the subgroup" is the gatekeeper: it is precisely the 
+                    condition ensuring that the quotient topology separates points, 
+                    as we foreshadowed in <a href="#separation">Section 3</a>.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Symmetry in Geometric Deep Learning</h3>
+                    <p>
+                        In Geometric Deep Learning, a neural network that is equivariant 
+                        under a group \(G\) effectively operates on the quotient space 
+                        of inputs modulo \(G\)-action. For the output representations to be 
+                        well-defined, the orbit space must be Hausdorff — otherwise, 
+                        "equivalent" inputs could be topologically inseparable from 
+                        "inequivalent" ones, and the network's output would be ambiguous. 
+                        The theorem above guarantees this when \(G\) acts properly, 
+                        which is satisfied by compact groups like \(\mathrm{SO}(3)\) 
+                        acting on \(\mathbb{R}^3\) — the setting of rotation-equivariant 
+                        networks for 3D point clouds.
+                    </p>
+                </div>
 
             </section>
 
 
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- SECTION 5: Paracompactness & Partitions of Unity               -->
-            <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!--
-                PURPOSE: The technical condition that makes global constructions 
-                possible on manifolds. Without this, Riemannian metrics, integration 
-                on manifolds, and de Rham cohomology cannot be defined.
-                
-                KEY CONTENT:
-                - Locally finite cover: every point has a neighborhood meeting 
-                  only finitely many sets in the cover.
-                - Refinement: a cover C' refines C if every element of C' is 
-                  contained in some element of C.
-                - Paracompact: every open cover has a locally finite open refinement.
-                - KEY THEOREM (state without proof): Every second-countable Hausdorff 
-                  space is paracompact. Hence every topological manifold is paracompact.
-                - Partition of unity: a collection {ψ_α} of continuous functions 
-                  ψ_α: X → [0,1] such that (1) supp(ψ_α) ⊂ U_α for some open cover,
-                  (2) {supp(ψ_α)} is locally finite, (3) Σ ψ_α(x) = 1 for all x.
-                - KEY THEOREM: On a paracompact Hausdorff space, partitions of unity 
-                  exist subordinate to any open cover.
-                - WHY THIS MATTERS: "Stitching local to global."
-                  * Riemannian metric: define g locally on each chart, then glue 
-                    using partition of unity → every smooth manifold admits a 
-                    Riemannian metric.
-                  * Integration: integrate a function locally, then sum using 
-                    partition of unity.
-                  * Bump functions: smooth functions with compact support, 
-                    essential for extending local constructions.
-                
-                CS CONNECTION: In GDL, equivariant maps are often defined chart-by-chart 
-                and assembled globally via partition of unity. Understanding this 
-                "local → global" machinery is essential for gauge equivariant networks.
-                
-                LEE REFERENCE: Appendix A, pp. 623–632 ("Paracompactness" through 
-                "Partitions of Unity"); also Ch. 2, pp. 44–49 (smooth partitions of 
-                unity on manifolds — the main payoff).
-            -->
             <section id="paracompact" class="section-content">
                 <h2>Paracompactness & Partitions of Unity</h2>
 
                 <p>
-                    <!-- TODO: Content after reading Lee Appendix A pp. 623–632 -->
+                    We have now assembled two of the three conditions in the definition of 
+                    a topological manifold: the Hausdorff property 
+                    (<a href="#separation">Section 3</a>) and second countability 
+                    (<a href="#basis">Section 2</a>). The third condition — 
+                    "locally Euclidean" — specifies what a manifold <em>looks like</em> 
+                    locally. But a manifold must also support <em>global</em> constructions: 
+                    Riemannian metrics, integration, and differential forms must all be 
+                    defined on the entire space, not just within individual coordinate charts. 
+                    The bridge from local to global is provided by 
+                    <strong>paracompactness</strong> and its key consequence, the existence of 
+                    <strong>partitions of unity</strong>.
+                </p>
+
+                <h3>Covers and Refinements</h3>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Open Cover</span>
+                    <p>
+                        An <strong>open cover</strong> of a topological space \(X\) is a 
+                        collection \(\{U_\alpha\}_{\alpha \in A}\) of open sets with 
+                        \(\bigcup_{\alpha \in A} U_\alpha = X\).
+                    </p>
+                </div>
+
+                <p>
+                    We encountered open covers in 
+                    <a href="compactness.html"><strong>Compactness</strong></a>, where a 
+                    space is compact if every open cover has a <em>finite</em> subcover. 
+                    Paracompactness relaxes this: instead of demanding finiteness globally, 
+                    it asks for a "locally finite" refinement.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Locally Finite and Refinement</span>
+                    <p>
+                        Let \(X\) be a topological space.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>A collection \(\{V_\beta\}_{\beta \in B}\) of subsets of \(X\) is 
+                            <strong>locally finite</strong> if every point \(x \in X\) has a 
+                            neighborhood that intersects only finitely many of the \(V_\beta\).</li>
+                        <li>A cover \(\{V_\beta\}\) is a <strong>refinement</strong> of 
+                            a cover \(\{U_\alpha\}\) if every \(V_\beta\) is contained in 
+                            some \(U_\alpha\).</li>
+                    </ul>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Paracompact Space</span>
+                    <p>
+                        A topological space \(X\) is <strong>paracompact</strong> if every 
+                        open cover of \(X\) admits a <strong>locally finite open refinement</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Every compact space is trivially paracompact (a finite subcover is 
+                    automatically locally finite). The significance of paracompactness 
+                    is that it extends this "tameness" to non-compact spaces like 
+                    \(\mathbb{R}^n\), which are not compact but are still paracompact.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Regular Lindelöf Spaces are Paracompact</span>
+                    <p>
+                        Every regular Lindelöf space is paracompact.
+                    </p>
+                </div>
+
+                <p>
+                    We state this theorem without proof — the argument is technical, 
+                    involving an iterative construction of locally finite refinements 
+                    from countable covers. (Here, <strong>regular</strong> means that 
+                    for every point \(x\) and every closed set \(F\) not containing \(x\), 
+                    there exist disjoint open sets separating them — a stronger condition 
+                    than Hausdorff.)
+                </p>
+
+                <p>
+                    Note that second countability and the Hausdorff property alone are 
+                    <em>not</em> sufficient for paracompactness — regularity is essential. 
+                    However, topological manifolds satisfy all three conditions: 
+                    a locally Euclidean space is locally compact (every point has a 
+                    neighborhood with compact closure, inherited from \(\mathbb{R}^n\)), 
+                    and a locally compact Hausdorff space is regular. Combining this with 
+                    second countability (which implies the Lindelöf property, as we proved in 
+                    <a href="#basis">Section 2</a>), we conclude:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Topological Manifolds are Paracompact</span>
+                    <p>
+                        Every topological manifold is paracompact.
+                    </p>
+                </div>
+
+                <p>
+                    The chain of implications is: locally Euclidean \(\Rightarrow\) 
+                    locally compact \(\Rightarrow\) (with Hausdorff) regular; 
+                    second countable \(\Rightarrow\) Lindelöf; regular + Lindelöf 
+                    \(\Rightarrow\) paracompact. This is why all three conditions in the 
+                    manifold definition — Hausdorff, second countable, <em>and</em> 
+                    locally Euclidean — contribute to paracompactness, even though 
+                    paracompactness is not listed explicitly.
+                </p>
+
+                <h3>Partitions of Unity</h3>
+
+                <p>
+                    Paracompactness is primarily a tool for proving the existence of 
+                    partitions of unity — the mechanism by which local data is assembled 
+                    into global objects.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Support</span>
+                    <p>
+                        The <strong>support</strong> of a continuous function 
+                        \(\psi : X \to \mathbb{R}\) is the closure of the set where 
+                        \(\psi\) is nonzero:
+                        \[
+                        \operatorname{supp}(\psi) = \overline{\{x \in X : \psi(x) \neq 0\}}.
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Partition of Unity</span>
+                    <p>
+                        Let \(\{U_\alpha\}_{\alpha \in A}\) be an open cover of a 
+                        topological space \(X\). A <strong>partition of unity subordinate 
+                        to \(\{U_\alpha\}\)</strong> is a collection of continuous functions 
+                        \(\{\psi_\alpha : X \to [0, 1]\}_{\alpha \in A}\) satisfying:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li><strong>(Subordinate)</strong> 
+                            \(\operatorname{supp}(\psi_\alpha) \subseteq U_\alpha\) 
+                            for each \(\alpha\).</li>
+                        <li><strong>(Locally finite)</strong> 
+                            The collection \(\{\operatorname{supp}(\psi_\alpha)\}\) is 
+                            locally finite.</li>
+                        <li><strong>(Partition)</strong> 
+                            \(\displaystyle\sum_{\alpha \in A} \psi_\alpha(x) = 1\) 
+                            for every \(x \in X\).</li>
+                    </ol>
+                    <p>
+                        The local finiteness condition in (2) ensures that the sum in (3) 
+                        is actually a finite sum at each point — only finitely many 
+                        \(\psi_\alpha\) are nonzero in any neighborhood.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Existence of Partitions of Unity</span>
+                    <p>
+                        On a paracompact Hausdorff space, for every open cover 
+                        \(\{U_\alpha\}\), there exists a partition of unity 
+                        subordinate to \(\{U_\alpha\}\).
+                    </p>
+                </div>
+
+                <p>
+                    Again we state without proof. The construction uses the Hausdorff property 
+                    to build "bump functions" (continuous functions with support inside a given 
+                    open set), paracompactness to ensure the supports form a locally finite 
+                    collection, and normalization to achieve the partition condition.
+                </p>
+
+                <h3>Why Partitions of Unity Matter: Local to Global</h3>
+
+                <p>
+                    The phrase <strong>"stitching local to global"</strong> captures the 
+                    essential role of partitions of unity. The idea is simple but 
+                    extraordinarily powerful: suppose we have a construction that works 
+                    locally on each open set \(U_\alpha\) of a cover. A partition of unity 
+                    allows us to combine these local pieces into a single global object 
+                    by taking a weighted sum, where the weights \(\psi_\alpha\) smoothly 
+                    "fade out" each local piece outside its domain.
+                </p>
+
+                <p>
+                    Three foundational applications will appear in the chapters ahead:
+                </p>
+
+                <p>
+                    <strong>Riemannian metrics.</strong> On a smooth manifold \(M\), 
+                    each coordinate chart \((U_\alpha, \varphi_\alpha)\) provides a local 
+                    inner product on tangent vectors (pulled back from the standard inner 
+                    product on \(\mathbb{R}^n\)). Using a smooth partition of unity 
+                    \(\{\psi_\alpha\}\), we define a global inner product by 
+                    \(g_x(v, w) = \sum_\alpha \psi_\alpha(x) \cdot g_{\alpha, x}(v, w)\). 
+                    This is a positive-definite inner product at each point (a convex combination 
+                    of positive-definite forms), and the local finiteness ensures the sum 
+                    is finite. The conclusion: <em>every smooth manifold admits a 
+                    Riemannian metric</em>. Without partitions of unity, we would have 
+                    no way to guarantee this.
+                </p>
+
+                <p>
+                    <strong>Integration.</strong> To integrate a function over a manifold, 
+                    we split it into pieces \(f = \sum_\alpha \psi_\alpha f\), each supported 
+                    in a single chart, integrate each piece using the local coordinate 
+                    representation, and sum the results.
+                </p>
+
+                <p>
+                    <strong>Extension of local constructions.</strong> A function or 
+                    tensor field defined on a small open set can be extended to the 
+                    entire manifold by multiplying by a bump function (a partition of 
+                    unity function with support in that set).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Connection to Geometric Deep Learning</h3>
+                    <p>
+                        In Geometric Deep Learning, equivariant feature maps on a 
+                        manifold are often defined chart-by-chart: within each local 
+                        coordinate patch, one constructs a convolution or message-passing 
+                        operation. The global feature map is then assembled using a 
+                        partition of unity, exactly as with Riemannian metrics above. 
+                        This "local → global" pattern — define locally where coordinates 
+                        are available, stitch globally using the partition — is the 
+                        fundamental architecture behind gauge equivariant networks. 
+                        Understanding partitions of unity is understanding the glue 
+                        that holds these constructions together.
+                    </p>
+                </div>
+
+                <h3>Looking Ahead: The Topological Manifold</h3>
+
+                <p>
+                    We now have all the tools required to state the definition toward 
+                    which this entire chapter has been building.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Locally Euclidean</span>
+                    <p>
+                        A topological space \(X\) is <strong>locally Euclidean of 
+                        dimension \(n\)</strong> if every point \(x \in X\) has a neighborhood 
+                        \(U\) that is homeomorphic to an open subset of \(\mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Topological Manifold</span>
+                    <p>
+                        A <strong>topological manifold of dimension \(n\)</strong> is a 
+                        topological space \(M\) that is:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li><strong>Hausdorff</strong> 
+                            (<a href="#separation">Section 3</a>) — limits are unique, 
+                            compact subsets are closed.</li>
+                        <li><strong>Second countable</strong> 
+                            (<a href="#basis">Section 2</a>) — paracompactness and 
+                            partitions of unity are guaranteed.</li>
+                        <li><strong>Locally Euclidean of dimension \(n\)</strong> — 
+                            locally, \(M\) looks like \(\mathbb{R}^n\).</li>
+                    </ol>
+                </div>
+
+                <p>
+                    Each condition plays a distinct role, and we have seen what goes wrong 
+                    when any is dropped: without Hausdorff, we get the line with two origins 
+                    (<a href="#separation">Section 3</a>); without second countability, 
+                    we lose paracompactness, partitions of unity, and embeddability 
+                    (<a href="#basis">Section 2</a>); and without locally Euclidean, 
+                    we have no coordinate charts to work with at all.
+                </p>
+
+                <p>
+                    A topological manifold gives us local coordinates and global 
+                    well-behavedness — but it does not yet give us calculus. 
+                    To differentiate functions, define tangent vectors, and construct 
+                    differential forms, we need the coordinate transitions between 
+                    overlapping charts to be <em>smooth</em>. This additional structure — 
+                    a <strong>smooth atlas</strong> — is the subject of the next chapter, 
+                    where we pass from topological manifolds to <strong>smooth manifolds</strong>.
                 </p>
 
             </section>
