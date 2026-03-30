@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 3/29/2026 
+**Last Updated:** 3/31/2026 
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -81,11 +81,11 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                product/quotient)✅      (Hölder,          │                       Intro to Homology
      │                       │               Minkowski)✅        │                       (disc-15) ✅
      │                       │                    │              │                            │
-     │                       │                    ├──────── prob-22: Measure-                 │
+     │                       │                    ├──────── prob-22&23: Measure-              │
      │                       │                    │         Theoretic Probability             │
      │                       │                    │         (RV as measurable fn,             │
      │                       │                    │          convergence thms,                │
-     │                       │               calc-31:        Fubini)                          │
+     │                       │               calc-31:        Fubini)✅✅                     │
      │                       │               Fourier in          │                            │
      │                       │               Hilbert Spaces      │                            │
      ├───────────────────────┤                    │              │                            │
@@ -116,19 +116,19 @@ Theory (Intro)         Metrics & Geodesics        │              │          
 
 ### Section II — Pure Analysis & Topology
 
-#### calc-29: Topological Spaces & Manifold Prerequisites
+#### calc-29: Topological Spaces & Manifold Prerequisites✅
 - **Status:** Skeleton complete (5 sections with detailed TODO comments).
 - **Goal:** Bridge metric spaces (calc-16~22) to axiomatic topology. Prepare for Lee Ch. 1–2.
 - **Sections:** From Metrics to Axioms → Bases & Countability → Hausdorff & Separation → Subspace/Product/Quotient Topologies → Paracompactness & Partitions of Unity.
 
-#### calc-30: Lp Spaces & Riesz-Fischer
+#### calc-30: Lp Spaces & Riesz-Fischer✅
 - **Goal:** Formalize completeness of function spaces, closing the proof debt from calc-25 (Hölder's inequality deferred) and grounding the Lp duality used throughout the FA block.
 - **Topics:** Hölder's inequality (full proof), Minkowski's inequality, Riesz-Fischer theorem (completeness of Lp), complex Lp spaces.
 - **Narrative:** Why probability, signal processing, and quantum mechanics all require a complete function space.
 
 ### Section III — Measure-Theoretic Probability
 
-#### prob-22: Measure-Theoretic Probability
+#### prob-22&23: Measure-Theoretic Probability✅✅
 - **Timing:** Concurrent with calc-30 (June). calc-30 attacks Lp from the analysis side; prob-22 illuminates it from the probability side. Together they close the gap between calc-11/12 (measure & Lebesgue) and prob-1~21 (classical probability).
 - **Goal:** Translate the measure-theoretic machinery of calc-11 (σ-algebras, probability measures) and calc-12 (Lebesgue integral, a.e./a.s.) into the language of Section III, providing the rigorous foundation that prob-1~13 assumed informally.
 - **Prereqs:** calc-11 (Measure Theory), calc-12 (Lebesgue Integration), prob-2 (Random Variables), prob-13 (Convergence).
@@ -229,25 +229,34 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 
 ---
 
-## Updated Schedule (2026)
+## Schedule & Sprint Plan
 
-| Month | Section I (Algebra) | Section II (Analysis/Geometry) | Section III (Probability) | Section IV (Discrete) | Section V (ML) |
-|-------|---------------------|-------------------------------|--------------------------|----------------------|----------------|
-| **Mar** | Algebraic Ext / Finite Fields ✅ | FA Block (calc-24~28) ✅ | — | disc-12~14 (Simplicial) ✅ | — |
-| **Apr** | — | — | — | disc-15 (Homology) ✅ | — |
-| **May** | — | **calc-29** (Topological Spaces)✅ | — | — | — |
-| **Jun** | **linalg-27** (Lie Groups) | **calc-30** (Lp & Riesz-Fischer)✅ | **prob-22** (Measure-Theoretic Probability) | — | — |
-| **Jul** | — | **calc-31** (Fourier in Hilbert Spaces) | — | — | **ml-13** (GNN) |
-| **Aug** | linalg-28 (Rep Theory) | **calc-32** (Smooth Manifolds) | — | — | ml-14 (Equivariant NN) |
-| **Sep** | — | **calc-33** (Riemannian Metrics) | — | disc-16~17 (Quivers, Categories) | — |
-| **Oct+** | — | — | — | disc-18 (DEC & Hodge) | GDL / CDL viewpoints |
+*Note: With AI-assisted development, output generation has accelerated significantly. We have transitioned from strict monthly schedules to an agile, sprint-based backlog. The focus shifts from "writing speed" to "reading, conceptualizing, and instructional design."*
 
-**Notes on pacing:**
-- May is dedicated to calc-29 alone — it is dense (5 substantial sections) and requires careful Lee reading.
-- June is the busiest month: three independent tracks (linalg-27, calc-30, prob-22). calc-30 and prob-22 are complementary — the same Lp material viewed from analysis and probability respectively — so writing them in tandem is efficient. linalg-27 provides a change of pace.
-- Manifold pages (calc-32, 33) are deliberately spaced — Lee Ch. 1–3 requires deep reading.
-- Section IV resumes in September once the continuous geometry is mature enough for DEC to cross-reference.
-- Section V bridge pages (ml-13, ml-14) can be written whenever their prerequisites are met; scheduled here as interleaving options.
+### Completed Early (March 2026)
+- **calc-29** (Topological Spaces)
+- **calc-30** (Lp Spaces & Riesz-Fischer)
+- **prob-22 & prob-23** (Measure-Theoretic Probability)
+
+### Current Sprint (Target: April 2026)
+*Focus: Concluding Hilbert space analysis, introducing continuous symmetries, and bridging to modern ML.*
+- **calc-31**: Fourier in Hilbert Spaces (Plancherel, Uncertainty Principle)
+- **linalg-27**: Lie Groups & Lie Algebras (Matrix groups, exponential map)
+- **ml-13**: Graph Neural Networks (Applying disc-15 and linalg-14 to permutation equivariance)
+- *Background Reading:* Lee's *Smooth Manifolds* Ch. 1-3.
+
+### Next Sprint (Target: May 2026)
+*Focus: Deep continuous geometry and continuous equivariant networks.*
+- **calc-32**: Smooth Manifolds & Tangent Spaces
+- **linalg-28**: Representation Theory (Intro)
+- **ml-14**: Equivariant Neural Networks (Applying linalg-27/28 to network architectures)
+
+### Future Backlog (Summer 2026)
+*Focus: Categorical foundations, discrete geometry, and ultimate viewpoints.*
+- **calc-33**: Riemannian Metrics
+- **disc-16 & 17**: Quivers and Category Theory
+- **disc-18**: Discrete Exterior Calculus (DEC)
+- **Viewpoints**: GDL Overview (ml-15), CDL Overview (ml-16)
 
 ---
 
@@ -300,13 +309,14 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 | calc-27 | `spectral_theory.html` |  ✅ |
 | calc-28 | `rkhs.html` | ✅ |
 | calc-29 | `topological_spaces.html` |  ✅ |
-| calc-30 | `lp_spaces.html` | Draft  |
+| calc-30 | `lp_spaces.html` |  ✅  |
 | calc-31 | `fourier_hilbert.html` | Planned |
 | calc-32 | `smooth_manifolds.html` | Planned |
 | calc-33 | `riemannian_metrics.html` | Planned |
 | linalg-27 | `lie_groups.html` | Planned |
 | linalg-28 | `representation_theory.html` | Planned |
-| prob-22 | `measure_probability.html` | Planned |
+| prob-22 | `measure_probability.html` | ✅ |
+| prob-23 | `limit_theorems_product_measures.html` | ✅ |
 | ml-13 | `graph_neural_networks.html` | Planned |
 | ml-14 | `equivariant_nn.html` | Planned |
 | disc-16 | `quivers.html` | Planned |
@@ -360,6 +370,7 @@ Which books serve which pages. All references are listed on the site-wide index;
 ---
 
 ## Changelog
+- **3/31/2026:**Finished prob-22 and prob-23. Updated Schedule & Sprint Plan.
 - **3/29/2026:**Finished calc-29 and calc-30.
 - **3/28/2026:** Major roadmap revision following strategic review.
   - Replaced "three pillars / terminal goals" framing with "three application domains as viewpoints" philosophy.
