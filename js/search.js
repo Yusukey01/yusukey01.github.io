@@ -407,9 +407,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pagePath = result.path.startsWith('/') ? result.path.substring(1) : result.path;
                 const fullPath = siteRoot + pagePath;
                 
-                // Add section badge
+                // Add section badge with section-specific color
+                const sectionColors = {
+                    'I':   '#1565c0',
+                    'II':  '#2e7d32',
+                    'III': '#00838f',
+                    'IV':  '#6a1b9a',
+                    'V':   '#ef6c00'
+                };
+                const badgeColor = sectionColors[result.section] || '';
+                const badgeStyle = badgeColor ? ` style="background-color:${badgeColor}"` : '';
                 const sectionBadge = result.section && result.section !== 'HOME' 
-                    ? `<span class="result-section">Section ${result.section}</span>` 
+                    ? `<span class="result-section"${badgeStyle}>Section ${result.section}</span>` 
                     : '';
                 
                 // Add match type indicator
