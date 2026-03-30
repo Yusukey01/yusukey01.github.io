@@ -127,6 +127,39 @@
                 applyFilter(activeFilter());
             });
         });
+        /* ── Default collapsed ── */
+        initReferencesCollapse();
+    
+        function initReferencesCollapse() {
+            const section = document.getElementById('references');
+            if (!section) return;
+            const heading = section.querySelector('h2');
+            if (!heading) return;
+
+            // Initial state: collapsed
+            CONTAINER.classList.add('ref-collapsed');
+            heading.classList.add('ref-heading-toggle');
+            heading.setAttribute('role', 'button');
+            heading.setAttribute('aria-expanded', 'false');
+            heading.setAttribute('tabindex', '0');
+
+            // Add chevron indicator
+            const chevron = document.createElement('i');
+            chevron.className = 'fas fa-chevron-down ref-collapse-icon';
+            heading.appendChild(chevron);
+
+            function toggle() {
+                const collapsed = CONTAINER.classList.toggle('ref-collapsed');
+                heading.setAttribute('aria-expanded', !collapsed);
+                chevron.className = 'fas ref-collapse-icon ' +
+                    (collapsed ? 'fa-chevron-down' : 'fa-chevron-up');
+            }
+
+            heading.addEventListener('click', toggle);
+            heading.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            });
+        }
     }
 
     /* ── DOM helpers ── */
