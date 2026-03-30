@@ -1,0 +1,321 @@
+---
+layout: default
+title: "Measure-Theoretic Probability"
+topic_id: prob-22
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Measure-Theoretic Probability</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#measurable-rv">Random Variables as Measurable Functions</a>
+            <a href="#expectation">Expectation as Lebesgue Integral</a>
+            <a href="#convergence-theorems">Convergence Theorems for Probability</a>
+            <a href="#independence">Independence and Product Measures</a>
+        </div>  
+
+        <div class="container">   
+
+            <p>
+                In our early study of probability, we were forced to treat discrete and continuous 
+                random variables as two separate worlds — one ruled by summation \(\sum\), 
+                the other by integration \(\int\). In 
+                <a href="random_variables.html#rv"><strong>Random Variables</strong></a>, 
+                we defined a random variable simply as a function \(X : S \to \mathbb{R}\) that assigns 
+                a numerical value to each outcome, and we computed expectations by 
+                summation for discrete variables and by integration against a density for continuous ones.
+            </p>
+
+            <p>
+                But nature does not divide data into such neat categories. A mixed distribution — partly 
+                discrete, partly continuous — cannot be handled cleanly by either formula alone. 
+                And fundamental questions remain unanswered: <em>when</em> can we interchange limits 
+                and expectations? <em>Why</em> does the independence assumption \(P(A \cap B) = P(A)P(B)\) 
+                justify treating samples as separate coordinates? These questions require a language 
+                more precise than the one we have built so far.
+            </p>
+
+            <p>
+                The tools to answer them already exist. In 
+                <a href="../Calculus/measure.html#sigma"><strong>Measure Theory</strong></a>, 
+                we constructed the \(\sigma\)-algebra and probability measure as the 
+                mathematical substrate of randomness. In 
+                <a href="../Calculus/lebesgue.html#abs"><strong>Lebesgue Integration</strong></a>, 
+                we built an integral powerful enough to handle highly irregular functions on 
+                arbitrary measure spaces. In 
+                <a href="../Calculus/lp_spaces.html"><strong>\(L^p\) Spaces</strong></a>, 
+                we proved that the resulting function spaces are complete.
+            </p>
+
+            <p>
+                This chapter brings these tools to bear on probability. We do not repeat the 
+                definitions of \(\sigma\)-algebras, measures, or the Lebesgue integral — those 
+                foundations are in place. Instead, we <strong>translate</strong>: each concept from 
+                classical probability receives its measure-theoretic formulation, and each 
+                measure-theoretic theorem receives its probabilistic name. The result is a unified 
+                framework in which discrete sums, continuous integrals, and mixed distributions are 
+                all special cases of a single operation: integration against a measure.
+            </p>
+
+
+            <section id="measurable-rv" class="section-content">
+                <h2>Random Variables as Measurable Functions</h2>
+
+                <p>
+                    In <a href="random_variables.html#rv"><strong>Random Variables</strong></a>, 
+                    we defined a random variable as "a function \(X : S \to \mathbb{R}\) that assigns 
+                    a numerical value to each outcome in the sample space." This definition is correct 
+                    in spirit but incomplete in one critical respect: it imposes no condition on 
+                    <em>which</em> functions qualify. In the measure-theoretic framework, 
+                    not every function from \(\Omega\) to \(\mathbb{R}\) deserves to be called a 
+                    random variable — only those compatible with the \(\sigma\)-algebra structure 
+                    that determines which events can be assigned probabilities.
+                </p>
+
+                <h3>The Measurability Condition</h3>
+
+                <p>
+                    Let \((\Omega, \mathcal{F}, \mathbb{P})\) be a 
+                    <a href="../Calculus/measure.html#pspace"><strong>probability space</strong></a>, 
+                    and let \((\mathbb{R}, \mathcal{B}(\mathbb{R}))\) be the real line equipped with its 
+                    <a href="../Calculus/measure.html#borel"><strong>Borel \(\sigma\)-algebra</strong></a> 
+                    — the \(\sigma\)-algebra generated by all open intervals.
+                </p>
+
+                <div class="theorem" id="rv-measurable">
+                    <span class="theorem-title">Definition: Random Variable (Measure-Theoretic)</span>
+                    <p>
+                        A <strong>random variable</strong> is a measurable function 
+                        \(X : (\Omega, \mathcal{F}) \to (\mathbb{R}, \mathcal{B}(\mathbb{R}))\). 
+                        That is, \(X\) satisfies the <strong>measurability condition</strong>:
+                        \[
+                        X^{-1}(B) \;=\; \{\omega \in \Omega : X(\omega) \in B\} \;\in\; \mathcal{F}
+                        \quad \text{for every } B \in \mathcal{B}(\mathbb{R}).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The condition asks: for every "reasonable" subset \(B\) of the real line (every Borel set), 
+                    the set of outcomes \(\omega\) for which \(X(\omega)\) lands in \(B\) must be an event — 
+                    that is, a member of \(\mathcal{F}\), to which \(\mathbb{P}\) can assign a probability. 
+                    Without this condition, the expression \(\mathbb{P}(X \in B)\) might be undefined: 
+                    we would be asking for the probability of a set that our \(\sigma\)-algebra does not recognize.
+                </p>
+
+                <p>
+                    In practice, measurability is verified via a useful shortcut. Since 
+                    \(\mathcal{B}(\mathbb{R})\) is generated by half-lines \((-\infty, a]\), it suffices 
+                    to check preimages of these generators:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Measurability via Half-Lines</span>
+                    <p>
+                        A function \(X : \Omega \to \mathbb{R}\) is measurable with respect to 
+                        \((\mathcal{F}, \mathcal{B}(\mathbb{R}))\) if and only if
+                        \[
+                        \{\omega \in \Omega : X(\omega) \leq a\} \in \mathcal{F}
+                        \quad \text{for every } a \in \mathbb{R}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    This connects directly to the familiar CDF: the measurability condition is precisely 
+                    the requirement that the cumulative distribution function 
+                    \(F_X(a) = \mathbb{P}(X \leq a)\) is well-defined for every \(a \in \mathbb{R}\).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Why Not Every Function Qualifies:</span>
+                    <p>
+                        On an abstract probability space, the \(\sigma\)-algebra \(\mathcal{F}\) can be 
+                        much smaller than the power set \(2^\Omega\). Consider 
+                        \(\Omega = \{H, T\}\) with \(\mathcal{F} = \{\emptyset, \Omega\}\) — the 
+                        trivial \(\sigma\)-algebra. Define \(X(H) = 1\) and \(X(T) = 0\). Then 
+                        \(X^{-1}((-\infty, 0.5]) = \{T\}\), but \(\{T\} \notin \mathcal{F}\). 
+                        So \(\mathbb{P}(X \leq 0.5)\) is undefined — this \(X\) is not a random variable 
+                        with respect to this \(\sigma\)-algebra.
+                    </p>
+                    <p>
+                        The issue disappears if we enlarge to \(\mathcal{F} = \{\emptyset, \{H\}, \{T\}, \Omega\}\), 
+                        because every preimage of a Borel set now belongs to \(\mathcal{F}\). 
+                        The lesson is that "being a random variable" is not an intrinsic property of a function — 
+                        it depends on the relationship between the function and the \(\sigma\)-algebra.
+                    </p>
+                </div>
+
+                <h3>The Distribution of a Random Variable</h3>
+
+                <p>
+                    Given a random variable \(X\), we constantly ask questions of the form 
+                    "\(\mathbb{P}(X \in B)\) for various Borel sets \(B\)." This collection of 
+                    probabilities is itself a measure on \((\mathbb{R}, \mathcal{B}(\mathbb{R}))\), 
+                    and it encodes everything we need to know about \(X\) from a probabilistic standpoint.
+                </p>
+
+                <div class="theorem" id="pushforward">
+                    <span class="theorem-title">Definition: Distribution (Pushforward Measure)</span>
+                    <p>
+                        Let \(X : (\Omega, \mathcal{F}, \mathbb{P}) \to (\mathbb{R}, \mathcal{B}(\mathbb{R}))\) 
+                        be a random variable. The <strong>distribution</strong> (or <strong>law</strong>) 
+                        of \(X\) is the probability measure \(P_X\) on \((\mathbb{R}, \mathcal{B}(\mathbb{R}))\) 
+                        defined by
+                        \[
+                        P_X(B) \;=\; \mathbb{P}(X \in B) \;=\; \mathbb{P}\bigl(X^{-1}(B)\bigr)
+                        \quad \text{for every } B \in \mathcal{B}(\mathbb{R}).
+                        \]
+                        This measure is also called the <strong>pushforward</strong> of \(\mathbb{P}\) 
+                        by \(X\), and is written \(P_X = \mathbb{P} \circ X^{-1}\).
+                    </p>
+                </div>
+
+                <p>
+                    That \(P_X\) is indeed a probability measure follows immediately from the properties 
+                    of \(\mathbb{P}\): we have \(P_X(\mathbb{R}) = \mathbb{P}(X^{-1}(\mathbb{R})) = \mathbb{P}(\Omega) = 1\), 
+                    and countable additivity of \(P_X\) is inherited from countable additivity of \(\mathbb{P}\) 
+                    because preimages preserve disjoint unions.
+                </p>
+
+                <p>
+                    The pushforward perspective reveals that all the information about \(X\) that matters 
+                    probabilistically — its CDF, its moments, its tail behavior — is encoded in the single 
+                    measure \(P_X\) on \(\mathbb{R}\). Two random variables defined on entirely different 
+                    probability spaces can have the same distribution, and from the perspective of 
+                    any question answerable by \(P_X\) alone, they are indistinguishable.
+                </p>
+
+                <h3>Recovering PMFs and PDFs</h3>
+
+                <p>
+                    The pushforward framework unifies the discrete and continuous cases that were treated 
+                    separately in <a href="random_variables.html#rv"><strong>Random Variables</strong></a>.
+                </p>
+
+                <p>
+                    <strong>Discrete case.</strong> If \(X\) takes values in a countable set 
+                    \(\{x_1, x_2, \ldots\}\), then \(P_X\) is concentrated on these points:
+                    \[
+                    P_X(B) \;=\; \sum_{k:\, x_k \in B} \mathbb{P}(X = x_k) 
+                    \;=\; \sum_{k:\, x_k \in B} p(x_k).
+                    \]
+                    Here \(p(x_k) = \mathbb{P}(X = x_k)\) is the probability mass function. 
+                    Formally, \(P_X\) is the weighted sum of point masses: 
+                    \(P_X = \sum_k p(x_k) \, \delta_{x_k}\), where \(\delta_{x_k}(B) = 1\) if 
+                    \(x_k \in B\) and \(0\) otherwise. The measure \(P_X\) is 
+                    <strong>singular</strong> with respect to the 
+                    <a href="../Calculus/measure.html#leb"><strong>Lebesgue measure</strong></a> \(\lambda\): 
+                    it is supported on a countable set, which has \(\lambda\)-measure zero.
+                </p>
+
+                <p>
+                    <strong>Continuous case.</strong> If \(P_X\) is 
+                    <strong>absolutely continuous</strong> with respect to 
+                    \(\lambda\) — meaning \(\lambda(B) = 0\) implies \(P_X(B) = 0\) — then 
+                    there exists a nonnegative measurable function \(f_X\) such that
+                    \[
+                    P_X(B) \;=\; \int_B f_X(x) \, d\lambda(x)
+                    \quad \text{for every } B \in \mathcal{B}(\mathbb{R}).
+                    \]
+                    The function \(f_X\) is the probability density function (PDF), 
+                    and the relationship is written compactly as
+                    \[
+                    f_X \;=\; \frac{dP_X}{d\lambda},
+                    \]
+                    the <strong>Radon-Nikodym derivative</strong> of \(P_X\) with respect to \(\lambda\).
+                </p>
+
+                <p>
+                    The Radon-Nikodym theorem guarantees the existence of \(f_X\) whenever 
+                    \(P_X \ll \lambda\) (absolute continuity). We do not prove this theorem here — 
+                    the full proof requires additional machinery — but we use the result freely. 
+                    This perspective elevates the PDF from "the derivative of the CDF" to 
+                    a precise statement about how one measure relates to another: the density 
+                    \(f_X(x)\) measures the local rate at which \(P_X\) accumulates probability 
+                    relative to the rate at which \(\lambda\) accumulates length.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The End of the Discrete-Continuous Dichotomy</h3>
+                    <p>
+                        The pushforward measure \(P_X\) treats all random variables uniformly. 
+                        A discrete variable has \(P_X\) concentrated on isolated points. 
+                        A continuous variable has \(P_X\) spread smoothly via a density. 
+                        A <strong>mixed</strong> distribution — for example, a variable that 
+                        equals zero with probability \(1/2\) and is otherwise uniformly 
+                        distributed on \([0,1]\) — is simply a measure that has both a point mass 
+                        and an absolutely continuous component:
+                        \[
+                        P_X \;=\; \tfrac{1}{2}\,\delta_0 \;+\; \tfrac{1}{2}\,\lambda\big|_{[0,1]}.
+                        \]
+                        No special formulas are needed. The Lebesgue integral against \(P_X\) handles 
+                        all three cases — discrete, continuous, and mixed — in a single expression. 
+                        This unification is not aesthetic convenience; it is essential for modern 
+                        machine learning, where models like 
+                        <a href="../Machine_learning/vae.html#vi"><strong>variational autoencoders</strong></a> 
+                        routinely operate on distributions that mix discrete and continuous components.
+                    </p>
+                </div>
+
+                <h3>Random Vectors and Measurability</h3>
+
+                <p>
+                    Everything above extends to vector-valued random variables. A 
+                    <strong>random vector</strong> 
+                    \(\mathbf{X} = (X_1, \ldots, X_d) : \Omega \to \mathbb{R}^d\) is measurable 
+                    with respect to \((\mathcal{F}, \mathcal{B}(\mathbb{R}^d))\), where 
+                    \(\mathcal{B}(\mathbb{R}^d)\) is the Borel \(\sigma\)-algebra on \(\mathbb{R}^d\). 
+                    A convenient fact simplifies verification:
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Component-wise Measurability</span>
+                    <p>
+                        A function \(\mathbf{X} = (X_1, \ldots, X_d) : \Omega \to \mathbb{R}^d\) is 
+                        \((\mathcal{F}, \mathcal{B}(\mathbb{R}^d))\)-measurable if and only if 
+                        each component \(X_i : \Omega \to \mathbb{R}\) is 
+                        \((\mathcal{F}, \mathcal{B}(\mathbb{R}))\)-measurable.
+                    </p>
+                </div>
+
+                <p>
+                    This follows from the fact that 
+                    \(\mathcal{B}(\mathbb{R}^d) = \mathcal{B}(\mathbb{R}) \otimes \cdots \otimes \mathcal{B}(\mathbb{R})\) 
+                    (the product \(\sigma\)-algebra), which is generated by sets of the form 
+                    \(B_1 \times \cdots \times B_d\) with each \(B_i \in \mathcal{B}(\mathbb{R})\). 
+                    Since \(\mathbf{X}^{-1}(B_1 \times \cdots \times B_d) = \bigcap_{i=1}^d X_i^{-1}(B_i)\), 
+                    component-wise measurability ensures that all preimages of generators belong to \(\mathcal{F}\), 
+                    which suffices.
+                </p>
+
+                <p>
+                    The distribution of a random vector is the pushforward 
+                    \(P_{\mathbf{X}} = \mathbb{P} \circ \mathbf{X}^{-1}\) on 
+                    \((\mathbb{R}^d, \mathcal{B}(\mathbb{R}^d))\). When \(P_{\mathbf{X}}\) 
+                    has a density \(f_{\mathbf{X}}\) with respect to the Lebesgue measure on 
+                    \(\mathbb{R}^d\), we recover exactly the joint density studied in 
+                    <a href="mvn.html#mn"><strong>Multivariate Distributions</strong></a>: 
+                    for instance, the multivariate normal density with mean \(\boldsymbol{\mu}\) 
+                    and covariance \(\boldsymbol{\Sigma}\) is the Radon-Nikodym derivative 
+                    \(f_{\mathbf{X}} = dP_{\mathbf{X}}/d\lambda^d\).
+                </p>
+
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+    </body>
+</html>
