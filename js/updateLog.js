@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     /* Section badge */
                     var secBadge = el("span", "ul-badge");
-                    secBadge.textContent = item.section === "general" ? "General" : "§" + item.section;
+                    secBadge.textContent = item.section === "general" ? "General" : item.section;
                     setStyles(secBadge, {
                         background: sec.color + "1a",
                         color: sec.light,
