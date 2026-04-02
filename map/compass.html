@@ -92,39 +92,6 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* UI Overlay */
-        #ui-layer { 
-            position: absolute; 
-            top: env(safe-area-inset-top, 20px); 
-            left: 20px; 
-            pointer-events: none; 
-            z-index: 10;
-        }
-
-        #ui-layer h1 {
-            margin: 0;
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #fff 0%, #a0c4ff 50%, #fff 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
-        }
-
-        @keyframes shimmer {
-            to { background-position: 200% center; }
-        }
-
-        #status {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-top: 4px;
-            transition: all 0.3s ease;
-        }
-
         /* Legend */
         #legend {
             position: absolute;
@@ -614,7 +581,6 @@
         }
 
         /* Hide UI during gate animation */
-        body.gate-active #ui-layer,
         body.gate-active #search-container,
         body.gate-active #legend,
         body.gate-active #zoom-controls,
@@ -634,11 +600,6 @@
         <img id="gate-2" src="../images/gate/gate_2.png" alt="" class="gate-image">
     </div>
     <div id="gate-glow"></div>
-</div>
-
-<div id="ui-layer">
-    <h1>MATH-CS COMPASS</h1>
-    <div id="status">Explore the Knowledge Map</div>
 </div>
 
 <div id="search-container">
@@ -1273,7 +1234,7 @@ function triggerExitAnimation(url) {
     updateTesseraMessage("See you there! Happy learning!");
     
     // Fade out UI elements for cleaner transition
-    const uiElements = ['#ui-layer', '#search-container', '#legend', '#zoom-controls'];
+    const uiElements = ['#search-container', '#legend', '#zoom-controls'];
     uiElements.forEach(selector => {
         const el = document.querySelector(selector);
         if (el) {
@@ -1652,7 +1613,6 @@ function render() {
         const elapsed = time - highlightedSectionTime;
         if (elapsed >= SECTION_HIGHLIGHT_DURATION) {
             highlightedSection = null;
-            document.getElementById('status').innerText = "Explore the Knowledge Map";
         }
     }
 
@@ -1932,7 +1892,6 @@ function panToSection(sectionId) {
         'IV': 'Discrete Mathematics & Algorithms',
         'V': 'Machine Learning'
     };
-    document.getElementById('status').innerText = `Section ${sectionId}: ${sectionNames[sectionId] || sectionId} (${sectionTiles.length} topics)`;
 }
 
 /**
@@ -1967,10 +1926,6 @@ function performSearch(query) {
             updateInfoPanel(firstResult);
         }
     }
-    
-    document.getElementById('status').innerText = searchResults.length > 0 
-        ? `Found ${searchResults.length} result${searchResults.length > 1 ? 's' : ''}`
-        : 'No results found';
 }
 
 // --- INTERACTION LOGIC ---
@@ -1990,7 +1945,6 @@ function handleInteraction(clientX, clientY) {
             
             if (tile.isReserved) {
                 activeTileId = tile.id;
-                document.getElementById('status').innerText = `Coming Soon - New content planned`;
                 updateInfoPanel(tile);
                 panToTile(tile);
                 break;
@@ -2005,8 +1959,6 @@ function handleInteraction(clientX, clientY) {
                 
                 const prereqCount = tile.prereqs?.length || 0;
                 const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
-                document.getElementById('status').innerText = `Selected: ${tile.title}${prereqText}`;
-                
                 updateInfoPanel(tile);
                 panToTile(tile);
             }
@@ -2018,7 +1970,6 @@ function handleInteraction(clientX, clientY) {
         activeTileId = null;
         isPanning = false;
         updateInfoPanel(null);
-        document.getElementById('status').innerText = "Explore the Knowledge Map";
         
         // Clear search
         if (searchQuery) {
@@ -2143,7 +2094,6 @@ window.addEventListener('keydown', e => {
         activeTileId = null;
         highlightedSection = null;
         updateInfoPanel(null);
-        document.getElementById('status').innerText = "Explore the Knowledge Map";
         searchQuery = '';
         searchResults = [];
         document.getElementById('search-input').value = '';
@@ -2223,7 +2173,7 @@ function resetMapState() {
     entryAnimationStartTime = Date.now();
     
     // Reset UI opacity
-    const uiElements = ['#ui-layer', '#search-container', '#legend', '#zoom-controls', '#tessera-container'];
+    const uiElements = ['#search-container', '#legend', '#zoom-controls', '#tessera-container'];
     uiElements.forEach(selector => {
         const el = document.querySelector(selector);
         if (el) {
@@ -2242,7 +2192,6 @@ function resetMapState() {
     searchQuery = '';
     searchResults = [];
     document.getElementById('search-input').value = '';
-    document.getElementById('status').innerText = "Explore the Knowledge Map";
     
     // Reset Tessera completely
     tesseraState.showingSectionExplain = false;
