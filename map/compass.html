@@ -709,6 +709,8 @@ const minScale = 40, maxScale = 250;
 let offsetX = window.innerWidth / 2;
 let offsetY = window.innerHeight / 2;
 
+let activeRipples = []; 
+
 // Camera animation state
 let targetOffsetX = offsetX;
 let targetOffsetY = offsetY;
@@ -1596,6 +1598,39 @@ function render() {
     
     const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    //For tile effect
+    for (let i = activeRipples.length - 1; i >= 0; i--) {
+        const ripple = activeRipples[i];
+        const age = time - ripple.startTime;
+        const duration = 800; 
+        
+        if (age >= duration) {
+            activeRipples.splice(i, 1);
+            continue;
+        }
+        
+        const progress = age / duration;
+        
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        const currentRadius = ripple.radius + (ripple.maxRadius - ripple.radius) * easeOut;
+        const currentAlpha = ripple.alpha * (1 - progress);
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ripple.x, ripple.y, currentRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = ripple.color;
+        ctx.lineWidth = 4 * (1 - progress); 
+        ctx.globalAlpha = currentAlpha * globalAlphaFactor;
+        
+        ctx.shadowColor = ripple.color;
+        ctx.shadowBlur = 15;
+        
+        ctx.stroke();
+        ctx.restore();
+    }//end effect
+    
     ctx.globalAlpha = globalAlphaFactor;
 
     const activeTile = activeTileId ? knowledgeData.find(t => t.id === activeTileId) : null;
@@ -1966,6 +2001,18 @@ function handleInteraction(clientX, clientY) {
                 }
             } else {
                 activeTileId = tile.id;
+
+                // tile effect
+                const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
+                activeRipples.push({
+                    x: x,
+                    y: y,
+                    radius: scale * 0.9,      
+                    maxRadius: scale * 4.5,   
+                    alpha: 0.8,               
+                    color: sectionColor,
+                    startTime: Date.now()
+                });//end effect
                 
                 const prereqCount = tile.prereqs?.length || 0;
                 const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
