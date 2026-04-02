@@ -2,15 +2,14 @@
 /**
  * build_previews.js
  * -----------------
- * Post-build script for MATH-CS COMPASS.
- * Parses Jekyll _site/ output and extracts .theorem[id] elements
- * into a single /data/previews.json for the ref-preview system.
+ * Extracts .theorem[id] elements from HTML content pages
+ * and compiles them into data/previews.json for the ref-preview system.
  *
- * Usage:
- *   node build_previews.js [site-dir]
+ * Usage (from project root):
+ *   node build_previews.js
  *
- * Defaults to ./_site if no argument is given.
- * Output: <site-dir>/data/previews.json
+ * Reads from: Mathematics/{Calculus,Probability,...}/*.html
+ * Writes to:  data/previews.json
  */
 
 const fs   = require('fs');
@@ -19,26 +18,18 @@ const { JSDOM } = require('jsdom');
 
 /* ── Configuration ─────────────────────────────────────────── */
 
-// CSS selector for extractable preview targets.
-// Currently scoped to .theorem[id] only (definitions & theorems).
-// Expand later if needed: '.theorem[id], .proof[id], .insight-box[id]'
 const TARGET_SELECTOR = '.theorem[id]';
 
-// Directories to scan inside the site root.
-// Matches the MATH-CS COMPASS content folder structure.
 const CONTENT_DIRS = [
-    'Linear_Algebra',
-    'Calculus',
-    'Probability',
-    'Discrete_Math',
-    'ML'
+    'Mathematics/Linear_algebra',
+    'Mathematics/Calculus',
+    'Mathematics/Probability',
+    'Mathematics/Discrete',
+    'Mathematics/Machine_learning'
 ];
 
 /* ── Helpers ───────────────────────────────────────────────── */
 
-/**
- * Recursively collect all .html files under `dir`.
- */
 function collectHtmlFiles(dir) {
     let results = [];
     if (!fs.existsSync(dir)) return results;
@@ -54,35 +45,23 @@ function collectHtmlFiles(dir) {
     return results;
 }
 
-/**
- * Strip MathJax rendering artifacts that appear in built HTML
- * but keep the original LaTeX source intact.
- * (In practice, Jekyll+MathJax pages ship raw LaTeX in the HTML;
- *  this is a safety measure for edge cases.)
- */
 function cleanInnerHtml(html) {
     return html
-        .replace(/\s+/g, ' ')   // collapse whitespace
+        .replace(/\s+/g, ' ')
         .trim();
 }
 
 /* ── Main ──────────────────────────────────────────────────── */
 
 function main() {
-    const siteDir = process.argv[2] || path.join(process.cwd(), '_site');
+    const rootDir = process.cwd();
 
-    if (!fs.existsSync(siteDir)) {
-        console.error(`Error: site directory not found: ${siteDir}`);
-        console.error('Run Jekyll build first, or pass the site directory as an argument.');
-        process.exit(1);
-    }
-
-    const previews = {};   // id → { html, source }
+    const previews = {};
     let fileCount  = 0;
     let blockCount = 0;
 
     for (const contentDir of CONTENT_DIRS) {
-        const fullDir = path.join(siteDir, contentDir);
+        const fullDir = path.join(rootDir, contentDir);
         const files   = collectHtmlFiles(fullDir);
 
         for (const filePath of files) {
@@ -91,19 +70,22 @@ function main() {
             const dom  = new JSDOM(html);
             const doc  = dom.window.document;
 
-            // Relative path from site root, used for "View full context →" links
-            const relPath = path.relative(siteDir, filePath).replace(/\\/g, '/');
+            // Source path relative to Mathematics/ for "View full context" links
+            // e.g. "Calculus/lp_spaces.html"
+            const relPath = path.relative(
+                path.join(rootDir, 'Mathematics'),
+                filePath
+            ).replace(/\\/g, '/');
 
             const targets = doc.querySelectorAll(TARGET_SELECTOR);
             for (const el of targets) {
                 const id = el.getAttribute('id');
                 if (!id) continue;
 
-                // Warn on duplicate IDs across pages
                 if (previews[id]) {
                     console.warn(
-                        `Warning: duplicate id="${id}" found in ${relPath}` +
-                        ` (already seen in ${previews[id].source}). Overwriting.`
+                        `Warning: duplicate id="${id}" in ${relPath}` +
+                        ` (already in ${previews[id].source}). Overwriting.`
                     );
                 }
 
@@ -116,8 +98,8 @@ function main() {
         }
     }
 
-    // Write output
-    const outDir  = path.join(siteDir, 'data');
+    // Write to data/previews.json in project root
+    const outDir  = path.join(rootDir, 'data');
     const outFile = path.join(outDir, 'previews.json');
 
     if (!fs.existsSync(outDir)) {
