@@ -598,6 +598,31 @@
                 right: 20px; 
             }
         }
+
+        /* BGM Toggle Button */
+        #bgm-toggle {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            user-select: none;
+            border-radius: 50%;
+        }
+        #bgm-toggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        @media (max-width: 768px) {
+            #bgm-toggle { left: 10px; width: 40px; height: 40px; }
+        }
     </style>
 </head>
 <body>
@@ -610,6 +635,20 @@
         <img id="gate-2" src="../images/gate/gate_2.png" alt="" class="gate-image">
     </div>
     <div id="gate-glow"></div>
+</div>
+
+<!-- BGM Toggle Button -->
+<div id="bgm-toggle" class="glass-panel" title="Toggle Background Music">
+    <!-- ON -->
+    <svg id="bgm-icon-on" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none" style="display:none;">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+    <!-- OFF(Initial) -->
+    <svg id="bgm-icon-off" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <line x1="23" y1="1" x2="1" y2="23"></line>
+    </svg>
 </div>
 
 <div id="search-container">
@@ -708,8 +747,138 @@ let scale = window.innerWidth < 768 ? 43 : 50;
 const minScale = 40, maxScale = 250;
 let offsetX = window.innerWidth / 2;
 let offsetY = window.innerHeight / 2;
-
 let activeRipples = []; 
+
+// Dual cross fade BGM
+class CrossfadeBGMPlayer {
+    constructor(url, crossfadeTime = 4) {
+        this.url = url;
+        this.crossfadeTime = crossfadeTime; 
+        this.maxVolume = 0.15;
+        this.isPlaying = false;
+        
+        // two players for natural fade out and in 
+        this.player1 = new Audio(url);
+        this.player2 = new Audio(url);
+        
+        [this.player1, this.player2].forEach(p => {
+            p.volume = 0;
+            p.loop = false; 
+            p.preload = 'auto';
+        });
+
+        this.currentPlayer = this.player1;
+        this.nextPlayer = this.player2;
+        this.checkInterval = null;
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        
+        this.currentPlayer.volume = 0;
+        this.currentPlayer.play().then(() => {
+            this.fadeIn(this.currentPlayer);
+            this.scheduleCrossfade();
+            document.getElementById('bgm-icon-off').style.display = 'none';
+            document.getElementById('bgm-icon-on').style.display = 'block';
+        }).catch(e => {
+            console.warn("BGM play blocked:", e);
+            this.isPlaying = false;
+        });
+    }
+
+    pause() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        clearInterval(this.checkInterval);
+        
+        this.fadeOut(this.currentPlayer, true);
+        document.getElementById('bgm-icon-on').style.display = 'none';
+        document.getElementById('bgm-icon-off').style.display = 'block';
+    }
+
+    toggle() {
+        if (this.isPlaying) this.pause();
+        else this.play();
+    }
+
+    scheduleCrossfade() {
+        clearInterval(this.checkInterval);
+        this.checkInterval = setInterval(() => {
+            if (!this.isPlaying) {
+                clearInterval(this.checkInterval);
+                return;
+            }
+            // check time left
+            const timeLeft = this.currentPlayer.duration - this.currentPlayer.currentTime;
+            if (isNaN(timeLeft)) return;
+
+            // less than cross fade time
+            if (timeLeft <= this.crossfadeTime && timeLeft > 0) {
+                clearInterval(this.checkInterval);
+                this.doCrossfade();
+            }
+        }, 100);
+    }
+
+    doCrossfade() {
+        // play next BGM from the beginning
+        this.nextPlayer.currentTime = 0;
+        this.nextPlayer.play().catch(e => console.log(e));
+        
+        // fade in and out
+        this.fadeIn(this.nextPlayer);
+        this.fadeOut(this.currentPlayer, false);
+
+        // switch BGM
+        const temp = this.currentPlayer;
+        this.currentPlayer = this.nextPlayer;
+        this.nextPlayer = temp;
+
+        this.scheduleCrossfade();
+    }
+
+    fadeIn(player) {
+        let vol = 0;
+        const steps = 20;
+        const stepTime = (this.crossfadeTime * 1000) / steps;
+        const volStep = this.maxVolume / steps;
+        
+        const fade = setInterval(() => {
+            if (!this.isPlaying) { clearInterval(fade); return; }
+            vol += volStep;
+            if (vol >= this.maxVolume) {
+                player.volume = this.maxVolume;
+                clearInterval(fade);
+            } else {
+                player.volume = vol;
+            }
+        }, stepTime);
+    }
+
+    fadeOut(player, forceStop) {
+        let vol = player.volume;
+        const steps = 20;
+        const stepTime = (this.crossfadeTime * 1000) / steps;
+        const volStep = vol / steps;
+        
+        const fade = setInterval(() => {
+            vol -= volStep;
+            if (vol <= 0 || (!this.isPlaying && !forceStop)) {
+                player.volume = 0;
+                player.pause();
+                clearInterval(fade);
+            } else {
+                player.volume = Math.max(0, vol);
+            }
+        }, stepTime);
+    }
+}
+
+// Reset BGM slowly before 4 seconds of the end of BGM
+const bgmPlayer = new CrossfadeBGMPlayer('../sounds/bgm.mp3', 4); 
+
 
 // Camera animation state
 let targetOffsetX = offsetX;
@@ -2224,6 +2393,12 @@ window.addEventListener('pageshow', (event) => {
         // Page was restored from bfcache (back/forward navigation)
         resetMapState();
     }
+});
+
+// BGM
+document.getElementById('bgm-toggle').addEventListener('click', (e) => {
+    e.stopPropagation(); 
+    bgmPlayer.toggle();
 });
 
 /**
