@@ -880,6 +880,71 @@ class CrossfadeBGMPlayer {
 const bgmPlayer = new CrossfadeBGMPlayer('../sounds/bgm.mp3', 4); 
 
 
+// SFX System
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+// generate SFX
+const sfx = {
+    init: () => {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    },
+    
+    // Hover sound
+    hover: () => {
+        if (!audioCtx || audioCtx.state === 'suspended') return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, t);
+        osc.frequency.exponentialRampToValueAtTime(400, t + 0.1);
+        
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.03, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(t);
+        osc.stop(t + 0.15);
+    },
+    
+    // Tap sound
+    tap: () => {
+        if (!audioCtx || audioCtx.state === 'suspended') return;
+        const t = audioCtx.currentTime;
+        
+        //multiple sin waves to merge them
+        const freqs = [1200, 1750, 2400, 3100]; 
+        const masterGain = audioCtx.createGain();
+        
+        masterGain.gain.setValueAtTime(0, t);
+        masterGain.gain.linearRampToValueAtTime(0.12, t + 0.02);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        masterGain.connect(audioCtx.destination);
+
+        freqs.forEach(freq => {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.95, t + 0.5);
+            
+            osc.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + 0.6);
+        });
+    }
+};
+
+//　Need first touch to turn on
+window.addEventListener('mousedown', sfx.init, { once: true });
+window.addEventListener('touchstart', sfx.init, { once: true });
+// ==========================================
+
 // Camera animation state
 let targetOffsetX = offsetX;
 let targetOffsetY = offsetY;
@@ -2173,6 +2238,8 @@ function handleInteraction(clientX, clientY) {
             } else {
                 activeTileId = tile.id;
 
+                sfx.tap(); //tap sound
+
                 // tile effect
                 const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
                 activeRipples.push({
@@ -2221,6 +2288,12 @@ function handleMouseMove(clientX, clientY) {
     if (hoveredTileId !== found) {
         hoveredTileId = found;
         canvas.style.cursor = found ? 'pointer' : 'grab';
+        if (found) {
+            const tile = knowledgeData.find(t => t.id === found);
+            if (tile && !tile.isReserved) {
+                sfx.hover(); //hover sound
+            }
+        }
     }
 }
 
@@ -2400,6 +2473,7 @@ document.getElementById('bgm-toggle').addEventListener('click', (e) => {
     e.stopPropagation(); 
     bgmPlayer.toggle();
 });
+
 
 /**
  * Reset map state for fresh start (used when navigating back)
