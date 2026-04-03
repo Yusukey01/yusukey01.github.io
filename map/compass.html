@@ -921,39 +921,25 @@ const sfx = {
         const t = audioCtx.currentTime;
         
         const masterGain = audioCtx.createGain();
-        const delay = audioCtx.createDelay();
-        const feedback = audioCtx.createGain();
-    
-        delay.delayTime.value = 0.35; 
-        feedback.gain.value = 0.35;  
-        masterGain.gain.value = 0.15; 
+        
+        masterGain.gain.setValueAtTime(0, t);
+        masterGain.gain.linearRampToValueAtTime(0.1, t + 0.1); 
+        masterGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
         
         masterGain.connect(audioCtx.destination);
-        masterGain.connect(delay);
-        delay.connect(audioCtx.destination);
-        delay.connect(feedback);
-        feedback.connect(delay);
 
-        const dropOsc = audioCtx.createOscillator();
-        const dropGain = audioCtx.createGain();
-        dropOsc.type = 'sine'; 
+        const baseFreq = 1318.51;
+        const detune = 3;         
         
-        dropOsc.frequency.setValueAtTime(300, t);
-        dropOsc.frequency.exponentialRampToValueAtTime(700, t + 0.08);
-        
-        dropGain.gain.setValueAtTime(0, t);
-        dropGain.gain.linearRampToValueAtTime(1, t + 0.02);
-        dropGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-        
-        dropOsc.connect(dropGain);
-        dropGain.connect(masterGain);
-        
-        
-        dropOsc.start(t);
-        dropOsc.stop(t + 0.2);
-        
-        rippleOsc.start(t);
-        rippleOsc.stop(t + 1.0);
+        [baseFreq, baseFreq + detune].forEach(freq => {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine'; 
+            osc.frequency.value = freq;
+            
+            osc.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + 1.5);
+        });
     }
 };
 
