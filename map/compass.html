@@ -895,47 +895,54 @@ const sfx = {
     hover: () => {
         if (!audioCtx || audioCtx.state === 'suspended') return;
         const t = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
         
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, t);
-        osc.frequency.exponentialRampToValueAtTime(400, t + 0.1);
+        const freqs = [1568, 2352]; 
+        const masterGain = audioCtx.createGain();
         
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.03, t + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        masterGain.gain.setValueAtTime(0, t);
+        masterGain.gain.linearRampToValueAtTime(0.015, t + 0.015);
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3); 
         
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        masterGain.connect(audioCtx.destination);
         
-        osc.start(t);
-        osc.stop(t + 0.15);
+        freqs.forEach(freq => {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq; 
+            osc.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + 0.35);
+        });
     },
     
     // Tap sound
     tap: () => {
         if (!audioCtx || audioCtx.state === 'suspended') return;
         const t = audioCtx.currentTime;
-        
-        //multiple sin waves to merge them
-        const freqs = [1200, 1750, 2400, 3100]; 
+    
+        const freqs = [2093, 2637, 3136, 4186, 4704];
         const masterGain = audioCtx.createGain();
         
         masterGain.gain.setValueAtTime(0, t);
-        masterGain.gain.linearRampToValueAtTime(0.12, t + 0.02);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        masterGain.gain.linearRampToValueAtTime(0.06, t + 0.02);
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); 
+        
         masterGain.connect(audioCtx.destination);
 
-        freqs.forEach(freq => {
+        freqs.forEach((freq, index) => {
             const osc = audioCtx.createOscillator();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, t);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.95, t + 0.5);
             
-            osc.connect(masterGain);
+            const oscGain = audioCtx.createGain();
+            oscGain.gain.value = 1 / (index + 1);
+            
+            osc.frequency.value = freq; 
+            
+            osc.connect(oscGain);
+            oscGain.connect(masterGain);
+            
             osc.start(t);
-            osc.stop(t + 0.6);
+            osc.stop(t + 0.95);
         });
     }
 };
