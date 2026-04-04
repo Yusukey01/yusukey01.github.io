@@ -90,11 +90,11 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                       │               Hilbert Spaces      │                            │
      ├───────────────────────┤                    │              │                            │
      │                       │                    │              │                            │
-linalg-27: Lie Groups  calc-32: Smooth            │              │                       disc-16: Quivers
+linalg-27&28:Lie Groups  calc-32: Smooth          │              │                       disc-16: Quivers
 & Lie Algebras ◀──────▶ Manifolds &              │              │                       disc-17: Categories
      │                  Tangent Spaces            │              │                            │
      │                       │                    │              │                            │
-linalg-28: Represent.  calc-33: Riemannian        │              │                       disc-18: Discrete
+linalg-29: Represent.  calc-33: Riemannian        │              │                       disc-18: Discrete
 Theory (Intro)         Metrics & Geodesics        │              │                       Ext. Calculus (DEC)
      │                       │                    │              │                            │
      ▼                       ▼                    ▼              ▼                            ▼
@@ -184,9 +184,9 @@ At this point, readers have seen permutation equivariance (GNN), rotation/transl
 
 ### Section I — Representation Theory
 
-#### linalg-28: Representation Theory (Intro)
+#### linalg-29: Representation Theory (Intro)
 - **Topics:** Group representations, irreducible representations, Schur's lemma, character theory (finite groups).
-- **Prereqs:** linalg-27 (Lie groups), linalg-22 (classification of finite abelian groups).
+- **Prereqs:** linalg-28 (Lie algebras), linalg-22 (classification of finite abelian groups).
 - **Connection:** Bridges to Peter-Weyl theorem (the "Fourier analysis on groups" story, linking back to calc-31).
 
 ### Section IV — Discrete Differential Geometry & Categories
@@ -248,7 +248,7 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 ### Next Sprint (Target: May 2026)
 *Focus: Deep continuous geometry and continuous equivariant networks.*
 - **calc-32**: Smooth Manifolds & Tangent Spaces
-- **linalg-28**: Representation Theory (Intro)
+- **linalg-29**: Representation Theory (Intro)
 - **ml-14**: Equivariant Neural Networks (Applying linalg-27/28 to network architectures)
 
 ### Future Backlog (Summer 2026)
@@ -314,6 +314,8 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 | calc-32 | `smooth_manifolds.html` | Planned |
 | calc-33 | `riemannian_metrics.html` | Planned |
 | linalg-27 | `lie_groups.html` | Planned |
+| linalg-28 | `lie_algebras.html` | Planned |
+| linalg-29 | `representation_theory.html` | Planned |
 | linalg-28 | `representation_theory.html` | Planned |
 | prob-22 | `measure_probability.html` | ✅ |
 | prob-23 | `limit_theorems_product_measures.html` | ✅ |
