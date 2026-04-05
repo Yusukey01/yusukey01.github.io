@@ -1,0 +1,690 @@
+---
+layout: default
+title: "The Lie Correspondence"
+topic_id: linalg-30
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Lie Correspondence</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#correspondence">The Lie Group–Lie Algebra Correspondence</a>
+            <a href="#double-cover">The Double Cover: \(SU(2)\) and \(SO(3)\)</a>
+            <a href="#adjoint">The Adjoint Representations</a>
+            <a href="#outlook">Connections and Outlook</a>
+        </div>
+
+        <div class="container">
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §1  THE LIE GROUP–LIE ALGEBRA CORRESPONDENCE            -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="correspondence" class="section-content">
+                <h2>The Lie Group–Lie Algebra Correspondence</h2>
+
+                <p>
+                    Over the past three pages, we have built a dictionary between Lie groups and Lie 
+                    algebras. A 
+                    <a href="lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>matrix Lie group</strong></a> 
+                    \(G\) determines a 
+                    <a href="lie_algebras.html#D-lie_algebra_matrix" class="ref-link"><strong>Lie algebra</strong></a> 
+                    \(\mathfrak{g} = T_I G\) — a vector space equipped with a 
+                    <a href="lie_algebras.html#D-lie_bracket" class="ref-link"><strong>Lie bracket</strong></a> 
+                    \([X, Y] = XY - YX\). The 
+                    <a href="matrix_exponential.html#D-matrix_exponential" class="ref-link"><strong>matrix exponential</strong></a> 
+                    \(\exp : \mathfrak{g} \to G\) sends the algebra to the group, converting linear 
+                    (infinitesimal) data into nonlinear (finite) group elements. We now address the 
+                    central question: <em>to what extent does the Lie algebra determine the Lie group?</em>
+                </p>
+
+                <h3>The Exponential Map as a Local Diffeomorphism</h3>
+
+                <p>
+                    The exponential map \(\exp : \mathfrak{g} \to G\) is, in general, neither injective 
+                    nor surjective globally. For instance, in \(SO(2)\), the map 
+                    \(\theta \mapsto \exp(\theta J)\) wraps \(\mathbb{R}\) infinitely many times around 
+                    the circle, so it is not injective. However, near the origin, the exponential map is 
+                    well-behaved:
+                </p>
+
+                <div class="theorem" id="T-exp_local_diffeo">
+                    <span class="theorem-title">Theorem: Local Diffeomorphism</span>
+                    <p>
+                        Let \(G\) be a matrix Lie group with Lie algebra \(\mathfrak{g}\). The exponential 
+                        map \(\exp : \mathfrak{g} \to G\) is a <strong>diffeomorphism</strong> from a 
+                        neighborhood of \(0 \in \mathfrak{g}\) onto a neighborhood of \(I \in G\). That 
+                        is, near the identity, every group element has a unique logarithm in the Lie 
+                        algebra.
+                    </p>
+                </div>
+
+                <p>
+                    The proof uses the inverse function theorem on manifolds: the derivative of \(\exp\) at 
+                    \(0\) is the identity map \(\mathfrak{g} \to \mathfrak{g}\) (since 
+                    \(\frac{d}{dt}\big|_{t=0} \exp(tA) = A\)), which is invertible, so \(\exp\) is a local 
+                    diffeomorphism by the inverse function theorem. The full details require the machinery of 
+                    smooth manifolds, which will be developed in a future page. For now, we state the theorem 
+                    and draw its consequences.
+                </p>
+
+                <p>
+                    The local diffeomorphism property means that the Lie algebra \(\mathfrak{g}\) faithfully 
+                    encodes the <strong>local</strong> structure of \(G\) — the structure in a neighborhood 
+                    of the identity. Two Lie groups with isomorphic Lie algebras are 
+                    <em>locally isomorphic</em>: they look identical near their respective identities. They 
+                    may, however, differ <em>globally</em> — in their topology. We will see a dramatic 
+                    example of this phenomenon in the next section.
+                </p>
+
+                <h3>Lie Algebra Homomorphisms</h3>
+
+                <p>
+                    The correspondence between groups and algebras extends to their maps. Just as a 
+                    <a href="group_isomorphism.html#D-group_homomorphism" class="ref-link"><strong>group homomorphism</strong></a> 
+                    preserves the group operation, a Lie algebra homomorphism preserves the bracket.
+                </p>
+
+                <div class="theorem" id="D-lie_algebra_homomorphism">
+                    <span class="theorem-title">Definition: Lie Algebra Homomorphism</span>
+                    <p>
+                        A <strong>Lie algebra homomorphism</strong> is a linear map 
+                        \(\varphi : \mathfrak{g} \to \mathfrak{h}\) between Lie algebras that preserves 
+                        the bracket:
+                        \[
+                            \varphi([X, Y]) = [\varphi(X), \varphi(Y)] 
+                            \quad \text{for all } X, Y \in \mathfrak{g}.
+                        \]
+                        A bijective Lie algebra homomorphism is a <strong>Lie algebra isomorphism</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The key theorem of the Lie correspondence is that group homomorphisms automatically 
+                    induce Lie algebra homomorphisms — the passage from group to algebra is 
+                    <em>functorial</em>.
+                </p>
+
+                <div class="theorem" id="T-induced_lie_algebra_hom">
+                    <span class="theorem-title">Theorem: Group Homomorphisms Induce Lie Algebra Homomorphisms</span>
+                    <p>
+                        Let \(\Phi : G \to H\) be a Lie group homomorphism (i.e., a continuous group 
+                        homomorphism between matrix Lie groups). Then the <strong>derivative at the 
+                        identity</strong>,
+                        \[
+                            d\Phi_I : \mathfrak{g} \to \mathfrak{h}, \qquad 
+                            d\Phi_I(A) = \left.\frac{d}{dt}\right|_{t=0} \Phi(\exp(tA)),
+                        \]
+                        is a Lie algebra homomorphism: 
+                        \(d\Phi_I([A, B]) = [d\Phi_I(A),\, d\Phi_I(B)]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof sketch:</span>
+                    <p>
+                        Since \(\Phi\) is a group homomorphism, it intertwines the exponential maps:
+                        \[
+                            \Phi(\exp(tA)) = \exp(t \cdot d\Phi_I(A))
+                        \]
+                        for all \(A \in \mathfrak{g}\) and \(t \in \mathbb{R}\). (This follows from the 
+                        fact that \(t \mapsto \Phi(\exp(tA))\) is a one-parameter subgroup of \(H\) with 
+                        initial velocity \(d\Phi_I(A)\), so by the 
+                        <a href="matrix_exponential.html#T-one_param_exp" class="ref-link"><strong>one-parameter subgroup theorem</strong></a>, 
+                        it equals \(\exp(t \cdot d\Phi_I(A))\).)
+                    </p>
+                    <p>
+                        Now, using the closure proof from 
+                        <a href="lie_algebras.html#T-bracket_closure" class="ref-link"><strong>Lie Algebras and the Lie Bracket</strong></a>, 
+                        recall that 
+                        \([A, B] = \frac{d}{dt}\big|_{t=0} \exp(tA)\,B\,\exp(-tA)\). Applying 
+                        \(d\Phi_I\) and using the intertwining property:
+                        \[
+                        \begin{align*}
+                            d\Phi_I([A, B]) 
+                            &= \left.\frac{d}{dt}\right|_{t=0} 
+                               \Phi(\exp(tA))\, d\Phi_I(B)\, \Phi(\exp(-tA)) \\
+                            &= \left.\frac{d}{dt}\right|_{t=0} 
+                               \exp(t\,d\Phi_I(A))\, d\Phi_I(B)\, \exp(-t\,d\Phi_I(A)) \\
+                            &= [d\Phi_I(A),\, d\Phi_I(B)]. \qquad \square
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example: The Determinant and the Trace</span>
+                    <p>
+                        The determinant 
+                        \(\det : GL(n, \mathbb{R}) \to \mathbb{R}^*\) is a Lie group homomorphism. Its 
+                        derivative at the identity is:
+                        \[
+                            d(\det)_I(A) = \left.\frac{d}{dt}\right|_{t=0} \det(\exp(tA)) 
+                            = \left.\frac{d}{dt}\right|_{t=0} e^{t\,\mathrm{tr}(A)} 
+                            = \mathrm{tr}(A).
+                        \]
+                        So the induced Lie algebra homomorphism 
+                        \(\mathrm{tr} : \mathfrak{gl}(n, \mathbb{R}) \to \mathbb{R}\) is the trace. 
+                        Since \(\mathbb{R}\) is abelian (its Lie bracket is zero), the homomorphism 
+                        condition \(\mathrm{tr}([A, B]) = [\mathrm{tr}(A), \mathrm{tr}(B)] = 0\) 
+                        reduces to \(\mathrm{tr}(AB - BA) = 0\), which indeed holds because 
+                        \(\mathrm{tr}(AB) = \mathrm{tr}(BA)\).
+                    </p>
+                    <p>
+                        The 
+                        <a href="group_isomorphism.html#D-kernel_of_Homomorphism" class="ref-link"><strong>kernel</strong></a> 
+                        of \(\det\) is \(SL(n)\); correspondingly, the kernel of \(\mathrm{tr}\) is 
+                        \(\mathfrak{sl}(n)\). Group-level and algebra-level kernels correspond perfectly.
+                    </p>
+                </div>
+
+                <h3>The Baker-Campbell-Hausdorff Formula</h3>
+
+                <p>
+                    We now arrive at the deepest result of the Lie correspondence: the group multiplication 
+                    near the identity is <em>entirely determined</em> by the Lie bracket. This is 
+                    formalized by the Baker-Campbell-Hausdorff (BCH) formula.
+                </p>
+
+                <div class="theorem" id="T-bch_formula">
+                    <span class="theorem-title">Theorem: Baker-Campbell-Hausdorff Formula</span>
+                    <p>
+                        For \(X, Y \in \mathfrak{g}\) sufficiently close to zero, there exists a unique 
+                        \(Z \in \mathfrak{g}\) such that \(\exp(X)\exp(Y) = \exp(Z)\). This element 
+                        \(Z\) is given by the series:
+                        \[
+                            Z = X + Y + \frac{1}{2}[X, Y] 
+                            + \frac{1}{12}\bigl([X, [X, Y]] - [Y, [X, Y]]\bigr) + \cdots
+                        \]
+                        where every subsequent term is an iterated Lie bracket of \(X\) and \(Y\).
+                    </p>
+                </div>
+
+                <p>
+                    The full series involves increasingly complex nested brackets and is determined by a 
+                    universal recursive formula (the Dynkin formula). We do not prove the BCH formula — the 
+                    proof requires analysis of formal power series in non-commuting variables. Instead, we 
+                    focus on its meaning and consequences.
+                </p>
+
+                <p>
+                    <strong>The key message:</strong> The group multiplication 
+                    \((g, h) \mapsto gh\) is a <em>nonlinear</em> operation on a curved manifold. The BCH 
+                    formula shows that, near the identity, this nonlinear operation is <em>entirely encoded</em> 
+                    by the Lie bracket — a <em>bilinear</em> operation on a vector space. Every coefficient 
+                    in the BCH series is built from iterated brackets and nothing else. This is why the Lie 
+                    algebra, with its bracket, determines the local structure of the group.
+                </p>
+
+                <p>
+                    <strong>Special cases.</strong> The BCH formula illuminates the results of the 
+                    preceding pages:
+                </p>
+
+                <p>
+                    <strong>(a) Commuting case.</strong> If \([X, Y] = 0\), then all bracket terms in the 
+                    BCH series vanish, and \(Z = X + Y\). This recovers 
+                    \(\exp(X)\exp(Y) = \exp(X + Y)\) — 
+                    <a href="matrix_exponential.html#T-matrix_exp_properties" class="ref-link"><strong>property (b)</strong></a> 
+                    of the matrix exponential.
+                </p>
+
+                <p>
+                    <strong>(b) First-order approximation.</strong> Keeping only the first bracket term:
+                    \[
+                        \exp(X)\exp(Y) \approx \exp\!\left(X + Y + \tfrac{1}{2}[X, Y]\right)
+                    \]
+                    for small \(X, Y\). The failure of \(\exp\) to be a homomorphism is measured, to 
+                    leading order, by \(\frac{1}{2}[X, Y]\). This makes precise the statement from 
+                    <a href="matrix_exponential.html#exp-map"><strong>The Matrix Exponential</strong></a> 
+                    that the commutator is the "first correction term."
+                </p>
+
+                <p>
+                    <strong>(c) Abelian groups.</strong> If \(\mathfrak{g}\) is abelian 
+                    (\([X, Y] = 0\) for all \(X, Y\)), then the BCH formula reduces to 
+                    \(Z = X + Y\), i.e., \(\exp(X)\exp(Y) = \exp(X + Y)\) always. The exponential 
+                    map is a group homomorphism from \((\mathfrak{g}, +)\) to \(G\). This is exactly 
+                    what happens for \(SO(2)\): the exponential 
+                    \(\theta \mapsto \exp(\theta J)\) is a homomorphism because 
+                    \(\mathfrak{so}(2) \cong \mathbb{R}\) is abelian.
+                </p>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §2  THE DOUBLE COVER: SU(2) AND SO(3)                    -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="double-cover" class="section-content">
+                <h2>The Double Cover: \(SU(2)\) and \(SO(3)\)</h2>
+
+                <p>
+                    The BCH formula tells us that isomorphic Lie algebras produce locally isomorphic Lie 
+                    groups. But "locally isomorphic" does not mean "isomorphic" — two groups can share 
+                    the same infinitesimal structure while differing in their global topology. The most 
+                    important example of this phenomenon is the relationship between 
+                    <a href="lie_groups.html#D-special_unitary_group" class="ref-link"><strong>\(SU(2)\)</strong></a> 
+                    and 
+                    <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(3)\)</strong></a>.
+                </p>
+
+                <h3>The Lie Algebra Isomorphism \(\mathfrak{su}(2) \cong \mathfrak{so}(3)\)</h3>
+
+                <p>
+                    The Lie algebra \(\mathfrak{su}(2)\) consists of \(2 \times 2\) traceless 
+                    skew-Hermitian matrices. A standard basis is:
+                    \[
+                        F_1 = \begin{pmatrix} 0 & -i \\ -i & 0 \end{pmatrix}, \quad 
+                        F_2 = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}, \quad 
+                        F_3 = \begin{pmatrix} -i & 0 \\ 0 & i \end{pmatrix}.
+                    \]
+                    (These are \(-i\) times the Pauli matrices \(\sigma_1, \sigma_2, \sigma_3\).) One 
+                    verifies that each \(F_k\) is skew-Hermitian (\(F_k^* = -F_k\)) and traceless, and 
+                    that
+                    \[
+                        [F_1, F_2] = 2F_3, \qquad [F_2, F_3] = 2F_1, \qquad [F_3, F_1] = 2F_2.
+                    \]
+                    Setting \(\tilde{E}_k = \frac{1}{2}F_k\) for \(k = 1, 2, 3\) gives a basis satisfying
+                    \[
+                        [\tilde{E}_1, \tilde{E}_2] = \tilde{E}_3, \qquad 
+                        [\tilde{E}_2, \tilde{E}_3] = \tilde{E}_1, \qquad 
+                        [\tilde{E}_3, \tilde{E}_1] = \tilde{E}_2
+                    \]
+                    — <em>exactly</em> the same bracket relations as the basis \(\{E_1, E_2, E_3\}\) of 
+                    \(\mathfrak{so}(3)\) computed in 
+                    <a href="lie_algebras.html#structure"><strong>Lie Algebras and the Lie Bracket</strong></a>. 
+                    The linear map \(\tilde{E}_k \mapsto E_k\) is therefore a Lie algebra isomorphism:
+                    \[
+                        \mathfrak{su}(2) \cong \mathfrak{so}(3).
+                    \]
+                </p>
+
+                <p>
+                    Both are 3-dimensional real Lie algebras with structure constants given by the 
+                    Levi-Civita symbol. At the Lie algebra level, they are indistinguishable.
+                </p>
+
+                <h3>The Groups are Not Isomorphic</h3>
+
+                <p>
+                    Despite their identical Lie algebras, \(SU(2)\) and \(SO(3)\) are <strong>not 
+                    isomorphic</strong> as groups. The difference is topological:
+                </p>
+
+                <p>
+                    <strong>\(SU(2)\) is homeomorphic to \(S^3\).</strong> Every element of \(SU(2)\) has 
+                    the form 
+                    \(\begin{pmatrix} \alpha & -\bar{\beta} \\ \beta & \bar{\alpha} \end{pmatrix}\) with 
+                    \(|\alpha|^2 + |\beta|^2 = 1\), which identifies \(SU(2)\) with the unit sphere in 
+                    \(\mathbb{C}^2 \cong \mathbb{R}^4\). In particular, \(SU(2)\) is 
+                    <strong>simply connected</strong> — every closed loop can be continuously shrunk to a 
+                    point.
+                </p>
+
+                <p>
+                    <strong>\(SO(3)\) is homeomorphic to \(\mathbb{R}P^3\).</strong> The real projective 
+                    space \(\mathbb{R}P^3 = S^3 / \{x \sim -x\}\) is obtained from \(S^3\) by identifying 
+                    antipodal points. This space is <strong>not simply connected</strong>: it has 
+                    fundamental group \(\pi_1(SO(3)) \cong \mathbb{Z}/2\mathbb{Z}\). There exist loops in 
+                    \(SO(3)\) (a rotation by \(2\pi\) about any axis) that cannot be continuously deformed 
+                    to the identity, but traversing such a loop <em>twice</em> (rotation by \(4\pi\)) 
+                    yields a contractible loop.
+                </p>
+
+                <h3>The Double Cover Homomorphism</h3>
+
+                <p>
+                    The Lie algebra isomorphism \(\mathfrak{su}(2) \cong \mathfrak{so}(3)\) lifts to a 
+                    group homomorphism — but not an isomorphism. There is a surjective 2:1 map 
+                    \(\Phi : SU(2) \to SO(3)\), called the <strong>double cover</strong>.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Construction (following Stillwell):</span>
+                    <p>
+                        The group \(SU(2)\) acts on its own Lie algebra \(\mathfrak{su}(2)\) by 
+                        conjugation: for \(U \in SU(2)\) and \(X \in \mathfrak{su}(2)\), define
+                        \[
+                            \Phi_U(X) = U X U^*.
+                        \]
+                        Since conjugation preserves skew-Hermiticity and tracelessness, \(\Phi_U\) maps 
+                        \(\mathfrak{su}(2)\) to itself. Moreover, \(\Phi_U\) preserves the inner product 
+                        \(\langle X, Y \rangle = -\frac{1}{2}\,\mathrm{tr}(XY)\) on \(\mathfrak{su}(2)\):
+                        \[
+                            \langle \Phi_U(X), \Phi_U(Y) \rangle 
+                            = -\tfrac{1}{2}\,\mathrm{tr}(UXU^* \cdot UYU^*) 
+                            = -\tfrac{1}{2}\,\mathrm{tr}(XY) = \langle X, Y \rangle.
+                        \]
+                        Using the isomorphism \(\mathfrak{su}(2) \cong \mathbb{R}^3\) (via the basis 
+                        \(\{\tilde{E}_1, \tilde{E}_2, \tilde{E}_3\}\)), the map \(\Phi_U\) becomes an 
+                        isometry of \(\mathbb{R}^3\) preserving orientation (since \(\det(\Phi_U)\) is 
+                        continuous, equals 1 at \(U = I\), and \(SU(2)\) is connected). Hence 
+                        \(\Phi_U \in SO(3)\).
+                    </p>
+                    <p>
+                        The map \(\Phi : SU(2) \to SO(3)\), \(U \mapsto \Phi_U\), is a group homomorphism 
+                        (since conjugation respects composition). It is surjective (this can be verified 
+                        by checking that the induced Lie algebra map is the isomorphism 
+                        \(\mathfrak{su}(2) \xrightarrow{\sim} \mathfrak{so}(3)\), and applying the 
+                        connectedness of \(SO(3)\)).
+                    </p>
+                </div>
+
+                <p>
+                    <strong>The kernel.</strong> We have \(\Phi_U = \mathrm{Id}\) if and only if 
+                    \(UXU^* = X\) for all \(X \in \mathfrak{su}(2)\), i.e., \(U\) commutes with the 
+                    three basis matrices \(F_1, F_2, F_3\). Since these together with \(iI\) span 
+                    \(M_2(\mathbb{C})\) over \(\mathbb{R}\), the matrix \(U\) commutes with every 
+                    \(2 \times 2\) complex matrix, so \(U = \lambda I\) for some scalar \(\lambda\). 
+                    The conditions \(U^* U = I\) and \(\det(U) = 1\) force \(\lambda = \pm 1\), so
+                    \[
+                        \ker(\Phi) = \{I, -I\} \cong \mathbb{Z}/2\mathbb{Z}.
+                    \]
+                    By the 
+                    <a href="group_isomorphism.html#T-first_isomorphism_theorem" class="ref-link"><strong>First Isomorphism Theorem</strong></a>:
+                    \[
+                        SU(2) / \{I, -I\} \;\cong\; SO(3).
+                    \]
+                    The group \(SO(3)\) is obtained from \(SU(2) \cong S^3\) by identifying each element 
+                    with its negative — precisely the operation that produces the projective space 
+                    \(\mathbb{R}P^3\) from \(S^3\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Quaternions and 3D Graphics</h3>
+                    <p>
+                        The double cover \(SU(2) \to SO(3)\) is the mathematical foundation of 
+                        <strong>quaternion rotations</strong> in computer graphics and game engines. The 
+                        group \(SU(2)\) is isomorphic to the group of unit quaternions 
+                        \(\{q \in \mathbb{H} : |q| = 1\}\), and the double cover corresponds to the 
+                        action of a unit quaternion \(q\) on \(\mathbb{R}^3\) by 
+                        \(\mathbf{v} \mapsto q \mathbf{v} \bar{q}\), where \(\mathbf{v}\) is identified 
+                        with a purely imaginary quaternion. The sign ambiguity — \(q\) and \(-q\) yield 
+                        the <em>same</em> rotation — is precisely the \(\mathbb{Z}/2\mathbb{Z}\) kernel.
+                    </p>
+                    <p>
+                        Quaternion representations of rotations are preferred over rotation matrices in 
+                        many applications because they avoid <strong>gimbal lock</strong> (a degeneracy in 
+                        Euler angle parameterizations) and admit smooth interpolation via 
+                        <strong>SLERP</strong> (Spherical Linear Interpolation) on \(S^3\). The 
+                        mathematical reason is that \(SU(2) \cong S^3\) is a smooth, simply connected 
+                        manifold — interpolation on the sphere is geometrically natural and singularity-free.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §3  THE ADJOINT REPRESENTATIONS                          -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="adjoint" class="section-content">
+                <h2>The Adjoint Representations</h2>
+
+                <p>
+                    The double cover construction above used a specific instance of a general operation: 
+                    the group \(G\) acting on its own Lie algebra \(\mathfrak{g}\) by conjugation. This 
+                    operation — the <strong>adjoint representation</strong> — is the most natural example 
+                    of a group representation and the bridge to the systematic study of representation 
+                    theory.
+                </p>
+
+                <h3>The Adjoint Representation of the Group</h3>
+
+                <p>
+                    For each \(g \in G\), the <strong>conjugation map</strong> 
+                    \(C_g : G \to G\), \(C_g(h) = ghg^{-1}\), is a group automorphism. Recall that 
+                    conjugation appeared in the definition of 
+                    <a href="group_isomorphism.html#D-normal_subgroup" class="ref-link"><strong>normal subgroups</strong></a>: 
+                    a subgroup \(H\) is normal if \(gHg^{-1} = H\) for all \(g \in G\). The adjoint 
+                    representation is the <em>infinitesimal</em> version: instead of conjugating subgroups, 
+                    we conjugate Lie algebra elements.
+                </p>
+
+                <div class="theorem" id="D-adjoint_representation_Ad">
+                    <span class="theorem-title">Definition: The Adjoint Representation \(\mathrm{Ad}\)</span>
+                    <p>
+                        Let \(G\) be a matrix Lie group with Lie algebra \(\mathfrak{g}\). For each 
+                        \(g \in G\), define the linear map
+                        \[
+                            \mathrm{Ad}(g) : \mathfrak{g} \to \mathfrak{g}, \qquad 
+                            \mathrm{Ad}(g)(X) = gXg^{-1}.
+                        \]
+                        The map \(\mathrm{Ad} : G \to GL(\mathfrak{g})\), \(g \mapsto \mathrm{Ad}(g)\), 
+                        is a group homomorphism — the <strong>adjoint representation of \(G\)</strong>.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Verification:</span>
+                    <p>
+                        <strong>\(\mathrm{Ad}(g)\) maps \(\mathfrak{g}\) to \(\mathfrak{g}\):</strong> 
+                        If \(X \in \mathfrak{g}\), then \(\exp(t \cdot gXg^{-1}) = g\exp(tX)g^{-1} \in G\) 
+                        for all \(t\) (since \(\exp(tX) \in G\) and \(G\) is closed under conjugation). 
+                        Hence \(gXg^{-1} \in \mathfrak{g}\).
+                    </p>
+                    <p>
+                        <strong>\(\mathrm{Ad}(g)\) is linear:</strong> 
+                        \(\mathrm{Ad}(g)(aX + bY) = g(aX + bY)g^{-1} = a\,gXg^{-1} + b\,gYg^{-1} = a\,\mathrm{Ad}(g)(X) + b\,\mathrm{Ad}(g)(Y)\).
+                    </p>
+                    <p>
+                        <strong>\(\mathrm{Ad}\) is a group homomorphism:</strong> 
+                        \(\mathrm{Ad}(g_1 g_2)(X) = (g_1 g_2)X(g_1 g_2)^{-1} = g_1(g_2 X g_2^{-1})g_1^{-1} = \mathrm{Ad}(g_1)(\mathrm{Ad}(g_2)(X))\), 
+                        so \(\mathrm{Ad}(g_1 g_2) = \mathrm{Ad}(g_1) \circ \mathrm{Ad}(g_2)\). Also, 
+                        \(\mathrm{Ad}(I)(X) = X\), so \(\mathrm{Ad}(I) = \mathrm{Id}\). \(\square\)
+                    </p>
+                </div>
+
+                <p>
+                    The double cover \(\Phi : SU(2) \to SO(3)\) constructed in the previous section is 
+                    precisely \(\mathrm{Ad} : SU(2) \to GL(\mathfrak{su}(2)) \cong GL(3, \mathbb{R})\), 
+                    restricted to the image \(SO(3)\). This illustrates the adjoint representation's 
+                    geometric content: it describes how the group rotates its own infinitesimal generators.
+                </p>
+
+                <h3>The Adjoint Representation of the Lie Algebra</h3>
+
+                <p>
+                    Applying the general principle of the Lie correspondence — differentiating a group 
+                    homomorphism to obtain a Lie algebra homomorphism — to 
+                    \(\mathrm{Ad} : G \to GL(\mathfrak{g})\) gives a Lie algebra homomorphism from 
+                    \(\mathfrak{g}\) to \(\mathfrak{gl}(\mathfrak{g})\).
+                </p>
+
+                <div class="theorem" id="D-adjoint_representation_ad">
+                    <span class="theorem-title">Definition: The Adjoint Representation \(\mathrm{ad}\)</span>
+                    <p>
+                        The derivative of \(\mathrm{Ad}\) at the identity defines the 
+                        <strong>adjoint representation of the Lie algebra</strong>:
+                        \[
+                            \mathrm{ad} : \mathfrak{g} \to \mathfrak{gl}(\mathfrak{g}), \qquad 
+                            \mathrm{ad}(X)(Y) = \left.\frac{d}{dt}\right|_{t=0} 
+                            \mathrm{Ad}(\exp(tX))(Y) = \left.\frac{d}{dt}\right|_{t=0} 
+                            \exp(tX)\,Y\,\exp(-tX).
+                        \]
+                        Computing the derivative (as in the proof of bracket closure in 
+                        <a href="lie_algebras.html#T-bracket_closure" class="ref-link"><strong>Lie Algebras and the Lie Bracket</strong></a>):
+                        \[
+                            \mathrm{ad}(X)(Y) = XY - YX = [X, Y].
+                        \]
+                        The adjoint representation of the Lie algebra is simply the Lie bracket itself, 
+                        viewed as a linear map \(Y \mapsto [X, Y]\) for each fixed \(X\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-ad_is_hom">
+                    <span class="theorem-title">Theorem: \(\mathrm{ad}\) is a Lie Algebra Homomorphism</span>
+                    <p>
+                        The map \(\mathrm{ad} : \mathfrak{g} \to \mathfrak{gl}(\mathfrak{g})\) is a 
+                        Lie algebra homomorphism:
+                        \[
+                            \mathrm{ad}([X, Y]) = [\mathrm{ad}(X),\, \mathrm{ad}(Y)] 
+                            = \mathrm{ad}(X) \circ \mathrm{ad}(Y) - \mathrm{ad}(Y) \circ \mathrm{ad}(X).
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We must show that for all \(Z \in \mathfrak{g}\):
+                        \[
+                            \mathrm{ad}([X, Y])(Z) = \mathrm{ad}(X)(\mathrm{ad}(Y)(Z)) 
+                            - \mathrm{ad}(Y)(\mathrm{ad}(X)(Z)).
+                        \]
+                        The left-hand side is \([[X, Y], Z]\). The right-hand side is 
+                        \([X, [Y, Z]] - [Y, [X, Z]]\). The claim is therefore:
+                        \[
+                            [[X, Y], Z] = [X, [Y, Z]] - [Y, [X, Z]].
+                        \]
+                        This is precisely the 
+                        <a href="lie_algebras.html#T-lie_bracket_properties" class="ref-link"><strong>Jacobi identity</strong></a> 
+                        rearranged: the standard form 
+                        \([X, [Y, Z]] + [Y, [Z, X]] + [Z, [X, Y]] = 0\) can be rewritten as 
+                        \(-[Z, [X, Y]] = [X, [Y, Z]] + [Y, [Z, X]]\), i.e., 
+                        \([[X, Y], Z] = [X, [Y, Z]] - [Y, [X, Z]]\) (using antisymmetry 
+                        \([Z, X] = -[X, Z]\)). \(\square\)
+                    </p>
+                </div>
+
+                <p>
+                    This result reveals a deep connection: the statement "\(\mathrm{ad}\) is a Lie algebra 
+                    homomorphism" is <em>equivalent</em> to the Jacobi identity. Conversely, the Jacobi 
+                    identity can be understood as the statement that the map \(X \mapsto [X, \,\cdot\,]\) 
+                    is a derivation — it satisfies a "product rule" with respect to the bracket.
+                </p>
+
+                <h3>Example: \(\mathrm{ad}\) for \(\mathfrak{so}(3)\)</h3>
+
+                <p>
+                    Using the basis \(\{E_1, E_2, E_3\}\) of \(\mathfrak{so}(3)\) and the bracket 
+                    relations from 
+                    <a href="lie_algebras.html#structure"><strong>Lie Algebras and the Lie Bracket</strong></a>, 
+                    we can write \(\mathrm{ad}(E_i)\) as a \(3 \times 3\) matrix acting on the basis 
+                    \(\{E_1, E_2, E_3\}\).
+                </p>
+
+                <p>
+                    For \(\mathrm{ad}(E_1)\): we have \(\mathrm{ad}(E_1)(E_1) = [E_1, E_1] = 0\), 
+                    \(\mathrm{ad}(E_1)(E_2) = [E_1, E_2] = E_3\), and 
+                    \(\mathrm{ad}(E_1)(E_3) = [E_1, E_3] = -E_2\). So:
+                    \[
+                        \mathrm{ad}(E_1) = \begin{pmatrix} 0 & 0 & 0 \\ 0 & 0 & -1 \\ 0 & 1 & 0 \end{pmatrix} = E_1.
+                    \]
+                    Similarly:
+                    \[
+                        \mathrm{ad}(E_2) = \begin{pmatrix} 0 & 0 & 1 \\ 0 & 0 & 0 \\ -1 & 0 & 0 \end{pmatrix} = E_2, \qquad 
+                        \mathrm{ad}(E_3) = \begin{pmatrix} 0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 0 \end{pmatrix} = E_3.
+                    \]
+                </p>
+
+                <p>
+                    The matrices of \(\mathrm{ad}(E_1)\), \(\mathrm{ad}(E_2)\), \(\mathrm{ad}(E_3)\) in 
+                    the basis \(\{E_1, E_2, E_3\}\) are <em>exactly the basis elements themselves</em>. In 
+                    other words, the map 
+                    \(\mathrm{ad} : \mathfrak{so}(3) \to \mathfrak{gl}(\mathfrak{so}(3))\) is, in this 
+                    basis, the <strong>identity map</strong>. This remarkable fact reflects the exceptional 
+                    isomorphism \(\mathfrak{so}(3) \cong (\mathbb{R}^3, \times)\): the Lie algebra acts on 
+                    itself by the cross product, and the matrix of the cross product map 
+                    \(\mathbf{v} \mapsto \boldsymbol{\omega} \times \mathbf{v}\) is precisely the 
+                    skew-symmetric matrix \(\hat{\boldsymbol{\omega}}_\times\) — the hat map.
+                </p>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §4  CONNECTIONS AND OUTLOOK                              -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="outlook" class="section-content">
+                <h2>Connections and Outlook</h2>
+
+                <div class="insight-box">
+                    <h3>Lie Algebras in Deep Learning</h3>
+                    <p>
+                        In <strong>equivariant neural networks</strong>, layers must commute with the 
+                        action of a symmetry group \(G\) on the input data — a condition called 
+                        <strong>equivariance</strong>. For instance, a network processing 3D point clouds 
+                        should produce the same output regardless of how the input is rotated (equivariance 
+                        under \(SO(3)\)).
+                    </p>
+                    <p>
+                        Enforcing equivariance at the <em>group level</em> requires checking the constraint 
+                        for every group element — an uncountable family of conditions. The Lie 
+                        correspondence provides a shortcut: for connected groups, equivariance under 
+                        \(G\) is equivalent to <strong>infinitesimal equivariance</strong> under the Lie 
+                        algebra \(\mathfrak{g}\). This reduces the problem to finitely many linear 
+                        constraints (one for each basis element of \(\mathfrak{g}\)), which can be 
+                        incorporated directly into the network architecture. This is why modern equivariant 
+                        architectures often work with \(\mathfrak{g}\)-valued features and the Lie bracket 
+                        rather than explicit group elements.
+                    </p>
+                </div>
+
+                <h3>Summary of the Four-Page Arc</h3>
+
+                <p>
+                    We have completed the development of Lie groups and Lie algebras for matrix groups. 
+                    Let us trace the logical arc:
+                </p>
+
+                <p>
+                    <a href="lie_groups.html"><strong>Matrix Lie Groups</strong></a> defined the classical 
+                    groups as closed subgroups of \(GL(n)\), with Cartan's theorem guaranteeing smooth 
+                    manifold structure.
+                    <a href="matrix_exponential.html"><strong>The Matrix Exponential</strong></a> provided 
+                    the bridge between linear data and nonlinear group elements, establishing one-parameter 
+                    subgroups as the "straight lines" in the group.
+                    <a href="lie_algebras.html"><strong>Lie Algebras and the Lie Bracket</strong></a> 
+                    formalized the tangent space at the identity as a Lie algebra — a vector space with a 
+                    bracket encoding non-commutativity.
+                    The present page established the <strong>Lie correspondence</strong>: the algebra 
+                    determines the group locally (BCH formula), group homomorphisms induce algebra 
+                    homomorphisms, and the adjoint representations describe the group's action on its own 
+                    infinitesimal generators.
+                </p>
+
+                <h3>Where We Go from Here</h3>
+
+                <p>
+                    <strong>Representation Theory</strong> (next page): The adjoint representations 
+                    \(\mathrm{Ad}\) and \(\mathrm{ad}\) are examples of 
+                    <strong>group and algebra representations</strong> — homomorphisms from \(G\) 
+                    (or \(\mathfrak{g}\)) to \(GL(V)\) for some vector space \(V\). The next page studies 
+                    representations systematically: which vector spaces can \(G\) act on? When can a 
+                    representation be decomposed into simpler pieces (irreducible representations)? 
+                    Schur's lemma and character theory will provide the answers.
+                </p>
+
+                <p>
+                    <strong>Smooth Manifolds</strong> (Section II): The tangent space \(T_I G\), defined 
+                    here concretely as velocity vectors of curves in \(M_n(\mathbb{C})\), will be 
+                    generalized to the tangent space \(T_p M\) at any point of an abstract smooth manifold. 
+                    The exponential map on a Lie group will become a special case of the exponential map of 
+                    a Riemannian manifold.
+                </p>
+
+                <p>
+                    <strong>Equivariant Neural Networks</strong> (Section V): Networks whose architecture 
+                    encodes the symmetry groups \(SO(3)\), \(SE(3)\), and the Lie algebras 
+                    \(\mathfrak{so}(3)\), \(\mathfrak{se}(3)\) defined across these four pages. The 
+                    adjoint representation and the BCH formula will appear as tools for constructing 
+                    equivariant layers.
+                </p>
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
+    </body>
+</html>

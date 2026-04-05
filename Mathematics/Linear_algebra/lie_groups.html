@@ -1,0 +1,570 @@
+---
+layout: default
+title: "Lie Groups: Matrix Groups and Continuous Symmetry"
+topic_id: linalg-27
+level: detail
+uses_math: true
+uses_python: false
+noindex: true
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Lie Groups: Matrix Groups and Continuous Symmetry</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">From Discrete to Continuous Symmetry</a>
+            <a href="#matrix-lie">Matrix Lie Groups</a>
+            <a href="#ahead">Looking Ahead</a>
+        </div>
+
+        <div class="container">
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §1  FROM DISCRETE TO CONTINUOUS SYMMETRY                 -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="intro" class="section-content">
+                <h2>From Discrete to Continuous Symmetry</h2>
+
+                <p>
+                    In <a href="dihedral_group.html"><strong>Geometry of Symmetry</strong></a>, we explored the 
+                    <a href="dihedral_group.html#D-dihedral_group" class="ref-link"><strong>dihedral group</strong></a> 
+                    \(D_n\) — the finite group of symmetries of a regular \(n\)-gon — and previewed two 
+                    continuous groups, \(SO(3)\) and \(SE(3)\), that govern rotation and rigid body motion in 
+                    three-dimensional space. There, we observed these continuous groups visually and intuitively: 
+                    \(SO(3)\) allows rotations by <em>any</em> angle, and \(SE(3)\) combines such rotations with 
+                    arbitrary translations. We noted that the passage from \(D_n\) to \(SO(3)\) is a shift from 
+                    <em>discrete</em> to <em>continuous</em> symmetry — but we did not make this precise.
+                </p>
+
+                <p>
+                    The present page fulfills this task. We formalize continuous symmetry groups as 
+                    <strong>matrix Lie groups</strong> and develop the <strong>matrix exponential</strong>, the 
+                    fundamental tool that connects infinitesimal symmetries to finite transformations. The key 
+                    question driving this development is: <em>what does it mean for a group to be "continuous"?</em>
+                </p>
+
+                <h3>Topological Groups</h3>
+
+                <p>
+                    The answer lies in combining two structures we have studied separately: the algebraic structure 
+                    of a group and the topological structure of a space with a notion of continuity. A group whose 
+                    operations respect topology is called a <strong>topological group</strong>.
+                </p>
+
+                <div class="theorem" id="D-topological_group">
+                    <span class="theorem-title">Definition: Topological Group</span>
+                    <p>
+                        A <strong>topological group</strong> is a group \(G\) equipped with a topology such that 
+                        the following two maps are continuous:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            <strong>Multiplication:</strong> 
+                            \(\mu : G \times G \to G\), \(\mu(g, h) = gh\), where \(G \times G\) carries the 
+                            <a href="../Calculus/topological_spaces.html#D-product_topology_finite" class="ref-link"><strong>product topology</strong></a>.
+                        </li>
+                        <li>
+                            <strong>Inversion:</strong> 
+                            \(\iota : G \to G\), \(\iota(g) = g^{-1}\).
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    The continuity of multiplication means that if \(g\) and \(h\) are "close" to \(g_0\) and 
+                    \(h_0\) respectively, then \(gh\) is close to \(g_0 h_0\). Continuity of inversion ensures 
+                    that nearby elements have nearby inverses. Together, they guarantee that the algebraic 
+                    operations are compatible with the topology — the group structure does not "tear" the 
+                    underlying space.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Examples:</span>
+                    <p>
+                        <strong>(a)</strong> \((\mathbb{R}, +)\) with the standard (Euclidean) topology is a 
+                        topological group: addition \((x, y) \mapsto x + y\) and negation \(x \mapsto -x\) 
+                        are both continuous.
+                    </p>
+                    <p>
+                        <strong>(b)</strong> \((\mathbb{R} \setminus \{0\}, \cdot)\) with the subspace topology 
+                        inherited from \(\mathbb{R}\) is a topological group: multiplication and the map 
+                        \(x \mapsto 1/x\) are continuous on \(\mathbb{R} \setminus \{0\}\).
+                    </p>
+                    <p>
+                        <strong>(c)</strong> The <strong>circle group</strong> 
+                        \(S^1 = \{z \in \mathbb{C} : |z| = 1\}\) with the subspace topology from \(\mathbb{C}\) 
+                        is a topological group under complex multiplication. Multiplication and inversion 
+                        \(z \mapsto \bar{z}\) are continuous. This is the simplest example of a compact, 
+                        connected topological group.
+                    </p>
+                </div>
+
+                <h3>Toward Lie Groups</h3>
+
+                <p>
+                    A <strong>Lie group</strong> is a group that is simultaneously a <em>smooth manifold</em>, 
+                    with smooth (infinitely differentiable) group operations. Since smooth manifolds have not 
+                    yet been formally defined in this curriculum — they are the subject of a future page on 
+                    <strong>Smooth Manifolds</strong> — we take a concrete approach that is both fully 
+                    rigorous and historically prior to the abstract definition.
+                </p>
+
+                <p>
+                    Our strategy is to define <strong>matrix Lie groups</strong> as closed subgroups of the 
+                    general linear group \(GL(n, \mathbb{C})\). A deep theorem — Cartan's Closed Subgroup 
+                    Theorem, stated in the next section — guarantees that every such closed subgroup is 
+                    automatically a smooth manifold with smooth group operations. In other words, closedness 
+                    alone buys us all the smoothness we need.
+                </p>
+
+                <p>
+                    This approach mirrors a recurring pattern in our curriculum: just as 
+                    <a href="../Machine_learning/natural_gradient.html"><strong>Natural Gradient Descent</strong></a> 
+                    previewed Riemannian geometry before manifolds were formally available, we now study the 
+                    most important Lie groups concretely before the general definition arrives. Every matrix Lie 
+                    group we define here will be a Lie group in the abstract sense — we lose nothing by 
+                    starting with matrices, and we gain the ability to compute.
+                </p>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §2  MATRIX LIE GROUPS                                    -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="matrix-lie" class="section-content">
+                <h2>Matrix Lie Groups</h2>
+
+                <p>
+                    We now define the arena in which all our groups will live. The space 
+                    \(M_n(\mathbb{F})\) of \(n \times n\) matrices over \(\mathbb{F}\) (where 
+                    \(\mathbb{F} = \mathbb{R}\) or \(\mathbb{C}\)) is a finite-dimensional vector space 
+                    isomorphic to \(\mathbb{F}^{n^2}\), and we equip it with the topology induced by any 
+                    norm (all norms on a finite-dimensional space are equivalent). Within this space sits the 
+                    group of invertible matrices.
+                </p>
+
+                <div class="theorem" id="D-general_linear_group">
+                    <span class="theorem-title">Definition: General Linear Group</span>
+                    <p>
+                        The <strong>general linear group</strong> is
+                        \[
+                            GL(n, \mathbb{F}) = \{ A \in M_n(\mathbb{F}) : \det(A) \neq 0 \}.
+                        \]
+                        Since the determinant \(\det : M_n(\mathbb{F}) \to \mathbb{F}\) is a polynomial in the 
+                        matrix entries (hence continuous), and \(\{0\}\) is closed in \(\mathbb{F}\), the 
+                        complement \(GL(n, \mathbb{F}) = \det^{-1}(\mathbb{F} \setminus \{0\})\) is an 
+                        <strong>open subset</strong> of \(M_n(\mathbb{F})\).
+                    </p>
+                    <p>
+                        Matrix multiplication is polynomial in the entries, hence continuous. Matrix inversion 
+                        is given by Cramer's rule as a rational function of the entries (with denominator 
+                        \(\det(A) \neq 0\)), hence continuous on \(GL(n, \mathbb{F})\). Therefore 
+                        \(GL(n, \mathbb{F})\) is a topological group.
+                    </p>
+                </div>
+
+                <p>
+                    The general linear group is the "universe" of matrix groups. Every matrix Lie group will 
+                    be a subgroup of \(GL(n, \mathbb{C})\) (or \(GL(n, \mathbb{R})\)) satisfying one additional 
+                    condition: <em>closedness</em>.
+                </p>
+
+                <div class="theorem" id="D-matrix_lie_group">
+                    <span class="theorem-title">Definition: Matrix Lie Group</span>
+                    <p>
+                        A <strong>matrix Lie group</strong> is a subgroup \(G \leq GL(n, \mathbb{C})\) that 
+                        is a <strong>closed subset</strong> in the topology of \(M_n(\mathbb{C})\). That is, 
+                        \(G\) is closed under the group operations <em>and</em> under taking limits of convergent 
+                        sequences: if \(A_1, A_2, A_3, \dots \in G\) and \(A_k \to A\) in \(M_n(\mathbb{C})\), 
+                        then either \(A \in G\) or \(A \notin GL(n, \mathbb{C})\).
+                    </p>
+                </div>
+
+                <p>
+                    The closedness condition is remarkably mild — it is the <em>only</em> topological condition 
+                    we impose. Yet it has profound consequences, as we will see in Cartan's theorem below. 
+                    Intuitively, closedness prevents the group from having "holes" or "missing boundary points" 
+                    that would destroy its manifold structure.
+                </p>
+
+                <h3>The Classical Groups</h3>
+
+                <p>
+                    We now introduce the classical matrix Lie groups — the groups that appear throughout 
+                    mathematics, physics, and computer science. For each group, we verify that it is indeed 
+                    a matrix Lie group by checking that it is a closed subgroup of \(GL(n, \mathbb{C})\).
+                </p>
+
+                <!-- SL(n, ℝ) -->
+                <div class="theorem" id="D-special_linear_group">
+                    <span class="theorem-title">Definition: Special Linear Group</span>
+                    <p>
+                        The <strong>special linear group</strong> is
+                        \[
+                            SL(n, \mathbb{R}) = \{ A \in GL(n, \mathbb{R}) : \det(A) = 1 \}.
+                        \]
+                        This is the group of volume-preserving linear transformations.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof that \(SL(n, \mathbb{R})\) is a matrix Lie group:</span>
+                    <p>
+                        The determinant map \(\det : GL(n, \mathbb{R}) \to \mathbb{R}^*\) is a continuous 
+                        <a href="group_isomorphism.html#D-group_homomorphism" class="ref-link"><strong>group homomorphism</strong></a> 
+                        (with \(\mathbb{R}^*\) under multiplication). Its 
+                        <a href="group_isomorphism.html#D-kernel_of_Homomorphism" class="ref-link"><strong>kernel</strong></a> 
+                        is \(SL(n, \mathbb{R}) = \det^{-1}(\{1\})\). Since \(\{1\}\) is closed in 
+                        \(\mathbb{R}^*\) and \(\det\) is continuous, \(SL(n, \mathbb{R})\) is a closed 
+                        subgroup of \(GL(n, \mathbb{R})\). The dimension of \(SL(n, \mathbb{R})\) is 
+                        \(n^2 - 1\) (the single constraint \(\det(A) = 1\) removes one degree of freedom).
+                    </p>
+                </div>
+
+                <!-- O(n) -->
+                <div class="theorem" id="D-orthogonal_group">
+                    <span class="theorem-title">Definition: Orthogonal Group</span>
+                    <p>
+                        The <strong>orthogonal group</strong> is
+                        \[
+                            O(n) = \{ A \in GL(n, \mathbb{R}) : A^\top A = I \}.
+                        \]
+                        Equivalently, \(O(n)\) consists of the linear transformations that preserve the 
+                        Euclidean inner product: \(\langle Ax, Ay \rangle = \langle x, y \rangle\) for all 
+                        \(x, y \in \mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof that \(O(n)\) is a closed subgroup of \(GL(n, \mathbb{R})\):</span>
+                    <p>
+                        Consider the map \(\Phi : M_n(\mathbb{R}) \to M_n(\mathbb{R})\) defined by 
+                        \(\Phi(A) = A^\top A\). This map is continuous (it is polynomial in the entries), and 
+                        \(O(n) = \Phi^{-1}(\{I\})\). Since \(\{I\}\) is a closed set in \(M_n(\mathbb{R})\), 
+                        the preimage \(O(n)\) is closed. Furthermore, if \(A^\top A = I\), then 
+                        \(\det(A)^2 = \det(A^\top A) = 1\), so \(\det(A) = \pm 1 \neq 0\), confirming 
+                        \(O(n) \subset GL(n, \mathbb{R})\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof that \(O(n)\) is compact:</span>
+                    <p>
+                        <strong>Bounded:</strong> For any \(A \in O(n)\), the Frobenius norm satisfies 
+                        \(\|A\|_F^2 = \mathrm{tr}(A^\top A) = \mathrm{tr}(I) = n\). Hence every element of 
+                        \(O(n)\) has the same Frobenius norm \(\sqrt{n}\), so \(O(n)\) is bounded in 
+                        \(M_n(\mathbb{R}) \cong \mathbb{R}^{n^2}\).
+                    </p>
+                    <p>
+                        <strong>Closed:</strong> We proved this above.
+                    </p>
+                    <p>
+                        By the Heine-Borel theorem, a subset of \(\mathbb{R}^{n^2}\) is compact if and only 
+                        if it is closed and bounded. Therefore \(O(n)\) is compact.
+                    </p>
+                </div>
+
+                <p>
+                    The condition \(\det(A) = \pm 1\) for \(A \in O(n)\) shows that \(O(n)\) has 
+                    <strong>two connected components</strong>: the matrices with \(\det(A) = +1\) (proper 
+                    rotations) and those with \(\det(A) = -1\) (improper rotations, i.e., rotations composed 
+                    with a reflection). The component containing the identity is the special orthogonal group.
+                </p>
+
+                <!-- SO(n) -->
+                <div class="theorem" id="D-special_orthogonal_group">
+                    <span class="theorem-title">Definition: Special Orthogonal Group</span>
+                    <p>
+                        The <strong>special orthogonal group</strong> is
+                        \[
+                            SO(n) = O(n) \cap SL(n, \mathbb{R}) = \{ A \in GL(n, \mathbb{R}) : A^\top A = I,\; \det(A) = 1 \}.
+                        \]
+                        This is the group of <strong>rotations</strong> of \(\mathbb{R}^n\). It is a closed 
+                        subgroup of \(GL(n, \mathbb{R})\) (as the intersection of two closed subgroups), and it 
+                        is compact (as a closed subset of the compact set \(O(n)\)). Its dimension is 
+                        \(n(n-1)/2\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof that \(SO(n)\) is connected:</span>
+                    <p>
+                        We show that \(SO(n)\) is <strong>path-connected</strong>, which implies connectedness. 
+                        Let \(A \in SO(n)\). We must find a continuous path from \(I\) to \(A\) within \(SO(n)\). 
+                        By the real Schur decomposition, every element of \(SO(n)\) is orthogonally similar to a 
+                        block-diagonal matrix consisting of \(2 \times 2\) rotation blocks 
+                        \(\begin{pmatrix} \cos\theta_k & -\sin\theta_k \\ \sin\theta_k & \cos\theta_k \end{pmatrix}\), 
+                        and when \(n\) is odd, a single \(1 \times 1\) block. Since \(\det A = 1\), any eigenvalue \(-1\) 
+                        must occur with even multiplicity, so each pair of \(-1\) eigenvalues is absorbed into a \(2 \times 2\) 
+                        rotation block with angle \(\pi\); the remaining \(1 \times 1\) block is necessarily \(+1\).
+                        Each such block can be continuously rotated to the identity by replacing \(\theta_k\) 
+                        with \(t\theta_k\) for \(t \in [0, 1]\). Since conjugation by the orthogonal change-of-basis 
+                        matrix is a homeomorphism of \(SO(n)\), this gives a continuous path from \(I\) to \(A\).
+                    </p>
+                </div>
+
+                <p>
+                    The dimension formula \(\dim SO(n) = n(n-1)/2\) reflects the number of independent 
+                    parameters in a skew-symmetric matrix (equivalently, the number of independent constraints 
+                    in \(A^\top A = I\): the symmetric matrix equation gives \(n(n+1)/2\) equations on \(n^2\) 
+                    entries, leaving \(n^2 - n(n+1)/2 = n(n-1)/2\) degrees of freedom). For the cases of 
+                    greatest importance: \(\dim SO(2) = 1\) (one angle of rotation) and \(\dim SO(3) = 3\) 
+                    (three Euler angles, or equivalently, a rotation axis and an angle).
+                </p>
+
+                <!-- U(n) -->
+                <div class="theorem" id="D-unitary_group">
+                    <span class="theorem-title">Definition: Unitary Group</span>
+                    <p>
+                        The <strong>unitary group</strong> is
+                        \[
+                            U(n) = \{ A \in GL(n, \mathbb{C}) : A^* A = I \}
+                        \]
+                        where \(A^* = \overline{A}^\top\) denotes the conjugate transpose. This is the group of 
+                        linear transformations preserving the standard Hermitian inner product on 
+                        \(\mathbb{C}^n\). By the same argument as for \(O(n)\), \(U(n)\) is a closed, 
+                        compact subgroup of \(GL(n, \mathbb{C})\). It is connected, and its dimension is 
+                        \(n^2\) (as a <em>real</em> manifold).
+                    </p>
+                </div>
+
+                <!-- SU(n) -->
+                <div class="theorem" id="D-special_unitary_group">
+                    <span class="theorem-title">Definition: Special Unitary Group</span>
+                    <p>
+                        The <strong>special unitary group</strong> is
+                        \[
+                            SU(n) = U(n) \cap SL(n, \mathbb{C}) = \{ A \in GL(n, \mathbb{C}) : A^* A = I,\; \det(A) = 1 \}.
+                        \]
+                        It is a closed, compact, connected subgroup of \(GL(n, \mathbb{C})\) of dimension 
+                        \(n^2 - 1\). The group \(SU(2)\) plays a central role in quantum mechanics and, as we 
+                        shall see in the next page, is intimately related to \(SO(3)\) via a 2:1 covering map.
+                    </p>
+                </div>
+
+                <!-- SE(3) -->
+                <div class="theorem" id="D-special_euclidean_group">
+                    <span class="theorem-title">Definition: Special Euclidean Group</span>
+                    <p>
+                        The <strong>special Euclidean group</strong> \(SE(3)\) is the group of rigid body 
+                        motions (rotations and translations) of \(\mathbb{R}^3\). It is realized as a matrix 
+                        Lie group via the embedding into \(GL(4, \mathbb{R})\):
+                        \[
+                            SE(3) = \left\{ \begin{pmatrix} R & \mathbf{t} \\ \mathbf{0}^\top & 1 \end{pmatrix} 
+                            : R \in SO(3),\; \mathbf{t} \in \mathbb{R}^3 \right\} \subset GL(4, \mathbb{R}).
+                        \]
+                        The group operation corresponds to composition of rigid body motions:
+                        \[
+                            \begin{pmatrix} R_1 & \mathbf{t}_1 \\ \mathbf{0}^\top & 1 \end{pmatrix}
+                            \begin{pmatrix} R_2 & \mathbf{t}_2 \\ \mathbf{0}^\top & 1 \end{pmatrix}
+                            = \begin{pmatrix} R_1 R_2 & R_1 \mathbf{t}_2 + \mathbf{t}_1 \\ \mathbf{0}^\top & 1 \end{pmatrix}.
+                        \]
+                        The group \(SE(3)\) is a closed, connected subgroup of \(GL(4, \mathbb{R})\), but it 
+                        is <strong>not compact</strong> (the translation component \(\mathbf{t}\) is unbounded). 
+                        Its dimension is \(6\) (\(3\) for rotation + \(3\) for translation).
+                    </p>
+                </div>
+
+                <p>
+                    The following table summarizes the classical matrix Lie groups:
+                </p>
+
+                <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:8px; border-bottom:2px solid var(--border-color, #555);">Group</th>
+                            <th style="text-align:left; padding:8px; border-bottom:2px solid var(--border-color, #555);">Defining Condition</th>
+                            <th style="text-align:center; padding:8px; border-bottom:2px solid var(--border-color, #555);">Dimension</th>
+                            <th style="text-align:center; padding:8px; border-bottom:2px solid var(--border-color, #555);">Connected</th>
+                            <th style="text-align:center; padding:8px; border-bottom:2px solid var(--border-color, #555);">Compact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(GL(n, \mathbb{R})\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(\det(A) \neq 0\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n^2\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">No (2 components)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(SL(n, \mathbb{R})\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(\det(A) = 1\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n^2 - 1\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">No</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(O(n)\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(A^\top A = I\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n(n-1)/2\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">No (2 components)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(SO(n)\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(A^\top A = I,\; \det(A) = 1\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n(n-1)/2\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(U(n)\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(A^* A = I\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n^2\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(SU(n)\)</td>
+                            <td style="padding:8px; border-bottom:1px solid var(--border-color, #333);">\(A^* A = I,\; \det(A) = 1\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">\(n^2 - 1\)</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                            <td style="text-align:center; padding:8px; border-bottom:1px solid var(--border-color, #333);">Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px;">\(SE(3)\)</td>
+                            <td style="padding:8px;">\(\begin{pmatrix} R & \mathbf{t} \\ \mathbf{0}^\top & 1 \end{pmatrix},\; R \in SO(3)\)</td>
+                            <td style="text-align:center; padding:8px;">6</td>
+                            <td style="text-align:center; padding:8px;">Yes</td>
+                            <td style="text-align:center; padding:8px;">No</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <h3>Cartan's Closed Subgroup Theorem</h3>
+
+                <p>
+                    Why is closedness the only condition we need? The following theorem, due to Élie Cartan, 
+                    justifies our entire approach.
+                </p>
+
+                <div class="theorem" id="T-cartan_closed_subgroup">
+                    <span class="theorem-title">Theorem: Cartan's Closed Subgroup Theorem</span>
+                    <p>
+                        Every closed subgroup of \(GL(n, \mathbb{C})\) is a smooth submanifold of 
+                        \(M_n(\mathbb{C})\), and the group operations (multiplication and inversion) are 
+                        smooth maps with respect to this manifold structure.
+                    </p>
+                </div>
+
+                <p>
+                    The proof requires the inverse function theorem on manifolds, which lies beyond our current 
+                    tools (it will become available after smooth manifolds are formally introduced). We state 
+                    it here as the foundational result that justifies our definition: calling a closed subgroup 
+                    of \(GL(n, \mathbb{C})\) a "matrix <em>Lie</em> group" is not merely a convention — 
+                    Cartan's theorem guarantees that it is genuinely a Lie group in the abstract sense.
+                </p>
+
+                <p>
+                    It is worth noting the parallel with quotient structures. In 
+                    <a href="../Calculus/topological_spaces.html#T-hausdorff_quotient_group_action" class="ref-link"><strong>Topological Spaces</strong></a>, 
+                    we saw that closedness of a subgroup \(H\) is the condition ensuring the quotient space 
+                    \(G/H\) is Hausdorff. Here, closedness of the subgroup \(G\) in \(GL(n)\) is the condition 
+                    ensuring \(G\) is a smooth manifold. In both cases, closedness is the gatekeeper to 
+                    good geometric behavior.
+                </p>
+
+                <h3>Quotient Spaces</h3>
+
+                <p>
+                    If \(H \leq G\) is a closed subgroup of a matrix Lie group \(G\), then the quotient space 
+                    \(G/H\) carries a natural smooth manifold structure (by a generalization of Cartan's theorem). 
+                    Here, \(G/H\) denotes the set of left cosets \(\{gH : g \in G\}\) equipped with the 
+                    <a href="../Calculus/topological_spaces.html#D-quotient_topology" class="ref-link"><strong>quotient topology</strong></a>.
+                </p>
+
+                <p>
+                    An important distinction must be made. When \(H\) is a 
+                    <a href="group_isomorphism.html#D-normal_subgroup" class="ref-link"><strong>normal subgroup</strong></a>, 
+                    the quotient \(G/H\) is both a smooth manifold <em>and</em> a group (a 
+                    <a href="group_isomorphism.html#T-factor_group" class="ref-link"><strong>factor group</strong></a>). 
+                    When \(H\) is merely closed (not necessarily normal), \(G/H\) is still a smooth manifold — 
+                    called a <strong>homogeneous space</strong> — but it does not carry a group structure.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: The 2-Sphere as a Homogeneous Space</span>
+                    <p>
+                        The group \(SO(3)\) acts transitively on the unit sphere \(S^2 \subset \mathbb{R}^3\) 
+                        (any unit vector can be rotated to any other). The stabilizer of the north pole 
+                        \(\mathbf{e}_3 = (0, 0, 1)^\top\) is the subgroup of rotations about the \(z\)-axis, 
+                        which is isomorphic to \(SO(2)\). Therefore:
+                        \[
+                            SO(3) / SO(2) \cong S^2.
+                        \]
+                        The 2-sphere is a homogeneous space — it is a smooth manifold, but not a group 
+                        (there is no natural way to "multiply" two points on a sphere).
+                    </p>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!--  §3  LOOKING AHEAD                                        -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <section id="ahead" class="section-content">
+                <h2>Looking Ahead</h2>
+
+                <p>
+                    We have established the classical matrix Lie groups — \(GL\), \(SL\), \(O\), \(SO\), 
+                    \(U\), \(SU\), and \(SE(3)\) — as closed subgroups of the general linear group, and 
+                    Cartan's theorem assures us that each one is a smooth manifold with smooth group operations. 
+                    The summary table in the previous section makes a recurring pattern visible: each group is 
+                    carved out of \(GL(n)\) by a set of <em>nonlinear</em> algebraic equations 
+                    (\(A^\top A = I\), \(\det(A) = 1\), etc.).
+                </p>
+
+                <p>
+                    A natural question arises: is there a systematic way to move between these nonlinear 
+                    group-level constraints and simpler, <em>linear</em> conditions? The answer is yes, and 
+                    the tool is the <strong>matrix exponential</strong> — a power series that converts 
+                    matrices satisfying linear conditions (e.g., skew-symmetry \(A^\top = -A\)) into group 
+                    elements satisfying the corresponding nonlinear ones (e.g., orthogonality 
+                    \(e^A (e^A)^\top = I\)). In the 
+                    <a href="matrix_exponential.html"><strong>next page</strong></a>, we define this 
+                    exponential map, prove its fundamental properties, and use it to derive explicit formulas 
+                    for rotations — including <strong>Rodrigues' rotation formula</strong>, the computational 
+                    backbone of 3D rotation in robotics and computer graphics.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Road to Lie Algebras</h3>
+                    <p>
+                        The matrix exponential will reveal that each Lie group \(G\) has an associated 
+                        <strong>Lie algebra</strong> \(\mathfrak{g}\) — a vector space of "infinitesimal 
+                        generators" equipped with an operation called the <strong>Lie bracket</strong> that 
+                        encodes the group's non-commutativity at the linear level. This linearization is 
+                        the key to making Lie groups computationally tractable: instead of working with 
+                        nonlinear group elements, we work with their linear Lie algebra counterparts and 
+                        exponentiate back when needed. The full development of this theory spans the next 
+                        three pages:
+                    </p>
+                    <p>
+                        <strong>The Matrix Exponential</strong> (next) — the bridge from linear to nonlinear.
+                        <br>
+                        <strong>Lie Algebras and the Lie Bracket</strong> — the tangent space at the identity 
+                        and its algebraic structure.
+                        <br>
+                        <strong>The Lie Correspondence</strong> — how the algebra determines the group, 
+                        the Baker-Campbell-Hausdorff formula, and the adjoint representations.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
+    </body>
+</html>
