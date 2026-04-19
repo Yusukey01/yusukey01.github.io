@@ -27,75 +27,110 @@ uses_python: false
             <section id="jacobian" class="section-content">
                 <h2>Jacobian</h2>
                 <p>
-                    In the previous chapter, we defined the derivative as a <a href="linear_approximation.html#diff"><strong>linear operator</strong></a> 
-                    that maps a small input change \(dx\) to an output change \(df\). When we extend this to a vector-valued function \(f: \mathbb{R}^n \to \mathbb{R}^m\), 
-                    this operator is represented by the <strong>Jacobian matrix</strong>.
+                    In the previous page we defined the differential of a scalar function as a
+                    <a href="linear_approximation.html#D-differential"><strong>linear map on displacements</strong></a>.
+                    We now extend this to a vector-valued function
+                    \(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\). The linear map representing its differential is
+                    encoded by a matrix — the <strong>Jacobian</strong>.
+                </p>
+
+                <div class="theorem" id="D-jacobian">
+                    <span class="theorem-title">Definition: Jacobian</span>
+                    <p>
+                        Let \(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\) be differentiable at \(\mathbf{x}\). The
+                        <strong>Jacobian</strong> of \(\mathbf{f}\) at \(\mathbf{x}\), denoted \(\mathbf{f}'(\mathbf{x})\)
+                        or \(J_{\mathbf{f}}(\mathbf{x})\), is the \(m \times n\) matrix of partial derivatives
+                        \[
+                        J_{ij} \;=\; \frac{\partial f_i}{\partial x_j}, \qquad 1 \leq i \leq m,\; 1 \leq j \leq n.
+                        \]
+                        The corresponding differential — the linear map taking a displacement \(d\mathbf{x} \in \mathbb{R}^n\)
+                        to the linear part of the change in \(\mathbf{f}\) — is characterized by
+                        \[
+                        \mathbf{f}(\mathbf{x} + d\mathbf{x}) - \mathbf{f}(\mathbf{x})
+                            \;=\; \mathbf{f}'(\mathbf{x})\, d\mathbf{x} + o(\|d\mathbf{x}\|) \quad \text{as } d\mathbf{x} \to \mathbf{0}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    <strong>Two notations for the derivative-as-operator.</strong> The Jacobian \(\mathbf{f}'(\mathbf{x})\)
+                    is simultaneously (i) an \(m \times n\) matrix of partial derivatives and (ii) a linear map
+                    \(\mathbb{R}^n \to \mathbb{R}^m\). Both views are standard, and the corresponding notations are:
+                    \[
+                    d\mathbf{f} \;=\; \mathbf{f}'(\mathbf{x})\, d\mathbf{x}
+                    \qquad \text{(matrix-vector product)}
+                    \]
+                    \[
+                    d\mathbf{f} \;=\; \mathbf{f}'(\mathbf{x})[d\mathbf{x}]
+                    \qquad \text{(linear map applied to an argument)}
+                    \]
+                    For finite-dimensional calculations the two are interchangeable. The bracket form
+                    \(\mathbf{f}'(\mathbf{x})[d\mathbf{x}]\) is the notation of choice once we leave finite dimensions:
+                    for <strong>Fréchet derivatives</strong> on Banach spaces, for directional derivatives on
+                    manifolds, and for the operator-valued maps \(\mathrm{Ad}_g[X]\), \(\mathrm{ad}_X[Y]\) that appear
+                    in Lie theory and representation theory. This page uses the matrix-product form by default and the
+                    bracket form where operator composition is cleaner (notably in the Chain Rule).
                 </p>
 
                 <p>
-                    Consider \(f(x) \in \mathbb{R}^m\), where \(x \in \mathbb{R}^n\). By the differential notation,
-                    \[
-                    df = f'(x)dx
-                    \]
-                    where \(df \in \mathbb{R}^m \, \), \(dx \in \mathbb{R}^n\) and here, the linear operator \(f'(x)\) is 
-                    the \(m \times n\) <strong>Jacobian matrix</strong> such that:
-                    \[
-                    J_{ij} = \frac{\partial f_i}{\partial x_j}.
-                    \]
-                    Here, \(J_{ij}\) represents the rate of change of the \(i\)-th output \(f_i\) with respect to the 
-                    \(j\)-th input \(x_j\).
-                </p>
-                <p>
-                    For example, Let \(f(x) = \begin{bmatrix}f_1(x) \\ f_2(x) \end{bmatrix}\), 
-                    and \(x = \begin{bmatrix}x_1 \\ x_2 \end{bmatrix} \). Then
+                    The \(i\)-th row of \(J\) records the partial derivatives of the \(i\)-th output component; the
+                    \(j\)-th column records the effect of perturbing the \(j\)-th input coordinate. Writing out
+                    \(d\mathbf{f} = J\, d\mathbf{x}\) component by component for \(n = m = 2\):
                     \[
                     \begin{align*}
-                    df &= \begin{bmatrix} \frac{\partial f_1}{\partial x_1} & \frac{\partial f_1}{\partial x_2} \\
-                                        \frac{\partial f_2}{\partial x_1} & \frac{\partial f_2}{\partial x_2} 
-                        \end{bmatrix} 
-                        \begin{bmatrix} dx_1 \\ dx_2 \end{bmatrix} \\\\
-                    &=  \begin{bmatrix} \frac{\partial f_1}{\partial x_1}dx_1 + \frac{\partial f_1}{\partial x_2}dx_2 \\
-                                        \frac{\partial f_2}{\partial x_1}dx_1 + \frac{\partial f_2}{\partial x_2}dx_2 
-                        \end{bmatrix}.
+                    d\mathbf{f}
+                        &= \begin{bmatrix}
+                             \partial f_1/\partial x_1 & \partial f_1/\partial x_2 \\
+                             \partial f_2/\partial x_1 & \partial f_2/\partial x_2
+                           \end{bmatrix}
+                           \begin{bmatrix} dx_1 \\ dx_2 \end{bmatrix} \\
+                        &= \begin{bmatrix}
+                             (\partial f_1/\partial x_1)\,dx_1 + (\partial f_1/\partial x_2)\,dx_2 \\
+                             (\partial f_2/\partial x_1)\,dx_1 + (\partial f_2/\partial x_2)\,dx_2
+                           \end{bmatrix}.
                     \end{align*}
                     \]
-                    As you can see, the Jacobian matrix \(f'(x)\) acts as a linear operator that maps changes in \(x\) 
-                    encoded in \(dx\) to corresponding changes in \(f(x)\) encoded in \(df\). 
-                </P>
+                    The Jacobian acts as a linear operator that maps input displacements \(d\mathbf{x}\) to the
+                    corresponding linear part of the output change \(d\mathbf{f}\).
+                </p>
 
                 <p>
-                    <strong>Note: Input & Output: vector \(\Longrightarrow\) First derivative: Jacobian matrix.</strong>
+                    <strong>Convention (shape).</strong> For \(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\) the Jacobian
+                    \(\mathbf{f}'(\mathbf{x})\) is \(m \times n\). Two special cases recover earlier objects:
                 </p>
-                
+                <ul style="padding-left: 40px;">
+                    <li>\(m = 1\) (scalar output): \(\mathbf{f}'(\mathbf{x})\) is a \(1 \times n\) <em>row</em> vector,
+                        equal to \((\nabla f)^T\) in the
+                        <a href="linear_approximation.html#diff"><strong>gradient convention</strong></a>
+                        established previously.</li>
+                    <li>\(n = 1\) (curve): \(\mathbf{f}'(\mathbf{x})\) is an \(m \times 1\) <em>column</em> vector,
+                        the velocity vector of the curve.</li>
+                </ul>
+
                 <p>
-                    Instead of expressing the Jacobian component by component, it is often more convenient to use a 
-                    symbolic representation. 
-                    <br>
-                    For example, consider a trivial case: the matrix equation \(f(x) = Ax\) where \(A \in \mathbb{R}^{m \times n}\) 
-                    is a constant matrix.
-                    Then 
+                    As a first example, consider the affine map \(\mathbf{f}(\mathbf{x}) = A\mathbf{x}\) with
+                    \(A \in \mathbb{R}^{m \times n}\) constant. Expanding the increment,
                     \[
-                    \begin{align*}
-                    df &= f(x + dx) - f(x) \\\\
-                    &= A(x + dx) - Ax \\\\
-                    &= Adx \\\\
-                    &= f'(x)dx
-                    \end{align*}
+                    \Delta \mathbf{f} \;=\; \mathbf{f}(\mathbf{x} + d\mathbf{x}) - \mathbf{f}(\mathbf{x})
+                                     \;=\; A(\mathbf{x} + d\mathbf{x}) - A\mathbf{x} \;=\; A\, d\mathbf{x},
                     \]
-                    Thus \(f'(x) = A \) is the Jacobian matrix. 
+                    the linear part is exact and there is no \(o(\|d\mathbf{x}\|)\) remainder. Reading off the
+                    matrix-product form identifies the Jacobian as \(\mathbf{f}'(\mathbf{x}) = A\) — the constant
+                    matrix \(A\) itself is its own linearization, as expected for an affine map.
                 </p>
 
-               <div class="insight-box">
+                <div class="insight-box">
                     <h3>Local Transformation of Hypervolumes</h3>
                     <p>
-                        The Jacobian describes how an <strong>infinitesimal hypercube</strong> in the input space \(\mathbb{R}^n\) is 
-                        mapped to a parallelotope in the output space \(\mathbb{R}^m\). 
+                        When \(m = n\), the Jacobian describes how an <strong>infinitesimal hypercube</strong> in the
+                        input space is mapped to a parallelotope in the output space.
                     </p>
                     <p>
-                        The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> of the Jacobian, \(\det(J)\), represents the 
-                        <strong>local volume expansion factor</strong>. In Generative AI, specifically, <strong>Normalizing Flows</strong>, 
-                        this determinant is critical for calculating the change of variables in probability density functions, ensuring that 
-                        the total probability remains integrated to one after a complex nonlinear transformation.
+                        The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> of the
+                        Jacobian, \(\det J\), is the <strong>local volume expansion factor</strong>. In generative
+                        modeling — specifically, <strong>Normalizing Flows</strong> — this determinant is what
+                        allows the change-of-variables formula to preserve total probability mass under complex
+                        nonlinear transformations of a base distribution.
                     </p>
                 </div>
 
@@ -105,125 +140,183 @@ uses_python: false
                 <h2>Chain Rule</h2>
 
                 <p>
-                    In <a href="../Machine_learning/deep_nn.html"><strong>Deep Learning</strong></a>, we treat a neural network as a composition of differentiable layers. 
-                    If \(x \xrightarrow{f} u \xrightarrow{g} y\), then the total derivative is the product of the Jacobian matrices:
-                    \[
-                    \frac{dy}{dx} = \frac{dy}{du} \frac{du}{dx} = J_g(u) J_f(x)
-                    \]
-                    Since matrix multiplication represents the composition of linear transformations, the Chain Rule essentially 
-                    states that the linearization of a composed function is the composition of the linearizations of its individual components.
+                    In <a href="../Machine_learning/deep_nn.html"><strong>deep learning</strong></a>, a neural network
+                    is a composition of differentiable layers. The chain rule turns differentiation of such a
+                    composition into the composition of the <em>individual</em> differentials — and, because
+                    differentials are linear maps, composition becomes matrix multiplication of Jacobians.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Chain Rule</span> 
-                    Suppose \(f(x) = g(h(x))\) where both \(g\) and \(h\) are differentiable. Then
-                    \[
-                    \begin{align*}
-                    df &= f'(x)[dx]  \\\\
-                    &= g'(h(x))[h'(x)[dx]
-                    \end{align*}
-                    \]
-                </div>
-                <p>
-                    Intuitively, if we think about a higher dimensional case, it is clear that the chain rule is not commutative in general. 
-                    <br>
-                    For example, consider 
+                <div class="theorem" id="T-chain_rule">
+                    <span class="theorem-title">Theorem: Chain Rule</span>
+                    <p>
+                        Let \(\mathbf{h} : \mathbb{R}^n \to \mathbb{R}^p\) be differentiable at \(\mathbf{x}\) and
+                        \(\mathbf{g} : \mathbb{R}^p \to \mathbb{R}^m\) be differentiable at \(\mathbf{u} := \mathbf{h}(\mathbf{x})\).
+                        Then the composition \(\mathbf{f} = \mathbf{g} \circ \mathbf{h}\) is differentiable at
+                        \(\mathbf{x}\), and its differential is the composition of the individual differentials:
                         \[
-                        x \in \mathbb{R}^n, \, h(x) \in \mathbb{R}^p, \, \text{and } g(h(x)) \in \mathbb{R}^m
-                        \] 
-                    Then the output must be the \(m \times n\) <strong>Jacobian matrix</strong> \(f'(x)\).
-                    <br>
-                    To construct this \(m \times n\) matrix, we must need the product of the \(m \times p\) Jacobian matrix \(g'(h(x))\) 
-                    and the \(p \times n\) Jacobian matrix h'(x) in this order. 
-                </p>
+                        \mathbf{f}'(\mathbf{x})[d\mathbf{x}]
+                            \;=\; \mathbf{g}'(\mathbf{h}(\mathbf{x}))\bigl[\,\mathbf{h}'(\mathbf{x})[d\mathbf{x}]\,\bigr].
+                        \]
+                        Equivalently, at the level of Jacobian matrices,
+                        \[
+                        \mathbf{f}'(\mathbf{x}) \;=\; \mathbf{g}'(\mathbf{h}(\mathbf{x}))\,\mathbf{h}'(\mathbf{x})
+                        \qquad \text{(an } m \times n \text{ matrix, from } m \times p \text{ times } p \times n\text{).}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(J_{\mathbf{h}} := \mathbf{h}'(\mathbf{x})\) and \(J_{\mathbf{g}} := \mathbf{g}'(\mathbf{u})\).
+                        By differentiability of \(\mathbf{h}\) at \(\mathbf{x}\),
+                        \[
+                        \mathbf{h}(\mathbf{x} + d\mathbf{x}) - \mathbf{h}(\mathbf{x})
+                            \;=\; J_{\mathbf{h}}\, d\mathbf{x} + r_{\mathbf{h}}(d\mathbf{x}),
+                        \qquad r_{\mathbf{h}}(d\mathbf{x}) = o(\|d\mathbf{x}\|).
+                        \]
+                        Let \(d\mathbf{u} := J_{\mathbf{h}}\, d\mathbf{x} + r_{\mathbf{h}}(d\mathbf{x})\); note that
+                        \(\|d\mathbf{u}\| = O(\|d\mathbf{x}\|)\). By differentiability of \(\mathbf{g}\) at
+                        \(\mathbf{u}\),
+                        \[
+                        \mathbf{g}(\mathbf{u} + d\mathbf{u}) - \mathbf{g}(\mathbf{u})
+                            \;=\; J_{\mathbf{g}}\, d\mathbf{u} + r_{\mathbf{g}}(d\mathbf{u}),
+                        \qquad r_{\mathbf{g}}(d\mathbf{u}) = o(\|d\mathbf{u}\|).
+                        \]
+                        Composing these and expanding,
+                        \[
+                        \mathbf{f}(\mathbf{x} + d\mathbf{x}) - \mathbf{f}(\mathbf{x})
+                            \;=\; J_{\mathbf{g}} J_{\mathbf{h}}\, d\mathbf{x}
+                                + \underbrace{J_{\mathbf{g}}\, r_{\mathbf{h}}(d\mathbf{x})}_{o(\|d\mathbf{x}\|)}
+                                + \underbrace{r_{\mathbf{g}}(d\mathbf{u})}_{o(\|d\mathbf{u}\|) = o(\|d\mathbf{x}\|)}.
+                        \]
+                        The first error term is \(o(\|d\mathbf{x}\|)\) because \(J_{\mathbf{g}}\) is a fixed linear map
+                        (hence bounded) and \(r_{\mathbf{h}}(d\mathbf{x}) = o(\|d\mathbf{x}\|)\). The second is
+                        \(o(\|d\mathbf{x}\|)\) because \(\|d\mathbf{u}\| = O(\|d\mathbf{x}\|)\). Identifying the linear
+                        part gives \(\mathbf{f}'(\mathbf{x}) = J_{\mathbf{g}} J_{\mathbf{h}}\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Order matters: non-commutativity of matrix multiplication</h3>
+                    <p>
+                        The Jacobian of a composition is a product of Jacobians in a specific order:
+                        outer-first, inner-last. The dimensional count confirms this — if
+                        \(\mathbf{x} \in \mathbb{R}^n\), \(\mathbf{h}(\mathbf{x}) \in \mathbb{R}^p\),
+                        \(\mathbf{g}(\mathbf{h}(\mathbf{x})) \in \mathbb{R}^m\), then only
+                        \[
+                        \underbrace{\mathbf{g}'(\mathbf{h}(\mathbf{x}))}_{m \times p}
+                        \;\cdot\;
+                        \underbrace{\mathbf{h}'(\mathbf{x})}_{p \times n}
+                        \]
+                        produces a well-defined \(m \times n\) matrix. Reversing the order would, in general, not even
+                        be dimensionally compatible. This non-commutativity is the reason chain-rule applications in
+                        machine learning must keep careful track of which direction the composition runs.
+                    </p>
+                </div>
             </section>
 
             <section id="backp" class="section-content">
-            <h2>Backpropagation</h2>
-            <p>
-                Consider a neural network with a scalar loss function \(L: \mathbb{R}^n \to \mathbb{R}\). Here, the final Jacobian 
-                is a row vector (\(1 \times n\)). The order of matrix multiplication in the Chain Rule determines the computational cost.
-            </p>
+                <h2>Backpropagation</h2>
 
-            <p>
-                The <strong>backpropagation</strong> or more generally, <a href="../Machine_learning/autodiff.html"><strong>reverse mode automatic differentiation</strong></a> is a widely used 
-                algorithm in machine learning to train <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a>. 
-                It computes gradients of the loss function with respect to the network's parameters (weights and biases) to minimize 
-                the loss, improving model performance.
-            </p>
-
-            <p>
-                The backpropagation works by explicitly transmitting <strong>gradients</strong> layer by layer, maintaining the order 
-                dictated by the <strong>Chain Rule</strong>. At each layer (or function), the gradient of the loss is computed with 
-                respect to the output of the previous layer.
-            </p>
-
-            <p>
-                Consider a small neural network, which has three layers(functions): \(f_1, f_2, f_3\). This network represents 
-                a composition of functions:
-                \[
-                L(x) = f_3(f_2(f_1(x)))
-                \]
-                where \(x \in \mathbb{R}^n\) represents the inputs(parameters) and \(L(x) \in \mathbb{R}^m\) is the 
-                output often called the <strong>loss function</strong>.
-            </p> 
-            <p>
-                Suppose \(f_1 \in \mathbb{R}^p\), \(f_2 \in \mathbb{R}^q\), and \(f_3 \in \mathbb{R}^m\).
-                <br>
-                To compute the derivative of this function, we apply the chain rule:
-                \[
-                dL = f_3'f_2'f_1'
-                = (m \times q)(q \times p)(p \times n)
-                \]
-                This is the multiplication of <strong>Jacobian matrices</strong> for each layer. 
-            </p>
-            <p>
-                In <strong>reverse</strong> mode, the algorithm compute this expression from the left \(f_3'\) backward.
-                So, in the context of neural network structure, the backpropagation process appears to follow a "reverse" order, 
-                starting from the output layer and moving backward through the network. However, from a mathematical perspective, 
-                this corresponds to a standard left-to-right multiplication of Jacobian matrices.
-            </p>
-            <p>
-                This reverse order makes it computationally efficient for large scale neural networks with many inputs (\(n\)) 
-                and a single output (\(m = 1\)).  
-                \[
-                \begin{align*}
-                (f_3'f_2')f_1' &= [(1 \times q)(q \times p)](p \times n) \\\\
-                            &= (1 \times p)(p \times n) \\\\
-                            &= (1 \times n) \\\\
-                            &= (\nabla L)^T
-                \end{align*}
-                \]
-                This efficiency is due to backpropagation requiring only the computation of <strong>vector-Jacobian products</strong>, which are 
-                less computationally expensive than full matrix multiplications. At each step, only the product of a row 
-                vector(the transpose of a local gradient) with a Jacobian matrix is calculated.
-            </p>
-            <p>
-                In contrast,in <strong>forward mode</strong> differentiation requires full matrix multiplications.
-                \[
-                \begin{align*}
-                f_3'(f_2'f_1') &= (1 \times q)[(q \times p)(p \times n)] \\\\
-                            &= (1 \times q)(q \times n)  \\\\
-                            &= (1 \times n)  \\\\
-                            &= (\nabla L)^T
-                \end{align*}
-                \]
-            </p>
-
-            <div class="insight-box">
-                <h3>The VJP (Vector-Jacobian Product) and Memory</h3>
                 <p>
-                    Storing a full Jacobian matrix for a layer with 10,000 inputs and 10,000 outputs would require 
-                    100 million entries. To avoid this, modern frameworks like <strong>PyTorch</strong> only compute the 
-                    <strong>Vector-Jacobian Product (VJP)</strong>:
-                    \[
-                    v^T J
-                    \]
-                    where \(v^T\) is the gradient flowing back from the output. This allows the system to compute the necessary 
-                    gradients without ever materializing the full Jacobian matrix in memory, making the training of "Deep" models 
-                    physically possible.
+                    We now specialize the chain rule to the situation that drives neural-network training: a
+                    <strong>scalar loss</strong> computed by a deep composition. This specialization is what the
+                    <a href="../Machine_learning/autodiff.html"><strong>reverse-mode automatic differentiation</strong></a>
+                    algorithm — commonly called <strong>backpropagation</strong> in
+                    <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> training —
+                    computes efficiently.
                 </p>
-            </div>
+
+                <p>
+                    Consider three composed layers with compatible dimensions:
+                    \[
+                    \mathbf{x} \;\xrightarrow{\mathbf{f}_1}\; \mathbb{R}^{p}
+                       \;\xrightarrow{\mathbf{f}_2}\; \mathbb{R}^{q}
+                       \;\xrightarrow{f_3}\; \mathbb{R},
+                    \]
+                    with \(\mathbf{x} \in \mathbb{R}^n\) the parameters and \(f_3\) scalar-valued so that the final
+                    output is the loss
+                    \[
+                    L(\mathbf{x}) \;=\; f_3\bigl(\mathbf{f}_2(\mathbf{f}_1(\mathbf{x}))\bigr).
+                    \]
+                    By the <a href="#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>, the Jacobian of
+                    \(L\) — a \(1 \times n\) row vector, since the output is scalar — factors as the product of the
+                    layer Jacobians:
+                    \[
+                    L'(\mathbf{x}) \;=\; f_3'\,\mathbf{f}_2'\,\mathbf{f}_1'
+                    \qquad \text{with shapes } (1 \times q)(q \times p)(p \times n).
+                    \]
+                    By the
+                    <a href="linear_approximation.html#diff"><strong>gradient convention</strong></a>, the column
+                    vector \(\nabla L\) is the transpose of this row: \(L'(\mathbf{x}) = (\nabla L)^T\).
+                </p>
+
+                <h3>Associativity and evaluation order</h3>
+
+                <p>
+                    Matrix multiplication is associative but not commutative, so the <em>value</em> of the product
+                    \(f_3'\,\mathbf{f}_2'\,\mathbf{f}_1'\) does not depend on the order of the parenthesization — but
+                    the <em>cost</em> of computing it does. The two natural parenthesizations are:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>Reverse mode</strong> (backpropagation): left-to-right evaluation
+                        \(\bigl((f_3' \, \mathbf{f}_2')\, \mathbf{f}_1'\bigr)\). In terms of the computation graph,
+                        this corresponds to starting at the <em>output</em> layer and propagating gradients
+                        <em>backward</em> through the network — hence the name.</li>
+                    <li><strong>Forward mode</strong>: right-to-left evaluation
+                        \(\bigl(f_3'\,(\mathbf{f}_2'\, \mathbf{f}_1')\bigr)\), propagating perturbations forward from
+                        inputs toward outputs.</li>
+                </ul>
+
+                <p>
+                    Tracking the shapes through reverse mode:
+                    \[
+                    \begin{align*}
+                    \bigl(f_3'\,\mathbf{f}_2'\bigr)\,\mathbf{f}_1'
+                        &= \bigl[(1 \times q)(q \times p)\bigr](p \times n) \\
+                        &= (1 \times p)(p \times n) \\
+                        &= (1 \times n) = (\nabla L)^T.
+                    \end{align*}
+                    \]
+                    Every intermediate result is a row vector of length at most \(\max(p, q, n)\); no \(p \times n\)
+                    or \(q \times n\) matrix is ever materialized. Each layer contributes a single
+                    <strong>vector-Jacobian product</strong> (VJP) — the left-multiplication of a row vector
+                    \(\mathbf{v}^T\) by a layer's Jacobian \(J\).
+                </p>
+
+                <p>
+                    Forward mode, by contrast, accumulates full intermediate Jacobians:
+                    \[
+                    \begin{align*}
+                    f_3'\,\bigl(\mathbf{f}_2'\,\mathbf{f}_1'\bigr)
+                        &= (1 \times q)\bigl[(q \times p)(p \times n)\bigr] \\
+                        &= (1 \times q)(q \times n) \\
+                        &= (1 \times n) = (\nabla L)^T.
+                    \end{align*}
+                    \]
+                    The intermediate matrix \(\mathbf{f}_2'\,\mathbf{f}_1'\) has \(q \times n\) entries, which is much
+                    larger than any row vector in reverse mode when \(n\) is large (the typical parameter regime).
+                    This is the fundamental reason deep networks are trained with reverse-mode autodiff rather than
+                    forward-mode: for scalar loss and high-dimensional parameters, reverse mode is optimal.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The VJP and Memory</h3>
+                    <p>
+                        Materializing a full Jacobian for a layer with, say, \(10{,}000\) inputs and \(10{,}000\)
+                        outputs would require \(10^8\) entries. To avoid this, modern frameworks such as
+                        <strong>PyTorch</strong> and <strong>JAX</strong> implement each layer's differentiation as a
+                        <strong>vector-Jacobian product</strong>
+                        \[
+                        \mathbf{v}^T J,
+                        \]
+                        where \(\mathbf{v}^T\) is the gradient flowing back from the downstream layers. This allows
+                        the system to compute every gradient needed for training without ever materializing a full
+                        layer Jacobian — which is what makes training of "deep" models physically feasible.
+                    </p>
+                </div>
             </section>
         </div>
         <script src="/js/main.js"></script> 
