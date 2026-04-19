@@ -31,7 +31,7 @@ uses_python: false
 
                 <p> 
                     We usually accept the convergence of probabilities based on experimental results or large-scale simulations.
-                    In <a href="mle.html"><strong>Part 9</strong></a> and <a href="hypothesis_testing.html"><strong>Part 10</strong></a>, 
+                    In <a href="mle.html"><strong>maximum likelihood estimation</strong></a> and <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a>, 
                     we relied on the idea that sample statistics approximate population parameters as the sample size grows. 
                     But what exactly does "approximate" mean for random variables? Unlike deterministic sequences, 
                     a sequence of random variables can approach a limit in several distinct senses, each with different mathematical 
@@ -70,6 +70,11 @@ uses_python: false
                         \bar{X}_n = \frac{1}{n}\sum_{i=1}^{n} X_i \xrightarrow{a.s.} \mu.
                         \]
                     </p>
+                    <p>
+                        <em>Proof:</em> Durrett, <em>Probability: Theory and Examples</em>, §2.4, Theorem 2.4.1. 
+                        The classical proof via Kolmogorov's three-series theorem relies on truncation and martingale-style 
+                        estimates that lie beyond this introductory treatment; we accept the result here and deploy it freely.
+                    </p>
                 </div>
 
                 <p>
@@ -93,7 +98,7 @@ uses_python: false
                     individual sample path settles down. This mode of convergence corresponds to the Weak Law.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-WLLN">
                     <span class="theorem-title">Theorem: Weak Law of Large Numbers (WLLN)</span>
                     <p>
                         Let \(X_1, X_2, \ldots\) be i.i.d. random variables with 
@@ -104,15 +109,21 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    The WLLN is often proved using <strong>Chebyshev's inequality</strong>, which requires the assumption of a 
-                    finite variance (\(\sigma^2 < \infty\)). Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
-                    \[
-                    P(|\bar{X}_n - \mu| \geq \epsilon) \leq \frac{\sigma^2}{n\epsilon^2} \to 0.
-                    \]
-                    Note: While Chebyshev's proof requires finite variance, Khinchin's theorem shows that the WLLN actually holds 
-                    under the same condition as the SLLN — only a finite mean (\(\mathbb{E}[|X_1|] < \infty\)) is needed.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof sketch (via Chebyshev):</span>
+                    <p>
+                        The WLLN is often proved using <strong>Chebyshev's inequality</strong>, which requires the assumption of a 
+                        finite variance (\(\sigma^2 < \infty\)). Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
+                        \[
+                        P(|\bar{X}_n - \mu| \geq \epsilon) \leq \frac{\sigma^2}{n\epsilon^2} \to 0.
+                        \]
+                    </p>
+                    <p>
+                        While this argument requires finite variance, <strong>Khinchin's theorem</strong> shows that the WLLN actually holds 
+                        under the same condition as the SLLN — only a finite mean (\(\mathbb{E}[|X_1|] < \infty\)) is needed. 
+                        See Durrett, <em>Probability: Theory and Examples</em>, §2.2.
+                    </p>
+                </div>
 
                 <p>
                     The weakest mode concerns only the distribution functions, not the random 
@@ -147,6 +158,15 @@ uses_python: false
                         \]
                         The reverse is not generally true. However, if the limit \(X\) is a <strong>constant</strong> 
                         (as in LLN), then convergence in distribution implies convergence in probability.
+                    </p>
+                    <p>
+                        <em>Proof status:</em> The implication \(\xrightarrow{P} \Longrightarrow \xrightarrow{D}\) is proved 
+                        in the <a href="#T-prob_implies_dist" class="ref-link"><strong>next section</strong></a>. 
+                        The implication \(\xrightarrow{a.s.} \Longrightarrow \xrightarrow{P}\) follows from the fact that 
+                        \(\{|X_n - X| \geq \epsilon\}\) is eventually contained in the a.s. null set of non-convergence; 
+                        see Durrett, <em>Probability: Theory and Examples</em>, §2.3, Theorem 2.3.2. 
+                        The partial converse \(\xrightarrow{D} \Longrightarrow \xrightarrow{P}\) for constant limits 
+                        is Durrett, §3.2, Exercise 3.2.3.
                     </p>
                 </div>
 
@@ -202,7 +222,7 @@ uses_python: false
                     convergence, it does not require individual sample paths to converge pointwise - only that "large deviations" become rare events.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-convergence_in_probability">
                     <span class="theorem-title">Definition: Convergence in Probability</span>
                     <p>
                         Let \(\{X_n\}\) be a sequence of random variables and \(X\) be a random variable on a common probability 
@@ -224,7 +244,7 @@ uses_python: false
                     the asymptotic behavior of estimators.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-continuous_mapping">
                     <span class="theorem-title">Theorem: Continuous Mapping Theorem</span>
                     <p>
                         Suppose \(X_n \xrightarrow{P} a\) where \(a\) is a constant, and the function \(f\) is continuous at \(a\). Then 
@@ -259,7 +279,10 @@ uses_python: false
                     \[
                     f(X_n) \xrightarrow{P} f(X).
                     \]
-                    The proof follows similar logic but requires a more careful measure-theoretic argument.
+                    <em>Proof:</em> Durrett, <em>Probability: Theory and Examples</em>, §3.2, Theorem 3.2.4. 
+                    The argument handles the non-constant limit via a careful set-theoretic decomposition around the 
+                    discontinuity set of \(f\); the constant case proved above is the pedagogically clean specialization 
+                    we will need in the sequel.
                 </p>
 
                 <p>
@@ -280,7 +303,7 @@ uses_python: false
                     limiting distribution even if they are defined on entirely different probability spaces.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-convergence_in_distribution">
                     <span class="theorem-title">Definition: Convergence in Distribution</span>
                     <p>
                         Let \(\{X_n\}\) be a sequence of random variables with CDFs \(F_{X_n}\), and let \(X\) be a random variable 
@@ -304,8 +327,8 @@ uses_python: false
                     However, the reverse implication does hold:
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem:</span>
+                <div class="theorem" id="T-prob_implies_dist">
+                    <span class="theorem-title">Theorem: Convergence in Probability Implies Convergence in Distribution</span>
                     <p>
                         If \(X_n\) converges to \(X\) in probability, then \(X_n\) converges to \(X\) in distribution. 
                     </p>
@@ -373,9 +396,35 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="insight-box">
+                    <h3>Bridge: The Analytical Hierarchy in \(L^p\) Spaces</h3>
+                    <p>
+                        The hierarchy \(\xrightarrow{a.s.} \Longrightarrow \xrightarrow{P} \Longrightarrow \xrightarrow{D}\) 
+                        has a parallel in the setting of general measure spaces. For measurable functions on 
+                        \((\Omega, \mathcal{F}, \mu)\), the <a href="../Calculus/lp_spaces.html#T-convergence_implications" class="ref-link"><strong>Relations Between Modes of Convergence</strong></a> 
+                        catalog the implications — and non-implications — among 
+                        \(L^p\) convergence, pointwise a.e. convergence, convergence in measure, and uniform a.e. convergence.
+                    </p>
+                    <p>
+                        <strong>Specialization to \(\mu = \mathbb{P}\):</strong> On a probability space, a.e. becomes a.s., 
+                        and convergence in measure becomes convergence in probability 
+                        (\(\mu(\{|f_n - f| \geq \epsilon\}) \to 0\) is literally the definition of \(\xrightarrow{P}\)). 
+                        The analytical statement that \(L^p\) convergence implies convergence in measure therefore 
+                        specializes to: if \(\mathbb{E}[|X_n - X|^p] \to 0\) for some \(p \geq 1\), then 
+                        \(X_n \xrightarrow{P} X\). Conversely, convergence in probability does not imply \(L^p\) convergence 
+                        without an integrable domination hypothesis — this is why the CLT, stated as 
+                        \(\xrightarrow{D}\), is a genuinely weaker statement than any finite-moment version.
+                    </p>
+                    <p>
+                        Convergence in distribution \(\xrightarrow{D}\), by contrast, has no direct counterpart in the general 
+                        \(L^p\) hierarchy: it depends only on the <em>distributions</em> of the \(X_n\), not on the underlying 
+                        probability space. It is a weaker, distribution-level mode tailored to probability theory.
+                    </p>
+                </div>
+
                 <p>
-                    We can now see that the <strong>Central Limit Theorem (CLT)</strong> - first stated without proof in 
-                    <a href="gaussian.html#clt"><strong>Part 4: Gaussian Distribution</strong></a> - is precisely a statement 
+                    We can now see that the <strong>Central Limit Theorem (CLT)</strong> - first stated without proof in our 
+                    treatment of the <a href="gaussian.html#clt"><strong>Gaussian distribution</strong></a> - is precisely a statement 
                     about convergence in distribution. To prove the CLT rigorously, we need a tool that characterizes distributions 
                     and behaves well under limits: the moment generating function.
                 </p>
@@ -392,7 +441,7 @@ uses_python: false
                     simpler problem of pointwise convergence of real-valued functions.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-MGF">
                     <span class="theorem-title">Definition: Moment Generating Function (MGF)</span>
                     <p>
                         Let \(X\) be a random variable such that for some \(h > 0\), the expectation of \(e^{tX}\) exists 
@@ -427,7 +476,7 @@ uses_python: false
                     The key theorem connecting MGFs to convergence in distribution is:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-levy_continuity_mgf">
                     <span class="theorem-title">Theorem: Lévy's Continuity Theorem - MGF Version</span>
                     <p>
                         Let \(\{X_n\}\) be a sequence of random variables with MGFs \(M_n(t)\) that exist for \(t \in (-h, h)\). 
@@ -437,6 +486,14 @@ uses_python: false
                         X_n \xrightarrow{D} X.
                         \]
                     </p>
+                    <p>
+                        <em>Proof:</em> The classical form of Lévy's continuity theorem is stated for 
+                        <strong>characteristic functions</strong> \(\varphi_X(t) = \mathbb{E}[e^{itX}]\), which exist for all 
+                        random variables without integrability conditions; see Durrett, <em>Probability: Theory and Examples</em>, 
+                        §3.3, Theorem 3.3.17. The MGF version stated here follows by the same Fourier-analytic argument under 
+                        the stronger hypothesis that the MGF exists in a neighborhood of \(0\) (which forces all moments to be 
+                        finite and the MGF to uniquely determine the distribution).
+                    </p>
                 </div>
 
                 <p>
@@ -444,7 +501,7 @@ uses_python: false
                     We now apply this strategy to prove the Central Limit Theorem.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-CLT">
                     <span class="theorem-title">Theorem: Central Limit Theorem (CLT)</span>
                     <p>
                         Let \(X_1, X_2, \ldots, X_n\) be i.i.d. random variables with mean \(\mu\) and variance \(\sigma^2 > 0\). 
@@ -505,7 +562,10 @@ uses_python: false
                         \[
                         m''(\xi_n) \to m''(0) = \sigma^2 \implies m''(\xi_n) - \sigma^2 \to 0.
                         \]
-                        Using the fundamental limit \(\lim_{n \to \infty}\left(1 + \frac{x}{n}\right)^n = e^x\) with \(x = \frac{t^2}{2}\):
+                        To close the limit, we use the following generalization of the exponential limit: 
+                        <strong>if \(c_n \to c\) and \(\epsilon_n \to 0\), then \(\left(1 + \frac{c_n}{n} + \frac{\epsilon_n}{n}\right)^n \to e^c\).</strong> 
+                        (This follows by taking logarithms and applying the Taylor expansion \(\ln(1 + x) = x + O(x^2)\).) 
+                        Applying this with \(c_n \equiv \frac{t^2}{2}\) and \(\epsilon_n = \frac{[m''(\xi_n) - \sigma^2]t^2}{2\sigma^2} \to 0\):
                         \[
                         \lim_{n \to \infty} M_n(t) = e^{t^2/2}.
                         \]
@@ -546,13 +606,21 @@ uses_python: false
                     have order \(\sigma / \sqrt{n}\), and once rescaled by \(\sqrt{n}\), they converge to a Gaussian with variance \(\sigma^2\).
                 </p>
 
+                <p>
+                    <strong>Remark on hypotheses.</strong> The assumption that \(M(t)\) exists in a neighborhood of zero is 
+                    convenient for our proof, but is <em>not</em> necessary for the conclusion. The full <strong>Lindeberg-Lévy CLT</strong> 
+                    requires only a finite variance (\(\sigma^2 < \infty\)); the proof uses characteristic functions in place of MGFs 
+                    and the classical Lévy continuity theorem referenced above. See Durrett, <em>Probability: Theory and Examples</em>, 
+                    §3.4, Theorem 3.4.1. In this section we traded generality for a transparent derivation.
+                </p>
+
                 <div class="insight-box">
                     <h3>Connections to Machine Learning</h3>
                     <p>
                         The convergence results developed in this section are not merely theoretical. The <strong>Law of Large Numbers</strong> 
                         justifies replacing expectations with sample averages, which is the foundation of empirical risk minimization: 
                         minimizing the training loss converges to minimizing the true expected loss as the dataset grows. The <strong>CLT</strong> 
-                        explains why confidence intervals and hypothesis tests (from <a href="hypothesis_testing.html"><strong>Part 10</strong></a>) 
+                        explains why confidence intervals and hypothesis tests (from our development of <a href="hypothesis_testing.html"><strong>statistical inference and hypothesis testing</strong></a>) 
                         work: test statistics are asymptotically normal regardless of the underlying distribution. In deep learning, 
                         the <strong>Continuous Mapping Theorem</strong> ensures that if parameter estimates converge, so do the predictions of any 
                         continuous model.
@@ -561,7 +629,7 @@ uses_python: false
 
                 <p>
                     We now have the tools to reason rigorously about parameter estimation and inference. 
-                    In <a href="bayesian.html"><strong>Part 14: Introduction to Bayesian Statistics</strong></a>, we adopt a fundamentally 
+                    In our development of <a href="bayesian.html"><strong>Bayesian statistics</strong></a>, we adopt a fundamentally 
                     different perspective on inference - treating parameters themselves as random variables with prior 
                     distributions - where the convergence results developed here ensure that Bayesian and frequentist approaches agree 
                     in the large-sample limit.
