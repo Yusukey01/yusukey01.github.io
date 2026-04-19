@@ -47,7 +47,7 @@ uses_python: true
                     Fourier transform.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-fourier_transform">
                     <span class="theorem-title">Definition: Fourier Transform</span> 
                     <p>
                         For a function \(f: \mathbb{R} \to \mathbb{C}\), we define:
@@ -66,7 +66,7 @@ uses_python: true
 
                 <p>
                     <strong>Note on Conventions:</strong><br>
-                    As discussed in <a href="fourier_series.html#convention">Part 14</a>, we use the mathematical/PDE convention 
+                    As discussed in the <a href="fourier_series.html#convention">Fourier series conventions</a>, we use the mathematical/PDE convention 
                     with positive sign in the forward transform and negative in the inverse. Engineering and physics often use the 
                     opposite convention: \(\hat{f}(\omega) = \int_{-\infty}^{\infty} f(t)e^{-i\omega t} \, dt\).
                     Both are mathematically equivalent, just be consistent within your work.
@@ -139,33 +139,40 @@ uses_python: true
                     form the foundation of spectral methods in both analysis and computation.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Properties of the Fourier Transform</span>
-
+                <div class="theorem" id="T-ft_linearity">
+                    <span class="theorem-title">Property: Linearity</span>
                     <p>
-                        <strong>1. Linearity:</strong><br>
                         \[
                         \mathcal{F}\{\alpha f + \beta g\} = \alpha \mathcal{F}\{f\} + \beta \mathcal{F}\{g\}
                         \]
                         for constants \(\alpha, \beta \in \mathbb{C}\).
                     </p>
+                </div>
+
+                <div class="theorem" id="T-ft_translation">
+                    <span class="theorem-title">Property: Translation (Shift)</span>
                     <p>
-                        <strong>2. Translation (Shift) Property:</strong><br>
                         \[
                         \mathcal{F}\{f(x - a)\}(\xi) = e^{ia\xi}\hat{f}(\xi)
                         \]
                         A shift in space corresponds to a phase shift in frequency.
                     </p>
+                </div>
+
+                <div class="theorem" id="T-ft_scaling">
+                    <span class="theorem-title">Property: Scaling</span>
                     <p>
-                        <strong>3. Scaling Property:</strong><br>
                         \[
                         \mathcal{F}\{f(ax)\}(\xi) = \frac{1}{|a|}\hat{f}\left(\frac{\xi}{a}\right), \quad a \neq 0
                         \]
                         This embodies the <strong>uncertainty principle</strong>: compressing a signal in time stretches its frequency 
                         spectrum, and vice versa. One cannot localize a signal arbitrarily well in both time and frequency simultaneously.
                     </p>
+                </div>
+
+                <div class="theorem" id="T-ft_differentiation">
+                    <span class="theorem-title">Property: Differentiation</span>
                     <p>
-                        <strong>4. Differentiation Property:</strong><br>
                         \[
                         \mathcal{F}\{f'(x)\}(\xi) = -i\xi \hat{f}(\xi)
                         \]
@@ -178,7 +185,7 @@ uses_python: true
                     </p>
                 </div>
 
-                <div class="theorem" id="T-Plancherel's">
+                <div class="theorem" id="T-plancherel">
                     <span class="theorem-title">Theorem: Plancherel's Theorem</span>
                     <p>
                         For \(f, g \in L^2(\mathbb{R})\):
@@ -199,7 +206,7 @@ uses_python: true
                     \(f \mapsto \frac{1}{\sqrt{2\pi}}\hat{f}\) is a unitary operator on \(L^2(\mathbb{R})\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-fourier_inversion">
                     <span class="theorem-title">Theorem: Fourier Inversion</span>
                     <p>
                         For suitable functions (e.g., \(f \in L^1(\mathbb{R})\) with 
@@ -211,6 +218,10 @@ uses_python: true
                         a deep symmetry between the spatial and frequency domains.
                     </p>
                 </div>
+
+                <p>
+                    A rigorous proof — establishing inversion first on the Schwartz class via a Gaussian mollifier, then extending by density — is given in <em>Stein &amp; Shakarchi, Fourier Analysis: An Introduction, Ch.&nbsp;5 §1</em>. The inversion formula also admits a clean Hilbert-space interpretation: on \(L^2(\mathbb{R})\), the normalized Fourier transform \(f \mapsto \tfrac{1}{\sqrt{2\pi}}\hat{f}\) is a unitary operator, whose inverse is exactly its adjoint. This viewpoint will be developed in the forthcoming page on Fourier analysis in Hilbert spaces.
+                </p>
 
             </section>
 
@@ -232,7 +243,7 @@ uses_python: true
                     (The second equality shows convolution is commutative.)
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-convolution_theorem">
                     <span class="theorem-title">Theorem: Convolution Theorem</span> 
                     <p>
                         The Fourier transform converts convolution into pointwise multiplication:
@@ -279,7 +290,7 @@ uses_python: true
                  </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof of Convolution Theorem:</span>
+                    <span class="proof-title">Proof (convolution to product):</span>
                     <p>
                         Using the mathematical convention with \(\hat{f}(\xi) = \int f(x)e^{ix\xi} \, dx\):
                         \[
@@ -299,6 +310,22 @@ uses_python: true
                         \end{align*}
                         \]
                         The interchange of integration order is justified by Fubini's theorem when \(f, g \in L^1(\mathbb{R})\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (product to convolution):</span>
+                    <p>
+                        Under sufficient regularity (for instance, \(f, g \in L^1\) with \(\hat f, \hat g \in L^1\)), the inversion formula gives \(f(x) = \frac{1}{2\pi}\int \hat f(\eta) e^{-ix\eta}\, d\eta\). Substituting into the Fourier transform of \(fg\) and applying Fubini:
+                        \[
+                        \begin{align*}
+                        \mathcal{F}\{f \cdot g\}(\xi) 
+                        &= \int_{-\infty}^{\infty} \left[\frac{1}{2\pi}\int_{-\infty}^{\infty} \hat f(\eta)\, e^{-ix\eta}\, d\eta\right] g(x)\, e^{ix\xi}\, dx \\\\
+                        &= \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat f(\eta)\left[\int_{-\infty}^{\infty} g(x)\, e^{ix(\xi - \eta)}\, dx\right] d\eta \\\\
+                        &= \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat f(\eta)\, \hat g(\xi - \eta)\, d\eta
+                        = \frac{1}{2\pi}(\hat f * \hat g)(\xi).
+                        \end{align*}
+                        \]
                     </p>
                 </div>
             </section>
@@ -329,8 +356,8 @@ uses_python: true
                     </p>
                 </div>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: DFT & IDFT</span> 
+                <div class="theorem" id="D-dft_idft">
+                    <span class="theorem-title">Definition: DFT &amp; IDFT</span> 
                     <p>
                         For a sequence \(\{x_0, x_1, \ldots, x_{N-1}\}\) of \(N\) complex numbers, the DFT is:
                         \[
