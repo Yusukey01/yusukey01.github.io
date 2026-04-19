@@ -35,6 +35,18 @@ uses_python: false
                     complex function \(f(x)\) near a specific point \(x_o\) using the simplest possible tool - a linear function. 
                 </p>
 
+                <p>
+                    <strong>Asymptotic notation.</strong> Throughout this page (and the rest of this section) we use
+                    the Landau symbols. We write \(\varphi(h) = o(h)\) as \(h \to 0\) to mean
+                    \(\lim_{h \to 0} \varphi(h)/h = 0\) — that is, \(\varphi\) vanishes <em>strictly faster</em> than
+                    \(h\). More generally \(\varphi(h) = o(|h|^k)\) means \(\varphi(h)/|h|^k \to 0\). The companion
+                    symbol \(\varphi(h) = O(h)\) means \(|\varphi(h)| \leq C|h|\) for some constant \(C\) and all \(h\)
+                    near \(0\). In the multivariate case, \(h\) is replaced by a vector \(\mathbf{h}\) and \(|h|\) by a
+                    norm \(\|\mathbf{h}\|\). These abbreviations let us separate the <em>linear part</em> of a change
+                    from everything that vanishes faster — which is exactly what a differential, and then a linearization,
+                    capture.
+                </p>
+
                 <div class="theorem" id="D-linearization">
                     <span class="theorem-title">Definition: Linearization</span>
                     <p>
@@ -77,6 +89,7 @@ uses_python: false
                     scales from scalar calculus to the vector, matrix, and operator settings used throughout optimization
                     and machine learning.
                 </p>
+
 
                 <div class="theorem" id="D-differential">
                     <span class="theorem-title">Definition: Differential (scalar case)</span>
@@ -126,6 +139,46 @@ uses_python: false
                         case yields the <strong>gradient</strong>.
                     </p>
                 </div>
+
+                <h3>Multivariate Extension and the Gradient</h3>
+
+                <p>
+                    We now pass from scalar inputs \(x \in \mathbb{R}\) to vector inputs
+                    \(\mathbf{x} \in \mathbb{R}^n\). From here on, <strong>bold</strong> symbols
+                    \(\mathbf{x}, \mathbf{y}, d\mathbf{x}\) denote vectors; plain italic \(x_i\) denotes the \(i\)-th
+                    scalar component. For a scalar-valued differentiable function
+                    \(f : \mathbb{R}^n \to \mathbb{R}\), the differential at \(\mathbf{x}\) is the linear map
+                    \[
+                    df : \mathbb{R}^n \to \mathbb{R}, \qquad
+                    df(d\mathbf{x}) \;=\; \sum_{i=1}^n \frac{\partial f}{\partial x_i}\, dx_i.
+                    \]
+                    This linear functional, being represented by a single row of partial derivatives, can be written
+                    as an inner product with a uniquely determined column vector.
+                </p>
+
+                <p>
+                    <strong>Convention (Gradient).</strong> For a scalar-valued function
+                    \(f : \mathbb{R}^n \to \mathbb{R}\), the <strong>gradient</strong> \(\nabla f\) is the
+                    <em>column</em> vector in \(\mathbb{R}^n\) defined so that the differential takes the inner-product
+                    form
+                    \[
+                    df \;=\; (\nabla f)^T\, d\mathbf{x}
+                    \qquad \text{equivalently} \qquad
+                    (\nabla f)_i \;=\; \frac{\partial f}{\partial x_i}.
+                    \]
+                    In practice, when a computation yields \(df = \mathbf{v}^T\, d\mathbf{x}\) for some row vector
+                    \(\mathbf{v}\), we read off the gradient as \(\nabla f = \mathbf{v}^T\).
+                </p>
+
+                <p>
+                    The same increment-and-linear-part story transfers verbatim:
+                    \[
+                    \Delta f \;=\; f(\mathbf{x} + d\mathbf{x}) - f(\mathbf{x})
+                             \;=\; (\nabla f)^T\, d\mathbf{x} + o(\|d\mathbf{x}\|) \quad \text{as } d\mathbf{x} \to \mathbf{0}.
+                    \]
+                    The three examples that follow all instantiate this single pattern: expand \(\Delta f\), collect
+                    terms linear in \(d\mathbf{x}\), and read off \(\nabla f\) from the resulting row vector.
+                </p>
             </section>
         
             <section id="ex1" class="section-content">
@@ -133,11 +186,13 @@ uses_python: false
 
                 <p>
                     In <a href="../Machine_learning/intro_ml.html"><strong>machine learning</strong></a>, we rarely
-                    optimize single scalar variables — we optimize weight <strong>vectors</strong>. Applying the
-                    differential to vector- and matrix-valued expressions is largely a matter of bookkeeping:
-                    careful attention to dimensions, order of multiplication, and the product rule. We first state the
-                    product rule in the differential form that will be used throughout this section and the next few
-                    pages.
+                    optimize single scalar variables — we optimize weight <strong>vectors</strong>. The differential
+                    calculus just developed is the right tool: rather than writing out \(n\) partial derivatives by
+                    hand, we manipulate \(d(\cdot)\) symbolically and read off the gradient from the row-vector
+                    coefficient of \(d\mathbf{x}\). The three examples below — the squared norm, the quadratic form,
+                    and the \(L_2\) norm — cover essentially every gradient that appears in standard regularization and
+                    second-order optimization. We first state the product rule in the differential form that will be
+                    used throughout.
                 </p>
 
                 <div class="theorem" id="T-differential_product_rule">
@@ -178,46 +233,12 @@ uses_python: false
 
                 <p>
                     This function represents the squared distance from the origin — a core component of
-                    <strong>Mean Squared Error (MSE)</strong>. The input is the vector \(\mathbf{x}\), and the output is the scalar
-                    \(\mathbf{x}^T\mathbf{x}\).
-                </p>
-
-                <p>
-                    We first compute the gradient entrywise. Writing
-                    \[
-                    f(\mathbf{x}) \;=\; \mathbf{x}^T\mathbf{x} \;=\; \sum_{i=1}^n x_i^2,
-                    \]
-                    and differentiating with respect to each \(x_i\), we obtain
-                    \[
-                    \nabla f \;=\; \begin{bmatrix}
-                                \partial f / \partial x_1 \\
-                                \partial f / \partial x_2 \\
-                                \vdots \\
-                                \partial f / \partial x_n
-                                \end{bmatrix}
-                            \;=\; \begin{bmatrix} 2x_1 \\ 2x_2 \\ \vdots \\ 2x_n \end{bmatrix}
-                            \;=\; 2\mathbf{x}.
-                    \]
-                </p>
-
-                <p>
-                    <strong>Convention.</strong> For a scalar-valued function \(f : \mathbb{R}^n \to \mathbb{R}\), the
-                    <strong>gradient</strong> \(\nabla f\) is a <em>column</em> vector in \(\mathbb{R}^n\), so that the
-                    differential takes the inner-product form
-                    \[
-                    df \;=\; (\nabla f)^T\, d\mathbf{x}.
-                    \]
-                    Equivalently, when the differential is written as \(df = \mathbf{v}^T\, d\mathbf{x}\) with
-                    \(\mathbf{v}\) a row vector, the gradient is \(\nabla f = \mathbf{v}^T\).
-                </p>
-
-                <p>
-                    We now re-derive the same result using the differential calculus developed above. Let
-                    \(d\mathbf{x} \in \mathbb{R}^n\) denote an arbitrary displacement.
+                    <strong>Mean Squared Error (MSE)</strong>. The input is the vector \(\mathbf{x}\), and the output is
+                    the scalar \(\mathbf{x}^T\mathbf{x}\).
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Example 1 (differential derivation).</span>
+                    <span class="proof-title">Example 1.</span>
                     <p>
                         Applying the <a href="#T-differential_product_rule" class="ref-link"><strong>differential product rule</strong></a>
                         to \(f(\mathbf{x}) = \mathbf{x}^T\mathbf{x}\):
@@ -235,14 +256,23 @@ uses_python: false
                         \(\mathbf{b} = \mathbf{x}\).
                     </p>
                     <p>
-                        By the gradient convention above, reading off the row vector \(2\,\mathbf{x}^T\) as the transpose
-                        of the gradient gives
+                        Reading off the row vector \(2\,\mathbf{x}^T\) as the transpose of the gradient:
                         \[
-                        \nabla f \;=\; (2\,\mathbf{x}^T)^T \;=\; 2\mathbf{x},
+                        \nabla f \;=\; (2\,\mathbf{x}^T)^T \;=\; 2\mathbf{x}. \qquad \blacksquare
                         \]
-                        matching the entrywise computation. \(\blacksquare\)
                     </p>
                 </div>
+
+                <p>
+                    <strong>Sanity check (entrywise).</strong> Writing
+                    \(f(\mathbf{x}) = \sum_{i=1}^n x_i^2\) and differentiating componentwise yields
+                    \(\partial f / \partial x_i = 2 x_i\), so
+                    \[
+                    \nabla f \;=\; \begin{bmatrix} 2x_1 \\ 2x_2 \\ \vdots \\ 2x_n \end{bmatrix} \;=\; 2\mathbf{x},
+                    \]
+                    in agreement with the differential derivation. For the remaining examples the entrywise route
+                    would be progressively more painful; the differential calculation generalizes effortlessly.
+                </p>
             </section>
 
             <section id="ex2" class="section-content">
@@ -274,7 +304,8 @@ uses_python: false
                         df \;=\; \mathbf{x}^T A^T\, d\mathbf{x} + \mathbf{x}^T A\, d\mathbf{x}
                              \;=\; \mathbf{x}^T(A + A^T)\, d\mathbf{x}.
                         \]
-                        Reading off the row vector \(\mathbf{x}^T(A + A^T)\) as the transpose of the gradient:
+                        Reading off the row vector \(\mathbf{x}^T(A + A^T)\) as the transpose of the gradient (per
+                        the convention established in <a href="#diff">Differentials</a>):
                         \[
                         \nabla f \;=\; (A + A^T)\,\mathbf{x}. \qquad \blacksquare
                         \]
@@ -323,7 +354,7 @@ uses_python: false
                                     \;=\; \frac{\mathbf{x}^T}{\|\mathbf{x}\|_2}\, d\mathbf{x}.
                         \end{align*}
                         \]
-                        By the gradient convention, the gradient is therefore
+                        By the gradient convention (<a href="#diff">Differentials</a>), the gradient is therefore
                         \[
                         \nabla \|\mathbf{x}\|_2 \;=\; \frac{\mathbf{x}}{\|\mathbf{x}\|_2}. \qquad \blacksquare
                         \]
