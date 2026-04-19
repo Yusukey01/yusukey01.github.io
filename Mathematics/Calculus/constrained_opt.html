@@ -19,125 +19,162 @@ uses_python: true
 
         <div class="topic-nav">
             <a href="#intro">Constrained Optimization Problem</a>
-            <a href="#lm">Lagrange multipliers</a>
+            <a href="#lm">Lagrange Multipliers</a>
             <a href="#kkt">The KKT Conditions</a>
-            <a href='duality.html'><strong>Go: Duality</strong></a>
+            <a href="duality.html"><strong>Next: Duality →</strong></a>
         </div>  
 
         <div class="container">     
             <section id="intro" class="section-content">
                 <h2>Constrained Optimization Problem</h2>
                 <p>
-                    The <strong>constrained optimization problem</strong> is given by 
+                    So far we have studied <a href="gradient.html"><strong>unconstrained</strong></a> minimization
+                    of \(\mathcal{L}: \mathbb{R}^d \to \mathbb{R}\). In most applications, however, the parameters
+                    must additionally satisfy a collection of equality and inequality constraints — a <strong>feasibility
+                    region</strong> carved out of \(\mathbb{R}^d\) by the constraints.
+                </p>
+
+                <div class="theorem" id="D-constrained_opt_problem">
+                    <span class="theorem-title">Definition: Constrained Optimization Problem</span>
+                    <p>
+                        Let \(\mathcal{L}: \mathbb{R}^d \to \mathbb{R}\) be the objective,
+                        \(g_i: \mathbb{R}^d \to \mathbb{R}\) for \(i \in \mathcal{I}\) inequality constraints, and
+                        \(h_j: \mathbb{R}^d \to \mathbb{R}\) for \(j \in \mathcal{E}\) equality constraints. The
+                        <strong>constrained optimization problem</strong> is
+                        \[
+                        \boldsymbol{\theta}^* \in \operatorname*{arg\,min}_{\boldsymbol{\theta} \in \mathcal{C}}\, \mathcal{L}(\boldsymbol{\theta}),
+                        \]
+                        where the <strong>feasible set</strong> is
+                        \[
+                        \mathcal{C} = \{\, \boldsymbol{\theta} \in \mathbb{R}^d :
+                        g_i(\boldsymbol{\theta}) \leq 0 \text{ for all } i \in \mathcal{I},\;
+                        h_j(\boldsymbol{\theta}) = 0 \text{ for all } j \in \mathcal{E} \,\}.
+                        \]
+                    </p>
+                </div>
+
+                <h3>Penalty Method</h3>
+                <p>
+                    A natural first attempt to reduce the constrained problem to something we already know how to solve
+                    is the <strong>penalty method</strong>: replace the constraints by soft penalties in the objective,
                     \[
-                    \theta^* \in \arg \min_{\theta \in \mathcal{C}} \mathcal{L}(\theta): \mathbb{R}^D \to \mathbb{R}.
+                    \mathcal{L}_\rho(\boldsymbol{\theta}) = \mathcal{L}(\boldsymbol{\theta})
+                    + \rho \sum_{i \in \mathcal{I}} \max\!\bigl(0, g_i(\boldsymbol{\theta})\bigr)^{\!2}
+                    + \rho \sum_{j \in \mathcal{E}} h_j(\boldsymbol{\theta})^2,
                     \]
-                    Here, \(\mathcal{C}\) is the <strong>feasible set</strong> as the subset of the parameter space \(\Theta \in \mathbb{R}^D\) that 
-                    satisfies a set of <strong>constraints</strong>:
-                    \[
-                    \mathcal{C} = \{\theta \in \mathbb{R}^D : g_i (\theta) \leq 0,  i \in \mathcal{I}, \, h_j (\theta) = 0, j \in \mathcal{E} \}.
-                    \]
-                    where \(\mathcal{I}\) is a set of inequality constraints and \(\mathcal{E}\) is a set of equality constraints. 
+                    where \(\rho > 0\) controls the penalty strength. The result is unconstrained and can be minimized
+                    by gradient descent. The drawback is that for finite \(\rho\) the constraints are only approximately
+                    satisfied, and driving \(\rho \to \infty\) causes the unconstrained problem to become
+                    ill-conditioned.
                 </p>
 
                 <p>
-                    Often, We convert this constrained optimization problem into an unconstrained optimization problem by introducing <strong>penalty 
-                    terms</strong> that measure how much we violate each constraint and adding them to the objective function. For example, 
-                    A penalty-modified objective function can be written as:
-                    \[
-                    \mathcal{L_p}(\theta) = \mathcal{L}(\theta) + \rho \sum_{i\in \mathcal{I}} \max(0, g_i(\theta))^2 + \rho \sum_{j\in \mathcal{E}} h_j(\theta)^2
-                    \]
-                    where \(\rho >0\) is a penalty parameter controlling the strength of the penalty. 
-                </p>
-
-                <p>
-                    However, when constraints must be strictly satisfied, or computational resources are not a major concern, following method will provide 
-                    higher precision results. For large-scale problems, hybrid approaches like <strong>Augmented Lagrangian methods</strong> can be better. 
+                    When constraints must be strictly satisfied — or high-precision solutions are required — the
+                    <strong>Lagrangian</strong> machinery introduced below provides a principled alternative that
+                    reformulates constrained optimality as a system of equations (the <strong>KKT conditions</strong>).
+                    In large-scale problems, hybrid approaches such as <strong>Augmented Lagrangian methods</strong>
+                    combine the numerical robustness of penalties with the exactness of Lagrangian multipliers.
                 </p>
             </section>
 
             <section id="lm" class="section-content">
                 <h2>Lagrange Multipliers</h2>
                 <p>
-                    First, we consider a constrained optimization problem without inequality constraints. 
-                    Assume we have only one equality constraint \(h(\theta) = 0\). The constraint surface is given by 
+                    We build up the general theory in two stages. First, consider the pure equality-constrained problem
+                    with a single smooth constraint \(h: \mathbb{R}^d \to \mathbb{R}\),
                     \[
-                    \mathcal{C} = \{\theta \in \mathbb{R}^D : h(\theta) = 0\}
-                    \] 
-                    where \(h: \mathbb{R}^D \to \mathbb{R}\) is a differentiable function.
+                    \operatorname*{min}_{\boldsymbol{\theta}}\, \mathcal{L}(\boldsymbol{\theta})
+                    \quad \text{s.t.} \quad h(\boldsymbol{\theta}) = 0,
+                    \qquad \mathcal{C} = \{\boldsymbol{\theta} \in \mathbb{R}^d : h(\boldsymbol{\theta}) = 0\}.
+                    \]
                 </p>
+
+                <h3>Normal Direction at a Feasible Point</h3>
                 <p>
-                    Consider another point \(\theta + \epsilon \in \mathcal{C}\) with infinitesimal displacement vector \(\epsilon \in \mathbb{R}^D\). 
-                    By the first-order Taylor expansion around \(\theta\), 
+                    Fix \(\boldsymbol{\theta} \in \mathcal{C}\) and consider a small displacement
+                    \(\boldsymbol{\epsilon} \in \mathbb{R}^d\) keeping \(\boldsymbol{\theta} + \boldsymbol{\epsilon} \in \mathcal{C}\).
+                    By the first-order <a href="mvt.html#taylor"><strong>Taylor expansion</strong></a>,
                     \[
-                    h(\theta + \epsilon) \approx h(\theta) + \epsilon^\top \nabla h(\theta).
+                    h(\boldsymbol{\theta} + \boldsymbol{\epsilon})
+                    \approx h(\boldsymbol{\theta}) + \boldsymbol{\epsilon}^\top \nabla h(\boldsymbol{\theta})
+                    = \boldsymbol{\epsilon}^\top \nabla h(\boldsymbol{\theta}),
                     \]
-                    Since both points lie on the same constraint surface, \(h(\theta) = h(\theta + \epsilon) = 0\), and thus
-                    \[
-                    \epsilon^\top \nabla h(\theta) \approx 0.
-                    \]
-                    Since \(\epsilon\) is parallel to the constraint surface, \(\nabla h(\theta)\) must be orthogonal to it. 
-                    Therefore, for any point \(\theta \in \mathcal{C}\), the gradient \(\nabla h(\theta)\) is orthogonal to the constraint surface \(\mathcal{C}\).
+                    using \(h(\boldsymbol{\theta}) = 0\). Since \(h(\boldsymbol{\theta} + \boldsymbol{\epsilon}) = 0\) as well,
+                    \(\boldsymbol{\epsilon}^\top \nabla h(\boldsymbol{\theta}) \approx 0\). Displacements that keep us on
+                    \(\mathcal{C}\) are therefore (to first order) orthogonal to \(\nabla h(\boldsymbol{\theta})\) — equivalently,
+                    \(\nabla h(\boldsymbol{\theta})\) points in the <em>normal</em> direction to the constraint surface.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: Tangent Space</span>
-                    The <strong>tangent space</strong> of \(\mathcal{C}\) at \(\theta\) is defined as:
-                    \[
-                    T_{\theta} \mathcal{C} = \{\epsilon \in \mathbb{R}^D : \nabla h(\theta)^\top \epsilon = 0\} = \text{Ker }(\nabla h(\theta)^\top).
-                    \]
-                    This can be motivated by the first-order Taylor expansion: for \(\theta + \epsilon \in \mathcal{C}\), 
-                    we have \(h(\theta + \epsilon) \approx h(\theta) + \nabla h(\theta)^\top \epsilon = 0\), so tangent 
-                    vectors must satisfy \(\nabla h(\theta)^\top \epsilon = 0\).
+                    <span class="theorem-title">Definition: Tangent Space (constraint surface)</span>
+                    <p>
+                        The <strong>tangent space</strong> of the constraint surface \(\mathcal{C} = \{h = 0\}\) at
+                        \(\boldsymbol{\theta}\) is
+                        \[
+                        T_{\boldsymbol{\theta}} \mathcal{C}
+                        = \{\boldsymbol{\epsilon} \in \mathbb{R}^d : \nabla h(\boldsymbol{\theta})^\top \boldsymbol{\epsilon} = 0\}
+                        = \operatorname{ker}\bigl(\nabla h(\boldsymbol{\theta})^\top\bigr).
+                        \]
+                        This is the first-order approximation of the set of feasible displacements from
+                        \(\boldsymbol{\theta}\). The general notion of tangent space — independent of any specific
+                        defining function — will be developed in the upcoming smooth-manifold series.
+                    </p>
                 </div>
 
+                <h3>The Lagrange Multiplier Rule</h3>
                 <p>
-                    We seek a point \(\theta^* \in \mathcal{C}\) that minimizes the objective \(\mathcal{L}(\theta)\). 
-                    At such a point, \(\nabla \mathcal{L}(\theta^*)\) must also be orthogonal to the constraint surface. 
-                    Otherwise, movement along the surface would decrease \(\mathcal{L}(\theta)\), contradicting the assumption 
-                    that \(\theta^*\) is a local minimum.
-                </p>
-                <p>
-                    Since both \(\nabla h(\theta^*)\) and \(\nabla \mathcal{L}(\theta^*)\) are orthogonal to the constraint surface at \(\theta^*\), 
-                    they must be parallel (or anti-parallel) to each other. Thus, there exists a constant \(\lambda \in \mathbb{R}\), 
-                    called the <strong>Lagrange multiplier</strong>, such that 
+                    Suppose \(\boldsymbol{\theta}^* \in \mathcal{C}\) is a local minimum. If
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)\) had any tangent component — i.e., were not orthogonal to
+                    \(T_{\boldsymbol{\theta}^*} \mathcal{C}\) — moving a small step along that component inside
+                    \(\mathcal{C}\) would strictly decrease \(\mathcal{L}\), contradicting local optimality. Therefore
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)\) is also normal to \(\mathcal{C}\). Assuming
+                    \(\nabla h(\boldsymbol{\theta}^*) \neq \mathbf{0}\) (the single-constraint analogue of the LICQ
+                    regularity condition introduced below), the normal space is one-dimensional, spanned by
+                    \(\nabla h(\boldsymbol{\theta}^*)\), so \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)\) is a scalar
+                    multiple of \(\nabla h(\boldsymbol{\theta}^*)\): there exists \(\lambda \in \mathbb{R}\), the
+                    <strong>Lagrange multiplier</strong>, with
                     \[
-                    \nabla \mathcal{L}(\theta^*) + \lambda \nabla h(\theta^*) = 0. \tag{1}
+                    \nabla \mathcal{L}(\boldsymbol{\theta}^*) + \lambda\, \nabla h(\boldsymbol{\theta}^*) = \mathbf{0}. \tag{1}
                     \]
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-lagrangian">
                     <span class="theorem-title">Definition: Lagrangian (Equality Constraints)</span>
-                    For a single equality constraint \(h(\theta) = 0\), the <strong>Lagrangian</strong> is defined as:
-                    \[
-                    L(\theta, \lambda) = \mathcal{L}(\theta) + \lambda \, h(\theta).
-                    \]
-                    For \(p\) equality constraints \(h_j(\theta) = 0\), \(j = 1, \ldots, p\):
-                    \[
-                    L(\theta, \lambda) = \mathcal{L}(\theta) + \sum_{j=1}^{p} \lambda_j \, h_j(\theta)
-                    \]
-                    where \(\lambda = (\lambda_1, \ldots, \lambda_p)^\top \in \mathbb{R}^p\) is the vector of Lagrange multipliers.
+                    <p>
+                        For equality constraints \(h_j(\boldsymbol{\theta}) = 0\), \(j = 1, \ldots, p\), the
+                        <strong>Lagrangian</strong> is
+                        \[
+                        \mathcal{L}\!\left(\boldsymbol{\theta}, \boldsymbol{\lambda}\right)
+                        = \mathcal{L}(\boldsymbol{\theta})
+                        + \sum_{j=1}^{p} \lambda_j\, h_j(\boldsymbol{\theta})
+                        = \mathcal{L}(\boldsymbol{\theta}) + \boldsymbol{\lambda}^\top \mathbf{h}(\boldsymbol{\theta}),
+                        \]
+                        where \(\boldsymbol{\lambda} = (\lambda_1, \ldots, \lambda_p)^\top \in \mathbb{R}^p\) is the vector
+                        of Lagrange multipliers and \(\mathbf{h} = (h_1, \ldots, h_p)^\top\). (We overload \(\mathcal{L}\) to
+                        refer to both the objective and the Lagrangian; the number of arguments disambiguates.)
+                    </p>
                 </div>
 
                 <p>
-                    At a stationary point of the Lagrangian, 
+                    At a stationary point of the Lagrangian, \(\nabla_{\boldsymbol{\theta}, \boldsymbol{\lambda}}\, \mathcal{L} = \mathbf{0}\),
+                    which unpacks to
                     \[
-                    \nabla_{\theta, \lambda} L(\theta, \lambda) = 0
+                    \nabla_{\boldsymbol{\theta}}\, \mathcal{L}(\boldsymbol{\theta}) + \sum_{j=1}^p \lambda_j\, \nabla h_j(\boldsymbol{\theta}) = \mathbf{0},
+                    \qquad h_j(\boldsymbol{\theta}) = 0 \text{ for all } j.
                     \]
-                    which gives the system of equations:
-                    \[
-                    \nabla_\theta \mathcal{L}(\theta) + \lambda^\top \nabla h(\theta) = 0, \qquad h(\theta) = 0.
-                    \]
-                    Such a point is called a <strong>critical point</strong>, satisfying both the constraint \(h(\theta) = 0\) and the stationarity condition (1).
+                    Such a point is called a <strong>critical point</strong>; it simultaneously satisfies primal feasibility
+                    and the stationarity condition (1).
                 </p>
 
                 <div class="insight-box">
                     <h3>Geometric Intuition</h3>
                     <p>
-                        At a constrained optimum \(\theta^*\), you cannot improve the objective by moving along the constraint surface. 
-                        This means the gradient of the objective \(\nabla \mathcal{L}(\theta^*)\) has no component tangent to \(\mathcal{C}\) - it 
-                        must point purely in the normal direction, which is spanned by \(\nabla h(\theta^*)\). The Lagrange multiplier \(\lambda\) 
-                        measures "how much" of the objective gradient is absorbed by the constraint.
+                        At a constrained optimum \(\boldsymbol{\theta}^*\), you cannot improve the objective by moving along
+                        the constraint surface. This means the gradient of the objective \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)\)
+                        has no component tangent to \(\mathcal{C}\) — it must point purely in the normal direction, which is
+                        spanned by \(\{\nabla h_j(\boldsymbol{\theta}^*)\}\). The Lagrange multiplier
+                        \(\lambda_j\) measures "how much" of the objective gradient is absorbed by constraint \(h_j\), and its
+                        sign records whether the constraint pulls the objective up or down as it is relaxed.
                     </p>
                 </div>
             </section>
@@ -145,157 +182,235 @@ uses_python: true
             <section id="kkt" class="section-content">
                 <h2>The KKT Conditions</h2>
                 <p>
-                    Next, consider the case where we have a single inequality constraint \(g(\theta) \leq 0\). We create the lower bound \(\mu g(\theta)\), where 
-                    \(\mu \geq 0\). So, the Lagrangian can be written as 
+                    We now add inequality constraints \(g_i(\boldsymbol{\theta}) \leq 0\). A single inequality is handled
+                    by extending the Lagrangian with a <em>non-negative</em> multiplier \(\mu \geq 0\):
                     \[
-                    L(\theta, \mu) = \mathcal{L}(\theta) + \mu g(\theta).
+                    \mathcal{L}(\boldsymbol{\theta}, \mu) = \mathcal{L}(\boldsymbol{\theta}) + \mu\, g(\boldsymbol{\theta}).
                     \]
-                    For multiple inequality constraints, 
-                    \[
-                    L(\theta, \mu) = \mathcal{L}(\theta) + \sum_{i}^m \mu_i g_i(\theta). 
-                    \]
-                    If \(g_i (\theta) = 0\), then the inequality constraint \(g_i (\theta) \leq 0\) is said to be <strong>active</strong>, and we can build an active set 
-                    \(\mathcal{A}(\theta) = \{i \in \{1, \cdots, m\}: g_i(\theta) = 0\}\). Technically, we only need the \(i\)th inequality constraint in the active set.  
+                    The sign restriction \(\mu \geq 0\) is essential — it is what distinguishes inequalities from
+                    equalities, and encodes that the constraint can only <em>push back</em> against infeasibility, never
+                    pull into it. For multiple inequalities, the extension is additive:
+                    \(\mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\mu}) = \mathcal{L}(\boldsymbol{\theta}) + \sum_{i=1}^{m} \mu_i\, g_i(\boldsymbol{\theta})\).
                 </p>
+
+                <div class="theorem" id="D-active_set">
+                    <span class="theorem-title">Definition: Active Set</span>
+                    <p>
+                        At a feasible point \(\boldsymbol{\theta} \in \mathcal{C}\), an inequality constraint
+                        \(g_i(\boldsymbol{\theta}) \leq 0\) is said to be <strong>active</strong> if
+                        \(g_i(\boldsymbol{\theta}) = 0\). The <strong>active set</strong> at \(\boldsymbol{\theta}\) is
+                        \[
+                        \mathcal{A}(\boldsymbol{\theta}) = \{\, i \in \{1, \ldots, m\} : g_i(\boldsymbol{\theta}) = 0 \,\}.
+                        \]
+                        Only active inequalities constrain the local geometry at \(\boldsymbol{\theta}\); inactive ones
+                        (\(g_i(\boldsymbol{\theta}) < 0\)) have slack and play no local role.
+                    </p>
+                </div>
 
                 <p>
-                    In general, for multiple inequality constraints and equality constraints, we obtain the Lagrangian:
+                    In the presence of both \(m\) inequality constraints and \(p\) equality constraints the general
+                    Lagrangian is
                     \[
-                    L(\theta, \mu, \lambda) = \mathcal{L}(\theta) + \sum_{i \in \mathcal{A}} \mu_i g_i(\theta) + \sum_{j}^p \lambda_j h_j(\theta)
+                    \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\mu}, \boldsymbol{\lambda})
+                    = \mathcal{L}(\boldsymbol{\theta})
+                    + \sum_{i=1}^{m} \mu_i\, g_i(\boldsymbol{\theta})
+                    + \sum_{j=1}^{p} \lambda_j\, h_j(\boldsymbol{\theta}),
                     \]
-                    and our optimization problem becomes
+                    and the primal problem admits the min–max reformulation
                     \[
-                    \min_{\theta} \max_{\mu \geq 0, \lambda} L(\theta, \mu, \lambda). \tag{P}
+                    \min_{\boldsymbol{\theta}} \max_{\boldsymbol{\mu} \geq 0,\, \boldsymbol{\lambda}}\,
+                    \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\mu}, \boldsymbol{\lambda}). \tag{P}
                     \]
+                    The inner maximization over \(\boldsymbol{\mu} \geq 0\) returns \(+\infty\) whenever any
+                    \(g_i(\boldsymbol{\theta}) > 0\) (infeasibility), and the maximization over unrestricted
+                    \(\boldsymbol{\lambda}\) returns \(+\infty\) whenever any \(h_j(\boldsymbol{\theta}) \neq 0\). Feasibility
+                    is therefore enforced implicitly through the min–max structure. This formulation anchors the transition
+                    to <a href="duality.html"><strong>duality</strong></a>, where we will instead study the dual
+                    \(\max_{\boldsymbol{\mu} \geq 0, \boldsymbol{\lambda}} \min_{\boldsymbol{\theta}} \mathcal{L}\).
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: <strong>Karush-Kuhn-Tucker (KKT) Conditions</strong> </span>
+                <div class="theorem" id="D-licq">
+                    <span class="theorem-title">Definition: Linear Independence Constraint Qualification (LICQ)</span>
+                    <p>
+                        The <strong>linear independence constraint qualification</strong> holds at a feasible point
+                        \(\boldsymbol{\theta}^*\) if the gradients
+                        \[
+                        \{\nabla g_i(\boldsymbol{\theta}^*) : i \in \mathcal{A}(\boldsymbol{\theta}^*)\}
+                        \;\cup\;
+                        \{\nabla h_j(\boldsymbol{\theta}^*) : j = 1, \ldots, p\}
+                        \]
+                        are linearly independent in \(\mathbb{R}^d\). LICQ is one of several possible
+                        <em>constraint qualifications</em> ensuring that the linearized constraint geometry at
+                        \(\boldsymbol{\theta}^*\) faithfully captures the nonlinear feasible set.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-kkt_conditions">
+                    <span class="theorem-title">Theorem: Karush–Kuhn–Tucker (KKT) Conditions</span>
 
                     <p>
-                        If the objective function \(\mathcal{L}\) and constraint functions \(g\) are <strong>convex</strong>, then all critical 
-                        points of the optimization problem (P) satisfy the following conditions:
+                        Let \(\boldsymbol{\theta}^*\) be a feasible point. Say that
+                        \((\boldsymbol{\theta}^*, \boldsymbol{\mu}^*, \boldsymbol{\lambda}^*)\) satisfies the <strong>KKT
+                        conditions</strong> if all four of the following hold:
                     </p>
-                   
+
                     <ol style="padding-left: 40px;">
-                        <li><strong>Primal Feasibility</strong>:</li>
+                        <li>
+                            <strong>Primal feasibility:</strong>
                             \[
-                            g(\theta^*) \leq 0, \quad h(\theta^*) = 0
+                            g_i(\boldsymbol{\theta}^*) \leq 0 \text{ for all } i, \qquad h_j(\boldsymbol{\theta}^*) = 0 \text{ for all } j.
                             \]
-                            All original constraints must be satisfied at \(\theta^*\).
-                        <li><strong>Stationarity</strong>:</li>
+                        </li>
+                        <li>
+                            <strong>Stationarity:</strong>
                             \[
-                            \nabla \mathcal{L}(\theta^*) + \sum_i^m \mu_i \nabla g_i (\theta^*) + \sum_j^p \lambda_j \nabla h_j (\theta^*) = 0
+                            \nabla \mathcal{L}(\boldsymbol{\theta}^*)
+                            + \sum_{i=1}^{m} \mu_i^*\, \nabla g_i(\boldsymbol{\theta}^*)
+                            + \sum_{j=1}^{p} \lambda_j^*\, \nabla h_j(\boldsymbol{\theta}^*) = \mathbf{0}.
                             \]
-                            or equivalently, 
+                        </li>
+                        <li>
+                            <strong>Dual feasibility:</strong>
                             \[
-                            \nabla \mathcal{L}(\theta^*) + \mu^T \nabla g (\theta^*) + \lambda^T \nabla h (\theta^*) = 0.
+                            \mu_i^* \geq 0 \quad \text{for all } i = 1, \ldots, m.
                             \]
-                            The gradient of the Lagrangian is zero at \(\theta^*\).
-                        <li><strong>Dual Feasibility</strong></li>
+                        </li>
+                        <li>
+                            <strong>Complementary slackness:</strong>
                             \[
-                            \mu \geq 0 
-                            \] 
-                            When constraints are violated \(g(x) > 0\),  by increasing the objective , pushing the solution toward 
-                            the feasible region, where the inequality constraints are satisfied \(g(x) \leq 0\). 
-                        <li><strong>Complementary Slackness</strong></li>
-                            \[
-                            \mu \odot g = 0
+                            \mu_i^*\, g_i(\boldsymbol{\theta}^*) = 0 \quad \text{for all } i = 1, \ldots, m,
                             \]
-                            For each inequality constraint \(g_i(\theta^*) \leq 0, \quad i \in \{1, \cdots, m\}\), either 
-                            <br>
-                            <ul style="padding-left: 40px;">
-                                <li>\(g_i(\theta^*) = 0, \, \mu_i \neq 0\) (The local optimal \(\theta^*\) lies "on" the constraint boundary. The constraint is active.) </li>
-                                or
-                                <li>\(g_i(\theta^*) < 0, \, \mu_i = 0\) (The constraint is inactive.)</li>
-                            </ul>
-                            <br>
-                            Note: "\(\odot\)" represents the element-wise product(also known as Hadamard product). Only the constraints in the 
-                            active set \(\mathcal{A}(\theta^*) = \{i: g_i(\theta^*)=0 \}\)contribute to the optimization.
-                    </ol><br>
+                            equivalently \(\boldsymbol{\mu}^* \odot \mathbf{g}(\boldsymbol{\theta}^*) = \mathbf{0}\). For each
+                            \(i\), either \(\mu_i^* = 0\) (constraint inactive) or \(g_i(\boldsymbol{\theta}^*) = 0\)
+                            (constraint active); only constraints in the active set \(\mathcal{A}(\boldsymbol{\theta}^*)\)
+                            contribute non-trivially.
+                        </li>
+                    </ol>
+
+                    <p><strong>(i) Necessity.</strong>
+                        If \(\boldsymbol{\theta}^*\) is a local minimum of the constrained problem and
+                        <a href="#D-licq"><strong>LICQ</strong></a> holds at \(\boldsymbol{\theta}^*\), then there exist
+                        multipliers \((\boldsymbol{\mu}^*, \boldsymbol{\lambda}^*)\) such that the KKT conditions hold. (No
+                        convexity of \(\mathcal{L}\) or \(g_i\) is required for necessity.)
+                    </p>
+                    <p><strong>(ii) Sufficiency under convexity.</strong>
+                        If \(\mathcal{L}\) and all \(g_i\) are <a href="gradient.html#D-convex_function" class="ref-link"><strong>convex</strong></a>,
+                        all \(h_j\) are affine, and \((\boldsymbol{\theta}^*, \boldsymbol{\mu}^*, \boldsymbol{\lambda}^*)\)
+                        satisfies the KKT conditions, then \(\boldsymbol{\theta}^*\) is a <em>global</em> minimum of the
+                        constrained problem.
+                    </p>
                     <p>
-                        Note: In addition, we need some <strong>regularity conditions</strong> for (P). Usually, we assume that the "active" \(\nabla g_i (\theta^*)\) and \(\nabla h_j (\theta^*)\) are 
-                        linearly independent. This is called the <strong>linear independence constraint qualification(LICQ)</strong>. 
+                        Proofs of both directions are given in Boyd &amp; Vandenberghe, <em>Convex Optimization</em>, §5.5.3.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Reading KKT: sign conventions and the role of each condition</h3>
+                    <p>
+                        The dual-feasibility sign \(\mu_i^* \geq 0\) records that inequality constraints can only push
+                        <em>back</em> from infeasibility. If a small relaxation of \(g_i\) (moving from \(g_i \leq 0\) to
+                        \(g_i \leq \varepsilon\), \(\varepsilon > 0\)) would let us decrease \(\mathcal{L}\), then \(\mu_i^*\)
+                        measures the rate — this is the <em>sensitivity</em> interpretation of Lagrange multipliers.
+                        Equality multipliers \(\lambda_j^*\) can have either sign, reflecting that an equality constraint
+                        can be relaxed in either direction.
                     </p>
                 </div>
 
                 <p>
-                    This is critical in some machine learning applications such as the <a href="../Machine_learning/svm.html"><strong>support vector machine(SVM)</strong></a> in classification, but here, we introduce 
-                    a simple optimization problem that can be solved by hand.
+                    KKT is critical in many machine-learning applications such as the
+                    <a href="../Machine_learning/svm.html"><strong>support vector machine (SVM)</strong></a>; here we
+                    demonstrate the KKT machinery on a simple problem that can be solved by hand.
                 </p>
 
-                <div class="proof">
-                    <span class="proof-title">Example:</span>
-                    <p>
-                        Objective:
-                        \[
-                        \min f(x) = (x_1-2)^2 + x_2^2 + x_3^2
-                        \]
-                        Constraints:
-                        \[
-                        \begin{align*}
-                        &x_1 + x_2 \leq 1  \Longrightarrow g_1(x) = x_1 + x_2 -1 \leq 0 \tag{g1} \\\\
-                        &x_1 + x_3 \leq 1 \Longrightarrow g_2(x) = x_1 + x_3 -1 \leq 0 \tag{g2}   \\\\
-                        &x_1 = x_2        \Longrightarrow h_1(x) = x_1 - x_2  = 0 \tag{h1}  \\\\
-                        \end{align*}
-                        \]
-                    </p>
+                <h3>Worked Example</h3>
+                <p>
+                    We minimize
+                    \[
+                    f(\mathbf{x}) = (x_1 - 2)^2 + x_2^2 + x_3^2
+                    \]
+                    subject to
+                    \[
+                    \begin{aligned}
+                    &g_1(\mathbf{x}) = x_1 + x_2 - 1 \leq 0, \\
+                    &g_2(\mathbf{x}) = x_1 + x_3 - 1 \leq 0, \\
+                    &h_1(\mathbf{x}) = x_1 - x_2 = 0.
+                    \end{aligned}
+                    \]
+                    The objective is strictly convex, the inequality constraints are affine (hence convex), and the
+                    equality constraint is affine; moreover the gradients \(\nabla g_1 = (1,1,0)^\top\),
+                    \(\nabla g_2 = (1,0,1)^\top\), \(\nabla h_1 = (1,-1,0)^\top\) are linearly independent at every
+                    feasible point, so LICQ holds. Both the necessity and the sufficiency parts of the KKT theorem apply:
+                    a KKT point will be the global minimum.
+                </p>
 
-                    <p>           
-                        The Lagrangian can be written as: 
-                        \[
-                        \begin{align*}
-                        \mathcal{L}(x, \mu, \lambda) &= f(x) + \mu_1 g_1(x) + \mu_2 g_2(x) + \lambda h(x) \\\\
-                                                    &= (x_1-2)^2 + x_2^2 + x_3^2 + \mu_1 (x_1 + x_2 -1) + \mu_2 (x_1 + x_3 -1) + \lambda (x_1 - x_2).
-                        \end{align*}
-                        \]
-                        By the stationarity condition, 
-                        \[
-                        \begin{align*}
-                        &\frac{\partial \mathcal{L}}{\partial x_1} = 2x_1 -4 + \mu_1 + \mu_2 + \lambda = 0 \tag{1} \\\\
-                        &\frac{\partial \mathcal{L}}{\partial x_2} = 2x_2 + \mu_1 - \lambda = 0 \tag{2} \\\\
-                        &\frac{\partial \mathcal{L}}{\partial x_3} = 2x_3 + \mu_2 = 0. \tag{3} \\\\
-                        \end{align*}
-                        \]
-                        <strong>Note: Here, if LICQ is not satisfied, you cannot use KKT conditions. </strong>
-                    </p>
+                <p>
+                    The Lagrangian is
+                    \[
+                    \mathcal{L}(\mathbf{x}, \boldsymbol{\mu}, \lambda)
+                    = (x_1 - 2)^2 + x_2^2 + x_3^2
+                    + \mu_1 (x_1 + x_2 - 1)
+                    + \mu_2 (x_1 + x_3 - 1)
+                    + \lambda (x_1 - x_2).
+                    \]
+                    Stationarity gives
+                    \[
+                    \begin{aligned}
+                    &\tfrac{\partial \mathcal{L}}{\partial x_1} = 2 x_1 - 4 + \mu_1 + \mu_2 + \lambda = 0, \tag{1}\\
+                    &\tfrac{\partial \mathcal{L}}{\partial x_2} = 2 x_2 + \mu_1 - \lambda = 0, \tag{2}\\
+                    &\tfrac{\partial \mathcal{L}}{\partial x_3} = 2 x_3 + \mu_2 = 0. \tag{3}
+                    \end{aligned}
+                    \]
+                    Dual feasibility requires \(\mu_1, \mu_2 \geq 0\), and complementary slackness gives
+                    \[
+                    \mu_1 (x_1 + x_2 - 1) = 0, \qquad \mu_2 (x_1 + x_3 - 1) = 0. \tag{4,5}
+                    \]
+                </p>
 
-                    <p>
-                        By the dual feasibility condition, 
-                        \[
-                        \mu_1 \geq 0, \quad \mu_2 \geq 0. \tag{4}
-                        \]
-                        By the complementary slackness condition, 
-                        \[
-                        \begin{align*}
-                        &\mu_1 (x_1 + x_2 -1) = 0 \tag{5} \\\\
-                        &\mu_2 (x_1 + x_3 -1) = 0 \tag{6} \\\\
-                        \end{align*}
-                        \]
-                        The optimal \(x^*\) must satisfy all conditions: (g1), (g2), (h1), and (1) ~ (6).
-                    </p>
-                    
-                    <p>
-                        On Equation (5) and (6):
-                        <br>
-                        If \(\mu_1 > 0\) and \(\mu_2 >0\), then \(x_1 = x_2 = x_3 = \frac{1}{2}\). However, if \(x_3 = \frac{1}{2}\), 
-                        Equation (3) gives \(\mu_2 = -1\). This violates Condition (4). 
-                        <br>
-                        Instead, if \(\mu_1 > 0\) and \(\mu_2 = 0\), then \(x_1 = x_2 = \frac{1}{2}, x_3 = 0\). Using Equation (1) and (2), we obtain 
-                        \(\mu_1 = 1\) and \(\lambda = 2\). In this case, all conditions are satisfied. 
-                    </p>
+                <p>
+                    <strong>Case analysis.</strong> Complementary slackness splits the problem into four cases
+                    determined by which inequality constraints are active.
+                </p>
 
-                    <p>   
-                        Therefore, the optimal solution is 
-                        \[
-                        x^* = \begin{bmatrix} \frac{1}{2} \\ \frac{1}{2} \\ 0 \end{bmatrix}
-                        \]
-                        and 
-                        \[
-                        f(x^*) = (\frac{1}{2} - 2)^2 + (\frac{1}{2})^2 + 0 = \frac{5}{2}.
-                        \]
-                    </p>
-                </div>
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Case (i): \(\mu_1 = \mu_2 = 0\) (both inequalities inactive).</strong>
+                        From (3), \(x_3 = 0\). From (2), \(\lambda = 2 x_2\); from \(h_1\), \(x_1 = x_2\); from (1),
+                        \(2 x_1 - 4 + 2 x_1 = 0 \Rightarrow x_1 = 1\). Hence \(\mathbf{x} = (1, 1, 0)^\top\), which gives
+                        \(g_1(\mathbf{x}) = 1 > 0\) — infeasible. <em>Rejected.</em>
+                    </li>
+                    <li>
+                        <strong>Case (ii): \(\mu_1 = 0, \mu_2 > 0\) (only \(g_2\) active).</strong>
+                        Complementary slackness: \(x_1 + x_3 = 1\). From (3): \(\mu_2 = -2 x_3\), so \(\mu_2 > 0\) requires
+                        \(x_3 < 0\), hence \(x_1 > 1\). From \(h_1\): \(x_2 = x_1 > 1\). From (2): \(\lambda = 2 x_2\);
+                        substituting into (1): \(2 x_1 - 4 + \mu_2 + 2 x_2 = 0\), which with \(\mu_2 = -2 x_3\) and
+                        \(x_3 = 1 - x_1\) gives \(-6 x_3 = 0 \Rightarrow x_3 = 0\), contradicting \(x_3 < 0\).
+                        <em>Rejected.</em>
+                    </li>
+                    <li>
+                        <strong>Case (iii): \(\mu_1 > 0, \mu_2 = 0\) (only \(g_1\) active).</strong>
+                        Complementary slackness: \(x_1 + x_2 = 1\). From (3): \(x_3 = 0\). From \(h_1\): \(x_1 = x_2\), so
+                        \(x_1 = x_2 = \tfrac{1}{2}\). From (2): \(\lambda = 2 x_2 + \mu_1 = 1 + \mu_1\). From (1):
+                        \(1 - 4 + \mu_1 + \lambda = 0 \Rightarrow \lambda = 3 - \mu_1\). Solving
+                        \(1 + \mu_1 = 3 - \mu_1\) gives \(\mu_1 = 1\), \(\lambda = 2\). All conditions check:
+                        \(\mu_1 = 1 > 0\), \(\mu_2 = 0 \geq 0\), \(g_1 = 0\), \(g_2 = -\tfrac{1}{2} \leq 0\),
+                        \(h_1 = 0\). <em>Accepted.</em>
+                    </li>
+                    <li>
+                        <strong>Case (iv): \(\mu_1, \mu_2 > 0\) (both inequalities active).</strong>
+                        \(x_1 + x_2 = 1\) and \(x_1 + x_3 = 1\), combined with \(h_1: x_1 = x_2\), give
+                        \(x_1 = x_2 = x_3 = \tfrac{1}{2}\). From (3): \(\mu_2 = -2 x_3 = -1 < 0\), violating dual feasibility.
+                        <em>Rejected.</em>
+                    </li>
+                </ul>
+
+                <p>
+                    Only case (iii) yields a KKT point, so by sufficiency the constrained global minimum is
+                    \[
+                    \mathbf{x}^* = \bigl(\tfrac{1}{2},\, \tfrac{1}{2},\, 0\bigr)^\top,
+                    \qquad
+                    f(\mathbf{x}^*) = \bigl(\tfrac{1}{2} - 2\bigr)^2 + \bigl(\tfrac{1}{2}\bigr)^2 + 0 = \tfrac{5}{2}.
+                    \]
+                </p>
 
                 <p>
                     A sample code for optimization problem with KKT conditions and a simple penalty method is as follows: 
@@ -487,19 +602,35 @@ uses_python: true
                     <div class="python-output"></div>
                 </div>
 
-                <p>
-                    Note: Here, we introduced <strong>slack variables</strong>(s1 and s2) instead of using the <strong>active set</strong>. 
-                    Both the active set and slack variables are essential for ensuring complementary slackness in coding because numerical solvers 
-                    cannot directly handle inequalities or the discontinuity caused by the \(\mu_i g_i(x) = 0\) condition. 
-                </p>
-                <p>
-                    Using slack variables, we can transform inequalities into equalities:
-                    \[
-                    g_i(x) \leq 0 \to g_i(x) + s_i = 0, \quad s_i \geq0
-                    \]
-                    On the other hand, the active set method directly identifies and enforces active constraints, potentially reducing 
-                    computational cost, but requiring more sophisticated logic to update the active set dynamically and check feasibility. 
-                </p>
+                <div class="insight-box">
+                    <h3>Implementation note: slack variables vs. active-set tracking</h3>
+                    <p>
+                        Numerical KKT solvers cannot directly handle the inequality \(g_i(\mathbf{x}) \leq 0\) nor the
+                        kink in the complementary slackness condition \(\mu_i\, g_i(\mathbf{x}) = 0\). Two strategies
+                        resolve this:
+                    </p>
+                    <p>
+                        <strong>(1) Slack variables.</strong> Introduce \(s_i \geq 0\) and convert each inequality to an
+                        equality:
+                        \[
+                        g_i(\mathbf{x}) \leq 0 \iff g_i(\mathbf{x}) + s_i = 0, \; s_i \geq 0.
+                        \]
+                        Complementary slackness then becomes \(\mu_i\, s_i = 0\), which is a smooth bilinear equation —
+                        amenable to Newton-type solvers (as in the code above).
+                    </p>
+                    <p>
+                        <strong>(2) Active-set methods.</strong> Guess which constraints are active, solve the resulting
+                        equality-constrained problem, then check whether the guess is consistent with dual feasibility
+                        and primal feasibility; if not, update the active set and repeat. Faster when the correct active
+                        set can be identified cheaply, but requires more logic for dynamically updating the active set.
+                    </p>
+                    <p>
+                        Modern interior-point methods use a smoothed version of slack-variable tracking with barrier
+                        functions, and are the workhorse for large-scale convex programs — the subject of the next page
+                        on <a href="duality.html"><strong>duality</strong></a>, which reformulates the primal problem in
+                        a way that reveals structure often invisible in the primal.
+                    </p>
+                </div>
             </section>
         </div>
         <script src="/js/main.js"></script>
