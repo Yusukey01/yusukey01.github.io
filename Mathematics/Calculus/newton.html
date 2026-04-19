@@ -29,51 +29,67 @@ uses_python: true
             <section id="LS" class="section-content">
                 <h2>Line Search</h2>
                 <p>
-                    In the previous chapter, we used a "fixed" <strong>learning rate</strong>(or <strong>step size</strong>), which was chosen 
-                    based on experimental results. However, the "optimal" step size can be determined by <strong>line search</strong>:
+                    In the <a href="gradient.html"><strong>previous page</strong></a> we used a fixed
+                    <strong>learning rate</strong> (or <strong>step size</strong>) \(\eta\) chosen by experiment.
+                    A principled alternative is the <strong>line search</strong>: given a current iterate
+                    \(\boldsymbol{\theta}_t\) and a <strong>descent direction</strong> \(\mathbf{d}_t\) (i.e., one with
+                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) < 0\)), select the step that minimizes
+                    the objective along the ray \(\{\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t : \eta > 0\}\):
                     \[
-                    \eta_t = \arg \min _{\eta > 0} \mathcal{L} (\theta_t + \eta d_t) \in \mathbb{R}.
+                    \eta_t \in \operatorname*{arg\,min}_{\eta > 0}\, \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t).
                     \]
-                    Consider a quadratic loss:
-                    
-                    \[
-                    \mathcal{L}(\theta + \eta \, d)
-                    = \frac{1}{2}(\theta+ \eta d)^\top A (\theta + \eta \, d) + b^\top (\theta + \eta d) + c.
-                    \]
-                    
-                    where \(\theta, d \in \mathbb{R}^n\), and \(\eta, c \in \mathbb{R}\).
-                </p>
-                <p>
-                    Taking derivative of this function:
-                    \[
-                    \begin{align*}
-                    \frac{d \mathcal{L}(\theta + \eta d)}{d\eta} &= \frac{1}{2} d^\top 2A(\theta + \eta d) + d^\top b  \\\\
-                                                                    &= d^\top (A\theta + b) + \eta d^\top A d
-                    \end{align*}
-                    \]
-                    Setting the derivative equal to zero, we have:
-                    \[
-                    \eta = - \frac{d^\top (A\theta + b)}{d^\top A d}.
-                    \]
-                    Note that we assunme the matrix \(A\) is <strong>symmetric positive definite (SPD)</strong>, ensuring the quadratic 
-                    is strictly convex and has a unique minimum. 
                 </p>
 
+                <h3>Exact Line Search on a Quadratic</h3>
                 <p>
-                    In practice, we don't need the "exact" line search because it can be expensive to solve this sub-optimization 
-                    problem "at each step." 
-                </p>
-                
-                <p>
-                    For example, we can start with some initial step size, and then reduce it by a factor \(c \in (0, 1)\)  at each 
-                    iteration until we satisfy the following condition: 
+                    On a strictly convex quadratic
                     \[
-                    \mathcal{L}(\theta_t + \eta \, d_t) \leq \mathcal{L}(\theta_t) + c \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t) \tag{1}
+                    \mathcal{L}(\boldsymbol{\theta}) = \tfrac{1}{2}\, \boldsymbol{\theta}^\top \mathbf{A} \boldsymbol{\theta}
+                    + \mathbf{b}^\top \boldsymbol{\theta} + c,
+                    \qquad \mathbf{A} \succ 0,
                     \]
-                    This is called <strong>Armijo condition(Sufficient Decrease condition)</strong> that ensures sufficient 
-                    decreasing of our objective function.
-                    <br>
-                    Note: Usually, we set \(c = 10^{-4}\).
+                    the one-dimensional problem admits a closed-form solution. Differentiating with respect to \(\eta\):
+                    \[
+                    \frac{d}{d\eta}\, \mathcal{L}(\boldsymbol{\theta} + \eta\, \mathbf{d})
+                    = \mathbf{d}^\top (\mathbf{A} \boldsymbol{\theta} + \mathbf{b}) + \eta\, \mathbf{d}^\top \mathbf{A}\, \mathbf{d}.
+                    \]
+                    Setting this to zero and using \(\mathbf{A} \boldsymbol{\theta} + \mathbf{b} = \nabla \mathcal{L}(\boldsymbol{\theta})\):
+                    \[
+                    \eta^*_t = -\,\frac{\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)}{\mathbf{d}_t^\top \mathbf{A}\, \mathbf{d}_t}.
+                    \]
+                    Positivity of \(\mathbf{A}\) makes the denominator positive, and the descent-direction condition makes the
+                    numerator negative, so \(\eta^*_t > 0\) as required.
+                </p>
+
+                <h3>Inexact Line Search</h3>
+                <p>
+                    Solving the subproblem exactly at every outer iteration is wasteful. Inexact line searches instead seek
+                    any step \(\eta\) that delivers "sufficient" progress along \(\mathbf{d}_t\). The most common such rule
+                    is the Armijo condition.
+                </p>
+
+                <div class="theorem" id="D-armijo_condition">
+                    <span class="theorem-title">Definition: Armijo (Sufficient-Decrease) Condition</span>
+                    <p>
+                        Fix \(c_1 \in (0, 1)\). A step size \(\eta > 0\) satisfies the <strong>Armijo condition</strong> at
+                        \(\boldsymbol{\theta}_t\) along a descent direction \(\mathbf{d}_t\) if
+                        \[
+                        \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t)
+                        \leq \mathcal{L}(\boldsymbol{\theta}_t) + c_1\, \eta\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t).
+                        \tag{1}
+                        \]
+                        Because \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) < 0\), the right-hand side is strictly
+                        smaller than \(\mathcal{L}(\boldsymbol{\theta}_t)\); thus (1) enforces a decrease proportional to the step
+                        and the directional derivative. A typical choice is \(c_1 = 10^{-4}\).
+                    </p>
+                </div>
+
+                <p>
+                    The standard <strong>backtracking</strong> implementation starts from an initial trial step \(\eta\) (often
+                    \(\eta = 1\) for Newton-type methods) and shrinks it by a factor \(\tau \in (0, 1)\) (commonly \(\tau = 0.5\))
+                    until (1) holds. By continuity of \(\mathcal{L}\) and the negativity of
+                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)\), (1) is eventually satisfied for
+                    sufficiently small \(\eta\); see Boyd &amp; Vandenberghe, <em>Convex Optimization</em>, §9.2.
                 </p>
             </section>
 
@@ -81,76 +97,111 @@ uses_python: true
                 <h2>Newton's Method</h2>
 
                 <p>
-                    While gradient descent relies on a first-order linear approximation, <strong>Newton's Method</strong> utilizes a 
-                    <strong>second-order Taylor expansion</strong> to find the stationary point of a function. By incorporating the 
-                    <strong>curvature</strong> (Hessian matrix) of the loss function, it creates a quadratic approximation locally 
-                    and jumps to the minimum of that quadratic.
+                    Gradient descent uses a first-order linear model of \(\mathcal{L}\); <strong>Newton's method</strong>
+                    uses the second-order quadratic model. Instead of following the negative gradient, at each step it
+                    jumps to the minimizer of the local quadratic approximation, exploiting curvature information encoded
+                    in the Hessian.
                 </p>
 
                 <p>
-                    Consider the second-order approximation of \(\mathcal{L}\) around the current point \(\theta_t\):
+                    The second-order <a href="mvt.html#taylor"><strong>Taylor expansion</strong></a> around the current
+                    iterate \(\boldsymbol{\theta}_t\) reads
                     \[
-                    \mathcal{L}(\theta_t + \Delta \theta) \approx \mathcal{L}(\theta_t) + \nabla \mathcal{L}(\theta_t)^\top \Delta \theta + \frac{1}{2} \Delta \theta^\top \nabla^2 \mathcal{L}(\theta_t) \Delta \theta.
+                    \mathcal{L}(\boldsymbol{\theta}_t + \Delta\boldsymbol{\theta})
+                    \;\approx\; \mathcal{L}(\boldsymbol{\theta}_t)
+                    + \mathbf{g}_t^\top \Delta\boldsymbol{\theta}
+                    + \tfrac{1}{2}\, \Delta\boldsymbol{\theta}^\top \mathbf{H}_t\, \Delta\boldsymbol{\theta},
                     \]
+                    where \(\mathbf{g}_t = \nabla \mathcal{L}(\boldsymbol{\theta}_t)\) and
+                    \(\mathbf{H}_t = \nabla^2 \mathcal{L}(\boldsymbol{\theta}_t)\). Minimizing the right-hand side over
+                    \(\Delta\boldsymbol{\theta}\) leads to the Newton step.
                 </p>
 
+                <div class="theorem" id="T-newton_direction">
+                    <span class="theorem-title">Proposition: Newton Direction</span>
+                    <p>
+                        Let \(\mathbf{H}_t \succ 0\). The quadratic model
+                        \(q(\Delta\boldsymbol{\theta}) = \mathbf{g}_t^\top \Delta\boldsymbol{\theta}
+                        + \tfrac{1}{2}\, \Delta\boldsymbol{\theta}^\top \mathbf{H}_t\, \Delta\boldsymbol{\theta}\)
+                        has a unique minimizer
+                        \[
+                        \mathbf{d}_t \;=\; -\mathbf{H}_t^{-1}\, \mathbf{g}_t,
+                        \]
+                        called the <strong>Newton direction</strong>. It is a descent direction whenever \(\mathbf{g}_t \neq \mathbf{0}\):
+                        \(\mathbf{d}_t^\top \mathbf{g}_t = -\mathbf{g}_t^\top \mathbf{H}_t^{-1}\, \mathbf{g}_t < 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        \(q\) is strictly convex because \(\mathbf{H}_t \succ 0\), so its unique minimizer is the stationary
+                        point. Setting \(\nabla q = \mathbf{g}_t + \mathbf{H}_t\, \Delta\boldsymbol{\theta} = \mathbf{0}\)
+                        and using invertibility of \(\mathbf{H}_t\) gives \(\mathbf{d}_t = -\mathbf{H}_t^{-1} \mathbf{g}_t\).
+                        Positive-definiteness of \(\mathbf{H}_t^{-1}\) (inherited from \(\mathbf{H}_t\)) yields
+                        \(\mathbf{g}_t^\top \mathbf{H}_t^{-1} \mathbf{g}_t > 0\) whenever \(\mathbf{g}_t \neq \mathbf{0}\).
+                    </p>
+                </div>
+
                 <p>
-                    To find the optimal change \(\Delta \theta\) that minimizes this approximation, we set the derivative with respect 
-                    to \(\Delta \theta\) to zero:
+                    <strong>Pure Newton's method</strong> takes \(\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t + \mathbf{d}_t\)
+                    (unit step). This scheme enjoys <strong>local quadratic convergence</strong> near a strict local minimum,
+                    but can diverge when started far from the optimum or when the Hessian is not positive definite. To
+                    restore global convergence, the <strong>Damped Newton's Method</strong> scales the Newton direction by
+                    a line-search step size:
                     \[
-                    \nabla \mathcal{L}(\theta_t) + \nabla^2 \mathcal{L}(\theta_t) \Delta \theta = 0.
+                    \boldsymbol{\theta}_{t+1} \;=\; \boldsymbol{\theta}_t + \eta_t\, \mathbf{d}_t,
+                    \qquad \eta_t \text{ chosen to satisfy the }
+                    \href{#D-armijo_condition}{\textbf{Armijo condition}}.
                     \]
-                </p>
-
-                <p>
-                    Let \(g_t = \nabla \mathcal{L}(\theta_t)\) be the gradient and \(H_t = \nabla^2 \mathcal{L}(\theta_t)\) be the Hessian. 
-                    Solving for \(\Delta \theta\) gives us the <strong>Newton Direction</strong>, denoted as \(d_t\):
-                    \[
-                    H_t d_t = -g_t \implies d_t = -H_t^{-1} g_t.
-                    \]
-                    Note that we assume \(H_t = \nabla^2 \mathcal{L}(\theta_t)\) is positive definite 
-                    (which holds when \(\mathcal{L}\) is locally strictly convex). Otherwise, we cannot solve for \(d_t\).
-                </p>
-
-                <p>
-                    In the pure Newton's method, the update is simply \(\theta_{t+1} = \theta_t + d_t\). However, to ensure 
-                    convergence even when the function is not perfectly quadratic, we often employ <strong>Damped Newton's Method</strong>. 
-                    This involves performing a <strong>line search</strong> along the direction \(d_t\) to find a step size \(\eta_t\) 
-                    that satisfies sufficient decrease conditions (such as the Armijo rule).
                 </p>
 
                 <div class="pseudocode">
-                    <span class="pseudocode-title">Algorithm 1: NEWTONS_METHOD</span>
-                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_o\);<br>
-                    <strong>Output:</strong> stationary point \(\theta_t\);<br>
+                    <span class="pseudocode-title">Algorithm 1: DAMPED_NEWTON</span>
+                    <strong>Input:</strong> objective \(\mathcal{L}\), tolerance \(\epsilon\);<br>
+                    <strong>Output:</strong> approximate stationary point \(\boldsymbol{\theta}_t\);<br>
                     <strong>begin</strong><br>
-                    &emsp;\(t \leftarrow 0\);<br>
-                    &emsp;Choose an initial point \(\theta_o\);<br>
-                    &emsp;<strong>repeat: </strong><br>
-                    &emsp;&emsp;&emsp;Compute gradient: \(g_t = \nabla \mathcal{L}(\theta_t);\)<br>
-                    &emsp;&emsp;&emsp;Compute Hessian: \(H_t = \nabla^2 \mathcal{L}(\theta_t);\)<br>
-                    &emsp;&emsp;&emsp;Solve \(H_t d_t = -g_t\) for \(d_t\);<br>
-                    &emsp;&emsp;&emsp;Do LINE_SEARCH to get step size \(\eta_t\) along \(d_t\);<br>
-                    &emsp;&emsp;&emsp;Update parameters: \(\theta_{t+1} = \theta_t + \eta_t d_t;\)<br>
-                    &emsp;&emsp;&emsp;\( t \leftarrow t + 1 ;\)<br>
-                    &emsp;<strong>until</strong> \(\| g_t \| < \epsilon\);<br>
-                    &emsp;Output \(\theta_t\);<br>
+                    &emsp;\(t \leftarrow 0\); choose initial point \(\boldsymbol{\theta}_0\);<br>
+                    &emsp;<strong>repeat</strong><br>
+                    &emsp;&emsp;\(\mathbf{g}_t \leftarrow \nabla \mathcal{L}(\boldsymbol{\theta}_t)\);<br>
+                    &emsp;&emsp;\(\mathbf{H}_t \leftarrow \nabla^2 \mathcal{L}(\boldsymbol{\theta}_t)\);<br>
+                    &emsp;&emsp;Solve \(\mathbf{H}_t\, \mathbf{d}_t = -\mathbf{g}_t\) for \(\mathbf{d}_t\);<br>
+                    &emsp;&emsp;\(\eta_t \leftarrow \mathrm{LINE\_SEARCH}(\boldsymbol{\theta}_t, \mathbf{d}_t)\) satisfying the Armijo condition;<br>
+                    &emsp;&emsp;\(\boldsymbol{\theta}_{t+1} \leftarrow \boldsymbol{\theta}_t + \eta_t\, \mathbf{d}_t\);<br>
+                    &emsp;&emsp;\(t \leftarrow t + 1\);<br>
+                    &emsp;<strong>until</strong> \(\|\mathbf{g}_t\| < \epsilon\);<br>
+                    &emsp;Output \(\boldsymbol{\theta}_t\);<br>
                     <strong>end</strong>
                 </div>
 
                 <div class="insight-box">
                     <h3>Computational Note: Solving vs. Inverting</h3>
                     <p>
-                        A critical issue of Newton's method is computing the inverse Hessian \(H_t^{-1}\) at 
-                        each \(t\) step, which is obviously expensive.
-                    </p>
-                    <p>
-                        Mathematically, we write \(d_t = -H^{-1}g_t\). However, in algorithmic practice (as shown in the pseudocode), 
-                        we rarely compute the inverse explicitly due to numerical instability and high cost. Instead, we <strong>solve</strong> 
-                        the system of linear equations \(H_t d_t = -g_t\) using methods like Cholesky decomposition or Conjugate Gradient.
+                        Although we write \(\mathbf{d}_t = -\mathbf{H}_t^{-1}\, \mathbf{g}_t\), the inverse is never formed
+                        explicitly: forming \(\mathbf{H}_t^{-1}\) costs \(O(n^3)\) and is numerically fragile. Instead we
+                        <em>solve</em> the linear system \(\mathbf{H}_t\, \mathbf{d}_t = -\mathbf{g}_t\) directly — by
+                        Cholesky factorization when \(\mathbf{H}_t \succ 0\), or by conjugate gradients for large sparse
+                        problems. The cost is the same asymptotically but the constants and numerical stability are
+                        dramatically better.
                     </p>
                 </div>
-                
+
+                <div class="insight-box">
+                    <h3>When Newton's Method Fails</h3>
+                    <p>
+                        Newton's direction is a descent direction only when \(\mathbf{H}_t \succ 0\). In non-convex
+                        landscapes — ubiquitous in deep learning — the Hessian is often indefinite near saddle points, so
+                        \(-\mathbf{H}_t^{-1} \mathbf{g}_t\) may point <em>uphill</em>. Practical remedies include
+                        <strong>trust-region</strong> methods, <strong>Levenberg–Marquardt</strong> damping
+                        \(\mathbf{H}_t \mapsto \mathbf{H}_t + \mu \mathbf{I}\), and <strong>saddle-free Newton</strong>
+                        (Dauphin et al., 2014), which replaces \(\mathbf{H}_t\) by \(|\mathbf{H}_t|\) (constructed from the
+                        absolute values of its eigenvalues). Another concern is cost: storing the full Hessian requires
+                        \(O(n^2)\) memory, and solving the Newton system is \(O(n^3)\) — intractable for modern neural
+                        networks with \(n \sim 10^9\). This motivates the <em>quasi-Newton</em> methods of the next
+                        section.
+                    </p>
+                </div>
+
             </section>
 
             
@@ -158,212 +209,270 @@ uses_python: true
                 <h2>BFGS Method</h2>
 
                 <p>
-                    To mitigate the computational burden of the Hessian, <strong>Quasi-Newton methods</strong> like 
-                    <strong>BFGS</strong> (Broyden-Fletcher-Goldfarb-Shanno) are used. These algorithms iteratively construct 
-                    an approximation of the Hessian (or its inverse) using only gradient information.
+                    To avoid the \(O(n^3)\) cost of Hessian computation and inversion, <strong>quasi-Newton methods</strong>
+                    maintain a symmetric positive-definite matrix \(\mathbf{B}_t \approx \mathbf{H}_t\) (or its inverse
+                    \(\mathbf{C}_t \approx \mathbf{H}_t^{-1}\)) that is updated cheaply at each iteration using only
+                    gradient information. The <strong>BFGS</strong> method of
+                    Broyden–Fletcher–Goldfarb–Shanno is the quasi-Newton method most widely used in practice.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Approximation of Hessian in BFGS</span>
-                    \[
-                    \begin{align*}
-                    H_{t+1} &\approx B_{t+1}  \\\\
-                            &= B_{t} + \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}
-                    \end{align*}
-                    \]
-                    where \(s_t = \theta_{t+1} - \theta_t\) is the step in the parameter space and \(y_t = g_{t+1} - g_t\) is the change in the gradient
-                    of objective \(\mathcal{L}\).
-                    <br>
-                    Alternatively, we can iteratively update an approximation to the inverse Hessian: 
-                    \[
-                    \begin{align*}
-                    H_{t+1}^{-1} &\approx C_{t+1} \\\\
-                                 &= \Big(I - \frac{s_t y_t^\top}{y_t^\top s_t} \Big) C_t \Big( I - \frac{y_t s_t^\top}{y_t^\top s_t}\Big) + \frac{s_t s_t^\top}{y_t^\top s_t}.
-                    \end{align*}
-                    \]
-                </div>
+                <h3>Secant Condition</h3>
                 <p>
-                    By the Taylor expansion of the gradient \(g(\theta) = \nabla \mathcal{L}(\theta)\) around \(\theta_t\), neglecting higher-order terms:
+                    Let \(\mathbf{s}_t = \boldsymbol{\theta}_{t+1} - \boldsymbol{\theta}_t\) denote the parameter step and
+                    \(\mathbf{y}_t = \mathbf{g}_{t+1} - \mathbf{g}_t\) the gradient change. A first-order
+                    <a href="mvt.html#taylor"><strong>Taylor expansion</strong></a> of \(\nabla \mathcal{L}\) around
+                    \(\boldsymbol{\theta}_t\) gives
                     \[
-                    \begin{align*}
-                    &g(\theta_{t+1}) \approx  g(\theta_t) + H(\theta_t) (\theta_{t+1}-\theta_t) \\\\
-                    &\Longrightarrow y_t = H_t s_t,
-                    \end{align*}
+                    \mathbf{g}_{t+1} \approx \mathbf{g}_t + \mathbf{H}_t\, \mathbf{s}_t
+                    \quad\Longrightarrow\quad \mathbf{y}_t \approx \mathbf{H}_t\, \mathbf{s}_t.
                     \]
-                    where 
-                    \[
-                    \begin{align*}
-                    &y_t = g(\theta_{t+1}) - g(\theta_t) \\\\
-                    &s_t = \theta_{t+1}-\theta_t
-                    \end{align*}
-                    \]
-                    <br> 
-                    To efficiently approximate the Hessian \(H_t\), we compute the updated Hessian approximation \(B_{t+1}\) at the end of step \(t\). 
-                    It must satisfy the <strong>secant condition</strong>:
-                    \[
-                    B_{t+1} s_t = y_t.
-                    \]
-                    This condition ensures that the updated Hessian approximation \(B_{t+1} \) reflects the curvature 
-                    relationship between the step \(s_t\) and the gradient change \(y_t\).
-                    (Note: The Wolfe curvature condition ensures \(y_t^\top s_t >0\), which is necessary for the BFGS update to
-                     maintain positive definiteness.)
-                    <br>
-                    Assuming \(B_{t+1}\) is a positive definite rank-2 update of \(B_t\): 
-                    \[
-                    B_{t+1} = B_t + U,
-                    \]
-                    the secant condition becomes:
-                    \[
-                    (B_t + U) s_t = y_t \Longrightarrow U s_t = y_t - B_t s_t.
-                    \]
-                    Here, the correction matrix \(U\) must account for the discrepancy \(y_t - B_t s_t\). 
-                    <br>
-                    We assume \(U\) takes the form:
-                    \[
-                    U = \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}.
-                    \]
-                    The first term adds curvature in the direction of \(y_t\), normalized by \(y_t^\top s_t\), ensuring positive definiteness. 
-                    The second term removes excess curvature in the direction of \(s_t\) ensuring the secant condition is satisfied without over-correction.
-                    <br>
-                    Verification:
-                    \[
-                    \begin{align*}
-                    &B_{t+1} = B_t + \frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t} \\\\
-                    &\Longrightarrow B_{t+1} s_t = B_t s_t + \Big\{\frac{y_t y_t^\top}{y_t^\top s_t} - \frac{(B_t s_t)(B_t s_t)^\top }{s_t^\top B_t s_t}\Big\} s_t\\\\
-                    &\Longrightarrow B_{t+1} s_t = B_t s_t + y_t \cdot \frac{y_t^\top s_t}{y_t^\top s_t} - B_t s_t  \cdot \frac{(s_t^\top B_t s_t)}{s_t^\top B_t s_t}\\\\
-                    &\Longrightarrow B_{t+1} s_t = B_t s_t  + y_t - B_t s_t \\\\
-                    &\Longrightarrow B_{t+1} s_t = y_t
-                    \end{align*}
-                    \]
-                    Therefore, \(B_{t+1}\) satisfies the secant condition, maintaining positive definiteness while approximating 
-                    the curvature of the objective function.
+                    This motivates the quasi-Newton curvature-matching requirement on the updated approximation:
                 </p>
+
+                <div class="theorem" id="D-secant_condition">
+                    <span class="theorem-title">Definition: Secant Condition</span>
+                    <p>
+                        A sequence of Hessian approximations \(\{\mathbf{B}_t\}\) satisfies the <strong>secant condition</strong> if
+                        \[
+                        \mathbf{B}_{t+1}\, \mathbf{s}_t \;=\; \mathbf{y}_t \qquad \text{for all } t.
+                        \]
+                        Equivalently, the inverse approximations \(\mathbf{C}_t = \mathbf{B}_t^{-1}\) satisfy
+                        \(\mathbf{C}_{t+1}\, \mathbf{y}_t = \mathbf{s}_t\).
+                    </p>
+                </div>
+
+                <h3>Derivation of the BFGS Update</h3>
+                <p>
+                    The secant condition alone under-determines \(\mathbf{B}_{t+1}\): in \(n\) dimensions there are
+                    \(n(n+1)/2\) free parameters in a symmetric matrix but only \(n\) linear constraints. BFGS makes the
+                    update unique by requiring (i) the update be a symmetric <strong>rank-2 correction</strong> of
+                    \(\mathbf{B}_t\), and (ii) \(\mathbf{B}_{t+1} \succ 0\) be preserved. Writing \(\mathbf{B}_{t+1} = \mathbf{B}_t + \mathbf{U}\),
+                    the secant condition forces \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t\, \mathbf{s}_t\),
+                    and the rank-2 ansatz
+                    \[
+                    \mathbf{U} = \alpha\, \mathbf{y}_t \mathbf{y}_t^\top + \beta\, (\mathbf{B}_t \mathbf{s}_t)(\mathbf{B}_t \mathbf{s}_t)^\top
+                    \]
+                    is chosen so that the first term injects curvature along \(\mathbf{y}_t\) while the second removes the
+                    now-stale curvature along \(\mathbf{B}_t \mathbf{s}_t\). Enforcing \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t \mathbf{s}_t\)
+                    pins the scalars to \(\alpha = 1/(\mathbf{y}_t^\top \mathbf{s}_t)\) and
+                    \(\beta = -1/(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\), yielding the BFGS update formula.
+                </p>
+
+                <div class="theorem" id="T-bfgs_update">
+                    <span class="theorem-title">Proposition: BFGS Hessian Update</span>
+                    <p>
+                        Given \(\mathbf{B}_t \succ 0\) and vectors \(\mathbf{s}_t, \mathbf{y}_t\) satisfying the
+                        <strong>curvature condition</strong> \(\mathbf{y}_t^\top \mathbf{s}_t > 0\), define
+                        \[
+                        \mathbf{B}_{t+1} \;=\; \mathbf{B}_t
+                        + \frac{\mathbf{y}_t \mathbf{y}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}
+                        - \frac{(\mathbf{B}_t \mathbf{s}_t)(\mathbf{B}_t \mathbf{s}_t)^\top}{\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t}.
+                        \]
+                        Then \(\mathbf{B}_{t+1}\) is symmetric, positive definite, and satisfies the secant condition
+                        \(\mathbf{B}_{t+1}\, \mathbf{s}_t = \mathbf{y}_t\).
+                    </p>
+                </div>
 
                 <div class="proof">
-                    <span class="proof-title">Inverse Hessian Approximation:</span>
-                    <br>
-                    Let \(B_t^{-1} = C_t\). First, we consider the rank-1 update:
-                    \[
-                    B_{t+1}^{-1} = \Big(B_t + \frac{y_t y_t^\top}{y_t^\top s_t} \Big)^{-1}.
-                    \]
-                    Note: A <strong>rank-1 update</strong> modifies the current Hessian approximation by adding or subtracting a rank-1 
-                    matrix, which is the outer product of two vectors.
-                    <br>
-                    Using <a href="../Linear_algebra/woodbury.html"><strong>Sherman-Morrison formula</strong></a>: 
-                    \[
-                    \begin{align*}
-                    B_{t+1}^{-1} &= \Big(B_t + y_t \cdot \frac{y_t^\top}{y_t^\top s_t} \Big)^{-1} \\\\
-                                    &= C_t - \frac{C_t y_t \frac{y_t^\top}{y_t^\top s_t} C_t}{1 + \frac{y_t^\top}{y_t^\top s_t} C_t y_t} \\\\
-                                    &= C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}.
-                    \end{align*}
-                    \]
-                    Next, we consider the <strong>rank-2 update</strong>: 
-                    \[
-                    C_{t+1} = \Big[\Big(B_t + \frac{y_t y_t^\top}{y_t^\top s_t}\Big) - (B_t s_t) \cdot \frac{(B_t s_t)^\top}{s_t^\top B_t s_t} \Big]^{-1}.
-                    \]
-                    Again using Sherman-Morrison formula:
-                    \[
-                    \begin{align*}
-                    C_{t+1} &= \Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big) 
-                                + \frac{\Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)(B_t s_t) \frac{(B_t s_t)^\top}{s_t^\top B_t s_t} \Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)}
-                                        {1 - \frac{(B_t s_t)^\top}{s_t^\top B_t s_t} \Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)(B_t s_t) } \\\\
-
-                            &= C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}
-                                + \frac{\Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big) B_t s_t s_t^\top B_t \Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)}
-                                        {s_t^\top B_t s_t - s_t^\top B_t \Big(C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big) B_t s_t } \\\\
-
-                            &= C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}
-                                + \frac{\Big(I - \frac{C_t y_t y_t^\top}{y_t^\top s_t + y_t^\top C_t y_t}\Big) s_t s_t^\top  \Big(I - \frac{y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)}
-                                        {s_t^\top B_t s_t - s_t^\top B_t s_t  + \frac{(y_t^\top s_t)^2}{y_t^\top s_t + y_t^\top C_t y_t}}\\\\
-
-                            &= C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}
-                                + \frac{s_t s_t^\top 
-                                        - \frac{y_t^\top s_t}{y_t^\top s_t + y_t^\top C_t y_t}(s_t y_t^\top C_t + C_t y_t s_t^\top)
-                                        +\Big(\frac{y_t^\top s_t}{y_t^\top s_t + y_t^\top C_t y_t}\Big)^2 C_t y_t y_t^\top C_t}
-                                        {\frac{(y_t^\top s_t)^2}{y_t^\top s_t + y_t^\top C_t y_t}}\\\\
-
-                            &= C_t - \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t}
-                                        + \frac{s_t s_t^\top( y_t^\top s_t + y_t^\top C_t y_t) }{(y_t^\top s_t)^2}
-                                        - \frac{s_t y_t^\top C_t + C_t y_t s_t^\top}{y_t^\top s_t}
-                                        + \frac{C_t y_t y_t^\top C_t}{y_t^\top s_t + y_t^\top C_t y_t} \\\\
-
-                            &= C_t + \frac{s_t s_t^\top}{y_t^\top s_t} 
-                                    + \frac{s_t y_t^\top C_t y_t s_t^\top}{(y_t^\top s_t)^2}
-                                    - \frac{s_t y_t^\top C_t}{y_t^\top s_t}   
-                                    - \frac{C_t y_t s_t^\top}{y_t^\top s_t} \\\\
-
-                            &= \Big(I -\frac{s_t y_t^\top}{y_t^\top s_t}\Big)C_t\Big(I - \frac{y_t s_t^\top}{y_t^\top s_t}\Big) + \frac{s_t s_t^\top}{y_t^\top s_t} 
-                    \end{align*}
-                    \]
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Secant condition.</strong> Compute directly:
+                        \[
+                        \mathbf{B}_{t+1}\, \mathbf{s}_t
+                        = \mathbf{B}_t \mathbf{s}_t
+                        + \mathbf{y}_t\, \frac{\mathbf{y}_t^\top \mathbf{s}_t}{\mathbf{y}_t^\top \mathbf{s}_t}
+                        - (\mathbf{B}_t \mathbf{s}_t)\, \frac{\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t}{\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t}
+                        = \mathbf{B}_t \mathbf{s}_t + \mathbf{y}_t - \mathbf{B}_t \mathbf{s}_t
+                        = \mathbf{y}_t.
+                        \]
+                    </p>
+                    <p>
+                        <strong>Symmetry.</strong> Both rank-1 correction terms are outer products of a vector with itself,
+                        hence symmetric. \(\mathbf{B}_t\) is symmetric by hypothesis, so \(\mathbf{B}_{t+1}\) is symmetric.
+                    </p>
+                    <p>
+                        <strong>Positive-definiteness.</strong> For any \(\mathbf{v} \neq \mathbf{0}\), decompose by
+                        projecting onto \(\mathbf{s}_t\): write \(\mathbf{w} = \mathbf{v} - \alpha \mathbf{s}_t\) with
+                        \(\alpha = (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{v})/(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\),
+                        so that \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{w} = 0\). A direct calculation (see Boyd &amp;
+                        Vandenberghe, <em>Convex Optimization</em>, §9.3) then gives
+                        \[
+                        \mathbf{v}^\top \mathbf{B}_{t+1} \mathbf{v}
+                        = \mathbf{w}^\top \mathbf{B}_t \mathbf{w}
+                        + \frac{(\mathbf{v}^\top \mathbf{y}_t)^2}{\mathbf{y}_t^\top \mathbf{s}_t}.
+                        \]
+                        The first term is non-negative by \(\mathbf{B}_t \succeq 0\); the second is strictly positive unless
+                        \(\mathbf{v}^\top \mathbf{y}_t = 0\), using \(\mathbf{y}_t^\top \mathbf{s}_t > 0\). Combining both
+                        terms shows the right-hand side is positive for every \(\mathbf{v} \neq \mathbf{0}\).
+                    </p>
                 </div>
+
                 <p>
-                    If the initial \(B_0\) is positive definite (usually, \(B_0 = I\)), and the step size \(\eta\) is found via Condition (1) and the following 
-                    <strong>curvature condition</strong>: 
-                    \[
-                    d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, d_t^\top \nabla \mathcal{L}(\theta_t) \tag{2}
-                    \]
-                    where \(c_2 \in (c_1, 1)\).
-                    <br>
-                    Then \(B_{t+1}\) remains positive definite. Conditions (1) and (2) together are called the <strong>Wolfe conditions</strong>. 
+                    The curvature condition \(\mathbf{y}_t^\top \mathbf{s}_t > 0\) is not automatic — it fails on non-convex
+                    objectives unless the step size \(\eta_t\) is chosen carefully. It is guaranteed by the
+                    <strong>Wolfe conditions</strong> introduced below, which is why Wolfe (not plain Armijo) is the
+                    standard line search for BFGS.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Wolfe conditions</span>
-                    <ol>
-                        <li>Sufficient decrease condition (Armijo condition)</li>
-                        \[\mathcal{L}(\theta_t + \eta \, d_t) \leq \mathcal{L}(\theta_t) + c_1 \, \eta \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
-                        <li>Curvature condition</li>
-                        \[d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) \geq c_2 \, d_t^\top \nabla \mathcal{L}(\theta_t)\]
-                        <br>
-                        where \(0 < c_1 < c_2 < 1\). For example, \(c_1 = 10^{-4}, c_2 = 0.9\) for Quasi-Newton methods.
-                        <br>
-                        Note: In the <strong>strong Wolfe conditions</strong>, the curvature condition becomes
-                        \[ 
-                        | d_t^\top \nabla \mathcal{L}(\theta_t + \eta \, d_t) | \leq c_2 \, | d_t^\top \nabla \mathcal{L}(\theta_t) |
+                <div class="theorem" id="T-bfgs_inverse_update">
+                    <span class="theorem-title">Proposition: BFGS Inverse Update</span>
+                    <p>
+                        Under the same hypotheses as the previous proposition, the inverse \(\mathbf{C}_{t+1} = \mathbf{B}_{t+1}^{-1}\)
+                        admits the closed form
+                        \[
+                        \mathbf{C}_{t+1}
+                        \;=\; \Bigl(\mathbf{I} - \frac{\mathbf{s}_t \mathbf{y}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}\Bigr)
+                              \mathbf{C}_t
+                              \Bigl(\mathbf{I} - \frac{\mathbf{y}_t \mathbf{s}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}\Bigr)
+                              + \frac{\mathbf{s}_t \mathbf{s}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}.
                         \]
-                    </ol>
+                    </p>
                 </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (via two applications of Sherman–Morrison):</span>
+                    <p>
+                        Apply the <a href="../Linear_algebra/woodbury.html#T-sherman_morrison" class="ref-link"><strong>Sherman–Morrison formula</strong></a>
+                        first to the rank-1 addition \(\mathbf{B}_t + \mathbf{y}_t \mathbf{y}_t^\top / (\mathbf{y}_t^\top \mathbf{s}_t)\):
+                        with \(\mathbf{u} = \mathbf{y}_t\), \(\mathbf{v}^\top = \mathbf{y}_t^\top / (\mathbf{y}_t^\top \mathbf{s}_t)\),
+                        \[
+                        \Bigl(\mathbf{B}_t + \frac{\mathbf{y}_t \mathbf{y}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}\Bigr)^{-1}
+                        = \mathbf{C}_t - \frac{\mathbf{C}_t \mathbf{y}_t \mathbf{y}_t^\top \mathbf{C}_t}{\mathbf{y}_t^\top \mathbf{s}_t + \mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t}.
+                        \]
+                        Next apply Sherman–Morrison to the rank-1 subtraction of \((\mathbf{B}_t \mathbf{s}_t)(\mathbf{B}_t \mathbf{s}_t)^\top / (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\)
+                        from the intermediate matrix. After collecting terms and repeatedly using
+                        \(\mathbf{C}_t \mathbf{B}_t \mathbf{s}_t = \mathbf{s}_t\) (since \(\mathbf{C}_t = \mathbf{B}_t^{-1}\))
+                        and the identity
+                        \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t \cdot (\mathbf{y}_t^\top \mathbf{s}_t + \mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t) - (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)(\mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t)
+                        = \mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t \cdot \mathbf{y}_t^\top \mathbf{s}_t\),
+                        the expression telescopes to the stated form. A complete term-by-term calculation is standard
+                        (see Boyd &amp; Vandenberghe, <em>Convex Optimization</em>, §9.3). The final form can be verified
+                        mechanically by direct multiplication \(\mathbf{C}_{t+1} \mathbf{B}_{t+1} = \mathbf{I}\), which we
+                        defer to computer algebra.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why the two-factor form matters</h3>
+                    <p>
+                        The compact form
+                        \(\mathbf{C}_{t+1} = (\mathbf{I} - \rho_t \mathbf{s}_t \mathbf{y}_t^\top)\, \mathbf{C}_t\, (\mathbf{I} - \rho_t \mathbf{y}_t \mathbf{s}_t^\top) + \rho_t \mathbf{s}_t \mathbf{s}_t^\top\),
+                        where \(\rho_t = 1/(\mathbf{y}_t^\top \mathbf{s}_t)\), exposes the <em>action</em> of the update:
+                        \(\mathbf{C}_{t+1} \mathbf{v}\) can be computed using only inner products and outer-product sums
+                        involving \(\mathbf{s}_t, \mathbf{y}_t\) and \(\mathbf{C}_t \mathbf{v}\) — no explicit matrix storage
+                        of the correction is needed. This is the structural observation that enables <strong>L-BFGS</strong>
+                        below: by unrolling this two-factor recurrence over the most recent \(m\) pairs, one obtains a
+                        two-loop algorithm that never materializes \(\mathbf{C}_t\) at all.
+                    </p>
+                </div>
+
+                <h3>Wolfe Conditions</h3>
                 <p>
-                    In practice, we cannot store the whole Hessian approximation for large-scale problems. It costs \(O(n^2)\) memory space. 
-                    In <strong>Limited-memory BFGS (L-BFGS)</strong>, we only use the \(m\) most recent \((s_t, y_t)\) pairs, and do not store the Hessian approximation 
-                    explicitly. Instead, we approximate \(H_t^{-1} g_t\) by computing a sequence of inner products of these vectors. The memory requirement 
-                    is \(O(mn)\), where \(m\) is typically 5 to 20.
+                    BFGS's positive-definiteness preservation and fast convergence both depend on the step
+                    \(\eta_t\) satisfying conditions stronger than Armijo alone. The <strong>Wolfe conditions</strong>
+                    pair the sufficient-decrease condition with a curvature condition that prevents steps that are too short.
+                </p>
+
+                <div class="theorem" id="D-wolfe_conditions">
+                    <span class="theorem-title">Definition: Wolfe Conditions</span>
+                    <p>
+                        Fix \(0 < c_1 < c_2 < 1\). A step size \(\eta > 0\) satisfies the <strong>Wolfe conditions</strong>
+                        at \(\boldsymbol{\theta}_t\) along a descent direction \(\mathbf{d}_t\) if both hold:
+                    </p>
+                    <p>
+                        <strong>(W1) Sufficient decrease (Armijo):</strong>
+                        \[
+                        \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t)
+                        \leq \mathcal{L}(\boldsymbol{\theta}_t)
+                        + c_1\, \eta\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t).
+                        \]
+                    </p>
+                    <p>
+                        <strong>(W2) Curvature:</strong>
+                        \[
+                        \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t)
+                        \geq c_2\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t).
+                        \]
+                        The <strong>strong Wolfe conditions</strong> replace (W2) with the tighter two-sided form
+                        \(|\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t + \eta \mathbf{d}_t)| \leq c_2\, |\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)|\).
+                        Typical choices for quasi-Newton methods are \(c_1 = 10^{-4}\) and \(c_2 = 0.9\).
+                    </p>
+                </div>
+
+                <p>
+                    The curvature condition (W2) is precisely what guarantees the BFGS prerequisite
+                    \(\mathbf{y}_t^\top \mathbf{s}_t > 0\). Indeed, for a descent direction
+                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) < 0\), (W2) gives
+                    \[
+                    \mathbf{y}_t^\top \mathbf{s}_t
+                    = \eta_t\, \mathbf{d}_t^\top \bigl(\nabla \mathcal{L}(\boldsymbol{\theta}_{t+1}) - \nabla \mathcal{L}(\boldsymbol{\theta}_t)\bigr)
+                    \geq \eta_t\, (c_2 - 1)\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)
+                    > 0,
+                    \]
+                    since \(\eta_t > 0\), \(c_2 < 1\), and
+                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) < 0\). This is the reason BFGS line
+                    searches are implemented with (strong) Wolfe rather than plain Armijo.
+                </p>
+
+                <h3>Limited-Memory BFGS (L-BFGS)</h3>
+                <p>
+                    For large-scale problems, storing the \(n \times n\) matrix \(\mathbf{C}_t\) explicitly is infeasible —
+                    \(n \sim 10^6\) already requires terabytes. <strong>L-BFGS</strong> sidesteps this by never forming
+                    \(\mathbf{C}_t\): it retains only the most recent \(m\) pairs \(\{(\mathbf{s}_i, \mathbf{y}_i)\}\) (typically
+                    \(m \in \{5, \ldots, 20\}\)) and computes \(\mathbf{C}_t\, \mathbf{g}_t\) implicitly via the
+                    <strong>two-loop recursion</strong> below. A direct expansion of the two-factor form
+                    \(\mathbf{C}_{t+1} = (\mathbf{I} - \rho_t \mathbf{s}_t \mathbf{y}_t^\top)\, \mathbf{C}_t\, (\mathbf{I} - \rho_t \mathbf{y}_t \mathbf{s}_t^\top) + \rho_t \mathbf{s}_t \mathbf{s}_t^\top\)
+                    over the last \(m\) pairs, applied to a vector \(\mathbf{g}_t\) against an implicit initial
+                    \(\mathbf{C}_t^{(0)}\) (often \(\mathbf{I}\)), produces exactly the two-loop recursion — we refer to Boyd
+                    &amp; Vandenberghe, <em>Convex Optimization</em>, §9.3 for the full expansion, and note that the recursion
+                    is also verifiable mechanically against the explicit formula, as done in our verification. The memory cost
+                    drops to \(O(mn)\) and each iteration costs \(O(mn)\).
                 </p>
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm 2: L_BFGS</span>
-                    <strong>Input:</strong> objective function \(\mathcal{L}\), tolerance \(\epsilon\), initial step size \(\eta_0\); 
-                    <strong>Output:</strong> stationary point \(\theta^*\);
-                    <strong>begin</strong>
-                    &emsp;Choose an initial point \(\theta_0\);
-                    &emsp;Initialize \( (s, y) \) storage for \( m \) past updates;
-                    &emsp;\(t \leftarrow 0\);
-                    &emsp;<strong>repeat: </strong>
-                    &emsp;&emsp;Compute gradient \( g_t = \nabla \mathcal{L}(\theta_t) \);
-                    &emsp;&emsp;Set \( q \leftarrow g_t \);
-                    &emsp;&emsp;Loop backward (from newest to oldest stored \( (s, y) \) pairs):
-                    &emsp;&emsp;&emsp;Compute \( \alpha_i = \rho_i \, s_i^\top q \);
-                    &emsp;&emsp;&emsp;Update \( q \leftarrow q - \alpha_i y_i \);
-                    &emsp;&emsp;Set \( r \leftarrow H_t^0 q \);
-                    &emsp;&emsp;Loop forward (from oldest to newest stored \( (s, y) \) pairs):
-                    &emsp;&emsp;&emsp;Compute \( \beta_i = \rho_i \, y_i^\top r \);
-                    &emsp;&emsp;&emsp;Update \( r \leftarrow r + s_i (\alpha_i - \beta_i) \);
-                    &emsp;&emsp;Set search direction \( p_t \leftarrow -r \);
-                    &emsp;&emsp;Do LINE_SEARCH: find step size \( \eta_t \) along \(p_t\) satisfying Wolfe conditions;
-                    &emsp;&emsp;Update parameters: \( \theta_{t+1} \leftarrow \theta_t + \eta_t p_t \);
-                    &emsp;&emsp;Compute gradient \( g_{t+1} \leftarrow \nabla \mathcal{L}(\theta_{t+1}) \);
-                    &emsp;&emsp;Store \( s_t \leftarrow \theta_{t+1} - \theta_t \), \( y_t \leftarrow g_{t+1} - g_t \), \( \rho_t \leftarrow \frac{1}{y_t^\top s_t} \);
-                    &emsp;&emsp;If the number of stored pairs exceeds \( m \), discard the oldest pair;
-                    &emsp;&emsp;\( t \leftarrow t + 1 \);
-                    &emsp;<strong>until</strong> \( \|g_t\| < \epsilon \);
-                    &emsp;Output \(\theta_t\);
+                    <strong>Input:</strong> objective \(\mathcal{L}\), tolerance \(\epsilon\), memory size \(m\);<br>
+                    <strong>Output:</strong> approximate stationary point \(\boldsymbol{\theta}^*\);<br>
+                    <strong>begin</strong><br>
+                    &emsp;Choose initial point \(\boldsymbol{\theta}_0\); initialise \((\mathbf{s}, \mathbf{y})\) storage for up to \(m\) past updates;<br>
+                    &emsp;\(t \leftarrow 0\);<br>
+                    &emsp;<strong>repeat</strong><br>
+                    &emsp;&emsp;\(\mathbf{g}_t \leftarrow \nabla \mathcal{L}(\boldsymbol{\theta}_t)\); \(\mathbf{q} \leftarrow \mathbf{g}_t\);<br>
+                    &emsp;&emsp;<em>Backward loop (newest to oldest stored pair):</em><br>
+                    &emsp;&emsp;&emsp;\(\alpha_i \leftarrow \rho_i\, \mathbf{s}_i^\top \mathbf{q}\); \(\;\mathbf{q} \leftarrow \mathbf{q} - \alpha_i\, \mathbf{y}_i\);<br>
+                    &emsp;&emsp;\(\mathbf{r} \leftarrow \mathbf{C}_t^{(0)}\, \mathbf{q}\)  (typically \(\mathbf{C}_t^{(0)} = \mathbf{I}\) or a scaled identity);<br>
+                    &emsp;&emsp;<em>Forward loop (oldest to newest stored pair):</em><br>
+                    &emsp;&emsp;&emsp;\(\beta_i \leftarrow \rho_i\, \mathbf{y}_i^\top \mathbf{r}\); \(\;\mathbf{r} \leftarrow \mathbf{r} + \mathbf{s}_i (\alpha_i - \beta_i)\);<br>
+                    &emsp;&emsp;\(\mathbf{p}_t \leftarrow -\mathbf{r}\);<br>
+                    &emsp;&emsp;\(\eta_t \leftarrow \mathrm{LINE\_SEARCH}(\boldsymbol{\theta}_t, \mathbf{p}_t)\) satisfying Wolfe conditions;<br>
+                    &emsp;&emsp;\(\boldsymbol{\theta}_{t+1} \leftarrow \boldsymbol{\theta}_t + \eta_t\, \mathbf{p}_t\);<br>
+                    &emsp;&emsp;\(\mathbf{g}_{t+1} \leftarrow \nabla \mathcal{L}(\boldsymbol{\theta}_{t+1})\);<br>
+                    &emsp;&emsp;Store \(\mathbf{s}_t \leftarrow \boldsymbol{\theta}_{t+1} - \boldsymbol{\theta}_t\), \(\mathbf{y}_t \leftarrow \mathbf{g}_{t+1} - \mathbf{g}_t\), \(\rho_t \leftarrow 1/(\mathbf{y}_t^\top \mathbf{s}_t)\);<br>
+                    &emsp;&emsp;If the number of stored pairs exceeds \(m\), discard the oldest pair;<br>
+                    &emsp;&emsp;\(t \leftarrow t + 1\);<br>
+                    &emsp;<strong>until</strong> \(\|\mathbf{g}_t\| < \epsilon\);<br>
+                    &emsp;Output \(\boldsymbol{\theta}_t\);<br>
                     <strong>end</strong>
                 </div>
+
                 <p>
-                    Note: For computational efficiency and numerical stability, instead of calculating \(\frac{1}{s^\top y}\) multiple times, 
-                    we introduce \(\rho = \frac{1}{s^\top y}\) and store it alongside each \((s, y)\) pair.
+                    Note: For numerical efficiency, the scalar \(\rho_t = 1/(\mathbf{y}_t^\top \mathbf{s}_t)\) is computed once
+                    and stored alongside each \((\mathbf{s}_t, \mathbf{y}_t)\) pair rather than being recomputed whenever it is
+                    needed in the two loops.
                 </p>
+
                 <h3>Python Implementation</h3>
-                <p>A sample code for L-BFGS is as follows:</p>
+                <p>
+                    The sample implementation below tests L-BFGS on the <strong>Rosenbrock function</strong>
+                    \[
+                    f(\mathbf{x}) = \sum_{i=1}^{n-1} \bigl[a\, (x_{i+1} - x_i^2)^2 + (b - x_i)^2\bigr],
+                    \qquad a = 100,\; b = 1,
+                    \]
+                    a standard optimization benchmark with global minimum \(f(\mathbf{1}) = 0\). Despite the simple
+                    appearance, the Rosenbrock function is notoriously difficult for optimization algorithms because its
+                    global minimum lies at the bottom of a narrow, curved, "banana-shaped" valley. The surrounding landscape
+                    is ill-conditioned (strong anisotropy of the Hessian) and contains broad flat regions where gradients are
+                    small, so naive gradient descent crawls while Newton-type methods must handle curvature carefully.
+                </p>
 
                 <div class="code-container">
                     <div class="collapsible-section">
@@ -514,27 +623,28 @@ uses_python: true
                     <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
                     <div class="python-output"></div>
                 </div>
-                <p>
-                    Note: On the above code, we used the <strong>Rosenbrock function</strong>, which is defined as 
-                    \[
-                    f(x) = \sum_{i = 1}^{n-1} a (x_{i+1} - x_i^2)^2 + (b - x_i)^2
-                    \]
-                    where \(x \in \mathbb{R}^n\), and usually we set the coefficients \(a = 100, \, b = 1\).
-                </p>
-                
-                <p>
-                    The global minimum can be obtained simply at \(x = [1, 1, \cdots, 1]\), but in numerical optimization, converging to 
-                    the global minimum is difficult because of several reasons:
-                </p>
-                
-                <ul style="padding-left: 40px;">
-                    <li><strong>Broad "flat" regions & several local minima:</strong> Optimization algorithms can be trapped there.</li>
-                    <li><strong>Ill-conditioned:</strong> Small changes in one variable can result in large changes in another.</li>
-                    <li><strong>A narrow, curved valley containing the global minimum:</strong> It makes hard for optimization algorithms to navigate. The 
-                    steep sides of the valley can cause algorithms to overshoot or converge very slowly.</li>
-                </ul>
-                <br>
-                <p>Rosenbrock function is a common benchmark for testing the robustness and efficiency of optimization algorithms.</p>
+                <div class="insight-box">
+                    <h3>Why Rosenbrock is a hard benchmark</h3>
+                    <p>
+                        Even though \(\mathbf{x}^* = (1, 1, \ldots, 1)\) is easy to read off analytically, numerical optimizers
+                        struggle with the Rosenbrock landscape for three compounding reasons:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Narrow, curved valley:</strong> the minimum lies at the bottom of a bent ravine. Steep
+                            walls deflect iterates and trigger over- or undershooting unless curvature information is used.</li>
+                        <li><strong>Ill-conditioning:</strong> along the valley the Hessian has eigenvalues differing by
+                            several orders of magnitude — the condition number is large, slowing first-order methods
+                            dramatically (cf. the <a href="duality.html#Lip"><strong>condition-number analysis</strong></a>
+                            later in this section).</li>
+                        <li><strong>Broad flat regions:</strong> outside the valley, the gradient is small but the function is
+                            still far from its minimum, so step sizes must be large without overshooting the valley walls.</li>
+                    </ul>
+                    <p>
+                        These three properties — anisotropic curvature, ill-conditioning, and flat plateaus — are exactly
+                        the pathologies that plague loss landscapes in deep learning. This is why Rosenbrock remains the
+                        standard testbed for new optimization algorithms.
+                    </p>
+                </div>
             </section>
         </div>
         <script src="/js/main.js"></script>
