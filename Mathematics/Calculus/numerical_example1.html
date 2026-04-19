@@ -18,102 +18,160 @@ uses_python: true
         {% include section_navigation.html %}
 
         <div class="topic-nav">
-            <a href="#ex1">Numerical Computation Example</a>
-        </div> 
+            <a href="#ex1">Numerical Validation of a Matrix Differential</a>
+        </div>
 
-        <div class="container">        
+        <div class="container">
             <section id="ex1" class="section-content">
-                <h2>Example: \(df = X(dx)+(dX)X\) for \(f(X) = X^2\)</h2>
+                <h2>Example: numerical validation of \(d(X^2) = X\,(dX) + (dX)\,X\)</h2>
+
                 <p>
-                    In matrix calculus, complex symbolic derivations are prone to human error. A professional developer's 
-                    first step is to validate these rules using <strong>finite-difference approximations</strong>. 
+                    In the previous page we derived the differential of
+                    <a href="matrix_cal.html#square"><strong>matrix-valued matrix functions</strong></a> symbolically,
+                    producing formulas such as
+                    \[
+                    d(X^3) \;=\; (dX)X^2 + X(dX)X + X^2(dX), \qquad
+                    d(X^{-1}) \;=\; -X^{-1}(dX)X^{-1}.
+                    \]
+                    Symbolic derivations like these are short but error-prone — miss a term, flip a factor, and the
+                    whole downstream optimization is silently wrong. A basic hygiene step of computational
+                    mathematics is therefore to <strong>validate each derivation numerically</strong> before trusting
+                    it. In this page we work through the simpler case \(f(X) = X^2\), for which the differential is
+                    \[
+                    df \;=\; f'(X)[dX] \;=\; X(dX) + (dX)X,
+                    \]
+                    and we verify it against finite differences.
+                </p>
+
+                <h3>Finite differences</h3>
+
+                <p>
+                    For a differentiable function \(f\), the
+                    <a href="linear_approximation.html#D-differential"><strong>differential</strong></a> \(df\) at
+                    \(X\) is the linear part of the increment — equivalently, the quantity that satisfies
+                    \[
+                    f(X + dX) - f(X) \;=\; df + o(\|dX\|).
+                    \]
+                    Two standard <strong>finite-difference approximations</strong> of \(df\) are
+                    \[
+                    \text{Forward difference:} \quad f(X + dX) - f(X), \qquad
+                    \text{Backward difference:} \quad f(X) - f(X - dX).
+                    \]
+                    Each equals \(df\) up to an \(o(\|dX\|)\) term, so in the limit \(dX \to 0\) both agree with the
+                    analytical formula.
                 </p>
 
                 <p>
-                    In this example, we numerically compute the derivative of the matrix equation \(f(X) = X^2\). Defining 
-                    differentiation rules, such as the general chain rule and vector-Jacobian product can significantly enhance 
-                    computational performance.
+                    When comparing a computed approximation against a reference value, we measure quality by
+                    <strong>relative error</strong> in a norm (we use the Frobenius norm throughout):
+                    \[
+                    \text{relative error} \;=\; \frac{\|\,\text{true} - \text{approx}\,\|_F}{\|\,\text{true}\,\|_F}.
+                    \]
+                    A small absolute difference does not necessarily mean a small error — scale matters. Relative
+                    error normalizes by the size of the quantity being approximated.
                 </p>
 
+                <div class="insight-box">
+                    <h3>Choosing the perturbation scale \(\|dX\|\)</h3>
+                    <p>
+                        Taking \(dX\) ever smaller does <em>not</em> make a finite-difference approximation ever more
+                        accurate. Two error sources compete:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Truncation error</strong> from the \(o(\|dX\|)\) remainder — the quadratic term
+                            \(O(\|dX\|^2)\) dominates; its <em>relative</em> size is \(O(\|dX\|)\).</li>
+                        <li><strong>Rounding error</strong> from subtracting two nearly equal floating-point numbers
+                            in \(f(X + dX) - f(X)\); its <em>relative</em> size is
+                            \(O(\varepsilon_{\text{mach}} / \|dX\|)\), where
+                            \(\varepsilon_{\text{mach}} \approx 2.2\times 10^{-16}\) for IEEE 754 double precision.</li>
+                    </ul>
+                    <p>
+                        Balancing the two gives optimal
+                        \(\|dX\| \approx \sqrt{\varepsilon_{\text{mach}}} \approx 1.5 \times 10^{-8}\) for one-sided
+                        differences, with corresponding best achievable relative error
+                        \(\approx \sqrt{\varepsilon_{\text{mach}}}\). This is why we set the perturbation scale to
+                        \(10^{-8}\) in the code below: any smaller and rounding dominates; any larger and the
+                        quadratic truncation term does.
+                    </p>
+                </div>
+
+                <h3>Good practice for test inputs</h3>
+
                 <p>
-                    To validate our differentiation rules, comparing them with the <strong>finite-difference approximation</strong> 
-                    is a practical approach. Two common methods for finite-difference approximation are:
-                    \[
-                    f(x+dx) - f(x) \text{ (Forward Difference)}
-                    \]
-                    \[
-                    f(x) - f(x-dx) \text{ (Backward Difference)}
-                    \]
-                    When evaluating the accuracy of your results, it is essential to use <strong>relative error</strong> as a metric. 
-                    A small simple difference between two quantities does not always imply that the error is negligible. Instead, relative 
-                    error is calculated as:
-                    \[
-                    Relative Error = \frac{\| True - Approximation \|}{\|True \|}
-                    \]
-                    Theoritically, as \(dx \to 0\), the approximation of \(df\) becomes more accurate. However, this is not always true in 
-                    practice due to the limitations of floating-point arithmetic. When \(dx\) becomes too small, the computed difference 
-                    \(f(x+dx) - f(x) \) may be rounded off to zero by the computer, leading to a loss of accuracy and an increase in the error.
+                    Draw test matrices from a continuous distribution (here, <code>np.random.randn</code>) rather than
+                    hand-picking "nice" integer-valued matrices. Integer matrices can accidentally satisfy identities
+                    (commuting \(X\) and \(dX\), exact zero entries, singular matrices) that mask bugs in the
+                    general-position code path. Random non-integer values exercise the full logic.
                 </p>
-                <P>
-                    In the example, we set \(dX = \text{np.random.randn}(2, 2)\) * <strong>1e-8</strong>. This is small enough to approximate the derivative 
-                    but not so small that numerical rounding errors dominate the computation. 
-                </P>
-                <p>
-                    Finally, to ensure the reliability of your code, avoid choosing arbitrarily "nice" numbers. Instead, generate random 
-                    <strong>non-integer</strong> values to test the robustness of your implementation and minimize bias in your results.
-                </p>
+
+                <h3>Implementation and run</h3>
 
                 <div class="code-container">
                     <div class="collapsible-section">
-                    <button class="collapsible-btn">Show/Hide Code</button>
-                    <div class="collapsible-content">
-                    <pre class="python-code">
-                        import numpy as np
-                        # Matrix X 
-                        X = np.random.randn(2, 2)
+                        <button class="collapsible-btn">Show/Hide Code</button>
+                        <div class="collapsible-content">
+<pre class="python-code">
+import numpy as np
 
-                        # Differential matrix dX
-                        dX = np.random.randn(2, 2) * 1e-8
+# Random test matrix X in R^{2x2}
+X = np.random.randn(2, 2)
 
-                        # Define f(X) = X^2
-                        f_X = X @ X  
+# Perturbation dX at the sqrt(eps_machine) scale
+dX = np.random.randn(2, 2) * 1e-8
 
-                        # Forward Difference Approximation: f(X + dX) - f(X) 
-                        f_approx = (X + dX) @ (X + dX) - f_X
+# f(X) = X^2
+f_X = X @ X
 
-                        # Backward Difference Approximation: f(X) - f(X - dX)
-                        b_approx = f_X - (X - dX) @ (X - dX) 
+# Forward difference:  f(X + dX) - f(X)
+f_approx = (X + dX) @ (X + dX) - f_X
 
-                        # Exact: X dX + dX X
-                        exact = X @ dX + dX @ X
+# Backward difference: f(X) - f(X - dX)
+b_approx = f_X - (X - dX) @ (X - dX)
 
-                        # Relative errors (by Frobenius norm)
-                        f_relative_error =  np.linalg.norm(f_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
-                        b_relative_error =  np.linalg.norm(b_approx - exact, 'fro')  / np.linalg.norm(exact, 'fro')
+# Analytical differential:  df = X dX + dX X
+exact = X @ dX + dX @ X
 
-                        # Print the results
-                        print(f"Input Matrix X:\n {X} \n")
-                        print(f"Differential dX:\n {dX}\n")
-                        print(f"Foward Difference (f(X + dX) - f(X)):\n {f_approx}\n")
-                        print(f"Backward Difference (f(X) - f(X - dX)):\n {b_approx}\n")
-                        print(f"Exact (X dX + dX X):\n {exact}\n")
-                        print(f"\nRelative Error(Forward): {f_relative_error:.2e}")
-                        print(f"\nRelative Error(Backward): {b_relative_error:.2e}")
-                    </pre>
+# Relative errors in Frobenius norm
+f_rel_err = np.linalg.norm(f_approx - exact, 'fro') / np.linalg.norm(exact, 'fro')
+b_rel_err = np.linalg.norm(b_approx - exact, 'fro') / np.linalg.norm(exact, 'fro')
+
+print(f"Input matrix X:\n{X}\n")
+print(f"Perturbation dX:\n{dX}\n")
+print(f"Forward difference  f(X + dX) - f(X):\n{f_approx}\n")
+print(f"Backward difference f(X) - f(X - dX):\n{b_approx}\n")
+print(f"Analytical df = X dX + dX X:\n{exact}\n")
+print(f"Relative error (forward) : {f_rel_err:.2e}")
+print(f"Relative error (backward): {b_rel_err:.2e}")
+</pre>
+                        </div>
+                        <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
+                        <div class="python-output"></div>
+                    </div>
                 </div>
-                <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
-                <div class="python-output"></div>
+
+                <p>
+                    Typical output shows relative errors around \(10^{-8}\) — consistent with the optimal accuracy
+                    predicted by the balance of truncation and rounding errors discussed above. If one of these
+                    errors suddenly spiked to \(10^{-2}\) or larger, that would indicate either a bug in the
+                    analytical formula or an inappropriate perturbation scale, and the validation would have caught
+                    it.
+                </p>
 
                 <div class="insight-box">
-                    <h3>Why Numerical Validation Matters</h3>
+                    <h3>Why numerical validation matters</h3>
                     <p>
-                        Even if you are using <a href="../Machine_learning/autodiff.html"><strong>Auto-diff</strong></a>, 
-                        understanding how to manually verify a gradient via finite differences is essential when implementing 
-                        custom layers or complex physical constraints where the analytical form is non-trivial.
+                        Modern machine-learning frameworks compute gradients with
+                        <a href="../Machine_learning/autodiff.html"><strong>automatic differentiation</strong></a>,
+                        not by hand. But whenever one writes a <em>custom</em> operator — a new layer type, an
+                        exotic loss function, a physics-informed constraint — the framework's autodiff only works
+                        for the parts built from its registered primitives. Anything custom needs a hand-written
+                        derivative, and a hand-written derivative needs finite-difference validation before it goes
+                        into training. The same logic applies to gradient checks in scientific-computing libraries
+                        and to the testing of custom CUDA kernels. The technique on this page — pick a perturbation
+                        at the \(\sqrt{\varepsilon_{\text{mach}}}\) scale, compare against a forward or backward
+                        difference, measure relative error — is the workhorse behind all of these checks.
                     </p>
                 </div>
-                
-            </section>
 
             </section>
 
@@ -121,6 +179,6 @@ uses_python: true
         <script src="/js/main.js"></script>
         <script src="/js/runPythonCode.js"></script>
         <script src="/js/collapsible.js"></script>
-        
+
     </body>
 </html>
