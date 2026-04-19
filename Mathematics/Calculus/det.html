@@ -4,7 +4,7 @@ title: Scalar Functions of a Matrix
 topic_id: calc-5
 level: detail
 uses_math: true
-uses_python: false
+uses_python: true
 ---
 <!DOCTYPE html>
 <html>
@@ -28,112 +28,145 @@ uses_python: false
                 <h2>Derivative of the Frobenius Norm</h2>
 
                 <p>
-                    In machine learning, we frequently map high-dimensional weight matrices to a single scalar "cost" or "penalty" term.
-                    The <a href="../Linear_algebra/trace.html"><strong>Frobenius norm</strong></a> provides the most natural way to measure 
-                    the total magnitude of a matrix \(X \in \mathbb{R}^{m \times n}\), acting as the matrix-space equivalent of the Euclidean 
-                    \(L_2\) norm.
+                    So far we have studied differentials of
+                    <a href="linear_approximation.html#D-differential"><strong>scalar-input</strong></a>,
+                    <a href="jacobian.html#D-jacobian"><strong>vector-input</strong></a>, and
+                    <a href="matrix_cal.html#square"><strong>matrix-input / matrix-output</strong></a> functions.
+                    This page closes the natural square of cases: <strong>scalar-output functions of a matrix
+                    argument</strong>, \(f : \mathbb{R}^{m \times n} \to \mathbb{R}\). In machine learning these
+                    arise everywhere — regularization terms, log-likelihoods, and scalar losses are all such
+                    functions of weight matrices.
                 </p>
 
                 <p>
-                    It is defined through the <strong>trace operator</strong>, which we will see is the fundamental tool for extracting 
-                    scalar information from matrix products:
+                    The <a href="../Linear_algebra/trace.html"><strong>Frobenius norm</strong></a> measures the total
+                    magnitude of a matrix \(X \in \mathbb{R}^{m \times n}\), serving as the matrix-space analogue of
+                    the Euclidean \(L_2\) norm. It is defined through the <strong>trace</strong>:
                     \[
-                    f(X) = \| X \|_F = \sqrt{\text{tr}(X^TX)} = \sqrt{\sum_{i,j} X_{ij}^2}
-                    \] 
+                    \|X\|_F \;=\; \sqrt{\operatorname{tr}(X^T X)} \;=\; \sqrt{\sum_{i,j} X_{ij}^2}.
+                    \]
                 </p>
 
                 <p>
-                    Derivatives implicitly rely on <strong>norms</strong> to measure the magnitude of changes in both the input \(dx\) 
-                    and the output \(df\) ensuring a consistent comparison of their scales.  
+                    <strong>The role of the norm, made concrete.</strong> The abstract remark made on the
+                    <a href="linear_approximation.html#lapp"><strong>Linear Approximations page</strong></a> — that
+                    derivatives compare the magnitudes of input and output displacements, and a norm is what supplies
+                    that magnitude — becomes palpable once inputs are matrices. Unlike vectors, matrices admit several
+                    genuinely different norms: the Frobenius norm \(\|\cdot\|_F\) we use throughout this page, the
+                    operator (spectral) norm \(\|\cdot\|_2\), the nuclear norm \(\|\cdot\|_*\), and more. In finite
+                    dimensions these are all equivalent as topologies, but they produce qualitatively different
+                    <em>geometric</em> statements: a ball of radius \(1\) in Frobenius norm is not the same shape as
+                    a ball of radius \(1\) in operator norm. Choosing a norm is therefore a modelling decision — it
+                    fixes what "a small perturbation of \(X\)" means. For standard gradient-based optimization of
+                    loss functions on matrix parameters, the Frobenius norm is the natural choice because it is the
+                    norm compatible with the entrywise \(L_2\)-type inner product, which is exactly what the next
+                    definition records.
+                </p>
+
+                <p>
+                    Before differentiating, we establish the gradient convention for scalar-output matrix functions —
+                    the direct analogue of the
+                    <a href="linear_approximation.html#diff"><strong>gradient convention</strong></a> for vector
+                    inputs.
+                </p>
+
+                <div class="theorem" id="D-matrix_gradient">
+                    <span class="theorem-title">Definition: Gradient for scalar functions of a matrix</span>
+                    <p>
+                        Let \(f : \mathbb{R}^{m \times n} \to \mathbb{R}\) be differentiable at \(X\). The
+                        <strong>gradient</strong> \(\nabla f \in \mathbb{R}^{m \times n}\) is the unique matrix
+                        satisfying
+                        \[
+                        df \;=\; \langle \nabla f,\, dX \rangle_F \;=\; \operatorname{tr}\bigl((\nabla f)^T dX\bigr),
+                        \]
+                        where the <strong>Frobenius inner product</strong> is
+                        \(\langle A, B \rangle_F := \operatorname{tr}(A^T B) = \sum_{i,j} A_{ij} B_{ij}\).
+                        Equivalently, \((\nabla f)_{ij} = \partial f / \partial X_{ij}\).
+                    </p>
+                </div>
+
+                <p>
+                    In practice, we compute \(df\) by manipulating differentials, collect it into the form
+                    \(df = \operatorname{tr}(M^T dX)\) for some matrix \(M\), and read off \(\nabla f = M\).
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Derivative of the Frobenius Norm</span>
+                    <span class="proof-title">Derivation of \(\nabla \|X\|_F\).</span>
                     <p>
-                        Let's take the differential \(df\) of 
+                        Let \(f(X) = \|X\|_F = \sqrt{\operatorname{tr}(X^T X)}\). Applying the
+                        <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>
+                        with the outer scalar function \(u \mapsto \sqrt{u}\) (whose scalar derivative is
+                        \(1/(2\sqrt{u})\)):
                         \[
-                        f(X) = \| X \|_F = \sqrt{\text{tr}(X^TX)} = \sqrt{\sum_{i,j} X_{ij}^2}.
+                        df \;=\; \frac{1}{2\sqrt{\operatorname{tr}(X^T X)}}\; d\bigl[\operatorname{tr}(X^T X)\bigr].
                         \]
-                        First, by the chain rule:
+                        To handle the inner expression, we use linearity of the trace:
                         \[
-                        df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}d[\text{tr }(X^TX)]
+                        d\bigl(\operatorname{tr}(A)\bigr) \;=\; \operatorname{tr}(A + dA) - \operatorname{tr}(A)
+                                                          \;=\; \operatorname{tr}(dA),
                         \]
-                        Note: for any matrix \(A\),
+                        so \(d\) and \(\operatorname{tr}\) commute. Applying the
+                        <a href="linear_approximation.html#T-differential_product_rule" class="ref-link"><strong>product rule</strong></a>
+                        to \(X^T X\):
                         \[
-                        \begin{align*}
-                        d(\text{tr }(A)) &= \text{tr }(A + dA) - \text{tr }(A) \\\\\
-                                        &= \text{tr }(A) + \text{tr }(dA) - \text{tr }(A) \\\\
-                                        &= \text{tr }(dA)
-                        \end{align*}
+                        d(X^T X) \;=\; (dX^T) X + X^T (dX) \;=\; (dX)^T X + X^T (dX).
                         \]
-                        Thus:
+                        Taking the trace and using that \(\operatorname{tr}(B) = \operatorname{tr}(B^T)\) to combine
+                        the two terms:
                         \[
-                        df = \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[d(X^TX)]
+                        \operatorname{tr}\bigl((dX)^T X\bigr) \;=\; \operatorname{tr}\bigl(((dX)^T X)^T\bigr)
+                                                              \;=\; \operatorname{tr}(X^T dX),
                         \]
-                        By the product rule:
+                        so \(\operatorname{tr}\bigl(d(X^T X)\bigr) = 2\,\operatorname{tr}(X^T dX)\). Substituting back:
                         \[
-                        \begin{align*}
-                        df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }[dX^TX + X^TdX]\\\\
-                        &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}\text{tr }(dX^TX) + \text{tr }(X^TdX)
-                        \end{align*}
+                        df \;=\; \frac{1}{\sqrt{\operatorname{tr}(X^T X)}}\, \operatorname{tr}(X^T dX)
+                             \;=\; \operatorname{tr}\!\left(\frac{X^T}{\|X\|_F}\, dX\right).
                         \]
-                        Since 
+                        Comparing with \(df = \operatorname{tr}((\nabla f)^T dX)\) from the gradient convention:
                         \[
-                        \text{tr }(dX^TX)  = \text{tr }((dX^TX)^T) = \text{tr }(X^TdX),
-                        \]
-                        We obtain
-                        \[ 
-                        \begin{align*}
-                        df &= \frac{1}{2\sqrt{\text{tr }(X^TX)}}2\text{tr }(X^TdX)\\\\
-                            &= \frac{1}{\sqrt{\text{tr }(X^TX)}}\text{tr }(X^TdX)
-                        \end{align*}
-                        \]
-                        Here, \(\text{tr }(X^TdX)\) represents the <strong>Frobenius inner product</strong> of \(X\) and \(dX\). Then:
-                        \[
-                        df = \left\langle \frac{X}{\sqrt{\text{tr }(X^TX)}}, dX \right\rangle_F  \tag{1}
-                        \]
-                        Therefore, 
-                        \[
-                        \nabla f = \frac{X}{ \| X \|_F}.
+                        \nabla f \;=\; \frac{X}{\|X\|_F}. \qquad \blacksquare
                         \]
                     </p>
                 </div>
-                
+
+                <div class="insight-box">
+                    <h3>Matrix analogue of the \(L_2\)-norm gradient</h3>
+                    <p>
+                        This matches the
+                        <a href="linear_approximation.html#ex3"><strong>vector \(L_2\)-norm</strong></a> result
+                        \(\nabla \|\mathbf{x}\|_2 = \mathbf{x}/\|\mathbf{x}\|_2\), with \(X\) playing the role of
+                        \(\mathbf{x}\) and \(\|\cdot\|_F\) the role of \(\|\cdot\|_2\). The Frobenius norm
+                        <em>is</em> the Euclidean norm of \(\operatorname{vec}(X)\); all of its calculus inherits
+                        directly from the vector case.
+                    </p>
+                </div>
+
+                <h3>Example: gradient of a bilinear form \(f(A) = \mathbf{x}^T A \mathbf{y}\)</h3>
+
                 <p>
-                    Note:The expression in (1) is equivalent to
-                    \[
-                    df = \text{tr }((\nabla f)^TdX) \tag{2}
-                    \]
-                </p>
-                
-                    
-                <p>
-                    The trace operator satisfies linearity and the cyclic property, making it a convenient way to express derivatives 
-                    in terms of gradients.
+                    The trace carries a single additional tool that matrix calculus uses constantly: the
+                    <strong>cyclic property</strong>, \(\operatorname{tr}(ABC) = \operatorname{tr}(BCA) = \operatorname{tr}(CAB)\)
+                    whenever the products are defined. This turns almost every matrix-gradient calculation into a
+                    one-step transformation.
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Appling Cyclic Property</span>
+                    <span class="proof-title">Example.</span>
                     <p>
-                        consider \(f(A) = x^TAy\) where \(A\) is a \(m \times n\) matrix, \(x \in \mathbb{R}^m\), and  
-                        \(y \in \mathbb{R}^n\).
-                    </p>
-                    <p>
-                        By the product rule,
+                        Let \(f(A) = \mathbf{x}^T A \mathbf{y}\) where \(A \in \mathbb{R}^{m \times n}\),
+                        \(\mathbf{x} \in \mathbb{R}^m\), \(\mathbf{y} \in \mathbb{R}^n\). The differential is
                         \[
-                        df = x^TdAy
+                        df \;=\; \mathbf{x}^T (dA)\, \mathbf{y},
                         \]
-                        Since \(df\) is a scalar,  taking the trace does not change its value:
+                        a scalar. A scalar equals its own trace; applying the cyclic property:
                         \[
-                        df = \text{tr }(x^TdAy)
+                        df \;=\; \operatorname{tr}\bigl(\mathbf{x}^T (dA)\, \mathbf{y}\bigr)
+                             \;=\; \operatorname{tr}\bigl(\mathbf{y}\mathbf{x}^T\, dA\bigr)
+                             \;=\; \operatorname{tr}\bigl((\mathbf{x}\mathbf{y}^T)^T\, dA\bigr).
                         \]
-                        By the cyclic property of the trace:
+                        Comparing with \(df = \operatorname{tr}((\nabla f)^T dA)\):
                         \[
-                        df = \text{tr }(yx^TdA)
-                        \]
-                        Therefore, comparing this with \(df = \text{tr }((\nabla f)^TdA)\), 
-                        \[
-                        \nabla f = (yx^T)^T = xy^T
+                        \nabla_A f \;=\; \mathbf{x}\mathbf{y}^T. \qquad \blacksquare
                         \]
                     </p>
                 </div>
@@ -142,120 +175,195 @@ uses_python: false
 
             <section id="det" class="section-content">
                 <h2>Derivative of the Determinant</h2>
-                <p>
-                    The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> \(\det(X)\) represents the oriented volume scaling 
-                    factor of a linear transformation. Its derivative is crucial for <strong>Normalizing Flows</strong> and any optimization 
-                    involving <a href="../Probability/covariance.html"><strong>Covariance Matrices</strong></a>.
-                </p>
 
                 <p>
-                    The derivative of the of a square matrix \(A \in \mathbb{R}^{n \times n}\) 
-                    can be expressed using several equivalent forms. Recall that 
-                    \[
-                    \text{adj }(A) = \text{cofactor }(A)^T = (\det A)A^{-1}.
-                    \]
-                    This implies:
-                    \[
-                    \text{cofactor }(A) = \text{adj }(A)^T = (\det A)(A^{-1})^T.
-                    \]
-                    By the cofactor expansion of the determinant based on \(i\)-th row of \(A\):
-                    \[
-                    \det (A) = A_{i1}C_{i1} + A_{i2}C_{i2} +  \cdots + A_{in}C_{in}
-                    \]
-                    Thus, \(\frac{\partial \det A}{\partial A_{ij}} = C_{ij} \) and then:
-                    \[
-                    \nabla (\det A) = \text{cofactor } (A)
-                    \]
+                    The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> \(\det X\)
+                    measures the oriented volume scaling factor of a linear transformation
+                    \(X : \mathbb{R}^n \to \mathbb{R}^n\). Its differential is central to
+                    <strong>Normalizing Flows</strong>, to log-determinant losses in Gaussian models, and to any
+                    optimization involving <a href="../Probability/covariance.html"><strong>covariance matrices</strong></a>.
+                    The key formula is due to Jacobi.
                 </p>
 
-                <p>
-                    Equivalently, using the expression (2): 
-                    \[
-                    \begin{align*}
-                    d (\det A) &= \text{tr }(\text{cofactor }(A)^T dA) \\\\
-                            &= \text{tr }(\text{adj }(A) dA) \\\\
-                            &= \text{tr }((\det A)A^{-1} dA)  \tag{3}
-                    \end{align*}
-                    \]
-                    Therefore,
-                    \[
-                    \begin{align*}
-                    \nabla (\det A) &= \text{cofactor } (A) \\\\
-                                    &= \text{adj }(A)^T  \\\\
-                                    &= (\det A)(A^{-1})^T
-                    \end{align*}
-                    \]
-                    Since \(\det A\) is a scalar, the expression (3) can be written as:
-                    \[
-                    d(\det A) = (\det A)\text{tr }(A^{-1} dA) \tag{4}
-                    \]
-                </p>
-
-                
-                <div class="proof">
-                    <span class="proof-title">Characteristic polynomial</span>
+                <div class="theorem" id="T-jacobi_formula">
+                    <span class="theorem-title">Theorem: Jacobi's formula</span>
                     <p>
-                        Consider the scalar function \(p(x) = \det(xI - A)\), which is the characteristic polynomial of \(A\). 
-                        In practice, when approximating eigenvalues using numerical methods, we often need to compute the derivative 
-                        of \(p(x)\) at different values of \(x\).
-                    </p>
-                    <p>
-                        Applying the expression (4), we have:
+                        For a differentiable matrix-valued function \(A : t \mapsto A(t) \in \mathbb{R}^{n \times n}\),
+                        or more generally for \(A \in \mathbb{R}^{n \times n}\) viewed as a variable,
                         \[
-                        \begin{align*}
-                        &d(\det (xI-A))  \\\\
-                        &= (\det (xI-A)) \text{tr } ((xI-A)^{-1} d(xI -A)).
-                        \end{align*}
+                        d(\det A) \;=\; \operatorname{tr}\bigl(\operatorname{adj}(A)\, dA\bigr).
                         \]
-                        Since \(A\) is constant, \(d(xI -A) = dxI\), and also \(dx\) is a scalar. Thus, 
+                        When \(A\) is invertible, using \(\operatorname{adj}(A) = (\det A)\, A^{-1}\),
                         \[
-                        \begin{align*}
-                        &d(\det (xI-A)) \\\\
-                        &= (\det (xI-A)) \text{tr } ((xI-A)^{-1})dx
-                        \end{align*}
+                        d(\det A) \;=\; (\det A)\, \operatorname{tr}(A^{-1}\, dA).
+                        \]
+                        Equivalently, via the
+                        <a href="#D-matrix_gradient"><strong>gradient convention</strong></a>,
+                        \[
+                        \nabla (\det A) \;=\; \operatorname{cofactor}(A) \;=\; (\det A)(A^{-1})^T \qquad (A \text{ invertible}).
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Fix indices \(i, j\) and recall the
+                        <a href="../Linear_algebra/determinants.html"><strong>cofactor expansion</strong></a>
+                        along the \(i\)-th row:
+                        \[
+                        \det A \;=\; \sum_{k=1}^n A_{ik}\, C_{ik},
+                        \]
+                        where \(C_{ik}\) is the \((i,k)\) cofactor. The decisive structural fact is that
+                        \(C_{ik}\) is defined via the \((n-1) \times (n-1)\) minor obtained by deleting row \(i\) and
+                        column \(k\), so \(C_{ik}\) <em>does not depend on any entry of the \(i\)-th row</em>, and in
+                        particular does not depend on \(A_{ij}\). Differentiating the expansion with respect to
+                        \(A_{ij}\) therefore picks out the single term \(A_{ij}\, C_{ij}\):
+                        \[
+                        \frac{\partial \det A}{\partial A_{ij}} \;=\; C_{ij}.
+                        \]
+                        By the gradient convention, the matrix whose \((i,j)\) entry is \(\partial \det A / \partial A_{ij}\)
+                        is \(\nabla(\det A)\):
+                        \[
+                        \nabla (\det A) \;=\; \operatorname{cofactor}(A) \;=\; \operatorname{adj}(A)^T.
+                        \]
+                        The corresponding differential is
+                        \[
+                        d(\det A) \;=\; \operatorname{tr}\bigl((\nabla \det A)^T\, dA\bigr)
+                                    \;=\; \operatorname{tr}\bigl(\operatorname{adj}(A)\, dA\bigr).
+                        \]
+                        When \(A\) is invertible, \(\operatorname{adj}(A) = (\det A)\, A^{-1}\), and since \(\det A\)
+                        is a scalar it factors out of the trace:
+                        \[
+                        d(\det A) \;=\; (\det A)\, \operatorname{tr}(A^{-1}\, dA). \qquad \blacksquare
+                        \]
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Where Jacobi's formula appears in ML</h3>
+                    <p>
+                        In <strong>Normalizing Flows</strong>, the change-of-variables formula for a bijective
+                        transformation \(\mathbf{z} = f_\theta(\mathbf{x})\) requires
+                        \(\log |\det J_{f_\theta}|\) in the log-likelihood; training by gradient descent on
+                        \(\theta\) relies on Jacobi's formula to differentiate through the determinant. In
+                        <strong>Gaussian-likelihood losses</strong> (maximum-likelihood estimation of a covariance
+                        matrix, Gaussian processes, variational inference with full-covariance posteriors), the
+                        \(\log \det \Sigma\) term's gradient is, via
+                        \(d(\log \det A) = \operatorname{tr}(A^{-1} dA)\), simply \((\Sigma^{-1})^T\). In
+                        <strong>physics-informed learning</strong>, Jacobians of coordinate transformations enter
+                        Hamiltonians and action functionals the same way.
+                    </p>
+                </div>
+
+                <h3>Corollary: derivative of the characteristic polynomial</h3>
+
+                <p>
+                    The Jacobi formula specializes cleanly to the one-variable derivative of the
+                    <strong>characteristic polynomial</strong> \(p(x) = \det(xI - A)\), a quantity that appears in
+                    iterative eigenvalue algorithms (for instance, Newton's method on \(p\)).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Corollary.</span>
+                    <p>
+                        For a fixed \(A \in \mathbb{R}^{n \times n}\), set \(M(x) := xI - A\). Then \(dM = (dx)\, I\),
+                        and for \(x\) such that \(M(x)\) is invertible (i.e., \(x\) not an eigenvalue of \(A\)),
+                        Jacobi's formula gives
+                        \[
+                        d\bigl(\det M(x)\bigr) \;=\; (\det M(x))\, \operatorname{tr}\bigl(M(x)^{-1}\, (dx)\, I\bigr)
+                                              \;=\; (\det M(x))\, \operatorname{tr}\bigl(M(x)^{-1}\bigr)\, dx.
+                        \]
+                        Dividing by \(dx\):
+                        \[
+                        p'(x) \;=\; p(x)\, \operatorname{tr}\bigl((xI - A)^{-1}\bigr). \qquad \blacksquare
                         \]
                     </p>
                 </div>
 
                 <p>
-                    Note: While the <strong>analytical approach</strong> provides a useful formula for the differential of many functions, in practice,
-                    <a href="../Machine_learning/autodiff.html"><strong>reverse mode automatic differentiation</strong></a> offers a more stable and 
-                    efficient way to compute the gradient of functions. Auto-diff allows us to compute the derivative with respect to matrix parameters directly 
-                    without explicitly computing like \(A^{-1}\), which can introduce numerical instability in certain cases (e.g., \(\det(xI - A) \approx 0\))/
+                    This identity has a striking consequence: since
+                    \(\operatorname{tr}\bigl((xI-A)^{-1}\bigr) = \sum_{k=1}^n 1/(x - \lambda_k)\) where
+                    \(\lambda_k\) are the eigenvalues of \(A\), the formula recovers the familiar logarithmic
+                    derivative identity \(p'(x)/p(x) = \sum_k 1/(x - \lambda_k)\) — a bridge between matrix calculus
+                    and the algebra of polynomial roots.
                 </p>
 
                 <p>
-                    Here's an example using auto-diff in PyTorch vs using the analytical formula to compute the derivative of \(p(x)\):
+                    In numerical practice, <a href="../Machine_learning/autodiff.html"><strong>reverse-mode automatic
+                    differentiation</strong></a> can be preferable to the analytical formula when \(A\) is poorly
+                    conditioned or close to singular (\(\det(xI - A) \approx 0\)), since it avoids explicitly forming
+                    the inverse.
                 </p>
-    
-                <pre class="python-code">
-                    import torch
 
-                    # Random square matrix
-                    def generate_matrix(n):
-                        return torch.randn(n, n, dtype=torch.float64, requires_grad=False)
+                <h3>Numerical verification</h3>
 
-                    # Characteristic polynomial p(x) = det(xI - A)
-                    def p(x, A):
-                        return torch.det(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
+                <p>
+                    We validate the Jacobi-formula corollary against a
+                    <a href="numerical_example1.html"><strong>finite-difference approximation</strong></a>: for a
+                    fixed random matrix \(A\) and a chosen evaluation point \(x = 5\) (well separated from the
+                    eigenvalues of \(A\), so \(xI - A\) is safely invertible), we compare
+                    \[
+                    p'(x) \;\approx\; \frac{\det((x+dx)I - A) - \det(xI - A)}{dx}
+                    \qquad \text{versus} \qquad
+                    p'(x) \;=\; p(x)\, \operatorname{tr}\bigl((xI-A)^{-1}\bigr).
+                    \]
+                </p>
 
-                    # Derivative of p(x) using auto-differentiation
-                    def dp_torch(x, A):
-                        x_tensor = torch.tensor([x], requires_grad=True, dtype=A.dtype, device=A.device)
-                        grad = torch.autograd.grad(p(x_tensor, A), x_tensor)[0]
-                        return grad.item()
+                <div class="code-container">
+                    <div class="collapsible-section">
+                        <button class="collapsible-btn">Show/Hide Code</button>
+                        <div class="collapsible-content">
+<pre class="python-code">
+import numpy as np
 
-                    # Analytical formula d(p(x)) = (det (xI-A))*tr((xI-A)^-1)dx 
-                    def dp(x, A):
-                        return (
-                            p(x, A).item() *
-                            torch.trace(
-                                torch.inverse(x * torch.eye(A.shape[0], dtype=A.dtype, device=A.device) - A)
-                            ).item()
-                        )
-                </pre>
+np.random.seed(0)
+n = 4
+
+# Random matrix A
+A = np.random.randn(n, n)
+
+# Evaluation point x chosen well away from any eigenvalue of A
+# (for real-random 4x4 matrices, |eigenvalues| are typically below ~3)
+x = 5.0
+dx = 1e-8
+
+# Finite-difference approximation of p'(x) where p(x) = det(xI - A)
+I = np.eye(n)
+p_at_x = np.linalg.det(x * I - A)
+p_approx = (np.linalg.det((x + dx) * I - A) - p_at_x) / dx
+
+# Analytical formula from Jacobi:  p'(x) = p(x) * tr((xI - A)^{-1})
+p_exact = p_at_x * np.trace(np.linalg.inv(x * I - A))
+
+# Relative error
+rel_err = abs(p_approx - p_exact) / abs(p_exact)
+
+print(f"Matrix A:\n{A}\n")
+print(f"Evaluation point x = {x}")
+print(f"p(x) = det(xI - A) = {p_at_x:.6e}\n")
+print(f"p'(x) finite-difference  : {p_approx:.6e}")
+print(f"p'(x) analytical (Jacobi): {p_exact:.6e}")
+print(f"\nRelative error: {rel_err:.2e}")
+</pre>
+                        </div>
+                        <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
+                        <div class="python-output"></div>
+                    </div>
+                </div>
+
+                <p>
+                    Typical output shows a relative error near \(10^{-8}\), matching the optimal accuracy of a
+                    forward difference at \(dx = \sqrt{\varepsilon_{\text{mach}}}\) (as analyzed in the
+                    <a href="numerical_example1.html"><strong>previous page</strong></a>). The match confirms the
+                    Jacobi-based formula and illustrates how analytical and numerical tools routinely cross-check
+                    each other in practice.
+                </p>
+
             </section>
         </div>
         <script src="/js/main.js"></script>
+        <script src="/js/runPythonCode.js"></script>
+        <script src="/js/collapsible.js"></script>
     </body>
 </html>
