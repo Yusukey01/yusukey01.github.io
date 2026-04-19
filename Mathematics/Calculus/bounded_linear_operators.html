@@ -125,7 +125,7 @@ uses_python: false
                     is an algebraic/analytic condition, while continuity is a topological one.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-bounded_iff_continuous">
                     <span class="theorem-title">Theorem: Bounded ⟺ Continuous</span>
                     <p>
                         Let \(T: \mathcal{X} \to \mathcal{Y}\) be a linear operator between normed spaces. The following are equivalent:
@@ -185,7 +185,7 @@ uses_python: false
                     all norms are topologically equivalent. This equivalence, combined with topology, has a powerful consequence:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-finite_dim_linear_bounded">
                     <span class="theorem-title">Theorem: Every Linear Operator on Finite-Dimensional Spaces is Bounded</span>
                     <p>
                         If \(\mathcal{X}\) is a finite-dimensional normed space, then every linear operator \(T: \mathcal{X} \to \mathcal{Y}\)
@@ -193,21 +193,133 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    Why is this true? The key is that in finite dimensions, <strong>all norms are equivalent</strong> as established 
-                    in <a href="intro_analysis.html#dimensions"><strong>Intro to Functional Analysis</strong></a>. 
-                    This means we can work with the standard Euclidean norm without loss of generality. 
-                    Under this norm, each component of a linear map is a bounded linear functional (a coordinate projection), and 
-                    the triangle inequality lets us bound the entire map. 
-                    Alternatively, by the <a href="compactness.html#T-Heine-Borel" class="ref-link"><strong>Heine-Borel Theorem</strong></a>, 
-                    the closed unit ball in finite dimensions is <strong>compact</strong>, so the continuous function 
-                    \(x \mapsto \|Tx\|\) achieves a finite maximum on it. Either way, the "maximum gain" is always finite.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The key is that in finite dimensions, <strong>all norms are equivalent</strong> as established 
+                        in <a href="intro_analysis.html#T-norm_equivalence_finite_dim" class="ref-link"><strong>Intro to Functional Analysis</strong></a>. 
+                        This means we can work with the standard Euclidean norm without loss of generality. 
+                        Under this norm, each component of a linear map is a bounded linear functional (a coordinate projection), and 
+                        the triangle inequality lets us bound the entire map. 
+                        Alternatively, by the <a href="compactness.html#T-Heine-Borel" class="ref-link"><strong>Heine-Borel Theorem</strong></a>, 
+                        the closed unit ball in finite dimensions is <strong>compact</strong>, so the continuous function 
+                        \(x \mapsto \|Tx\|\) achieves a finite maximum on it. Either way, the "maximum gain" is always finite.
+                    </p>
+                </div>
 
                 <p>
                     This is why the question of "is this matrix continuous?" never arises in basic Linear Algebra — it is 
                     automatically true. Boundedness only becomes a nontrivial, essential constraint in infinite-dimensional spaces.
                 </p>
+
+                <h3>Riesz's Lemma and the Geometry of Infinite-Dimensional Balls</h3>
+
+                <p>
+                    The finite-dimensional comfort we just described — compact unit balls, automatic boundedness, 
+                    equivalence of norms — all rests on a single geometric fact: the unit ball is compact precisely when 
+                    the space is finite-dimensional. The reverse direction of this characterization is subtle and 
+                    requires a careful geometric construction. The key is the following lemma, which shows that in any 
+                    proper closed subspace, one can always find a unit vector "almost orthogonal" to the entire subspace.
+                </p>
+
+                <div class="theorem" id="T-riesz_lemma">
+                    <span class="theorem-title">Theorem (Riesz's Lemma)</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a normed space and \(M \subsetneq \mathcal{X}\) a <strong>closed proper subspace</strong>. 
+                        Then for every \(\varepsilon \in (0, 1)\), there exists a unit vector \(x_\varepsilon \in \mathcal{X}\) 
+                        with \(\|x_\varepsilon\| = 1\) such that
+                        \[
+                        \operatorname{dist}(x_\varepsilon, M) \;=\; \inf_{m \in M} \|x_\varepsilon - m\| \;\geq\; 1 - \varepsilon.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Since \(M\) is proper, pick any \(y \in \mathcal{X} \setminus M\). Because \(M\) is closed, 
+                        \(d := \operatorname{dist}(y, M) > 0\) (otherwise \(y\) would lie in the closure, hence in \(M\)).
+                    </p>
+                    <p>
+                        By the definition of infimum, for any \(\varepsilon \in (0, 1)\) we can choose \(m_0 \in M\) with
+                        \[
+                        d \;\leq\; \|y - m_0\| \;\leq\; \frac{d}{1 - \varepsilon}.
+                        \]
+                        Set
+                        \[
+                        x_\varepsilon \;=\; \frac{y - m_0}{\|y - m_0\|}.
+                        \]
+                        Then \(\|x_\varepsilon\| = 1\) by construction. For any \(m \in M\), using the fact that 
+                        \(m_0 + \|y - m_0\| \cdot m \in M\) (since \(M\) is a subspace),
+                        \[
+                        \|x_\varepsilon - m\| \;=\; \frac{\|y - m_0 - \|y - m_0\| \cdot m\|}{\|y - m_0\|} 
+                        \;=\; \frac{\|y - (m_0 + \|y - m_0\|\,m)\|}{\|y - m_0\|} 
+                        \;\geq\; \frac{d}{\|y - m_0\|} \;\geq\; 1 - \varepsilon.
+                        \]
+                        Taking the infimum over \(m \in M\) yields \(\operatorname{dist}(x_\varepsilon, M) \geq 1 - \varepsilon\).
+                    </p>
+                </div>
+
+                <p>
+                    Riesz's Lemma lets us iterate: in an infinite-dimensional space, we can build an infinite sequence 
+                    of unit vectors, each separated from the span of its predecessors by distance at least \(1/2\). 
+                    No subsequence can be Cauchy, let alone convergent. This is the content of the following 
+                    characterization, which we first glimpsed in 
+                    <a href="intro_analysis.html#T-compact_unit_ball_iff_finite_dim" class="ref-link"><strong>Intro to Functional Analysis</strong></a>.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Theorem: Compact Unit Ball ⟺ Finite-Dimensional</span>
+                    <p>
+                        The closed unit ball \(\overline{B}_1 = \{x \in \mathcal{X} : \|x\| \leq 1\}\) of a normed space 
+                        \(\mathcal{X}\) is compact if and only if \(\mathcal{X}\) is finite-dimensional.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\Leftarrow\)) Finite-dimensional \(\Rightarrow\) compact unit ball.</strong> 
+                        By the equivalence of norms in finite dimensions, we may assume \(\mathcal{X} = \mathbb{R}^n\) with 
+                        the Euclidean norm. The closed unit ball is then closed and bounded in \(\mathbb{R}^n\), hence compact 
+                        by the <a href="compactness.html#T-Heine-Borel" class="ref-link"><strong>Heine-Borel theorem</strong></a>.
+                    </p>
+                    <p>
+                        <strong>(\(\Rightarrow\)) Compact unit ball \(\Rightarrow\) finite-dimensional.</strong> 
+                        We prove the contrapositive: if \(\mathcal{X}\) is infinite-dimensional, then \(\overline{B}_1\) is not compact.
+                    </p>
+                    <p>
+                        Construct a sequence \(\{x_n\} \subset \overline{B}_1\) with no convergent subsequence, as follows. 
+                        Pick any unit vector \(x_1\). Let \(M_1 = \operatorname{span}\{x_1\}\); this is finite-dimensional, 
+                        hence a closed proper subspace of \(\mathcal{X}\) (it is closed because all finite-dimensional subspaces 
+                        of a normed space are closed, itself a consequence of the equivalence of norms in finite dimensions). 
+                        By Riesz's Lemma with \(\varepsilon = 1/2\), choose a unit vector \(x_2\) with 
+                        \(\operatorname{dist}(x_2, M_1) \geq 1/2\). Inductively, let \(M_n = \operatorname{span}\{x_1, \dots, x_n\}\) 
+                        and choose \(x_{n+1}\) on the unit sphere with \(\operatorname{dist}(x_{n+1}, M_n) \geq 1/2\). 
+                        Since \(\mathcal{X}\) is infinite-dimensional, \(M_n \subsetneq \mathcal{X}\) at every stage, so the 
+                        construction never terminates.
+                    </p>
+                    <p>
+                        The resulting sequence satisfies \(\|x_m - x_n\| \geq 1/2\) for all \(m \neq n\) 
+                        (since for \(m < n\), \(x_m \in M_{n-1}\) while \(x_n\) is chosen at distance at least \(1/2\) from \(M_{n-1}\)). No subsequence is Cauchy, so no subsequence converges. 
+                        Therefore \(\overline{B}_1\) is not <a href="compactness.html#T-compactness_equivalence" class="ref-link"><strong>sequentially compact</strong></a>, 
+                        and hence not compact.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why This Matters: The Failure of Brute-Force Optimization</h3>
+                    <p>
+                        In finite-dimensional optimization (standard machine learning with a fixed-size parameter vector), 
+                        we can always appeal to compactness: bound the parameters, and a continuous loss function attains its minimum. 
+                        In infinite-dimensional function space optimization — training a neural network of unbounded width, 
+                        finding the optimal function in a reproducing kernel Hilbert space, solving a variational problem — 
+                        this guarantee evaporates. A bounded sequence of candidate solutions may fail to have any convergent subsequence, 
+                        meaning the "optimal" function may fail to exist in the space at all. This is why infinite-dimensional 
+                        optimization requires genuinely new tools: weak convergence (next chapter), convexity, 
+                        and carefully chosen function space topologies — none of which are needed in finite dimensions.
+                    </p>
+                </div>
 
             </section>
 
@@ -220,7 +332,7 @@ uses_python: false
                     can stretch any input.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-operator_norm">
                     <span class="theorem-title">Definition: The Operator Norm</span>
                     <p>
                         Let \(T: \mathcal{X} \to \mathcal{Y}\) be a bounded linear operator between normed spaces. The 
@@ -241,7 +353,7 @@ uses_python: false
                     from a slightly different geometric perspective:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-operator_norm_equivalent_forms">
                     <span class="theorem-title">Proposition: Equivalent Formulations of the Operator Norm</span>
                     <p>
                         The following expressions all equal \(\|T\|\) (assuming \(\mathcal{X} \neq \{0\}\)):
@@ -254,6 +366,29 @@ uses_python: false
                         &= \inf \{ M \geq 0 : \|Tx\| \leq M\|x\| \text{ for all } x \in \mathcal{X} \} && \text{(smallest bounding constant)}
                         \end{align*}
                         \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        All three equalities rely on the linearity of \(T\) and the homogeneity of the norm: for any 
+                        \(\lambda > 0\), \(\|T(\lambda x)\| = \lambda \|Tx\|\) and \(\|\lambda x\| = \lambda \|x\|\), 
+                        so the ratio \(\|Tx\|/\|x\|\) is invariant under positive scaling.
+                    </p>
+                    <p>
+                        <strong>Sphere = closed ball:</strong> For any \(x \neq 0\), write \(\hat{x} = x / \|x\|\). Then 
+                        \(\|T\hat{x}\| = \|Tx\|/\|x\|\), so the supremum of \(\|Tx\|/\|x\|\) over \(x \neq 0\) equals the 
+                        supremum of \(\|T\hat{x}\|\) over the unit sphere. The closed ball supremum is at least the sphere 
+                        supremum (the sphere is a subset) and at most (since for \(\|x\| \leq 1\), 
+                        \(\|Tx\| \leq \|T\hat{x}\| \cdot \|x\| \leq \|T\hat{x}\|\)), so the two coincide.
+                    </p>
+                    <p>
+                        <strong>Smallest bounding constant:</strong> Any \(M\) with \(\|Tx\| \leq M\|x\|\) for all \(x\) 
+                        satisfies \(\|Tx\|/\|x\| \leq M\) for \(x \neq 0\), hence 
+                        \(\sup_{x \neq 0} \|Tx\|/\|x\| \leq M\). Taking infimum over admissible \(M\) gives 
+                        \(\|T\| \leq \inf\{M : \ldots\}\). Conversely, \(\|T\|\) itself is an admissible \(M\) by definition, 
+                        so \(\inf\{M : \ldots\} \leq \|T\|\).
                     </p>
                 </div>
 
@@ -291,7 +426,7 @@ uses_python: false
                     but it also has a crucial <strong>submultiplicativity</strong> property that is essential for studying compositions:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-operator_norm_submultiplicative">
                     <span class="theorem-title">Proposition: Submultiplicativity</span>
                     <p>
                         If \(T: \mathcal{X} \to \mathcal{Y}\) and \(S: \mathcal{Y} \to \mathcal{Z}\) are bounded linear operators, then the 
@@ -299,6 +434,20 @@ uses_python: false
                         \[
                         \|S \circ T\| \leq \|S\| \cdot \|T\|.
                         \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For any \(x \in \mathcal{X}\), applying the defining bound of the operator norm twice gives
+                        \[
+                        \|(S \circ T)(x)\|_\mathcal{Z} \;=\; \|S(Tx)\|_\mathcal{Z} \;\leq\; \|S\| \cdot \|Tx\|_\mathcal{Y} 
+                        \;\leq\; \|S\| \cdot \|T\| \cdot \|x\|_\mathcal{X}.
+                        \]
+                        Hence \(S \circ T\) is bounded with bounding constant \(\|S\| \cdot \|T\|\), and by the 
+                        smallest-bounding-constant characterization of the operator norm, 
+                        \(\|S \circ T\| \leq \|S\| \cdot \|T\|\).
                     </p>
                 </div>
 
@@ -339,7 +488,7 @@ uses_python: false
                     operator norm, we obtain a normed space of its own.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-operator_space_BXY">
                     <span class="theorem-title">Definition: The Space \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\)</span>
                     <p>
                         Let \(\mathcal{X}\) and \(\mathcal{Y}\) be normed spaces over the same scalar field. The set
@@ -361,7 +510,7 @@ uses_python: false
                     the operators inherit completeness from their codomain.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-completeness_BXY">
                     <span class="theorem-title">Theorem: Completeness of \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\)</span>
                      <p>
                         If \(\mathcal{X}\) is a normed space and \(\mathcal{Y}\) is a Banach space, then \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) 
@@ -474,7 +623,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Key examples include spheres \(S^n\), the rotation group \(SO(3)\), and the space of 
+                    Key examples include spheres \(S^n\), the <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>rotation group</strong></a> \(SO(3)\), and the space of 
                     positive definite matrices — all of which have intrinsic <strong>curvature</strong>.
                 </p>
 
@@ -497,7 +646,7 @@ uses_python: false
                     <h3>Why This Matters for GDL</h3>
                     <p>
                         In Geometric Deep Learning, "manifold" always refers to curved spaces: the sphere \(S^2\) for 
-                        omnidirectional images, the <strong>Lie group</strong>\(SO(3)\) for 3D rotations in robotics, or the statistical 
+                        omnidirectional images, the <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>Lie group</strong></a> \(SO(3)\) for 3D rotations in robotics, or the statistical 
                         manifold of probability distributions for 
                         <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>. 
                         If you encounter "linear manifold" in a functional analysis text, mentally replace it with 

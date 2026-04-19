@@ -55,7 +55,7 @@ uses_python: false
                     In \(L^2([a,b])\), the answer is <strong>no</strong>. Functions in \(L^2\) are equivalence 
                     classes defined up to sets of measure zero — changing a function at a single point 
                     does not change its \(L^2\) norm. Consequently, point evaluation is not a 
-                    <a href="bounded_linear_operators.html#D-Bounded_Linear_Functional" class ="ref-link"><strong>bounded linear functional</strong></a> 
+                    <a href="bounded_linear_operators.html#D-Bounded_Linear_Functional" class="ref-link"><strong>bounded linear functional</strong></a> 
                     on \(L^2\), and \(\delta_x \notin (L^2)^*\). We cannot meaningfully "evaluate" an 
                     \(L^2\) function at a point.
                 </p>
@@ -86,6 +86,14 @@ uses_python: false
 
             <section id="rkhs" class="section-content">
                 <h2>Reproducing Kernel Hilbert Spaces</h2>
+
+                <p>
+                    <strong>Convention.</strong> Throughout this chapter we work with real-valued kernels 
+                    \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) and the corresponding real Hilbert space \(\mathcal{H}_K\); 
+                    the inner product is symmetric, so \(\langle u, v\rangle = \langle v, u\rangle\). 
+                    The complex case is analogous with conjugation in the second slot (per the 
+                    <a href="dual_spaces.html#riesz"><strong>first-slot-linear convention</strong></a> adopted in Dual Spaces).
+                </p>
 
                 <p>
                     Suppose \(\mathcal{H}\) is a Hilbert space of functions \(f : \mathcal{X} \to \mathbb{R}\) 
@@ -189,12 +197,20 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    The proof constructs \(\mathcal{H}_K\) explicitly: start with the span of all 
-                    functions of the form \(K(\cdot, x)\), define the inner product via 
-                    \(\langle K(\cdot, x), K(\cdot, x') \rangle = K(x, x')\), 
-                    and take the completion. The reproducing property is then built in by construction.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof sketch:</span>
+                    <p>
+                        The construction is explicit. Start with the vector space 
+                        \(\mathcal{H}_0 = \operatorname{span}\{K(\cdot, x) : x \in \mathcal{X}\}\) 
+                        of finite linear combinations, define the inner product on generators by 
+                        \(\langle K(\cdot, x), K(\cdot, x') \rangle := K(x, x')\), and extend bilinearly. 
+                        Positive definiteness of \(K\) makes this a valid inner product (positive definiteness of the Gram matrix for any finite set of generators translates to \(\langle f, f\rangle \geq 0\) on \(\mathcal{H}_0\)). 
+                        Let \(\mathcal{H}_K\) be the completion of \(\mathcal{H}_0\) under the induced norm. 
+                        The reproducing property holds by construction on \(\mathcal{H}_0\) and extends to the completion by continuity (point evaluation \(\delta_x = \langle \cdot, K(\cdot, x)\rangle\) is bounded with constant \(\sqrt{K(x,x)}\)). 
+                        Uniqueness of the reproducing kernel follows from the Riesz representation theorem. 
+                        See Aronszajn's original 1950 paper or Steinwart &amp; Christmann, <em>Support Vector Machines</em>, Thm. 4.21 for the complete argument.
+                    </p>
+                </div>
 
                 <div class="insight-box">
                     <h3>Connection to the Kernel Trick</h3>
@@ -224,7 +240,7 @@ uses_python: false
                     eigenfunction expansion of the kernel itself.
                 </p>
 
-                <div class="theorem" id="T-Mercer's_Theorem">
+                <div class="theorem" id="T-Mercers_Theorem">
                     <span class="theorem-title">Theorem: Mercer's Theorem</span>
                     <p>
                         Let \(\mathcal{X}\) be a compact subset of \(\mathbb{R}^d\) equipped with a finite <strong>strictly positive</strong> 
@@ -236,7 +252,8 @@ uses_python: false
                         \]
                         Then \(T_K\) is compact, self-adjoint, and positive, and there exist 
                         orthonormal eigenfunctions \(\{e_n\}_{n=1}^\infty\) in \(L^2(\mathcal{X}, \mu)\) 
-                        with eigenvalues \(\lambda_1 \geq \lambda_2 \geq \cdots > 0\), \(\lambda_n \to 0\), 
+                        with eigenvalues \(\lambda_1 \geq \lambda_2 \geq \cdots \geq 0\), \(\lambda_n \to 0\) 
+                        (with the convention that the list enumerates only the nonzero eigenvalues, of which there are countably many by compactness of \(T_K\)), 
                         such that
                         \[
                         K(x, x') = \sum_{n=1}^{\infty} \lambda_n \, e_n(x) \, e_n(x').
@@ -246,12 +263,33 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof sketch:</span>
+                    <p>
+                        Continuity of \(K\) on the compact set \(\mathcal{X}\times\mathcal{X}\) gives \(K \in L^2(\mathcal{X}\times\mathcal{X}, \mu\otimes\mu)\), 
+                        so \(T_K\) is a 
+                        <a href="spectral_theory.html#D-Hilbert_Schmidt_operator" class="ref-link"><strong>Hilbert-Schmidt operator</strong></a> 
+                        and hence compact. Symmetry of \(K\) gives self-adjointness; positive definiteness gives \(\langle T_K f, f\rangle \geq 0\), so \(\lambda_n \geq 0\). 
+                        The 
+                        <a href="spectral_theory.html#T-spectral_theorem_csa_operators" class="ref-link"><strong>Spectral Theorem</strong></a> 
+                        then yields the eigenfunction expansion \(K(x,x') = \sum_n \lambda_n e_n(x) e_n(x')\) converging in \(L^2(\mathcal{X}\times\mathcal{X})\).
+                    </p>
+                    <p>
+                        The upgrade to <em>absolute and uniform</em> convergence on \(\mathcal{X}\times\mathcal{X}\) is the deep part. The key observation is that strict positivity of \(\mu\) together with continuity of \(K\) forces each eigenfunction \(e_n\) to have a continuous representative (via the bootstrap identity \(e_n(x) = \lambda_n^{-1} \int K(x,x') e_n(x')\, d\mu(x')\), valid for \(\lambda_n > 0\)). 
+                        The partial sums \(S_N(x, x') = \sum_{n=1}^N \lambda_n e_n(x) e_n(x')\) are continuous, and — restricted to the diagonal — satisfy 
+                        \(S_N(x, x) \nearrow K(x,x)\) pointwise in a monotonically increasing fashion. 
+                        <strong>Dini's theorem</strong> upgrades this to uniform convergence on the diagonal; 
+                        an application of Cauchy-Schwarz to the off-diagonal tails \(|K(x,x') - S_N(x,x')|\) leveraging diagonal uniform convergence then gives uniform convergence on \(\mathcal{X}\times\mathcal{X}\). 
+                        For the full argument, see Steinwart &amp; Christmann, <em>Support Vector Machines</em>, Thm. 4.49.
+                    </p>
+                </div>
+
                 <p>
                     Let us unpack why each ingredient is necessary:
                 </p>
                 <ol style="padding-left: 40px;">
                     <li><strong>Continuity + symmetry of \(K\)</strong>: Guarantees that \(T_K\) is a 
-                        <a href="spectral_theory.html#Hilbert-Schmidt_operator" class="ref-link"><strong>Hilbert-Schmidt operator</strong></a>, 
+                        <a href="spectral_theory.html#D-Hilbert_Schmidt_operator" class="ref-link"><strong>Hilbert-Schmidt operator</strong></a>, 
                         hence compact.</li>
                     <li><strong>Positive definiteness</strong>: Ensures all eigenvalues are nonnegative 
                         (so \(T_K\) is a positive operator).</li>
@@ -308,7 +346,7 @@ uses_python: false
                     <p>
                         In a <a href="../Probability/gaussian_process.html"><strong>Gaussian Process</strong></a> 
                         with covariance function \(K\), the Mercer expansion gives the 
-                        <a href="spectral_theory.html#T-Karhunen-Loève_Expansion" class="ref-link"><strong>Karhunen-Loève expansion</strong></a>:
+                        <a href="spectral_theory.html#T-Karhunen_Loeve_Expansion" class="ref-link"><strong>Karhunen-Loève expansion</strong></a>:
                         \[
                         f(x) = \sum_{n=1}^{\infty} Z_n \sqrt{\lambda_n}\, e_n(x), \qquad Z_n \sim \mathcal{N}(0, 1) \text{ i.i.d.}
                         \]
@@ -348,8 +386,9 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Definition: RKHS Inner Product and Norm</span>
+                    <span class="theorem-title">Proposition: RKHS Norm via Mercer Coefficients</span>
                     <p>
+                        Assume \(\lambda_n > 0\) for all \(n\) (equivalently, \(K\) is strictly positive definite; otherwise restrict the sums to \(\{n : \lambda_n > 0\}\) and interpret \(\mathcal{H}_K\) as functions in \(\overline{\operatorname{Range}(T_K)}\)). 
                         For \(f = \sum_n f_n \, e_n\) and \(g = \sum_n g_n \, e_n\) in \(\mathcal{H}_K\):
                         \[
                         \langle f, g \rangle_{\mathcal{H}_K} = \sum_{n=1}^{\infty} \frac{f_n \, g_n}{\lambda_n}.
@@ -360,6 +399,17 @@ uses_python: false
                         \]
                         A function \(f\) belongs to \(\mathcal{H}_K\) if and only if 
                         \(\sum_n f_n^2 / \lambda_n < \infty\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Setting \(\phi_n = \sqrt{\lambda_n}\, e_n\), the map 
+                        \(f = \sum_n f_n e_n \;\longmapsto\; (f_n/\sqrt{\lambda_n})_{n\geq 1} \in \ell^2\) 
+                        is an isometric isomorphism between \(\mathcal{H}_K\) and \(\ell^2\) 
+                        (Moore-Aronszajn identifies \(\mathcal{H}_K\) as the completion of \(\operatorname{span}\{K(\cdot, x)\}\) under the kernel inner product; the Mercer expansion gives the explicit orthonormal basis \(\{\phi_n\}\) of \(\mathcal{H}_K\) with \(\langle\phi_n, \phi_m\rangle_{\mathcal{H}_K} = \delta_{nm}\)). 
+                        Transport of the \(\ell^2\) inner product back to \(\mathcal{H}_K\) yields the formula.
                     </p>
                 </div>
 
@@ -461,7 +511,9 @@ uses_python: false
                         Decompose any \(f \in \mathcal{H}_K\) as 
                         \(f = f_\parallel + f_\perp\), where 
                         \(f_\parallel \in \operatorname{span}\{K(\cdot, x_i)\}_{i=1}^N\) and 
-                        \(f_\perp\) is orthogonal to this subspace.
+                        \(f_\perp\) is orthogonal to this subspace. 
+                        (The span is finite-dimensional, hence closed in \(\mathcal{H}_K\), so this orthogonal decomposition is guaranteed by 
+                        <a href="dual_spaces.html#T-projection_theorem_hilbert" class="ref-link"><strong>the projection theorem</strong></a>.)
                     </p>
                     <p>
                         By the reproducing property, \(f(x_i) = \langle f, K(\cdot, x_i) \rangle_{\mathcal{H}_K}\). 
