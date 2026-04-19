@@ -41,7 +41,7 @@ uses_python: false
                     partition, which divides a continuous interval into a finite set of discrete sub-segments.
                 </p>
                             
-                <div class="theorem">
+                <div class="theorem" id="D-partition">
                     <span class="theorem-title">Definition: Partition and Subintervals</span>
                     <p>
                         Let \(f: [a, b] \to \mathbb{R} \) be a bounded function on a closed interval \([a, b]\).
@@ -60,7 +60,7 @@ uses_python: false
                     we can construct two bounding rectangles that "sandwich" the true area.
                 </p>
                
-                <div class="theorem">
+                <div class="theorem" id="D-lower_upper_sum">
                     <span class="theorem-title">Definition: Lower & Upper Sums</span>
                     <p>
                         For each subinterval, let \(m_i\) be the <strong>infimum</strong> (greatest lower bound) and \(M_i\) be the 
@@ -88,7 +88,7 @@ uses_python: false
                     unique value for the area.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-riemann_integrable">
                     <span class="theorem-title">Definition: Riemann Integrability</span>
                     <p>
                         The <strong>lower Riemann integral</strong> and the <strong>upper Riemann integral</strong> of \(f\) over \([a, b]\) are 
@@ -127,6 +127,16 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof (sketch):</span>
+                    <p>
+                        The "if" direction is immediate: if the two limits exist and coincide at \(\alpha\), then since \(L(f, \mathcal{P}) \leq \underline{\int} \leq \overline{\int} \leq U(f, \mathcal{P})\) for every partition, both integrals equal \(\alpha\).
+                    </p>
+                    <p>
+                        For the "only if" direction, suppose \(f\) is Riemann integrable with common value \(\alpha\). Given \(\varepsilon > 0\), by the definition of supremum and infimum we can choose a partition \(\mathcal{P}_\varepsilon\) with \(U(f, \mathcal{P}_\varepsilon) - L(f, \mathcal{P}_\varepsilon) < \varepsilon/2\). The key fact is that upper sums decrease and lower sums increase under refinement: if \(\mathcal{Q}\) refines \(\mathcal{P}\), then \(L(f, \mathcal{P}) \leq L(f, \mathcal{Q})\) and \(U(f, \mathcal{Q}) \leq U(f, \mathcal{P})\). Any partition \(\mathcal{P}\) with sufficiently small norm \(\|\mathcal{P}\|\) differs from its common refinement with \(\mathcal{P}_\varepsilon\) by a controllable amount bounded by \(\|\mathcal{P}\| \cdot (\sup f - \inf f) \cdot (\text{number of points in } \mathcal{P}_\varepsilon)\), which is made small by shrinking \(\|\mathcal{P}\|\). Hence \(U(f, \mathcal{P}) - L(f, \mathcal{P}) \to 0\) as \(\|\mathcal{P}\| \to 0\), and both sums must converge to \(\alpha\).
+                    </p>
+                </div>
+
                 <p>
                     Understanding when a function is integrable is key. While some properties are strict requirements (necessary conditions), 
                     others provide a guarantee that the integral exists (sufficient conditions).
@@ -142,6 +152,23 @@ uses_python: false
                         <li><strong>Sufficient Condition (Monotonicity):</strong><br>
                             If \(f\) is monotonic on \([a, b]\), it is guaranteed to be Riemann integrable, even if it has many points of discontinuity.</li>
                     </ul>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Justifications:</span>
+                    <p>
+                        <strong>Boundedness is necessary.</strong> Suppose \(f\) is unbounded on \([a, b]\). Then for any partition \(\mathcal{P}\), there is at least one subinterval \([x_{i-1}, x_i]\) on which \(f\) is unbounded, forcing \(M_i = +\infty\) (or \(m_i = -\infty\)). The upper sum \(U(f, \mathcal{P})\) is then undefined as a finite number, so the upper integral cannot equal a finite lower integral.
+                    </p>
+                    <p>
+                        <strong>Monotonicity is sufficient.</strong> Assume \(f\) is non-decreasing (the non-increasing case is symmetric). For any partition \(\mathcal{P}\), monotonicity gives \(m_i = f(x_{i-1})\) and \(M_i = f(x_i)\). Hence
+                        \[
+                        U(f, \mathcal{P}) - L(f, \mathcal{P}) = \sum_{i=1}^n \bigl(f(x_i) - f(x_{i-1})\bigr)(x_i - x_{i-1}) \leq \|\mathcal{P}\| \sum_{i=1}^n \bigl(f(x_i) - f(x_{i-1})\bigr) = \|\mathcal{P}\| \bigl(f(b) - f(a)\bigr),
+                        \]
+                        which tends to \(0\) as \(\|\mathcal{P}\| \to 0\). This forces the upper and lower integrals to coincide.
+                    </p>
+                    <p>
+                        <strong>Continuity is sufficient.</strong> The proof uses <strong>uniform continuity</strong> of \(f\) on the compact interval \([a, b]\), which lets us choose \(\|\mathcal{P}\|\) small enough that \(M_i - m_i < \varepsilon\) uniformly. We defer this argument — both uniform continuity and the role of compactness are developed later in the foundations-of-analysis track.
+                    </p>
                 </div>
 
                 <p>
@@ -204,6 +231,7 @@ uses_python: false
                     \[
                     \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}.
                     \]
+                    (The value \(\sqrt{\pi}\) is computed in the Gaussian distribution page via a polar-coordinate change of variables; here we only use the fact that the integral converges.)<br><br>
                     <strong>Important Caution:</strong> The improper integral is <strong>not</strong> defined as \(\lim_{R \to \infty} \int_{-R}^{R} f(x) dx\). That symmetric limit is known as the <strong>Cauchy Principal Value</strong>, which can exist even when the improper integral does not. Consider \(f(x) = \frac{x}{1+x^2}\):
                     \[
                     \begin{align*}
@@ -309,15 +337,27 @@ uses_python: false
                     on the real line is negligible.
                 </p>
 
-                <strong>Side Note:</strong>
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Dense Set</span>
+                <div class="insight-box">
+                    <h3>Looking Ahead: Lebesgue's Criterion for Riemann Integrability</h3>
                     <p>
-                        A set \(A \subset \mathbb{R}\) is said to be <strong>dense</strong> on \(\mathbb{R}\) if for any 
-                        \(x, y \in \mathbb{R}\), there exsits \(a \in A\) such that \(x < a < y\).  
+                        The structural reason why "too many" discontinuities break Riemann integrability is captured by the following theorem: a bounded function \(f\) on \([a, b]\) is Riemann integrable <strong>if and only if</strong> the set of points where \(f\) is discontinuous has <strong>Lebesgue measure zero</strong>.
                     </p>
                     <p>
-                        Equivalently, every open interval in \(\mathbb{R}\) contains at least one point from \(A\).
+                        The Dirichlet function is discontinuous at <em>every</em> point of \([0, 1]\) — a set of Lebesgue measure one — so it fails this criterion. By contrast, a monotone function can only be discontinuous at a countable set of points (which has measure zero), explaining why monotonicity suffices. 
+                    </p>
+                    <p>
+                        This theorem is the cleanest possible bridge between Riemann and Lebesgue theory, but it requires the notion of "measure zero" to even state precisely. We develop this in the upcoming pages on measure theory and Lebesgue integration.
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-dense_set">
+                    <span class="theorem-title">Definition: Dense Set (Side Note)</span>
+                    <p>
+                        A set \(A \subset \mathbb{R}\) is said to be <strong>dense</strong> in \(\mathbb{R}\) if for any 
+                        \(x, y \in \mathbb{R}\) with \(x < y\), there exists \(a \in A\) such that \(x < a < y\).  
+                    </p>
+                    <p>
+                        Equivalently, every non-empty open interval in \(\mathbb{R}\) contains at least one point from \(A\).
                     </p>
                 </div>
 
