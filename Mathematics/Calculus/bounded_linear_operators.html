@@ -22,7 +22,7 @@ uses_python: false
             <a href="#boundedness">Boundedness & Continuity</a>
             <a href="#norm">The Operator Norm</a>
             <a href="#bxy">The Space \(\mathcal{B}(\mathcal{X},\mathcal{Y})\)</a>
-            <a href="#affine">Affine Subspaces vs Manifolds</a>
+            <a href="#terminology">"Linear Manifold" vs "Manifold"</a>
         </div>  
 
         <div class="container">   
@@ -59,7 +59,8 @@ uses_python: false
                     </p>
                     <p>
                         Consider the differentiation operator \(T(f) = f'\).
-                        Let \(f_k(t) = \sin(kt)\). The "size" of the input is always \(\|f_k\|_\infty = 1\), regardless of \(k\).
+                        Let \(f_k(t) = \sin(kt)\) for integers \(k \geq 1\). The "size" of the input is always \(\|f_k\|_\infty = 1\), regardless of \(k\) 
+                        (the maximum value \(1\) is attained at \(t = \pi/(2k) \in [0, \pi]\)).
                         However, applying the operator gives:
                         \[
                         T(f_k) = \frac{d}{dt}\sin(kt) = k\cos(kt)
@@ -154,15 +155,17 @@ uses_python: false
                         \left\| T\!\left(\frac{\delta}{2} \cdot \frac{x}{\|x\|}\right) \right\| = \frac{\delta}{2\|x\|} \|Tx\| < 1
                         \implies \|Tx\| < \frac{2}{\delta}\|x\|.
                         \]
-                        Thus \(T\) is bounded with \(M = 2/\delta\).
+                        For \(x = 0\), both sides of the boundedness inequality vanish, so it holds trivially. 
+                        Thus \(T\) is bounded with \(M = 2/\delta\) (any \(M \geq 2/\delta\) also works).
                     </p>
                     
                     <p>
-                        <strong>(c) \(\Rightarrow\) (a):</strong> If \(\|Tx\| \leq M\|x\|\), then for any sequence \(x_n \to x\):
+                        <strong>(c) \(\Rightarrow\) (a):</strong> If \(\|Tx\| \leq M\|x\|\) for all \(x\), then by linearity, for any \(x, y \in \mathcal{X}\),
                         \[
-                        \|Tx_n - Tx\| = \|T(x_n - x)\| \leq M\|x_n - x\| \to 0.
+                        \|Tx - Ty\| \;=\; \|T(x - y)\| \;\leq\; M\|x - y\|.
                         \]
-                        So \(T\) is <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>(Lipschitz) continuous</strong></a> everywhere.
+                        This is the Lipschitz condition with constant \(M\), so \(T\) is 
+                        <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz continuous</strong></a>, hence continuous, everywhere. \(\square\)
                     </p>
                 </div>
 
@@ -182,7 +185,7 @@ uses_python: false
                 <h3>Finite Dimensions: Automatic Boundedness</h3>
                 <p>
                     Recall from <a href="intro_analysis.html#dimensions"><strong>Intro to Functional Analysis</strong></a> that in finite-dimensional spaces, 
-                    all norms are topologically equivalent. This equivalence, combined with topology, has a powerful consequence:
+                    all norms are Lipschitz equivalent. Combined with a basis expansion, this yields a striking consequence:
                 </p>
 
                 <div class="theorem" id="T-finite_dim_linear_bounded">
@@ -334,9 +337,9 @@ uses_python: false
                 <h2>The Operator Norm</h2>
 
                 <p>
-                    We know that a bounded operator has a finite "maximum gain." The <strong>operator norm</strong> makes this 
-                    precise by defining the <em>smallest</em> such gain constant — the tightest possible bound on how much \(T\) 
-                    can stretch any input.
+                    We know that a bounded operator has a finite "maximum gain." The <strong>operator norm</strong> captures this by taking 
+                    the <em>supremum stretch</em> over all nonzero inputs — which, as we show below, is equivalently the smallest 
+                    constant \(M\) that witnesses boundedness.
                 </p>
 
                 <div class="theorem" id="D-operator_norm">
@@ -487,7 +490,7 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        For any \(x \in \mathcal{X}\), applying the defining bound of the operator norm twice gives
+                        \(S \circ T\) is linear as a composition of linear maps. For any \(x \in \mathcal{X}\), applying the defining bound of the operator norm twice gives
                         \[
                         \|(S \circ T)(x)\|_\mathcal{Z} \;=\; \|S(Tx)\|_\mathcal{Z} \;\leq\; \|S\| \cdot \|Tx\|_\mathcal{Y} 
                         \;\leq\; \|S\| \cdot \|T\| \cdot \|x\|_\mathcal{X}.
@@ -647,36 +650,27 @@ uses_python: false
                 </div>
             </section>
 
-            <section id="affine" class="section-content">
-                <h2>Affine Subspaces vs Manifolds: A Terminological Warning</h2>
+            <section id="terminology" class="section-content">
+                <h2>"Linear Manifold" vs "Manifold": A Terminological Warning</h2>
 
                 <p>
-                    Before we proceed further in this curriculum, we must address a terminological issue that causes 
-                    significant confusion when students transition from classical functional analysis textbooks to modern 
-                    Geometric Deep Learning (GDL) literature.
+                    Before proceeding further, we must flag a terminological pitfall that trips up readers moving between 
+                    classical functional analysis and modern differential geometry / Geometric Deep Learning.
                 </p>
 
                 <p>
-                    Many classical texts (such as John B. Conway's <em>A Course in Functional Analysis</em>) use the term 
-                    <strong>"linear manifold"</strong> to refer to what is more precisely called an <strong>affine subspace</strong> 
-                    (or a "translated subspace," or a "coset" of a subspace).
+                    Conway's <em>A Course in Functional Analysis</em> (and several other classical texts) uses the term 
+                    <strong>"linear manifold"</strong> to mean a <strong>subspace</strong> of a vector space — possibly non-closed, 
+                    in the normed setting — reserving the word <strong>"subspace"</strong> for a <em>closed</em> linear manifold. 
+                    In either case the object is <em>flat</em>: it passes through the origin and is closed under linear combinations.
                 </p>
 
-                <div class="theorem" id="D-Affine_Subspace">
-                    <span class="theorem-title">Definition: Affine Subspace</span>
-                    <p>
-                        Let \(\mathcal{X}\) be a vector space and \(M \subseteq \mathcal{X}\) a subspace. An <strong>affine subspace</strong> 
-                        (or <strong>flat</strong>) is a set of the form
-                        \[
-                        x_0 + M = \{ x_0 + m : m \in M \}
-                        \]
-                        for some fixed \(x_0 \in \mathcal{X}\). This is simply the subspace \(M\) shifted by the vector \(x_0\).
-                    </p>
-                </div>
-
                 <p>
-                    An affine subspace is a <strong>flat</strong> object — it has no curvature. It is the infinite-dimensional 
-                    analogue of a plane that does not pass through the origin in \(\mathbb{R}^3\).
+                    This is a completely different meaning from the word "manifold" as used in Lee's <em>Introduction to Smooth Manifolds</em> 
+                    or in Geometric Deep Learning, where a manifold is a <em>curved</em> space that only <em>locally</em> looks Euclidean. 
+                    The adjective "linear" in "linear manifold" is precisely what marks the object as flat; the term has largely fallen out of 
+                    use outside classical functional analysis, so a reader trained on Lee will rarely encounter it elsewhere — and when it does 
+                    appear in Conway, misreading it as a curved manifold is an easy trap.
                 </p>
 
                 <div class="theorem" id="D-Manifold_calc-24">
@@ -692,21 +686,21 @@ uses_python: false
 
                 <p>
                     Key examples include spheres \(S^n\), the <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>rotation group</strong></a> \(SO(3)\), and the space of 
-                    positive definite matrices — all of which have intrinsic <strong>curvature</strong>.
+                    positive definite matrices — all of which carry intrinsic <strong>curvature</strong> (under their natural metrics).
                 </p>
 
                 <p>
-                    The distinction is critical:
+                    The distinction to keep in mind:
                 </p>
 
                 <ul style="padding-left: 40px;">
                     <li>
-                        <strong>Affine subspace:</strong> Flat, globally linear structure. Lives inside a vector space. 
-                        No curvature.
+                        <strong>"Linear manifold" (Conway, classical FA):</strong> a subspace of a vector space. Flat, globally linear, 
+                        passes through the origin. Same thing as what modern texts simply call a <em>subspace</em>.
                     </li>
                     <li>
-                        <strong>Manifold:</strong> Potentially curved, only locally linear. Does not need an ambient vector space. 
-                        Has rich geometric structure (tangent spaces, geodesics, curvature).
+                        <strong>"Manifold" (Lee, GDL, modern):</strong> a locally Euclidean topological space, potentially curved, 
+                        with no ambient vector space required. Carries rich geometric structure — tangent spaces, geodesics, curvature.
                     </li>
                 </ul>
 
@@ -718,8 +712,8 @@ uses_python: false
                         manifold of probability distributions for 
                         <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>. 
                         If you encounter "linear manifold" in a functional analysis text, mentally replace it with 
-                        <strong>"affine subspace"</strong> to avoid confusing the flat, algebraic concept with the curved, 
-                        geometric one that dominates the later portions of this curriculum.
+                        <strong>"subspace"</strong> — the flat, algebraic concept — and reserve "manifold" for the curved, 
+                        geometric object that dominates the later portions of this curriculum.
                     </p>
                 </div>
 
