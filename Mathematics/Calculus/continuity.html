@@ -90,19 +90,71 @@ uses_python: false
                 </p>
 
                 <div class="theorem" id="T-epsilon_delta_continuity">
-                    <span class="theorem-title">Theorem: Metric Characterization (\(\epsilon-\delta\))</span>
-                    Let \((X, d)\) and \((Y, e)\) be metric spaces. A function \(f: X \to Y\) is continuous at \(z\) 
-                    (in the sense of the definition above) if and only if:
-                    <br>
-                    For every \(\epsilon > 0\), there exists \(\delta > 0\) such that
-                    \[
-                    d(x, z) < \delta \implies e(f(x), f(z)) < \epsilon.
-                    \]
-                    <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> See O'Searcoid, <em>Metric Spaces</em>, Chapter 6 (Continuity). The equivalence reduces to the fact 
-                        that open balls form a basis for the metric topology.
+                    <span class="theorem-title">Theorem: Metric Characterization (\(\varepsilon\)-\(\delta\))</span>
+                    <p>
+                        Let \((X, d)\) and \((Y, e)\) be metric spaces. A function \(f: X \to Y\) is continuous at \(z\) 
+                        (in the sense of the definition above) if and only if for every \(\varepsilon > 0\), there exists 
+                        \(\delta > 0\) such that
+                        \[
+                        d(x, z) < \delta \implies e(f(x), f(z)) < \varepsilon.
+                        \]
                     </p>
                 </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(Open-set \(\Rightarrow\) \(\varepsilon\)-\(\delta\)):</strong> 
+                        Given \(\varepsilon > 0\), take \(V := \mathcal{B}^Y[f(z); \varepsilon)\), which is an open subset of 
+                        \(Y\) containing \(f(z)\). By the open-set definition of continuity, there exists an open subset 
+                        \(U\) of \(X\) with \(z \in U\) and \(f(U) \subseteq V\). Since open balls form a basis for the 
+                        metric topology, there exists \(\delta > 0\) with \(\mathcal{B}^X[z; \delta) \subseteq U\). Then 
+                        \(d(x, z) < \delta\) implies \(x \in U\), so \(f(x) \in V\), i.e. \(e(f(x), f(z)) < \varepsilon\).
+                    </p>
+                    <p>
+                        <strong>(\(\varepsilon\)-\(\delta\) \(\Rightarrow\) Open-set):</strong> 
+                        Let \(V\) be an open subset of \(Y\) with \(f(z) \in V\). By the basis property, there exists 
+                        \(\varepsilon > 0\) with \(\mathcal{B}^Y[f(z); \varepsilon) \subseteq V\). The \(\varepsilon\)-\(\delta\) 
+                        condition then yields \(\delta > 0\) such that \(d(x, z) < \delta\) implies 
+                        \(e(f(x), f(z)) < \varepsilon\). Setting \(U := \mathcal{B}^X[z; \delta)\), we have \(U\) open with 
+                        \(z \in U\) and \(f(U) \subseteq \mathcal{B}^Y[f(z); \varepsilon) \subseteq V\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-sequential_continuity">
+                    <span class="theorem-title">Theorem: Sequential Characterization</span>
+                    <p>
+                        Let \((X, d)\) and \((Y, e)\) be metric spaces. A function \(f: X \to Y\) is continuous at \(z\) 
+                        if and only if, for every sequence \(\{x_n\}\) in \(X\) with \(x_n \to z\), we have 
+                        \(f(x_n) \to f(z)\) in \(Y\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\Rightarrow\)):</strong> 
+                        Suppose \(f\) is continuous at \(z\) and \(x_n \to z\). Let \(V\) be any open subset of \(Y\) 
+                        containing \(f(z)\). By continuity, there exists an open \(U \ni z\) with \(f(U) \subseteq V\). 
+                        Since \(x_n \to z\), the set \(U\) includes a tail of \(\{x_n\}\), so \(V\) includes the 
+                        corresponding tail of \(\{f(x_n)\}\). Hence \(f(x_n) \to f(z)\).
+                    </p>
+                    <p>
+                        <strong>(\(\Leftarrow\)):</strong> 
+                        We prove the contrapositive. Suppose \(f\) is not continuous at \(z\): there exists an open 
+                        \(V \ni f(z)\) such that for every open \(U \ni z\), \(f(U) \not\subseteq V\). Applying this to 
+                        \(U_n := \mathcal{B}^X[z; 1/n)\) for each \(n \in \mathbb{N}\), we obtain \(x_n \in U_n\) with 
+                        \(f(x_n) \notin V\). Then \(d(x_n, z) < 1/n\), so by the Archimedean property \(x_n \to z\); yet 
+                        the entire sequence \(\{f(x_n)\}\) lies outside \(V\), so \(f(x_n) \not\to f(z)\).
+                    </p>
+                </div>
+
+                <p>
+                    The sequential characterization is the bridge from topology to analysis: convergence of sequences — 
+                    the operational concept developed in the previous chapter — now encodes continuity. This is the form 
+                    most directly useful in iterative algorithms, where we verify continuity by checking the behavior of 
+                    the function along the sequence of iterates.
+                </p>
 
                 <p>
                     The power of the open-set definition becomes clear when we look at global properties. 
@@ -229,12 +281,13 @@ uses_python: false
 
                 <div class="theorem" id="D-Lipschitz_Continuous_Function">
                     <span class="theorem-title">Definition: Lipschitz Continuous Function</span>
-                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces, and \(f: X \to Y\). If there exists \(L \in \mathbb{R}^+\) 
+                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces, and \(f: X \to Y\). If there exists \(L \geq 0\) 
                     such that 
                     \[
                     e(f(a), f(b)) \leq L \cdot d(a, b), \quad \forall \, a, b \in X,
                     \]
-                    then \(f\) is called a <strong>Lipschitz function</strong> on \(X\) with <strong>Lipschitz constant</strong> \(L\).
+                    then \(f\) is called a <strong>Lipschitz function</strong> on \(X\) with <strong>Lipschitz constant</strong> \(L\). 
+                    The case \(L = 0\) corresponds to constant functions.
                 </div>
 
                 <div class="theorem" id="T-lipschitz_implies_uniform">
@@ -303,7 +356,10 @@ uses_python: false
                     \]
                     Note: Every isometry is a Lipschitz function with constant \(L = 1\), and in our curriculum's convention 
                     (see terminology note above) it is classified as a <strong>contraction</strong> (with contraction factor \(k = 1\), 
-                    but not a strong contraction). The converse fails: a Lipschitz function with \(L = 1\) need not be an isometry.
+                    but not a strong contraction). The converse fails: a Lipschitz function with \(L = 1\) need not be an isometry. 
+                    For instance, the absolute-value map \(f: \mathbb{R} \to \mathbb{R}\), \(f(x) = |x|\), satisfies 
+                    \(\big||a| - |b|\big| \leq |a - b|\) (reverse triangle inequality), so \(L = 1\) works — but \(f(-1) = f(1) = 1\), 
+                    violating injectivity and hence isometry.
                 </div>   
 
                 <div class="insight-box">
