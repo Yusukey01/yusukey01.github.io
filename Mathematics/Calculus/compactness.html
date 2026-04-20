@@ -81,7 +81,7 @@ uses_python: false
 
                 <p>
                     With these tools, we can now formally define compactness. The definition takes the "open cover" formulation 
-                    as primary, following the standard convention (O'Searcoid, §12.1).
+                    as primary, following the standard topological convention.
                 </p>
 
                 <div class="theorem" id="D-compact_metric_space">
@@ -89,7 +89,10 @@ uses_python: false
                     <p>
                         A metric space \(X\) is called <strong>compact</strong> if and only if every open cover of \(X\) 
                         has a finite subcover. A subset \(K \subseteq X\) is called compact if \(K\), viewed as a metric 
-                        subspace with the restricted metric, is a compact metric space.
+                        subspace with the restricted metric, is a compact metric space. Equivalently, \(K\) is compact 
+                        iff every collection of open subsets of \(X\) whose union contains \(K\) admits a finite 
+                        subcollection still covering \(K\) — this <em>ambient</em> characterization is the form most 
+                        often used in proofs.
                     </p>
                 </div>
 
@@ -111,92 +114,191 @@ uses_python: false
                             Every open cover for \(X\) has a finite subcover.
                             <br>
                             Mathematical Significance: The foundational definition. It ensures that global properties can 
-                            be derived from finite local data - a prerequisite for <strong>Manifold Theory</strong>.
+                            be derived from finite local data — the mechanism behind <strong>partition of unity</strong> 
+                            constructions in Manifold Theory and Differential Geometry, where compactness lets us stitch 
+                            local charts into global objects.
                         </li>
                         <li>
                             <strong>Ball Cover Criterion</strong><br>
                             Every cover of \(X\) by <a href="metric_space.html#D-open_and_closed_balls" class="ref-link"><strong>open balls</strong></a> has a finite subcover.
                             <br>
-                            Mathematical Significance: A specialization for metric spaces; useful for proving properties related 
-                            to distance-based epsilon-nets.
+                            Mathematical Significance: A specialization for metric spaces: it suffices to check finite 
+                            subcovers for ball covers rather than arbitrary open covers. This simplification is the starting 
+                            point for many classical proofs (the Lebesgue number lemma, total boundedness arguments).
                         </li>
                         <li>
                             <strong>Finite Intersection Criterion (Duality)</strong><br>
                             Every collection of closed subsets with the finite intersection property has a non-empty intersection.
                             <br>
-                            Mathematical Significance: The "dual" of the open cover definition. It provides the logic for 
-                            <strong>existence proofs</strong> in constrained optimization.
+                            Mathematical Significance: The De Morgan dual of the open cover definition. It provides the 
+                            logic for <strong>existence proofs</strong>: if a family of closed feasible sets has every finite 
+                            subfamily with common points, then the entire family shares a common point. In constrained 
+                            optimization, this justifies taking limits of intersecting constraint sets.
                         </li>
                         <li>
                             <strong>Cantor's Criterion (Nested Intervals)</strong><br>
                             Every <a href="completeness.html#D-nest" class="ref-link"><strong>nest</strong></a> of non-empty closed subsets of \(X\) has a non-empty intersection.
                             <br>
-                            Mathematical Significance: This ensures that "shrinking" a search space leads to a non-empty limit. It is the 
-                            topological foundation for <strong>Bisection-based algorithms</strong> and <strong>Divide-and-Conquer algorithms</strong>, 
-                            guaranteeing that if we keep narrowing down our constraints, a valid solution must exist in the intersection.
+                            Mathematical Significance: Any downward-filtered family of non-empty closed sets has non-empty 
+                            intersection. Unlike the Cantor Intersection Theorem for complete spaces (which requires diameters 
+                            \(\to 0\)), compactness removes this size condition — a strictly stronger guarantee. This underlies 
+                            <strong>branch-and-bound</strong> and <strong>interval methods</strong>: as the search tree refines, 
+                            nested candidate regions cannot collapse to emptiness.
                         </li>
                         <li>
                             <strong>Cantor's Sequence Criterion</strong><br>
                             Every sequence \(\{F_n\}\) of nested non-empty closed subsets has a non-empty intersection.
                             <br>
-                            Mathematical Significance: A countable version of the nested set property. It is the formal justification for 
-                            <strong>any iterative refinement process</strong>. In CS, it guarantees that if an algorithm produces a sequence 
-                            of narrowing candidate sets (e.g., in <strong>Constraint Satisfaction Problems</strong>), the search will not 
-                            result in an empty set, ensuring the existence of a limit point.
+                            Mathematical Significance: A countable version of (4): any nested sequence 
+                            \(F_1 \supseteq F_2 \supseteq \cdots\) of non-empty closed sets has non-empty intersection. 
+                            Useful whenever candidate regions are indexed by iteration count — e.g., proving that the 
+                            intersection of feasible sets in successive relaxation hierarchies remains non-empty.
                         </li>
                         <li>
                             <strong>Convergence Criterion (Sequential Compactness)</strong><br>
                             Every sequence in \(X\) has a subsequence that <a href="limit_convergence.html#D-convergence" class="ref-link"><strong>converges</strong></a> in \(X\).
                             <br>
-                            Mathematical Significance: The primary tool for proving the <strong>convergence of iterative algorithms</strong> 
-                            in CS and Machine Learning.
+                            Mathematical Significance: Every sequence has a convergent subsequence inside \(X\). This does 
+                            not by itself imply that an algorithm's iterates converge, but it guarantees the existence of 
+                            <strong>accumulation points</strong> within the feasible set. In non-convex optimization, such 
+                            accumulation points are identified with stationary/KKT points by separate arguments, making 
+                            sequential compactness the topological backbone of <strong>Bolzano-Weierstrass-type convergence 
+                            analyses</strong>.
                         </li>
                         <li>
                             <strong>Spatial Criterion (Structural Decomposition)</strong><br>
                             \(X\) is complete and <a href="limit_convergence.html#D-totally_bounded" class="ref-link"><strong>totally bounded</strong></a>.
                             <br>
                             Mathematical Significance: Decouples compactness into "no holes" (completeness) and "finite size" 
-                            (total boundedness). Essential for <strong>Functional Analysis</strong>.
+                            (total boundedness). Total boundedness is exactly the existence of finite <strong>\(\varepsilon\)-nets</strong> 
+                            for every \(\varepsilon > 0\), which powers <strong>covering-number</strong> bounds in statistical 
+                            learning theory (Rademacher complexity, PAC bounds) and <strong>Arzelà-Ascoli</strong>-type 
+                            precompactness arguments in Functional Analysis.
                         </li>
                         <li>
                             <strong>BBW Criterion (Nearest-point Property)</strong><br>
                             \(X\) is bounded and has the <a href="limit_convergence.html#D-nearest_point_property" class="ref-link"><strong>nearest-point property</strong></a>.
                             <br>
-                            Mathematical Significance: Connects topology to approximation theory; ensures there is always a 
-                            "best approximation" within the set.
+                            Mathematical Significance: A compact set, viewed as a subset of any ambient metric space, admits 
+                            a nearest point from every external point. This is the foundation of <strong>projection operators</strong> 
+                            onto compact sets and of <strong>Vector Quantization</strong> (k-means-type algorithms rely on a 
+                            nearest-centroid assignment always being well-defined).
                         </li>
                         <li>
                             <strong>Cantor Set Criterion</strong><br>
-                            \(X\) is a continuous image of the Cantor set.
+                            \(X\) is empty or a continuous image of the Cantor set.
                             <br>
-                            Mathematical Significance: Highlights the deep relationship between simple fractal structures and 
-                            general compact metric spaces.
+                            Mathematical Significance: The <strong>Hausdorff-Alexandroff Theorem</strong>. Reveals that every 
+                            compact metric space, no matter how exotic, admits a sampling from a universal fractal template — 
+                            a perspective used in <strong>descriptive set theory</strong>, in constructing space-filling curves, 
+                            and in surjective encodings for symbolic dynamics.
                         </li>
                         <li>
                             <strong>Attained Bound Criterion (Operational View)</strong><br>
                             Every real continuous function defined on \(X\) is bounded and attains its bounds.
                             <br>
-                            Mathematical Significance: A functional characterization. It bridges compactness directly to 
-                            the <strong>Extreme Value Theorem</strong>.
+                            Mathematical Significance: A functional characterization: compactness is exactly what makes every 
+                            continuous real-valued function attain its supremum and infimum. This is the <strong>Extreme Value 
+                            Theorem</strong> in disguise — the single most invoked consequence of compactness in analysis and 
+                            optimization, guaranteeing that minimizers of continuous objectives on compact feasible sets always exist.
                         </li>
                     </ol>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof (Spine):</span>
+                    <span class="proof-title">Proof Sketch (Spine):</span>
                     <p>
-                        A full proof traversing all ten criteria is extensive; we sketch the backbone and refer to 
-                        O'Searcoid, <em>Metric Spaces</em>, §12 for the complete treatment. The core cyclic chain is
+                        A full proof traversing all ten criteria requires a web of implications. Rather than writing every 
+                        one, we establish the central bridge <strong>(1) ⇒ (6)</strong> in detail — it exposes the deep 
+                        link between the covering and sequential viewpoints — and record the remaining connections as 
+                        short structural remarks organized by cluster.
+                    </p>
+
+                    <p>
+                        <strong>Core implication: (1) ⇒ (6).</strong> Suppose every open cover of \(X\) admits a finite 
+                        subcover. Let \(\{x_n\}\) be a sequence in \(X\). Assume for contradiction that \(\{x_n\}\) has 
+                        no convergent subsequence. Then for every \(p \in X\) there exists \(r_p > 0\) such that the 
+                        ball \(B(p, r_p)\) contains \(x_n\) for only finitely many indices \(n\): otherwise, the balls 
+                        of radius \(1/k\) around \(p\) would each contain infinitely many terms, and we could inductively 
+                        select indices \(n_1 < n_2 < \cdots\) with \(x_{n_k} \in B(p, 1/k)\), producing a subsequence 
+                        converging to \(p\) — contradicting our assumption. The family 
+                        \(\{B(p, r_p) : p \in X\}\) is an open cover of \(X\), so by (1) a finite subcollection 
+                        \(B(p_1, r_{p_1}), \ldots, B(p_k, r_{p_k})\) covers \(X\). Then
                         \[
-                        (1) \;\Longrightarrow\; (2) \;\Longrightarrow\; (7) \;\Longrightarrow\; (6) \;\Longrightarrow\; (1),
+                            \mathbb{N} \;=\; \bigcup_{i=1}^{k} \{\, n : x_n \in B(p_i, r_{p_i}) \,\},
                         \]
-                        with \((1) \Longleftrightarrow (3)\) following from De Morgan (open/closed duality), 
-                        \((3) \Longleftrightarrow (4) \Longleftrightarrow (5)\) from basic set-theoretic manipulation of nests, 
-                        and \((7) \Longleftrightarrow (8)\) from the fact that a bounded metric space has the nearest-point property iff it is complete. 
-                        Criterion (10) is bridged to (1) via the Extreme Value Theorem (proved below), and (9) is Urysohn's classical result. 
-                        The most substantive link is \((6) \Longrightarrow (1)\): given sequential compactness, one shows that any open cover 
-                        admits a Lebesgue number \(\delta > 0\), then uses total boundedness (which follows from (6)) to finitely cover \(X\) by 
-                        \(\delta\)-balls, whence finitely many cover elements suffice.
+                        a finite union of finite sets — but \(\mathbb{N}\) is infinite, a contradiction. Hence a 
+                        convergent subsequence exists.
+                    </p>
+
+                    <p>
+                        <strong>Sequential ↔ covering cluster: (6) ⇔ (7) ⇔ (1).</strong> 
+                        For <em>(6) ⇒ (7)</em>: a Cauchy sequence with a convergent subsequence converges to the same 
+                        limit, giving completeness; and if \(X\) were not totally bounded, some \(\varepsilon > 0\) 
+                        would allow constructing a sequence \(\{y_n\}\) with pairwise distances \(\ge \varepsilon\), 
+                        which admits no convergent subsequence — any convergent subsequence is Cauchy, forcing 
+                        \(d(y_{n_k}, y_{n_l}) < \varepsilon\) for sufficiently large \(k \ne l\), contradicting the 
+                        pairwise \(\ge \varepsilon\) condition — and this contradicts (6). 
+                        For <em>(7) ⇒ (6)</em>: given any sequence, total boundedness provides, at each scale \(1/k\), 
+                        a ball of radius \(1/k\) containing infinitely many terms; iterating this inside successive 
+                        subsequences and extracting the diagonal produces a subsequence in which any two terms beyond 
+                        index \(k\) lie in a common ball of radius \(1/k\), hence within distance \(2/k\) of each other 
+                        — forming a Cauchy subsequence, and completeness delivers its limit. 
+                        For <em>(6) ⇒ (1)</em>: sequentially compact metric spaces admit <em>Lebesgue numbers</em> 
+                        (every open cover has a \(\delta > 0\) such that every set of diameter \(< \delta\) lies in 
+                        some cover element); combined with a finite \(\delta/3\)-net from total boundedness (each such 
+                        ball has diameter \(\le 2\delta/3 < \delta\)), this yields a finite subcover.
+                    </p>
+
+                    <p>
+                        <strong>Covering-style criteria: (1) ⇔ (2) ⇔ (3).</strong> 
+                        <em>(1) ⇒ (2)</em> because ball covers are a special case of open covers, so the finite-subcover 
+                        property transfers directly. <em>(2) ⇒ (1)</em>: given any open cover \(\mathcal{U}\), for each 
+                        \(x \in X\) pick \(U_x \in \mathcal{U}\) with \(x \in U_x\) and a ball \(B(x, r_x) \subseteq U_x\); 
+                        the family \(\{B(x, r_x)\}\) is a ball cover, so (2) yields a finite subcollection 
+                        \(B(x_1, r_{x_1}), \ldots, B(x_k, r_{x_k})\) covering \(X\), and the corresponding 
+                        \(\{U_{x_1}, \ldots, U_{x_k}\}\) is a finite subcover of \(\mathcal{U}\). 
+                        <em>(1) ⇔ (3)</em> is De Morgan duality: a family of open sets covers \(X\) iff the complementary 
+                        family of closed sets has empty intersection, and a finite subcover corresponds to a finite 
+                        subfamily with empty intersection — which is exactly the negation of the finite intersection 
+                        property.
+                    </p>
+
+                    <p>
+                        <strong>Nested-set criteria: (3) ⇒ (4) ⇒ (5).</strong> 
+                        <em>(3) ⇒ (4) ⇒ (5)</em> by specialization: a nest (totally ordered family under \(\subseteq\)) 
+                        of non-empty closed sets has the finite intersection property (any finite subfamily has a 
+                        minimum element among its members, which is non-empty), and any nested sequence 
+                        \(F_1 \supseteq F_2 \supseteq \cdots\) is a countable nest. The converse directions restoring 
+                        (3) from (4) or (5) are subtle — they rely either on Zorn's lemma or on an indirect route. 
+                        The cleanest closure is sequential: given a sequence \(\{x_n\}\), the nested closed sets 
+                        \(F_n = \overline{\{x_k : k \ge n\}}\) have non-empty intersection by any of (3), (4), (5), and 
+                        any point in \(\bigcap_n F_n\) is an accumulation point of \(\{x_n\}\), yielding a convergent 
+                        subsequence. Combined with (6) ⇒ (1) above, this closes the equivalence loop.
+                    </p>
+
+                    <p>
+                        <strong>Geometric and functional characterizations: (7) ⇔ (8), (1) ⇔ (10), (9).</strong> 
+                        <em>(1) ⇒ (8)</em>: compactness implies boundedness — the cover 
+                        \(\{B(x_0, n) : n \in \mathbb{N}\}\) admits a finite subcover, placing \(X\) inside a single 
+                        ball. For the nearest-point property: for any superspace \(Y \supseteq X\) and any \(y \in Y\), 
+                        the distance function \(d(\cdot, y): X \to \mathbb{R}\) is continuous (Lipschitz with constant 1), 
+                        and the Extreme Value Theorem — proved below as a consequence of (1) — attains its minimum on 
+                        the compact \(X\), yielding a nearest point. The converse <em>(8) ⇒ (7)</em> is a classical 
+                        equivalence in metric-space theory: bounded sets with the nearest-point property possess enough 
+                        structure to force completeness and the existence of finite \(\varepsilon\)-nets. This direction 
+                        is non-trivial and we do not reproduce it in this spine. 
+                        <em>(1) ⇒ (10)</em> is the Extreme Value Theorem, proved below. <em>(10) ⇒ (1)</em>: from an 
+                        open cover without a finite subcover, one constructs a continuous real-valued function on \(X\) 
+                        that is unbounded (or attains no supremum), contradicting (10); the construction uses a 
+                        Urysohn-type interpolation along a nested sequence of non-empty closed sets with empty 
+                        intersection, which is non-trivial but standard. 
+                        <em>(9)</em>: the <strong>Hausdorff-Alexandroff Theorem</strong> — every non-empty compact 
+                        metric space is a continuous image of the Cantor set — is a classical result in descriptive set 
+                        theory whose full proof uses the separability of compact metric spaces and a binary encoding of 
+                        a countable base. The reverse direction (continuous images of the Cantor set are compact) 
+                        follows from the Cantor set being compact and from continuous images of compact sets being 
+                        compact, established separately below.
                     </p>
                 </div>
       
@@ -213,9 +315,9 @@ uses_python: false
                     </li>
                     <li>
                         <strong>(4) & (5) Algorithmic Assurance:</strong><br>
-                        Cantor's Criteria justify <strong>Divide-and-Conquer</strong> and <strong>Iterative Refinement</strong>. 
-                        They provide the formal guarantee that if you keep narrowing your search space (via nested sets), a valid solution 
-                        will always exist in the limit.
+                        Cantor's Criteria power <strong>branch-and-bound</strong> and <strong>interval methods</strong>: 
+                        as a search tree or relaxation hierarchy refines, the sequence of nested candidate regions cannot 
+                        collapse to emptiness, guaranteeing that the limit of narrowing still contains a solution.
                     </li>
                     <li>
                         <strong>(7) & (8) Approximation & Search:</strong><br>
@@ -274,7 +376,7 @@ uses_python: false
                     in the familiar Euclidean space \(\mathbb{R}^n\), compactness has a simple geometric characterization.
                 </p>
                 
-                <div class="theorem" id="T-Heine-Borel">
+                <div class="theorem" id="T-heine_borel">
                     <span class="theorem-title">Theorem: Heine-Borel</span>
                     <p>
                         A subset \(K \subseteq \mathbb{R}^n\) is compact if and only if it is:
@@ -288,19 +390,31 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof Sketch:</span>
                     <p>
-                        (\(\Rightarrow\)) Compactness implies closed and bounded <em>in any metric space</em>. Boundedness: the 
-                        cover \(\{B(x; 1) : x \in K\}\) admits a finite subcover, whose centres have bounded diameter; then \(K\) 
-                        lies within a single enlarged ball. Closedness: if \(p\) is a limit point of \(K\) not in \(K\), the open sets 
-                        \(\{X \setminus \overline{B}(p; 1/n) : n \in \mathbb{N}\}\) form a cover of \(K\) with no finite subcover.
+                        (\(\Rightarrow\)) Compactness implies closed and bounded <em>in any metric space</em>. 
+                        <strong>Boundedness:</strong> the cover \(\{B(x, 1) : x \in K\}\) admits a finite subcover 
+                        \(B(x_1, 1), \ldots, B(x_m, 1)\); since the finite set \(\{x_1, \ldots, x_m\}\) has bounded 
+                        diameter \(M := \max_{i,j} d(x_i, x_j)\), any \(y \in K\) lies in some \(B(x_i, 1)\) and 
+                        satisfies \(d(y, x_1) \le d(y, x_i) + d(x_i, x_1) < 1 + M\), placing \(K\) inside 
+                        \(B(x_1, 1 + M)\). 
+                        <strong>Closedness:</strong> if \(p\) is a limit point of \(K\) not in \(K\), the open sets 
+                        \(\{X \setminus \overline{B}(p, 1/n) : n \in \mathbb{N}\}\) cover \(K\) (every \(x \in K\) has 
+                        positive distance to \(p\), so \(1/n < d(x, p)\) for some \(n\)), but no finite subcover 
+                        exists — any finite subfamily would leave \(K \cap \overline{B}(p, 1/\max n_i)\) uncovered, 
+                        yet every neighborhood of \(p\) meets \(K\) by the limit-point assumption. This contradicts 
+                        compactness of \(K\), so \(p \in K\).
                     </p>
                     <p>
-                        (\(\Leftarrow\)) This direction is the distinctively Euclidean content. By the Equivalence of Compactness, 
-                        it suffices to show closed-and-bounded subsets of \(\mathbb{R}^n\) are complete and totally bounded (criterion (7)). 
-                        Completeness: \(\mathbb{R}^n\) is complete, and a closed subset of a complete metric space is complete 
+                        (\(\Leftarrow\)) This direction is the distinctively Euclidean content. By the equivalence 
+                        above, it suffices to show closed-and-bounded subsets of \(\mathbb{R}^n\) are complete and 
+                        totally bounded (criterion (7)). 
+                        <strong>Completeness:</strong> \(\mathbb{R}^n\) is complete, and a closed subset of a complete 
+                        metric space is complete 
                         (see <a href="completeness.html#T-complete_subset" class="ref-link"><strong>complete subset theorem</strong></a>). 
-                        Total boundedness: a bounded subset of \(\mathbb{R}^n\) sits inside some cube \([-R, R]^n\), which can be 
-                        partitioned into finitely many sub-cubes of diameter \(< \varepsilon\) for any \(\varepsilon > 0\). 
-                        Full details in O'Searcoid, <em>Metric Spaces</em>, §14.
+                        <strong>Total boundedness:</strong> a bounded subset \(K \subseteq \mathbb{R}^n\) sits inside 
+                        some cube \([-R, R]^n\); given \(\varepsilon > 0\), partition this cube into finitely many 
+                        sub-cubes of side length \(\varepsilon / (2\sqrt{n})\), each having diameter 
+                        \(\varepsilon / 2 < \varepsilon\). The centres of these sub-cubes form a finite 
+                        \(\varepsilon\)-net for \(K\).
                     </p>
                 </div>
 
@@ -311,9 +425,13 @@ uses_python: false
                 </p>
 
                 <p>
-                    In an infinite-dimensional Hilbert space, the unit ball is closed and bounded, but not compact. 
-                    This is why we often need stronger conditions (like Reproducing Kernel Hilbert Space (RKHS) properties 
-                    or specific regularization) to guarantee that our optimization algorithms converge to a solution within the space.
+                    In an infinite-dimensional Hilbert space, the unit ball is closed and bounded, but not compact 
+                    (<a href="intro_analysis.html#T-compact_unit_ball_iff_finite_dim" class="ref-link"><strong>Riesz's lemma</strong></a>). 
+                    This is why optimization in infinite-dimensional settings requires additional structure — e.g., 
+                    <strong>compactness-preserving regularization</strong> (L2 or nuclear-norm constraints that restrict 
+                    the search to a compact subset), or <strong>reduction to finite dimension</strong> via the 
+                    representer theorem in reproducing kernel Hilbert spaces (RKHS) — to recover the existence 
+                    guarantees that Heine-Borel freely provides in Euclidean space.
                 </p>
 
                 <div class="insight-box">
@@ -364,7 +482,7 @@ uses_python: false
                 <div class="theorem" id="T-extreme_value_theorem">
                     <span class="theorem-title">Theorem: Extreme Value Theorem (EVT)</span>
                     <p>
-                        Let \(K\) be a compact metric space and \(f: K \to \mathbb{R}\) be a continuous function. 
+                        Let \(K\) be a non-empty compact metric space and \(f: K \to \mathbb{R}\) be a continuous function. 
                         Then \(f\) is bounded and attains its maximum and minimum values. That is, there exist 
                         \(x_{\min}, x_{\max} \in K\) such that for all \(x \in K\):
                         \[
@@ -376,11 +494,25 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        By the Preservation of Compactness theorem, \(f(K) \subseteq \mathbb{R}\) is compact. By the Heine-Borel theorem, 
-                        \(f(K)\) is closed and bounded in \(\mathbb{R}\). Boundedness of \(f(K)\) means \(\sup f(K)\) and \(\inf f(K)\) 
-                        exist and are finite; closedness of \(f(K)\) means these supremum and infimum belong to \(f(K)\) itself 
-                        (a closed subset of \(\mathbb{R}\) contains its sup and inf). Hence there exist \(x_{\max}, x_{\min} \in K\) 
-                        with \(f(x_{\max}) = \sup f(K)\) and \(f(x_{\min}) = \inf f(K)\). \(\square\)
+                        By the <a href="#T-compactness_continuous_image" class="ref-link"><strong>Preservation of Compactness</strong></a> theorem, 
+                        \(f(K) \subseteq \mathbb{R}\) is compact. By the 
+                        <a href="#T-heine_borel" class="ref-link"><strong>Heine-Borel theorem</strong></a>, \(f(K)\) is closed 
+                        and bounded in \(\mathbb{R}\). Since \(K \ne \emptyset\) we have \(f(K) \ne \emptyset\), so boundedness 
+                        of \(f(K)\) means \(\sup f(K)\) and \(\inf f(K)\) exist and are finite. 
+                    </p>
+                    <p>
+                        Closedness of \(f(K)\) means these supremum and infimum belong to \(f(K)\) itself. Indeed, if 
+                        \(\sup f(K) \notin f(K)\), then by the defining property of the supremum every 
+                        \(\varepsilon\)-neighborhood contains some \(y \in f(K)\) with \(y > \sup f(K) - \varepsilon\), 
+                        giving \(\text{dist}(\sup f(K), f(K)) = 0\); combined with \(\sup f(K) \in f(K)^c\) (which gives 
+                        \(\text{dist}(\sup f(K), f(K)^c) = 0\) trivially), this places \(\sup f(K)\) in 
+                        \(\partial f(K) \subseteq \overline{f(K)} = f(K)\), a contradiction. Hence 
+                        \(\sup f(K) \in f(K)\), and analogously \(\inf f(K) \in f(K)\). 
+                    </p>
+                    <p>
+                        Therefore there exist \(x_{\max}, x_{\min} \in K\) with \(f(x_{\max}) = \sup f(K)\) and 
+                        \(f(x_{\min}) = \inf f(K)\), and for every \(x \in K\) we have \(f(x) \in f(K)\), 
+                        so \(f(x_{\min}) \le f(x) \le f(x_{\max})\). \(\square\)
                     </p>
                 </div>
 
@@ -395,15 +527,18 @@ uses_python: false
                 </div>
 
                 <p>
-                    Beyond existence of optima, compactness imposes a uniform constraint on how much a function can change. 
-                    In non-compact spaces, a continuous function can become arbitrarily sensitive (like \(1/x\) near zero). 
-                    Compactness eliminates these "local spikes."
+                    Beyond existence of optima, compactness forces a <em>uniform</em> modulus of continuity across the 
+                    entire domain (proved in the Heine-Cantor theorem below). On a non-compact space, a continuous 
+                    function can vary arbitrarily fast near a missing boundary point or at infinity — the function 
+                    \(f(x) = 1/x\) near \(x = 0\) illustrates how continuity alone gives no uniform control. 
+                    Compactness eliminates this pathology.
                 </p>
 
                 <div class="theorem" id="T-heine_cantor_uniform_continuity">
                     <span class="theorem-title">Theorem: Heine-Cantor (Uniform Continuity)</span>
                     <p>
-                        If \(f: K \to Y\) is a continuous function and \(K\) is compact, then \(f\) is 
+                        If \(f: K \to Y\) is a continuous function from a non-empty compact metric space \(K\) to a 
+                        metric space \(Y\), then \(f\) is 
                         <a href="continuity.html#D-uniform_continuity" class="ref-link"><strong>uniformly continuous</strong></a> on \(K\).
                     </p>
                 </div>
@@ -413,12 +548,15 @@ uses_python: false
                     <p>
                         Fix \(\varepsilon > 0\). By continuity, for each \(x \in K\) there exists \(\delta_x > 0\) such that 
                         \(f(B(x; \delta_x)) \subseteq B(f(x); \varepsilon/2)\). The family 
-                        \(\{B(x; \delta_x / 2) : x \in K\}\) is an open cover of \(K\), so by compactness it admits a finite 
-                        subcover \(\{B(x_1; \delta_{x_1}/2), \ldots, B(x_n; \delta_{x_n}/2)\}\).
+                        \(\{B(x; \delta_x / 2) : x \in K\}\) — note the half-size radii — is an open cover of \(K\), so by 
+                        compactness it admits a finite subcover \(\{B(x_1; \delta_{x_1}/2), \ldots, B(x_n; \delta_{x_n}/2)\}\).
                     </p>
                     <p>
-                        Set \(\delta = \min_{i} \delta_{x_i} / 2 > 0\). For any \(x, y \in K\) with \(d(x, y) < \delta\), 
-                        \(x\) lies in some \(B(x_i; \delta_{x_i}/2)\), so \(d(x, x_i) < \delta_{x_i}/2\). Then 
+                        Set \(\delta = \min_{i} \delta_{x_i} / 2 > 0\). This choice ensures 
+                        \(\delta + \delta_{x_i}/2 \le \delta_{x_i}\) for every \(i\), so that any point within distance 
+                        \(\delta\) of a half-size ball lies inside the corresponding full-size ball where \(f\) is controlled. 
+                        Concretely: for any \(x, y \in K\) with \(d(x, y) < \delta\), 
+                        \(x\) lies in some \(B(x_i; \delta_{x_i}/2)\), so \(d(x, x_i) < \delta_{x_i}/2\); then 
                         \(d(y, x_i) \le d(y, x) + d(x, x_i) < \delta + \delta_{x_i}/2 \le \delta_{x_i}\), placing \(y\) in 
                         \(B(x_i; \delta_{x_i})\). Both \(f(x)\) and \(f(y)\) therefore lie in \(B(f(x_i); \varepsilon/2)\), so 
                         \(d(f(x), f(y)) < \varepsilon\). This \(\delta\) depends only on \(\varepsilon\), proving uniform continuity. \(\square\)
@@ -428,14 +566,18 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Optimization Stability via Uniform Continuity</h3>
                     <p>
-                        While the EVT guarantees that a solution <em>exists</em>, the Heine-Cantor Theorem tells us that our optimization process 
-                        is <em>stable</em>. If our loss function \(\mathcal{L}\) is defined on a compact space, its "sensitivity" is bounded across 
-                        the entire domain.
+                        While the EVT guarantees that a solution <em>exists</em>, the Heine-Cantor Theorem gives our 
+                        objective a <em>uniform</em> behaviour: on a compact domain, the modulus of continuity 
+                        \(\omega_f(\delta) = \sup\{|f(x) - f(y)| : d(x, y) < \delta\}\) tends to zero as 
+                        \(\delta \to 0\), with a rate that does not vary across the domain.
                     </p>
                     <p>
-                        Unlike on an open set where the gradient could become infinitely steep, a compact domain ensures that the function's 
-                        rate of change doesn't explode. For engineers, this means a chosen learning rate \(\eta\) is far more likely to remain 
-                        safe and effective across the entire search space, preventing catastrophic divergence.
+                        This does not by itself bound the gradient — uniform continuity is strictly weaker than 
+                        Lipschitz continuity (\(f(x) = \sqrt{x}\) on \([0, 1]\) is uniformly continuous but not 
+                        Lipschitz near \(x = 0\)). To obtain a bounded gradient one additionally applies the Extreme 
+                        Value Theorem to \(\|\nabla f\|\) under a \(C^1\) assumption. Together, these two pieces — 
+                        uniform modulus plus bounded gradient — provide the stability guarantees that let engineers 
+                        choose learning rates \(\eta\) safely across the entire compact search space.
                     </p>
                 </div>
 
