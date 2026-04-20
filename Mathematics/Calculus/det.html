@@ -93,7 +93,10 @@ uses_python: true
                 <div class="proof">
                     <span class="proof-title">Derivation of \(\nabla \|X\|_F\).</span>
                     <p>
-                        Let \(f(X) = \|X\|_F = \sqrt{\operatorname{tr}(X^T X)}\). Applying the
+                        Let \(f(X) = \|X\|_F = \sqrt{\operatorname{tr}(X^T X)}\). Assume \(X \neq 0\), so that
+                        \(\operatorname{tr}(X^T X) > 0\) and \(f\) is differentiable at \(X\) (as the composition of
+                        the smooth map \(\sqrt{\,\cdot\,}\) on \((0,\infty)\) with the polynomial map
+                        \(X \mapsto \operatorname{tr}(X^T X)\)). Applying the
                         <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>
                         with the outer scalar function \(u \mapsto \sqrt{u}\) (whose scalar derivative is
                         \(1/(2\sqrt{u})\)):
@@ -107,7 +110,8 @@ uses_python: true
                         \]
                         so \(d\) and \(\operatorname{tr}\) commute. Applying the
                         <a href="linear_approximation.html#T-differential_product_rule" class="ref-link"><strong>product rule</strong></a>
-                        to \(X^T X\):
+                        to \(X^T X\) (using \(d(X^T) = (dX)^T\), since transposition is linear and therefore commutes
+                        with taking the differential):
                         \[
                         d(X^T X) \;=\; (dX^T) X + X^T (dX) \;=\; (dX)^T X + X^T (dX).
                         \]
@@ -208,7 +212,8 @@ uses_python: true
                 <div class="proof">
                     <span class="proof-title">Proof.</span>
                     <p>
-                        Fix indices \(i, j\) and recall the
+                        Since \(\det A\) is a polynomial in the entries of \(A\), it is \(C^\infty\) and in particular
+                        differentiable everywhere on \(\mathbb{R}^{n \times n}\). Fix indices \(i, j\) and recall the
                         <a href="../Linear_algebra/determinants.html"><strong>cofactor expansion</strong></a>
                         along the \(i\)-th row:
                         \[
@@ -314,38 +319,38 @@ uses_python: true
                     <div class="collapsible-section">
                         <button class="collapsible-btn">Show/Hide Code</button>
                         <div class="collapsible-content">
-<pre class="python-code">
-import numpy as np
+                            <pre class="python-code">
+                            import numpy as np
 
-np.random.seed(0)
-n = 4
+                            np.random.seed(0)
+                            n = 4
 
-# Random matrix A
-A = np.random.randn(n, n)
+                            # Random matrix A
+                            A = np.random.randn(n, n)
 
-# Evaluation point x chosen well away from any eigenvalue of A
-# (for real-random 4x4 matrices, |eigenvalues| are typically below ~3)
-x = 5.0
-dx = 1e-8
+                            # Evaluation point x chosen well away from any eigenvalue of A
+                            # (for real-random 4x4 matrices, |eigenvalues| are typically below ~3)
+                            x = 5.0
+                            dx = 1e-8
 
-# Finite-difference approximation of p'(x) where p(x) = det(xI - A)
-I = np.eye(n)
-p_at_x = np.linalg.det(x * I - A)
-p_approx = (np.linalg.det((x + dx) * I - A) - p_at_x) / dx
+                            # Finite-difference approximation of p'(x) where p(x) = det(xI - A)
+                            I = np.eye(n)
+                            p_at_x = np.linalg.det(x * I - A)
+                            p_approx = (np.linalg.det((x + dx) * I - A) - p_at_x) / dx
 
-# Analytical formula from Jacobi:  p'(x) = p(x) * tr((xI - A)^{-1})
-p_exact = p_at_x * np.trace(np.linalg.inv(x * I - A))
+                            # Analytical formula from Jacobi:  p'(x) = p(x) * tr((xI - A)^{-1})
+                            p_exact = p_at_x * np.trace(np.linalg.inv(x * I - A))
 
-# Relative error
-rel_err = abs(p_approx - p_exact) / abs(p_exact)
+                            # Relative error
+                            rel_err = abs(p_approx - p_exact) / abs(p_exact)
 
-print(f"Matrix A:\n{A}\n")
-print(f"Evaluation point x = {x}")
-print(f"p(x) = det(xI - A) = {p_at_x:.6e}\n")
-print(f"p'(x) finite-difference  : {p_approx:.6e}")
-print(f"p'(x) analytical (Jacobi): {p_exact:.6e}")
-print(f"\nRelative error: {rel_err:.2e}")
-</pre>
+                            print(f"Matrix A:\n{A}\n")
+                            print(f"Evaluation point x = {x}")
+                            print(f"p(x) = det(xI - A) = {p_at_x:.6e}\n")
+                            print(f"p'(x) finite-difference  : {p_approx:.6e}")
+                            print(f"p'(x) analytical (Jacobi): {p_exact:.6e}")
+                            print(f"\nRelative error: {rel_err:.2e}")
+                            </pre>
                         </div>
                         <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
                         <div class="python-output"></div>
