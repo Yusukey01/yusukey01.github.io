@@ -85,43 +85,6 @@ uses_python: false
                     </p>
                 </div>
 
-                <p>
-                    Another equivalent way to define completeness is given by the <strong>virtual point</strong>.
-                </p>
-
-                <div class="theorem" id="D-virtual_point">
-                    <span class="theorem-title">Definition: Virtual Points</span>
-                    Suppose \((X, d)\) is a metric space and \(u: X \to \mathbb{R}\). Then \(u\) is called a <strong>virtual point</strong> 
-                    of \(X\) if and only if \(u\) satisfies the following conditions:
-                    <ul style="padding-left: 40px;">
-                        <li>\(\forall a, b \in X, \, |u(a) - u(b)| \leq d(a, b) \leq u(a) + u(b)\).</li>
-                        <li>\(\inf u(X) = 0\).</li>
-                        <li>\(0 \notin u(X)\).</li>
-                    </ul>
-                </div>
-
-                <div class="theorem" id="T-virtual_point_criterion">
-                    <span class="theorem-title">Theorem: Virtual Point Criterion for Completeness</span>
-                    A metric space \(X\) is complete if and only if \(X\) has no virtual points.
-                    <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> See O'Searcoid, <em>Metric Spaces</em>, §9.
-                    </p>
-                </div>
-
-                <p>
-                    A virtual point is a function that "measures distance to a missing point." If \(X\) has a hole 
-                    (like \(\mathbb{Q}\) missing \(\sqrt{2}\)), we can define \(u: \mathbb{Q} \to \mathbb{R}\) by 
-                    \(u(q) = |q - \sqrt{2}|\). This function satisfies all three conditions: it respects the triangle 
-                    inequality, its infimum is 0 (rationals get arbitrarily close to \(\sqrt{2}\)), yet no rational 
-                    achieves distance 0.
-                </p>
-
-                <p>
-                    The virtual point criterion is equivalent to the Cauchy criterion: every non-convergent 
-                    Cauchy sequence \((x_n)\) in an incomplete space induces a virtual point via 
-                    \(u(a) = \lim_{n \to \infty} d(a, x_n)\).
-                </p>
-
                 <div class="insight-box">
                     <h3>Insight: Why Completeness Matters in Machine Learning</h3>
                     <p>
@@ -138,11 +101,13 @@ uses_python: false
                         </li>
                         <li>
                             \(C([0,1])\) with the integral metric \(d_1(f,g) = \int_0^1 |f(x) - g(x)| \, dx\) is 
-                            <em>not</em> complete. Its completion is the Lebesgue space \(L^1([0,1])\).
+                            <em>not</em> complete. Its completion is the Lebesgue space 
+                            <a href="intro_analysis.html#D-Lp_intro" class="ref-link"><strong>\(L^1([0,1])\)</strong></a>.
                         </li>
                         <li>
                             In <strong>Reinforcement Learning</strong>, the space of value functions is often modeled using 
-                            \(L^\infty\) (supremum norm) to ensure completeness. This guarantees that the Bellman operator, 
+                            <a href="intro_analysis.html#D-Linfty_intro" class="ref-link"><strong>\(L^\infty\)</strong></a> 
+                            (supremum norm) to ensure completeness. This guarantees that the Bellman operator, 
                             which is a contraction, actually has a fixed point (the optimal value function) within the space.
                         </li>
                     </ul>
@@ -195,32 +160,18 @@ uses_python: false
                 </div>
 
                 <p>
-                    To prove this theorem, we require the following two extension results, which are of independent interest.
+                    The proof relies on a general principle about <strong>extending functions from a dense subset</strong>. 
+                    If \(f: S \to Y\) is uniformly continuous on a dense subset \(S \subseteq X\) and \(Y\) is complete, then 
+                    \(f\) admits a unique continuous extension to all of \(X\). The idea is natural: for any \(x \in X\), 
+                    density provides a sequence \(s_n \in S\) with \(s_n \to x\); uniform continuity transfers the Cauchy 
+                    property of \(\{s_n\}\) to \(\{f(s_n)\}\) in \(Y\); and completeness of \(Y\) produces a limit, which 
+                    serves as the extended value \(\tilde f(x)\). Well-definedness (independence of the approximating 
+                    sequence) again comes from uniform continuity. Furthermore, if \(f\) happens to be an isometry, the 
+                    extension is an isometry too — distance preservation passes through the limit by continuity.
                 </p>
 
-                <div class="theorem" id="T-continuous_extension">
-                    <span class="theorem-title">Theorem: Continuous Extension</span>
-                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces and \(Y\) is complete. Suppose \(S\) is a 
-                    dense subset of \(X\) and \(f: S \to Y\) is a uniformly continuous function. Then there exists a unique 
-                    continuous function \(\tilde{f}: X \to Y\) such that \(\tilde{f} \mid_S = f\). Moreover, this extension 
-                    \(\tilde{f}\) is also uniformly continuous.
-                    <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> See O'Searcoid, <em>Metric Spaces</em>, §9.
-                    </p>
-                </div>
-
-                <div class="theorem" id="T-isometry_extension">
-                    <span class="theorem-title">Theorem: Isometry Extension</span>
-                    Suppose \((X, d)\) and \((Y, e)\) are metric spaces and \(Y\) is complete. Suppose \(S\) is a 
-                    dense subset of \(X\) and \(f: S \to Y\) is an isometric map. Then the unique continuous extension 
-                    of \(f\) to \(X\) is also an isometry.
-                    <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> See O'Searcoid, <em>Metric Spaces</em>, §9.
-                    </p>
-                </div>
-
                 <p>
-                    Note that the <strong>extension</strong> of functions is defined as follows:
+                    We formalize the notion of extension before proceeding.
                 </p>
 
                 <div class="theorem" id="D-function_extension">
@@ -232,7 +183,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Below is the outline of the proof for the Uniqueness of Completion.
+                    Applying this extension principle, the outline of the proof for the Uniqueness of Completion is as follows.
                 </p>
 
                 <div class="proof">
@@ -241,12 +192,15 @@ uses_python: false
                         The map \(\phi \circ \psi^{-1}\) is an isometry from the dense subspace \(\psi(X)\) of \(X'\) onto 
                         the dense subspace \(\phi(X)\) of \(X''\). 
                         
-                        Since \(X''\) is complete, \(\phi \circ \psi^{-1}\) has a unique continuous extension \(f\) to \(X'\) by 
-                        the <strong>Continuous Extension Theorem</strong>, and this extension is isometric by the <strong>Isometry Extension Theorem</strong>.
+                        Since \(X''\) is complete, \(\phi \circ \psi^{-1}\) has a unique continuous extension \(f\) to \(X'\) 
+                        (by the extension principle above), and this extension is isometric because the isometry equation 
+                        passes through limits.
 
-                        Because \(f\) is an isometry, its range is complete and therefore closed in \(X''\). 
-                        Since this range includes \(\phi(X)\), it must also include the closure \(\overline{\phi(X)}\), which is \(X''\). 
-                        Thus, \(f\) is an isometry from \(X'\) onto \(X''\).
+                        Because \(f\) is an isometry and \(X'\) is complete, the range \(f(X')\) inherits completeness 
+                        (Cauchy sequences transfer across isometries), and by the 
+                        <a href="#T-complete_subset" class="ref-link"><strong>complete subset theorem</strong></a> 
+                        applied in \(X''\), \(f(X')\) is closed in \(X''\). Since \(f(X') \supseteq \phi(X)\), it contains the 
+                        closure \(\overline{\phi(X)} = X''\). Thus, \(f\) is an isometry from \(X'\) onto \(X''\).
                     </p>
                 </div>
 
@@ -294,24 +248,15 @@ uses_python: false
                     each \(A, B \in \mathcal{N}\), either \(A \subseteq B\) or \(B \subseteq A\).
                 </div>
 
-                <div class="theorem" id="T-adjoining_limit_point">
-                    <span class="theorem-title">Lemma: Adjoining a Limit Point</span>
-                    Suppose \((X, d)\) is a metric space and \(\mathcal{F}\) is a <strong>nest</strong> of non-empty subsets of 
-                    \(X\) for which \(\inf \{\text{diam } (A) \mid A \in \mathcal{F}\} = 0\). 
-                    <br>
-                    Suppose \(\bigcap \left\{\text{Cl}_{X}(A)  \mid A \in \mathcal{F} \right\} = \emptyset\). Then, given \(z \notin X\), 
-                    \(d\) can be extended to be a metric on \(X' = X \cup \{z\}\) in such a way that 
-                    \[
-                    \forall A \in \mathcal{F}, \, \text{Cl}_{X'} (A) = \text{Cl}_{X}(A) \cup \{z\}.
-                    \]
-                    Thus, 
-                    \[
-                    \bigcap \left\{\text{Cl}_{X'} (A) \mid A \in \mathcal{F} \right\} = \{z\}.
-                    \]
-                    <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> See O'Searcoid, <em>Metric Spaces</em>, §9.
-                    </p>
-                </div>
+                <p>
+                    The key technical input is an <strong>adjoining principle</strong>: if a nest of closed sets in \(X\) has 
+                    shrinking diameters but empty intersection, then the metric \(d\) can be extended to a superspace 
+                    \(X' = X \cup \{z\}\) so that \(z\) serves as the "missing limit point" common to all closures. Intuitively, 
+                    an incomplete space has sequences that <em>ought to</em> converge, and this construction manifests their 
+                    would-be limit as a new point outside \(X\). This is the tool that allows us to move from non-existence of 
+                    an intersection inside \(X\) to the existence of a Cauchy sequence with no limit in \(X\) — i.e., a witness 
+                    of incompleteness.
+                </p>
 
                 <p>
                     This leads to the following fundamental criteria for completeness, framing it as the guarantee that 
@@ -333,10 +278,19 @@ uses_python: false
                     every sequence \(\{F_n\}\) of non-empty closed subsets of \(X\) for which \(F_{n+1} \subseteq F_n\) 
                     for each \(n \in \mathbb{N}\) and \(\text{diam }(F_n) \to 0\) has singleton (hence non-empty) intersection.
                     <p style="margin-top: 0.5em;">
-                        <em>Proof.</em> The (⇒) direction uses the Cauchy criterion: pick \(x_n \in F_n\); 
-                        since \(\text{diam}(F_n) \to 0\), \(\{x_n\}\) is Cauchy, converges to some \(z \in X\), and \(z \in \bigcap F_n\) 
-                        because each \(F_n\) is closed. The (⇐) direction uses the preceding lemma on adjoining a limit point. 
-                        For the complete argument, see O'Searcoid, <em>Metric Spaces</em>, §9.
+                        <em>Proof Sketch.</em> <strong>(\(\Rightarrow\))</strong> Pick \(x_n \in F_n\); since 
+                        \(\text{diam}(F_n) \to 0\), \(\{x_n\}\) is Cauchy, and by completeness converges to some \(z \in X\). 
+                        Each \(F_n\) is closed and eventually contains the tail of \(\{x_n\}\), so \(z \in F_n\) for every \(n\); 
+                        hence \(z \in \bigcap F_n\), and the singleton property follows from \(\text{diam}(F_n) \to 0\). 
+                        <strong>(\(\Leftarrow\))</strong> We argue by contrapositive. If \(X\) is not complete, the 
+                        <a href="#T-cauchy_criterion_completeness" class="ref-link"><strong>Cauchy Criterion</strong></a> 
+                        yields a non-convergent Cauchy sequence \(\{x_n\}\). Let \(F_n\) be the closure of the tail 
+                        \(\{x_k : k \geq n\}\) in \(X\): each \(F_n\) is non-empty and closed, the sequence is nested since 
+                        later tails are subsets, and \(\text{diam}(F_n) \to 0\) follows from the Cauchy property. If some 
+                        \(z \in \bigcap F_n\), then \(x_n, z \in F_n\) gives \(d(x_n, z) \leq \text{diam}(F_n) \to 0\), forcing 
+                        \(x_n \to z\) — contradicting non-convergence. Hence \(\bigcap F_n = \emptyset\), and the nest 
+                        \(\{F_n\}\) violates the hypothesis. For full details — including the rigorous adjoining construction 
+                        that makes the contrapositive strictly constructive — see O'Searcoid, <em>Metric Spaces</em>, §9.
                     </p>
                 </div>
 
@@ -353,14 +307,35 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        (⇒) Suppose \(S\) is complete. Let \(x \in \overline{S}\). Choose \(s_n \in S\) with \(d(s_n, x) < 1/n\); 
-                        then \(\{s_n\}\) is Cauchy in \(S\) and, by completeness of \(S\), converges to some \(s \in S\). 
-                        Uniqueness of limits (in \(X\)) forces \(s = x\), hence \(x \in S\). Therefore \(S = \overline{S}\), i.e. \(S\) is closed.
+                        <strong>(\(\Rightarrow\)) \(S\) complete \(\Rightarrow\) \(S\) closed.</strong> 
+                        Suppose, for contradiction, that \(S\) is not closed in \(X\): there exists \(x \in \partial S\) with 
+                        \(x \notin S\). By the definition of a 
+                        <a href="metric_space.html#D-boundary_point" class="ref-link"><strong>boundary point</strong></a>, 
+                        \(\text{dist}(x, S) = 0\), so for each \(n \in \mathbb{N}\) we can pick \(s_n \in S\) with 
+                        \(d(s_n, x) < 1/n\). Then \(s_n \to x\) in \(X\) (ball form of convergence), hence \(\{s_n\}\) is 
+                        <a href="limit_convergence.html#T-convergent_implies_cauchy" class="ref-link"><strong>Cauchy</strong></a> 
+                        in \(X\). To transfer this to \(S\): given \(r > 0\), some ball \(\mathcal{B}^X[c; r/2)\) of \(X\) 
+                        includes a tail \(\{s_n : n \geq N\}\); re-centering at \(s_N \in S\), the triangle inequality gives 
+                        \(d(s_n, s_N) \leq d(s_n, c) + d(c, s_N) < r/2 + r/2 = r\) for all \(n \geq N\), so the tail lies in 
+                        \(\mathcal{B}^S[s_N; r)\). Thus \(\{s_n\}\) is also Cauchy in \(S\). By completeness of \(S\), 
+                        \(s_n \to s\) for some \(s \in S\). Since every ball of \(S\) is included in the corresponding ball of 
+                        \(X\), convergence in \(S\) implies convergence in \(X\) to the same point, so \(s_n \to s\) in \(X\) 
+                        as well. 
+                        <a href="limit_convergence.html#T-uniqueness_of_limits" class="ref-link"><strong>Uniqueness of limits</strong></a> 
+                        in \(X\) then forces \(s = x\), so \(x \in S\), contradicting \(x \notin S\). Hence \(S\) is closed.
                     </p>
                     <p>
-                        (⇐) Suppose \(S\) is closed in \(X\). Let \(\{s_n\}\) be a Cauchy sequence in \(S\). It is also Cauchy in 
-                        \(X\), and since \(X\) is complete, \(s_n \to x\) for some \(x \in X\). As \(x \in \overline{S} = S\), 
-                        the sequence converges within \(S\). Hence \(S\) is complete.
+                        <strong>(\(\Leftarrow\)) \(S\) closed \(\Rightarrow\) \(S\) complete.</strong> 
+                        Let \(\{s_n\}\) be Cauchy in \(S\). Since any ball of \(S\) is included in the corresponding ball of 
+                        \(X\), \(\{s_n\}\) is also Cauchy in \(X\); by completeness of \(X\) and the 
+                        <a href="#T-cauchy_criterion_completeness" class="ref-link"><strong>Cauchy Criterion</strong></a>, 
+                        \(s_n \to x\) for some \(x \in X\). We claim \(x \in S\). Any open ball \(\mathcal{B}^X[x; r)\) includes 
+                        a tail of \(\{s_n\} \subseteq S\), so \(\mathcal{B}^X[x; r) \cap S \neq \emptyset\) for every \(r > 0\); 
+                        hence \(\text{dist}(x, S) = 0\). If \(x \notin S\), then \(x \in S^c\) gives 
+                        \(\text{dist}(x, S^c) = 0\) as well, so \(x \in \partial S\); but \(S\) is closed, forcing \(x \in S\) — 
+                        a contradiction. Thus \(x \in S\), and by the 
+                        <a href="limit_convergence.html#T-convergence_in_subspace" class="ref-link"><strong>subspace convergence theorem</strong></a>, 
+                        \(\{s_n\}\) converges to \(x\) in \(S\). Hence \(S\) is complete.
                     </p>
                 </div>
 
@@ -412,7 +387,7 @@ uses_python: false
                     <span class="theorem-title">Theorem: Banach's Fixed-Point Theorem</span>
                     Suppose \((X, d)\) is a complete metric space and \(f: X \to X\) is a 
                     <a href="continuity.html#D-strong_contraction" class="ref-link"><strong>(strong) contraction</strong></a> on 
-                    \(X\) with contraction factor \(k \in (0, 1)\). Then \(f\) has a unique fixed point in \(X\) and, for 
+                    \(X\) with contraction factor \(k \in [0, 1)\). Then \(f\) has a unique fixed point in \(X\) and, for 
                     each \(w \in X\), the sequence \(\{f^n(w)\}\) converges to this point.
                 </div>
 
