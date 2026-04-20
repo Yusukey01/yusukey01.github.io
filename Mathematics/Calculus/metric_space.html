@@ -76,9 +76,9 @@ uses_python: false
                         For all \(a, b, c \in M\), the following axioms must hold:
                     </p>
                     <ol style="padding-left: 40px;">
-                        <li>Positivity: \(d(a,b) \geq 0\) with equality if and only if \(a = b\).</li>
-                        <li>Symmetry: \(d(a,b) = d(b,a)\).</li>
-                        <li>The triangle inequality \(d(a,b) \leq d(a,c) + d(c, b)\).</li>
+                        <li><strong>Positive definiteness</strong>: \(d(a,b) \geq 0\), with equality if and only if \(a = b\). (The inequality \(d(a,b) \geq 0\) is the non-negativity condition; the "if and only if" clause is the identity of indiscernibles.)</li>
+                        <li><strong>Symmetry</strong>: \(d(a,b) = d(b,a)\).</li>
+                        <li><strong>Triangle inequality</strong>: \(d(a,b) \leq d(a,c) + d(c, b)\).</li>
                     </ol>
                 </div>
                 <div class="theorem" id="D-metric_subspace">
@@ -192,7 +192,7 @@ uses_python: false
                     \[
                     \text{dist }(A, B) = \inf \{d(a, b) \mid a \in A, b \in B\}.  \quad (\text{Sets to Sets})
                     \]
-                    The both distances depend on what the metric \(d\) is.
+                    Both distances depend on the choice of the metric \(d\). By convention, when the set is empty we extend these definitions via \(\inf \emptyset = +\infty\) (as established above), so that \(\text{dist}(x, \emptyset) = +\infty\) and \(\text{dist}(A, \emptyset) = +\infty\); this ensures the derived notions below (isolated points, boundary, etc.) remain well-defined in degenerate cases.
                 </div>
 
                 <div class="theorem" id="D-isolated_point">
@@ -224,11 +224,63 @@ uses_python: false
                 
                 <div class="theorem" id="D-nearest_point">
                     <span class="theorem-title">Definition: Nearest Points</span>
-                    Suppose \((X, d)\) is a metric space, \(S\) is a subset of \(X\) and \(z \in X\). A member \(s\) of \(S\) is 
-                    called a <strong>nearest point</strong> of \(S\) to \(z\) in \(X\) if and only if 
+                    Suppose \((X, d)\) is a metric space, \(S\) is a subset of \(X\), and \(z \in X\). A member \(s \in S\), <em>if one exists</em>, 
+                    is called a <strong>nearest point</strong> of \(S\) to \(z\) in \(X\) if and only if 
                     \[
                     d(z, s) = \text{dist }(z, S).
                     \]
+                </div>
+
+                <p>
+                    A nearest point need not exist in general: take \(X = \mathbb{R}\), \(S = (0, 1)\), and \(z = 0\). Then 
+                    \(\text{dist}(z, S) = 0\), yet no member of \(S\) is at distance zero from \(z\), because \(S\) is open and 
+                    excludes its boundary. Existence is guaranteed, however, when \(S\) has sufficient structure — most notably 
+                    when \(S\) is <strong>compact</strong>, a notion we formalize in a later chapter. In \(\mathbb{R}^n\), this reduces to 
+                    \(S\) being closed and bounded (Heine–Borel); more generally, closedness alone suffices in "nice" spaces such as 
+                    <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert spaces</strong></a>, where the projection onto a closed convex set is uniquely determined.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: "The Nearest Point Exists" — When Can You Trust This Assumption?</h3>
+                    <p>
+                        Machine learning practitioners routinely take the existence of a nearest point for granted: 
+                        "find the closest training example," "project onto the feasible set," "snap the embedding to 
+                        the nearest codeword." These operations are <em>so ubiquitous</em> that it is easy to forget 
+                        they rest on a non-trivial mathematical guarantee.
+                    </p>
+                    <p>
+                        Here is the cheat sheet for when existence is safe:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            <strong>k-Nearest Neighbors / SVM support vectors</strong> — The set \(S\) is a <em>finite</em> collection of training points. 
+                            Finite sets are automatically compact, so a minimizer always exists (in fact, it is attained by brute-force search).
+                        </li>
+                        <li>
+                            <strong>Projection in convex optimization (proximal methods, projected gradient descent)</strong> — The feasible set is typically 
+                            <em>closed and convex</em> in \(\mathbb{R}^n\) or a Hilbert space. The <strong>Hilbert projection theorem</strong> guarantees not only 
+                            existence but also <em>uniqueness</em> of the nearest point.
+                        </li>
+                        <li>
+                            <strong>Vector quantization / codebook lookup</strong> — Finite codebook, same as k-NN: existence is automatic.
+                        </li>
+                        <li>
+                            <strong>Open constraint sets (e.g., strict inequalities \(g(x) < 0\))</strong> — This is where existence can <em>fail</em>. 
+                            The nearest feasible point may not exist; typical fix is to replace the constraint with its closure \(g(x) \leq 0\), 
+                            or to use a barrier/penalty method rather than direct projection.
+                        </li>
+                        <li>
+                            <strong>Non-compact feasible sets (even convex ones)</strong> — No guarantee in general. The fundamental obstruction is 
+                            not non-convexity but <em>non-compactness</em>: a closed but unbounded set in \(\mathbb{R}^n\), or any closed bounded set 
+                            in an infinite-dimensional <a href="intro_analysis.html#D-Banach_space" class="ref-link"><strong>Banach space</strong></a> 
+                            (which is never compact), can fail to contain a nearest point. Iterative algorithms operating in such settings may 
+                            oscillate or approach a limit outside \(S\).
+                        </li>
+                    </ul>
+                    <p>
+                        The takeaway: whenever you write <code>project(x, S)</code> or call a nearest-neighbor routine, the code silently assumes 
+                        existence — and that assumption is usually, but not always, justified by the structure of \(S\).
+                    </p>
                 </div>
 
                 <p>
@@ -345,6 +397,9 @@ uses_python: false
                         A metric space \(X\) is said to be <strong>complete</strong> if and only if 
                         \(X\) is closed in every metric superspace of \(X\).
                     </p>
+                    <p>
+                        Here "closed" is meant in the topological sense relative to the superspace \(Y\): for every metric superspace \((Y, e)\) with \(X \subseteq Y\), the boundary \(\partial X\) computed inside \(Y\) satisfies \(\partial X \subseteq X\).
+                    </p>
                 </div>
 
                 <p>
@@ -374,7 +429,12 @@ uses_python: false
                     Open and closed sets can be complicated objects, but we can build them from simpler pieces. The 
                     <strong>open ball</strong> centered at a point \(x\) with radius \(r\) is the set of all points 
                     within distance \(r\) of \(x\). These balls are the "building blocks" of the topology: every open 
-                    set can be expressed as a union of open balls.
+                    set \(U\) can be expressed as a union of open balls. The reason is short — for each \(x \in U\), 
+                    the interior-point property guarantees \(\text{dist}(x, U^c) > 0\), so the ball 
+                    \(\mathcal{B}[x; r_x)\) with \(r_x = \tfrac{1}{2}\text{dist}(x, U^c)\) lies inside \(U\), giving 
+                    \(U = \bigcup_{x \in U} \mathcal{B}[x; r_x)\). This is what it means to say the open balls form a 
+                    <em>basis</em> for the metric topology, a perspective we develop in full generality in the chapter 
+                    on topological spaces.
                 </p>
                 <p>
                     More importantly for algorithms, balls give us a <strong>coordinate-free</strong> way to talk about 
@@ -417,9 +477,11 @@ uses_python: false
                     \]
                     so that \(d(x, z) < r - s\).
                     Now, consider any point \(w\) outside the ball, i.e., \(w \in X \setminus \mathcal{B}\). 
-                    By definition, \(d(w, x) \geq r\). Using the triangle inequality, we have:
+                    By definition, \(d(w, x) \geq r\). The triangle inequality gives 
+                    \(d(w, x) \leq d(w, z) + d(z, x)\), and rearranging (using symmetry) yields the 
+                    <strong>reverse triangle inequality</strong>:
                     \[
-                    d(z, w) \geq d(w, x) - d(x, z) > r - (r - s) = s. 
+                    d(z, w) \;\geq\; d(w, x) - d(x, z) \;>\; r - (r - s) \;=\; s.
                     \]
                     Since \(w\) is an arbitrary point in the complement \(X \setminus \mathcal{B}\), 
                     this inequality holds for all points outside the ball. This implies that the 
@@ -440,15 +502,15 @@ uses_python: false
 
                 <p>
                     The open ball also provides the foundation for discussing <a href="gradient.html#convexity"><strong>convexity</strong></a> in a coordinate-free manner. 
-                    In a normed linear space, all open balls of the same radius have identical shape - each is simply a translation 
-                    of the others. Moreover, these balls are themselves convex sets. We can now state the definition of convexity 
+                    In a <a href="intro_analysis.html#D-normed_space" class="ref-link"><strong>normed linear space</strong></a>, all open balls of the same radius have identical shape — each is simply a translation 
+                    of the others. Moreover, these balls are themselves convex sets (a short consequence of the triangle inequality and positive homogeneity of the norm). We can now state the definition of convexity 
                     that applies to general normed spaces, not just \(\mathbb{R}^n\):
                 </p>
 
                 <div class="theorem" id="D-convex_set">
                     <span class="theorem-title">Definition: Convex</span>
-                    Suppose \(V\) is a normed linear space and \(C \subseteq V\). Then \(C\) is said to be <strong>convex</strong> if and only if 
-                    for each \(a, b \in C\), the line segment \(\{ (1 - t)a + tb \mid t \in [0, 1] \}\) jointing \(a\) and \(b\) is included in 
+                    Suppose \(V\) is a <a href="intro_analysis.html#D-normed_space" class="ref-link"><strong>normed linear space</strong></a> and \(C \subseteq V\). Then \(C\) is said to be <strong>convex</strong> if and only if 
+                    for each \(a, b \in C\), the line segment \(\{ (1 - t)a + tb \mid t \in [0, 1] \}\) joining \(a\) and \(b\) is included in 
                     \(C\).
                 </div>
 
