@@ -34,21 +34,47 @@ uses_python: false
                     encoded by a matrix — the <strong>Jacobian</strong>.
                 </p>
 
+                <div class="theorem" id="D-differentiable_multivariate">
+                    <span class="theorem-title">Definition: Differentiability (vector-valued)</span>
+                    <p>
+                        A function \(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\) is <strong>differentiable</strong>
+                        at \(\mathbf{x}\) if there exists a linear map \(L : \mathbb{R}^n \to \mathbb{R}^m\) such that
+                        \[
+                        \mathbf{f}(\mathbf{x} + \mathbf{h}) - \mathbf{f}(\mathbf{x})
+                            \;=\; L(\mathbf{h}) + o(\|\mathbf{h}\|) \quad \text{as } \mathbf{h} \to \mathbf{0}.
+                        \]
+                        When such \(L\) exists it is unique (two linear maps differing by \(o(\|\mathbf{h}\|)\) must
+                        coincide, by the same argument as in the
+                        <a href="linear_approximation.html#diff"><strong>scalar case</strong></a>) and is called the
+                        <strong>differential</strong> of \(\mathbf{f}\) at \(\mathbf{x}\), denoted
+                        \(d\mathbf{f}_{\mathbf{x}}\) or simply \(\mathbf{f}'(\mathbf{x})\).
+                    </p>
+                    <p>
+                        <em>Remark.</em> Differentiability is a stronger condition than the existence of all partial
+                        derivatives \(\partial f_i/\partial x_j\): a function can have all partials at a point yet fail
+                        to be differentiable there (the standard counterexample is
+                        \(f(x,y) = xy/(x^2+y^2)\) extended by \(f(0,0) = 0\)). Differentiability implies the existence
+                        of all partials; the converse holds under continuity of the partials in a neighborhood.
+                    </p>
+                </div>
+
                 <div class="theorem" id="D-jacobian">
                     <span class="theorem-title">Definition: Jacobian</span>
                     <p>
                         Let \(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\) be differentiable at \(\mathbf{x}\). The
                         <strong>Jacobian</strong> of \(\mathbf{f}\) at \(\mathbf{x}\), denoted \(\mathbf{f}'(\mathbf{x})\)
-                        or \(J_{\mathbf{f}}(\mathbf{x})\), is the \(m \times n\) matrix of partial derivatives
+                        or \(J_{\mathbf{f}}(\mathbf{x})\), is the \(m \times n\) matrix representing the differential
+                        \(d\mathbf{f}_{\mathbf{x}}\) in the standard bases. Its entries are the partial derivatives
                         \[
-                        J_{ij} \;=\; \frac{\partial f_i}{\partial x_j}, \qquad 1 \leq i \leq m,\; 1 \leq j \leq n.
+                        J_{ij} \;=\; \frac{\partial f_i}{\partial x_j}, \qquad 1 \leq i \leq m,\; 1 \leq j \leq n,
                         \]
-                        The corresponding differential — the linear map taking a displacement \(d\mathbf{x} \in \mathbb{R}^n\)
-                        to the linear part of the change in \(\mathbf{f}\) — is characterized by
+                        and the defining linear approximation takes the form
                         \[
                         \mathbf{f}(\mathbf{x} + d\mathbf{x}) - \mathbf{f}(\mathbf{x})
                             \;=\; \mathbf{f}'(\mathbf{x})\, d\mathbf{x} + o(\|d\mathbf{x}\|) \quad \text{as } d\mathbf{x} \to \mathbf{0}.
                         \]
+                        (The identification \(J_{ij} = \partial f_i/\partial x_j\) follows from evaluating the linear
+                        approximation along each coordinate direction \(\mathbf{h} = t\,\mathbf{e}_j\), \(t \to 0\).)
                     </p>
                 </div>
 
@@ -169,6 +195,13 @@ uses_python: false
                     <span class="proof-title">Proof.</span>
                     <p>
                         Let \(J_{\mathbf{h}} := \mathbf{h}'(\mathbf{x})\) and \(J_{\mathbf{g}} := \mathbf{g}'(\mathbf{u})\).
+                        We use throughout the fact that in finite dimensions every linear map is automatically
+                        bounded: there exists \(C > 0\) with \(\|L\mathbf{v}\| \leq C\|\mathbf{v}\|\) for all
+                        \(\mathbf{v}\) (this is the operator norm, and it is finite because the unit sphere is compact).
+                        This is what lets us push \(o(\|\cdot\|)\) and \(O(\|\cdot\|)\) bounds through \(J_{\mathbf{h}}\)
+                        and \(J_{\mathbf{g}}\) below.
+                    </p>
+                    <p>
                         By differentiability of \(\mathbf{h}\) at \(\mathbf{x}\),
                         \[
                         \mathbf{h}(\mathbf{x} + d\mathbf{x}) - \mathbf{h}(\mathbf{x})
@@ -190,10 +223,22 @@ uses_python: false
                                 + \underbrace{J_{\mathbf{g}}\, r_{\mathbf{h}}(d\mathbf{x})}_{o(\|d\mathbf{x}\|)}
                                 + \underbrace{r_{\mathbf{g}}(d\mathbf{u})}_{o(\|d\mathbf{u}\|) = o(\|d\mathbf{x}\|)}.
                         \]
-                        The first error term is \(o(\|d\mathbf{x}\|)\) because \(J_{\mathbf{g}}\) is a fixed linear map
-                        (hence bounded) and \(r_{\mathbf{h}}(d\mathbf{x}) = o(\|d\mathbf{x}\|)\). The second is
-                        \(o(\|d\mathbf{x}\|)\) because \(\|d\mathbf{u}\| = O(\|d\mathbf{x}\|)\). Identifying the linear
-                        part gives \(\mathbf{f}'(\mathbf{x}) = J_{\mathbf{g}} J_{\mathbf{h}}\). \(\blacksquare\)
+                        The first error term is \(o(\|d\mathbf{x}\|)\) because
+                        \(\|J_{\mathbf{g}}\,r_{\mathbf{h}}(d\mathbf{x})\| \leq \|J_{\mathbf{g}}\|_{\mathrm{op}}\,\|r_{\mathbf{h}}(d\mathbf{x})\|
+                        = \|J_{\mathbf{g}}\|_{\mathrm{op}} \cdot o(\|d\mathbf{x}\|) = o(\|d\mathbf{x}\|)\).
+                        The second requires combining \(r_{\mathbf{g}}(d\mathbf{u}) = o(\|d\mathbf{u}\|)\) with
+                        \(\|d\mathbf{u}\| = O(\|d\mathbf{x}\|)\): since \(d\mathbf{x} \to 0\) forces
+                        \(d\mathbf{u} \to 0\),
+                        \[
+                        \frac{\|r_{\mathbf{g}}(d\mathbf{u})\|}{\|d\mathbf{x}\|}
+                            \;=\; \underbrace{\frac{\|r_{\mathbf{g}}(d\mathbf{u})\|}{\|d\mathbf{u}\|}}_{\to\, 0}
+                                  \cdot
+                                  \underbrace{\frac{\|d\mathbf{u}\|}{\|d\mathbf{x}\|}}_{\text{bounded}}
+                            \;\longrightarrow\; 0,
+                        \]
+                        so \(r_{\mathbf{g}}(d\mathbf{u}) = o(\|d\mathbf{x}\|)\) as well (the case
+                        \(d\mathbf{u} = \mathbf{0}\) gives \(r_{\mathbf{g}} = \mathbf{0}\) directly). Identifying
+                        the linear part gives \(\mathbf{f}'(\mathbf{x}) = J_{\mathbf{g}} J_{\mathbf{h}}\). \(\blacksquare\)
                     </p>
                 </div>
 
