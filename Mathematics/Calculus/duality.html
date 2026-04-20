@@ -31,43 +31,57 @@ uses_python: false
                     Optimization problems are often easier to analyze from a different angle. <strong>Duality</strong> formalizes this 
                     idea: every constrained optimization problem (the <strong>primal</strong>) has a companion problem (the <strong>dual</strong>) 
                     that provides bounds on the optimal value, and sometimes solves the original problem exactly. This principle arises throughout 
-                    machine learning, convex analysis, and game theory, and it connects the <a href="constrained_opt.html"><strong>KKT conditions</strong></a> to 
+                    machine learning, convex analysis, and game theory, and it connects the 
+                    <a href="constrained_opt.html#T-kkt_conditions" class="ref-link"><strong>KKT conditions</strong></a> to 
                     algorithmic efficiency.
                 </p>
                 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Primal to Dual Construction</span>
+                <div class="theorem" id="D-primal_problem">
+                    <span class="theorem-title">Definition: Primal Problem</span>
                     <p>
-                        In constrained optimization, we define the <strong>primal problem</strong>
+                        In constrained optimization, the <strong>primal problem</strong> is
                         \[
-                        \min_x f(x) \, \text{ subject to } g_i (x) \leq 0,  \, h_j (x) = 0
+                        p^* \;=\; \inf_x f(x) \quad \text{subject to} \quad g_i(x) \leq 0, \; h_j(x) = 0,
                         \]
                         where \(f(x)\) is the objective function, \(g_i(x)\) are inequality constraints, and \(h_j(x)\) are equality 
-                        constraints. 
+                        constraints. The optimal value \(p^*\) is the infimum of \(f\) over the feasible set; it may or may not be attained.
                     </p>
+                </div>
 
+                <p>
+                    To analyze this constrained problem, we encode the constraints into the objective via the 
+                    <a href="constrained_opt.html#D-lagrangian" class="ref-link"><strong>Lagrangian</strong></a> 
+                    \(\mathcal{L}(x, \lambda, \nu) = f(x) + \sum_i \lambda_i g_i(x) + \sum_j \nu_j h_j(x)\), 
+                    where \(\lambda_i, \nu_j\) are the Lagrange multipliers. Taking the infimum of \(\mathcal{L}\) over \(x\) 
+                    with the multipliers fixed produces a scalar-valued function of the multipliers alone:
+                </p>
+
+                <div class="theorem" id="D-lagrange_dual_function">
+                    <span class="theorem-title">Definition: Lagrange Dual Function</span>
                     <p>
-                        We define the <strong>Lagrangian</strong> as a combination of the objective function and the constraints:
+                        The <strong>Lagrange dual function</strong> associated with the primal problem is
                         \[
-                        \mathcal{L}(x, \lambda, \nu) = f(x) + \sum_i \lambda_i g_i(x) + \sum_j \nu_j h_j(x)
+                        g(\lambda, \nu) \;=\; \inf_x \mathcal{L}(x, \lambda, \nu).
                         \]
-                        where \(\lambda_i\) and \(\nu_j\) are the <a href='constrained_opt.html'><strong>Lagrange multipliers</strong></a>.
+                        This is defined for arbitrary \((\lambda, \nu) \in \mathbb{R}^m \times \mathbb{R}^p\) and takes values in 
+                        \([-\infty, +\infty)\). Whenever \(\mathcal{L}(x, \lambda, \nu)\) is unbounded below in \(x\), 
+                        \(g(\lambda, \nu) = -\infty\); the effective domain of \(g\) is the set of multipliers for which 
+                        this infimum is finite.
                     </p>
+                </div>
 
+                <div class="theorem" id="D-dual_problem">
+                    <span class="theorem-title">Definition: Dual Problem</span>
                     <p>
-                        The <strong>Lagrange dual function</strong> is then defined as the minimum of the Lagrangian with respect to \(x\):
+                        The <strong>dual problem</strong> is
                         \[
-                        g(\lambda, \nu) = \inf_x \mathcal{L}(x, \lambda, \nu).
+                        d^* \;=\; \sup_{\lambda \geq 0, \, \nu} g(\lambda, \nu).
                         \]
-                        Crucially, for the dual function to remain a valid <strong>lower bound</strong> on the primal optimal value \(p^*\) 
-                        in the presence of inequality constraints \(g_i(x) \leq 0\), we must require \(\lambda_i \geq 0\).
-                    </p>
-
-                    <p>
-                        The <strong>dual problem</strong> seeks the best possible lower bound by maximizing this dual function:
-                        \[
-                        d^* = \max_{\lambda \geq 0, \nu} g(\lambda, \nu).
-                        \]
+                        The restriction \(\lambda \geq 0\) (with \(\nu\) unrestricted) will be justified by the Weak Duality 
+                        theorem below, which shows that under this restriction each \(g(\lambda, \nu)\) is a lower bound on \(p^*\); 
+                        the dual problem then selects the best such bound. Since \(g\) is the pointwise infimum of affine functions of 
+                        \((\lambda, \nu)\), it is always <em>concave</em> — regardless of whether the primal is convex — so the dual 
+                        is a concave maximization, structurally a convex optimization problem over \((\lambda, \nu)\).
                     </p>
                 </div>
 
@@ -77,58 +91,103 @@ uses_python: false
                     the optimal solution can be. This leads to one of the most fundamental results in optimization:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-weak_duality">
                     <span class="theorem-title">Theorem: Weak Duality</span>
                     <p>
-                        The optimal value of the dual problem \(d^*\) provides a <strong>lower bound</strong> on 
-                        the optimal value of the primal problem \(p^*\):
+                        For any optimization problem (convex or not) with a valid Lagrangian formulation, the dual optimal value 
+                        \(d^*\) is a lower bound on the primal optimal value \(p^*\):
                         \[
-                        d^* \leq p^*.
+                        d^* \;\leq\; p^*.
                         \]
-                        This holds for <em>any</em> optimization problem (convex or not) where a valid dual is formulated.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Let \(x\) be any primal-feasible point (so \(g_i(x) \leq 0\) and \(h_j(x) = 0\)) and let 
+                        \((\lambda, \nu)\) be any dual-feasible pair (so \(\lambda_i \geq 0\)). Because \(\lambda_i \geq 0\) and 
+                        \(g_i(x) \leq 0\), each \(\lambda_i g_i(x) \leq 0\); because \(h_j(x) = 0\), each \(\nu_j h_j(x) = 0\). 
+                        Therefore
+                        \[
+                        \mathcal{L}(x, \lambda, \nu) 
+                        \;=\; f(x) + \underbrace{\textstyle\sum_i \lambda_i g_i(x)}_{\leq \, 0} 
+                        + \underbrace{\textstyle\sum_j \nu_j h_j(x)}_{= \, 0} 
+                        \;\leq\; f(x).
+                        \]
+                        Since \(g(\lambda, \nu) = \inf_{x'} \mathcal{L}(x', \lambda, \nu)\) takes the infimum over <em>all</em> \(x'\) 
+                        (not only feasible ones), it is bounded above by the value at our particular feasible \(x\):
+                        \[
+                        g(\lambda, \nu) \;\leq\; \mathcal{L}(x, \lambda, \nu) \;\leq\; f(x).
+                        \]
+                        The right side \(f(x)\) does not depend on \((\lambda, \nu)\), so taking the supremum of the left side 
+                        over dual-feasible \((\lambda, \nu)\) preserves the inequality: \(d^* \leq f(x)\). This now holds for 
+                        <em>every</em> primal-feasible \(x\), and \(d^*\) is a fixed number, so taking the infimum over primal-feasible 
+                        \(x\) on the right gives \(d^* \leq p^*\). \(\blacksquare\)
                     </p>
                 </div>
 
                 <p>
-                    The difference \(p^* - d^* \geq 0\) is called the <strong>duality gap</strong>. When this gap 
-                    is zero, the dual problem provides the exact optimal value of the primal, a situation known as 
-                    <strong>strong duality</strong>.
+                    The non-negative quantity \(p^* - d^*\) is called the <strong>duality gap</strong>. The gap need not be zero in 
+                    general — non-convex problems frequently exhibit a strictly positive gap — but under favorable conditions it 
+                    vanishes, giving <strong>strong duality</strong>.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Strong Duality and Slater's Condition</span>
+                <div class="theorem" id="T-strong_duality_slater">
+                    <span class="theorem-title">Theorem: Strong Duality (Slater's Condition)</span>
                     <p>
-                        If \(p^* = d^*\), we say <strong>strong duality</strong> holds. Strong duality does not 
-                        hold in general (particularly for non-convex problems). However, for <strong>convex</strong> 
-                        problems, <strong>Slater's condition</strong> is sufficient: if there exists a strictly 
-                        feasible point \(x\) such that
+                        Suppose the primal problem is <em>convex</em> — that is, \(f\) and \(g_i\) are convex and \(h_j\) are affine. 
+                        If <strong>Slater's condition</strong> holds, meaning there exists a strictly feasible point \(x\) with
                         \[
-                        g_i(x) < 0 \quad \text{for all } i,
+                        g_i(x) < 0 \text{ for all } i, \qquad h_j(x) = 0 \text{ for all } j,
                         \]
-                        then strong duality holds.
+                        then <strong>strong duality</strong> holds: \(d^* = p^*\), and the dual optimum is attained when \(p^* > -\infty\).
+                    </p>
+                    <p>
+                        <em>Proof sketch.</em> Consider the set \(\mathcal{A} = \{(u, t) : \exists x \text{ with } g_i(x) \leq u_i,\ h_j(x) = 0,\ f(x) \leq t\}\). 
+                        Convexity of \(f\) and \(g_i\) plus affinity of \(h_j\) make \(\mathcal{A}\) convex. The point 
+                        \((0, p^*)\) lies on the boundary of \(\mathcal{A}\), so by the supporting-hyperplane theorem there exist 
+                        \((\lambda, \mu_0) \neq 0\) such that \(\lambda^\top u + \mu_0 t \geq \lambda^\top 0 + \mu_0 p^* = \mu_0 p^*\) 
+                        for all \((u, t) \in \mathcal{A}\). Since \(\mathcal{A}\) is unbounded in the positive directions of both \(u\) 
+                        and \(t\) (one can increase \(u_i\) or \(t\) while staying in \(\mathcal{A}\)), we must have \(\lambda \geq 0\) 
+                        and \(\mu_0 \geq 0\). Slater's condition rules out the degenerate case \(\mu_0 = 0\): if \(\mu_0 = 0\), then 
+                        \(\lambda \neq 0\) and \(\lambda^\top u \geq 0\) on \(\mathcal{A}\) would force \(\lambda^\top g(x) \geq 0\) 
+                        for every \(x\) satisfying \(h_j(x) = 0\) (since \((g(x), f(x)) \in \mathcal{A}\) for every such \(x\)), 
+                        contradicting the existence of a strictly feasible \(\bar x\) with \(g(\bar x) < 0\). 
+                        Normalizing \(\mu_0 = 1\), the supporting inequality yields \(g(\lambda, \nu) \geq p^*\) for an appropriate 
+                        \(\nu \in \mathbb{R}^p\) (generated by the equality-constraint directions), and combined with weak duality 
+                        this gives \(d^* = p^*\). See Boyd &amp; Vandenberghe, 
+                        <em>Convex Optimization</em>, §5.3.2 for the full argument with equality constraints handled carefully.
                     </p>
                 </div>
 
                 <p>
-                    When strong duality holds, the dual optimal solution corresponds to the KKT multipliers 
-                    (Lagrange multipliers) from the 
-                    <a href="constrained_opt.html"><strong>KKT conditions</strong></a>, and 
-                    the KKT conditions become both necessary and sufficient for optimality.
+                    Slater's condition is one of several sufficient conditions guaranteeing strong duality in the convex case; 
+                    others include linearity of all constraints (which needs no strict feasibility) and various constraint 
+                    qualifications. Non-convex problems may also enjoy strong duality in special cases, but it is the exception 
+                    rather than the rule.
+                </p>
+
+                <p>
+                    When strong duality holds, the dual optimal multipliers \((\lambda^*, \nu^*)\) coincide with the multipliers 
+                    from the <a href="constrained_opt.html#T-kkt_conditions" class="ref-link"><strong>KKT conditions</strong></a>, 
+                    and those conditions become both necessary <em>and</em> sufficient for primal-dual optimality.
                 </p>
 
                 <div class="insight-box">
                     <h3>Insight: Duality in Machine Learning</h3>
                     <p>
                         Duality is widely used in machine learning and statistical learning theory. 
-                        In <a href="../Machine_learning/svm.html"><strong>Support Vector Machines (SVMs)</strong></a>, 
-                        the dual formulation is often preferred over the primal because it enables the 
-                        <strong>kernel trick</strong>, allowing nonlinear classification in high-dimensional 
-                        feature spaces without explicitly computing the mapping. In 
+                        In <a href="../Machine_learning/svm.html"><strong>kernel Support Vector Machines</strong></a>, 
+                        the dual formulation is essential because it enables the <strong>kernel trick</strong>, 
+                        allowing nonlinear classification in high-dimensional (or infinite-dimensional) feature spaces 
+                        without explicitly computing the mapping. In 
                         <a href="../Machine_learning/regression.html"><strong>regularization methods</strong></a> 
                         (Lasso, Ridge, etc.), dual formulations help derive generalization bounds and 
-                        computationally efficient optimization algorithms. More broadly, many deep learning 
-                        training objectives — including adversarial training and Wasserstein GANs — can be 
-                        analyzed through duality principles, where the discriminator solves the dual problem.
+                        computationally efficient optimization algorithms. More broadly, many adversarial and 
+                        minimax training objectives — including Wasserstein GANs, which compute the Kantorovich dual 
+                        of an optimal-transport problem via a 1-Lipschitz critic — can be interpreted through duality 
+                        principles.
                     </p>
                 </div>
                  
@@ -138,31 +197,26 @@ uses_python: false
                 <h2>Lipschitz Continuity</h2>
 
                 <p>
-                    Duality tells us <em>what</em> the optimal value is, but not <em>how fast</em> an algorithm can reach it. Convergence 
-                    rates depend on regularity properties of the objective function, particularly how rapidly its gradient can change. 
+                    Duality characterizes the optimal value of a constrained problem — exactly, when strong duality holds — 
+                    but it does not tell us <em>how fast</em> an algorithm can reach it. Convergence rates depend on regularity 
+                    properties of the objective function, particularly how rapidly its gradient can change. 
                     <strong>Lipschitz continuity</strong> provides the precise mathematical framework for bounding this rate of change, 
                     and it is the key assumption behind most convergence guarantees in optimization.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Lipschitz Continuity</span>
-                    <p>
-                        Let \((X, d)\) and \((Y, e)\) be 
-                        <a href="../Calculus/metric_space.html"><strong>metric spaces</strong></a> and 
-                        \(f: X \to Y\). The function \(f\) is <strong>Lipschitz continuous</strong> on \(X\) 
-                        with <strong>Lipschitz constant</strong> \(L \geq 0\) if
-                        \[
-                        e(f(a), f(b)) \leq L \, d(a, b) \quad \text{for all } a, b \in X.
-                        \]
-                    </p>
-                </div>
+                <p>
+                    Recall that a function \(f: X \to Y\) between metric spaces is 
+                    <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz continuous</strong></a> 
+                    with constant \(L \geq 0\) if \(e(f(a), f(b)) \leq L \cdot d(a, b)\) for all \(a, b \in X\). This bounds the 
+                    variation of \(f\) uniformly in terms of the input distance: \(f\) cannot change faster than linearly in \(d(a, b)\). 
+                    (Note that Lipschitz functions need not be bounded themselves — \(f(x) = x\) on \(\mathbb{R}\) is Lipschitz with 
+                    \(L = 1\) yet unbounded.)
+                </p>
 
                 <p>
-                    While Lipschitz continuity has broad applications in mathematical analysis 
-                    (see <a href="continuity.html"><strong>Continuity</strong></a>), its significance in 
-                    optimization lies in <a href="limit_convergence.html#bounds"><strong>boundedness</strong></a>: 
-                    it ensures that function values or gradients do not grow uncontrollably, preventing numerical instability 
-                    and guaranteeing that optimization trajectories remain well-defined.
+                    In optimization, Lipschitz-type regularity underpins step-size selection, stability of iterative methods, and 
+                    quantitative convergence rates. See <a href="continuity.html"><strong>Continuity</strong></a> for the purely-analytic 
+                    development.
                 </p>
 
                 <p>
@@ -170,7 +224,7 @@ uses_python: false
                     itself, we obtain the important notion of smoothness.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-L_smoothness">
                     <span class="theorem-title">Definition: \(L\)-Smoothness</span>
                     <p>
                         A continuously differentiable function \(f: \mathbb{R}^n \to \mathbb{R}\) is 
@@ -184,42 +238,53 @@ uses_python: false
                 </div>
                 
                 <p>
-                    In gradient-based optimization, \(L\)-smoothness is critical because it provides an <strong>upper bound</strong> 
-                    on the function's curvature, ensuring that a step size of \(\eta \leq 1/L\) will always decrease the function 
-                    value without overshooting. While Lipschitz continuity limits how much the function can change, 
-                    smoothness limits how fast the gradient can change.
+                    In gradient-based optimization, \(L\)-smoothness is critical because it implies a uniform upper bound on the 
+                    Hessian's operator norm (when \(f\) is twice differentiable, \(\|\nabla^2 f(x)\|_2 \leq L\)), which yields the 
+                    <strong>descent lemma</strong>
+                    \[
+                    f(y) \;\leq\; f(x) + \nabla f(x)^\top (y - x) + \tfrac{L}{2} \|y - x\|^2.
+                    \]
+                    This quadratic upper model is what makes gradient descent with step size \(\eta = 1/L\) a natural — and, 
+                    among constant step sizes, the optimal — choice: it precisely minimizes the upper model. While Lipschitz 
+                    continuity of \(f\) limits how fast the function values can change, \(L\)-smoothness limits how fast the 
+                    <em>gradient</em> can change.
                 </p>
 
                 <p>
-                    Under the \(L\)-smoothness assumption, steepest descent converges at a 
-                    <strong>linear rate</strong>: there exists \(0 < \mu < 1\) such that
+                    On its own, \(L\)-smoothness guarantees only a <em>sublinear</em> convergence rate 
+                    \(f(x_t) - f(x^*) = O(1/t)\) for gradient descent. To obtain a <strong>linear rate</strong> — 
+                    geometric decay of the error — we additionally need a <em>lower</em> curvature bound, captured by strong convexity:
+                    a function is <strong>\(m\)-strongly convex</strong> if \(f(x) - \tfrac{m}{2}\|x\|^2\) is convex, equivalently 
+                    \(\nabla^2 f(x) \succeq m I\) in the twice-differentiable case. When \(f\) is both \(L\)-smooth and \(m\)-strongly 
+                    convex, steepest descent admits the linear bound
                     \[
-                    |f(x_{t+1}) - f(x^*)| \leq \mu \, |f(x_t) - f(x^*)|.
+                    f(x_{t+1}) - f(x^*) \;\leq\; \mu \, \bigl(f(x_t) - f(x^*)\bigr), \qquad 0 < \mu < 1.
                     \]
-                    The constant \(\mu\) is the <strong>convergence rate</strong>. To understand what determines 
-                    \(\mu\), we analyze the canonical case of a quadratic objective.
+                    The constant \(\mu\) is the <strong>convergence rate</strong>. To understand what determines \(\mu\), 
+                    we analyze the canonical case of a quadratic objective — the simplest setting in which \(L\) and \(m\) 
+                    are both exact and straightforward to compute.
                 </p>
 
-                <div class="proof">
-                    <span class="proof-title">Example: Quadratic Objective</span>
-                    <p>
-                        Consider the quadratic loss function
-                        \[
-                        f(x) = \frac{1}{2}x^\top A x + b^\top x + c \tag{1}
-                        \]
-                        where \(A \in \mathbb{R}^{n \times n}\) is symmetric positive definite, 
-                        \(b \in \mathbb{R}^n\), and \(c \in \mathbb{R}\). This function has a unique 
-                        minimizer \(x^* = -A^{-1}b\).
-                    </p>
-                </div>
+                <h3>Example: Quadratic Objective</h3>
+                <p>
+                    Consider the quadratic loss function
+                    \[
+                    f(x) = \tfrac{1}{2}x^\top A x + b^\top x + c,
+                    \]
+                    where \(A \in \mathbb{R}^{n \times n}\) is symmetric positive definite, 
+                    \(b \in \mathbb{R}^n\), and \(c \in \mathbb{R}\). This function has a unique 
+                    minimizer \(x^* = -A^{-1}b\). The quadratic case is the canonical test bed for convergence rate 
+                    analysis because the iteration map for steepest descent becomes a linear operator, whose spectral properties 
+                    directly expose the convergence factor.
+                </p>
 
                 <p>
                     To analyze the convergence of steepest descent on this quadratic, we first introduce the 
                     concept of a contraction mapping, which provides the framework for linear convergence analysis.
                 </p>
                 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Contraction Mapping</span>
+                <div class="theorem" id="D-contraction_optim">
+                    <span class="theorem-title">Definition: Contraction (Optimization Convention)</span>
                     <p>
                         Let \((M, d)\) be a metric space. A map \(f: M \to M\) is a 
                         <strong>contraction</strong> if there exists a constant \(0 \leq k < 1\) such that
@@ -231,98 +296,116 @@ uses_python: false
                 </div>
 
                 <p>
-                    The contraction mapping \(f\) is a <strong>Lipschitz function</strong> with Lipschitz constant less than 1 and is 
-                    <strong>uniformly continuous</strong> on its domain. If an iterative method satisfies this contraction property, 
-                    it ensures that the error shrinks at every step, leading to convergence.
+                    A contraction is automatically a <strong>Lipschitz function</strong> with Lipschitz constant less than 1, 
+                    hence uniformly continuous on its domain. If an iterative method satisfies this contraction property, the error 
+                    shrinks by factor \(k\) at every step, yielding geometric convergence.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Note on Terminology</h3>
+                    <p>
+                        We use <strong>contraction</strong> here in the sense standard to optimization and ML literature 
+                        (e.g., Murphy, <em>Probabilistic Machine Learning</em>, 2022) — namely \(k < 1\). Our pure-analysis 
+                        pages follow the stricter convention where the unqualified term "contraction" allows \(k \leq 1\), 
+                        and the strictly-less-than-one case is labelled 
+                        <a href="continuity.html#D-strong_contraction" class="ref-link"><strong>strong contraction</strong></a>. 
+                        The two usages agree on the Banach fixed-point result; only the naming differs.
+                    </p>
+                </div>
 
                 <p>
-                    <strong>Note on Terminology:</strong><br>
-                    We use the term "Contraction" here to align with standard Optimization and ML 
-                    literature (e.g., <em>Murphy, 2022</em>). However, to distinguish this strict convergence from general distance-preserving maps, our 
-                    <a href="continuity.html#lipschitz"><strong>analysis section</strong></a> refers to the \(k < 1\) case as a <strong>Strong Contraction</strong>.
+                    We can now state and prove the convergence rate of steepest descent on the canonical quadratic, 
+                    using the contraction framework developed above.
                 </p>
 
-                <p>
-                    Now, suppose we apply <a href="gradient.html"><strong>steepest descent</strong></a> with a fixed step size \(\alpha\). 
-                    To analyze the function relative to the optimum \(x^*\), without loss of generality, Function (1) can be rewritten as
-                    \[
-                    f(x) = \frac{1}{2}(x - x^*)^T A (x - x^*)
-                    \]
-                    with gradient:
-                    \[
-                    \nabla f(x) = A(x-x^*).
-                    \]
-                    Then steepest descent iteration:
-                    \[
-                    x_{k+1} = x_k - \alpha \nabla f(x_k) 
-                    \]
-                    can be rewritten as:
-                    \[
-                    x_{k+1} - x^* = (I - \alpha A)(x_k - x^*).
-                    \]
-                    For the iteration to be a contraction (i.e., to ensure the error shrinks), we require:
-                    \[
-                    | 1 - \alpha \lambda_i | < 1, \, \forall i  \tag{2}
-                    \]
-                    where \(\lambda_i\) are eigenvalues of \(A\). This ensures that \(I - \alpha A\) has eigenvalues strictly inside 
-                    the unit circle.
-                </p>
-
-                <p>
-                    Let \(\lambda_{\min}\) and \(\lambda_{\max}\) be the smallest and largest eigenvalues of \(A\), respectively.
-                    From Inequality (2), we get
-                    \[
-                    0 < \alpha \lambda_i < 2 \Longrightarrow \alpha < \frac{2}{\lambda_{\max}}
-                    \]
-                    Thus, for \(\alpha < \frac{2}{\lambda_{\max}}\), the matrix \(I -\alpha A\) is a contraction with respect to 
-                    the Euclidean norm. This condition is critical because it guarantees that the error diminishes at each step of iteration.
-                </p>
-
-                 <p>
-                    To achieve the fastest convergence rate (i.e., to minimize the worst-case contraction factor), we choose \(\alpha^*\) 
-                    such that the two extreme eigenvalues of \(I -\alpha A\) have the same absolute deviation from 1:
-                    \[
-                    |1 - \alpha^* \lambda_{\min}| = |1 - \alpha^* \lambda_{\max}|.
-                    \]
-                    Assuming \(1 - \alpha^* \lambda_{\min} \geq 0\) and \(1 - \alpha^* \lambda_{\max} \leq 0\), we solve:
-                    \[
-                    1 - \alpha^* \lambda_{\min} = \alpha^* \lambda_{\max} - 1,
-                    \]
-                    which gives:
-                    \[
-                    \alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}}.
-                    \]
-                    With this step size, the contraction factor is:
-                    \[
-                    k = 1 - \alpha^*\lambda_{\min} = \frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}} = \frac{\kappa-1}{\kappa+1},
-                    \]
-                    where \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\) is the <strong>condition number</strong>. 
-                </p>
-
-                <p>
-                    Note that for the quadratic objective \(f(x) = \frac{1}{2}x^\top A x + b^\top x + c\), the error in the function value, 
-                    \(f(x) - f^*\), is proportional to the <strong>square</strong> of the distance to the optimum weighted by the Hessian matrix \(A\). 
-                    Specifically, 
-                    \[
-                    f(x) - f^* = \frac{1}{2}(x - x^*)^\top A (x - x^*).
-                    \]
-                    This quadratic relationship is why the convergence rate for the <em>function value</em> 
-                    is the square of the rate for the parameters: \(\mu = k^2\).
-                </p>
-
-                <div class="theorem">
+                <div class="theorem" id="T-sd_quadratic_rate">
                     <span class="theorem-title">Theorem: Convergence Rate of Steepest Descent (Quadratic Case)</span>
                     <p>
-                        For the quadratic objective \(f(x) = \frac{1}{2}x^\top A x + b^\top x + c\) with 
-                        \(A\) symmetric positive definite, steepest descent with optimal step size 
-                        \(\alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}}\) achieves the function-value 
-                        convergence rate
+                        For the quadratic objective \(f(x) = \tfrac{1}{2}x^\top A x + b^\top x + c\) with 
+                        \(A\) symmetric positive definite, <a href="gradient.html"><strong>steepest descent</strong></a> 
+                        with any fixed step size \(\alpha \in (0, 2/\lambda_{\max})\) converges linearly to the unique minimizer 
+                        \(x^* = -A^{-1}b\). The step size that minimizes the worst-case contraction factor of the iterate error is
                         \[
-                        \mu = \left(\frac{\kappa - 1}{\kappa + 1}\right)^2
+                        \alpha^* = \frac{2}{\lambda_{\min} + \lambda_{\max}},
                         \]
-                        where \(\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}\) is the 
-                        <a href="../Linear_algebra/symmetry.html"><strong>condition number</strong></a> of \(A\).
+                        at which the function-value convergence rate is
+                        \[
+                        \mu \;=\; \left(\frac{\kappa - 1}{\kappa + 1}\right)^2,
+                        \]
+                        where \(\kappa = \lambda_{\max}/\lambda_{\min}\) is the 
+                        <a href="../Linear_algebra/symmetry.html"><strong>condition number</strong></a> of \(A\), and 
+                        \(\lambda_{\min}, \lambda_{\max}\) are the smallest and largest eigenvalues of \(A\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        The gradient of \(f\) is \(\nabla f(x) = Ax + b = A(x - x^*)\), using \(x^* = -A^{-1}b\). 
+                        Steepest descent with step size \(\alpha\) takes the form \(x_{k+1} = x_k - \alpha \nabla f(x_k)\), so
+                        \[
+                        x_{k+1} - x^* \;=\; (x_k - x^*) - \alpha A (x_k - x^*) \;=\; (I - \alpha A)(x_k - x^*).
+                        \]
+                        The iteration is therefore an affine map whose linear part is \(I - \alpha A\). Since \(A\) is symmetric, 
+                        \(I - \alpha A\) is symmetric too, and its operator (spectral) norm equals its largest-in-absolute-value 
+                        eigenvalue:
+                        \[
+                        \|I - \alpha A\|_2 \;=\; \max_i |1 - \alpha \lambda_i|.
+                        \]
+                        The iteration is a contraction in the Euclidean norm precisely when \(\|I - \alpha A\|_2 < 1\), i.e.
+                        \[
+                        |1 - \alpha \lambda_i| < 1 \quad \text{for all } i,
+                        \]
+                        which, since each \(\lambda_i > 0\), reduces to \(0 < \alpha < 2/\lambda_{\max}\).
+                    </p>
+
+                    <p>
+                        We now minimize the contraction factor over \(\alpha \in (0, 2/\lambda_{\max})\). The contraction 
+                        factor as a function of \(\alpha\) is
+                        \[
+                        \max_i |1 - \alpha \lambda_i| \;=\; \max\bigl(1 - \alpha \lambda_{\min},\ \alpha \lambda_{\max} - 1\bigr),
+                        \]
+                        where we have used monotonicity in \(\lambda_i\) to reduce the max over all eigenvalues to the max over 
+                        the two extremes. The first expression is decreasing in \(\alpha\) and the second is increasing, so their 
+                        maximum is minimized where they meet:
+                        \[
+                        1 - \alpha^* \lambda_{\min} \;=\; \alpha^* \lambda_{\max} - 1,
+                        \]
+                        giving
+                        \[
+                        \alpha^* \;=\; \frac{2}{\lambda_{\min} + \lambda_{\max}}.
+                        \]
+                        Substituting back, the optimal contraction factor for the iterate error is
+                        \[
+                        k \;=\; 1 - \alpha^* \lambda_{\min} \;=\; \frac{\lambda_{\max} - \lambda_{\min}}{\lambda_{\max} + \lambda_{\min}} 
+                        \;=\; \frac{\kappa - 1}{\kappa + 1},
+                        \]
+                        so \(\|x_{k+1} - x^*\|_2 \leq k \, \|x_k - x^*\|_2\).
+                    </p>
+
+                    <p>
+                        Finally we translate the iterate contraction into a function-value rate. A direct computation using 
+                        \(x^* = -A^{-1} b\) shows
+                        \[
+                        f(x) - f(x^*) \;=\; \tfrac{1}{2}(x - x^*)^\top A (x - x^*).
+                        \]
+                        Diagonalize \(A = Q \Lambda Q^\top\) with \(\Lambda = \mathrm{diag}(\lambda_1, \dots, \lambda_n)\), so that 
+                        \(I - \alpha^* A = Q(I - \alpha^* \Lambda)Q^\top\). Let \(z_k := Q^\top(x_k - x^*)\); then 
+                        \(z_{k+1} = (I - \alpha^* \Lambda) z_k\), i.e.\ \((z_{k+1})_i = (1 - \alpha^* \lambda_i)(z_k)_i\), and
+                        \[
+                        f(x_k) - f(x^*) \;=\; \tfrac{1}{2} z_k^\top \Lambda z_k \;=\; \tfrac{1}{2} \sum_i \lambda_i (z_k)_i^2.
+                        \]
+                        Applying the iteration,
+                        \[
+                        f(x_{k+1}) - f(x^*) \;=\; \tfrac{1}{2} \sum_i \lambda_i (z_{k+1})_i^2 
+                        \;=\; \tfrac{1}{2} \sum_i (1 - \alpha^* \lambda_i)^2 \, \lambda_i \, (z_k)_i^2.
+                        \]
+                        Since \((1 - \alpha^* \lambda_i)^2 \leq k^2\) for every \(i\), we conclude
+                        \[
+                        f(x_{k+1}) - f(x^*) \;\leq\; k^2 \cdot \tfrac{1}{2} \sum_i \lambda_i (z_k)_i^2 
+                        \;=\; k^2 \bigl(f(x_k) - f(x^*)\bigr).
+                        \]
+                        Hence \(\mu = k^2 = \left(\dfrac{\kappa - 1}{\kappa + 1}\right)^2\). \(\blacksquare\)
                     </p>
                 </div>
 
@@ -339,8 +422,10 @@ uses_python: false
                         effective condition number of the loss landscape's Hessian determines how well gradient-based optimizers 
                         perform. <strong>Adam</strong> and other adaptive methods implicitly approximate a preconditioner by 
                         maintaining per-parameter learning rates, effectively reducing the condition number seen by each parameter. 
-                        <strong>Batch normalization</strong> also improves conditioning by reducing internal covariate shift, which 
-                        is one reason it accelerates training. Understanding \(\kappa\) explains why some architectures train easily 
+                        <strong>Batch normalization</strong> empirically accelerates training; recent analysis 
+                        (Santurkar et al., 2018) attributes this to a smoothing effect on the loss landscape — reducing the Lipschitz 
+                        constants of both the loss and its gradient — rather than to the originally proposed "internal covariate shift" 
+                        mechanism. Understanding \(\kappa\) helps explain why some architectures train easily 
                         while others require careful hyperparameter tuning.
                     </p>
                 </div>
