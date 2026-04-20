@@ -417,9 +417,53 @@ uses_python: true
                 <ul style="padding-left: 40px;">
                     <li><strong>Orthogonality:</strong> \(W^*W = NI\), so \(W^{-1} = \frac{1}{N}W^*\)</li>
                     <li><strong>Symmetry:</strong> \(W\) is symmetric: \(W^T = W\)</li>
-                    <li><strong>Eigenvalues:</strong> The eigenvalues of the DFT matrix are \(\pm 1, \pm i\) (for \(N = 4k\))</li>
+                    <li><strong>Fourth-power identity and eigenvalues:</strong> Writing out \((W^2)_{ij} = \sum_k \omega^{k(i+j)}\)
+                    shows \(W^2 = N \cdot P\), where \(P\) is the permutation matrix implementing \(n \mapsto -n \bmod N\).
+                    Since \(P^2 = I\), we get \(W^4 = N^2 I\); equivalently, the <em>normalized</em> DFT matrix
+                    \(F := \tfrac{1}{\sqrt{N}}\, W\) satisfies \(F^4 = I\). The eigenvalues of \(F\) therefore lie in
+                    \(\{+1, -1, +i, -i\}\), while the eigenvalues of the unnormalized \(W\) are the scaled quartet
+                    \(\{\pm\sqrt{N}, \pm i\sqrt{N}\}\).</li>
                     <li><strong>Circulant diagonalization:</strong> The DFT matrix diagonalizes all circulant matrices</li>
                 </ul>
+
+                <div class="insight-box">
+                    <h3>Normalization conventions across domains</h3>
+                    <p>
+                        The choice between the unnormalized \(W\) and the normalized \(F = \tfrac{1}{\sqrt{N}} W\) is
+                        not a mere cosmetic rescaling — it reflects which property of the transform the user cares
+                        about most. Three regimes coexist in practice:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Signal processing / scientific computing (unnormalized \(W\)):</strong>
+                            NumPy, SciPy, MATLAB, FFTW, PyTorch (<code>torch.fft.fft</code>), and JAX all default to
+                            <em>forward DFT without normalization</em>, placing the full \(1/N\) factor in the inverse.
+                            This is the long-standing numerical-computation convention (reinforced by Cooley–Tukey
+                            1965 and its descendants) and has two practical advantages: the convolution theorem
+                            \(\mathcal{F}(f * g) = \hat f \cdot \hat g\) holds with no stray constants, and only the
+                            inverse transform pays the \(1/N\) cost. The price is that the forward transform is
+                            <em>not</em> an isometry — norms are scaled by \(\sqrt{N}\).</li>
+                        <li><strong>Harmonic analysis / functional analysis (normalized \(F\)):</strong>
+                            Plancherel's identity \(\|f\|_2 = \|\hat f\|_2\) requires the normalized version. The map
+                            \(F : \mathbb{C}^N \to \mathbb{C}^N\) is then a <strong>unitary</strong> operator
+                            (\(F^*F = I\)), and all of \(L^2\)-based Fourier theory transfers to the discrete setting
+                            without rescaling. The clean eigenvalue structure \(\{\pm 1, \pm i\}\) derived above is a
+                            symptom of the fourth-power identity \(F^4 = I\), with unitarity forcing the roots onto
+                            the unit circle.</li>
+                        <li><strong>Quantum computation (normalized \(F\) is mandatory):</strong>
+                            The <strong>Quantum Fourier Transform</strong>, the key subroutine behind Shor's
+                            algorithm and phase estimation, is the same matrix \(F\) — and it must be unitary
+                            because every gate operation on qubits is, by the postulates of quantum mechanics, a
+                            unitary transformation. There is no choice: the normalized version is the only one that
+                            corresponds to a physically realizable quantum gate.</li>
+                    </ul>
+                    <p>
+                        Most numerical libraries expose both options via a <code>norm=</code> argument — NumPy's
+                        <code>np.fft.fft(x, norm='ortho')</code> returns the normalized transform, and
+                        <code>norm='backward'</code> (the default) returns the unnormalized one. When porting a
+                        formula from a textbook to code (or vice versa), the first question to ask is always:
+                        <em>which convention is this written in?</em>
+                    </p>
+                </div>
 
                 <p>
                     <strong>Computational Complexity:</strong>
@@ -466,15 +510,16 @@ uses_python: true
                     Note that \(\omega^2 = e^{-\frac{4\pi i}{N}} = e^{-\frac{2\pi i}{N/2}}\) is a primitive \((N/2)\)-th root of unity.
                 </p>
                 <p>
-                    Let \(E_k\) be the DFT of the even-indexed subsequence and \(O_k\) the DFT of odd-indexed subsequence. 
-                    Using the periodicity of the DFT, for \(k = 0, 1, \ldots, N/2-1\):
+                    Let \(E_k\) be the \((N/2)\)-point DFT of the even-indexed subsequence and \(O_k\) the \((N/2)\)-point
+                    DFT of odd-indexed subsequence. Since \(E_k\) and \(O_k\) are themselves \((N/2)\)-periodic in \(k\)
+                    (\(E_{k+N/2} = E_k\), \(O_{k+N/2} = O_k\)), and since \(\omega^{k+N/2} = -\omega^k\) (because
+                    \(\omega^{N/2} = e^{-i\pi} = -1\)), we obtain, for \(k = 0, 1, \ldots, N/2-1\):
                     \[
-                    X_k = E_k + \omega^k O_k
+                    X_k = E_k + \omega^k O_k,
                     \]
                     \[
-                    X_{k+N/2} = E_k - \omega^k O_k
+                    X_{k+N/2} = E_k - \omega^k O_k.
                     \]
-                    (using the fact that \(\omega^{k+N/2} = -\omega^k\) since \(\omega^{N/2} = e^{-i\pi} = -1\)).
                 </p>
                 
                 <p>
