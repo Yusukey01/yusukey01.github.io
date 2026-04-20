@@ -93,12 +93,14 @@ uses_python: false
                         \[
                         \begin{align*}
                         (X+dX)^3 - X^3
-                           &= X^3 + X^2(dX) + X(dX)X + X(dX)^2 \\
-                           &\quad + (dX)X^2 + (dX)X(dX) + (dX)^2 X + (dX)^3 - X^3.
+                           &= X^2(dX) + X(dX)X + (dX)X^2 \\
+                           &\quad + X(dX)^2 + (dX)X(dX) + (dX)^2 X + (dX)^3.
                         \end{align*}
                         \]
-                        The six bilinear and trilinear terms in \(dX\) are \(o(\|dX\|)\). The three linear terms give
-                        the differential:
+                        The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\): each is
+                        bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity of the operator norm
+                        (e.g. \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\)). The three linear terms give the
+                        differential:
                         \[
                         dF \;=\; F'(X)[\,dX\,] \;=\; (dX)X^2 + X(dX)X + X^2(dX).
                         \]
@@ -127,9 +129,13 @@ uses_python: false
                     <p>
                         Let \(X \in \mathbb{R}^{n \times n}\) be
                         <a href="../Linear_algebra/matrix_algebra.html#inv"><strong>invertible</strong></a>, and set
-                        \(F(X) = X^{-1}\). From the identity \(X^{-1} X = I\) we take the differential of both sides;
-                        since \(I\) is constant, \(d(I) = 0 \in \mathbb{R}^{n \times n}\). Applying the product rule
-                        to the left side:
+                        \(F(X) = X^{-1}\). The set of invertible matrices is open in \(\mathbb{R}^{n \times n}\), and
+                        the entries of \(X^{-1}\) are rational functions of the entries of \(X\) (via the cofactor
+                        formula \(X^{-1} = (\det X)^{-1}\mathrm{adj}(X)\)) with nonvanishing denominator, so
+                        \(F\) is \(C^\infty\) — in particular differentiable — at every such \(X\). We may therefore
+                        compute \(dF\) as follows. From the identity \(X^{-1} X = I\) we take the differential of both
+                        sides; since \(I\) is constant, \(d(I) = 0 \in \mathbb{R}^{n \times n}\). Applying the product
+                        rule to the left side:
                         \[
                         d(X^{-1})\,X + X^{-1}(dX) \;=\; 0
                         \qquad \Longrightarrow \qquad
@@ -178,9 +184,11 @@ uses_python: false
                     The structural constraints on \(L\) and \(U\) carry over to their differentials: \(dL\) is
                     strictly lower triangular (the unit-diagonal constraint freezes the diagonal of \(L\), so
                     \((dL)_{ii} = 0\)), and \(dU\) is upper triangular. Between the two of them \(dL\) and \(dU\)
-                    have exactly \(n^2\) independent entries — the same as \(dX\) — so the map
-                    \((dL, dU) \mapsto dX\) is (generically) invertible, which is what allows us to solve for
-                    \(dL, dU\) given \(dX\).
+                    have exactly \(n^2\) independent entries — the same as \(dX\). Under the standard condition
+                    that guarantees the existence and uniqueness of an LU decomposition — namely, all leading
+                    principal minors of \(X\) are nonzero, equivalently all diagonal entries \(U_{ii}\) are nonzero —
+                    the linear map \((dL, dU) \mapsto dX\) defined by \(dX = (dL)U + L(dU)\) is invertible, which is
+                    what allows us to solve for \(dL, dU\) given \(dX\).
                 </p>
 
                 <h3>A \(2 \times 2\) worked example</h3>
@@ -218,9 +226,16 @@ uses_python: false
                     Reading this system in reverse — solving for \((dU_{11}, dU_{12}, dL_{21}, dU_{22})\) given the
                     entries of \(dX\) — yields the <strong>forward-mode sensitivity</strong> of each LU factor
                     entry. The upper row of \(dX\) determines the top row of \(dU\) immediately
-                    (\(dU_{11} = dX_{11}\), \(dU_{12} = dX_{12}\)); the bottom row then gives \(dL_{21}\) and
-                    \(dU_{22}\) by back-substitution. This triangular-then-triangular solve pattern is exactly how
-                    the general LU-differentiation algorithm works at scale.
+                    (\(dU_{11} = dX_{11}\), \(dU_{12} = dX_{12}\)); assuming \(U_{11} \neq 0\), the bottom row then
+                    gives
+                    \[
+                    dL_{21} \;=\; \frac{dX_{21} - L_{21}\,dU_{11}}{U_{11}},
+                    \qquad
+                    dU_{22} \;=\; dX_{22} - L_{21}\,dU_{12} - U_{12}\,dL_{21},
+                    \]
+                    by back-substitution. This triangular-then-triangular solve pattern — and the role of the
+                    diagonal entries \(U_{ii}\) as the divisors that must be nonzero — is exactly how the general
+                    LU-differentiation algorithm works at scale.
                 </p>
 
                 <div class="insight-box">
