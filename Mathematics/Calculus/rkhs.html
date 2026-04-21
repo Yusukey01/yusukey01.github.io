@@ -42,6 +42,21 @@ uses_python: false
                 </p>
 
                 <p>
+                    <strong>Convention for this chapter.</strong> Our focus is the standard machine-learning 
+                    setting, in which kernels and the corresponding Hilbert space \(\mathcal{H}_K\) are 
+                    <strong>real-valued</strong> (RBF, polynomial, Laplacian, and Matérn kernels are all real). 
+                    The inner product is therefore symmetric, 
+                    \(\langle u, v\rangle_{\mathcal{H}_K} = \langle v, u\rangle_{\mathcal{H}_K}\), so the 
+                    first-slot-linear convention adopted in 
+                    <a href="dual_spaces.html#riesz"><strong>Dual Spaces</strong></a> 
+                    trivially restricts here. The complex Hermitian theory developed in 
+                    <a href="spectral_theory.html"><strong>Spectral Theory</strong></a> specializes cleanly to 
+                    this real-symmetric case — the conjugation in the Hermitian inner product becomes a no-op 
+                    when all quantities are real-valued. We will state this reduction explicitly when it 
+                    matters (notably in the <a href="#mercer">Mercer expansion</a>).
+                </p>
+
+                <p>
                     Given a function \(f\) in some Hilbert space \(\mathcal{H}\), define the 
                     <strong>point evaluation functional</strong> at \(x \in \mathcal{X}\):
                     \[
@@ -55,7 +70,7 @@ uses_python: false
                     In \(L^2([a,b])\), the answer is <strong>no</strong>. Functions in \(L^2\) are equivalence 
                     classes defined up to sets of measure zero — changing a function at a single point 
                     does not change its \(L^2\) norm. Consequently, point evaluation is not a 
-                    <a href="bounded_linear_operators.html#D-Bounded_Linear_Functional" class="ref-link"><strong>bounded linear functional</strong></a> 
+                    <a href="bounded_linear_operators.html#D-bounded_linear_functional" class="ref-link"><strong>bounded linear functional</strong></a> 
                     on \(L^2\), and \(\delta_x \notin (L^2)^*\). We cannot meaningfully "evaluate" an 
                     \(L^2\) function at a point.
                 </p>
@@ -88,27 +103,17 @@ uses_python: false
                 <h2>Reproducing Kernel Hilbert Spaces</h2>
 
                 <p>
-                    <strong>Convention.</strong> Throughout this chapter we work with real-valued kernels 
-                    \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) and the corresponding real Hilbert space \(\mathcal{H}_K\); 
-                    the inner product is symmetric, so \(\langle u, v\rangle = \langle v, u\rangle\). 
-                    The complex case is analogous with conjugation in the second slot (per the 
-                    <a href="dual_spaces.html#riesz"><strong>first-slot-linear convention</strong></a> adopted in Dual Spaces).
-                </p>
-
-                <p>
-                    Suppose \(\mathcal{H}\) is a Hilbert space of functions \(f : \mathcal{X} \to \mathbb{R}\) 
-                    in which point evaluation is continuous: for every \(x \in \mathcal{X}\), the functional 
-                    \(\delta_x(f) = f(x)\) satisfies \(\delta_x \in \mathcal{H}^*\). By the 
-                    <a href="dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a>, 
-                    there exists a unique element \(K_x \in \mathcal{H}\) such that
+                    By the standing assumption on \(\mathcal{H}\), the evaluation functional 
+                    \(\delta_x(f) = f(x)\) belongs to \(\mathcal{H}^*\) for every \(x \in \mathcal{X}\). The 
+                    <a href="dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a> 
+                    then gives a unique element \(K_x \in \mathcal{H}\) — the <strong>Riesz representative</strong> 
+                    of \(\delta_x\) — such that
                     \[
                     f(x) = \delta_x(f) = \langle f,\, K_x \rangle_{\mathcal{H}} \quad \text{for all } f \in \mathcal{H}.
                     \]
-                    The function \(K_x\) is the <strong>Riesz representative</strong> of the evaluation 
-                    functional at \(x\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-reproducing_kernel">
                     <span class="theorem-title">Definition: Reproducing Kernel</span>
                     <p>
                         Let \(\mathcal{H}\) be a Hilbert space of functions on a set \(\mathcal{X}\) 
@@ -120,6 +125,13 @@ uses_python: false
                         The pair \((\mathcal{H}, K)\) is called a 
                         <strong>Reproducing Kernel Hilbert Space (RKHS)</strong>.
                     </p>
+                    <p>
+                        <strong>Notation.</strong> The Riesz representative \(K_x \in \mathcal{H}\) and the 
+                        partially-evaluated kernel \(K(\cdot, x) : \mathcal{X} \to \mathbb{R}\) denote the 
+                        same function: \(K_x(\cdot) = K(\cdot, x)\). We use both notations interchangeably, 
+                        favoring \(K(\cdot, x)\) when emphasizing the kernel structure and \(K_x\) when 
+                        emphasizing the Riesz duality.
+                    </p>
                 </div>
 
                 <p>
@@ -127,7 +139,7 @@ uses_python: false
                     they deserve explicit naming.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-reproducing_property">
                     <span class="theorem-title">Theorem: The Reproducing Property</span>
                     <p>
                         For every \(f \in \mathcal{H}\) and every \(x' \in \mathcal{X}\):
@@ -159,7 +171,7 @@ uses_python: false
                     as the requirement for a valid covariance function.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-positive_definite_kernel">
                     <span class="theorem-title">Definition: Positive Definite Kernel (Mercer Kernel)</span>
                     <p>
                         A symmetric function \(K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) is 
@@ -187,7 +199,7 @@ uses_python: false
                     following theorem, which establishes a perfect one-to-one correspondence.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-moore_aronszajn">
                     <span class="theorem-title">Theorem: Moore-Aronszajn</span>
                     <p>
                         For every positive definite kernel \(K\) on a set \(\mathcal{X}\), there exists a 
@@ -200,15 +212,76 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof sketch:</span>
                     <p>
-                        The construction is explicit. Start with the vector space 
-                        \(\mathcal{H}_0 = \operatorname{span}\{K(\cdot, x) : x \in \mathcal{X}\}\) 
-                        of finite linear combinations, define the inner product on generators by 
-                        \(\langle K(\cdot, x), K(\cdot, x') \rangle := K(x, x')\), and extend bilinearly. 
-                        Positive definiteness of \(K\) makes this a valid inner product (positive definiteness of the Gram matrix for any finite set of generators translates to \(\langle f, f\rangle \geq 0\) on \(\mathcal{H}_0\)). 
-                        Let \(\mathcal{H}_K\) be the completion of \(\mathcal{H}_0\) under the induced norm. 
-                        The reproducing property holds by construction on \(\mathcal{H}_0\) and extends to the completion by continuity (point evaluation \(\delta_x = \langle \cdot, K(\cdot, x)\rangle\) is bounded with constant \(\sqrt{K(x,x)}\)). 
-                        Uniqueness of the reproducing kernel follows from the Riesz representation theorem. 
-                        See Aronszajn's original 1950 paper or Steinwart &amp; Christmann, <em>Support Vector Machines</em>, Thm. 4.21 for the complete argument.
+                        We construct \(\mathcal{H}_K\) explicitly in four steps.
+                    </p>
+                    <p>
+                        <strong>Step 1 (pre-Hilbert space).</strong> 
+                        Let \(\mathcal{H}_0 = \operatorname{span}\{K(\cdot, x) : x \in \mathcal{X}\}\) and 
+                        define a bilinear form on the generators by 
+                        \(\langle K(\cdot, x), K(\cdot, x') \rangle := K(x, x')\). Symmetry of \(K\) makes 
+                        this form symmetric. For any finite linear combination 
+                        \(f = \sum_i a_i K(\cdot, x_i)\), bilinearity forces 
+                        \(\langle f, f\rangle = \sum_{i,j} a_i a_j K(x_i, x_j) \geq 0\) by the Gram-matrix 
+                        condition, so the form is positive semi-definite. Well-definedness of the bilinear 
+                        extension to all of \(\mathcal{H}_0\) — that \(\langle f, g\rangle\) is independent 
+                        of the chosen finite-sum representations of \(f\) and \(g\) — is established next.
+                    </p>
+                    <p>
+                        <strong>Step 2 (reproducing property on \(\mathcal{H}_0\); well-definedness; 
+                        positive definiteness).</strong> 
+                        For \(f = \sum_i a_i K(\cdot, x_i)\), direct computation gives 
+                        \(\langle f, K(\cdot, x)\rangle = \sum_i a_i K(x_i, x) = f(x)\). 
+                        Consequently, for any \(g = \sum_j b_j K(\cdot, y_j) \in \mathcal{H}_0\), 
+                        bilinearity yields \(\langle f, g\rangle = \sum_j b_j f(y_j)\) — a value 
+                        determined entirely by the function \(f\) (not its representation) and the 
+                        data \((b_j, y_j)\); a symmetric argument in the first slot completes the 
+                        verification that \(\langle\cdot,\cdot\rangle\) is well-defined on \(\mathcal{H}_0\). 
+                        The Cauchy-Schwarz inequality then gives 
+                        \(|f(x)|^2 = |\langle f, K(\cdot, x)\rangle|^2 \leq \langle f, f\rangle \cdot K(x, x)\), 
+                        so \(\langle f, f\rangle = 0\) forces \(f \equiv 0\) — the form is a genuine 
+                        inner product.
+                    </p>
+                    <p>
+                        <strong>Step 3 (completion as a function space).</strong> 
+                        This is the heart of the theorem. Take the abstract Hilbert-space completion of 
+                        \(\mathcal{H}_0\) — the equivalence classes of Cauchy sequences 
+                        \(\{f_n\} \subset \mathcal{H}_0\). For each \(x \in \mathcal{X}\), the 
+                        Cauchy-Schwarz bound from Step 2 gives 
+                        \(|f_n(x) - f_m(x)| \leq \|f_n - f_m\| \cdot \sqrt{K(x, x)}\), so 
+                        \(\{f_n(x)\}\) is Cauchy in \(\mathbb{R}\) and converges to some \(f(x)\). 
+                        The same bound shows that Cauchy-equivalent sequences (\(\|f_n - g_n\| \to 0\)) 
+                        yield identical pointwise limits, so \(f : \mathcal{X} \to \mathbb{R}\) depends 
+                        only on the equivalence class. 
+                        Conversely, if the pointwise limit vanishes at every \(x\), then the completion 
+                        limit \(f^*\) also vanishes pointwise (the reproducing property extends 
+                        continuously to the completion, giving 
+                        \(f^*(x) = \langle f^*, K(\cdot, x)\rangle = \lim_n f_n(x) = 0\)); since 
+                        \(\mathcal{H}_0\) is dense in the completion and \(f^*\) is orthogonal to every 
+                        \(K(\cdot, x) \in \mathcal{H}_0\), this forces \(\|f^*\| = 0\). Thus the 
+                        assignment "equivalence class \(\mapsto\) pointwise limit" is injective. The 
+                        completion thus realizes as a Hilbert space 
+                        \(\mathcal{H}_K\) of bona fide functions on \(\mathcal{X}\), not merely as 
+                        abstract equivalence classes.
+                    </p>
+                    <p>
+                        <strong>Step 4 (reproducing property on \(\mathcal{H}_K\); uniqueness).</strong> 
+                        Point evaluation \(\delta_x = \langle \cdot, K(\cdot, x)\rangle\) is bounded on 
+                        \(\mathcal{H}_0\) with operator norm \(\sqrt{K(x, x)}\); since \(\mathcal{H}_0\) 
+                        is dense in \(\mathcal{H}_K\) by construction, \(\delta_x\) extends by continuity to 
+                        all of \(\mathcal{H}_K\), preserving the reproducing property 
+                        \(f(x) = \langle f, K(\cdot, x)\rangle\) throughout. Uniqueness of the reproducing 
+                        kernel follows from the 
+                        <a href="dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a>: 
+                        each \(\delta_x\) determines its representative \(K_x\) uniquely. Uniqueness of 
+                        \(\mathcal{H}_K\) itself follows because any RKHS reproducing the same \(K\) must 
+                        contain \(\{K(\cdot, x)\}\), inherit the same inner product on this set 
+                        (forced by the reproducing property), and be complete — hence coincides with 
+                        \(\mathcal{H}_K\) as a function space.
+                    </p>
+                    <p>
+                        For the complete argument with all measurability and density verifications, see 
+                        Aronszajn's original 1950 paper or Steinwart &amp; Christmann, 
+                        <em>Support Vector Machines</em>, Ch.&nbsp;4 ("Kernels and Reproducing Kernel Hilbert Spaces").
                     </p>
                 </div>
 
@@ -240,7 +313,7 @@ uses_python: false
                     eigenfunction expansion of the kernel itself.
                 </p>
 
-                <div class="theorem" id="T-Mercers_Theorem">
+                <div class="theorem" id="T-mercers_theorem">
                     <span class="theorem-title">Theorem: Mercer's Theorem</span>
                     <p>
                         Let \(\mathcal{X}\) be a compact subset of \(\mathbb{R}^d\) equipped with a finite <strong>strictly positive</strong> 
@@ -266,21 +339,72 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof sketch:</span>
                     <p>
-                        Continuity of \(K\) on the compact set \(\mathcal{X}\times\mathcal{X}\) gives \(K \in L^2(\mathcal{X}\times\mathcal{X}, \mu\otimes\mu)\), 
-                        so \(T_K\) is a 
+                        Continuity of \(K\) on the compact set \(\mathcal{X}\times\mathcal{X}\) and finiteness 
+                        of \(\mu\) give \(K \in L^2(\mathcal{X}\times\mathcal{X}, \mu\otimes\mu)\), so 
+                        \(T_K\) is a 
                         <a href="spectral_theory.html#D-hilbert_schmidt_operator" class="ref-link"><strong>Hilbert-Schmidt operator</strong></a> 
-                        and hence compact. Symmetry of \(K\) gives self-adjointness; positive definiteness gives \(\langle T_K f, f\rangle \geq 0\), so \(\lambda_n \geq 0\). 
-                        The 
-                        <a href="spectral_theory.html#T-spectral_theorem_csa_operators" class="ref-link"><strong>Spectral Theorem</strong></a> 
-                        then yields the eigenfunction expansion \(K(x,x') = \sum_n \lambda_n e_n(x) e_n(x')\) converging in \(L^2(\mathcal{X}\times\mathcal{X})\).
+                        and hence compact. Symmetry of \(K\) gives self-adjointness.
                     </p>
                     <p>
-                        The upgrade to <em>absolute and uniform</em> convergence on \(\mathcal{X}\times\mathcal{X}\) is the deep part. The key observation is that strict positivity of \(\mu\) together with continuity of \(K\) forces each eigenfunction \(e_n\) to have a continuous representative (via the bootstrap identity \(e_n(x) = \lambda_n^{-1} \int K(x,x') e_n(x')\, d\mu(x')\), valid for \(\lambda_n > 0\)). 
-                        The partial sums \(S_N(x, x') = \sum_{n=1}^N \lambda_n e_n(x) e_n(x')\) are continuous, and — restricted to the diagonal — satisfy 
-                        \(S_N(x, x) \nearrow K(x,x)\) pointwise in a monotonically increasing fashion. 
-                        <strong>Dini's theorem</strong> upgrades this to uniform convergence on the diagonal; 
-                        an application of Cauchy-Schwarz to the off-diagonal tails \(|K(x,x') - S_N(x,x')|\) leveraging diagonal uniform convergence then gives uniform convergence on \(\mathcal{X}\times\mathcal{X}\). 
-                        For the full argument, see Steinwart &amp; Christmann, <em>Support Vector Machines</em>, Thm. 4.49.
+                        Positive definiteness of \(K\) — defined for finite point sets — must be 
+                        promoted to the integral statement \(\langle T_K f, f\rangle \geq 0\). For 
+                        continuous \(f \in C(\mathcal{X})\) and any partition 
+                        \(\{A_i\}\) of \(\mathcal{X}\) with sample points \(x_i \in A_i\), the discrete 
+                        PD condition gives 
+                        \[
+                        \sum_{i,j} K(x_i, x_j) f(x_i) f(x_j) \, \mu(A_i) \mu(A_j) \geq 0.
+                        \]
+                        As the partition is refined, the left-hand side converges to 
+                        \(\iint K(x, x') f(x) f(x')\, d\mu(x) d\mu(x') = \langle T_K f, f\rangle\) 
+                        (uniform continuity of \(K\) and \(f\) on the compact \(\mathcal{X}\); finite \(\mu\)), 
+                        so \(\langle T_K f, f\rangle \geq 0\) for all \(f \in C(\mathcal{X})\). 
+                        Density of \(C(\mathcal{X})\) in \(L^2(\mathcal{X}, \mu)\) (standard for finite 
+                        Borel measures on compact spaces) and continuity of 
+                        \(f \mapsto \langle T_K f, f\rangle\) on \(L^2\) extend the inequality to all of 
+                        \(L^2\). All eigenvalues of \(T_K\) are therefore nonnegative.
+                    </p>
+                    <p>
+                        The 
+                        <a href="spectral_theory.html#T-spectral_theorem_csa_operators" class="ref-link"><strong>Spectral Theorem</strong></a> 
+                        for compact self-adjoint operators gives 
+                        \(T_K f = \sum_n \lambda_n \langle f, e_n\rangle_{L^2} e_n\) with orthonormal 
+                        eigenfunctions \(\{e_n\}\). Since the kernel \(K\) determines \(T_K\) uniquely as 
+                        an integral operator (distinct kernels modulo a.e. equivalence define distinct 
+                        integral operators), this lifts to the kernel decomposition 
+                        \(K(x, x') = \sum_n \lambda_n e_n(x) e_n(x')\) with convergence in 
+                        \(L^2(\mathcal{X}\times\mathcal{X}, \mu\otimes\mu)\).
+                    </p>
+                    <p>
+                        The upgrade to <em>absolute and uniform</em> convergence on 
+                        \(\mathcal{X}\times\mathcal{X}\) is the deep part. The right-hand side of 
+                        \(T_K e_n = \lambda_n e_n\), namely 
+                        \(x \mapsto \int K(x, x') e_n(x')\, d\mu(x')\), is continuous in \(x\) by 
+                        continuity of \(K\) and dominated convergence. Replacing \(e_n\) by 
+                        \(\lambda_n^{-1} T_K e_n\) (valid for \(\lambda_n > 0\)) within its a.e. 
+                        equivalence class therefore selects a continuous representative; strict 
+                        positivity of \(\mu\) ensures this representative is uniquely determined 
+                        (any two continuous functions agreeing a.e. with respect to a strictly 
+                        positive measure must agree pointwise), making the pointwise expansion 
+                        well-defined.
+                    </p>
+                    <p>
+                        The partial sums \(S_N(x, x') = \sum_{n=1}^N \lambda_n e_n(x) e_n(x')\) are 
+                        continuous, and on the diagonal the nonnegative terms 
+                        \(\lambda_n e_n(x)^2 \geq 0\) make \(S_N(x, x) \nearrow K(x, x)\) monotonically. 
+                        <strong>Dini's theorem</strong> (continuous monotone sequence with continuous 
+                        limit on a compact set converges uniformly) upgrades this to uniform 
+                        convergence on the diagonal. For the off-diagonal terms, Cauchy-Schwarz applied 
+                        to partial-sum tails gives, for \(M > N\),
+                        \[
+                        |S_M(x, x') - S_N(x, x')|^2 = \left|\sum_{n=N+1}^M \lambda_n e_n(x) e_n(x')\right|^2 
+                        \leq R_N(x) \cdot R_N(x'),
+                        \]
+                        where \(R_N(x) = K(x, x) - S_N(x, x) \geq \sum_{n=N+1}^M \lambda_n e_n(x)^2\). 
+                        The diagonal uniform convergence \(R_N \to 0\) gives a uniform Cauchy criterion, 
+                        yielding both <strong>absolute</strong> and <strong>uniform</strong> convergence 
+                        on all of \(\mathcal{X}\times\mathcal{X}\). 
+                        For the full argument, see Steinwart &amp; Christmann, 
+                        <em>Support Vector Machines</em>, Ch.&nbsp;4 ("Kernels and Reproducing Kernel Hilbert Spaces").
                     </p>
                 </div>
 
@@ -385,10 +509,58 @@ uses_python: false
                     <em>reweights</em> each eigencomponent by the inverse of the eigenvalue:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-aronszajn_factorization">
+                    <span class="theorem-title">Lemma: Aronszajn Factorization</span>
+                    <p>
+                        Under the hypotheses of 
+                        <a href="#T-mercers_theorem" class="ref-link"><strong>Mercer's Theorem</strong></a> 
+                        with \(\lambda_n > 0\) for all \(n\), let 
+                        \(T_K^{1/2}\) be the positive square root of \(T_K\), defined via spectral 
+                        calculus by 
+                        \(T_K^{1/2} g = \sum_n \sqrt{\lambda_n} \langle g, e_n\rangle_{L^2}\, e_n\). 
+                        Then \(T_K^{1/2} : L^2(\mathcal{X}, \mu) \to \mathcal{H}_K\) is an isometric 
+                        isomorphism:
+                        \[
+                        \mathcal{H}_K = T_K^{1/2}\bigl(L^2(\mathcal{X}, \mu)\bigr), \qquad 
+                        \|T_K^{1/2} g\|_{\mathcal{H}_K} = \|g\|_{L^2(\mathcal{X}, \mu)}.
+                        \]
+                        In particular, \(\{\phi_n := \sqrt{\lambda_n}\, e_n\}_{n \geq 1}\) is an 
+                        orthonormal basis of \(\mathcal{H}_K\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof sketch:</span>
+                    <p>
+                        By Mercer's Theorem, 
+                        \(K(x, y) = \sum_n \lambda_n e_n(x) e_n(y) = \sum_n \phi_n(x) \phi_n(y)\) 
+                        with \(\phi_n := \sqrt{\lambda_n}\, e_n\). The Hilbert space of formal series 
+                        \(\mathcal{H}' := \{\sum_n c_n \phi_n : \sum_n c_n^2 < \infty\}\), equipped 
+                        with the inner product 
+                        \(\langle \sum_n c_n \phi_n, \sum_n d_n \phi_n\rangle := \sum_n c_n d_n\), 
+                        has \(\{\phi_n\}\) as an orthonormal basis and reproducing kernel 
+                        \(\sum_n \phi_n(x) \phi_n(y) = K(x, y)\). By the uniqueness half of the 
+                        <a href="#T-moore_aronszajn" class="ref-link"><strong>Moore-Aronszajn Theorem</strong></a>, 
+                        \(\mathcal{H}' = \mathcal{H}_K\) as Hilbert spaces of functions.
+                    </p>
+                    <p>
+                        The spectral-calculus definition of \(T_K^{1/2}\) sends 
+                        \(g = \sum_n g_n e_n \in L^2\) to 
+                        \(T_K^{1/2} g = \sum_n \sqrt{\lambda_n}\, g_n\, e_n = \sum_n g_n \phi_n\), 
+                        whose \(\mathcal{H}_K\)-norm is 
+                        \((\sum_n g_n^2)^{1/2} = \|g\|_{L^2}\). Thus 
+                        \(T_K^{1/2} : L^2(\mathcal{X}, \mu) \to \mathcal{H}_K\) is norm-preserving, 
+                        with image all of \(\mathcal{H}_K\) (every \(f = \sum_n c_n \phi_n \in \mathcal{H}_K\) 
+                        is the image of \(g = \sum_n c_n e_n \in L^2\)). For full details, see 
+                        Aronszajn's original 1950 paper, or Steinwart &amp; Christmann, 
+                        <em>Support Vector Machines</em>, Ch.&nbsp;4 ("Kernels and Reproducing Kernel Hilbert Spaces").
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-rkhs_norm_mercer_coefficients">
                     <span class="theorem-title">Proposition: RKHS Norm via Mercer Coefficients</span>
                     <p>
-                        Assume \(\lambda_n > 0\) for all \(n\) (equivalently, \(K\) is strictly positive definite; otherwise restrict the sums to \(\{n : \lambda_n > 0\}\) and interpret \(\mathcal{H}_K\) as functions in \(\overline{\operatorname{Range}(T_K)}\)). 
+                        Assume \(\lambda_n > 0\) for all \(n\) (a standing assumption ensured, for instance, when \(K\) is strictly positive definite under the Mercer hypotheses; otherwise restrict the sums to \(\{n : \lambda_n > 0\}\) and identify \(\mathcal{H}_K\) with the corresponding subspace via the isometry below). 
                         For \(f = \sum_n f_n \, e_n\) and \(g = \sum_n g_n \, e_n\) in \(\mathcal{H}_K\):
                         \[
                         \langle f, g \rangle_{\mathcal{H}_K} = \sum_{n=1}^{\infty} \frac{f_n \, g_n}{\lambda_n}.
@@ -397,19 +569,34 @@ uses_python: false
                         \[
                         \|f\|_{\mathcal{H}_K}^2 = \sum_{n=1}^{\infty} \frac{f_n^2}{\lambda_n}.
                         \]
-                        A function \(f\) belongs to \(\mathcal{H}_K\) if and only if 
+                        A function \(f \in L^2(\mathcal{X}, \mu)\) with Fourier expansion 
+                        \(f = \sum_n f_n e_n\) belongs to \(\mathcal{H}_K\) if and only if 
                         \(\sum_n f_n^2 / \lambda_n < \infty\).
                     </p>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof:</span>
+                    <span class="proof-title">Proof sketch:</span>
                     <p>
-                        Setting \(\phi_n = \sqrt{\lambda_n}\, e_n\), the map 
-                        \(f = \sum_n f_n e_n \;\longmapsto\; (f_n/\sqrt{\lambda_n})_{n\geq 1} \in \ell^2\) 
-                        is an isometric isomorphism between \(\mathcal{H}_K\) and \(\ell^2\) 
-                        (Moore-Aronszajn identifies \(\mathcal{H}_K\) as the completion of \(\operatorname{span}\{K(\cdot, x)\}\) under the kernel inner product; the Mercer expansion gives the explicit orthonormal basis \(\{\phi_n\}\) of \(\mathcal{H}_K\) with \(\langle\phi_n, \phi_m\rangle_{\mathcal{H}_K} = \delta_{nm}\)). 
-                        Transport of the \(\ell^2\) inner product back to \(\mathcal{H}_K\) yields the formula.
+                        By the 
+                        <a href="#T-aronszajn_factorization" class="ref-link"><strong>Aronszajn Factorization Lemma</strong></a>, 
+                        every \(f \in \mathcal{H}_K\) can be written uniquely as \(f = T_K^{1/2} h\) 
+                        for some \(h \in L^2(\mathcal{X}, \mu)\), and this correspondence is an 
+                        isometry: \(\|f\|_{\mathcal{H}_K} = \|h\|_{L^2}\). Expanding \(h\) in the 
+                        \(L^2\)-orthonormal basis \(\{e_n\}\) as \(h = \sum_n h_n e_n\), we have 
+                        \[
+                        f = T_K^{1/2} h = \sum_n h_n\, T_K^{1/2} e_n = \sum_n h_n \sqrt{\lambda_n}\, e_n.
+                        \]
+                        Comparing with the \(L^2\)-Fourier expansion \(f = \sum_n f_n e_n\) gives 
+                        \(f_n = h_n \sqrt{\lambda_n}\), i.e. \(h_n = f_n / \sqrt{\lambda_n}\). The 
+                        isometry \(\|f\|_{\mathcal{H}_K}^2 = \|h\|_{L^2}^2\) then reads 
+                        \[
+                        \|f\|_{\mathcal{H}_K}^2 = \sum_n h_n^2 = \sum_n \frac{f_n^2}{\lambda_n}.
+                        \]
+                        The polarization identity yields the inner-product formula. The membership 
+                        characterization \(f \in \mathcal{H}_K \iff \sum_n f_n^2/\lambda_n < \infty\) 
+                        follows from 
+                        \(f \in \mathcal{H}_K \iff h \in L^2 \iff \sum_n h_n^2 < \infty\).
                     </p>
                 </div>
 
@@ -445,7 +632,14 @@ uses_python: false
                 <p>
                     The membership condition \(\sum f_n^2 / \lambda_n < \infty\) is 
                     <em>strictly stronger</em> than the \(L^2\) condition \(\sum f_n^2 < \infty\) 
-                    (since \(\lambda_n \to 0\)). Therefore:
+                    (since \(\lambda_n \to 0\); for example, \(f_n = \sqrt{\lambda_n}\) gives 
+                    \(\sum f_n^2 = \sum \lambda_n < \infty\) — finite since integrating the Mercer 
+                    expansion on the diagonal gives 
+                    \(\sum_n \lambda_n = \int_{\mathcal{X}} K(x, x)\, d\mu(x)\), which is finite 
+                    by continuity of \(K\) on the compact \(\mathcal{X}\) and finiteness of \(\mu\) — 
+                    but \(\sum f_n^2 / \lambda_n = \infty\), giving 
+                    \(f \in L^2 \setminus \mathcal{H}_K\)). 
+                    Therefore:
                     \[
                     \mathcal{H}_K \subsetneq L^2(\mathcal{X}, \mu).
                     \]
@@ -477,12 +671,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    Since \(\mathcal{H}_K\) is a Hilbert space (hence reflexive) and the regularization term is coercive, 
-                    the <a href="weak_topologies.html#T-existence_of_minimizers" class="ref-link"><strong>existence of a minimizer</strong></a> 
-                    is guaranteed. The Representer Theorem tells us its <em>structure</em>:
+                    The Representer Theorem is a <strong>structural</strong> result: it describes 
+                    the form of any minimizer that exists, without itself asserting existence. 
+                    Existence depends on the loss function and is not automatic. In the kernel 
+                    methods that use this theorem in practice, existence is nevertheless clear: 
+                    Kernel Ridge Regression reduces to a finite-dimensional linear system with a 
+                    unique closed-form solution, and the kernel SVM to a finite-dimensional 
+                    convex quadratic program. The theorem below tells us the <em>structure</em> 
+                    of any such minimizer:
                 </p>
 
-                <div class="theorem" id="T-Representer_Theorem">
+                <div class="theorem" id="T-representer_theorem">
                     <span class="theorem-title">Theorem: The Representer Theorem</span>
                     <p>
                         Let \(\mathcal{H}_K\) be an RKHS on \(\mathcal{X}\) with kernel \(K\), 
@@ -490,8 +689,8 @@ uses_python: false
                         \[
                         \min_{f \in \mathcal{H}_K} \left[\sum_{i=1}^{N} \ell\bigl(y_i,\, f(x_i)\bigr) + \lambda \|f\|_{\mathcal{H}_K}^2\right],
                         \]
-                        where \(\ell\) is any loss function and \(\lambda > 0\). Then the minimizer 
-                        \(f^*\) has the form
+                        where \(\ell\) is any loss function and \(\lambda > 0\). Then any minimizer 
+                        \(f^*\) of this objective has the form
                         \[
                         f^*(x) = \sum_{i=1}^{N} \alpha_i \, K(x, x_i)
                         \]
@@ -526,7 +725,7 @@ uses_python: false
                         \|f\|_{\mathcal{H}_K}^2 = \|f_\parallel\|_{\mathcal{H}_K}^2 + \|f_\perp\|_{\mathcal{H}_K}^2 \geq \|f_\parallel\|_{\mathcal{H}_K}^2.
                         \]
                         Adding any nonzero \(f_\perp\) strictly increases the regularization penalty 
-                        without improving the data fit. Hence the minimizer satisfies 
+                        without improving the data fit. Hence any minimizer satisfies 
                         \(f_\perp = 0\).
                     </p>
                 </div>
@@ -557,65 +756,29 @@ uses_python: false
                 <h3>The Grand Synthesis</h3>
 
                 <p>
-                    Let us now trace how every chapter in the Functional Analysis series contributed 
-                    to this final result.
+                    Every chapter in this Functional Analysis series has contributed a piece of 
+                    the RKHS picture. 
+                    <a href="intro_analysis.html"><strong>Banach &amp; Hilbert Spaces</strong></a> 
+                    gave us the ambient structure — completeness, inner products, and \(L^2\) as 
+                    the home of Mercer's integral operator. 
+                    <a href="bounded_linear_operators.html"><strong>Bounded Operators</strong></a> 
+                    gave us the equivalence of boundedness and continuity, which is exactly what 
+                    point evaluation \(\delta_x\) must satisfy for the whole theory to begin. 
+                    <a href="dual_spaces.html"><strong>Dual Spaces</strong></a> and the Riesz 
+                    Representation Theorem converted "\(\delta_x\) is bounded" into the concrete 
+                    statement "\(\delta_x\) has a Riesz representative \(K_x\)" — the reproducing 
+                    kernel itself. 
+                    <a href="spectral_theory.html"><strong>Spectral Theory</strong></a> lifted 
+                    Mercer's integral operator into an eigenfunction expansion, exposing the 
+                    explicit feature map into \(\ell^2\) and the smoothness-controlling role of 
+                    eigenvalue decay. And the Representer Theorem, proved here, collapses 
+                    infinite-dimensional optimization onto a finite-dimensional kernel algebra. 
+                    The Functional Analysis series reaches its culmination here: each abstract tool introduced 
+                    above — Hilbert structure, boundedness, Riesz duality, spectral decomposition — 
+                    now anchors a concrete machine-learning method.
                 </p>
-
-                <table style="font-size: 0.95rem;">
-                    <thead>
-                        <tr>
-                            <th>Chapter</th>
-                            <th>Key Contribution</th>
-                            <th>Role in RKHS Theory</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><a href="intro_analysis.html"><strong>Banach & Hilbert Spaces</strong></a></td>
-                            <td>Hilbert spaces, completeness, \(L^p\) spaces</td>
-                            <td>RKHS is a Hilbert space; \(L^2\) is the ambient space for Mercer's integral operator</td>
-                        </tr>
-                        <tr>
-                            <td><a href="bounded_linear_operators.html"><strong>Bounded Operators</strong></a></td>
-                            <td>Bounded operators, continuity = boundedness</td>
-                            <td>Point evaluation must be bounded (continuous); 
-                                integral operators are bounded</td>
-                        </tr>
-                        <tr>
-                            <td><a href="dual_spaces.html"><strong>Dual Spaces & Riesz</strong></a></td>
-                            <td>Dual spaces, Riesz Representation</td>
-                            <td>\(\delta_x \in \mathcal{H}^*\) implies existence of 
-                                \(K_x = \delta_x^\sharp\) via Riesz — the reproducing kernel</td>
-                        </tr>
-                        <tr>
-                            <td><a href="weak_topologies.html"><strong>Weak Topologies</strong></a></td>
-                            <td>Weak compactness, existence of minimizers</td>
-                            <td>Guarantees that the regularized problem 
-                                \(\min(\text{loss} + \lambda\|f\|^2)\) has a solution in 
-                                \(\mathcal{H}_K\)</td>
-                        </tr>
-                        <tr>
-                            <td><a href="spectral_theory.html"><strong>Spectral Theory</strong></a></td>
-                            <td>Spectral Theorem, eigenfunction expansion</td>
-                            <td>Provides Mercer's eigenfunction decomposition of \(K\) 
-                                and the explicit feature map \(\Phi\)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>This chapter</strong></td>
-                            <td>RKHS, Mercer, Representer Theorem</td>
-                            <td>Unifies everything: infinite-dimensional optimization 
-                                reduces to finite-dimensional kernel algebra</td>
-                        </tr>
-                    </tbody>
-                </table>
 
                 <h3>Looking Ahead: From Function Spaces to Manifolds</h3>
-
-                <p>
-                    We have traveled from the abstract definition of normed spaces to a complete, rigorous understanding 
-                    of why kernel methods work. The tools we have built — Hilbert space structure, duality, weak topologies, 
-                    spectral decomposition, and now RKHS — form the analytical foundation for everything that follows.
-                </p>
 
                 <p>
                     Now, we will move from <em>function spaces</em> to <em>geometric spaces</em>. 
