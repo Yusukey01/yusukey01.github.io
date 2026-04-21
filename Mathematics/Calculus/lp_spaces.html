@@ -35,9 +35,12 @@ uses_python: false
                 <p>
                     We introduced the <a href="intro_analysis.html#D-Lp_intro" class="ref-link"><strong>\(L^p\) spaces</strong></a> 
                     as the most important examples of Banach spaces in analysis and machine learning. 
-                    In that introduction we left three claims unproven: that \(\|\cdot\|_p\) is 
-                    actually a norm, that this norm obeys a triangle inequality, and that the 
-                    resulting normed space is complete. 
+                    In that introduction we left three structural claims unproven: that \(\|\cdot\|_p\) 
+                    separates distinct elements (positive-definiteness), that it obeys the triangle 
+                    inequality, and that the resulting normed space is complete. The first two together 
+                    make \(L^p\) a normed space; the third upgrades it to a Banach space. Throughout 
+                    this chapter we focus on \(1 \leq p < \infty\), treating \(L^\infty\) as a parallel 
+                    construction whose essential supremum norm we define in its own right. 
                     In <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a>, we 
                     further relied on Hölder's inequality — also without proof — to justify the 
                     pairing \(\varphi_g(f) = \int fg \, d\mu\) in the duality table.
@@ -59,7 +62,7 @@ uses_python: false
                 </ol>
 
                 <p>
-                    The chain of implications is: <strong>Young → Hölder → Minkowski → Norm → Riesz-Fischer → Banach space</strong>. 
+                    The chain of implications is: <strong>Young → Hölder → Minkowski (triangle inequality) → Riesz-Fischer (completeness) → Banach space</strong>. 
                     Each link depends logically on the preceding one. We follow this chain from beginning to end.
                 </p>
 
@@ -78,18 +81,25 @@ uses_python: false
                     \|f\|_p \;=\; \left( \int_\Omega |f|^p \, d\mu \right)^{1/p}.
                     \]
                     For this to be a valid norm, three axioms must hold: 
-                    (i) \(\|f\|_p \geq 0\) with equality if and only if \(f = 0\), 
-                    (ii) \(\|\alpha f\|_p = |\alpha| \cdot \|f\|_p\), and 
-                    (iii) \(\|f + g\|_p \leq \|f\|_p + \|g\|_p\).
-                    Axiom (ii) is straightforward from the linearity of the integral. But axiom (i) immediately 
-                    presents a problem.
+                    (i) <strong>non-negativity with definiteness</strong>: \(\|f\|_p \geq 0\), and 
+                    \(\|f\|_p = 0\) implies \(f = 0\); 
+                    (ii) <strong>absolute homogeneity</strong>: \(\|\alpha f\|_p = |\alpha| \cdot \|f\|_p\); 
+                    (iii) <strong>triangle inequality</strong>: \(\|f + g\|_p \leq \|f\|_p + \|g\|_p\). 
+                    Non-negativity and axiom (ii) are straightforward: the former from the non-negativity 
+                    of the integrand \(|f|^p\), the latter from the linearity of the integral. The two 
+                    remaining difficulties — the <em>definiteness</em> half of axiom (i), and the 
+                    triangle inequality — drive the structure of this entire chapter. We address 
+                    definiteness first.
                 </p>
 
                 <h3>The Seminorm Problem</h3>
 
                 <p>
-                    Suppose \(\|f\|_p = 0\). Then \(\int |f|^p \, d\mu = 0\), and since \(|f|^p \geq 0\), 
-                    this forces \(|f(x)|^p = 0\) for "almost every" \(x \in \Omega\) — that is, 
+                    Suppose \(\|f\|_p = 0\). Then \(\int |f|^p \, d\mu = 0\), and since \(|f|^p\) is 
+                    non-negative and measurable, a standard result from 
+                    <a href="lebesgue.html#fnm" class="ref-link"><strong>Lebesgue integration</strong></a> 
+                    (a non-negative measurable function with zero integral vanishes almost everywhere) 
+                    forces \(|f(x)|^p = 0\) for almost every \(x \in \Omega\) — that is, 
                     \(f(x) = 0\) except on a set of <a href="measure.html#leb"><strong>measure zero</strong></a>. 
                     But this does <em>not</em> mean \(f\) is the zero function. It means only that \(f = 0\) 
                     <strong>almost everywhere (a.e.)</strong>.
@@ -105,7 +115,8 @@ uses_python: false
                     0 & \text{if } x \notin \mathbb{Q}.
                     \end{cases}
                     \]
-                    Since \(\mu(\mathbb{Q}) = 0\), we have \(\|f\|_p = 0\) for every \(1 \leq p \leq \infty\), 
+                    Since \(\mu(\mathbb{Q}) = 0\), we have \(\|f\|_p = 0\) for every \(1 \leq p < \infty\) 
+                    (and, once we define \(L^\infty\) below, for \(p = \infty\) as well), 
                     yet \(f\) is not the zero function — it equals \(1\) at every rational point. The quantity 
                     \(\|\cdot\|_p\) therefore fails to distinguish \(f\) from the zero function. 
                     In the language of normed space theory, \(\|\cdot\|_p\) is a <strong>seminorm</strong>, 
@@ -138,40 +149,40 @@ uses_python: false
                     <span class="proof-title">Verification:</span>
                     <p>
                         We verify the three axioms of an equivalence relation. A preliminary remark: 
-                        for measurable \(f, g\), the set \(\{x : f(x) \neq g(x)\}\) is measurable, 
-                        as the complement of \(\{x : f(x) = g(x)\} = \{x : (f - g)(x) = 0\}\) — the 
-                        preimage of the measurable set \(\{0\}\) under the measurable function 
-                        \(f - g\). (When working with functions into \(\mathbb{C}\), interpret 
-                        \(\{f = g\}\) as \(\{|f - g| = 0\}\).)
+                        for measurable \(f, g : \Omega \to \mathbb{F}\), the difference \(f - g\) is 
+                        measurable (componentwise in the complex case), and the singleton 
+                        \(\{0\} \subset \mathbb{F}\) is closed, hence Borel-measurable. Thus 
+                        \(\{x : f(x) = g(x)\} = (f - g)^{-1}(\{0\})\) is measurable, and so is its 
+                        complement \(\{x : f(x) \neq g(x)\}\).
                     </p>
                     <p>
                         <strong>Reflexivity:</strong> \(\{x : f(x) \neq f(x)\} = \emptyset\), which has measure zero.
                     </p>
                     <p>
-                        <strong>Symmetry:</strong> \(\{x : f(x) \neq g(x)\} = \{x : g(x) \neq f(x)\}\), 
-                        so \(\mu\) of the two sets is the same.
+                        <strong>Symmetry:</strong> The sets \(\{f \neq g\}\) and \(\{g \neq f\}\) are 
+                        literally equal, so \(f \sim g \iff g \sim f\).
                     </p>
                     <p>
                         <strong>Transitivity:</strong> Suppose \(f = g\) a.e. and \(g = h\) a.e. 
-                        Let \(N_1 = \{x : f(x) \neq g(x)\}\) and \(N_2 = \{x : g(x) \neq h(x)\}\). 
+                        Let \(N_1 = \{x : f(x) \neq g(x)\}\) and \(N_2 = \{x : g(x) \neq h(x)\}\); 
+                        both are null by hypothesis and measurable by the remark above. 
                         If \(f(x) \neq h(x)\), then either \(f(x) \neq g(x)\) or \(g(x) \neq h(x)\), so 
-                        \(\{x : f(x) \neq h(x)\} \subseteq N_1 \cup N_2\). Since 
-                        <a href="measure.html#D-sigma-algebra" class="ref-link"><strong>\(\sigma\)-algebras</strong></a> are 
-                        closed under finite unions, \(N_1 \cup N_2\) is measurable, and by the <strong>subadditivity of measures</strong>, 
-                        \(\mu(N_1 \cup N_2) \leq \mu(N_1) + \mu(N_2) = 0\).
+                        \(\{x : f(x) \neq h(x)\} \subseteq N_1 \cup N_2\), and by the 
+                        <strong>subadditivity of \(\mu\)</strong>,
+                        \(\mu(\{x : f(x) \neq h(x)\}) \leq \mu(N_1) + \mu(N_2) = 0\).
                     </p>
                 </div>
 
                 <h3>The Formal Definition of \(L^p\)</h3>
 
-                <div class="theorem" id = "D-Lp_space">
+                <div class="theorem" id="D-Lp_space">
                     <span class="theorem-title">Definition: The \(L^p\) Space (Rigorous)</span>
                     <p>
                         Let \((\Omega, \mathcal{F}, \mu)\) be a measure space and \(1 \leq p < \infty\). Define
                         \[
                         \mathscr{L}^p(\Omega, \mathcal{F}, \mu) \;=\; 
                         \bigl\{\, f : \Omega \to \mathbb{F} \;\big|\; f \text{ is measurable and } 
-                        \textstyle\int_\Omega |f|^p \, d\mu < \infty \,\bigr\}.
+                        \int_\Omega |f|^p \, d\mu < \infty \,\bigr\}.
                         \]
                         The <strong>\(L^p\) space</strong> is the quotient
                         \[
@@ -206,6 +217,56 @@ uses_python: false
                         with the norm \(\|\cdot\|_\infty\).
                     </p>
                 </div>
+
+                <p>
+                    The infimum in the definition of \(\|f\|_\infty\) is not just an infimum — it is 
+                    actually attained. This small fact is what makes \(\|\cdot\|_\infty\) well-behaved 
+                    as a norm and is used repeatedly in the sequel.
+                </p>
+
+                <div class="theorem" id="T-essup_attained">
+                    <span class="theorem-title">Lemma: Essential Supremum Is Attained</span>
+                    <p>
+                        If \(f \in L^\infty\), then \(|f(x)| \leq \|f\|_\infty\) for almost every \(x\). 
+                        In particular, the infimum in the definition of \(\|f\|_\infty\) is achieved.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Since \(f \in L^\infty\), the set of admissible bounds is non-empty, so 
+                        \(\|f\|_\infty < \infty\). By the defining property of the infimum, for each 
+                        \(n \in \mathbb{N}\) there exists an admissible \(C_n\) with 
+                        \(\|f\|_\infty \leq C_n < \|f\|_\infty + 1/n\); for this \(C_n\), the set 
+                        \(E_n = \{x : |f(x)| > C_n\}\) has measure zero. Let 
+                        \(E = \bigcup_{n=1}^\infty E_n\). By 
+                        <a href="measure.html#D-measure" class="ref-link"><strong>\(\sigma\)-subadditivity</strong></a>, 
+                        \(\mu(E) \leq \sum_{n=1}^\infty \mu(E_n) = 0\). For \(x \notin E\), we have 
+                        \(|f(x)| \leq C_n < \|f\|_\infty + 1/n\) for every \(n\); letting 
+                        \(n \to \infty\) gives \(|f(x)| \leq \|f\|_\infty\). This proves the first 
+                        claim; the second is its immediate corollary, since \(C = \|f\|_\infty\) is 
+                        itself an admissible bound.
+                    </p>
+                </div>
+
+                <p>
+                    With this lemma in hand, the three norm axioms for \(\|\cdot\|_\infty\) are 
+                    immediate. <em>Non-negativity</em> is clear from the definition. 
+                    <em>Definiteness on equivalence classes</em>: if \(\|f\|_\infty = 0\), then 
+                    \(|f(x)| \leq 0\) a.e., so \(f = 0\) a.e. — i.e., \([f]\) is the zero class. 
+                    <em>Absolute homogeneity</em>: for \(\alpha = 0\) both sides vanish; for 
+                    \(\alpha \neq 0\), the lemma gives \(|f(x)| \leq \|f\|_\infty\) a.e., so 
+                    \(|\alpha f(x)| \leq |\alpha| \|f\|_\infty\) a.e., showing 
+                    \(\|\alpha f\|_\infty \leq |\alpha| \|f\|_\infty\); applying the same argument 
+                    to \(\alpha^{-1}(\alpha f) = f\) yields the reverse inequality. 
+                    <em>Triangle inequality</em>: since \(|f(x)| \leq \|f\|_\infty\) and 
+                    \(|g(x)| \leq \|g\|_\infty\) a.e., we have 
+                    \(|f(x) + g(x)| \leq \|f\|_\infty + \|g\|_\infty\) a.e., which forces 
+                    \(\|f + g\|_\infty \leq \|f\|_\infty + \|g\|_\infty\). So \((L^\infty, \|\cdot\|_\infty)\) 
+                    is a normed space; its completeness will follow in the same breath as the 
+                    \(1 \leq p < \infty\) case when we prove the Riesz-Fischer theorem.
+                </p>
 
                 <div class="insight-box">
                     <h3>Connection to Sequence Spaces</h3>
