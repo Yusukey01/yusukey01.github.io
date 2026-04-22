@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 4/21/2026 
+**Last Updated:** 4/22/2026 
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -44,10 +44,10 @@ There is no isolated "Geometry" or "Physics" section. Geometric and quantum conc
 - **Metric Spaces & Topology (8 pages):** Metric spaces, convergence, continuity, completeness, connectedness, compactness, metric equivalence (homeomorphism), topological spaces.
 - **Functional Analysis (8 pages):** Banach & Hilbert spaces, bounded operators, dual spaces & Riesz representation, weak topologies & Banach-Alaoglu, spectral theory of compact operators, RKHS & kernel methods, Lp spaces (construction & inequalities), Lp completeness & convergence (Riesz-Fischer, MCT/Fatou/DCT, convergence modes).
 
-### Section III: Probability & Statistics (23 pages) ✅
+### Section III: Probability & Statistics (23 pages, expanding)
 - **Foundations & Inference:** Probability, distributions, covariance, MVN, MLE, hypothesis testing, linear regression.
 - **Bayesian & Stochastic:** Bayesian inference, exponential family, Fisher information matrix, decision theory, Markov chains, Monte Carlo, importance sampling, Gaussian processes.
-- **Measure-Theoretic Probability (2 pages):** Random variables as measurable functions, expectation as Lebesgue integral, convergence theorems, limit theorems & product measures.
+- **Measure-Theoretic Probability (2 pages, entering deepening phase):** Random variables as measurable functions, expectation as Lebesgue integral, convergence theorems, limit theorems & product measures. **Phase 2c–2e** (starting May 2026) will add a Radon-Nikodym track, Variational Inference foundation, and Stochastic Calculus — bringing Section III to the graduate-level depth already achieved in Sections I (Lie theory) and II (Functional Analysis block).
 
 ### Section IV: Discrete Mathematics & Algorithms (15 pages)
 - **Computation & Graph Theory (11 pages):** Graph theory, combinatorics, automata, Boolean logic, context-free languages, Turing machines, time complexity, Eulerian/Hamiltonian, P vs NP, network flow, trees.
@@ -77,13 +77,13 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                       ┌─────┴──────────────┐              │                       Incidence & ∂₁
      │                       │                    │              │                       (disc-13)✅
      │                calc-29: Topological   calc-30: Lp         │                       Simplicial Complexes
-     │                Spaces ✅              Construction ✅      │                       (disc-14)✅
+     │                Spaces ✅              Construction ✅    │                       (disc-14)✅
      │                       │                    │              │                            │
      │                       │             calc-31: Lp           │                       Intro to Homology
      │                       │             Completeness ✅       │                       (disc-15) ✅
      │                       │                    │              │                            │
      │                       │                    ├──────── prob-22&23: Measure-              │
-     │                       │                    │         Theoretic Prob. ✅✅               │
+     │                       │                    │         Theoretic Prob. ✅✅             │
      │                       │                    │              │                            │
      │                       │               calc-32:            │                            │
      │                       │               Fourier in          │                            │
@@ -91,15 +91,15 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      ├───────────────────────┤                    │              │                            │
      │                       │                    │              │                            │
 Lie Group Series        calc-XX (~3 pp):          │              │                       disc-XX: Quivers
-(linalg-27~30) ✅       Smooth Manifolds          │              │                       disc-XX: Categories
-     │            ◀────▶ (Atlases, Tangent         │              │                            │
-     │                   Spaces, Vector Fields)    │              │                            │
+(linalg-27~30) ✅       Smooth Manifolds         │              │                       disc-XX: Categories
+     │            ◀────▶ (Atlases, Tangent       │              │                            │
+     │                   Spaces, Vector Fields)   │              │                            │
      │                       │                    │              │                            │
-     │                  calc-XX (~2 pp):           │              │                       disc-XX: Discrete
-     │                  Riemannian Metrics         │              │                       Ext. Calculus (DEC)
-     │                  & Curvature                │              │                            │
+     │                  calc-XX (~2 pp):          │              │                       disc-XX: Discrete
+     │                  Riemannian Metrics        │              │                       Ext. Calculus (DEC)
+     │                  & Curvature               │              │                            │
      │                       │                    │              │                            │
-linalg-XX (~3-4 pp):        │                    │              │                            │
+linalg-XX (~3-4 pp):         │                    │              │                            │
 Representation Theory        │                    │              │                            │
      │                       │                    │              │                            │
      ▼                       ▼                    ▼              ▼                            ▼
@@ -154,6 +154,133 @@ Originally planned as 2 pages (linalg-27 & 28), expanded to 4 pages during draft
 - **Prereqs:** disc-15 (Homology — graph-level features), linalg-14 (Graph Laplacian — spectral convolution).
 - **Key insight:** Message passing = local, permutation-equivariant aggregation. This is the simplest instance of the GDL principle.
 - **Critical role:** This page plants forward references to the manifold series (calc-32+). When the reader asks "what about continuous symmetries? curved spaces?" — the manifold pages answer that question. Must be written with this foreshadowing in mind.
+
+---
+
+## Phase 2c–2e: Section III Measure-Theoretic Deepening (May 2026 onward)
+
+### Motivation & Strategic Context
+
+As of April 2026, the curriculum exhibits an **asymmetry in graduate-level depth** across sections:
+
+- **Section I** reached graduate level through the Lie theory series (linalg-27~30, 4 pages).
+- **Section II** reached graduate level through the Functional Analysis block (calc-23~28) and Lp theory (calc-30/31), 10 pages total.
+- **Section III** has only **2 measure-theoretic pages** (prob-22/23). Classical probability ends at prob-21 (Gaussian Processes), with measure-theoretic probability added as a thin bridge.
+
+This imbalance became apparent during the peer review of **prob-23** (4/22/2026), which revealed several critical gaps:
+
+1. **Radon-Nikodym theorem is invoked without proof across at least three pages** — prob-22 defines the PDF as \(f_X = dP_X/d\lambda\), lp_spaces.html references it for Lp duality, and prob-23 previews conditional expectation as a Radon-Nikodym derivative. Yet no page actually proves the theorem. This is a **name-lending pattern without mathematical content**.
+2. **Variational Inference is not formally isolated.** ml-12 (VAE) introduces VI as a pedagogical preamble to VAE, but there is no foundation page defining ELBO rigorously or treating VI as a general inference framework. This was already flagged in the Deferred Items table (#345) but without a concrete trigger.
+3. **Uniform integrability, Kolmogorov extension, and Fubini proofs** are delegated to external references (Durrett, Folland) in prob-23, which violates Instruction v2's "no formal in-body citations" rule but also reflects a real structural gap: these theorems have no dedicated home in the curriculum.
+4. **Fubini/Tonelli placement in Section III** rather than Section II was re-examined during the review. The placement is justified by (a) narrative cohesion — i.i.d. sampling and product measures are the natural consumer, (b) the hexagonal compass map shows a three-node cluster (calc-30 ↔ prob-22 ↔ prob-23) that visually anchors the measure-theoretic tools across Section II/III, and (c) the functional usage of Fubini in this curriculum is concentrated in probability/statistics/ML rather than pure analysis. This placement is **retained**, but the cross-section dependency is now explicit: future Section II pages (e.g., calc-32 Fourier) that need Fubini will ref-link to prob-23.
+
+### Design Philosophy
+
+Phase 2c–2e elevates Section III to the same graduate-level depth as Sections I and II, while maintaining the **"three application domains as viewpoints"** philosophy. Each phase creates a **plateau** where accumulated tools are applied to a class of 2026-era ML/AI problems, and from which the next mathematical foundation is motivated:
+
+- **Phase 2c plateau:** Bayesian rigor, Lp duality closure, KL regularization foundation (RLHF).
+- **Phase 2d plateau:** VAE/ELBO rigorous treatment, amortized inference, connection to diffusion models as hierarchical VI.
+- **Phase 2e plateau:** Diffusion model SDE foundation, score matching, Neural SDE / Neural ODE.
+
+These plateaus collectively unlock the modern ML frontier (as of 2026): Bayesian Neural Networks, RLHF/DPO alignment, score-based diffusion, flow matching, and the information-theoretic bounds relevant to PAC-Bayes generalization.
+
+### Page Count Realism
+
+Drawing on the **Lie group series expansion pattern** (planned 2 → actual 4 pages), Phase 2c–2e pages are expected to follow the same 1.5–2× expansion factor. Initial estimates are therefore conservative lower bounds; final structure is determined during drafting.
+
+---
+
+### Phase 2c: Radon-Nikodym Track (2 pages, start May 2026)
+
+**Goal:** Close the Radon-Nikodym name-usage debt and provide rigorous foundations for measure-theoretic Bayesian inference.
+
+#### prob-24: Signed Measures & Radon-Nikodym Theorem (1 page, likely)
+- **Topics:** Signed measures, Jordan-Hahn decomposition, absolute continuity, mutual singularity (conceptual only), Radon-Nikodym theorem with proof (von Neumann's L² method), chain rule, change-of-variables via RN derivative.
+- **Lebesgue decomposition:** **Excluded** from main text (referenced in Looking Ahead only). Decision rationale: three "decomposition" theorems in sequence (Hahn, Lebesgue, Radon-Nikodym) risks pedagogical clutter. RN-as-density is the primary target.
+- **Proof method:** von Neumann's L² method rather than Durrett's "greedy function" approach. Rationale: connects to calc-25 (Riesz Representation Theorem on Hilbert spaces, `#T-riesz_representation`) and calc-31 (L² completeness). This is a deliberate cross-section bridge using established machinery.
+- **Change of variables / chain rule:** Retained as a **Proposition inside §4** (not promoted to a dedicated page). Rationale considered and rejected: a standalone "Change of Variables" page would need to span Jacobian-type, pushforward-type, RN-type, and Girsanov-type variants, making it either thin or scope-diffuse. Each variant is better housed in its natural context.
+- **Retroactive closures:** prob-22's `dP_X/d\lambda` definition, lp_spaces.html's deferred Lp duality proof remark (deferred item #340), prob-23's conditional expectation preview (Section 6 Looking Ahead).
+- **ML connection:** Bayesian posterior density, score function \(\nabla \log p = \nabla \log(dP/d\lambda)\) as differentiated RN derivative, importance sampling reweighting, KL divergence rigorous setup for RLHF.
+- **Prereqs:** prob-22, prob-23, calc-25 (Riesz Rep), calc-31 (Lp completeness).
+- **References:** Durrett Ch. 1 & 5, Folland Ch. 3, Conway (Riesz representation bridge).
+
+#### prob-25: Conditional Expectation & Regular Conditional Distributions (1 page, likely)
+- **Topics:** Conditional expectation \(\mathbb{E}[X | \mathcal{G}]\) defined as Radon-Nikodym derivative of the signed measure \(\mathcal{G} \ni A \mapsto \int_A X d\mathbb{P}\) with respect to \(\mathbb{P}|_\mathcal{G}\). Basic properties: linearity, tower property, monotone/dominated convergence for conditional expectation, conditional Jensen. Regular conditional distributions.
+- **Connection to prob-23 Section 6:** Materializes the preview given in the prob-23 Looking Ahead section.
+- **ML connection:** Bayesian posterior as conditional expectation, E-step of EM algorithm, score matching identity.
+- **Prereqs:** prob-24.
+- **References:** Durrett Ch. 5, Billingsley (alternate treatment).
+
+**Phase 2c outcome:** Three deferred items simultaneously resolved (#340 Lp duality, #341 Conditional expectation, partial #345 Variational Inference foundation). Section III has a rigorous conditional expectation framework, enabling all downstream Bayesian/VI/martingale development.
+
+---
+
+### Phase 2d: Variational Inference (estimated 1–2 pages, timing TBD)
+
+**Goal:** Treat Variational Inference as a first-class inference framework, not merely as a VAE preamble.
+
+**Rationale for independence from ml-12 (VAE):** The VI section inside ml-12 (`vae.html`) is pedagogically motivated (leading toward VAE). A dedicated foundation page is required because:
+- The ELBO decomposition \(\log p(x) = \text{ELBO}(q) + D_{KL}(q \| p(\cdot | x))\) admits a **rigorous proof only after conditional expectation (prob-25) is in place**.
+- CAVI (coordinate ascent VI), SVI (stochastic VI), black-box VI, and the variational perspective on diffusion models are not covered in ml-12.
+- Deferred item #345 ("Variational Inference — Implicit in ml-12 but never formally isolated") has been pending since the 3/28 roadmap revision.
+
+#### prob-26: Variational Inference — ELBO & Mean-Field (1 page, likely; may expand)
+- **Topics:** Intractable posteriors and variational family selection. ELBO exact decomposition (rigorous proof using prob-25). Mean-field factorization, Coordinate Ascent VI (CAVI) with Bayesian Gaussian Mixture example. α-divergence alternatives (brief).
+- **Prereqs:** prob-24, prob-25, prob-12 (Shannon-level KL).
+- **ML connection:** Bayesian GMM, topic models (LDA), variational Bayesian inference in graphical models.
+
+#### prob-27 (conditional): Stochastic & Amortized VI (1 page, if split occurs)
+- **Topics:** Reparameterization trick (elevated from ml-12), score function estimator, Black-box VI, Stochastic VI (Hoffman et al. 2013). Normalizing flows as variational families. Variational perspective on diffusion models (hierarchical VI).
+- **Possible merge with prob-26:** If prob-26 stays tight at 1 page, prob-27 material can be compressed into the prob-26 "Looking Ahead" section or split only if drafting demands expansion.
+- **ML connection:** VAE amortized posterior, Normalizing Flows, Diffusion ELBO (MIT 6.S184 perspective).
+- **Prereqs:** prob-26, ml-12 (VAE, retroactive retrofit target).
+
+**Phase 2d outcome:** Deferred item #345 fully resolved. ml-12 (VAE) receives retroactive ref-links to prob-26/27. Foundation established for future ml-XX pages on diffusion models, flow matching, and Bayesian Neural Networks.
+
+---
+
+### Phase 2e: Stochastic Calculus Light (estimated 2–3 pages, timing TBD)
+
+**Goal:** Provide the continuous-time stochastic foundation required for modern generative AI (score-based diffusion, Neural SDE, continuous-time RL).
+
+**Strategic 2026 AI/ML commitment:** Diffusion models are the dominant paradigm for generative AI as of 2026 (Stable Diffusion, Sora, molecular/audio generation). The mathematical foundation involves Brownian motion, Itô integral, SDE, and Fokker-Planck equations. MIT course 6.S184 (2026) teaches this explicitly as "Generative AI with SDEs." Without Phase 2e, the curriculum cannot rigorously bridge to this frontier.
+
+**Scope "light" definition:** Construction of Brownian motion, Itô integral (basic definition + key properties), Itô's lemma, SDE as a solution concept, Fokker-Planck for the marginal density. **Excluded:** Stratonovich calculus (brief mention), Malliavin calculus, jump processes, stochastic control theory.
+
+#### prob-28: Brownian Motion — Construction & Properties (1 page, likely; may split)
+- **Topics:** Brownian motion axioms (Gaussian increments, independence, continuity), existence (Kolmogorov extension theorem + Kolmogorov-Čentsov continuity, or Lévy-Ciesielski construction), quadratic variation, nowhere-differentiable paths.
+- **Retroactive closure:** prob-23 L529's forward-reference to Kolmogorov extension theorem materializes here.
+
+#### prob-29: Itô Integral & Itô's Lemma (1 page, likely)
+- **Topics:** Predictable processes, Itô integral for elementary processes, extension via L² isometry, Itô's lemma (one-dimensional), SDE existence and uniqueness (statement level).
+- **Prereqs:** prob-28, prob-24 (for measure-change preview), calc-31 (L² completeness).
+
+#### prob-30: SDE & Fokker-Planck Equation (1 page, likely)
+- **Topics:** SDE solution theory overview, generator of a diffusion, Fokker-Planck equation for the marginal density, Girsanov theorem (statement + intuition), score function interpretation.
+- **ML connection:** Score-based diffusion models (DDPM, continuous-time formulation), Neural SDE, Langevin dynamics for sampling, Fokker-Planck as dual of the reverse-time SDE in diffusion generation.
+- **Prereqs:** prob-29, prob-24 (Girsanov uses RN derivative).
+
+**Phase 2e outcome:** Deferred item #342 resolved. Direct commitment to 2026 generative AI foundation. Enables future ml-XX pages on diffusion models, flow matching, Neural ODEs, and score matching.
+
+---
+
+### Phase 2f (optional, further deepening): Specialized Topics
+
+If Section III deepening continues beyond Phase 2e, the following pages become natural candidates. These are **not committed** and remain in the deferred items pool, but are flagged here for continuity.
+
+- **prob-XX: Variational Representations & f-Divergences** (1 page). Donsker-Varadhan variational formula, f-divergences (Hellinger, χ², α-divergence), Pinsker's inequality. Foundation for MINE (Mutual Information Neural Estimator), f-GAN, InfoNCE (contrastive learning), PAC-Bayes bounds. **Prereqs:** prob-24, prob-12, calc-25.
+- **prob-XX: Uniform Integrability & Martingale Convergence** (1–2 pages). UI, Vitali convergence theorem, filtrations and martingales (discrete time), Doob's martingale convergence theorem. Foundation for stochastic approximation / RL theory, optional stopping. **Retroactive closure:** prob-23 L290's UI forward-reference. **Prereqs:** prob-24, prob-25.
+- **prob-XX: Characteristic Functions & CLT (Rigorous)** (1 page). Characteristic functions as Fourier transforms of probability measures, Lévy continuity theorem, rigorous CLT proof. **Connection to calc-32 (Fourier in Hilbert).** **Prereqs:** prob-24, calc-32.
+
+### Execution Sequence
+
+Phase 2c is committed; Phase 2d/2e/2f timing depends on interleaving with Phase 3 (Smooth Manifolds), ml-13 (GNN), and Phase 4 (Representation Theory). Candidate orderings:
+
+- **Order A (Section III sprint):** prob-24 → prob-25 → prob-26 → prob-27 → prob-28 → prob-29 → prob-30, continuous.
+- **Order B (balanced interleave):** prob-24 → prob-25 → calc-32 → manifold series → prob-26 → ... 
+- **Order C (deferred revisit):** prob-24 → prob-25, then return to Phase 3 (manifolds) / ml-13 / Phase 4 (rep theory), and revisit prob-26+ only when a concrete ML page (VAE retrofit, diffusion model page) creates pressure.
+
+**Current default:** Order C. Phase 2c (prob-24/25) is committed and should be completed before any Phase 2d/2e judgement. Phase 2d/2e triggers are: (a) starting a dedicated ml-XX diffusion model page, (b) starting a dedicated ml-XX Bayesian Neural Networks page, (c) starting a dedicated ml-XX RLHF/DPO alignment page.
 
 ---
 
@@ -267,6 +394,8 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 |---------|-----------------|--------|
 | calc-32 | `fourier_hilbert.html` | Next |
 | ml-13 | `graph_neural_networks.html` | Next |
+| **prob-24** | `radon_nikodym.html` | **Phase 2c — start May 2026** |
+| **prob-25** | `conditional_expectation.html` | **Phase 2c — after prob-24** |
 
 ### Planned Pages (ID deferred — assigned at drafting time)
 
@@ -276,6 +405,8 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | ml-14 | 1 | `equivariant_nn.html` | After representation theory |
+| **Variational Inference (prob-XX, Phase 2d)** | ~1–2 | `variational_inference.html` (+ possibly `stochastic_amortized_vi.html`) | Triggered by Phase 2c completion + VAE retrofit / Bayesian NN / diffusion ml-page demand |
+| **Stochastic Calculus (prob-XX, Phase 2e)** | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Triggered by diffusion ml-page / Neural SDE / physical AI page demand |
 | Quivers (disc-XX) | ~1 | `quivers.html` | Backlog |
 | Category Theory (disc-XX) | ~2–3 | TBD | Backlog |
 | DEC (disc-XX) | ~1–2 | TBD | Backlog |
@@ -330,19 +461,22 @@ Which books serve which pages. All references are listed on the site-wide index;
 
 ## Deferred Items (Non-Blocking)
 
-These topics are explicitly deferred — not forgotten, but not on the critical path for 2026.
+These topics are explicitly deferred — not forgotten, but not on the critical path for 2026. Items linked to Phase 2c–2e show their resolution path.
 
 | Item | Why Deferred | Trigger to Revisit |
 |------|--------------|-------------------|
 | **Schwartz Space & Distributions** | Requires measure-theoretic machinery beyond calc-30; primarily needed for PDE theory | If a PDE or generalized function page is planned |
 | **Pontryagin Duality** (Fourier on groups) | Elegant but requires locally compact abelian groups + Haar measure; far from current scope | After linalg-27~30 (Lie groups) + calc-32 (Fourier) + linalg-XX (representation theory), if harmonic analysis track emerges |
 | **Spectral Theory of the Laplacian** (continuous) | Natural extension of calc-27 + calc-32; connects Fourier eigenfunctions to Laplace-Beltrami | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
-| **Lp Duality via Radon-Nikodym** | Full proof of (Lp)* ≅ Lq requires Radon-Nikodym derivative | After prob-22 (Measure-Theoretic Probability) and calc-30/31 (Lp Spaces & Completeness) provide the foundation |
-| **Conditional Expectation (Radon-Nikodym)** | Measure-theoretic conditional expectation, filtrations, martingale basics | After prob-22; if stochastic calculus or advanced Bayesian pages are planned |
-| **Continuous-Time Stochastic Processes** | Brownian motion, Itô integral, SDEs; requires solid measure-theoretic probability | After prob-22; if physical AI, financial math, or diffusion model pages are planned |
+| **Lp Duality via Radon-Nikodym** | Full proof of (Lp)* ≅ Lq requires Radon-Nikodym derivative | **→ Phase 2c (prob-24):** The RN theorem is the critical bridge; calc-31 retrofit will ref-link to prob-24 after completion |
+| **Conditional Expectation (Radon-Nikodym)** | Measure-theoretic conditional expectation, filtrations, martingale basics | **→ Phase 2c (prob-25):** Conditional expectation proper (filtrations, martingale basics remain deferred to separate Phase 2f candidate page) |
+| **Continuous-Time Stochastic Processes** | Brownian motion, Itô integral, SDEs; requires solid measure-theoretic probability | **→ Phase 2e (prob-28/29/30):** Triggered by diffusion model / Neural SDE / physical AI page demand |
 | **Fiber Bundles & Gauge Theory** | Requires mature manifold theory + Lie groups (linalg-27~30) | If GDL viewpoint page demands gauge equivariance machinery |
 | **String Diagrams** | Categorical tool; requires disc-XX (Category Theory) | After CDL viewpoint page is planned |
-| **Variational Inference** | Implicit in ml-12 (VAE) but never formally isolated | Low priority; reassess after prob-22 arc settles |
+| **Variational Inference** | Implicit in ml-12 (VAE) but never formally isolated | **→ Phase 2d (prob-26, possibly prob-27):** Triggered by the need for rigorous ELBO foundation; ml-12 VAE page will receive retroactive ref-links after completion |
+| **Uniform Integrability & Martingale Convergence** (NEW) | UI + Vitali convergence theorem + discrete-time martingale basics + Doob convergence | **→ Phase 2f candidate page.** Triggered by RL theory / stochastic approximation / bandit algorithms pages; prereq: Phase 2c complete. Resolves prob-23 L290 UI forward-reference. |
+| **Variational Representations & f-Divergences** (NEW) | Donsker-Varadhan formula, f-divergences, Pinsker's inequality; foundation for MINE / f-GAN / InfoNCE / PAC-Bayes | **→ Phase 2f candidate page.** Triggered by contrastive learning / mutual information estimation / generalization theory pages; prereq: Phase 2c complete. |
+| **Characteristic Functions & CLT (Rigorous)** (NEW) | Measure-theoretic version of CLT via characteristic functions + Lévy continuity theorem | **→ Phase 2f candidate page.** Triggered by advanced asymptotic statistics or Gaussian process limiting behavior pages; prereq: Phase 2c + calc-32 (Fourier in Hilbert). |
 
 ---
 
@@ -374,6 +508,18 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 ---
 
 ## Changelog
+- **4/22/2026:** Section III Measure-Theoretic Deepening plan (Phase 2c–2e) formally adopted.
+  - **Trigger:** Peer review of prob-23 (`limit_theorems_product_measures.html`) exposed several structural gaps: (a) Radon-Nikodym invoked without proof across prob-22, calc-30, and prob-23 Looking Ahead (name-lending without mathematical content); (b) Variational Inference never formally isolated despite being implicit in ml-12 VAE; (c) forward-references to uniform integrability, Kolmogorov extension, Fubini proofs all delegated to external standard texts — reflecting a real curriculum gap, not just Instruction v2 citation violations.
+  - **Root cause:** Section III had only 2 measure-theoretic pages (prob-22/23) while Sections I (Lie theory, 4 pages) and II (Functional Analysis block, 10 pages) reached graduate-level depth. Section III was under-developed relative to its importance for 2026 ML/AI (Bayesian inference, RLHF KL regularization, diffusion models, VAE/ELBO).
+  - **Commitment:** Phase 2c (prob-24/25: Radon-Nikodym + Conditional Expectation) is committed; Phase 2d (prob-26/27: Variational Inference) and Phase 2e (prob-28/29/30: Stochastic Calculus) are planned with trigger-based revisit policy.
+  - **Decision records:**
+    - **Fubini/Tonelli remains in Section III (prob-23)** despite its natural home being Section II. Rationale: (a) i.i.d. sampling is the primary consumer; (b) compass map visual structure (calc-30 ↔ prob-22 ↔ prob-23 three-node cluster) anchors the measure-theoretic tools across Section II/III; (c) the web-of-reinforcement architecture is not a linear book. Future Section II pages (calc-32 Fourier) that need Fubini will ref-link to prob-23.
+    - **Lebesgue decomposition excluded from prob-24 main text.** Rationale: three "decomposition" theorems in sequence (Hahn, Lebesgue, Radon-Nikodym) creates pedagogical clutter. RN-as-density is the primary target; Lebesgue decomposition referenced in Looking Ahead only.
+    - **Change of Variables / Chain Rule (RN version) retained as Proposition inside prob-24 §4**, not promoted to a dedicated page. Rationale: a standalone "Change of Variables" page would need to span Jacobian-type, pushforward-type, RN-type, and Girsanov-type variants, making it either thin or scope-diffuse. Each variant is better housed in its natural context. Pushforward-type is already at prob-22 (`#T-change-of-variable`); RN-type will sit at prob-24; Girsanov-type will sit at future Phase 2e page.
+    - **Radon-Nikodym proof method:** von Neumann's L² method, not Durrett's "greedy function" method. Rationale: uses calc-25 (Riesz Representation Theorem on Hilbert spaces) and calc-31 (L² completeness), making the proof a deliberate cross-section bridge.
+  - **Deferred items reorganized:** #340 (Lp Duality), #341 (Conditional Expectation), #342 (Continuous-Time SP), #345 (Variational Inference) all received concrete trigger paths (→ Phase 2c/2d/2e). Three new items added: Uniform Integrability & Martingale Convergence, Variational Representations & f-Divergences, Characteristic Functions & CLT (Rigorous) — flagged as Phase 2f candidates.
+  - **prob-23 peer review outcome:** All 🔴 and selected 🟡 items addressed via str_replace diffs (integrability hypothesis added to Proposition and Strong Law, UI iff binding fixed in two locations, formal citations rewritten to descriptive attribution in four locations, Fubini statement strengthened with a.e. inner/outer integrability, product premeasure σ-additivity verification made explicit, i.i.d. definition extended to infinite sequences, change-of-variable ref-link added to worked example, DCT vs Leibniz rule distinction clarified, event independence 2^n propagation noted). HTML structure verified (tag balance, anchor preservation).
+  - **Filename Registry:** prob-24 (`radon_nikodym.html`), prob-25 (`conditional_expectation.html`) added. Phase 2d/2e candidates listed with deferred ID convention.
 - **4/21/2026:** calc-30 split into calc-30 + calc-31; Fourier/Hilbert renumbered to calc-32.
   - **Rationale:** Original calc-30 (`lp_spaces.html`, 1826 lines) covered both the construction of Lp as a normed space (Hölder, Minkowski) and the deep completeness theory (Riesz-Fischer, MCT/Fatou/DCT, convergence modes, applications). The size and conceptual bifurcation made it unwieldy and hard to reference precisely from downstream pages (prob-22/23, future Fourier).
   - **Split boundary:** calc-30 now ends at Minkowski's inequality (concluding with Lp as a normed space). calc-31 (`lp_completeness.html`) opens with the Riesz-Fischer theorem, develops the MCT/Fatou/DCT toolkit, and continues through the convergence-modes landscape and applications.
