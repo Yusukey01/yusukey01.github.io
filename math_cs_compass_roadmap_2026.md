@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota  
-**Last Updated:** 4/5/2026 
+**Last Updated:** 4/21/2026 
 **Website:** https://math-cs-compass.com  
 
 ---
@@ -38,11 +38,11 @@ There is no isolated "Geometry" or "Physics" section. Geometric and quantum conc
 - **Abstract Algebra (8 pages):** Groups, cyclic/permutation, structural group theory, classification of finite abelian groups, rings & fields, ideals & factor rings, polynomial rings, integral domains.
 - **Field Theory & Continuous Symmetry (8 pages):** Extension fields, geometry of symmetry (Dₙ, SO(3), SE(3)), algebraic extensions, finite fields, Lie groups, matrix exponential, Lie algebras & bracket, Lie correspondence.
 
-### Section II: Calculus to Optimization & Analysis (30 pages) ✅
+### Section II: Calculus to Optimization & Analysis (31 pages) ✅
 - **Derivatives & Integration (9+3 pages):** Gradients, Jacobians, Newton's method, KKT, Duality, Riemann integration, measure theory, Lebesgue integration.
 - **Fourier Analysis (2 pages):** Fourier series, Fourier transform & FFT.
 - **Metric Spaces & Topology (8 pages):** Metric spaces, convergence, continuity, completeness, connectedness, compactness, metric equivalence (homeomorphism), topological spaces.
-- **Functional Analysis (7 pages):** Banach & Hilbert spaces, bounded operators, dual spaces & Riesz representation, weak topologies & Banach-Alaoglu, spectral theory of compact operators, RKHS & kernel methods, Lp spaces & Riesz-Fischer.
+- **Functional Analysis (8 pages):** Banach & Hilbert spaces, bounded operators, dual spaces & Riesz representation, weak topologies & Banach-Alaoglu, spectral theory of compact operators, RKHS & kernel methods, Lp spaces (construction & inequalities), Lp completeness & convergence (Riesz-Fischer, MCT/Fatou/DCT, convergence modes).
 
 ### Section III: Probability & Statistics (23 pages) ✅
 - **Foundations & Inference:** Probability, distributions, covariance, MVN, MLE, hypothesis testing, linear regression.
@@ -57,7 +57,7 @@ There is no isolated "Geometry" or "Physics" section. Geometric and quantum conc
 - **Foundations & Deep Learning:** Intro to ML, regularized regression, classification, SVM, neural networks, automatic differentiation, deep NN (CNNs/Transformers).
 - **Unsupervised & Physical AI:** PCA & autoencoders, clustering, reinforcement learning, natural gradient descent, variational autoencoders (VAE).
 
-**Total: 110 pages.**
+**Total: 111 pages.**
 
 ---
 
@@ -77,12 +77,15 @@ Geometry of Symmetry✅        Functional Analysis            Bayesian & Stochas
      │                       ┌─────┴──────────────┐              │                       Incidence & ∂₁
      │                       │                    │              │                       (disc-13)✅
      │                calc-29: Topological   calc-30: Lp         │                       Simplicial Complexes
-     │                Spaces ✅              Spaces ✅            │                       (disc-14)✅
+     │                Spaces ✅              Construction ✅      │                       (disc-14)✅
      │                       │                    │              │                            │
-     │                       │                    ├──────── prob-22&23: Measure-         Intro to Homology
-     │                       │                    │         Theoretic Prob. ✅✅          (disc-15) ✅
+     │                       │             calc-31: Lp           │                       Intro to Homology
+     │                       │             Completeness ✅       │                       (disc-15) ✅
      │                       │                    │              │                            │
-     │                       │               calc-31:            │                            │
+     │                       │                    ├──────── prob-22&23: Measure-              │
+     │                       │                    │         Theoretic Prob. ✅✅               │
+     │                       │                    │              │                            │
+     │                       │               calc-32:            │                            │
      │                       │               Fourier in          │                            │
      │                       │               Hilbert Spaces      │                            │
      ├───────────────────────┤                    │              │                            │
@@ -110,7 +113,7 @@ Representation Theory        │                    │              │        
   ◈ ml-14: Equivariant Neural Networks ← linalg-27~30, linalg-XX (Rep. Theory), ml-13
   ◈ ml-XX: GDL Overview ← calc-XX (Riemannian), linalg-27~30, ml-14
   ◈ ml-XX: CDL Overview ← disc-XX (Category Theory), ml-13
-  ◈ Quantum computation topics ← calc-31 (Fourier/Hilbert), calc-27 (Spectral)
+  ◈ Quantum computation topics ← calc-32 (Fourier/Hilbert), calc-27 (Spectral)
 ```
 
 ---
@@ -119,7 +122,8 @@ Representation Theory        │                    │              │        
 
 ### Phase 1 — Completed Early (March 2026)
 - **calc-29** (Topological Spaces)
-- **calc-30** (Lp Spaces & Riesz-Fischer)
+- **calc-30** (Lp Spaces — Construction & Inequalities)
+- **calc-31** (Lp Completeness & Convergence) — split from original calc-30 in April 2026; see Changelog 4/21/2026
 - **prob-22 & prob-23** (Measure-Theoretic Probability)
 
 ### Phase 2a — Lie Group Series (April 2026) ✅
@@ -138,11 +142,12 @@ Originally planned as 2 pages (linalg-27 & 28), expanded to 4 pages during draft
 
 ## Phase 2b: Current & Near-Term Work
 
-### calc-31: Fourier Analysis in Hilbert Spaces (1 page)
+### calc-32: Fourier Analysis in Hilbert Spaces (1 page)
 - **Goal:** Elevate Fourier analysis from engineering tools (calc-14, calc-15) to pure functional analysis. Capstone page that synthesizes existing machinery rather than introducing new foundations.
 - **Topics:** Plancherel's theorem (Fourier as unitary operator on L²), Riemann-Lebesgue lemma, Heisenberg's uncertainty principle as a mathematical theorem.
 - **Connections:** calc-27 (spectral theory) provides the abstract framework; this page instantiates it concretely. Insight Boxes connect to quantum mechanics (unitary evolution, measurement) and signal processing (Nyquist-Shannon as a Hilbert space projection).
-- **Why 1 page:** All heavy prerequisites are done (calc-23 Hilbert spaces, calc-25 Riesz, calc-27 spectral theory, calc-30 Lp completeness, prob-22 DCT). The content is convergence of existing tools, not new foundation-building. Group-theoretic Fourier analysis (Peter-Weyl) is deferred to after representation theory.
+- **Why 1 page:** All heavy prerequisites are done (calc-23 Hilbert spaces, calc-25 Riesz, calc-27 spectral theory, calc-31 Lp completeness, prob-22 DCT). The content is convergence of existing tools, not new foundation-building. Group-theoretic Fourier analysis (Peter-Weyl) is deferred to after representation theory.
+- **Note on numbering:** Originally assigned calc-31; renumbered to calc-32 when the original calc-30 was split into calc-30 (construction) + calc-31 (completeness) in April 2026.
 
 ### ml-13: Graph Neural Networks (1 page)
 - **Goal:** Show how discrete symmetry (permutation invariance) constrains network architecture. Introduces the GDL principle in its simplest form.
@@ -186,7 +191,7 @@ The original plan (1 page for calc-32) was recognized as inadequate during the L
 ### linalg-XX: Representation Theory (~3–4 pages)
 - **Topics:** Group representations, subrepresentations, irreducibility, Maschke's theorem, Schur's lemma, character theory (finite groups), Lie group representations and Peter-Weyl.
 - **Prereqs:** linalg-27~30 (Lie group series), linalg-22 (classification of finite abelian groups).
-- **Connection:** Peter-Weyl theorem bridges back to calc-31 (Fourier as a special case of harmonic analysis on groups).
+- **Connection:** Peter-Weyl theorem bridges back to calc-32 (Fourier as a special case of harmonic analysis on groups).
 - **Note:** Page count estimated at 3–4 based on the Lie group experience. Finite group representations alone (Maschke, Schur, character tables) fill at least 2 pages; Lie group representations add 1–2 more.
 
 ### ml-14: Equivariant Neural Networks
@@ -248,6 +253,7 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 | calc-28 | `rkhs.html` | ✅ |
 | calc-29 | `topological_spaces.html` | ✅ |
 | calc-30 | `lp_spaces.html` | ✅ |
+| calc-31 | `lp_completeness.html` | ✅ |
 | linalg-27 | `lie_groups.html` | ✅ |
 | linalg-28 | `matrix_exponential.html` | ✅ |
 | linalg-29 | `lie_algebras.html` | ✅ |
@@ -259,7 +265,7 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 
 | Page ID | Planned Filename | Status |
 |---------|-----------------|--------|
-| calc-31 | `fourier_hilbert.html` | Next |
+| calc-32 | `fourier_hilbert.html` | Next |
 | ml-13 | `graph_neural_networks.html` | Next |
 
 ### Planned Pages (ID deferred — assigned at drafting time)
@@ -289,7 +295,7 @@ Which books serve which pages. All references are listed on the site-wide index;
 | Boyd & Vandenberghe — *Convex Optimization* | calc-07 (KKT), calc-08 (Duality) | — | Complete for current needs |
 | Bronstein et al. — *Geometric Deep Learning* | Insight Boxes across site | ml-13 (GNN), ml-14 (Equivariant NN), ml-XX (GDL overview) | The "destination viewpoint" text; referenced but not followed as primary textbook |
 | Cormen et al. — *Introduction to Algorithms* | disc-01~11 | — | Complete for current needs |
-| **Conway — *A Course in Functional Analysis*** | **calc-23~28 (entire FA block)** | **calc-30 (Lp), calc-31 (Fourier/Hilbert)** | **Primary reference for all of Section II advanced analysis** |
+| **Conway — *A Course in Functional Analysis*** | **calc-23~28 (entire FA block), calc-30 (Lp construction), calc-31 (Lp completeness)** | **calc-32 (Fourier/Hilbert)** | **Primary reference for all of Section II advanced analysis** |
 | Lay — *Linear Algebra and Its Applications* | linalg-01~10 | — | Complete for current needs |
 | Diestel — *Graph Theory* | disc-01, disc-12 (Planar Graphs) | — | Complete for current needs |
 | **Durrett — *Probability: Theory and Examples*** | prob-13 (Convergence) | **prob-22 (Measure-Theoretic Probability)** | **Primary reference for measure-theoretic probability; convergence theorems (MCT, DCT, Fatou)** |
@@ -302,7 +308,7 @@ Which books serve which pages. All references are listed on the site-wide index;
 | Murphy Book 2 — *Probabilistic ML: Advanced* | ml-09~12 (NGD, VAE), prob-16 (FIM) | ml-14 (Equivariant NN) | Covers information geometry at applied level; sufficient until Amari is needed |
 | O'Searcoid — *Metric Spaces* | calc-16~22 (entire Metric Spaces block) | — | Complete for current needs |
 | Sipser — *Introduction to the Theory of Computation* | disc-05~09 (Automata through P vs NP) | — | Complete for current needs |
-| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15 (Fourier Series, FFT) | **calc-31 (Fourier in Hilbert Spaces — Plancherel, Riemann-Lebesgue)** | **Also covers Lp basics useful for calc-30** |
+| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15 (Fourier Series, FFT) | **calc-32 (Fourier in Hilbert Spaces — Plancherel, Riemann-Lebesgue)** | **Also covers Lp basics useful for calc-30/31** |
 | **Stillwell — *Naive Lie Theory*** | linalg-24 (Geometry of Symmetry) | **linalg-27~30 (Lie Group Series)** | **Accessible intro; supplement with Lee Ch.7+ for rigorous treatment** |
 
 ### New additions to index.html
@@ -318,7 +324,7 @@ Which books serve which pages. All references are listed on the site-wide index;
 | Book | Trigger | Pages |
 |------|---------|-------|
 | Amari — *Information Geometry and Its Applications* (2016) | After manifold series if information geometry page is planned | Future info geometry page; deepens ml-12 (NGD) |
-| Nielsen & Chuang — *Quantum Computation and Quantum Information* (2010) | If a dedicated quantum computation page is planned | Future quantum pages; supplements calc-31 (Fourier/Hilbert) |
+| Nielsen & Chuang — *Quantum Computation and Quantum Information* (2010) | If a dedicated quantum computation page is planned | Future quantum pages; supplements calc-32 (Fourier/Hilbert) |
 
 ---
 
@@ -329,9 +335,9 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 | Item | Why Deferred | Trigger to Revisit |
 |------|--------------|-------------------|
 | **Schwartz Space & Distributions** | Requires measure-theoretic machinery beyond calc-30; primarily needed for PDE theory | If a PDE or generalized function page is planned |
-| **Pontryagin Duality** (Fourier on groups) | Elegant but requires locally compact abelian groups + Haar measure; far from current scope | After linalg-27~30 (Lie groups) + calc-31 (Fourier) + linalg-XX (representation theory), if harmonic analysis track emerges |
-| **Spectral Theory of the Laplacian** (continuous) | Natural extension of calc-27 + calc-31; connects Fourier eigenfunctions to Laplace-Beltrami | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
-| **Lp Duality via Radon-Nikodym** | Full proof of (Lp)* ≅ Lq requires Radon-Nikodym derivative | After prob-22 (Measure-Theoretic Probability) and calc-30 (Lp Spaces) provide the foundation |
+| **Pontryagin Duality** (Fourier on groups) | Elegant but requires locally compact abelian groups + Haar measure; far from current scope | After linalg-27~30 (Lie groups) + calc-32 (Fourier) + linalg-XX (representation theory), if harmonic analysis track emerges |
+| **Spectral Theory of the Laplacian** (continuous) | Natural extension of calc-27 + calc-32; connects Fourier eigenfunctions to Laplace-Beltrami | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
+| **Lp Duality via Radon-Nikodym** | Full proof of (Lp)* ≅ Lq requires Radon-Nikodym derivative | After prob-22 (Measure-Theoretic Probability) and calc-30/31 (Lp Spaces & Completeness) provide the foundation |
 | **Conditional Expectation (Radon-Nikodym)** | Measure-theoretic conditional expectation, filtrations, martingale basics | After prob-22; if stochastic calculus or advanced Bayesian pages are planned |
 | **Continuous-Time Stochastic Processes** | Brownian motion, Itô integral, SDEs; requires solid measure-theoretic probability | After prob-22; if physical AI, financial math, or diffusion model pages are planned |
 | **Fiber Bundles & Gauge Theory** | Requires mature manifold theory + Lie groups (linalg-27~30) | If GDL viewpoint page demands gauge equivariance machinery |
@@ -368,12 +374,22 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 ---
 
 ## Changelog
+- **4/21/2026:** calc-30 split into calc-30 + calc-31; Fourier/Hilbert renumbered to calc-32.
+  - **Rationale:** Original calc-30 (`lp_spaces.html`, 1826 lines) covered both the construction of Lp as a normed space (Hölder, Minkowski) and the deep completeness theory (Riesz-Fischer, MCT/Fatou/DCT, convergence modes, applications). The size and conceptual bifurcation made it unwieldy and hard to reference precisely from downstream pages (prob-22/23, future Fourier).
+  - **Split boundary:** calc-30 now ends at Minkowski's inequality (concluding with Lp as a normed space). calc-31 (`lp_completeness.html`) opens with the Riesz-Fischer theorem, develops the MCT/Fatou/DCT toolkit, and continues through the convergence-modes landscape and applications.
+  - **Renumbering consequence:** Originally planned calc-31 (Fourier in Hilbert Spaces) → now calc-32. All downstream references (Peter-Weyl connection in linalg-XX; Pontryagin / Laplacian spectral / quantum in Deferred Items; Nielsen & Chuang trigger) updated.
+  - **Note on the manifold series:** Historical 4/5/2026 changelog below references "calc-32 (Smooth Manifolds)" — that assignment was superseded even before this update (manifold series moved to `calc-XX` deferred IDs on 4/5). After this 4/21 update, calc-32 = Fourier in Hilbert Spaces; manifold series remains at calc-XX.
+  - **Cross-section ref updates:** prob-22 (1 ref: MCT → lp_completeness), prob-23 (10 refs: all section/theorem anchors → lp_completeness) — all rewritten.
+  - **curriculum.json:** calc-30 entry updated (title, keywords, description, sections trimmed); calc-31 entry added as parts[30] with prereqs=[calc-30, calc-23, calc-12, calc-19] and icon `Σ‖fₙ‖` (non-colliding within Section II). `reservedSlots` already had `{q:7, r:-3}` pre-allocated for this slot.
+  - **Pattern confirmation:** This is a new instance of the "topics requiring new conceptual paradigms expand 2–4×" lesson. The Riesz-Fischer proof + convergence-mode landscape together constitute a distinct pedagogical unit that deserves its own page; the split was motivated not by mechanical length but by the conceptual separation between "normed structure" and "completeness theory."
+  - **No change to total planned curriculum scope** — only re-partitioning of existing content plus a clean +1 page count from the split.
 - **4/5/2026:** Major roadmap restructuring.
   - Reflected Lie group series expansion: linalg-27~30 (4 pages) now complete. linalg-27 (Lie Groups), linalg-28 (Matrix Exponential), linalg-29 (Lie Algebras), linalg-30 (Lie Correspondence).
   - Adopted deferred ID convention: unassigned future pages use XX instead of premature numbered IDs.
   - Planned manifold series split: calc-32 (Smooth Manifolds & Tangent Spaces) → calc-XX (~3 pages: Atlases, Tangent Spaces/Pushforward, Vector Fields/Flows). Riemannian metrics estimated at ~2 pages.
   - Representation theory (formerly linalg-29) deferred to linalg-XX (~3–4 pages), after manifold series.
   - Revised implementation order: linalg-27~30 → calc-31 → ml-13 → calc-XX (manifolds) → linalg-XX (rep. theory) → ml-14.
+  - *(Superseded by 4/21/2026: calc-30 split into calc-30/31; Fourier/Hilbert renumbered to calc-32. Updated order: calc-30/31 (both complete) → calc-32 (Fourier) → ml-13 → manifolds → rep. theory → ml-14.)*
   - ml-13 elevated to pre-manifold position: introduces GDL principle and plants forward references to manifold series.
   - Added "Page Count Estimation" to Key Learnings.
   - Added Variational Inference to Deferred Items.
