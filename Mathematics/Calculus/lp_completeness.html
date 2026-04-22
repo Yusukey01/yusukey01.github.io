@@ -81,8 +81,9 @@ uses_python: false
                     <p>
                         Let \((g_n)\) be a sequence of measurable functions satisfying 
                         \(0 \leq g_1(x) \leq g_2(x) \leq \cdots\) for a.e. \(x \in \Omega\). 
-                        Define \(g(x) = \lim_{n \to \infty} g_n(x)\) (which exists in \([0, \infty]\) 
-                        by monotonicity). Then \(g\) is measurable and
+                        Set \(g(x) := \sup_n g_n(x)\), which is measurable as a pointwise supremum 
+                        of measurable functions and agrees with \(\lim_{n \to \infty} g_n(x)\) 
+                        for a.e. \(x\) (where monotonicity holds). Then
                         \[
                         \int_\Omega g \, d\mu \;=\; \lim_{n \to \infty} \int_\Omega g_n \, d\mu.
                         \]
@@ -102,9 +103,13 @@ uses_python: false
                     <p>
                         <strong>Easy direction (\(\leq\)):</strong> 
                         Since \(g_n \leq g\) pointwise, every simple function \(q \in S(g_n)\) also 
-                        satisfies \(q \leq g\), i.e., \(q \in S(g)\); taking suprema in the definition 
-                        \(\int g_n \, d\mu = \sup_{q \in S(g_n)} \int q \, d\mu\) gives 
-                        \(\int g_n \, d\mu \leq \int g \, d\mu\) for every \(n\). The sequence 
+                        satisfies \(q \leq g\), i.e., \(S(g_n) \subseteq S(g)\). Hence
+                        \[
+                        \int g_n \, d\mu \;=\; \sup_{q \in S(g_n)} \int q \, d\mu 
+                        \;\leq\; \sup_{q \in S(g)} \int q \, d\mu 
+                        \;=\; \int g \, d\mu
+                        \]
+                        for every \(n\). The sequence 
                         \(\bigl(\int g_n \, d\mu\bigr)\) is non-decreasing (same argument applied to 
                         \(g_n \leq g_{n+1}\)), so its limit exists in \([0, \infty]\) and
                         \[
@@ -123,11 +128,17 @@ uses_python: false
                         \[
                         E_n \;=\; \{x \in \Omega : g_n(x) \geq \alpha \, q(x)\}.
                         \]
-                        Each \(E_n\) is measurable: writing \(E_n = \bigcup_{i=1}^k 
-                        \bigl(\{g_n \geq \alpha a_i\} \cap A_i\bigr)\) (a finite union of 
-                        intersections of measurable sets), measurability follows from that of 
-                        \(g_n\) and the \(A_i\). The sequence is increasing because \(g_n\) 
-                        is. We claim \(\bigcup_n E_n = \Omega\). Indeed, fix \(x \in \Omega\):
+                        Each \(E_n\) is measurable: on \(\bigcup_i A_i\), \(q\) takes the constant 
+                        value \(a_i\) on each \(A_i\), so \(E_n \cap A_i = \{g_n \geq \alpha a_i\} \cap A_i\); 
+                        on the complement \(\Omega \setminus \bigcup_i A_i\), \(q\) vanishes and 
+                        \(E_n\) contains this complement entirely (since \(g_n \geq 0\)). Hence
+                        \[
+                        E_n \;=\; \Bigl(\bigcup_{i=1}^k \bigl(\{g_n \geq \alpha a_i\} \cap A_i\bigr)\Bigr) 
+                              \cup \Bigl(\Omega \setminus \bigcup_{i=1}^k A_i\Bigr),
+                        \]
+                        a finite combination of measurable sets, hence measurable. The sequence is 
+                        increasing because \(g_n\) is. We claim \(\bigcup_n E_n = \Omega\). Indeed, 
+                        fix \(x \in \Omega\):
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>If \(q(x) = 0\), then \(g_n(x) \geq 0 = \alpha q(x)\) for every \(n\), so 
@@ -164,7 +175,9 @@ uses_python: false
                     <span class="theorem-title">Theorem: Fatou's Lemma</span>
                     <p>
                         Let \((g_n)\) be a sequence of measurable functions satisfying 
-                        \(g_n(x) \geq 0\) for a.e. \(x\). Then
+                        \(g_n(x) \geq 0\) for a.e. \(x\). Then \(\liminf_n g_n\) is measurable 
+                        (as a pointwise countable sup of countable infs of measurable functions), 
+                        and
                         \[
                         \int_\Omega \liminf_{n \to \infty} g_n \, d\mu 
                         \;\leq\; \liminf_{n \to \infty} \int_\Omega g_n \, d\mu.
@@ -178,7 +191,10 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        For each \(n\), set \(h_n(x) = \inf_{k \geq n} g_k(x)\). Then 
+                        As in MCT, modifying each \(g_n\) on the null set \(N_n = \{g_n < 0\}\) does 
+                        not affect any integral; on the complement of \(N = \bigcup_n N_n\) (itself null), 
+                        all \(g_n\) are non-negative. Working modulo \(N\), we may assume \(g_n \geq 0\) 
+                        everywhere. For each \(n\), set \(h_n(x) = \inf_{k \geq n} g_k(x)\). Then 
                         \(0 \leq h_1 \leq h_2 \leq \cdots\) (the infimum over a smaller index set is 
                         larger), \(h_n\) is measurable as the pointwise infimum of countably many 
                         measurable functions, and by definition
@@ -224,10 +240,12 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
                     <p>
                         Modifying on a null set, assume the convergence \(f_n \to f\) and the bound 
-                        \(|f_n| \leq h\) hold everywhere. Passing to the limit in \(|f_n| \leq h\) 
-                        gives \(|f| \leq h\), so \(\int |f| \, d\mu \leq \int h \, d\mu < \infty\), 
-                        hence \(f \in L^1\). For brevity we treat the real-valued case; the complex 
-                        case follows by applying the result to real and imaginary parts separately.
+                        \(|f_n| \leq h\) hold everywhere. Then \(f\) is measurable as the pointwise 
+                        limit of measurable functions, and \(|f| \leq h\) everywhere gives 
+                        \(\int |f| \, d\mu \leq \int h \, d\mu < \infty\), hence \(f \in L^1\). 
+                        For brevity we treat the real-valued case; the complex case follows by 
+                        applying the result separately to the real and imaginary parts (each bounded 
+                        by \(|f_n| \leq h\) and converging pointwise).
                     </p>
                     <p>
                         The sequences \(h + f_n\) and \(h - f_n\) are non-negative (since 
@@ -274,13 +292,14 @@ uses_python: false
                     at the cost of an inequality rather than equality. The DCT trades the nonnegativity 
                     assumption for a dominating function, recovering full equality. Together, these 
                     three tools form the backbone of measure-theoretic analysis, and the chain of 
-                    derivations above (MCT \(\Rightarrow\) Fatou \(\Rightarrow\) DCT) shows how all 
-                    three rest on a single foundation.
+                    derivations above (MCT \(\Rightarrow\) Fatou \(\Rightarrow\) DCT) shows that once 
+                    MCT is established from the integral definition and the continuity of measure, 
+                    the remaining two follow.
                 </p>
 
                 <h3>The Theorem</h3>
 
-                <div class="theorem" id="T-riesz_fischer">
+                <div class="theorem" id="T-Riesz-Fischer">
                     <span class="theorem-title">Theorem: Riesz-Fischer</span>
                     <p>
                         For \(1 \leq p \leq \infty\), the space 
@@ -290,15 +309,17 @@ uses_python: false
                 </div>
 
                 <p>
-                    The proof for \(1 \leq p < \infty\) is a beautiful application of the 
-                    convergence theorems above. Rather than dive immediately into a single linear 
-                    argument, we develop the proof in <strong>five clearly delineated steps</strong>, 
-                    each carrying its own role: extracting a fast subsequence, building a 
-                    dominating function via MCT, obtaining a pointwise limit, upgrading to \(L^p\) 
-                    convergence via DCT, and lifting from the subsequence to the full sequence. 
-                    This same five-step pattern reappears in virtually every completeness proof 
-                    in modern analysis (Sobolev spaces, Besov spaces, Hardy spaces), making it 
-                    one of the most important proof patterns to internalize.
+                    The proof splits into two cases of quite different character. For 
+                    \(1 \leq p < \infty\), we develop the argument in <strong>five clearly 
+                    delineated steps</strong>, each carrying its own role: extracting a fast 
+                    subsequence, building a dominating function via MCT, obtaining a pointwise 
+                    limit, upgrading to \(L^p\) convergence via DCT, and lifting from the 
+                    subsequence to the full sequence. This same five-step pattern reappears in 
+                    virtually every completeness proof in modern analysis (Sobolev spaces, 
+                    Besov spaces, Hardy spaces), making it one of the most important proof 
+                    patterns to internalize. For \(p = \infty\), the convergence theorems of 
+                    Lebesgue integration are not needed: a simpler uniform-convergence 
+                    argument suffices. We treat the two cases in turn.
                 </p>
 
                 <h3>Proof for \(1 \leq p < \infty\)</h3>
@@ -372,11 +393,14 @@ uses_python: false
                     <p>
                         <strong>Step 1 — Extract a fast subsequence.</strong> 
                         Since \((f_n)\) is Cauchy, for each \(k \geq 1\) there exists a threshold 
-                        index \(N_k\) such that \(\|f_m - f_n\|_p < 2^{-k}\) for all \(m, n \geq N_k\). 
-                        Construct \((n_k)\) inductively: pick \(n_1 \geq N_1\), and given \(n_k\), 
-                        pick \(n_{k+1} > n_k\) with \(n_{k+1} \geq N_{k+1}\) (always possible since 
-                        the Cauchy thresholds impose only a lower bound on indices). The resulting 
-                        subsequence \((f_{n_k})\) is strictly index-increasing and satisfies
+                        index \(N_k\) such that \(\|f_m - f_n\|_p < 2^{-k}\) for all \(m, n \geq N_k\); 
+                        replacing \(N_k\) by \(\max(N_1, \dots, N_k)\) if necessary, we may assume 
+                        \(N_1 \leq N_2 \leq \cdots\). Construct \((n_k)\) inductively: pick 
+                        \(n_1 \geq N_1\), and given \(n_k\), pick 
+                        \(n_{k+1} > n_k\) with \(n_{k+1} \geq N_{k+1}\) (always possible since 
+                        the Cauchy thresholds impose only a lower bound on indices). Since 
+                        \(n_k, n_{k+1} \geq N_k\) (using the monotonicity of \((N_k)\)), the 
+                        resulting subsequence \((f_{n_k})\) is strictly index-increasing and satisfies
                         \[
                         \|f_{n_{k+1}} - f_{n_k}\|_p \;<\; 2^{-k} \quad \text{for all } k \geq 1.
                         \]
@@ -389,16 +413,18 @@ uses_python: false
                         \[
                         G_N(x) \;=\; |f_{n_1}(x)| + \sum_{k=1}^{N} |f_{n_{k+1}}(x) - f_{n_k}(x)|.
                         \]
-                        The sequence \((G_N)\) is nonnegative and pointwise increasing. Since 
-                        \(p \geq 1\) (so that \(t \mapsto t^p\) is nondecreasing on \([0, \infty)\)), 
-                        the sequence \((G_N^p)\) is also nonnegative and pointwise increasing. 
+                        The sequence \((G_N)\) is nonnegative, pointwise increasing, and measurable 
+                        (as finite sums of measurable functions). Since 
+                        \(p \geq 1\) (so that \(t \mapsto t^p\) is continuous and nondecreasing on 
+                        \([0, \infty)\)), the sequence \((G_N^p)\) is also nonnegative, pointwise 
+                        increasing, and measurable. 
                         Applying the <a href="#T-mct" class="ref-link"><strong>Monotone Convergence Theorem</strong></a> 
                         to \((G_N^p)\):
                         \[
                         \int_\Omega G^p \, d\mu \;=\; \lim_{N \to \infty} \int_\Omega G_N^p \, d\mu,
                         \]
                         where \(G(x) = \lim_{N \to \infty} G_N(x)\). Taking \(p\)-th roots (the 
-                        continuous map \(t \mapsto t^{1/p}\) on \([0, \infty]\) commutes with monotone 
+                        continuous map \(t \mapsto t^{1/p}\) on \([0, \infty]\) preserves 
                         limits), \(\|G\|_p = \lim_{N \to \infty} \|G_N\|_p\). Each \(|h_k|\) lies in 
                         \(L^p\) (since \(h_k \in L^p\) and \(\||h_k|\|_p = \|h_k\|_p\)), so applying 
                         <a href="lp_spaces.html#T-minkowski_inequality" class="ref-link"><strong>Minkowski's inequality</strong></a> 
@@ -421,7 +447,8 @@ uses_python: false
                         \]
                         so the series 
                         \(\sum_{k=1}^{\infty} (f_{n_{k+1}}(x) - f_{n_k}(x))\) is 
-                        <em>absolutely convergent</em> in \(\mathbb{F}\), hence convergent. 
+                        <em>absolutely convergent</em> in \(\mathbb{F}\), hence convergent 
+                        (since \(\mathbb{F}\) is complete). 
                         By telescoping, 
                         \(\sum_{k=1}^{K} h_k(x) = f_{n_{K+1}}(x) - f_{n_1}(x)\), so 
                         \(f_{n_{K+1}}(x) = f_{n_1}(x) + \sum_{k=1}^{K} h_k(x)\) converges as 
@@ -443,8 +470,11 @@ uses_python: false
                         \;\leq\; |f_{n_1}(x)| + \sum_{k=1}^{\infty} |h_k(x)| 
                         \;=\; G(x).
                         \]
-                        Passing to the limit \(K \to \infty\) gives \(|f(x)| \leq G(x)\) for a.e. \(x\), 
-                        and \(G \in L^p\) yields \(\int |f|^p \, d\mu \leq \int G^p \, d\mu < \infty\), 
+                        Passing to the limit \(K \to \infty\) gives \(|f(x)| \leq G(x)\) for a.e. \(x\). 
+                        The function \(f\) is measurable as the a.e.-pointwise limit of measurable 
+                        functions (extended by \(0\) on the null set where \(G = \infty\)), and 
+                        \(G \in L^p\) together with \(|f|^p \leq G^p\) a.e. yields, by monotonicity 
+                        of the integral, \(\int |f|^p \, d\mu \leq \int G^p \, d\mu < \infty\), 
                         so \(f \in L^p\).
                     </p>
                     <p>
@@ -466,9 +496,14 @@ uses_python: false
                         \|f_{n_K} - f\|_p^p \;=\; \int |f_{n_K} - f|^p \, d\mu \;\to\; 0 
                         \quad \text{as } K \to \infty.
                         \]
+                        Since \(t \mapsto t^{1/p}\) is continuous on \([0, \infty)\) with 
+                        \(t^{1/p} = 0 \iff t = 0\), this gives \(\|f_{n_K} - f\|_p \to 0\).
                     </p>
                     <p>
                         <strong>Step 5 — Lift from the subsequence to the full sequence.</strong> 
+                        (This is the same lifting argument as in 
+                        <a href="#T-absolute_summability" class="ref-link"><strong>Lemma: Absolute Summability Criterion</strong></a> 
+                        (\(\Leftarrow\)), applied concretely to \((f_n)\).) 
                         We now know \(f_{n_K} \to f\) in \(L^p\). To show \(f_n \to f\) in \(L^p\), 
                         we use the fact that \((f_n)\) is Cauchy. Fix \(\epsilon > 0\) and choose 
                         \(N_0\) such that \(\|f_m - f_n\|_p < \epsilon/2\) for all \(m, n \geq N_0\). 
@@ -492,11 +527,15 @@ uses_python: false
                     By <a href="lp_spaces.html#T-essup_attained" class="ref-link"><strong>Lemma: Essential Supremum Is Attained</strong></a>, 
                     for each pair of indices \(m, n\), the inequality 
                     \(|f_m(x) - f_n(x)| \leq \|f_m - f_n\|_\infty\) holds for a.e. \(x\), 
-                    outside an exceptional null set \(E_{m,n}\). Taking the countable union 
-                    \(E = \bigcup_{m,n \in \mathbb{N}} E_{m,n}\) (still a null set, since it is 
-                    a countable union of null sets), we have
+                    outside an exceptional null set \(E_{m,n}\); likewise, for each \(n\), the 
+                    inequality \(|f_n(x)| \leq \|f_n\|_\infty\) holds outside a null set \(F_n\). 
+                    Taking the countable union 
+                    \(E = \bigl(\bigcup_{m,n \in \mathbb{N}} E_{m,n}\bigr) \cup \bigl(\bigcup_n F_n\bigr)\) 
+                    (still a null set, as a countable union of null sets), we have
                     \[
                     |f_m(x) - f_n(x)| \;\leq\; \|f_m - f_n\|_\infty 
+                    \quad \text{and} \quad 
+                    |f_n(x)| \;\leq\; \|f_n\|_\infty
                     \quad \text{for all } x \notin E \text{ and all } m, n.
                     \]
                     If \((f_n)\) is Cauchy in \(L^\infty\), the right side tends to zero as 
@@ -530,16 +569,13 @@ uses_python: false
                         The five-step pattern above — extract a fast subsequence, build a dominating 
                         function, obtain pointwise convergence, apply DCT, lift to the full 
                         sequence — is the standard template for proving completeness of function 
-                        spaces throughout analysis. Sobolev spaces \(W^{k,p}\), which arise in the 
-                        study of partial differential equations and physics-informed neural 
-                        networks, are proven complete by leveraging \(L^p\) completeness 
-                        component-wise: a Cauchy sequence \((u_n)\) in \(W^{k,p}\) yields Cauchy 
-                        sequences \((D^\alpha u_n)\) in \(L^p\) for each derivative order 
-                        \(|\alpha| \leq k\), each of which converges by Riesz-Fischer; the 
-                        distributional derivatives of the resulting limit are exactly these 
-                        component limits. Recognizing the architecture once thus equips you to 
-                        deploy it — directly or as a building block — wherever function space 
-                        completeness is needed.
+                        spaces throughout analysis. Spaces built over \(L^p\) — notably 
+                        <strong>Sobolev spaces</strong> \(W^{k,p}\), which arise in the study of 
+                        partial differential equations and physics-informed neural networks — 
+                        inherit completeness by applying the Riesz-Fischer argument to each 
+                        derivative component and reassembling. Recognizing this architecture 
+                        once equips you to deploy it, directly or as a building block, wherever 
+                        function space completeness is needed.
                     </p>
                 </div>
 
@@ -612,8 +648,9 @@ uses_python: false
                 <h3>Four Notions of Convergence</h3>
 
                 <p>
-                    Let \((f_n)\) be a sequence of measurable functions on \((\Omega, \mathcal{F}, \mu)\) 
-                    and let \(f\) be a measurable function. We consider four modes of convergence.
+                    Let \((f_n)\) be a sequence of measurable \(\mathbb{F}\)-valued functions on 
+                    \((\Omega, \mathcal{F}, \mu)\), and let \(f\) be a measurable 
+                    \(\mathbb{F}\)-valued function. We consider four modes of convergence.
                 </p>
 
                 <div class="theorem" id="D-lp_convergence">
@@ -653,10 +690,20 @@ uses_python: false
                     <p>
                         We say \(f_n \to f\) <strong>uniformly almost everywhere</strong> if 
                         there exists a null set \(E\) such that 
-                        \(\sup_{x \notin E} |f_n(x) - f(x)| \to 0\). This coincides with 
-                        \(L^\infty\) convergence: \(\|f_n - f\|_\infty \to 0\). Indeed, the 
-                        forward direction is immediate, since \(\sup_{x \notin E}|f_n - f|\) is an 
-                        admissible essential bound for \(|f_n - f|\), so 
+                        \(\sup_{x \notin E} |f_n(x) - f(x)| \to 0\).
+                    </p>
+                </div>
+
+                <p>
+                    This definition coincides with \(L^\infty\) convergence: \(f_n \to f\) uniformly 
+                    a.e. if and only if \(\|f_n - f\|_\infty \to 0\).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of equivalence:</span>
+                    <p>
+                        The forward direction is immediate, since \(\sup_{x \notin E}|f_n - f|\) is 
+                        an admissible essential bound for \(|f_n - f|\), so 
                         \(\|f_n - f\|_\infty \leq \sup_{x \notin E}|f_n - f| \to 0\). The reverse 
                         uses <a href="lp_spaces.html#T-essup_attained" class="ref-link"><strong>Lemma: Essential Supremum Is Attained</strong></a>: 
                         for each \(n\), \(|f_n - f| \leq \|f_n - f\|_\infty\) outside a null set 
@@ -717,13 +764,18 @@ uses_python: false
                     <p>
                         On <strong>finite measure spaces</strong> (such as probability spaces), the 
                         picture tightens: pointwise a.e. convergence <em>does</em> imply convergence 
-                        in measure, and <strong>Egorov's theorem</strong> — a standard result of 
-                        real analysis whose proof we omit here — guarantees that for every 
-                        \(\epsilon > 0\), there exists a measurable set \(E\) with 
-                        \(\mu(E) < \epsilon\) such that \(f_n \to f\) <em>uniformly</em> on 
-                        \(\Omega \setminus E\). This "almost uniform convergence" will 
-                        reappear naturally when we study convergence of random variables in the 
-                        setting of measure-theoretic probability.
+                        in measure. Indeed, for \(\epsilon > 0\), the sets 
+                        \(B_n = \bigcup_{k \geq n} \{|f_k - f| > \epsilon\}\) decrease to a null 
+                        set (by a.e. convergence) and have finite measure \(\mu(B_1) \leq \mu(\Omega) < \infty\), 
+                        so continuity of measure from above gives \(\mu(B_n) \to 0\), whence 
+                        \(\mu(\{|f_n - f| > \epsilon\}) \leq \mu(B_n) \to 0\). Furthermore, 
+                        <strong>Egorov's theorem</strong> (Folland, <em>Real Analysis</em>, §2.4; 
+                        Durrett, <em>Probability: Theory and Examples</em>, §1.6) — whose proof 
+                        we omit here — guarantees that for every \(\epsilon > 0\), there exists a 
+                        measurable set \(E\) with \(\mu(E) < \epsilon\) such that \(f_n \to f\) 
+                        <em>uniformly</em> on \(\Omega \setminus E\). This "almost uniform 
+                        convergence" will reappear naturally when we study convergence of random 
+                        variables in the setting of measure-theoretic probability.
                     </p>
                 </div>
 
@@ -765,15 +817,20 @@ uses_python: false
                     <span class="proof-title">Proof of (4) — convergence in measure \(\Rightarrow\) subsequence converges a.e.:</span>
                     <p>
                         Suppose \(f_n \to f\) in measure. For each \(k \geq 1\), 
-                        \(\mu(\{|f_n - f| > 2^{-k}\}) \to 0\) as \(n \to \infty\), so we can pick 
-                        an index \(n_k\) (and inductively choose them strictly increasing) such 
-                        that 
+                        \(\mu(\{|f_n - f| > 2^{-k}\}) \to 0\) as \(n \to \infty\), so there exists 
+                        \(N_k\) with \(\mu(\{|f_n - f| > 2^{-k}\}) < 2^{-k}\) for all \(n \geq N_k\); 
+                        replacing \(N_k\) by \(\max(N_1, \dots, N_k)\) if necessary, we may assume 
+                        \(N_1 \leq N_2 \leq \cdots\). Pick \(n_1 \geq N_1\), and given \(n_k\), 
+                        pick \(n_{k+1} > n_k\) with \(n_{k+1} \geq N_{k+1}\). Then \(n_k \geq N_k\) 
+                        for every \(k\), so 
                         \[
                         \mu(A_k) \;<\; 2^{-k}, 
                         \qquad \text{where } A_k = \{|f_{n_k} - f| > 2^{-k}\}.
                         \]
                         Define the "tail" sets \(B_m = \bigcup_{k \geq m} A_k\). By 
-                        <a href="measure.html#D-measure" class="ref-link"><strong>\(\sigma\)-subadditivity</strong></a>, 
+                        <a href="measure.html#D-measure" class="ref-link"><strong>\(\sigma\)-subadditivity</strong></a> 
+                        (applying countable \(\sigma\)-additivity to the disjoint sets 
+                        \(A_k \setminus \bigcup_{j < k} A_j \subseteq A_k\)), 
                         \(\mu(B_m) \leq \sum_{k \geq m} \mu(A_k) < \sum_{k \geq m} 2^{-k} = 2^{-m+1}\), 
                         which tends to \(0\) as \(m \to \infty\). 
                         Set \(B = \bigcap_{m=1}^\infty B_m\); since \(\mu(B) \leq \mu(B_m)\) for 
@@ -869,8 +926,9 @@ uses_python: false
                         good set, extended by zero on the exceptional null set; then \(f\) is 
                         measurable as the pointwise limit of measurable functions on the good set. 
                         On the good set, 
-                        \(|f(x)| = \lim_n |f_n(x)| \leq h(x)\), so \(|f| \leq h\) a.e.; raising to 
-                        the \(p\)-th power and integrating, 
+                        \(|f(x)| = \lim_n |f_n(x)| \leq h(x)\), so \(|f| \leq h\) a.e. Since 
+                        \(p \geq 1\) and \(t \mapsto t^p\) is non-decreasing on \([0, \infty)\), 
+                        this gives \(|f|^p \leq h^p\) a.e. By monotonicity of the integral, 
                         \(\int |f|^p \, d\mu \leq \int h^p \, d\mu < \infty\), so \(f \in L^p\).
                     </p>
                     <p>
@@ -882,7 +940,9 @@ uses_python: false
                         we have \(|f_n - f|^p \to 0\) a.e. Applying the 
                         <a href="#T-dct" class="ref-link"><strong>standard Dominated Convergence Theorem</strong></a> 
                         to the sequence \(|f_n - f|^p\) with dominator \((2h)^p\) yields 
-                        \(\int |f_n - f|^p \, d\mu \to 0\), i.e., \(\|f_n - f\|_p \to 0\).
+                        \(\int |f_n - f|^p \, d\mu \to 0\), and since \(t \mapsto t^{1/p}\) is 
+                        continuous on \([0, \infty)\) with \(t^{1/p} = 0 \iff t = 0\), this gives 
+                        \(\|f_n - f\|_p \to 0\).
                     </p>
                 </div>
 
@@ -945,7 +1005,7 @@ uses_python: false
                     <p>
                         In probability, a random variable \(X\) on a probability space 
                         \((\Omega, \mathcal{F}, \mathbb{P})\) is simply a measurable function 
-                        \(X : \Omega \to \mathbb{R}\). Saying \(X \in L^p(\Omega, \mathbb{P})\) 
+                        \(X : \Omega \to \mathbb{F}\). Saying \(X \in L^p(\Omega, \mathbb{P})\) 
                         means precisely that the \(p\)-th moment is finite:
                         \[
                         \mathbb{E}\bigl[|X|^p\bigr] \;=\; \int_\Omega |X|^p \, d\mathbb{P} \;<\; \infty.
@@ -954,11 +1014,12 @@ uses_python: false
                         mean and the variance are finite, and \(L^2(\Omega, \mathbb{P})\) is a 
                         <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert space</strong></a> 
                         with inner product \(\langle X, Y \rangle = \mathbb{E}[X \overline{Y}]\) 
-                        (which reduces to \(\mathbb{E}[XY]\) for real-valued random variables).
+                        (reducing to \(\mathbb{E}[XY]\) over \(\mathbb{R}\)).
                     </p>
                     <p>
                         Completeness of \(L^2\) guarantees that the 
-                        <strong>orthogonal projection</strong> onto any closed subspace exists. 
+                        <a href="dual_spaces.html#T-projection_theorem_hilbert" class="ref-link"><strong>orthogonal projection</strong></a> 
+                        onto any closed subspace exists. 
                         This is the mathematical foundation of <strong>least-squares estimation</strong>: 
                         the conditional expectation \(\mathbb{E}[X \mid \mathcal{G}]\) is the 
                         \(L^2\)-projection of \(X\) onto the subspace of \(\mathcal{G}\)-measurable 
@@ -967,8 +1028,9 @@ uses_python: false
                         with finite variance.
                     </p>
                     <p>
-                        Hölder's inequality also takes on a probabilistic reading: for random 
-                        variables \(X \in L^p\) and \(Y \in L^q\),
+                        <a href="lp_spaces.html#T-holder" class="ref-link"><strong>Hölder's inequality</strong></a> 
+                        also takes on a probabilistic reading: for conjugate exponents \(p, q\) 
+                        (with \(1/p + 1/q = 1\)) and random variables \(X \in L^p\), \(Y \in L^q\),
                         \[
                         \mathbb{E}[|XY|] \;\leq\; 
                         \bigl(\mathbb{E}[|X|^p]\bigr)^{1/p} \, \bigl(\mathbb{E}[|Y|^q]\bigr)^{1/q}.
@@ -989,13 +1051,14 @@ uses_python: false
                         \]
                         The space of finite-energy signals is exactly \(L^2(\mathbb{R})\). 
                         <a href="fourier_transform.html#T-plancherel" class="ref-link"><strong>Plancherel's theorem</strong></a> 
-                        states that the Fourier transform preserves this energy:
+                        states that the Fourier transform preserves this energy: adopting the 
+                        convention \(\hat{f}(\xi) = \int_{-\infty}^{\infty} f(t) e^{-it\xi} \, dt\),
                         \[
                         \|f\|_{L^2}^2 \;=\; \frac{1}{2\pi}\|\hat{f}\|_{L^2}^2.
                         \]
-                        In other words, the Fourier transform — suitably normalized by the factor 
-                        \(1/\sqrt{2\pi}\) — becomes a <strong>unitary operator</strong> on 
-                        \(L^2(\mathbb{R})\): an isometry that maps \(L^2\) onto itself.
+                        In other words, the rescaled transform \(f \mapsto (2\pi)^{-1/2} \hat{f}\) 
+                        becomes a <strong>unitary operator</strong> on \(L^2(\mathbb{R})\): an 
+                        isometry that maps \(L^2\) onto itself.
                     </p>
                     <p>
                         But unitarity is only meaningful if the space is <em>complete</em>. 
@@ -1033,8 +1096,9 @@ uses_python: false
                         the space, with infinite energy or failing to be square-integrable, making 
                         the probability interpretation collapse. Completeness guarantees that 
                         these limits stay within the space of physical states, and that the spectral 
-                        decomposition of observables (the 
-                        <a href="spectral_theory.html#T-spectral_theorem_csa_operators" class="ref-link"><strong>spectral theorem</strong></a>) 
+                        decomposition of observables (a generalization of the 
+                        <a href="spectral_theory.html#T-spectral_theorem_csa_operators" class="ref-link"><strong>spectral theorem</strong></a> 
+                        to unbounded self-adjoint operators) 
                         produces well-defined measurement outcomes. In this sense, the Riesz-Fischer 
                         theorem is not merely a mathematical convenience — it is a precondition for 
                         the logical consistency of quantum theory.
@@ -1064,10 +1128,11 @@ uses_python: false
                 <h3>Looking Ahead</h3>
 
                 <p>
-                    This chapter has established \(L^p\) as a Banach space and settled the proof 
-                    debts deferred from 
-                    <a href="intro_analysis.html"><strong>Intro to Functional Analysis</strong></a> 
-                    and <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a>. 
+                    This chapter has established \(L^p\) as a Banach space, settling the 
+                    \(L^p\) completeness proof invoked (and explicitly deferred) in 
+                    <a href="intro_analysis.html"><strong>Intro to Functional Analysis</strong></a>, 
+                    and thereby securing the Banach-space foundation tacitly used in 
+                    <a href="dual_spaces.html#dual-space"><strong>Dual Spaces</strong></a>. 
                     The road ahead branches in two complementary directions:
                 </p>
 
