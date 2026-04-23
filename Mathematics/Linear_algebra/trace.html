@@ -29,19 +29,28 @@ uses_python: false
                 <h2>Trace</h2>
 
                 <p>
-                    The trace is a fundamental scalar function that associates a single number with a square matrix. 
-                    Despite its simple definition as the sum of diagonal entries, the trace has deep connections to 
-                    eigenvalues, matrix norms, and appears throughout optimization and machine learning. Its cyclic 
-                    permutation property makes it invaluable for manipulating matrix expressions.
+                    So far, we have studied vectors, matrices, eigenvalues, orthogonality, and quadratic forms — all within the concrete world of \(\mathbb{R}^n\). 
+                    This page marks a quiet turning point. On the surface, the trace looks like just another scalar attached to a square matrix: 
+                    the sum of its diagonal entries. But this simple operation will lead us, within a few paragraphs, to an 
+                    inner product on the space of \(m \times n\) matrices — a space that is <em>not</em> \(\mathbb{R}^n\). 
+                    Once "inner product" and "norm" are shown to live on spaces other than \(\mathbb{R}^n\), a larger question becomes unavoidable: 
+                    <em>what exactly is a norm? what is a distance?</em> 
+                    The final section of this page opens that door. The rest of the curriculum, beginning with the foundations of analysis in Section II, walks through it.
                 </p>
 
-                <div class="theorem">
+                <p>
+                    Despite its simple definition, the trace has deep connections to eigenvalues and matrix norms, and appears 
+                    throughout optimization and machine learning. Its cyclic permutation property, in particular, makes it 
+                    indispensable for manipulating matrix expressions.
+                </p>
+
+                <div class="theorem" id="D-trace">
                     <span class="theorem-title">Definition: Trace</span>
                     <p>
                         The <strong>trace</strong> of an \(n \times n\) matrix \(A\) is the sum of the diagonal entries of \(A\) and
-                        denoted by \(\text{tr }(A)\):
+                        denoted by \(\operatorname{tr}(A)\):
                         \[
-                        \text{tr }(A) =\sum_{k=1}^n a_{kk}.
+                        \operatorname{tr}(A) =\sum_{k=1}^n a_{kk}.
                         \]
                     </p>
                 </div>
@@ -50,84 +59,130 @@ uses_python: false
                     The trace satisfies several important properties:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-trace_properties">
                     <span class="theorem-title">Theorem: Properties of Trace</span>
                     <p>
                         Let \(A, B\) be \(n \times n\) matrices and \(c \in \mathbb{R}\). The trace satisfies:
                     </p>
                     <ol style="padding-left: 40px;">
-                        <li>Linearity: \(\text{tr }(cA) = c(\text{tr }A)\)</li>
-                        <li>Additivity: \(\text{tr }(A + B) = \text{tr}A + \text{tr }B\)</li>
-                        <li>Transpose invariance: \(\text{tr }(A^\top) = \text{tr}A\)</li>
-                        <li>Frobenius inner product: \(\text{tr }(A^\top B) = \sum_{i=1}^m\sum_{j=1}^n a_{ij}b_{ij}\)</li>
-                        <li>Cyclic permutation: \(\text{tr }(AB) = \text{tr }(BA)\)</li>
-                        <li>Eigenvalue sum: \(\text{tr }A = \sum_{i=1}^n \lambda_i\) where \(\lambda_1, \ldots, \lambda_n\) 
-                            are the eigenvalues of \(A\)</li>
+                        <li>Linearity: \(\operatorname{tr}(cA) = c \operatorname{tr}(A)\)</li>
+                        <li>Additivity: \(\operatorname{tr}(A + B) = \operatorname{tr}(A) + \operatorname{tr}(B)\)</li>
+                        <li>Transpose invariance: \(\operatorname{tr}(A^\top) = \operatorname{tr}(A)\)</li>
+                        <li>Frobenius inner product: \(\operatorname{tr}(A^\top B) = \sum_{i=1}^n \sum_{j=1}^n a_{ij} b_{ij}\)</li>
+                        <li>Cyclic permutation: \(\operatorname{tr}(AB) = \operatorname{tr}(BA)\)</li>
+                        <li>Eigenvalue sum: \(\operatorname{tr}(A) = \sum_{i=1}^n \lambda_i\) where \(\lambda_1, \ldots, \lambda_n\) 
+                            are the eigenvalues of \(A\) (counted with algebraic multiplicity).</li>
                     </ol>
                     <p>
-                        Note: For property 5, \(A\) can be \(m \times n\) and \(B\) can be \(n \times m\). More generally, 
-                        \(\text{tr}(ABC) = \text{tr}(CAB) = \text{tr}(BCA)\).
+                        Note: Property 5 extends to rectangular matrices — if \(A\) is \(m \times n\) and \(B\) is \(n \times m\), 
+                        then both \(AB\) and \(BA\) are square and \(\operatorname{tr}(AB) = \operatorname{tr}(BA)\). 
+                        More generally, \(\operatorname{tr}(ABC) = \operatorname{tr}(CAB) = \operatorname{tr}(BCA)\). 
+                        Property 4 generalizes to \(A, B \in \mathbb{R}^{m \times n}\) with the double sum running over \(1 \leq i \leq m\) and \(1 \leq j \leq n\); 
+                        we revisit this in the Frobenius inner product definition below.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (sketch):</span>
+                    <p>
+                        Properties 1, 2 follow immediately from the diagonal-sum definition and the linearity of summation. 
+                        For Property 3, note that \((A^\top)_{ii} = a_{ii}\), so \(\operatorname{tr}(A^\top) = \sum_i (A^\top)_{ii} = \sum_i a_{ii} = \operatorname{tr}(A)\).
+                    </p>
+                    <p>
+                        For Property 5, compute directly from the definitions of trace and matrix product:
+                        \[
+                        \operatorname{tr}(AB) = \sum_{i=1}^n (AB)_{ii} = \sum_{i=1}^n \sum_{j=1}^n a_{ij} b_{ji} 
+                                              = \sum_{j=1}^n \sum_{i=1}^n b_{ji} a_{ij} = \sum_{j=1}^n (BA)_{jj} = \operatorname{tr}(BA),
+                        \]
+                        where the middle equality interchanges the order of a finite double sum.
+                    </p>
+                    <p>
+                        Property 4 follows from the same kind of direct computation — it does <em>not</em> require Property 5. By the definitions of trace and matrix product:
+                        \[
+                        \operatorname{tr}(A^\top B) = \sum_{i=1}^n (A^\top B)_{ii} = \sum_{i=1}^n \sum_{j=1}^n (A^\top)_{ij} b_{ji} 
+                                                    = \sum_{i=1}^n \sum_{j=1}^n a_{ji} b_{ji}.
+                        \]
+                        Renaming dummy indices (swap \(i \leftrightarrow j\)) gives \(\sum_{i=1}^n \sum_{j=1}^n a_{ij} b_{ij}\), matching the stated form.
+                    </p>
+                    <p>
+                        Property 6 is deeper and requires the <a href="eigenvectors.html#D-characteristic_equation" class="ref-link"><strong>characteristic polynomial</strong></a>. 
+                        For a matrix \(A\) with eigenvalues \(\lambda_1, \ldots, \lambda_n\) (counted with algebraic multiplicity over \(\mathbb{C}\)), 
+                        the characteristic polynomial factors as \(\det(\lambda I - A) = \prod_{i=1}^n (\lambda - \lambda_i)\). 
+                        Expanding both sides and comparing the coefficient of \(\lambda^{n-1}\) yields \(\operatorname{tr}(A) = \sum_i \lambda_i\). 
+                        A detailed proof is omitted here for space.
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Insight: The Trace Trick</h3>    
                     <p>
-                        Consider a <a href="symmetry.html"><strong>quadratic form</strong></a> \(x^\top Ax \in \mathbb{R}\). 
+                        Consider a <a href="symmetry.html#D-quadratic_form" class="ref-link"><strong>quadratic form</strong></a> \(\mathbf{x}^\top A \mathbf{x} \in \mathbb{R}\). 
                         While this expression is a scalar, we often rewrite it using the trace operator to gain structural advantages:
                         \[
-                        \begin{align*}
-                        x^\top Ax = \text{tr}(x^\top Ax) = \text{tr}(Axx^\top).
-                        \end{align*}
+                        \mathbf{x}^\top A \mathbf{x} = \operatorname{tr}(\mathbf{x}^\top A \mathbf{x}) = \operatorname{tr}(A \mathbf{x} \mathbf{x}^\top).
                         \]
                         This "trace trick" is indispensable in Computer Science and Statistics for the following reasons:
                     </p>
                     <ol style="padding-left: 40px; margin-bottom: 20px;">
                         <li>
                             <strong>Decoupling System and Data:</strong> 
-                            It separates the system matrix \(A\) from the data-dependent rank-1 matrix \(xx^\top\). In the original form, \(A\) is "sandwiched" between vectors, making it difficult to analyze the contribution of \(A\) and \(x\) independently.
+                            It separates the system matrix \(A\) from the data-dependent rank-1 matrix \(\mathbf{x} \mathbf{x}^\top\). In the original form, \(A\) is "sandwiched" between vectors, making it difficult to analyze the contribution of \(A\) and \(\mathbf{x}\) independently.
                         </li>
                         <li>
                             <strong>Computational Efficiency (The Summation Trick):</strong> 
-                            Suppose we need to compute the average of quadratic forms over \(N\) data points. Calculating each individually is computationally expensive ("calculation hell"), but the trace trick allows us to use the <strong>Covariance Matrix</strong>:
+                            Suppose we need to compute the average of quadratic forms over \(N\) data points. Calculating each individually is computationally expensive, but the trace trick allows us to factor through the <strong>covariance matrix</strong>:
                             \[
-                            \frac{1}{N} \sum_{i=1}^N x_i^\top A x_i = \text{tr}\left( A \cdot \left( \frac{1}{N} \sum_{i=1}^N x_i x_i^\top \right) \right) = \text{tr}(A\Sigma)
+                            \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i^\top A \mathbf{x}_i = \operatorname{tr}\!\left( A \cdot \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top \right) = \operatorname{tr}(A \Sigma).
                             \]
-                            By pre-calculating the covariance \(\Sigma\), we reduce \(N\) vector-matrix products to a single matrix multiplication and trace operation.
+                            By pre-computing the covariance \(\Sigma\), we reduce \(N\) vector-matrix-vector products to a single matrix product and one trace operation.
                         </li>
                         <li>
                             <strong>Structural Analysis:</strong> 
-                            This form is the gateway to advanced topics like <strong>Expectation of Quadratic Forms</strong>. In statistics, the expectation \(\mathbb{E}[x^\top Ax]\) simplifies beautifully to \(\text{tr}(A \mathbb{E}[xx^\top])\), which is impossible to express without the trace trick.
+                            This form is the gateway to advanced topics like the <strong>expectation of quadratic forms</strong>. In statistics, \(\mathbb{E}[\mathbf{x}^\top A \mathbf{x}]\) simplifies to \(\operatorname{tr}(A \, \mathbb{E}[\mathbf{x} \mathbf{x}^\top])\), which is impossible to express without the trace trick.
                         </li>
                     </ol>
                     <p>
-                        <em>Note: Although \(x^\top Ax\) is a \(1 \times 1\) scalar, the internal term \(Axx^\top\) is an \(n \times n\) matrix. The trace operator "compresses" this matrix back into the original scalar value.</em>
+                        <em>Note: although \(\mathbf{x}^\top A \mathbf{x}\) is a \(1 \times 1\) scalar, the internal term \(A \mathbf{x} \mathbf{x}^\top\) is an \(n \times n\) matrix. The trace "compresses" this matrix back to the scalar.</em>
                     </p>
                 </div>
                 
                 <p>
-                    Property 4 is the notion of the <a href="orthogonality.html"><strong>inner product</strong></a> for matrices. 
-                    We call it the <strong>Frobenius inner product</strong>, and also like the Euclidean (\(l_2\)) norm \(\|v\|_2 = \sqrt{v \cdot v} = \sqrt{v^\top v}\) 
-                    of vectors, we define the norm for matrices.
+                    Property 4 deserves a closer look. Up to this point, the 
+                    <a href="orthogonality.html#D-inner_product" class="ref-link"><strong>inner product</strong></a> 
+                    has lived on \(\mathbb{R}^n\): a structure on arrows in n-dimensional space. 
+                    But nothing in the defining axioms of an inner product — bilinearity, symmetry, positivity — is tied to \(\mathbb{R}^n\). 
+                    Property 4 reveals something striking: <strong>the trace defines an inner product on an entirely different space — the space \(\mathbb{R}^{m \times n}\) of matrices</strong>. 
+                    The formula \(\langle A, B \rangle_F = \operatorname{tr}(A^\top B)\) satisfies all the same axioms, 
+                    just with matrices playing the role that vectors played before. The notion of "inner product" survives the transplant intact.
                 </p>
 
-                <div class="theorem">
+                <p>
+                    This is the first hint of a general pattern: inner products, and the norms and distances they induce, 
+                    are <em>abstract structures</em> that can live on many different vector spaces. 
+                    We give this instance a name.
+                </p>
+
+                <div class="theorem" id="D-frobenius_inner_product">
                     <span class="theorem-title">Definition: Frobenius Inner Product</span>
                     <p>
                         For matrices \(A, B \in \mathbb{R}^{m \times n}\), the <strong>Frobenius inner product</strong> is defined as:
                         \[
-                        \left\langle A, B \right\rangle_F = \text{tr }(A^\top B) = \sum_{i=1}^m\sum_{j=1}^n a_{ij}b_{ij}.
+                        \left\langle A, B \right\rangle_F = \operatorname{tr}(A^\top B) = \sum_{i=1}^m \sum_{j=1}^n a_{ij} b_{ij}.
                         \]
                     </p>
+                </div>
+
+                <div class="theorem" id="D-frobenius_norm">
+                    <span class="theorem-title">Definition: Frobenius Norm</span>
                     <p>
-                        In addition, the <strong>Frobenius norm</strong> of a matrix \(A\) is defined as
+                        The <strong>Frobenius norm</strong> of a matrix \(A \in \mathbb{R}^{m \times n}\) is defined as
                         \[
-                        \| A \|_F = \sqrt{\left\langle A, A \right\rangle_F} = \sqrt{\text{tr }(A^\top A)}.
+                        \| A \|_F = \sqrt{\left\langle A, A \right\rangle_F} = \sqrt{\operatorname{tr}(A^\top A)} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n a_{ij}^2}.
                         \] 
                     </p>
                 </div>
 
-                  <p>
+                <p>
                     This is one of many possible matrix norms. Each norm emphasizes different aspects of a matrix's structure 
                     and is suited to different applications.
                 </p>
@@ -140,106 +195,138 @@ uses_python: false
                 <p>
                     While the trace characterizes matrices through a single scalar, norms provide a way to measure 
                     the "size" or "magnitude" of both vectors and matrices. In machine learning, norms are fundamental 
-                    for training stability of models. Norms are used to scale data to a "common" range. It ensures that 
-                    every single feature contributes "equally" to the training of the model and reduces sensitivity to 
-                    the scale of each feature. This <strong>normalization</strong> process is important in the "distance(i.e., norm)" 
-                    based models such as <a href="../Machine_learning/svm.html"><strong>support vector machines(SVMs)</strong></a> 
-                    and <strong>\(k\)-nearest neighbor(k-NN)</strong>. 
-                    Also, <a href="../Machine_learning/regression.html"><strong>regularization process</strong></a> uses norms to 
-                    "penalize" the model complexity, which avoids overfitting and then helps the model <strong>generalize</strong> to new data.
+                    for training stability. They are used to scale data to a common range, ensuring that 
+                    every feature contributes equally to model training and reducing sensitivity to 
+                    feature scale. This <strong>normalization</strong> process is important in distance-based 
+                    models such as <a href="../Machine_learning/svm.html"><strong>support vector machines (SVMs)</strong></a> 
+                    and <strong>\(k\)-nearest neighbors (k-NN)</strong>. 
+                    Norms also appear in <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>, 
+                    which penalizes model complexity to avoid overfitting and help the model <strong>generalize</strong> to new data.
                 </p>
 
                 <p>
-                    Another popular norm of a matrix is the <strong>nuclear norm(trace norm)</strong>. 
+                    Another popular norm of a matrix is the <strong>nuclear norm</strong> (also called <strong>trace norm</strong>). 
                 </p>
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Nuclear Norm(Trace Norm)</span>
+                <div class="theorem" id="D-nuclear_norm">
+                    <span class="theorem-title">Definition: Nuclear Norm (Trace Norm)</span>
                     <p>
-                        Given a matrix \(A \in \mathbb{R}^{m \times n}\), then the nuclear norm of \(A\) is defined as the sum of its 
-                        <strong>singular values</strong>:
+                        Given a matrix \(A \in \mathbb{R}^{m \times n}\), the <strong>nuclear norm</strong> of \(A\) is defined as the sum of its 
+                        <a href="symmetry.html#D-singular_values" class="ref-link"><strong>singular values</strong></a>:
                         \[
-                        \| A \|_{\ast} = \sum_{i} \sigma_i \geq 0.
+                        \| A \|_{\ast} = \sum_{i=1}^{\min(m,n)} \sigma_i \geq 0.
                         \]
                     </p>
                 </div>
                 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 1:</span>  
+                <div class="theorem" id="T-nuclear_norm_svd">
+                    <span class="theorem-title">Theorem: Nuclear Norm via SVD</span>  
                     <p>
-                        Let a matrix \(A = U\Sigma V^\top\) by SVD. Then
+                        Let \(A \in \mathbb{R}^{m \times n}\) have <a href="symmetry.html#T-svd" class="ref-link"><strong>singular value decomposition</strong></a> \(A = U \Sigma V^\top\). Then
                         \[
-                        \| A \|_{\ast} = \sum_{i} \sigma_i = \text{tr }(\Sigma) = \text{tr }(\sqrt{A^\top A})
-                        \].
+                        \| A \|_{\ast} = \sum_{i=1}^{\min(m,n)} \sigma_i = \operatorname{tr}\!\left(\sqrt{A^\top A}\right).
+                        \]
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Suppose \(A = U\Sigma V^\top \) by the singular value decomposition. 
-                        Since \(A^\top A = (V\Sigma U^\top)(U\Sigma V^\top) = V\Sigma^2 V^\top \), 
+                        Let \(A = U\Sigma V^\top\) be the SVD of \(A\), with \(U \in \mathbb{R}^{m \times m}\) and \(V \in \mathbb{R}^{n \times n}\) orthogonal and \(\Sigma \in \mathbb{R}^{m \times n}\) containing the singular values \(\sigma_1 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0\) on its diagonal. 
+                        Since \(U^\top U = I_m\),
                         \[
-                        \sqrt{A^\top A} = V\Sigma V^\top
+                        A^\top A = V \Sigma^\top U^\top U \Sigma V^\top = V (\Sigma^\top \Sigma) V^\top,
                         \]
-                        Then by the cyclic permutation property of trace, 
+                        where \(\Sigma^\top \Sigma \in \mathbb{R}^{n \times n}\) is diagonal with entries \(\sigma_1^2, \ldots, \sigma_{\min(m,n)}^2\) (padded with zeros if \(n > m\)). 
+                        Thus \(A^\top A\) is symmetric positive semidefinite, and its unique symmetric positive semidefinite square root is obtained by taking nonnegative square roots of the diagonal entries:
                         \[
-                        \begin{align*}
-                        \text{tr }(\sqrt{A^\top A}) = \text{tr }(V\Sigma V^\top) &= \text{tr }(\Sigma V^\top V) \\\\
-                                                                        &= \text{tr }(\Sigma ).
-                        \end{align*}
+                        \sqrt{A^\top A} = V \, \Sigma_+ \, V^\top, \quad \text{where } \Sigma_+ = \operatorname{diag}(\sigma_1, \ldots, \sigma_{\min(m,n)}, 0, \ldots, 0) \in \mathbb{R}^{n \times n}.
+                        \]
+                        (Uniqueness of the PSD square root follows from the <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a> applied to \(A^\top A\): diagonalize, take nonnegative roots, rotate back.)
+                    </p>
+                    <p>
+                        Now \(\sqrt{A^\top A}\) is an \(n \times n\) symmetric matrix, so its trace is well-defined. 
+                        By the <strong>cyclic permutation</strong> property of trace (Property 5) together with \(V^\top V = I_n\),
+                        \[
+                        \operatorname{tr}\!\left(\sqrt{A^\top A}\right) = \operatorname{tr}(V \Sigma_+ V^\top) = \operatorname{tr}(\Sigma_+ V^\top V) = \operatorname{tr}(\Sigma_+) = \sum_{i=1}^{\min(m,n)} \sigma_i = \|A\|_*.
                         \]
                     </p>
                 </div>
                 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Induced Norm & Spectral Norm</span>
+                <div class="theorem" id="D-induced_norm">
+                    <span class="theorem-title">Definition: Induced Norm</span>
                     <p>
-                        The <strong>induced norm</strong> of \(A\) is defined as
+                        Given a vector \(p\)-norm on \(\mathbb{R}^n\) and \(\mathbb{R}^m\), the <strong>induced norm</strong> (or <strong>operator norm</strong>) of a matrix \(A \in \mathbb{R}^{m \times n}\) is
                         \[
-                        \| A \|_p = \max_{x \neq 0} \frac{\| Ax \|_p}{\| x \|_p} = \max_{\| x \| =1} \| Ax \|_p. \tag{1}
+                        \| A \|_p = \max_{\mathbf{x} \neq \mathbf{0}} \frac{\| A \mathbf{x} \|_p}{\| \mathbf{x} \|_p} = \max_{\| \mathbf{x} \|_p = 1} \| A \mathbf{x} \|_p.
                         \]
+                        The two expressions are equal because the ratio \(\|A \mathbf{x}\|_p / \|\mathbf{x}\|_p\) is invariant under nonzero scaling of \(\mathbf{x}\).
                     </p>
+                </div>
+
+                <div class="theorem" id="D-spectral_norm">
+                    <span class="theorem-title">Definition: Spectral Norm</span>
                     <p>
-                        Typically, when \(p =2\), we call it the <strong>spectral norm</strong> of \(A\), which is just
-                        the largest singular value of \(A\):
+                        When \(p = 2\), the induced norm is called the <strong>spectral norm</strong> of \(A\) and equals the largest singular value:
                         \[
-                        \| A \|_2 = \max_{i} \sigma_i  = \sqrt{\lambda_{\max} (A^\top A)}
-                        \] 
-                        where \(\lambda_{\max}\) is the largest eigenvalue of \(A^\top A\).
+                        \| A \|_2 = \sigma_{\max}(A) = \sqrt{\lambda_{\max}(A^\top A)},
+                        \]
+                        where \(\lambda_{\max}(A^\top A)\) is the largest eigenvalue of \(A^\top A\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Derivation:</span>
+                    <p>
+                        Let \(A = U \Sigma V^\top\) be the SVD with \(U, V\) orthogonal and singular values ordered as 
+                        \(\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0\). 
+                        For notational convenience, extend \(\sigma_i := 0\) for \(\min(m,n) < i \leq n\). 
+                        For any \(\mathbf{x} \in \mathbb{R}^n\) with \(\|\mathbf{x}\|_2 = 1\), set \(\mathbf{y} = V^\top \mathbf{x}\). 
+                        Since \(V\) is orthogonal, \(\|\mathbf{y}\|_2 = \|\mathbf{x}\|_2 = 1\) by the <a href="orthogonality.html#T-orthonormal_columns_preserve_norm" class="ref-link"><strong>norm-preserving property</strong></a>. 
+                        Similarly \(U\) preserves norms, so:
+                        \[
+                        \|A \mathbf{x}\|_2^2 = \|U \Sigma V^\top \mathbf{x}\|_2^2 = \|\Sigma \mathbf{y}\|_2^2 = \sum_{i=1}^n \sigma_i^2 \, y_i^2.
+                        \]
+                        Bounding above by the largest singular value,
+                        \[
+                        \|A \mathbf{x}\|_2^2 = \sum_{i=1}^n \sigma_i^2 y_i^2 \leq \sigma_1^2 \sum_{i=1}^n y_i^2 = \sigma_1^2.
+                        \]
+                        Equality is achieved by \(\mathbf{y} = \mathbf{e}_1\) (equivalently \(\mathbf{x} = V \mathbf{e}_1\), the first right singular vector), which gives \(\|A\mathbf{x}\|_2^2 = \sigma_1^2\). 
+                        Thus \(\|A\|_2 = \sigma_1 = \sigma_{\max}\). 
+                        The equality \(\sigma_{\max} = \sqrt{\lambda_{\max}(A^\top A)}\) follows directly from the <a href="symmetry.html#D-singular_values" class="ref-link"><strong>definition of singular values</strong></a> as \(\sigma_i = \sqrt{\lambda_i(A^\top A)}\).
                     </p>
                 </div>
             
                 <p>
-                    The spectral norm is commonly used to control the <strong>Lipschitz continuity</strong> of
-                    functions in the <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> in order to prevent 
-                    <strong>vanishing or exploding gradients</strong>.
+                    The spectral norm is commonly used to control the <strong>Lipschitz continuity</strong> of functions in <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a> 
+                    to prevent <strong>vanishing or exploding gradients</strong>.
                 </p>
 
                 <p>
-                    \(\| x \|_p \) in (1) is called the <strong>\(p\)-norm</strong> of the vector \(x\). The Euclidean norm is 
-                    a specific case of \(p\)-norm where \(p =2\). In general, we define the \(p\)-norm as follows.
+                    The induced norm depends on a choice of vector \(p\)-norm. The Euclidean norm used throughout linear algebra is the 
+                    special case \(p = 2\). In general, we define the \(p\)-norm on vectors as follows.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-p_norm">
                     <span class="theorem-title">Definition: \(p\)-Norm</span>
                     <p>
-                        The <strong>\(p\)-norm</strong> of the vector \(x\) is given by:
+                        For \(p \geq 1\), the <strong>\(p\)-norm</strong> of a vector \(\mathbf{x} \in \mathbb{R}^n\) is
                         \[
-                        \| x \|_p = (\sum_{i =1} ^n |x_i|^p)^{\frac{1}{p}} \quad , p \geq 1.
+                        \| \mathbf{x} \|_p = \left( \sum_{i=1}^n |x_i|^p \right)^{1/p}.
                         \]
+                        The restriction \(p \geq 1\) ensures the triangle inequality holds (via Minkowski's inequality); for \(0 < p < 1\), the expression above still defines a function but fails to be a norm.
                     </p>
                 </div>
 
                 <p>              
-                    When \(p =1\), we call it <strong>Manhattan norm</strong>, which is commonly used in the grid-based
-                    environments. Also, if we need <strong>sparsity</strong> in models such as Lasso regression, often, 
-                    the Manhattan norm is used as a regularizer. 
+                    When \(p = 1\), we call it the <strong>Manhattan norm</strong> (or \(\ell_1\) norm), which is commonly used in grid-based
+                    environments. Also, when we need <strong>sparsity</strong> in models such as Lasso regression, 
+                    the Manhattan norm serves as a regularizer. 
                 </p>
 
                 <p>
-                    When \(p\) approaches \(\infty\), we define the <strong>maximum norm</strong>: 
+                    When \(p \to \infty\), we obtain the <strong>maximum norm</strong>: 
                     \[
-                    \| x \|_\infty = \lim_{p \to \infty} \| x \|_p = \max_{i} |x_i|.
+                    \| \mathbf{x} \|_\infty = \lim_{p \to \infty} \| \mathbf{x} \|_p = \max_{i} |x_i|.
                     \]
                     In numerical analysis, the maximum norm is used for "worst-case" error analysis. Similarly,
                     in machine learning, it is used when we want to minimize the worst error rather than the total
@@ -250,60 +337,83 @@ uses_python: false
 
             <section id="ms" class="section-content">
                 <h2>Introduction to Metric Spaces</h2>
+
                 <p>
-                    We have learned about <a href="vectorspaces.html"><strong>vector spaces</strong></a> and 
-                    norms, which measure "distance" between points(vectors) in \(\mathbb{R}^n\). Although this concept may seem
-                    "general" as it extends beyond the familiar 3D space, the vector space with norms is actually a specific
-                    case of a more general mathematical structure called a <strong>metric space</strong>. 
-                </p>
-                <p>
-                    Understanding this broader framework helps us see how the norms we use in linear algebra fit into the larger 
-                    picture of <strong>mathematical analysis</strong>. As an introduction to this perspective, we define the metric 
-                    space \((M, d)\) as follows.
+                    Look back over the norms we have collected in the previous two sections: the Frobenius norm on matrices, 
+                    the nuclear and spectral norms measuring singular-value magnitudes, the \(p\)-norms on vectors, the Manhattan and maximum norms 
+                    as special cases. At first glance they feel ad hoc — each invented for a specific purpose on a specific space. 
+                    But something invariant runs through all of them. Every norm we have seen satisfies three properties: 
+                    <strong>non-negativity, symmetry, and the triangle inequality</strong>. 
+                    These three properties — and nothing more — are what "distance" actually <em>is</em>. 
+                    When we extract them from the vector setting and apply them to an arbitrary set, 
+                    we arrive at one of the most fertile structures in modern mathematics: the <strong>metric space</strong>.
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Metric Space</span> 
                     <p>
-                        A <strong>metric space</strong> is an ordered pair \((M, d)\)consisting of a nonempty set 
+                        A <strong>metric space</strong> is an ordered pair \((M, d)\) consisting of a nonempty set 
                         \(M\) and a <strong>metric</strong> \(d\) on \(M\). The metric \(d\) is a function 
                         \(d: M \times M \to \mathbb{R}\) that defines the distance between any two elements of \(M\). 
                         For all \(a, b, c \in M\), the following axioms must hold:
                     </p>
                     <ol style="padding-left: 40px;">
-                        <li>Positivity: \(d(a,b) \geq 0\) with equality if and only if \(a = b\).</li>
+                        <li>Non-negativity: \(d(a,b) \geq 0\) with equality if and only if \(a = b\).</li>
                         <li>Symmetry: \(d(a,b) = d(b,a)\).</li>
-                        <li>The triangle inequality \(d(a,b) \leq d(a,c) + d(c, b)\).</li>
+                        <li>Triangle inequality: \(d(a,b) \leq d(a,c) + d(c, b)\).</li>
                     </ol>
                 </div>
 
                 <p>
-                    Often we just say "the metric space \(M\)" if the metric \(d\) is obvious. 
-                    <br>
-                    Note: Suppose \(X\) and \(Y\) are sets. Then <strong>Cartesian product </strong>of \(X\) and \(Y\)
-                    is a set of "ordered" pair:  
-                    \[
-                    X \times Y = \{(x, y) | x \in X, \, y\in Y\}.
-                    \] 
+                    Two things are striking about this definition. First, \(M\) is <em>any nonempty set</em> — not required to be a vector space, 
+                    not required to have any algebraic structure at all. Points could be matrices, functions, probability distributions, 
+                    strings of DNA, or vertices of a graph. Second, the axioms are strikingly minimal. 
+                    Often we just say "the metric space \(M\)" when \(d\) is understood from context.
                 </p>
 
                 <p>
-                    Now, you can see that any vector space equipped with a norm is a metric space. We call it 
-                    a <strong>normed vector space</strong>. More specifically, in linear algebra, we have worked within
-                    the framework of <strong>inner product spaces</strong> whose norm is defined by the inner product
+                    <em>Notational aside.</em> For sets \(X\) and \(Y\), the <strong>Cartesian product</strong> is the set of ordered pairs
                     \[
-                    d(u, v) = \|u-v\|= \sqrt{\langle u-v, u-v \rangle}.
+                    X \times Y = \{(x, y) \mid x \in X, \; y \in Y\},
                     \]
-                    The most familiar example of inner product space is the <strong>Euclidean space</strong> \(\mathbb{R}^n\).
+                    which is the natural domain for \(d\).
                 </p>
-                
+
                 <p>
-                    In <strong>machine learning</strong>, understanding how inner product spaces naturally extend to normed spaces and then to metric 
-                    spaces provides the mathematical foundation for defining <strong>similarity</strong> measures, regularization techniques, 
-                    and convergence criteria in optimization algorithms.
+                    Every <a href="vectorspaces.html#D-vector_space" class="ref-link"><strong>vector space</strong></a> equipped with a norm becomes a metric space: 
+                    the norm \(\|\cdot\|\) induces a metric via \(d(\mathbf{u}, \mathbf{v}) = \|\mathbf{u} - \mathbf{v}\|\). 
+                    This includes every setting we have worked with so far. Even more specifically, most of Section I has lived inside 
+                    <strong>inner product spaces</strong>, where the norm itself comes from an inner product:
+                    \[
+                    d(\mathbf{u}, \mathbf{v}) = \|\mathbf{u} - \mathbf{v}\| = \sqrt{\langle \mathbf{u} - \mathbf{v}, \mathbf{u} - \mathbf{v} \rangle}.
+                    \]
+                    The most familiar example is the <strong>Euclidean space</strong> \(\mathbb{R}^n\). 
+                    But now the Frobenius inner product has shown us that \(\mathbb{R}^{m \times n}\) carries exactly the same structure. 
+                    Both are special cases of a much broader family.
                 </p>
+
+                <div class="insight-box">
+                    <h3>Why This Abstraction Matters for ML and CS</h3>
+                    <p>
+                        The convergence of iterative algorithms — gradient descent, Newton's method, EM, MCMC — is not fundamentally about 
+                        real numbers or Euclidean geometry. It is about whether successive iterates get closer to a limit, 
+                        in <em>some</em> notion of distance. The relevant notion depends on the space:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>On \(\mathbb{R}^n\), gradient descent is analyzed using the Euclidean metric.</li>
+                        <li>On spaces of matrices, low-rank recovery is analyzed using the Frobenius or nuclear norm.</li>
+                        <li>On spaces of probability distributions, convergence is measured by the Wasserstein metric or KL divergence.</li>
+                        <li>On function spaces (where neural networks live in the infinite-width limit), the natural metric is an \(L^p\) norm.</li>
+                    </ul>
+                    <p>
+                        Each of these is a different metric space. To speak the language of convergence in modern ML — why an algorithm converges, 
+                        at what rate, and to what limit — one must first speak the language of metric spaces. 
+                        Section II of the curriculum, on the foundations of analysis, begins exactly there.
+                    </p>
+                </div>
             </section>
         </div>
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
