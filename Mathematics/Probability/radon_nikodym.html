@@ -1,0 +1,1226 @@
+---
+layout: default
+title: "Signed Measures & the Radon-Nikodym Theorem"
+topic_id: prob-24
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Signed Measures &amp; the Radon-Nikodym Theorem</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Why Radon-Nikodym?</a>
+            <a href="#signed-measures">Signed Measures, Hahn &amp; Jordan Decompositions</a>
+            <a href="#absolute-continuity">Absolute Continuity &amp; Singularity</a>
+            <a href="#radon-nikodym">The Radon-Nikodym Theorem</a>
+            <a href="#ahead">Looking Ahead</a>
+        </div>
+
+        <div class="container">
+
+            <section id="intro" class="section-content">
+                <h2>Why Radon-Nikodym?</h2>
+
+                <p>
+                    Three earlier pages have already used the name "Radon-Nikodym" without proof. In 
+                    <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>Pushforward Measure</strong></a>, 
+                    we defined the probability density function as the formal derivative \(f_X = dP_X/d\lambda\) and granted 
+                    its existence whenever \(P_X \ll \lambda\). In 
+                    <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a>, 
+                    the duality \((L^p)^* \cong L^q\) was stated as a fact, with the proof of the converse direction — every 
+                    continuous functional on \(L^p\) arises from some \(L^q\) function — left to a future result. And in the closing 
+                    paragraphs of <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>, 
+                    we previewed the conditional expectation \(\mathbb{E}[X \mid \mathcal{G}]\) as the Radon-Nikodym derivative of 
+                    a signed measure with respect to \(\mathbb{P}|_{\mathcal{G}}\). All three invocations rest on a single 
+                    theorem, the proof of which we provide in this chapter.
+                </p>
+
+                <p>
+                    The theorem answers a sharply posed question: <em>given two measures \(\mu\) and \(\nu\) on the same space, 
+                    when can \(\nu\) be written as an integral against \(\mu\)?</em> That is, when does there exist a measurable 
+                    function \(f\) such that
+                    \[
+                    \nu(A) \;=\; \int_A f \, d\mu \quad \text{for every measurable set } A \, ?
+                    \]
+                    The answer turns on a single hypothesis — <em>absolute continuity</em>, written \(\nu \ll \mu\) — and the 
+                    function \(f\) it produces is the <strong>density</strong> of \(\nu\) with respect to \(\mu\), denoted 
+                    \(d\nu/d\mu\). To formulate and prove this, we first need a notion of measure that admits negative values 
+                    (the assignment \(A \mapsto \int_A f \, d\mu\) for an integrable real-valued \(f\), and the difference 
+                    \(\nu_1 - \nu_2\) of two measures provided at least one is finite, are central examples). This leads us 
+                    to <strong>signed measures</strong> 
+                    and the <strong>Hahn and Jordan decompositions</strong>, which split any signed measure into a positive and 
+                    a negative part. With those in hand, the Radon-Nikodym theorem follows from a celebrated Hilbert-space 
+                    argument due to von Neumann — recovering, on the Section III side, the dividends of the entire functional-analytic 
+                    machinery developed in Section II.
+                </p>
+
+                <p>
+                    The applications in machine learning are pervasive and immediate: Bayesian posterior densities, the 
+                    score functions driving diffusion-based generative models, importance-sampling reweights, and the KL 
+                    divergences that regularize policy training in RLHF are all, at the foundational level, Radon-Nikodym 
+                    derivatives or integrals against them. We will revisit each of these in detail once the theorem is in 
+                    hand; for now, the message is that the abstract derivative \(d\nu/d\mu\) is the working object 
+                    underneath nearly every probabilistic construction in modern ML.
+                </p>
+            </section>
+
+            <section id="signed-measures" class="section-content">
+                <h2>Signed Measures, Hahn &amp; Jordan Decompositions</h2>
+
+                <p>
+                    A measure, as introduced in 
+                    <a href="../Calculus/measure.html"><strong>Measure Theory</strong></a>, assigns a non-negative value to 
+                    each measurable set and is countably additive on disjoint unions. Many natural constructions, however, 
+                    produce set functions that take both signs. The simplest example: given a measure \(\mu\) and an integrable 
+                    function \(f \in L^1(\mu)\) that takes both positive and negative values, the assignment
+                    \[
+                    \nu_f(A) \;=\; \int_A f \, d\mu
+                    \]
+                    is countably additive and finite, but \(\nu_f(A)\) can be negative. Differences of two measures, 
+                    \(\nu = \mu_1 - \mu_2\), behave the same way. To work with such objects on equal footing with measures, 
+                    we relax the non-negativity axiom while keeping countable additivity intact.
+                </p>
+
+                <h3>Definition</h3>
+
+                <div class="theorem" id="D-signed_measure">
+                    <span class="theorem-title">Definition: Signed Measure</span>
+                    <p>
+                        Let \((\Omega, \mathcal{F})\) be a measurable space. A <strong>signed measure</strong> on 
+                        \((\Omega, \mathcal{F})\) is a function \(\nu : \mathcal{F} \to [-\infty, \infty]\) satisfying:
+                    </p>
+                    <ol>
+                        <li>\(\nu(\emptyset) = 0\).</li>
+                        <li>\(\nu\) takes at most one of the values \(+\infty\) and \(-\infty\) (so the countable sum 
+                            in (3) is always well-defined, with no \(\infty - \infty\) ambiguity).</li>
+                        <li><strong>Countable additivity:</strong> for any sequence \((A_n)_{n \geq 1}\) of pairwise 
+                            disjoint sets in \(\mathcal{F}\),
+                            \[
+                            \nu\!\left(\bigsqcup_{n=1}^\infty A_n\right) \;=\; \sum_{n=1}^\infty \nu(A_n),
+                            \]
+                            where the series \(\sum_n \nu(A_n)\) is required to converge absolutely whenever 
+                            \(\nu(\bigsqcup_n A_n)\) is finite. (When the left-hand side equals \(+\infty\) or \(-\infty\), 
+                            condition (2) forces all but finitely many terms of the series to share the same sign on the 
+                            divergent side, so the partial sums diverge unambiguously to the same value.)
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    The absolute-convergence requirement in (3) deserves a brief comment. When \(\nu(\bigsqcup_n A_n)\) is 
+                    finite, the left-hand side does not depend on the order in which the disjoint sets \(A_n\) are listed, 
+                    so the series on the right must converge to the same value under every rearrangement. By Riemann's 
+                    rearrangement theorem on real series, this is equivalent to absolute convergence. The condition is 
+                    automatic when \(\nu\) is non-negative — it is only the possibility of cancellation between positive 
+                    and negative terms that makes it substantive in the signed case.
+                </p>
+
+                <p>
+                    The example \(\nu_f(A) = \int_A f \, d\mu\) is the prototype. Splitting \(f = f^+ - f^-\) into its positive 
+                    and negative parts gives
+                    \[
+                    \nu_f(A) \;=\; \int_A f^+ \, d\mu \;-\; \int_A f^- \, d\mu \;=\; \nu_{f^+}(A) - \nu_{f^-}(A),
+                    \]
+                    which writes \(\nu_f\) as the difference of two non-negative measures, supported respectively on 
+                    \(\{f \geq 0\}\) and \(\{f < 0\}\). The Jordan decomposition asserts that <em>every</em> signed 
+                    measure admits such a structural splitting <em>canonically</em>, independently of any representing function \(f\).
+                </p>
+
+                <h3>The Hahn and Jordan Decompositions</h3>
+
+                <p>
+                    The geometric picture is direct: a signed measure \(\nu\) on \(\Omega\) carves the space into a part 
+                    \(P\) on which \(\nu\) is non-negative and a complementary part \(N\) on which \(\nu\) is non-positive. 
+                    Once such a decomposition of \(\Omega\) is found, the splitting of \(\nu\) into a non-negative and a 
+                    non-positive piece comes for free.
+                </p>
+
+                <p>
+                    A measurable set \(P \in \mathcal{F}\) is called <strong>positive</strong> for \(\nu\) if \(\nu(A) \geq 0\) 
+                    for every measurable \(A \subseteq P\); similarly, \(N\) is <strong>negative</strong> if \(\nu(A) \leq 0\) 
+                    for every measurable \(A \subseteq N\). It is not enough merely that \(\nu(P) \geq 0\): every measurable 
+                    subset of \(P\) must inherit non-negativity.
+                </p>
+
+                <div class="theorem" id="T-hahn_decomposition">
+                    <span class="theorem-title">Theorem: Hahn Decomposition</span>
+                    <p>
+                        Let \(\nu\) be a signed measure on \((\Omega, \mathcal{F})\). Then there exist disjoint measurable 
+                        sets \(P, N \in \mathcal{F}\) with \(\Omega = P \sqcup N\), where \(P\) is positive and \(N\) is 
+                        negative for \(\nu\). The decomposition is unique up to \(\nu\)-null sets: if 
+                        \(\Omega = P' \sqcup N'\) is another such decomposition, then the symmetric differences 
+                        \(P \triangle P'\) and \(N \triangle N'\) are \(\nu\)-null in the strong sense (every measurable 
+                        subset has \(\nu\)-measure zero).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We assume without loss of generality that \(\nu\) does not take the value \(+\infty\); the other 
+                        case is symmetric. The strategy is to extract a positive set of maximal measure and verify that its 
+                        complement is negative.
+                    </p>
+
+                    <p>
+                        <strong>Step 1 (subset extraction).</strong> We first show: if \(E \in \mathcal{F}\) satisfies 
+                        \(0 < \nu(E) < \infty\), then \(E\) contains a positive set \(A \subseteq E\) with \(\nu(A) > 0\).
+                    </p>
+
+                    <p>
+                        Suppose for contradiction that every measurable \(A \subseteq E\) with \(\nu(A) > 0\) fails to be 
+                        positive — that is, contains a measurable subset of strictly negative \(\nu\)-value. Set \(E_0 = E\). 
+                        Let \(n_1\) be the smallest positive integer such that there exists a measurable \(B_1 \subseteq E_0\) 
+                        with \(\nu(B_1) < -1/n_1\); such an \(n_1\) exists by the contradiction hypothesis. Set 
+                        \(E_1 = E_0 \setminus B_1\). Inductively, given \(E_{k-1}\), let \(n_k\) be the smallest positive 
+                        integer such that there exists \(B_k \subseteq E_{k-1}\) with \(\nu(B_k) < -1/n_k\), and set 
+                        \(E_k = E_{k-1} \setminus B_k\). Continue while such an \(n_k\) exists.
+                    </p>
+
+                    <p>
+                        If at some stage no such \(n_k\) exists, then no measurable subset of \(E_{k-1}\) has strictly 
+                        negative \(\nu\)-measure, so \(E_{k-1}\) is itself a positive set; moreover 
+                        \[
+                        \nu(E_{k-1}) \;=\; \nu(E) - \sum_{j < k} \nu(B_j) \;=\; \nu(E) + \sum_{j < k} |\nu(B_j)| \;\geq\; \nu(E) \;>\; 0
+                        \]
+                        (each \(\nu(B_j) < 0\), so \(-\nu(B_j) = |\nu(B_j)| \geq 0\)), and the claim holds with 
+                        \(A = E_{k-1}\). Otherwise, the construction continues for all \(k \geq 1\), and we proceed as 
+                        follows.
+                    </p>
+
+                    <p>
+                        Define \(E_\infty = E \setminus \bigsqcup_{k \geq 1} B_k\), so that 
+                        \(E = E_\infty \sqcup \bigsqcup_{k \geq 1} B_k\). By countable additivity,
+                        \[
+                        \nu(E) \;=\; \nu(E_\infty) + \sum_{k \geq 1} \nu(B_k).
+                        \]
+                        Since \(\nu(E)\) is finite and \(\nu\) does not take the value \(+\infty\) (by the WLOG 
+                        assumption), the equation forces both \(\nu(E_\infty)\) and \(\sum_k \nu(B_k)\) to be finite — 
+                        for if \(\nu(E_\infty) = -\infty\), the right-hand side would be \(-\infty \neq \nu(E)\). With 
+                        the left-hand side finite, condition (3) of the signed-measure definition gives absolute 
+                        convergence of \(\sum_k \nu(B_k)\). Each \(\nu(B_k) < -1/n_k < 0\), so 
+                        \(\sum_k 1/n_k < \infty\), forcing \(n_k \to \infty\). Moreover, 
+                        \(\nu(E_\infty) = \nu(E) - \sum_k \nu(B_k) \geq \nu(E) > 0\), so in particular 
+                        \(\nu(E_\infty) > 0\).
+                    </p>
+
+                    <p>
+                        We claim \(E_\infty\) is positive. If not, there exists \(C \subseteq E_\infty\) with \(\nu(C) < 0\); 
+                        choose \(m \in \mathbb{N}\) with \(-1/m > \nu(C)\) (possible since \(\nu(C) < 0\)). For all sufficiently 
+                        large \(k\), \(n_k > m\), so by minimality of \(n_k\), no measurable subset of \(E_{k-1}\) has 
+                        \(\nu\)-measure \(< -1/m\). But \(C \subseteq E_\infty \subseteq E_{k-1}\) and \(\nu(C) < -1/m\), 
+                        a contradiction. Hence \(E_\infty\) is positive with \(\nu(E_\infty) > 0\), proving the claim with 
+                        \(A := E_\infty\).
+                    </p>
+
+                    <p>
+                        <strong>Step 2 (maximization).</strong> Let
+                        \[
+                        s \;=\; \sup\bigl\{\, \nu(P) \,:\, P \in \mathcal{F} \text{ is positive for } \nu \,\bigr\} \;\in\; [0, +\infty].
+                        \]
+                        The supremum is over a non-empty family (the empty set is positive with measure \(0\)). The 
+                        finiteness \(s < \infty\) is not yet established; it will follow at the end of this step from 
+                        \(\nu(P) = s\) and the WLOG assumption \(\nu < +\infty\). Choose positive sets \(P_n\) with 
+                        \(\nu(P_n) \to s\), and set \(P = \bigcup_n P_n\).
+                    </p>
+
+                    <p>
+                        Each finite union \(P_1 \cup \cdots \cup P_n\) is positive, since a measurable subset of a finite 
+                        union of positive sets can be partitioned into measurable pieces, each contained in some \(P_i\), 
+                        and a sum of non-negative numbers is non-negative. Apply continuity from below to the increasing 
+                        sequence of positive sets \(Q_n := P_1 \cup \cdots \cup P_n \nearrow P\) (this is a special case of 
+                        countable additivity applied to the disjoint sequence 
+                        \(P_1, P_2 \setminus P_1, P_3 \setminus (P_1 \cup P_2), \ldots\); the \(\nu\)-values \(\nu(Q_n)\) 
+                        lie in \([0, s]\), so all quantities are non-negative reals or \(+\infty\) and no 
+                        \(\infty - \infty\) ambiguity arises). Then every measurable subset \(A \subseteq P\) satisfies 
+                        \(\nu(A) = \lim_n \nu(A \cap Q_n) \geq 0\) (each term is the \(\nu\)-measure of a measurable 
+                        subset of the positive set \(Q_n\)), so \(P\) is positive. Moreover, since \(P\) is positive and 
+                        \(P_n \subseteq P\), the set \(P \setminus P_n\) is a measurable subset of \(P\), hence has 
+                        non-negative \(\nu\)-measure, giving \(\nu(P) \geq \nu(P_n)\) for each \(n\); letting 
+                        \(n \to \infty\) yields \(\nu(P) \geq s\), and since \(\nu(P)\) is a candidate in the supremum, 
+                        \(\nu(P) = s\). Finally, the WLOG assumption \(\nu < +\infty\) gives \(\nu(P) < +\infty\), 
+                        confirming \(s < \infty\).
+                    </p>
+
+                    <p>
+                        <strong>Step 3 (complement is negative).</strong> Set \(N = \Omega \setminus P\). Suppose for 
+                        contradiction \(N\) is not negative: there exists \(E \subseteq N\) with \(\nu(E) > 0\). Since 
+                        \(\nu(E)\) is finite (as \(\nu < +\infty\)), Step 1 produces a positive set \(A \subseteq E\) with 
+                        \(\nu(A) > 0\). Then \(P \cup A\) is positive, disjointly assembled, with 
+                        \(\nu(P \cup A) = \nu(P) + \nu(A) = s + \nu(A) > s\), contradicting the definition of \(s\). 
+                        Hence \(N\) is negative.
+                    </p>
+
+                    <p>
+                        <strong>Uniqueness.</strong> Let \(\Omega = P' \sqcup N'\) be another Hahn decomposition. The set 
+                        \(P \setminus P' = P \cap N'\) is a subset of the positive set \(P\) and of the negative set \(N'\), 
+                        so every measurable \(B \subseteq P \setminus P'\) satisfies both \(\nu(B) \geq 0\) and 
+                        \(\nu(B) \leq 0\), forcing \(\nu(B) = 0\). Thus \(P \setminus P'\) is \(\nu\)-null in the strong 
+                        sense (every measurable subset has \(\nu\)-measure zero); symmetrically \(P' \setminus P\) is 
+                        \(\nu\)-null. Hence \(P \triangle P'\) is \(\nu\)-null, and likewise \(N \triangle N'\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The Hahn decomposition produces a partition of the underlying space; the Jordan decomposition repackages 
+                    this as an intrinsic splitting of the measure itself.
+                </p>
+
+                <div class="theorem" id="T-jordan_decomposition">
+                    <span class="theorem-title">Theorem: Jordan Decomposition</span>
+                    <p>
+                        Every signed measure \(\nu\) on \((\Omega, \mathcal{F})\) decomposes uniquely as
+                        \[
+                        \nu \;=\; \nu^+ - \nu^-,
+                        \]
+                        where \(\nu^+\) and \(\nu^-\) are non-negative measures and \(\nu^+ \perp \nu^-\) — that is, 
+                        \(\nu^+\) and \(\nu^-\) are concentrated on disjoint measurable sets.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(\Omega = P \sqcup N\) be a Hahn decomposition for \(\nu\). Define
+                        \[
+                        \nu^+(A) \;=\; \nu(A \cap P), \qquad \nu^-(A) \;=\; -\,\nu(A \cap N), \qquad A \in \mathcal{F}.
+                        \]
+                        Since \(P\) is positive and \(N\) is negative, both \(\nu^+\) and \(\nu^-\) are non-negative, and 
+                        countable additivity of \(\nu\) transfers immediately. For every \(A \in \mathcal{F}\),
+                        \[
+                        \nu^+(A) - \nu^-(A) \;=\; \nu(A \cap P) + \nu(A \cap N) \;=\; \nu(A),
+                        \]
+                        proving the existence of the decomposition. By construction \(\nu^+(N) = 0\) and \(\nu^-(P) = 0\), so 
+                        \(\nu^+\) and \(\nu^-\) are concentrated on disjoint sets and hence mutually singular.
+                    </p>
+
+                    <p>
+                        For uniqueness, suppose \(\nu = \mu_1 - \mu_2\) with \(\mu_1, \mu_2\) non-negative measures 
+                        concentrated on disjoint measurable sets \(P', N' \in \mathcal{F}\) with 
+                        \(\Omega = P' \sqcup N'\) (so \(\mu_1(N') = 0\) and \(\mu_2(P') = 0\)).
+                    </p>
+
+                    <p>
+                        <em>Step (a): \(\Omega = P' \sqcup N'\) is a Hahn decomposition for \(\nu\).</em> For 
+                        \(A \subseteq P'\), \(\mu_2(A) \leq \mu_2(P') = 0\) (since \(\mu_2\) is concentrated on \(N'\), 
+                        disjoint from \(P'\)), so \(\nu(A) = \mu_1(A) \geq 0\); thus \(P'\) is positive. Symmetrically, 
+                        \(N'\) is negative. By Hahn uniqueness, the symmetric difference 
+                        \(P \triangle P' = (P \setminus P') \sqcup (P' \setminus P)\) is \(\nu\)-null in the strong sense — 
+                        every measurable subset has \(\nu\)-measure zero.
+                    </p>
+
+                    <p>
+                        <em>Step (b): \(\mu_1(P \triangle P') = 0\) and \(\mu_2(P \triangle P') = 0\).</em> For 
+                        \(P' \setminus P \subseteq P'\), the concentration of \(\mu_2\) on \(N'\) gives 
+                        \(\mu_2(P' \setminus P) = 0\), so \(\nu(P' \setminus P) = \mu_1(P' \setminus P)\); combined with 
+                        the strong \(\nu\)-nullity from Step (a), \(\mu_1(P' \setminus P) = 0\). For 
+                        \(P \setminus P' \subseteq N'\) (since \(P \setminus P' \subseteq \Omega \setminus P' = N'\)), the 
+                        concentration of \(\mu_1\) on \(P'\) gives \(\mu_1(P \setminus P') = 0\) directly; then 
+                        \(\nu(P \setminus P') = -\mu_2(P \setminus P')\), and the strong \(\nu\)-nullity forces 
+                        \(\mu_2(P \setminus P') = 0\). Combining, \(\mu_1(P \triangle P') = 0\) and 
+                        \(\mu_2(P \triangle P') = 0\).
+                    </p>
+
+                    <p>
+                        <em>Step (c): \(\mu_1 = \nu^+\) and \(\mu_2 = \nu^-\).</em> Fix \(A \in \mathcal{F}\). Since 
+                        \(\mu_1\) is concentrated on \(P' = (P \cap P') \sqcup (P' \setminus P)\),
+                        \[
+                        \mu_1(A) \;=\; \mu_1(A \cap P') \;=\; \mu_1(A \cap P \cap P') + \mu_1(A \cap (P' \setminus P)) 
+                        \;=\; \mu_1(A \cap P \cap P'),
+                        \]
+                        where the last equality uses \(\mu_1(P' \setminus P) = 0\) from Step (b). Similarly, splitting 
+                        \(P = (P \cap P') \sqcup (P \setminus P')\),
+                        \[
+                        \mu_1(A \cap P) \;=\; \mu_1(A \cap P \cap P') + \mu_1(A \cap (P \setminus P')) \;=\; \mu_1(A \cap P \cap P'),
+                        \]
+                        using \(\mu_1(P \setminus P') = 0\). Hence \(\mu_1(A) = \mu_1(A \cap P)\).
+                    </p>
+
+                    <p>
+                        On the other hand, from \(\nu = \mu_1 - \mu_2\),
+                        \[
+                        \nu^+(A) \;=\; \nu(A \cap P) \;=\; \mu_1(A \cap P) - \mu_2(A \cap P).
+                        \]
+                        We claim \(\mu_2(A \cap P) = 0\): split 
+                        \(A \cap P = (A \cap P \cap P') \sqcup (A \cap (P \setminus P'))\); the first piece satisfies 
+                        \(\mu_2(A \cap P \cap P') \leq \mu_2(P') = 0\), and the second satisfies 
+                        \(\mu_2(A \cap (P \setminus P')) \leq \mu_2(P \setminus P') = 0\) by Step (b). Thus 
+                        \(\nu^+(A) = \mu_1(A \cap P) = \mu_1(A)\). The identity \(\mu_2 = \nu^-\) follows symmetrically. 
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The Hahn decomposition is unique only up to \(\nu\)-null sets, but the Jordan decomposition itself is 
+                    fully unique — the ambiguity in choosing \(P\) versus \(P'\) is invisible from the perspective of 
+                    \(\nu^+\) and \(\nu^-\), which only see how \(\nu\) acts on sets, not which Hahn-partition was used 
+                    to construct them.
+                </p>
+
+                <div class="theorem" id="D-total_variation">
+                    <span class="theorem-title">Definition: Total Variation</span>
+                    <p>
+                        The <strong>total variation</strong> of a signed measure \(\nu\) is the non-negative measure
+                        \[
+                        |\nu| \;=\; \nu^+ + \nu^-.
+                        \]
+                        We say \(\nu\) is a <strong>finite signed measure</strong> if \(|\nu|(\Omega) < \infty\), and 
+                        <strong>\(\sigma\)-finite</strong> if \(\Omega\) is a countable union of sets of finite \(|\nu|\)-measure.
+                    </p>
+                </div>
+
+                <p>
+                    The total variation \(|\nu|\) is the natural "size" of a signed measure: \(|\nu|(A)\) measures the total 
+                    mass of \(\nu\) on \(A\) without cancellation between the positive and negative parts. For 
+                    \(\nu_f(A) = \int_A f \, d\mu\) with \(f \in L^1(\mu)\), the Hahn decomposition is given explicitly by 
+                    \(P = \{f \geq 0\}\) and \(N = \{f < 0\}\), so \(\nu_f^+(A) = \int_A f^+ \, d\mu\) and 
+                    \(\nu_f^-(A) = \int_A f^- \, d\mu\), giving \(|\nu_f|(A) = \int_A |f| \, d\mu\). In particular 
+                    \(|\nu_f|(\Omega) = \|f\|_{L^1(\mu)}\). The map \(f \mapsto \nu_f\) is therefore a norm-preserving linear 
+                    embedding of \(L^1(\mu)\) into the space of finite signed measures absolutely continuous with respect to 
+                    \(\mu\) (in the sense introduced in the <a href="#absolute-continuity">next section</a>). The Radon-Nikodym 
+                    theorem proved at the end of this chapter will upgrade this embedding to an isometric isomorphism by 
+                    establishing surjectivity — every such \(\mu\)-AC signed measure is of the form \(\nu_f\) for some 
+                    \(f \in L^1(\mu)\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Signed Measures in CS and ML</h3>
+                    <p>
+                        Signed measures appear wherever a system carries net-flow or signed-mass quantities rather than 
+                        mass alone.
+                    </p>
+                    <p>
+                        <strong>Optimal transport via Kantorovich-Rubinstein duality.</strong> In the Earth Mover's 
+                        formulation of optimal transport, the difference \(P - Q\) of two probability distributions is a 
+                        signed measure of total mass zero. The Kantorovich-Rubinstein duality writes the Wasserstein-1 
+                        distance as a supremum over Lipschitz functions of integrals against this signed measure:
+                        \(W_1(P, Q) = \sup_{f \in \mathrm{Lip}_1} \int f \, d(P - Q)\). The Jordan decomposition 
+                        \(P - Q = (P - Q)^+ - (P - Q)^-\) identifies the regions of mass surplus (sources) and deficit 
+                        (sinks) between the two distributions — the regions from which mass must flow and to which it 
+                        must arrive in any optimal transport plan.
+                    </p>
+                    <p>
+                        <strong>Log-likelihood ratios.</strong> In hypothesis testing and classification, when 
+                        \(\ell \in L^1(P_0)\) (i.e., \(\mathbb{E}_{P_0}[|\log(p_1/p_0)|] < \infty\)), the function 
+                        \(\ell(x) = \log\!\bigl(p_1(x)/p_0(x)\bigr)\) defines a finite signed measure 
+                        \(\nu_\ell(A) = \int_A \ell \, dP_0\). Its Jordan decomposition isolates the regions where 
+                        evidence favors hypothesis \(H_1\) over \(H_0\) and vice versa, and the total variation 
+                        \(|\nu_\ell|(\Omega) = \mathbb{E}_{P_0}[|\ell|]\) measures the typical magnitude of the 
+                        log-evidence under \(H_0\) — a quantity related to but distinct from standard divergence-based 
+                        measures of test difficulty such as the KL divergence \(D_{\mathrm{KL}}(P_0 \| P_1) = -\mathbb{E}_{P_0}[\ell]\) 
+                        or the total-variation distance \(\mathrm{TV}(P_0, P_1) = \tfrac{1}{2}\|p_0 - p_1\|_{L^1}\) that 
+                        governs the minimax Bayes risk in binary hypothesis testing (via Le Cam's identity 
+                        \(\mathcal{R}_{\min} = \tfrac{1}{2}(1 - \mathrm{TV}(P_0, P_1))\)).
+                    </p>
+                    <p>
+                        <strong>Network flows on graphs.</strong> For a flow defined on the edges of a finite graph (with 
+                        sources and sinks), its <em>divergence</em> — the net flow at each vertex (incoming minus 
+                        outgoing) — is naturally a signed measure on the vertex set, with \(\nu(\{v\})\) the net flow at 
+                        vertex \(v\); the Hahn decomposition partitions the vertices into net-source and net-sink subsets. 
+                        The same algebraic structure underlies divergence operators on simplicial complexes — a connection 
+                        that resurfaces in the simplicial and homological structures developed in Section IV and ahead 
+                        toward Geometric Deep Learning.
+                    </p>
+                </div>
+            </section>
+            <section id="absolute-continuity" class="section-content">
+                <h2>Absolute Continuity &amp; Singularity</h2>
+
+                <p>
+                    With the structural theory of signed measures in hand, we turn to the relation between two measures 
+                    on the same space. The Radon-Nikodym theorem will assert that one measure can be expressed as an 
+                    integral against another precisely when the two satisfy the relation defined here: <strong>absolute 
+                    continuity</strong>. The opposite extreme — <strong>mutual singularity</strong> — describes measures 
+                    that are concentrated on disjoint sets and have nothing to integrate against one another. Together, 
+                    these two relations partition the qualitative ways that two measures can interact, and the Lebesgue 
+                    decomposition (mentioned in the <a href="#ahead">Looking Ahead section</a>) shows that they account 
+                    for every \(\sigma\)-finite case.
+                </p>
+
+                <h3>Definitions</h3>
+
+                <div class="theorem" id="D-absolute_continuity">
+                    <span class="theorem-title">Definition: Absolute Continuity</span>
+                    <p>
+                        Let \(\mu\) be a non-negative measure and \(\nu\) a signed measure on \((\Omega, \mathcal{F})\). 
+                        We say \(\nu\) is <strong>absolutely continuous</strong> with respect to \(\mu\), written 
+                        \(\nu \ll \mu\), if for every \(A \in \mathcal{F}\),
+                        \[
+                        \mu(A) = 0 \;\Longrightarrow\; \nu(A) = 0.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The condition \(\nu \ll \mu\) is exactly what is needed for "\(\mu\)-null sets are also \(\nu\)-null 
+                    sets" — \(\nu\) inherits whatever \(\mu\) declares to be negligible. For signed \(\nu\), the definition 
+                    is equivalent to \(|\nu| \ll \mu\), and also to the conjunction \(\nu^+ \ll \mu\) and \(\nu^- \ll \mu\). 
+                    To see (\(\Rightarrow\)): if \(\mu(A) = 0\), then \(\mu(B) = 0\) for every measurable \(B \subseteq A\) 
+                    (by monotonicity, since \(\mu \geq 0\)); applied to \(B = A \cap P\) and \(B = A \cap N\) from a Hahn 
+                    decomposition of \(\nu\), this gives \(\nu^+(A) = \nu(A \cap P) = 0\) and 
+                    \(\nu^-(A) = -\nu(A \cap N) = 0\), hence \(|\nu|(A) = \nu^+(A) + \nu^-(A) = 0\). For (\(\Leftarrow\)): 
+                    \(\mu(A) = 0 \Rightarrow |\nu|(A) = 0 \Rightarrow |\nu(A)| \leq |\nu|(A) = 0 \Rightarrow \nu(A) = 0\). 
+                    The Radon-Nikodym theorem will be stated for non-negative \(\nu\); the signed case follows by applying 
+                    the result to \(\nu^+\) and \(\nu^-\) separately and subtracting.
+                </p>
+
+                <div class="theorem" id="D-mutual_singularity">
+                    <span class="theorem-title">Definition: Mutual Singularity</span>
+                    <p>
+                        Two signed measures \(\mu\) and \(\nu\) on \((\Omega, \mathcal{F})\) are 
+                        <strong>mutually singular</strong>, written \(\mu \perp \nu\), if there exists a measurable 
+                        \(E \in \mathcal{F}\) such that
+                        \[
+                        |\mu|(E^c) \;=\; 0 \quad \text{and} \quad |\nu|(E) \;=\; 0.
+                        \]
+                        Equivalently, \(\mu\) is concentrated on \(E\) and \(\nu\) is concentrated on \(E^c\), so the 
+                        two measures live on disjoint measurable carriers. (Unlike absolute continuity, mutual singularity 
+                        is a symmetric relation between two signed measures.)
+                    </p>
+                </div>
+
+                <p>
+                    The two relations are extremes. If \(\nu \ll \mu\), then \(\nu\) is "dominated" by \(\mu\): every 
+                    \(\mu\)-negligible set is also \(\nu\)-negligible. If \(\nu \perp \mu\), then \(\nu\) and \(\mu\) 
+                    have no overlap whatsoever. The only signed measure that is simultaneously \(\nu \ll \mu\) and 
+                    \(\nu \perp \mu\) is the zero measure: from \(\nu \perp \mu\), choose \(E\) with 
+                    \(|\nu|(E) = 0\) and \(\mu(E^c) = 0\); then \(\nu \ll \mu\) forces \(|\nu|(E^c) = 0\), and so 
+                    \(|\nu|(\Omega) = 0\), giving \(\nu = 0\).
+                </p>
+
+                <h3>The ε-δ Characterization</h3>
+
+                <p>
+                    The implication \(\mu(A) = 0 \Rightarrow \nu(A) = 0\) in the 
+                    <a href="#D-absolute_continuity"><strong>definition of absolute continuity</strong></a> is a 
+                    qualitative, "all-or-nothing" condition: it says that \(\nu\) collapses on \(\mu\)-null sets, but it 
+                    says nothing about how \(\nu\) behaves on sets of <em>small but positive</em> \(\mu\)-measure. 
+                    For finite measures, however, the condition tightens: \(\nu(A)\) must in fact be uniformly small 
+                    whenever \(\mu(A)\) is small. This is the analytic counterpart of the qualitative definition, 
+                    and it is the form in which absolute continuity most often appears in proofs.
+                </p>
+
+                <div class="theorem" id="T-absolute_continuity_epsilon_delta">
+                    <span class="theorem-title">Theorem: ε-δ Characterization of Absolute Continuity</span>
+                    <p>
+                        Let \(\mu\) be a non-negative measure and \(\nu\) a finite signed measure on \((\Omega, \mathcal{F})\). 
+                        Then \(\nu \ll \mu\) if and only if for every \(\varepsilon > 0\) there exists \(\delta > 0\) such 
+                        that for every \(A \in \mathcal{F}\),
+                        \[
+                        \mu(A) < \delta \;\Longrightarrow\; |\nu(A)| < \varepsilon.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\Leftarrow\))</strong> The ε-δ condition is strictly stronger than \(\nu \ll \mu\): if 
+                        \(\mu(A) = 0\), then \(\mu(A) < \delta\) for every \(\delta > 0\), so \(|\nu(A)| < \varepsilon\) 
+                        for every \(\varepsilon > 0\), forcing \(\nu(A) = 0\).
+                    </p>
+
+                    <p>
+                        <strong>(\(\Rightarrow\))</strong> Suppose \(\nu \ll \mu\) but the ε-δ condition fails. Then there 
+                        exists \(\varepsilon_0 > 0\) such that for every \(n \geq 1\), some \(A_n \in \mathcal{F}\) satisfies
+                        \[
+                        \mu(A_n) < 2^{-n} \quad \text{and} \quad |\nu(A_n)| \geq \varepsilon_0.
+                        \]
+                        Set \(B_n = \bigcup_{k \geq n} A_k\) and \(B = \bigcap_{n \geq 1} B_n = \limsup_n A_n\). The sets 
+                        \(B_n\) are decreasing, with \(B_1\) of finite \(|\nu|\)-measure (since \(\nu\) is finite). By 
+                        \(\sigma\)-subadditivity,
+                        \[
+                        \mu(B) \leq \mu(B_n) \leq \sum_{k \geq n} \mu(A_k) < \sum_{k \geq n} 2^{-k} = 2^{-(n-1)},
+                        \]
+                        so \(\mu(B) = 0\) on letting \(n \to \infty\). By absolute continuity, \(|\nu|(B) = 0\).
+                    </p>
+
+                    <p>
+                        On the other hand, by 
+                        <a href="../Calculus/measure.html#T-continuity_of_measure" class="ref-link"><strong>continuity from above</strong></a> 
+                        for the finite measure \(|\nu|\),
+                        \[
+                        |\nu|(B) \;=\; \lim_{n \to \infty} |\nu|(B_n) \;\geq\; \limsup_{n \to \infty} |\nu|(A_n) \;\geq\; \limsup_{n \to \infty} |\nu(A_n)| \;\geq\; \varepsilon_0,
+                        \]
+                        where the second inequality uses \(A_n \subseteq B_n\) (so \(|\nu|(A_n) \leq |\nu|(B_n)\) for each 
+                        \(n\), giving \(\limsup_n |\nu|(A_n) \leq \limsup_n |\nu|(B_n) = \lim_n |\nu|(B_n)\); the last 
+                        equality holds because \(B_n\) is decreasing) and the third uses \(|\nu(A_n)| \leq |\nu|(A_n)\). 
+                        This contradicts \(|\nu|(B) = 0\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The finiteness hypothesis on \(\nu\) cannot be dropped. Take \(\mu = \lambda\) (Lebesgue measure on 
+                    \(\mathbb{R}\)) and \(\nu(A) = \int_A x^2 \, d\lambda(x)\), so that \(\nu \ll \lambda\) and \(\nu\) is 
+                    \(\sigma\)-finite. The sets \(A_n = [n, n + 1/n^2]\) satisfy \(\lambda(A_n) = 1/n^2 \to 0\), but
+                    \[
+                    \nu(A_n) \;=\; \int_n^{n + 1/n^2} x^2 \, dx \;\geq\; n^2 \cdot \frac{1}{n^2} \;=\; 1
+                    \]
+                    for every \(n\). So \(\nu(A_n)\) does not vanish even as \(\lambda(A_n) \to 0\), and the ε-δ form 
+                    fails despite \(\nu \ll \lambda\) holding qualitatively.
+                </p>
+
+                <h3>The Probabilistic Picture</h3>
+
+                <p>
+                    For a probability distribution \(P_X\) on \((\mathbb{R}, \mathcal{B}(\mathbb{R}))\), the relation 
+                    to Lebesgue measure \(\lambda\) determines the qualitative type of the random variable. If 
+                    \(P_X \ll \lambda\), the distribution is <strong>absolutely continuous</strong> in the 
+                    measure-theoretic sense: it has a Lebesgue density (the Radon-Nikodym derivative \(dP_X/d\lambda\), whose existence we will prove <a href="#radon-nikodym">below</a>). If 
+                    \(P_X \perp \lambda\) — for instance, when \(P_X\) is concentrated on a countable set, or on a 
+                    fractal of zero Lebesgue measure such as the Cantor set — there is no density relative to length. 
+                    A mixed distribution, such as \(\tfrac{1}{2}\delta_0 + \tfrac{1}{2}\,\lambda\big|_{[0,1]}\), is neither: 
+                    it has a singular part (the Dirac mass at \(0\)) and an absolutely continuous part. The Lebesgue 
+                    decomposition mentioned <a href="#ahead">below</a> asserts that this is the universal pattern: every \(\sigma\)-finite 
+                    measure splits canonically into an absolutely continuous and a mutually singular piece.
+                </p>
+            </section>
+
+            <section id="radon-nikodym" class="section-content">
+                <h2>The Radon-Nikodym Theorem</h2>
+
+                <p>
+                    We arrive at the central result. Given two \(\sigma\)-finite measures with \(\nu \ll \mu\), the 
+                    Radon-Nikodym theorem asserts that \(\nu\) is the integral of some non-negative measurable function 
+                    against \(\mu\). The function — unique up to \(\mu\)-null sets — is the abstract derivative 
+                    \(d\nu/d\mu\), and it is the working object underneath every "density" in probability and statistics.
+                </p>
+
+                <h3>Statement</h3>
+
+                <div class="theorem" id="T-radon_nikodym">
+                    <span class="theorem-title">Theorem: Radon-Nikodym</span>
+                    <p>
+                        Let \((\Omega, \mathcal{F})\) be a measurable space, and let \(\mu, \nu\) be 
+                        <a href="../Calculus/measure.html#D-sigma_finite_measure" class="ref-link"><strong>\(\sigma\)-finite</strong></a> 
+                        non-negative measures on \((\Omega, \mathcal{F})\) with \(\nu \ll \mu\). Then there exists a 
+                        non-negative measurable function \(f : \Omega \to [0, \infty]\), unique up to \(\mu\)-a.e. equality, 
+                        such that
+                        \[
+                        \nu(A) \;=\; \int_A f \, d\mu \quad \text{for every } A \in \mathcal{F}.
+                        \]
+                        The function \(f\) is called the <strong>Radon-Nikodym derivative</strong> of \(\nu\) with respect 
+                        to \(\mu\), denoted
+                        \[
+                        f \;=\; \frac{d\nu}{d\mu}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    For signed \(\nu\), the result extends by Jordan decomposition: writing \(\nu = \nu^+ - \nu^-\) with 
+                    \(\nu^\pm \ll \mu\) (which follows from \(\nu \ll \mu\), as observed in the 
+                    <a href="#absolute-continuity">previous section</a>), we obtain 
+                    \(d\nu/d\mu = d\nu^+/d\mu - d\nu^-/d\mu\), an extended-real measurable function, finite 
+                    \(\mu\)-a.e. when \(\nu\) is finite.
+                </p>
+
+                <h3>Proof via von Neumann's L² Method</h3>
+
+                <p>
+                    The proof we present is due to von Neumann and is among the most striking applications of the 
+                    Hilbert-space machinery developed in Section II. The key idea is to construct \(f\) as the solution 
+                    of a single linear-algebraic problem in \(L^2\) and then transport it back to a relation between 
+                    measures. The integral against \(\nu\) defines a bounded linear functional on a suitable \(L^2\) 
+                    space; the 
+                    <a href="../Calculus/dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a> 
+                    delivers a representing function; algebraic manipulation extracts \(f\) from that representative.
+                </p>
+
+                <p>
+                    <strong>Reduction to finite measures.</strong> Since both \(\mu\) and \(\nu\) are \(\sigma\)-finite, 
+                    we can write \(\Omega = \bigsqcup_{n \geq 1} \Omega_n\) with \(\Omega_n\) pairwise disjoint, 
+                    measurable, and satisfying \(\mu(\Omega_n), \nu(\Omega_n) < \infty\). (Take a \(\mu\)-exhaustion 
+                    and a \(\nu\)-exhaustion separately, intersect, and disjointify.) If we can produce a Radon-Nikodym 
+                    derivative \(f_n\) of \(\nu|_{\Omega_n}\) with respect to \(\mu|_{\Omega_n}\) on each \(\Omega_n\), 
+                    extend each \(f_n\) by zero outside \(\Omega_n\); the function \(f = \sum_n f_n \mathbf{1}_{\Omega_n}\) is 
+                    measurable and non-negative, and the disjointness of \(\{\Omega_n\}\) together with MCT gives
+                    \(\nu(A) = \sum_n \nu(A \cap \Omega_n) = \sum_n \int_{A \cap \Omega_n} f_n \, d\mu = \int_A f \, d\mu\) 
+                    for every \(A \in \mathcal{F}\). Thus it suffices to prove the theorem when both \(\mu\) and \(\nu\) 
+                    are finite.
+                </p>
+
+                <p>
+                    <strong>Step 1: The auxiliary measure \(\rho = \mu + \nu\).</strong> Assume henceforth that \(\mu\) 
+                    and \(\nu\) are finite. Define a new measure
+                    \[
+                    \rho \;=\; \mu + \nu, \qquad \rho(A) = \mu(A) + \nu(A).
+                    \]
+                    Then \(\rho\) is finite, and \(\mu \ll \rho\) and \(\nu \ll \rho\) hold trivially (any \(\rho\)-null 
+                    set has both \(\mu\)- and \(\nu\)-measure zero, since \(\mu, \nu \geq 0\)).
+                </p>
+
+                <p>
+                    <strong>Step 2: A bounded linear functional on \(L^2(\rho)\).</strong> Define
+                    \[
+                    T : L^2(\rho) \to \mathbb{R}, \qquad T(g) \;=\; \int_\Omega g \, d\nu.
+                    \]
+                    The functional \(T\) is linear by linearity of the integral. To verify boundedness, apply the 
+                    Cauchy-Schwarz inequality on \(L^2(\rho)\) using the constant function \(\mathbf{1} \in L^2(\rho)\) 
+                    (which lies in \(L^2(\rho)\) because \(\rho(\Omega) < \infty\)):
+                    \[
+                    |T(g)| \;\leq\; \int |g| \, d\nu \;\leq\; \int |g| \, d\rho \;=\; \int |g| \cdot 1 \, d\rho 
+                    \;\leq\; \|g\|_{L^2(\rho)} \cdot \rho(\Omega)^{1/2}.
+                    \]
+                    Here the second inequality uses \(\nu \leq \rho\) (as measures), and the final inequality is 
+                    Cauchy-Schwarz. Thus \(T\) is a continuous linear functional on the Hilbert space \(L^2(\rho)\), 
+                    with operator norm at most \(\rho(\Omega)^{1/2}\).
+                </p>
+
+                <p>
+                    <strong>Step 3: Riesz representation.</strong> By the 
+                    <a href="../Calculus/dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a>, 
+                    there exists a unique \(h \in L^2(\rho)\) such that
+                    \[
+                    T(g) \;=\; \langle g, h \rangle_{L^2(\rho)} \;=\; \int_\Omega g \, h \, d\rho \quad \text{for every } g \in L^2(\rho).
+                    \]
+                    Unwinding the definition of \(T\), this reads
+                    \[
+                    \int_\Omega g \, d\nu \;=\; \int_\Omega g \, h \, d\rho \quad \text{for every } g \in L^2(\rho). \tag{$\star$}
+                    \]
+                    The function \(h\) is so far an abstract \(L^2(\rho)\)-element; the next two steps pin down its 
+                    geometry.
+                </p>
+
+                <p>
+                    <strong>Step 4: \(0 \leq h \leq 1\) holds \(\rho\)-a.e.</strong> We prove the two bounds separately 
+                    by testing (\(\star\)) against indicator functions.
+                </p>
+
+                <p>
+                    For the lower bound, let \(E_- = \{h < 0\}\), and substitute \(g = \mathbf{1}_{E_-} \in L^2(\rho)\) 
+                    (this is in \(L^2(\rho)\) because \(\rho\) is finite). Then
+                    \[
+                    \nu(E_-) \;=\; \int_{E_-} 1 \, d\nu \;=\; \int_{E_-} h \, d\rho \;\leq\; 0,
+                    \]
+                    while \(\nu(E_-) \geq 0\) since \(\nu\) is non-negative. Hence \(\nu(E_-) = 0\) and 
+                    \(\int_{E_-} h \, d\rho = 0\). But \(h < 0\) strictly on \(E_-\), so \(\int_{E_-} h \, d\rho < 0\) 
+                    unless \(\rho(E_-) = 0\). Combined with \(\int_{E_-} h \, d\rho = 0\), this forces 
+                    \(\rho(E_-) = 0\), i.e., \(h \geq 0\) holds \(\rho\)-a.e.
+                </p>
+
+                <p>
+                    For the upper bound, let \(E_+ = \{h > 1\}\) and substitute \(g = \mathbf{1}_{E_+}\). Then
+                    \[
+                    \nu(E_+) \;=\; \int_{E_+} h \, d\rho \;\geq\; \int_{E_+} 1 \, d\rho \;=\; \rho(E_+) \;=\; \mu(E_+) + \nu(E_+).
+                    \]
+                    Since \(\nu(E_+) \leq \nu(\Omega) < \infty\) (we are in the finite case), the term \(\nu(E_+)\) can be 
+                    subtracted from both sides, forcing \(\mu(E_+) \leq 0\), hence \(\mu(E_+) = 0\). By absolute continuity 
+                    \(\nu \ll \mu\), this gives \(\nu(E_+) = 0\), and therefore \(\rho(E_+) = 0\). Hence \(h \leq 1\) holds 
+                    \(\rho\)-a.e.
+                </p>
+
+                <p>
+                    We may modify \(h\) on a \(\rho\)-null set without disturbing equation (\(\star\)), so we redefine 
+                    \(h\) to take values in \([0, 1]\) everywhere.
+                </p>
+
+                <p>
+                    <strong>Step 5: Rewriting (\(\star\)) and isolating \(d\nu/d\mu\).</strong> Substitute the definition 
+                    \(\rho = \mu + \nu\) into (\(\star\)) and use linearity of the integral with respect to the sum measure 
+                    (\(\int \phi \, d(\mu + \nu) = \int \phi \, d\mu + \int \phi \, d\nu\) for non-negative or 
+                    \(\rho\)-integrable \(\phi\)):
+                    \[
+                    \int_\Omega g \, d\nu \;=\; \int_\Omega g \, h \, d\mu + \int_\Omega g \, h \, d\nu, 
+                    \]
+                    which rearranges to
+                    \[
+                    \int_\Omega g \, (1 - h) \, d\nu \;=\; \int_\Omega g \, h \, d\mu \quad \text{for every } g \in L^2(\rho). \tag{$\star\star$}
+                    \]
+                    We will use (\(\star\star\)) on indicator functions to identify \(d\nu/d\mu\). 
+                </p>
+
+                <p>
+                    Let \(E_1 = \{h = 1\}\). Substituting \(g = \mathbf{1}_{E_1}\) in (\(\star\star\)) gives 
+                    \(0 = \int_{E_1} h \, d\mu = \mu(E_1)\), so \(\mu(E_1) = 0\). By absolute continuity 
+                    \(\nu \ll \mu\), also \(\nu(E_1) = 0\). Hence \(h < 1\) holds \(\mu\)-a.e. and \(\nu\)-a.e., and 
+                    redefining \(h\) to take a value in \([0, 1)\) on the \(\rho\)-null set \(E_1\) leaves (\(\star\star\)) 
+                    intact.
+                </p>
+
+                <p>
+                    Set
+                    \[
+                    f \;=\; \frac{h}{1 - h},
+                    \]
+                    a non-negative measurable function with values in \([0, \infty)\), defined \(\mu\)-a.e. (we set 
+                    \(f = 0\) on the \(\mu\)-null set \(E_1\) where \(h = 1\) to make \(f\) defined everywhere; the 
+                    choice is irrelevant). The identity \(h = (1-h) f\) holds \(\mu\)-a.e., and will be used in Step 6 
+                    to extract \(f\) as the desired Radon-Nikodym derivative.
+                </p>
+
+                <p>
+                    <strong>Step 6: From (\(\star\star\)) to the Radon-Nikodym identity.</strong> We first extend 
+                    (\(\star\star\)) from \(L^2(\rho)\) to all non-negative measurable \(g\). Both sides of (\(\star\star\)) 
+                    are integrals of non-negative functions against non-negative measures (since 
+                    \(0 \leq h \leq 1\) \(\rho\)-a.e., so \(g(1-h) \geq 0\) and \(gh \geq 0\) for \(g \geq 0\)). For 
+                    indicator functions \(g = \mathbf{1}_A\), (\(\star\star\)) holds since \(\mathbf{1}_A \in L^2(\rho)\); 
+                    by linearity it holds for non-negative simple \(g\); and by the standard simple-function approximation 
+                    \(g_n \uparrow g\) and MCT applied to each side, it extends to all non-negative measurable \(g\) 
+                    (whether or not \(g \in L^2(\rho)\)). Call this extended identity (\(\star\star'\)).
+                </p>
+
+                <p>
+                    Now apply (\(\star\star'\)) with \(g = \mathbf{1}_A / (1 - h)\) — formally, via the truncations 
+                    \(g_N := \mathbf{1}_A \cdot \min(N, 1/(1-h))\), each bounded and measurable (hence in \(L^2(\rho)\) 
+                    since \(\rho\) is finite, and certainly admissible for the extended (\(\star\star'\))). The function 
+                    \(1/(1-h)\) is undefined on the set \(E_1 = \{h = 1\}\), but \(E_1\) is both \(\mu\)-null and 
+                    \(\nu\)-null (Step 5), hence \(\rho\)-null, so the value assigned on \(E_1\) (say 0) is irrelevant 
+                    for both integrals. Substituting \(g_N\) into (\(\star\star'\)):
+                    \[
+                    \int_A \min(N(1-h), 1) \, d\nu \;=\; \int_A \min(N, 1/(1-h)) \cdot h \, d\mu.
+                    \]
+                    On \(\{h < 1\}\), \(\min(N(1-h), 1) \uparrow 1\) and \(\min(N, 1/(1-h)) \cdot h \uparrow h/(1-h) = f\) 
+                    as \(N \to \infty\). Applying MCT to each side,
+                    \[
+                    \nu(A) \;=\; \int_A 1 \, d\nu \;=\; \int_A f \, d\mu \quad \text{for every } A \in \mathcal{F},
+                    \]
+                    completing the proof for finite \(\mu, \nu\). The reduction at the start of the proof extends the 
+                    result to the \(\sigma\)-finite case. \(\blacksquare\)
+                </p>
+
+                <div class="insight-box">
+                    <h3>What Hilbert Space Bought Us</h3>
+                    <p>
+                        The proof never constructs \(f\) directly. The function \(f = h / (1 - h)\) appears only in the 
+                        last step; until then, all the work happens with the auxiliary function \(h \in L^2(\rho)\) 
+                        produced by Riesz representation. This is the strategic content of von Neumann's argument: a 
+                        problem about <em>existence of a density</em> is converted into a problem about <em>existence 
+                        of a representing vector for a continuous linear functional on a Hilbert space</em> — a problem 
+                        already solved in 
+                        <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a>. 
+                        The entire functional-analytic apparatus of Section II — completeness of \(L^2\) (
+                        <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer</strong></a>), 
+                        orthogonal projection, the duality \((L^2)^* \cong L^2\) — collapses, in this single proof, into 
+                        a result about probability densities. Section III thereby harvests, in this single proof, what 
+                        Section II's chapters on Hilbert spaces, dual functionals, and \(L^p\) completeness developed.
+                    </p>
+                </div>
+
+                <h3>Uniqueness</h3>
+
+                <p>
+                    Uniqueness of the Radon-Nikodym derivative is a short, standalone argument that uses only the 
+                    integrability of \(f\) and the zero-integral lemma from Section II.
+                </p>
+
+                <p>
+                    Suppose \(f_1, f_2\) are two non-negative measurable functions, both satisfying 
+                    \(\nu(A) = \int_A f_i \, d\mu\) for every \(A \in \mathcal{F}\). We first prove uniqueness when 
+                    \(\nu\) is finite; the \(\sigma\)-finite case follows by applying the finite argument to each 
+                    \(\Omega_n\) of a \(\sigma\)-finite exhaustion. Assume henceforth \(\nu(\Omega) < \infty\). Then 
+                    \(\int_\Omega f_i \, d\mu = \nu(\Omega) < \infty\), so each \(f_i\) is \(\mu\)-integrable and 
+                    therefore finite \(\mu\)-a.e. Setting \(g = f_1 - f_2\) (well-defined \(\mu\)-a.e. and assigned the 
+                    value 0 on the \(\mu\)-null exceptional set where either \(f_i\) is infinite; the choice is 
+                    irrelevant), we have
+                    \[
+                    \int_A g \, d\mu \;=\; \nu(A) - \nu(A) \;=\; 0 \quad \text{for every } A \in \mathcal{F}.
+                    \]
+                    Apply this to \(A = \{g > 0\}\) and to \(A = \{g < 0\}\) separately. On the first set, 
+                    \(g^+ = g\) and \(g^- = 0\), so \(\int g^+ \, d\mu = \int_{\{g > 0\}} g \, d\mu = 0\). Since 
+                    \(g^+\) is non-negative, the 
+                    <a href="../Calculus/lebesgue.html#T-zero_integral_ae_zero" class="ref-link"><strong>Zero Integral Lemma</strong></a> 
+                    forces \(g^+ = 0\) \(\mu\)-a.e., that is, \(\mu(\{g > 0\}) = 0\). The argument on \(\{g < 0\}\) 
+                    is symmetric and gives \(\mu(\{g < 0\}) = 0\). Hence \(g = 0\) \(\mu\)-a.e., that is, \(f_1 = f_2\) 
+                    \(\mu\)-a.e.
+                </p>
+
+                <p>
+                    The Radon-Nikodym derivative is therefore well-defined as an element of the equivalence class of 
+                    measurable functions modulo \(\mu\)-null modifications. In particular, equations of the form 
+                    "\(d\nu/d\mu = f\)" are always understood up to \(\mu\)-a.e. equality.
+                </p>
+
+                <h3>Chain Rule and Change of Variables</h3>
+
+                <p>
+                    The Radon-Nikodym derivative is genuinely a derivative: it satisfies a chain rule under composition 
+                    of absolute-continuity relations, and it intertwines with integration in exactly the way the 
+                    Leibniz notation \(d\nu/d\mu\) suggests. These two properties — the chain rule and the change-of-variables 
+                    formula — are the computational engines that make the derivative usable in practice. Every Bayesian 
+                    update, every importance-sampling estimator, every KL divergence computation rests on the second 
+                    of these.
+                </p>
+
+                <div class="theorem" id="T-rn_chain_rule">
+                    <span class="theorem-title">Proposition: Chain Rule and Change of Variables</span>
+                    <p>
+                        Let \(\mu, \nu, \lambda\) be \(\sigma\)-finite non-negative measures on \((\Omega, \mathcal{F})\).
+                    </p>
+                    <ol>
+                        <li><strong>Chain rule.</strong> If \(\nu \ll \mu \ll \lambda\), then \(\nu \ll \lambda\) and
+                            \[
+                            \frac{d\nu}{d\lambda} \;=\; \frac{d\nu}{d\mu} \cdot \frac{d\mu}{d\lambda} \quad \lambda\text{-a.e.}
+                            \]
+                        </li>
+                        <li><strong>Change of variables.</strong> If \(\nu \ll \mu\), then for every measurable 
+                            \(g : \Omega \to [0, \infty]\),
+                            \[
+                            \int_\Omega g \, d\nu \;=\; \int_\Omega g \cdot \frac{d\nu}{d\mu} \, d\mu.
+                            \]
+                            The same identity holds for measurable \(g : \Omega \to \mathbb{R}\) provided either side 
+                            is finite when \(g\) is replaced by \(|g|\) (i.e., \(g \in L^1(\nu)\) iff 
+                            \(g \cdot d\nu/d\mu \in L^1(\mu)\), and the integrals agree).
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We prove (ii) first; (i) follows as a special case.
+                    </p>
+
+                    <p>
+                        <strong>Proof of (ii).</strong> Set \(f = d\nu/d\mu\), so that \(\nu(A) = \int_A f \, d\mu\) for 
+                        every \(A \in \mathcal{F}\). We extend this from indicator-set integrals to general non-negative 
+                        \(g\) by the standard three-step procedure.
+                    </p>
+
+                    <p>
+                        <em>Step 1: Indicator functions.</em> For \(g = \mathbf{1}_A\), the identity
+                        \[
+                        \int_\Omega \mathbf{1}_A \, d\nu \;=\; \nu(A) \;=\; \int_A f \, d\mu \;=\; \int_\Omega \mathbf{1}_A \cdot f \, d\mu
+                        \]
+                        is the defining property of \(f = d\nu/d\mu\).
+                    </p>
+
+                    <p>
+                        <em>Step 2: Non-negative simple functions.</em> Let \(g = \sum_{i=1}^n c_i \mathbf{1}_{A_i}\) 
+                        with \(c_i \geq 0\) and \(A_i \in \mathcal{F}\) pairwise disjoint. By linearity of the integral 
+                        on both sides and Step 1,
+                        \[
+                        \int_\Omega g \, d\nu \;=\; \sum_{i=1}^n c_i \nu(A_i) \;=\; \sum_{i=1}^n c_i \int_\Omega \mathbf{1}_{A_i} \cdot f \, d\mu \;=\; \int_\Omega g \cdot f \, d\mu.
+                        \]
+                    </p>
+
+                    <p>
+                        <em>Step 3: Non-negative measurable functions.</em> Let \(g : \Omega \to [0, \infty]\) be 
+                        measurable. By the standard simple-function approximation, there exists an increasing sequence 
+                        \(g_n \uparrow g\) of non-negative simple functions. Since \(f \geq 0\), the sequence 
+                        \(g_n f \uparrow g f\) is also increasing pointwise. Apply 
+                        <a href="../Calculus/lp_completeness.html#T-mct" class="ref-link"><strong>MCT</strong></a> 
+                        on both sides:
+                        \[
+                        \int_\Omega g \, d\nu \;=\; \lim_{n \to \infty} \int_\Omega g_n \, d\nu 
+                        \;=\; \lim_{n \to \infty} \int_\Omega g_n \, f \, d\mu 
+                        \;=\; \int_\Omega g \, f \, d\mu,
+                        \]
+                        where the middle equality is Step 2 applied to each \(g_n\). This proves (ii) for non-negative \(g\).
+                    </p>
+
+                    <p>
+                        <em>Step 4: Real-valued case.</em> For measurable \(g : \Omega \to \mathbb{R}\), apply Step 3 
+                        separately to \(g^+\) and \(g^-\) and subtract. Both \(\int g^+ \, d\nu = \int g^+ f \, d\mu\) 
+                        and \(\int g^- \, d\nu = \int g^- f \, d\mu\) hold, and the integrability hypothesis 
+                        \(g \in L^1(\nu)\) (i.e., \(\int |g| d\nu < \infty\)) makes both finite by the non-negative 
+                        identity applied to \(|g|\). The subtraction then yields
+                        \[
+                        \int_\Omega g \, d\nu \;=\; \int_\Omega g \, f \, d\mu,
+                        \]
+                        with both sides finite. The integrability equivalence 
+                        \(g \in L^1(\nu) \iff g f \in L^1(\mu)\) follows by applying the non-negative identity to \(|g|\).
+                    </p>
+
+                    <p>
+                        <strong>Proof of (i).</strong> Set \(f = d\nu/d\mu\) and \(k = d\mu/d\lambda\). For any 
+                        \(A \in \mathcal{F}\), apply (ii) with \(\nu \ll \mu\) and the test function \(g = \mathbf{1}_A\), 
+                        then apply (ii) again with \(\mu \ll \lambda\) and the test function \(g' = \mathbf{1}_A f\) 
+                        (non-negative and measurable):
+                        \[
+                        \nu(A) \;\stackrel{\text{(ii)}_{\nu \ll \mu}}{=}\; \int_\Omega \mathbf{1}_A f \, d\mu 
+                        \;\stackrel{\text{(ii)}_{\mu \ll \lambda}}{=}\; \int_\Omega \mathbf{1}_A f \, k \, d\lambda 
+                        \;=\; \int_A f k \, d\lambda.
+                        \]
+                        Hence \(\nu(A) = \int_A (f k) \, d\lambda\) for every \(A \in \mathcal{F}\). The product \(fk\) is 
+                        measurable and non-negative; although the value of \(f\) on \(\mu\)-null sets is undetermined (and 
+                        such sets need not be \(\lambda\)-null), the integral against \(\lambda\) is unaffected by this 
+                        ambiguity: for any two representatives \(f, f'\) of \(d\nu/d\mu\), applying (ii) with \(\mu \ll \lambda\) 
+                        gives \(\int_A (f - f') k \, d\lambda = \int_A (f - f') \, d\mu = 0\), since \(f = f'\) holds 
+                        \(\mu\)-a.e. Thus \(\int_A fk \, d\lambda = \nu(A)\) is well-defined regardless of the choice of 
+                        representatives, exhibiting \(fk\) as a density of \(\nu\) with respect to \(\lambda\). By 
+                        uniqueness of the Radon-Nikodym derivative with respect to \(\lambda\), 
+                        \(d\nu/d\lambda = fk = (d\nu/d\mu)(d\mu/d\lambda)\) holds \(\lambda\)-a.e.
+                    </p>
+
+                    <p>
+                        The hypothesis \(\nu \ll \lambda\) needed to apply uniqueness here is itself a consequence of 
+                        \(\nu \ll \mu \ll \lambda\): if \(\lambda(A) = 0\), then \(\mu(A) = 0\), and then \(\nu(A) = 0\). 
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    Two notational conveniences are worth noting. First, the change-of-variables formula (ii) is often 
+                    written in the suggestive Leibniz form
+                    \[
+                    \int g \, d\nu \;=\; \int g \, \frac{d\nu}{d\mu} \, d\mu,
+                    \]
+                    in which "\(d\nu = (d\nu/d\mu) \, d\mu\)" reads as a formal cancellation of differentials. This is 
+                    the source of all calculations of the type 
+                    \(\mathbb{E}_P[g(X)] = \mathbb{E}_Q[g(X) \cdot dP/dQ(X)]\) used in importance sampling and Monte Carlo 
+                    methods, where the target distribution \(P\) is integrated against by drawing samples from a different 
+                    distribution \(Q\) and reweighting by the Radon-Nikodym derivative \(dP/dQ\). Second, the chain rule (i) gives the 
+                    Radon-Nikodym derivative the algebraic structure of a classical derivative under composition: 
+                    transitivity of \(\ll\) at the level of measures lifts to multiplicativity of \(d/d\) at the level 
+                    of densities.
+                </p>
+
+                <p>
+                    A subtlety distinguishes this change-of-variables formula from the pushforward change-of-variables 
+                    proved in 
+                    <a href="measure_probability.html#T-change_of_variable" class="ref-link"><strong>Pushforward Measure</strong></a>. 
+                    The pushforward identity \(\int g \, d(X_*\mathbb{P}) = \int (g \circ X) \, d\mathbb{P}\) transports 
+                    integrals across a measurable map between two different measurable spaces; the function \(g\) and 
+                    its lift \(g \circ X\) live on different spaces, and the derivative \(dX_*\mathbb{P}/d\mathbb{P}\) 
+                    is not even defined (the measures live on different \(\sigma\)-algebras). The Radon-Nikodym 
+                    change-of-variables, by contrast, transports integrals between two measures on the <em>same</em> 
+                    space, paid for by multiplication by the density. Both are change-of-variables formulas, but they 
+                    operate in orthogonal directions: pushforward changes the carrier space, Radon-Nikodym changes the 
+                    weighting.
+                </p>
+
+                <h3>Connection to Machine Learning</h3>
+
+                <div class="insight-box">
+                    <p>
+                        Almost every probabilistic quantity in modern machine learning is, at the foundational level, 
+                        a Radon-Nikodym derivative — and almost every algorithm involving densities is, at the 
+                        foundational level, an instance of the change-of-variables formula (ii). We collect four 
+                        examples that span supervised, generative, and reinforcement learning.
+                    </p>
+
+                    <p>
+                        <strong>Bayesian posterior density.</strong> Given a prior \(\Pi\) on the parameter space 
+                        \(\Theta\) and a likelihood \(p(x | \theta)\) — viewed as a density of the conditional data 
+                        distribution with respect to a reference measure on the data space — the Bayesian posterior 
+                        \(\Pi_{\theta | x}\) is defined as a measure on \(\Theta\) — not, a priori, as a density. 
+                        When \(\Pi \ll \lambda_\Theta\) (with \(\lambda_\Theta\) a reference measure on \(\Theta\), 
+                        often Lebesgue measure), Bayes' rule produces the posterior density 
+                        \(d\Pi_{\theta|x}/d\lambda_\Theta\) by the formula
+                        \[
+                        \frac{d\Pi_{\theta|x}}{d\lambda_\Theta}(\theta) \;=\; \frac{p(x | \theta) \cdot (d\Pi/d\lambda_\Theta)(\theta)}{\int_\Theta p(x|\theta') \, (d\Pi/d\lambda_\Theta)(\theta') \, d\lambda_\Theta(\theta')}.
+                        \]
+                        If the prior is supported on a discrete set, \(\Pi \perp \lambda_\Theta\) and no Lebesgue density 
+                        exists; the posterior is then a discrete measure whose density relative to counting measure on 
+                        the support plays the analogous role. The framework is unified by the choice of dominating measure.
+                    </p>
+
+                    <p>
+                        <strong>Score function in diffusion models.</strong> Score-based generative models — including 
+                        denoising diffusion probabilistic models and score-based stochastic differential equations — 
+                        train a neural network \(s_\phi\) to estimate the gradient of the log-density, called the 
+                        <strong>Stein score</strong> (in the diffusion-modeling literature, often simply "score"):
+                        \[
+                        s_\phi(x, t) \;\approx\; \nabla_x \log p_t(x) \;=\; \nabla_x \log \frac{dP_t}{d\lambda}(x),
+                        \]
+                        where \(P_t\) is the distribution of the noised data at time \(t\) and \(\lambda\) is Lebesgue 
+                        measure on \(\mathbb{R}^d\). The score is well-defined as a measurable function on \(\mathbb{R}^d\) 
+                        when \(P_t \ll \lambda\) for \(t > 0\) (and, in the diffusion-model setting, smooth thanks to the 
+                        Gaussian noise injection along the forward diffusion). This noise injection ensures the absolute 
+                        continuity even when the original data distribution \(P_0\) lies on a low-dimensional manifold and 
+                        is singular to \(\lambda\). The reverse-time generative SDE is then driven by \(s_\phi\), which 
+                        integrates exactly the Radon-Nikodym derivative \(dP_t/d\lambda\) into the dynamics.
+                    </p>
+
+                    <p>
+                        <strong>Importance sampling.</strong> The most direct application of the change-of-variables 
+                        formula is importance sampling: to estimate \(\mathbb{E}_P[g(X)]\) using samples drawn from a 
+                        different distribution \(Q\), one rewrites
+                        \[
+                        \mathbb{E}_P[g(X)] \;=\; \int g \, dP \;=\; \int g \cdot \frac{dP}{dQ} \, dQ \;=\; \mathbb{E}_Q\!\left[g(X) \cdot \frac{dP}{dQ}(X)\right]
+                        \]
+                        and replaces the expectation under \(P\) by the empirical mean under \(Q\) of the reweighted 
+                        integrand \(g(X) \cdot dP/dQ(X)\). This is precisely the 
+                        <a href="#T-rn_chain_rule"><strong>change-of-variables proposition</strong></a> with \(\nu = P\) 
+                        and \(\mu = Q\). The estimator is unbiased 
+                        whenever \(P \ll Q\) (and \(g \in L^1(P)\), so that both expectations are finite); when 
+                        \(P \not\ll Q\), the ratio \(dP/dQ\) is undefined on a set of 
+                        positive \(P\)-measure, and the estimator misses contributions from that region — the practical 
+                        manifestation of an absolute-continuity violation.
+                    </p>
+
+                    <p>
+                        <strong>KL divergence and RLHF regularization.</strong> The Kullback-Leibler divergence between 
+                        two probability measures \(P\) and \(Q\) is defined by
+                        \[
+                        D_{\mathrm{KL}}(P \| Q) \;=\; 
+                        \begin{cases}
+                        \displaystyle \int_\Omega \log \frac{dP}{dQ} \, dP & \text{if } P \ll Q, \\
+                        +\infty & \text{otherwise}.
+                        \end{cases}
+                        \]
+                        The Radon-Nikodym derivative \(dP/dQ\) is what the divergence is integrating; without absolute 
+                        continuity, \(dP/dQ\) does not exist as a Radon-Nikodym derivative on the portion of the space 
+                        where \(Q\) places no mass but \(P\) does, and \(D_{\mathrm{KL}}(P \| Q)\) is set to \(+\infty\) 
+                        by convention. In reinforcement learning from human feedback (RLHF), the regularizer 
+                        \(D_{\mathrm{KL}}(\pi_\theta \| \pi_{\mathrm{ref}})\) — penalizing the trained policy 
+                        \(\pi_\theta\) for drifting from a reference policy \(\pi_{\mathrm{ref}}\) — is finite precisely 
+                        when \(\pi_\theta \ll \pi_{\mathrm{ref}}\), which is enforced by ensuring the trained policy 
+                        cannot place mass where the reference places none (e.g., via shared support or by parameterizing 
+                        \(\pi_\theta\) as \(\pi_{\mathrm{ref}}\) times a strictly positive learned ratio).
+                    </p>
+
+                    <p>
+                        The recurring pattern: <em>the Radon-Nikodym derivative is the object that algorithms compute 
+                        with, and absolute continuity is the hypothesis that makes the computation well-posed</em>. The 
+                        <a href="#T-radon_nikodym"><strong>Radon-Nikodym theorem</strong></a> proved above is the 
+                        existence proof that licenses every one of these constructions.
+                    </p>
+                </div>
+            </section>
+
+            <section id="ahead" class="section-content">
+                <h2>Looking Ahead</h2>
+
+                <p>
+                    The Radon-Nikodym theorem closes three open accounts in the curriculum and opens several new lines 
+                    of development. We summarize both.
+                </p>
+
+                <h3>Retroactive Closures</h3>
+
+                <p>
+                    First, in 
+                    <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>Pushforward Measure</strong></a>, 
+                    we defined the probability density function \(f_X\) of a continuous random variable as the formal 
+                    derivative \(dP_X/d\lambda\), assuming its existence. With the Radon-Nikodym theorem proved here, 
+                    that assumption is now justified: whenever \(P_X \ll \lambda\) — the measure-theoretic definition 
+                    of "continuous random variable" — the function \(f_X\) exists, is unique \(\lambda\)-a.e., and is 
+                    given by \(f_X = dP_X/d\lambda\). The PDF is no longer a primitive object but a derived one, 
+                    obtained from the structural relation \(P_X \ll \lambda\) between two measures.
+                </p>
+
+                <p>
+                    Second, in 
+                    <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a>, 
+                    the duality \((L^p)^* \cong L^q\) was stated as a fact, with the converse direction — every continuous 
+                    functional on \(L^p\) arises from some \(\psi \in L^q\) — left without proof. The standard proof of 
+                    that converse takes a continuous functional \(\Lambda\) on \(L^p(\mu)\), constructs the signed measure 
+                    \(\nu(A) = \Lambda(\mathbf{1}_A)\), shows \(\nu \ll \mu\), and applies Radon-Nikodym to obtain 
+                    \(\psi = d\nu/d\mu\). The present theorem fills that gap, completing the standard \(L^p\)-duality 
+                    statement for \(1 \leq p < \infty\).
+                </p>
+
+                <p>
+                    Third, in 
+                    <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>, 
+                    the closing paragraphs previewed conditional expectation \(\mathbb{E}[X | \mathcal{G}]\) as a 
+                    Radon-Nikodym derivative of the signed measure 
+                    \(A \mapsto \int_A X \, d\mathbb{P}\) (defined for \(A \in \mathcal{G}\)) with respect to 
+                    \(\mathbb{P}|_{\mathcal{G}}\). With Radon-Nikodym established, this construction is now fully 
+                    licensed; its development is the subject of the next chapter.
+                </p>
+
+                <h3>The Lebesgue Decomposition</h3>
+
+                <p>
+                    Absolute continuity (\(\ll\)) and mutual singularity (\(\perp\)) are extreme relations between two 
+                    measures. The <strong>Lebesgue decomposition theorem</strong>, which we state without proof, asserts 
+                    that every \(\sigma\)-finite signed measure decomposes uniquely into an absolutely continuous part 
+                    and a mutually singular part with respect to any reference measure: given a \(\sigma\)-finite 
+                    non-negative measure \(\mu\) and a \(\sigma\)-finite signed measure \(\nu\), 
+                    there exist unique signed measures \(\nu_{\mathrm{ac}}, \nu_{\mathrm{s}}\) with 
+                    \(\nu = \nu_{\mathrm{ac}} + \nu_{\mathrm{s}}\), \(\nu_{\mathrm{ac}} \ll \mu\), and 
+                    \(\nu_{\mathrm{s}} \perp \mu\). The proof, available in standard references such as Folland's real 
+                    analysis text or Durrett's probability text, is a refinement of the von Neumann argument used here 
+                    for Radon-Nikodym. Combined with our theorem, the Lebesgue decomposition gives a complete structural 
+                    classification: \(\nu\) splits into a "density part" (an integral against \(\mu\)) and a "singular 
+                    part" (concentrated where \(\mu\) is not) — and nothing else.
+                </p>
+
+                <h3>The Next Chapter</h3>
+
+                <p>
+                    In the upcoming page on conditional expectation, we will apply the Radon-Nikodym theorem to define 
+                    the conditional expectation \(\mathbb{E}[X | \mathcal{G}]\) of an integrable random variable 
+                    \(X \in L^1(\mathbb{P})\) with respect to a sub-\(\sigma\)-algebra \(\mathcal{G} \subseteq \mathcal{F}\). 
+                    The signed measure \(\nu_X(A) = \int_A X \, d\mathbb{P}\) on \((\Omega, \mathcal{G})\) is absolutely 
+                    continuous with respect to the restricted probability measure \(\mathbb{P}|_{\mathcal{G}}\); the 
+                    conditional expectation is then defined as the Radon-Nikodym derivative
+                    \[
+                    \mathbb{E}[X | \mathcal{G}] \;=\; \frac{d\nu_X}{d \mathbb{P}|_{\mathcal{G}}}.
+                    \]
+                    This rephrasing does several things at once: it makes \(\mathbb{E}[X | \mathcal{G}]\) a 
+                    \(\mathcal{G}\)-measurable function (rather than an event-by-event computation), it explains why 
+                    conditional expectation is unique only \(\mathbb{P}\)-a.s. (Radon-Nikodym uniqueness), and it 
+                    provides a single unified definition that subsumes both the discrete case 
+                    (\(\mathbb{E}[X | A]\) for an event \(A\)) and the continuous case. From this foundation, the 
+                    martingale theory that drives stochastic calculus, optimal stopping, and modern asymptotic 
+                    statistics becomes available.
+                </p>
+
+                <h3>Further Horizons</h3>
+
+                <p>
+                    Beyond conditional expectation, several future directions follow naturally from the Radon-Nikodym 
+                    framework:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Variational Inference.</strong> The Evidence Lower Bound (ELBO), central to variational 
+                        autoencoders and modern variational Bayesian inference, arises from the decomposition
+                        \(\log p(x) = \mathrm{ELBO}(q) + D_{\mathrm{KL}}(q(z|x) \| p(z|x))\), 
+                        which expresses the marginal log-likelihood as a sum of a tractable lower bound and an intractable 
+                        KL divergence to the true posterior. The ELBO itself further decomposes as 
+                        \(\mathbb{E}_{q(z|x)}[\log p(x|z)] - D_{\mathrm{KL}}(q(z|x) \| p(z))\) — a reconstruction term 
+                        plus a KL regularizer against the prior. Each KL term is an integral of the logarithm of a 
+                        Radon-Nikodym derivative, and the rigorous derivation requires absolute-continuity hypotheses on 
+                        the variational family \(q\) relative to the relevant reference measure. A future page on 
+                        variational inference will develop this explicitly, replacing the heuristic ELBO derivations of 
+                        introductory ML treatments.
+                    </li>
+                    <li>
+                        <strong>Girsanov's theorem and stochastic calculus.</strong> In continuous-time stochastic 
+                        analysis, the change of probability measure from one Brownian motion law to another (with a 
+                        drift) is governed by Girsanov's theorem, which is a Radon-Nikodym derivative computation in 
+                        the path-space measure. This underlies the mathematical theory of score-based diffusion 
+                        generative models — where the relationship between forward and reverse SDEs is established by 
+                        Anderson's time-reversal formula (with Girsanov-type changes of measure providing an 
+                        alternative path-space derivation in the spirit of Haussmann-Pardoux) — and the entire theory 
+                        of risk-neutral pricing in mathematical finance.
+                    </li>
+                    <li>
+                        <strong>Martingale theory.</strong> Doob's martingale convergence theorems, the Doob 
+                        decomposition of submartingales, and the optional stopping theorem all rely on conditional 
+                        expectation as a primitive — and hence on Radon-Nikodym. Martingales provide the discrete-time 
+                        skeleton of stochastic processes and are the gateway to continuous-time stochastic calculus.
+                    </li>
+                    <li>
+                        <strong>Information geometry.</strong> The KL divergence \(D_{\mathrm{KL}}(P \| Q)\) and the 
+                        Fisher information matrix \(F(\boldsymbol{\theta})\) — both built from Radon-Nikodym derivatives 
+                        (\(D_{\mathrm{KL}}\) from \(dP/dQ\) directly; \(F(\boldsymbol{\theta})\) from the parameter-derivatives 
+                        of \(\log(dP_\theta/d\mu)\) for a reference \(\mu\)) — generate a Riemannian structure on 
+                        parametric statistical manifolds. The natural gradient method, already developed for 
+                        <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a> in earlier 
+                        ML pages, is the gradient with respect to this geometry. A full development requires the 
+                        smooth-manifold framework of Section II's upcoming manifold series, at which point information 
+                        geometry becomes accessible.
+                    </li>
+                </ul>
+
+                <p>
+                    Each of these directions extends the same theorem in a different style: martingales push it into 
+                    the time domain, Girsanov pushes it into path space, variational inference pushes it into the 
+                    optimization landscape over distributions, and information geometry pushes it into differential 
+                    geometry. The Radon-Nikodym theorem is, in this sense, the central hub from which the deeper 
+                    probabilistic structure of modern machine learning radiates.
+                </p>
+            </section>
+
+        </div>
+
+        <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
+    </body>
+</html>
