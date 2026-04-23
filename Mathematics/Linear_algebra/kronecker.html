@@ -29,37 +29,53 @@ uses_python: false
                 <h2>Vectorization</h2>
 
                 <p>
-                    When working with matrices in optimization and statistics, we often need to treat a matrix as a single vector. 
-                    For instance, to take derivatives with respect to all entries simultaneously or to express matrix equations as 
-                    standard linear systems. The <strong>vectorization</strong> operation provides exactly this conversion.
+                    The previous page surfaced an unexpected fact: the space \(\mathbb{R}^{m \times n}\) of matrices carries a 
+                    <a href="trace.html#D-frobenius_inner_product" class="ref-link"><strong>Frobenius inner product</strong></a> of its own — 
+                    "inner product" was not tied to \(\mathbb{R}^n\), but a structure transplantable onto entirely different vector spaces. 
+                    That observation immediately invites a deeper question: <em>what is \(\mathbb{R}^{m \times n}\), really?</em> 
+                    Is it merely "an array of numbers," or does it have a hidden architecture worth uncovering?
                 </p>
 
-                <div class="theorem">
+                <p>
+                    This page answers in three movements. First, we will see that \(\mathbb{R}^{m \times n}\) can be identified with the long vector space \(\mathbb{R}^{mn}\) — 
+                    its dimension is \(m \cdot n\), suspiciously a product. Second, we will define an algebraic operation, the <strong>Kronecker product</strong>, 
+                    that combines two matrices in a way whose dimensions also multiply. By the end, we will see that neither fact is coincidence: 
+                    both reflect a single underlying structure, the <strong>tensor product of vector spaces</strong> \(V \otimes W\), of which \(\mathbb{R}^{m \times n}\) is the coordinate representation when \(V = \mathbb{R}^m\) and \(W = \mathbb{R}^n\). 
+                    What we have called "matrices" are the coordinates of a deeper construction.
+                </p>
+
+                <p>
+                    The first step — vectorization — is the simplest version of this identification: a literal flattening that turns a matrix 
+                    into a single column vector. We use it constantly when taking derivatives with respect to all entries at once, or 
+                    when re-expressing matrix equations as standard linear systems.
+                </p>
+
+                <div class="theorem" id="D-vectorization">
                     <span class="theorem-title">Definition: Vectorization</span>
                     <p>
-                        The <strong>vectorization</strong> of a matrix \(A \in \mathbb{R}^{m \times n}\), denoted \(\text{vec}(A)\), 
+                        The <strong>vectorization</strong> of a matrix \(A \in \mathbb{R}^{m \times n}\), denoted \(\operatorname{vec}(A)\), 
                         stacks the columns of \(A\) into a single <strong>column vector </strong> in \(\mathbb{R}^{mn}\):
                         \[
-                        \text{vec}(A) = \begin{bmatrix} a_1 \\ a_2 \\ \vdots \\ a_n \end{bmatrix}
+                        \operatorname{vec}(A) = \begin{bmatrix} \mathbf{a}_1 \\ \mathbf{a}_2 \\ \vdots \\ \mathbf{a}_n \end{bmatrix}
                         \]
-                        where \(a_j \in \mathbb{R}^m\) is the \(j\)th column of \(A\).
+                        where \(\mathbf{a}_j \in \mathbb{R}^m\) is the \(j\)th column of \(A\).
                     </p>
                 </div>
                
                 <p>
-                    For example, let \(x \in \mathbb{R}^n \), and consider outer product \(xx^\top  \in \mathbb{R}^{n \times n}\).
+                    For example, let \(\mathbf{x} \in \mathbb{R}^n\), and consider the outer product \(\mathbf{x}\mathbf{x}^\top \in \mathbb{R}^{n \times n}\).
                     \[
                     \begin{align*}
-                    \text{vec }(xx^\top) &= \begin{bmatrix}x_1x_1 \\ x_2x_1 \\ \vdots \\ x_nx_1 \\ x_1x_2 \\ x_2x_2 \\ \vdots \\ x_nx_2 \\ \vdots \\
+                    \operatorname{vec}(\mathbf{x}\mathbf{x}^\top) &= \begin{bmatrix}x_1x_1 \\ x_2x_1 \\ \vdots \\ x_nx_1 \\ x_1x_2 \\ x_2x_2 \\ \vdots \\ x_nx_2 \\ \vdots \\
                                     x_1x_n \\ x_2x_n \\ \vdots \\ x_nx_n 
                                     \end{bmatrix} \\ \\
-                                &= x \otimes x
+                                &= \mathbf{x} \otimes \mathbf{x}
                     \end{align*} 
                     \]
                 </p>
                 <p>
                     The notation \(\otimes\) denotes the <strong>Kronecker product</strong>, which we define formally in the next section. 
-                    The identity \(\text{vec}(xx^\top) = x \otimes x\) is a special case of a more general relationship between 
+                    The identity \(\operatorname{vec}(\mathbf{x}\mathbf{x}^\top) = \mathbf{x} \otimes \mathbf{x}\) is a special case of a more general relationship between 
                     vectorization and the Kronecker product.
                 </p>
 
@@ -74,17 +90,17 @@ uses_python: false
                     <p>
                         The identity 
                         \[
-                        \text{vec}(ABC) = (C^\top \otimes A)\,\text{vec}(B)
+                        \operatorname{vec}(ABC) = (C^\top \otimes A)\,\operatorname{vec}(B)
                         \]
-                        is a cornerstone for deriving closed-form solutions to matrix-valued optimization problems. A prime example is the 
+                        is a cornerstone for deriving closed-form solutions to matrix-valued optimization problems. (We prove this identity at the end of the next section, once the Kronecker product is in hand; see <a href="#T-vec_abc_identity" class="ref-link"><strong>The vec–Kronecker Identity</strong></a>.) A prime example is the 
                         <strong>continuous-time Lyapunov equation</strong> 
                         \[
-                        AX + XA^\top = Q
-                        \], 
+                        AX + XA^\top = Q,
+                        \] 
                         used to certify the stability of dynamical systems (including RNNs and neural controllers). By applying vectorization, 
                         this matrix equation is transformed into the standard linear system
                         \[
-                        (I \otimes A + A \otimes I)\text{vec}(X) = \text{vec}(Q).
+                        (I \otimes A + A \otimes I)\operatorname{vec}(X) = \operatorname{vec}(Q).
                         \]
                         This transformation allows us to use high-performance linear solvers to find the Lyapunov candidate \(X\), thereby 
                         mathematically guaranteeing that a system's "energy" dissipates over time.
@@ -119,8 +135,8 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        Note that the standard mathematical definition of \(\text{vec}(\cdot)\) follows <strong>column-major</strong> order. 
-                        That is, \(\text{vec}(A)\) stacks columns, so the inverse operation (reshaping back) also fills by columns.
+                        Note that the standard mathematical definition of \(\operatorname{vec}(\cdot)\) follows <strong>column-major</strong> order. 
+                        That is, \(\operatorname{vec}(A)\) stacks columns, so the inverse operation (reshaping back) also fills by columns.
                     </p>
                 </div>
 
@@ -141,23 +157,29 @@ uses_python: false
                 <h2>Kronecker Product</h2>
 
                 <p>
-                    The vectorization operation converts matrices into vectors, but we also need an algebraic operation that builds 
-                    larger structured matrices from smaller ones. The <strong>Kronecker product</strong> combines two matrices into a 
-                    block matrix whose structure encodes pairwise interactions between their entries. 
-                    This operation arises naturally whenever we need to represent the joint action of two independent linear maps.
+                    Vectorization unfolded a matrix into a long vector. Now we move in the opposite direction: an operation that <em>builds</em> a larger 
+                    matrix out of two smaller ones. But the construction is not arbitrary block-stacking; it has a precise meaning. 
+                    Suppose we have two linear maps \(A: \mathbb{R}^n \to \mathbb{R}^m\) and \(B: \mathbb{R}^q \to \mathbb{R}^p\) acting on two independent spaces. 
+                    What is the natural single linear map that captures the <strong>joint action</strong> of both — an operator on a combined input space that respects the independence of the two factors?
                 </p>
 
-                <div class="theorem">
+                <p>
+                    The answer is the <strong>Kronecker product</strong> \(A \otimes B\), an \((mp) \times (nq)\) matrix. The dimensions multiply for the same 
+                    reason the dimension of \(\mathbb{R}^{m \times n}\) was \(m \cdot n\): we are working in a combined space whose size is the product of the parts. 
+                    The Kronecker product is the concrete, coordinate-level realization of an abstract operation we will name in the next section.
+                </p>
+
+                <div class="theorem" id="D-kronecker_product">
                     <span class="theorem-title">Definition: Kronecker product</span>
                     <p>
                         Let \(A \in \mathbb{R}^{m \times n}\) and \(B \in \mathbb{R}^{p \times q}\). In general, the <strong>Kronecker product</strong> 
                         \(A\otimes B\) is given by \((mp) \times (nq)\) matrix: 
                         \[
                         A\otimes B =  \begin{bmatrix} 
-                                        a_{11}B & a_{12}B & \cdots & a_{1n} B \\
-                                        a_{21}B & a_{22}B & \cdots & a_{2n} B \\
+                                        a_{11}B & a_{12}B & \cdots & a_{1n}B \\
+                                        a_{21}B & a_{22}B & \cdots & a_{2n}B \\
                                         \vdots & \vdots & \ddots & \vdots \\
-                                        a_{m1}B & a_{m2}B & \cdots & a_{mn} B \\
+                                        a_{m1}B & a_{m2}B & \cdots & a_{mn}B \\
                                         \end{bmatrix}.
                         \]
                         Each element \(a_{ij}\) of \(A\) is multiplied by the entire matrix \(B\) resulting in blocks of size \(p \times q\).
@@ -188,8 +210,8 @@ uses_python: false
                     (\(A \otimes B \neq B \otimes A\)), but it interacts well with standard matrix operations.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title"> Useful Properties of the Kronecker Product</span> 
+                <div class="theorem" id="T-kronecker_properties">
+                    <span class="theorem-title">Theorem: Useful Properties of the Kronecker Product</span> 
                     <ol style="padding-left: 40px;">
                         <li><strong>Mixed-product property</strong><br>
                             \[
@@ -206,29 +228,161 @@ uses_python: false
                             (A \otimes B)^{-1} = A^{-1} \otimes B^{-1} 
                             \]
                         </li>
-                        <li><strong>Trace</strong><br>
+                        <li><strong>Trace</strong> (for square matrices \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\))<br>
                             \[
-                            \text{Tr }(A \otimes B) = \text{Tr }(A) \text{Tr }(B)
+                            \operatorname{tr}(A \otimes B) = \operatorname{tr}(A) \operatorname{tr}(B)
                             \]
                         </li> 
                         <li><strong>Determinant</strong> (for square matrices \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\))<br>
                             \[
                             \det (A \otimes B) = \det(A)^n \det(B)^m
                             \]
-                            where \(A \in \mathbb{R}^{m \times m}\), and \(B \in \mathbb{R}^{n \times n}\).
                         </li>
                         <li><strong>Eigenvalues</strong><br>
                             If \(A \in \mathbb{R}^{m \times m}\) has eigenvalues \(\lambda_1, \ldots, \lambda_m\) and 
-                            \(B \in \mathbb{R}^{n \times n}\) has eigenvalues \(\mu_1, \ldots, \mu_n\), then the 
+                            \(B \in \mathbb{R}^{n \times n}\) has eigenvalues \(\mu_1, \ldots, \mu_n\) (each counted with algebraic multiplicity over \(\mathbb{C}\)), then the 
                             eigenvalues of \(A \otimes B\) are all products
                             \[
                             \lambda_i \mu_j \quad (i = 1, \ldots, m, \; j = 1, \ldots, n).
                             \]
-                            In particular, if \(Av = \lambda v\) and \(Bw = \mu w\), then 
-                            \((A \otimes B)(v \otimes w) = \lambda\mu (v \otimes w)\).
+                            In particular, if \(A \mathbf{v} = \lambda \mathbf{v}\) and \(B \mathbf{w} = \mu \mathbf{w}\), then 
+                            \[
+                            (A \otimes B)(\mathbf{v} \otimes \mathbf{w}) = \lambda\mu \, (\mathbf{v} \otimes \mathbf{w}).
+                            \]
+                            Here \(\mathbf{v} \otimes \mathbf{w} \in \mathbb{R}^{mn}\) denotes the Kronecker product of column vectors, equivalently expressible as \(\mathbf{v} \otimes \mathbf{w} = \operatorname{vec}(\mathbf{w}\mathbf{v}^\top)\). 
+                            (Note the order: with our column-major \(\operatorname{vec}\) convention, the rank-one matrix appears as \(\mathbf{w}\mathbf{v}^\top\), not \(\mathbf{v}\mathbf{w}^\top\); the special case \(\mathbf{v} = \mathbf{w} = \mathbf{x}\) recovers the identity \(\mathbf{x} \otimes \mathbf{x} = \operatorname{vec}(\mathbf{x}\mathbf{x}^\top)\) from the previous section.)
                         </li>
                     </ol>
                 </div>       
+
+                <div class="proof">
+                    <span class="proof-title">Proof (Mixed-Product Property):</span>
+                    <p>
+                        We prove Property 1, the mixed-product property, by direct block computation. The remaining properties follow from this one or by analogous direct calculation; we discuss them briefly afterward.
+                    </p>
+                    <p>
+                        Let \(A \in \mathbb{R}^{m \times n}\), \(B \in \mathbb{R}^{p \times q}\), \(C \in \mathbb{R}^{n \times r}\), \(D \in \mathbb{R}^{q \times s}\), so that the products \(AC\) and \(BD\) are well-defined. Both sides of the identity are matrices in \(\mathbb{R}^{mp \times rs}\).
+                    </p>
+                    <p>
+                        By the definition of the Kronecker product,
+                        \[
+                        A \otimes B = \bigl[\,a_{ij} B\,\bigr]_{\substack{i = 1, \ldots, m \\ j = 1, \ldots, n}}
+                        \]
+                        is an \(m \times n\) array of \(p \times q\) blocks, and
+                        \[
+                        C \otimes D = \bigl[\,c_{jk} D\,\bigr]_{\substack{j = 1, \ldots, n \\ k = 1, \ldots, r}}
+                        \]
+                        is an \(n \times r\) array of \(q \times s\) blocks. The block partitions are compatible: the column-block dimension of \(A \otimes B\) is \(n\) (matching the row-block dimension of \(C \otimes D\)), and within each block the inner dimension is \(q\) (cols of \(B\) = rows of \(D\)). 
+                        We may therefore apply <a href="matrix_algebra.html#T-block_multiplication" class="ref-link"><strong>block multiplication</strong></a>: the \((i, k)\)-block of \((A \otimes B)(C \otimes D)\) is
+                        \[
+                        \sum_{j = 1}^{n} (a_{ij} B)(c_{jk} D) = \sum_{j = 1}^{n} a_{ij} c_{jk} \, (BD) = \left(\sum_{j = 1}^{n} a_{ij} c_{jk}\right) (BD) = (AC)_{ik} \, (BD),
+                        \]
+                        where the second equality pulls scalars out of the matrix product and the last equality uses the definition of the matrix product \(AC\).
+                    </p>
+                    <p>
+                        On the other hand, by the definition of the Kronecker product applied to the \(m \times r\) matrix \(AC\) and the \(p \times s\) matrix \(BD\),
+                        \[
+                        (AC) \otimes (BD) = \bigl[\,(AC)_{ik} \, (BD)\,\bigr]_{\substack{i = 1, \ldots, m \\ k = 1, \ldots, r}}
+                        \]
+                        — exactly the matrix whose \((i, k)\)-block we just computed. Therefore
+                        \[
+                        (A \otimes B)(C \otimes D) = (AC) \otimes (BD). \qquad\blacksquare
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proofs of the Remaining Properties:</span>
+                    <p>
+                        Each property's dimension and structural requirements are stated locally with the proof.
+                    </p>
+                    <p>
+                        <strong>Property 2 (Transpose).</strong> Let \(A \in \mathbb{R}^{m \times n}\) and \(B \in \mathbb{R}^{p \times q}\). Index the entries of \(A \otimes B\) using row index \(I = (i-1)p + r\) (with \(1 \leq i \leq m\), \(1 \leq r \leq p\)) and column index \(J = (j-1)q + s\). By the definition of the Kronecker product, the \((i,j)\)-block is \(a_{ij} B\), so its \((r, s)\)-entry — which is the global \((I, J)\)-entry — equals \(a_{ij} b_{rs}\). Then
+                        \[
+                        \bigl((A \otimes B)^\top\bigr)_{JI} = (A \otimes B)_{IJ} = a_{ij} b_{rs}.
+                        \]
+                        On the other hand, \(A^\top \otimes B^\top \in \mathbb{R}^{nq \times mp}\) has, by the same Kronecker indexing applied with \(A^\top\) and \(B^\top\) as outer and inner factors, the \((J, I)\)-entry \((A^\top)_{ji} (B^\top)_{sr} = a_{ij} b_{rs}\). The entries match for all \(I, J\), so \((A \otimes B)^\top = A^\top \otimes B^\top\). \(\quad\blacksquare\)
+                    </p>
+                    <p>
+                        <strong>Property 3 (Inverse).</strong> Suppose \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\) are invertible. By the mixed-product property,
+                        \[
+                        (A \otimes B)(A^{-1} \otimes B^{-1}) = (A A^{-1}) \otimes (B B^{-1}) = I_m \otimes I_n = I_{mn},
+                        \]
+                        where the last equality uses that \(I_m \otimes I_n\) is, by direct inspection, the \(mn \times mn\) identity matrix (its diagonal blocks are \(I_n\), off-diagonal blocks are zero). The same calculation with the factors reversed gives \((A^{-1} \otimes B^{-1})(A \otimes B) = I_{mn}\). Hence \(A \otimes B\) is invertible with inverse \(A^{-1} \otimes B^{-1}\). \(\quad\blacksquare\)
+                    </p>
+                    <p>
+                        <strong>Property 4 (Trace).</strong> Suppose \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\). The diagonal entries of \(A \otimes B \in \mathbb{R}^{mn \times mn}\) lie inside its diagonal blocks \(a_{ii} B\) for \(i = 1, \ldots, m\); the diagonal of the \(i\)-th such block contributes \(a_{ii} \operatorname{tr}(B)\). Summing over \(i\),
+                        \[
+                        \operatorname{tr}(A \otimes B) = \sum_{i=1}^m a_{ii} \operatorname{tr}(B) = \operatorname{tr}(B) \sum_{i=1}^m a_{ii} = \operatorname{tr}(A) \operatorname{tr}(B),
+                        \]
+                        using the <a href="trace.html#D-trace" class="ref-link"><strong>definition of the trace</strong></a> at both ends. \(\quad\blacksquare\)
+                    </p>
+                    <p>
+                        <strong>Property 6 (Eigenvalues).</strong> Suppose \(A \in \mathbb{R}^{m \times m}\) and \(B \in \mathbb{R}^{n \times n}\) are <em>diagonalizable</em> over \(\mathbb{C}\), with eigenpairs \(A \mathbf{v}_i = \lambda_i \mathbf{v}_i\) for \(i = 1, \ldots, m\) and \(B \mathbf{w}_j = \mu_j \mathbf{w}_j\) for \(j = 1, \ldots, n\), where \(\{\mathbf{v}_i\}\) and \(\{\mathbf{w}_j\}\) are bases. By the mixed-product property (treating \(\mathbf{v}_i\) and \(\mathbf{w}_j\) as column matrices),
+                        \[
+                        (A \otimes B)(\mathbf{v}_i \otimes \mathbf{w}_j) = (A\mathbf{v}_i) \otimes (B\mathbf{w}_j) = (\lambda_i \mathbf{v}_i) \otimes (\mu_j \mathbf{w}_j) = \lambda_i \mu_j \, (\mathbf{v}_i \otimes \mathbf{w}_j),
+                        \]
+                        where the last equality uses that the Kronecker product is bilinear in scalars. So each \(\lambda_i \mu_j\) is an eigenvalue of \(A \otimes B\) with eigenvector \(\mathbf{v}_i \otimes \mathbf{w}_j\).
+                    </p>
+                    <p>
+                        It remains to show this list is complete. By the basis-based 
+                        <a href="#D-tensor_product_space" class="ref-link"><strong>tensor-product construction</strong></a> 
+                        (extended to \(\mathbb{C}\)), 
+                        the set \(\{\mathbf{v}_i \otimes \mathbf{w}_j : 1 \leq i \leq m, \; 1 \leq j \leq n\}\) is a basis of \(\mathbb{C}^{mn}\) — it is the image of the standard tensor-product basis under the invertible change-of-basis induced by \(\{\mathbf{e}_i\} \mapsto \{\mathbf{v}_i\}\), \(\{\mathbf{f}_j\} \mapsto \{\mathbf{w}_j\}\). We have therefore exhibited \(mn\) linearly independent eigenvectors of \(A \otimes B\), accounting for all of its eigenvalues. The list \(\{\lambda_i \mu_j\}_{i, j}\) (counted with the algebraic multiplicities of \(\lambda_i\) and \(\mu_j\)) is the complete spectrum.
+                    </p>
+                    <p>
+                        <em>Remark on the non-diagonalizable case.</em> The identity \(\operatorname{spec}(A \otimes B) = \{\lambda_i \mu_j\}\) holds in full generality (with multiplicity), but a complete proof requires reducing to the diagonalizable case via density arguments or working with the Jordan canonical form. We omit the details here. \(\quad\blacksquare\)
+                    </p>
+                    <p>
+                        <strong>Property 5 (Determinant) — Scope-out.</strong> Once Property 6 is in hand, the determinant formula follows from the identity \(\det(M) = \prod_i \lambda_i\) (counting algebraic multiplicities): each \(\lambda_i\) appears paired with each of the \(n\) eigenvalues \(\mu_j\), giving \(\det(A \otimes B) = \prod_{i, j} \lambda_i \mu_j = \prod_i \lambda_i^n \cdot \prod_j \mu_j^m = \det(A)^n \det(B)^m\). A direct proof avoiding eigenvalues exists (e.g.,~via the factorization \(A \otimes B = (A \otimes I_n)(I_m \otimes B)\) and a permutation-similarity argument) but is more involved; we leave it aside.
+                    </p>
+                </div>
+
+                <p>
+                    Vectorization and the Kronecker product, introduced in the previous two sections, fit together through one central identity. We mentioned this identity informally in the vectorization insight box; we now prove it.
+                </p>
+
+                <div class="theorem" id="T-vec_abc_identity">
+                    <span class="theorem-title">Theorem: The vec–Kronecker Identity</span>
+                    <p>
+                        Let \(A \in \mathbb{R}^{m \times n}\), \(B \in \mathbb{R}^{n \times p}\), \(C \in \mathbb{R}^{p \times q}\). Then
+                        \[
+                        \operatorname{vec}(ABC) = (C^\top \otimes A) \, \operatorname{vec}(B).
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Both sides lie in \(\mathbb{R}^{mq}\), structured as \(q\) stacked blocks of size \(m\). We show the \(j\)-th block agrees on each side, for \(j = 1, \ldots, q\).
+                    </p>
+                    <p>
+                        Denote the columns of \(B\) by \(\mathbf{b}_1, \ldots, \mathbf{b}_p \in \mathbb{R}^n\) and the columns of \(C\) by \(\mathbf{c}_1, \ldots, \mathbf{c}_q \in \mathbb{R}^p\). The \(j\)-th column of \(ABC\) is \(A B \mathbf{c}_j\), and \(\operatorname{vec}(ABC)\) is obtained by stacking these columns. Expanding \(B \mathbf{c}_j\) in terms of the columns of \(B\),
+                        \[
+                        B \mathbf{c}_j = \sum_{k=1}^p c_{kj} \, \mathbf{b}_k,
+                        \]
+                        so the \(j\)-th block of \(\operatorname{vec}(ABC)\) is
+                        \[
+                        A B \mathbf{c}_j = \sum_{k=1}^p c_{kj} \, A \mathbf{b}_k.
+                        \]
+                    </p>
+                    <p>
+                        Now consider \((C^\top \otimes A) \, \operatorname{vec}(B)\). View \(C^\top \otimes A\) as a \(q \times p\) array of \(m \times n\) blocks: the \((j, k)\)-block is \((C^\top)_{jk} \, A = c_{kj} \, A\). View \(\operatorname{vec}(B) \in \mathbb{R}^{np}\) as \(p\) stacked blocks of size \(n\), where the \(k\)-th block is \(\mathbf{b}_k\). The block partitions are compatible (column-block dimension \(p\) on each side; inner dimension \(n\) on each side), so by <a href="matrix_algebra.html#T-block_multiplication" class="ref-link"><strong>block multiplication</strong></a> the \(j\)-th block of \((C^\top \otimes A) \, \operatorname{vec}(B)\) is
+                        \[
+                        \sum_{k=1}^p (c_{kj} A) \, \mathbf{b}_k = \sum_{k=1}^p c_{kj} \, A \mathbf{b}_k.
+                        \]
+                        This matches the \(j\)-th block of \(\operatorname{vec}(ABC)\) computed above. Since \(j\) was arbitrary, the two vectors are equal. \(\quad\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    As a quick consequence relevant to the Lyapunov example mentioned earlier: applying the identity to \(AX\) (taking \(B = X\), \(C = I_n\)) and to \(XA^\top\) (taking \(A = I_n\), \(B = X\), \(C = A^\top\)), then summing,
+                    \[
+                    \operatorname{vec}(AX + XA^\top) = (I_n \otimes A) \operatorname{vec}(X) + (A \otimes I_n) \operatorname{vec}(X) = (I_n \otimes A + A \otimes I_n) \operatorname{vec}(X),
+                    \]
+                    which is the linear-system reformulation announced in the vectorization insight box.
+                </p>
 
                 <div class="insight-box">
                     <h3>Insight: Kronecker Products in Machine Learning</h3>
@@ -242,14 +396,13 @@ uses_python: false
                         By exploiting this structure, K-FAC reduces the inversion cost from \(O(n^3)\) on the full parameter space to 
                         approximately \(O(n^{3/2})\). The <strong>eigenvalue property</strong> further enables efficient 
                         <strong>spectral preconditioning</strong>, allowing large-scale neural networks to converge faster by utilizing 
-                        the curvature of the loss landscape.
+                        the curvature of the loss landscape. K-FAC is treated in detail in the <a href="../Machine_learning/natural_gd.html#kfac"><strong>Natural Gradient Descent</strong></a> page of Section V.
                     </p>
                 </div>
 
                 <p>
-                    With the Kronecker product established, we now turn to <strong>tensors</strong> - the natural 
-                    generalization of vectors and matrices to higher dimensions. While the Kronecker product builds 
-                    larger matrices from smaller ones, tensors extend this idea beyond two dimensions entirely.
+                    With the Kronecker product established, we now turn to <strong>tensors</strong>. Two views will appear in tension: the <em>computational</em> view (a tensor is a multidimensional array, generalizing matrices to more than two indices) and the <em>algebraic</em> view (a tensor is an element of a tensor product of vector spaces). 
+                    Reconciling them is what reveals the structure that has been quietly underlying everything in this page.
                 </p>
                 
             </section>
@@ -271,7 +424,7 @@ uses_python: false
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>A <strong>scalar</strong> is an order-0 tensor (a single number, \(a \in \mathbb{R}\)).</li>
-                        <li>A <strong>vector</strong> is an order-1 tensor (a one-dimensional array, \(v \in \mathbb{R}^n\)).</li>
+                        <li>A <strong>vector</strong> is an order-1 tensor (a one-dimensional array, \(\mathbf{v} \in \mathbb{R}^n\)).</li>
                         <li>A <strong>matrix</strong> is an order-2 tensor (a two-dimensional array, \(A \in \mathbb{R}^{m \times n}\)).</li>
                     </ul>
                     <p>
@@ -288,38 +441,50 @@ uses_python: false
                 </p>
 
                 <p>
-                    Beyond this computational viewpoint, tensors also have a precise algebraic definition rooted in the 
-                    tensor product of vector spaces.
-                </p> 
+                    These computational examples — multidimensional arrays — are useful, but they describe how tensors are <em>stored</em>, not what tensors <em>are</em>. 
+                    For that, we need an algebraic definition rooted in the construction we have been circling around for the entire page: the <strong>tensor product of vector spaces</strong>. 
+                    The patterns we have collected so far — vec identifying \(\mathbb{R}^{m \times n}\) with \(\mathbb{R}^{mn}\), Kronecker building \((mp) \times (nq)\) matrices from \(m \times n\) and \(p \times q\) ones, dimensions multiplying everywhere — all become a single statement once the construction is in place.
+                </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Tensor Product Space</span>
+                <div class="theorem" id="D-tensor_product_space">
+                    <span class="theorem-title">Definition: Tensor Product Space (Finite-Dimensional)</span>
                     <p>
-                        Let \(V\) and \(W\) be vector spaces over a field \(\mathbb{F}\). The <strong>tensor product</strong> 
-                        \(V \otimes W\) is a vector space whose elements are (finite) linear combinations of elementary tensors:
+                        Let \(V\) and \(W\) be finite-dimensional vector spaces over \(\mathbb{R}\) with bases 
+                        \(\{\mathbf{e}_1, \ldots, \mathbf{e}_m\}\) of \(V\) and \(\{\mathbf{f}_1, \ldots, \mathbf{f}_n\}\) of \(W\). 
+                        The <strong>tensor product space</strong> \(V \otimes W\) is the \(mn\)-dimensional vector space with basis 
+                        \(\{\mathbf{e}_i \otimes \mathbf{f}_j : 1 \leq i \leq m, \; 1 \leq j \leq n\}\). 
+                        A general element is a linear combination
                         \[
-                        \sum_{i} \alpha_i \, (v_i \otimes w_i), \quad v_i \in V, \; w_i \in W, \; \alpha_i \in \mathbb{F}.
+                        T = \sum_{i=1}^m \sum_{j=1}^n T_{ij} \, (\mathbf{e}_i \otimes \mathbf{f}_j), \quad T_{ij} \in \mathbb{R}.
+                        \]
+                        For \(\mathbf{v} = \sum_i v_i \mathbf{e}_i \in V\) and \(\mathbf{w} = \sum_j w_j \mathbf{f}_j \in W\), the <strong>elementary tensor</strong> \(\mathbf{v} \otimes \mathbf{w}\) is defined to be
+                        \[
+                        \mathbf{v} \otimes \mathbf{w} := \sum_{i, j} v_i w_j \, (\mathbf{e}_i \otimes \mathbf{f}_j).
                         \]
                         More generally, an <strong>order-\(r\) tensor</strong> is an element of
                         \[
-                        T \in V_1 \otimes V_2 \otimes \cdots \otimes V_r.
+                        T \in V_1 \otimes V_2 \otimes \cdots \otimes V_r,
                         \]
-                        When each \(V_k = \mathbb{R}^{n_k}\), such a tensor can be represented as a multidimensional array 
-                        with entries \(T_{i_1 i_2 \cdots i_r}\) where \(1 \leq i_k \leq n_k\).
+                        constructed analogously with basis \(\{\mathbf{e}^{(1)}_{i_1} \otimes \cdots \otimes \mathbf{e}^{(r)}_{i_r}\}\). When each \(V_k = \mathbb{R}^{n_k}\), such a tensor is represented by a multidimensional array with entries \(T_{i_1 i_2 \cdots i_r}\), where \(1 \leq i_k \leq n_k\).
                     </p>
                 </div>
 
                 <p>
+                    <em>Remark.</em> A basis-free definition exists via a <strong>universal property</strong>: \(V \otimes W\) is the unique (up to isomorphism) vector space \(U\) equipped with a bilinear map \(V \times W \to U\) through which every bilinear map out of \(V \times W\) factors uniquely. This formulation makes the tensor product independent of any basis choice and extends naturally to infinite-dimensional and more general settings. We will not need this level of generality here; the basis-based definition above suffices for everything in Section I.
+                </p>
+
+                <p>
                     Under this formal definition, the familiar objects of linear algebra are recovered as special cases:
-                    a scalar is an order-0 tensor (an element of \(\mathbb{F}\)), a vector is an order-1 tensor (an element of \(V\)), 
+                    a scalar is an order-0 tensor (an element of \(\mathbb{R}\)), a vector is an order-1 tensor (an element of \(V\)), 
                     and a matrix is an order-2 tensor (an element of \(V \otimes W\)).
                 </p>
                 
                <p>
-                    The <strong>Kronecker product</strong> is the coordinate representation of the tensor product: when 
-                    \(V = \mathbb{R}^m\) and \(W = \mathbb{R}^n\), the tensor product of matrices (viewed as linear maps) 
-                    corresponds precisely to the Kronecker product of their matrix representations. The tensor product itself 
-                    is the abstract, coordinate-free operation, while the Kronecker product is what we compute in practice.
+                    Now the loose threads of this page tie together. The space \(\mathbb{R}^{m \times n}\) is not "an array of numbers" but the coordinate representation of \(\mathbb{R}^m \otimes \mathbb{R}^n\) — the tensor product of two simpler spaces. <strong>Vectorization</strong> is the explicit isomorphism \(\mathbb{R}^m \otimes \mathbb{R}^n \cong \mathbb{R}^{mn}\) that takes a tensor and lists its coordinates as a single column. The <strong>Kronecker product</strong> is the coordinate representation of the tensor product: when \(V = \mathbb{R}^m\) and \(W = \mathbb{R}^n\) with the standard basis, the abstract operation \(\mathbf{v} \otimes \mathbf{w}\) of forming an elementary tensor is precisely computed by the Kronecker product of the column vectors. More generally, given linear maps \(f: V \to V'\) and \(g: W \to W'\), they induce a linear map \(f \otimes g: V \otimes W \to V' \otimes W'\) whose matrix representation (in the standard tensor-product basis) is the Kronecker product of the matrices of \(f\) and \(g\). The tensor product itself is the abstract, coordinate-free operation; what we have called "matrices" and "Kronecker products" are its shadows in coordinates.
+                </p>
+
+                <p>
+                    A complete treatment of how linear maps act on tensor products — and how this perspective extends to <strong>group actions</strong>, where a group \(G\) acts on \(V \otimes W\) compatibly with its actions on \(V\) and \(W\) — belongs to the language of <strong>representation theory</strong>, which we develop in a future page of Section I. That language, in turn, is what makes the next idea possible: building neural networks whose internal computations <em>respect symmetries of the data</em>.
                 </p>
 
                 <div class="insight-box">
@@ -335,12 +500,13 @@ uses_python: false
                         — how it transforms under coordinate changes — becomes critical. This enables the design of 
                         <strong>Equivariant Neural Networks</strong>, where internal representations (scalars, vectors, and higher-order tensors) 
                         transform consistently according to group representations. This ensures the model respects the underlying physical symmetries 
-                        of the data, such as rotation and reflection invariance in 3D molecular modeling or medical imaging.
+                        of the data, such as rotation and reflection invariance in 3D molecular modeling or medical imaging. The relevant symmetries are formalized through continuous matrix groups such as <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(n)\)</strong></a>, developed in the Lie groups series later in Section I; the geometric flavor of these groups is previewed in <a href="dihedral_group.html#SOSE"><strong>Geometry of Symmetry</strong></a>.
                     </p>
                 </div>
 
             </section>
         </div>
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
