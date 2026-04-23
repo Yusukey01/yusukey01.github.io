@@ -123,9 +123,13 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof (sketch):</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        For an upper triangular matrix, expand along the first column. Only the \((1,1)\) entry is nonzero, so \(\det A = a_{11} \det A_{11}\), and \(A_{11}\) is itself upper triangular of size \(n-1\). Iterating yields \(\det A = a_{11} a_{22} \cdots a_{nn}\). The lower triangular case is analogous (expand along the first row).
+                        We use the fact (recorded in the Cofactor definition above) that the value of \(\det A\) is independent of which row or column is chosen for cofactor expansion. For an upper triangular matrix, expand along the <em>first column</em>: only the \((1,1)\) entry is nonzero, so all cofactors except \(C_{11}\) drop out and
+                        \[
+                        \det A = a_{11} \det A_{11},
+                        \]
+                        where \(A_{11}\) is the \((n-1) \times (n-1)\) matrix obtained by deleting row \(1\) and column \(1\) of \(A\) — itself upper triangular. Iterating (formally, induction on \(n\), with base case \(\det [a_{11}] = a_{11}\)) yields \(\det A = a_{11} a_{22} \cdots a_{nn}\). The lower triangular case is analogous (expand along the first row).
                     </p>
                 </div>
 
@@ -153,9 +157,26 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof (sketch):</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        The cofactor of the entry \(a_{1j}\) in \(A\) equals the cofactor of the entry \(a_{j1}\) in \(A^T\): deleting the same row and column from a matrix and from its transpose yields transposed minors, and minors of size \(n-1\) inherit the result by induction on \(n\). Hence the cofactor expansion across the first row of \(A\) coincides term-by-term with the cofactor expansion down the first column of \(A^T\).
+                        We proceed by induction on \(n\). For \(n = 1\), \(A = [a]\) is its own transpose and \(\det A = \det A^T = a\) trivially. For \(n = 2\),
+                        \[
+                        \det \begin{bmatrix} a & b \\ c & d \end{bmatrix} = ad - bc, \qquad
+                        \det \begin{bmatrix} a & c \\ b & d \end{bmatrix} = ad - cb,
+                        \]
+                        which are equal.
+                    </p>
+                    <p>
+                        For the inductive step, assume the result holds for all \((n-1) \times (n-1)\) matrices, and let \(A\) be \(n \times n\). Compare the cofactor expansion of \(\det A\) along the first row with that of \(\det A^T\) along the first column:
+                        \[
+                        \det A = \sum_{j=1}^n (-1)^{1+j} a_{1j} \det A_{1j}, \qquad
+                        \det A^T = \sum_{i=1}^n (-1)^{i+1} (A^T)_{i1} \det (A^T)_{i1}.
+                        \]
+                        Since \((A^T)_{i1} = a_{1i}\) (definition of transpose) and the minor \((A^T)_{i1}\) is the matrix obtained by deleting row \(i\) and column \(1\) of \(A^T\) — which is exactly the transpose of the matrix \(A_{1i}\) (delete row \(1\) and column \(i\) of \(A\)) — the inductive hypothesis applied to the \((n-1) \times (n-1)\) minors gives
+                        \[
+                        \det (A^T)_{i1} = \det (A_{1i})^T = \det A_{1i}.
+                        \]
+                        Renaming the summation index \(i \to j\), the two cofactor expansions match term by term, so \(\det A^T = \det A\).
                     </p>
                 </div>
 
@@ -185,12 +206,44 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof (sketch):</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        The cleanest route uses elementary matrices. One first checks directly that \(\det(EA) = \det(E) \det(A)\) for each type of elementary matrix \(E\) (interchange, scale, replacement) by examining the row operation's effect — this is the next theorem. Any invertible matrix factors as \(A = E_k \cdots E_1\), so the multiplicative law extends inductively. If \(A\) is singular, then \(AB\) is also singular and both sides of the identity vanish. A self-contained derivation appears in Lay's <em>Linear Algebra and Its Applications</em>, Chapter 3.
+                        We split into two cases according to whether \(A\) is invertible.
                     </p>
                     <p>
-                        The corollary follows by taking determinants of \(A A^{-1} = I\): \((\det A)(\det A^{-1}) = \det I = 1\).
+                        <strong>Case 1: \(A\) is invertible.</strong> By the <a href="matrix_algebra.html#T-inverse_via_row_reduction" class="ref-link"><strong>Inverse via Row Reduction</strong></a> theorem, \(A\) factors as a product of elementary matrices, \(A = F_1 F_2 \cdots F_k\). It therefore suffices to prove the multiplicative law for a single elementary matrix \(E\): \(\det(E B) = \det(E)\, \det(B)\). Then iterating gives
+                        \[
+                        \det(AB) = \det(F_1 F_2 \cdots F_k\, B) = \det(F_1) \det(F_2 \cdots F_k\, B) = \cdots = \det(F_1) \cdots \det(F_k)\, \det(B) = \det(A)\, \det(B).
+                        \]
+                        For the elementary case, we read off the determinant of \(E\) and the effect of \(E B\) directly from the Row Operations theorem above. There are three cases:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Replacement</strong> (\(E\) adds a multiple of one row of \(I\) to another): \(\det E = 1\) (triangular with all \(1\)'s on the diagonal), and \(EB\) replaces a row of \(B\) by itself plus a multiple of another row, leaving the determinant unchanged: \(\det(EB) = \det B = \det E \cdot \det B\). \(\checkmark\)</li>
+                        <li><strong>Interchange</strong> (\(E\) swaps two rows of \(I\)): \(\det E = -1\) (a single swap from \(I\)), and \(EB\) swaps the corresponding rows of \(B\), so \(\det(EB) = -\det B = \det E \cdot \det B\). \(\checkmark\)</li>
+                        <li><strong>Scale</strong> (\(E\) multiplies one row of \(I\) by \(k \neq 0\)): \(\det E = k\) (diagonal with one \(k\)), and \(EB\) scales the corresponding row of \(B\) by \(k\), so \(\det(EB) = k \det B = \det E \cdot \det B\). \(\checkmark\)</li>
+                    </ul>
+                    <p>
+                        <strong>Case 2: \(A\) is singular.</strong> We show both sides of \(\det(AB) = \det A \cdot \det B\) vanish.
+                    </p>
+                    <p>
+                        First, \(\det A = 0\). Indeed, by the <a href="matrix_algebra.html#T-inverse_via_row_reduction" class="ref-link"><strong>Inverse via Row Reduction</strong></a> theorem, the RREF of a singular \(A\) is not \(I_n\), so its RREF \(R\) has at least one zero row. Reducing \(A\) to \(R\) by elementary row operations gives \((F_k \cdots F_1) A = R\), and by Case 1 applied to the elementary factors,
+                        \[
+                        \det(F_k) \cdots \det(F_1) \cdot \det A = \det R = 0
+                        \]
+                        (the right-hand side because cofactor expansion along a zero row of \(R\) yields \(0\)). Each \(\det(F_i)\) is nonzero (it equals \(\pm 1\) or some \(k \neq 0\)), so \(\det A = 0\). Hence the right-hand side \(\det A \cdot \det B = 0\).
+                    </p>
+                    <p>
+                        Second, \(AB\) is also singular, which we show by exhibiting a nonzero vector \(\mathbf{v}\) with \((AB)\mathbf{v} = \mathbf{0}\). Since \(A\) is singular, the equation \(A\mathbf{x} = \mathbf{0}\) has a nontrivial solution \(\mathbf{x}_0 \neq \mathbf{0}\). We split on \(B\):
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>If \(B\) is invertible, set \(\mathbf{v} = B^{-1} \mathbf{x}_0 \neq \mathbf{0}\) (nonzero because \(B^{-1}\) is invertible and \(\mathbf{x}_0 \neq \mathbf{0}\)). Then \((AB)\mathbf{v} = A(B B^{-1} \mathbf{x}_0) = A \mathbf{x}_0 = \mathbf{0}\).</li>
+                        <li>If \(B\) is also singular, then \(B \mathbf{y}_0 = \mathbf{0}\) for some \(\mathbf{y}_0 \neq \mathbf{0}\). Set \(\mathbf{v} = \mathbf{y}_0\). Then \((AB)\mathbf{v} = A(B \mathbf{y}_0) = A \mathbf{0} = \mathbf{0}\).</li>
+                    </ul>
+                    <p>
+                        Either way, \(AB\) annihilates a nonzero vector, so \(AB\) is singular. By the same argument as for \(A\) (reducing \(AB\) to its RREF and finding a zero row), \(\det(AB) = 0\). Both sides of the identity equal zero in this case.
+                    </p>
+                    <p>
+                        The corollary follows by taking determinants of \(A A^{-1} = I\): \((\det A)(\det A^{-1}) = \det I = 1\), so \(\det(A^{-1}) = (\det A)^{-1}\).
                     </p>
                 </div>
 
@@ -315,6 +368,41 @@ uses_python: false
                                         \end{bmatrix}.
                         \]
                         That is, the \((i,j)\)-entry of \(\operatorname{adj}(A)\) is the cofactor \(C_{ji}\) (note the index swap).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We show the stronger identity
+                        \[
+                        A \cdot \operatorname{adj}(A) = (\det A)\, I,
+                        \]
+                        from which the formula \(A^{-1} = (\det A)^{-1} \operatorname{adj}(A)\) follows by dividing through by \(\det A \neq 0\) (using invertibility).
+                    </p>
+                    <p>
+                        Compute the \((i, j)\)-entry of \(A \cdot \operatorname{adj}(A)\) directly:
+                        \[
+                        \bigl(A \cdot \operatorname{adj}(A)\bigr)_{ij} = \sum_{k=1}^n a_{ik}\, \bigl(\operatorname{adj}(A)\bigr)_{kj} = \sum_{k=1}^n a_{ik}\, C_{jk},
+                        \]
+                        using \(\bigl(\operatorname{adj}(A)\bigr)_{kj} = C_{jk}\) (the index swap from the transpose).
+                    </p>
+                    <p>
+                        <strong>Diagonal entries</strong> (\(i = j\)): the sum becomes \(\sum_k a_{ik} C_{ik}\), which is exactly the cofactor expansion of \(\det A\) along row \(i\). Hence \(\bigl(A \cdot \operatorname{adj}(A)\bigr)_{ii} = \det A\).
+                    </p>
+                    <p>
+                        <strong>Off-diagonal entries</strong> (\(i \neq j\)): the sum becomes \(\sum_k a_{ik} C_{jk}\). We claim this equals zero. Define an auxiliary matrix \(\tilde{A}\) obtained from \(A\) by replacing row \(j\) with a copy of row \(i\) (so \(\tilde{A}\) has two identical rows: rows \(i\) and \(j\) both equal to row \(i\) of \(A\)). The cofactor expansion of \(\det \tilde{A}\) along row \(j\) reads
+                        \[
+                        \det \tilde{A} = \sum_k \tilde{a}_{jk}\, \tilde{C}_{jk} = \sum_k a_{ik}\, C_{jk},
+                        \]
+                        because \(\tilde{a}_{jk} = a_{ik}\) (we copied row \(i\) into row \(j\)) and the cofactor \(\tilde{C}_{jk}\) only depends on the matrix obtained by deleting row \(j\) — which is the same minor as \(C_{jk}\) of \(A\), since the \((n-1)\)-row matrix used to compute these cofactors does not involve row \(j\). Thus
+                        \[
+                        \sum_k a_{ik}\, C_{jk} = \det \tilde{A}.
+                        \]
+                        But \(\tilde{A}\) has two identical rows. Swapping these two equal rows leaves \(\tilde{A}\) unchanged, while by the Effect of Row Operations theorem the swap also negates the determinant: \(\det \tilde{A} = -\det \tilde{A}\), forcing \(2 \det \tilde{A} = 0\), hence \(\det \tilde{A} = 0\). Therefore \(\bigl(A \cdot \operatorname{adj}(A)\bigr)_{ij} = 0\) for \(i \neq j\).
+                    </p>
+                    <p>
+                        Combining diagonal and off-diagonal entries: \(A \cdot \operatorname{adj}(A) = (\det A)\, I\). Dividing by \(\det A\) gives the claimed formula.
                     </p>
                 </div>
 

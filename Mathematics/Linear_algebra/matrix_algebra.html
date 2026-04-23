@@ -210,7 +210,13 @@ uses_python: false
                         and similarly for the product in the reverse order.
                     </p>
                     <p>
-                        (Necessity) If \(ad - bc = 0\), the columns \(\begin{bmatrix} a \\ c \end{bmatrix}\) and \(\begin{bmatrix} b \\ d \end{bmatrix}\) are linearly dependent (one is a scalar multiple of the other, possibly zero), so they cannot span \(\mathbb{R}^2\). Hence the linear transformation \(\mathbf{x} \mapsto A\mathbf{x}\) is not onto, and \(A\) is not invertible.
+                        (Necessity) Suppose \(ad - bc = 0\). We show \(A\) is not invertible by exhibiting a nonzero vector \(\mathbf{v}\) with \(A\mathbf{v} = \mathbf{0}\) — for then no inverse can exist, since an inverse would force \(\mathbf{v} = A^{-1}\mathbf{0} = \mathbf{0}\), a contradiction. Direct computation shows
+                        \[
+                        A \begin{bmatrix} d \\ -c \end{bmatrix} = \begin{bmatrix} ad - bc \\ cd - cd \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix},
+                        \qquad
+                        A \begin{bmatrix} -b \\ a \end{bmatrix} = \begin{bmatrix} -ab + ab \\ -bc + ad \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix}.
+                        \]
+                        If \(A\) has any nonzero entry, then at least one of the two vectors \(\begin{bmatrix} d \\ -c \end{bmatrix}\) and \(\begin{bmatrix} -b \\ a \end{bmatrix}\) is nonzero — so we have produced the required \(\mathbf{v}\). The remaining case is \(A = 0\), the zero matrix, which is trivially not invertible (any candidate inverse \(B\) satisfies \(AB = 0 \neq I\)).
                     </p>
                 </div>
 
@@ -257,7 +263,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Since linear transformations on \(\mathbb{R}^n\) correspond bijectively to \(n \times n\) matrices via \(T(\mathbf{x}) = A\mathbf{x}\), the transformation \(T\) is invertible if and only if its matrix \(A\) is invertible, in which case the inverse transformation is \(S(\mathbf{x}) = A^{-1}\mathbf{x}\). This bridges the algebraic notion of inverse with its geometric meaning: an invertible transformation is one that can be undone.
+                    Since linear transformations on \(\mathbb{R}^n\) correspond bijectively to \(n \times n\) matrices via \(T(\mathbf{x}) = A\mathbf{x}\), the transformation \(T\) is invertible if and only if its matrix \(A\) is invertible, in which case the inverse transformation is \(S(\mathbf{x}) = A^{-1}\mathbf{x}\) — which is itself linear. (One can show directly: any \(S\) satisfying \(S(T(\mathbf{x})) = \mathbf{x}\) for all \(\mathbf{x}\), with \(T\) linear and bijective, must itself be linear.) This bridges the algebraic notion of inverse with its geometric meaning: an invertible transformation is one that can be undone.
                 </p>
             </section>
 
@@ -334,18 +340,21 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Suppose \(A\) is invertible, so its RREF is \(I_n\). Each step of the reduction is performed by left-multiplication by an elementary matrix \(E_i\):
+                        (\(\Leftarrow\)) Suppose the RREF of \(A\) is \(I_n\). Then there is a sequence of elementary row operations transforming \(A\) into \(I_n\); each operation is performed by left-multiplication by an elementary matrix, so
                         \[
                         (E_k \cdots E_2 E_1)\, A = I_n. \tag{1}
                         \]
-                        Multiplying both sides on the left by \((E_k \cdots E_1)^{-1}\) gives \(A = (E_k \cdots E_1)^{-1}\), so taking inverses,
+                        The matrix \(M := E_k \cdots E_2 E_1\) is a product of invertible matrices and therefore invertible, with explicit inverse \(M^{-1} = E_1^{-1} E_2^{-1} \cdots E_k^{-1}\). Equation (1) reads \(MA = I_n\); multiplying on the left by \(M^{-1}\) gives \(A = M^{-1}\), which exhibits \(A\) as invertible. Moreover \(A^{-1} = M = E_k \cdots E_1\), and since \(M = M \cdot I_n\) we have
                         \[
-                        A^{-1} = E_k \cdots E_2 E_1 = (E_k \cdots E_2 E_1)\, I_n. \tag{2}
+                        A^{-1} = (E_k \cdots E_2 E_1)\, I_n. \tag{2}
                         \]
-                        Equations (1) and (2) say that the same sequence of elementary matrices, applied to \(A\), produces \(I_n\); applied to \(I_n\), produces \(A^{-1}\). Performing the operations side by side on \([A \mid I]\) yields \([I \mid A^{-1}]\) in a single sweep.
+                        Equations (1) and (2) say: the same sequence of elementary matrices, applied to \(A\), produces \(I_n\); applied to \(I_n\), produces \(A^{-1}\). Performing the operations side by side on the augmented matrix \([A \mid I]\) therefore yields \([I \mid A^{-1}]\) in a single sweep.
                     </p>
                     <p>
-                        Conversely, if the RREF of \(A\) is not \(I_n\), then some column of the RREF has no pivot, which means \(A\) has linearly dependent columns and so is not invertible.
+                        (\(\Rightarrow\)) Suppose \(A\) is invertible. Reduce \(A\) to its RREF, call it \(R\); as in the previous direction, this gives \(NA = R\) for some invertible \(N\) (a product of elementary matrices). Hence \(R = NA\) is invertible, being the product of two invertible matrices.
+                    </p>
+                    <p>
+                        We claim that an invertible \(n \times n\) matrix in RREF must equal \(I_n\). Indeed, if \(R\) had any zero row — say its \(i\)-th row — then for every \(\mathbf{x}\) the \(i\)-th coordinate of \(R\mathbf{x}\) would be zero, so the equation \(R\mathbf{x} = \mathbf{e}_i\) would be unsolvable, contradicting invertibility. Hence every row of \(R\) contains a leading \(1\) — giving \(n\) leading \(1\)'s in \(n\) distinct columns. Combined with the RREF staircase condition (each leading \(1\) lies strictly to the right of the previous one), the \(n\) leading \(1\)'s must occupy positions \((1,1), (2,2), \ldots, (n,n)\). The remaining RREF condition (each pivot column has zeros above and below its leading \(1\)) then forces all off-diagonal entries to vanish: \(R = I_n\).
                     </p>
                 </div>
             </section>
@@ -386,6 +395,21 @@ uses_python: false
                         \end{array}\right],
                         \]
                         where \(C_{ij} = \sum_{k=1}^p A_{ik} B_{kj}\). The compatibility condition ensures each block product \(A_{ik} B_{kj}\) is well-defined, and the corresponding sums share matching dimensions.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (sketch):</span>
+                    <p>
+                        The result follows by tracking which entries of \(A\) and \(B\) contribute to a given entry of \(AB\). Pick any scalar entry \((AB)_{rs}\): by the entrywise definition of matrix multiplication,
+                        \[
+                        (AB)_{rs} = \sum_{\ell} a_{r\ell} b_{\ell s}.
+                        \]
+                        Now suppose the global indices \(r, \ell, s\) lie in row-block \(i\), column-block-of-\(A\) (= row-block-of-\(B\)) \(k\), and column-block \(j\) respectively. The compatibility condition guarantees this assignment is well-defined: every middle index \(\ell\) belongs to exactly one matching pair \((A\)-column-block-\(k\), \(B\)-row-block-\(k\)). Splitting the sum over \(\ell\) according to which block it belongs to,
+                        \[
+                        (AB)_{rs} = \sum_{k} \, \sum_{\ell \in \text{block } k} a_{r\ell} b_{\ell s} = \sum_k (A_{ik} B_{kj})_{r' s'},
+                        \]
+                        where \(r', s'\) are the local indices of \(r, s\) within their respective blocks. The right-hand side is exactly the \((r', s')\)-entry of the block sum \(C_{ij} = \sum_k A_{ik} B_{kj}\). Hence \(AB\), reassembled from its blocks, has \((i, j)\)-block equal to \(C_{ij}\), as claimed.
                     </p>
                 </div>
 
