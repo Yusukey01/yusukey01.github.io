@@ -511,6 +511,11 @@ uses_python: true
                         are generally different numerically, though they agree qualitatively on connectivity 
                         (both are zero iff \(G\) is disconnected).
                     </p>
+                    <p>
+                        <em>The proof is nontrivial — the lower bound in particular requires a careful analysis of 
+                        the Fiedler vector's level sets — and is traditionally covered in spectral graph theory texts. 
+                        We omit it here but will use the inequality freely below.</em>
+                    </p>
                 </div>
 
                 <div class="insight-box">
@@ -576,12 +581,11 @@ uses_python: true
 
                 <p>
                     This frequency interpretation connects back to the Dirichlet energy. By expanding 
-                    \(\boldsymbol{f}\) in the eigenbasis, we obtain a graph analogue of 
-                    <a href="../Calculus/fourier_series.html#T-parseval_identity" class="ref-link"><strong>Parseval's theorem</strong></a>:
+                    \(\boldsymbol{f}\) in the eigenbasis, we obtain a spectral decomposition of the Laplacian quadratic form:
                 </p>
 
                 <div class="theorem" id="T-parseval_graph">
-                    <span class="theorem-title">Theorem: Parseval's Identity on Graphs</span>
+                    <span class="theorem-title">Theorem: Spectral Expression of Dirichlet Energy</span>
                     <p>
                         For any graph signal \(\boldsymbol{f}\) with Graph Fourier Transform 
                         \(\hat{\boldsymbol{f}} = \boldsymbol{V}^\top \boldsymbol{f}\),
@@ -590,8 +594,19 @@ uses_python: true
                         \boldsymbol{f}^\top (\boldsymbol{V} \boldsymbol{\Lambda} \boldsymbol{V}^\top) \boldsymbol{f} =
                         (\boldsymbol{V}^\top \boldsymbol{f})^\top \boldsymbol{\Lambda} (\boldsymbol{V}^\top \boldsymbol{f}) =
                         \hat{\boldsymbol{f}}^\top \boldsymbol{\Lambda} \hat{\boldsymbol{f}} =
-                        \sum_{k=0}^{n-1} \lambda_k \hat{f}_k^2
+                        \sum_{k=0}^{n-1} \lambda_k \hat{f}_k^2.
                         \]
+                    </p>
+                    <p>
+                        <em>Terminology note.</em> The GSP literature often calls this identity 
+                        <strong>Parseval's theorem on graphs</strong>, by loose analogy with the classical 
+                        <a href="../Calculus/fourier_series.html#T-parseval_identity" class="ref-link"><strong>Parseval identity</strong></a>. 
+                        Strictly, classical Parseval is a <em>norm-preservation</em> statement — the graph analogue 
+                        \(\|\boldsymbol{f}\|^2 = \|\hat{\boldsymbol{f}}\|^2\) (which follows directly from 
+                        orthogonality of \(\boldsymbol{V}\)). The identity above is a weighted spectral sum with 
+                        eigenvalues as weights, so it is more accurately a spectral decomposition of the 
+                        Dirichlet quadratic form. We adopt the descriptive name here to avoid conflating the 
+                        two, while recognizing the Parseval naming is widespread in practice.
                     </p>
                 </div>
                 <p>
@@ -853,17 +868,20 @@ uses_python: true
                 <h3>Toward Continuous Symmetry: Lie Theory</h3>
 
                 <p>
-                    The symmetric matrices that dominated Section I admit a <em>discrete</em> symmetry 
-                    group (the orthogonal group acting by conjugation). The next chapters of Section I 
-                    will upgrade this picture to <em>continuous</em> symmetry. Starting with 
-                    <strong>Lie groups</strong> and their associated <strong>Lie algebras</strong>, we 
-                    will find that the matrix exponential \(e^{tX}\) plays, in the continuous setting, 
+                    The symmetric matrices that dominated Section I came with a natural symmetry group — the 
+                    orthogonal group, acting by conjugation \(A \mapsto Q A Q^\top\). Section I treated this 
+                    group primarily as a collection of matrices, useful for diagonalizing operators and 
+                    preserving inner products, without developing the group's own geometric or infinitesimal 
+                    structure. The next chapters upgrade this picture: <strong>Lie groups</strong> and 
+                    their associated <strong>Lie algebras</strong> treat \(O(n)\), \(SO(n)\), and their cousins 
+                    as smooth manifolds, with tangent structure and exponential maps connecting the two. 
+                    We will find that the matrix exponential \(e^{tX}\) plays, in this continuous setting, 
                     exactly the role that the power \(P^t\) played for the stochastic matrices of the 
                     <a href="stochastic.html"><strong>previous chapter</strong></a>, and that the 
                     heat-diffusion kernel \(e^{-t\boldsymbol{L}}\) we derived above is the 
                     graph-theoretic shadow of the same construction. Lie theory will give us the 
-                    vocabulary for rotation, rigid motion, and gauge symmetry — the continuous 
-                    counterparts of the discrete structures on which spectral clustering and the Fiedler 
+                    vocabulary for rotation, rigid motion, and gauge symmetry — the geometric 
+                    counterparts of the structures on which spectral clustering and the Fiedler 
                     vector are built.
                 </p>
 
@@ -872,13 +890,15 @@ uses_python: true
                 <p>
                     The most direct downstream destination of this page is <strong>Graph Neural Networks</strong> 
                     and, more broadly, <strong>Geometric Deep Learning</strong>. Every architectural idea 
-                    we have met — spectral filtering, Chebyshev polynomial approximations, the GCN 
-                    renormalization trick, heat-kernel diffusion, over-smoothing, graph differential 
-                    equations — rests on properties of \(\boldsymbol{L}\) proved on this page. A GNN 
-                    that respects graph structure is, at its core, a linear algebraic operator designed 
-                    to commute with \(\boldsymbol{L}\) in a controlled way. The same principle generalizes: 
-                    on a smooth manifold, the relevant operator is the Laplace-Beltrami operator; on a 
-                    group, it is the Casimir element; on a simplicial complex, it is the Hodge Laplacian. 
+                    in the <em>spectral</em> GNN family — spectral filtering, Chebyshev polynomial approximations, 
+                    the GCN renormalization trick, heat-kernel diffusion, over-smoothing, graph differential 
+                    equations — rests on properties of \(\boldsymbol{L}\) proved on this page. Spectral GNNs 
+                    are, at their core, linear algebraic operators designed to act diagonally in the eigenbasis 
+                    of \(\boldsymbol{L}\); spatial or message-passing GNNs (GAT, GraphSAGE, etc.) do not commute 
+                    with \(\boldsymbol{L}\) directly, but still respect the graph's permutation symmetries, 
+                    of which commutation with \(\boldsymbol{L}\) is one strong form. The same principle 
+                    generalizes: on a smooth manifold, the relevant operator is the Laplace-Beltrami operator; 
+                    on a Lie group, it is the Casimir element; on a simplicial complex, it is the Hodge Laplacian. 
                     The graph Laplacian is the simplest, cleanest instance of a pattern that will recur 
                     throughout the geometric tracks of this curriculum.
                 </p>
