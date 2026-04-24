@@ -33,7 +33,7 @@ uses_python: false
                 
                 <p>
                     In the previous pages, we studied the internal structure of individual groups: cyclic groups, 
-                    symmetric groups, cosets, and factor groups. Now we shift our focus from <strong>analysis</strong> 
+                    permutation groups, cosets, factor groups, and group homomorphisms. Now we shift our focus from <strong>analysis</strong> 
                     to <strong>synthesis</strong>. We now ask: How can we build large, complex groups 
                     from small, simple ones? And how can we tell when a group is built from simpler pieces?
                 </p>
@@ -84,8 +84,8 @@ uses_python: false
 
                 <p>
                     <strong>Note on notation:</strong> Some textbooks use \(\oplus\) instead of \(\times\) 
-                    when working with Abelian groups written additively, so you may see like this:
-                    \(\mathbb{Z}_2 \oplus \mathbb{Z}_3\) in other sources.
+                    when working with Abelian groups written additively, so you may encounter 
+                    expressions such as \(\mathbb{Z}_2 \oplus \mathbb{Z}_3\) in other sources.
                 </p>
 
                 <div class="theorem">
@@ -108,9 +108,9 @@ uses_python: false
                         \(c = (c_1, \ldots, c_n)\). Then:
                         \[
                         \begin{align*}
-                        (ab)c &= ((a_1 b_1, \ldots, a_n b_n))(c_1, \ldots, c_n) \\\\
-                              &= ((a_1 b_1)c_1, \ldots, (a_n b_n)c_n) \\\\
-                              &= (a_1(b_1 c_1), \ldots, a_n(b_n c_n)) && \text{(by associativity in each } G_i \text{)}\\\\
+                        (ab)c &= ((a_1 b_1, \ldots, a_n b_n))(c_1, \ldots, c_n) \\
+                              &= ((a_1 b_1)c_1, \ldots, (a_n b_n)c_n) \\
+                              &= (a_1(b_1 c_1), \ldots, a_n(b_n c_n)) && \text{(by associativity in each } G_i \text{)}\\
                               &= a(bc).
                         \end{align*}
                         \]
@@ -141,7 +141,7 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="T-order_of_direct_product">
                     <span class="theorem-title">Theorem: Order of Direct Product</span>  
                     If \(G_1, G_2, \ldots, G_n\) are finite groups, then
                     \[
@@ -149,10 +149,15 @@ uses_python: false
                     \]
                 </div>
 
-                <p>
-                    The proof follows directly from the counting principle: each position in the \(n\)-tuple 
-                    can be filled independently.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By the componentwise definition, an element of \(G_1 \times \cdots \times G_n\) is uniquely 
+                        determined by an independent choice of one element from each \(G_i\). The \(i\)th component 
+                        admits \(|G_i|\) choices. By the multiplication principle of counting, the total number of 
+                        such tuples is \(|G_1| \cdot |G_2| \cdots |G_n|\).
+                    </p>
+                </div>
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Abelian Property of Direct Products</span>  
@@ -163,15 +168,17 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
                     <p>
                         \((\Rightarrow)\) Suppose \(G = G_1 \times \cdots \times G_n\) is Abelian. For any \(a_i, b_i \in G_i\), 
-                        consider the elements \((e_1, \ldots, a_i, \ldots, e_n)\) and \((e_1, \ldots, b_i, \ldots, e_n)\) in \(G\). 
-                        Since \(G\) is Abelian, their product commutes, which implies \(a_i b_i = b_i a_i\) in \(G_i\).
+                        consider the elements \((e_1, \ldots, a_i, \ldots, e_n)\) and \((e_1, \ldots, b_i, \ldots, e_n)\) in \(G\), 
+                        where \(a_i\) and \(b_i\) sit in the \(i\)th slot and all other slots hold the identity. Their product 
+                        in \(G\) is \((e_1, \ldots, a_i b_i, \ldots, e_n)\); commuting them gives \((e_1, \ldots, b_i a_i, \ldots, e_n)\). 
+                        Since \(G\) is Abelian, these tuples are equal, which forces \(a_i b_i = b_i a_i\) in \(G_i\).
                     </p>
                     <p>
                         \((\Leftarrow)\) Suppose each \(G_i\) is Abelian. For any \((a_1, \ldots, a_n), (b_1, \ldots, b_n) \in G\):
                         \[
                         \begin{align*}
-                        (a_1, \ldots, a_n)(b_1, \ldots, b_n) &= (a_1 b_1, \ldots, a_n b_n) \\\\
-                                                            &= (b_1 a_1, \ldots, b_n a_n) \\\\
+                        (a_1, \ldots, a_n)(b_1, \ldots, b_n) &= (a_1 b_1, \ldots, a_n b_n) \\
+                                                            &= (b_1 a_1, \ldots, b_n a_n) \\
                                                             &= (b_1, \ldots, b_n)(a_1, \ldots, a_n).
                         \end{align*}
                         \]
@@ -190,27 +197,29 @@ uses_python: false
 
                 <div class="theorem">
                     <span class="theorem-title">Theorem: Order in Direct Products</span>  
-                    The order of an element \((g_1, g_2, \ldots, g_n)\) in \(G_1 \times G_2 \times \cdots \times G_n\) is
+                    Suppose each \(g_i\) has finite order in \(G_i\). Then \((g_1, g_2, \ldots, g_n)\) has 
+                    finite order in \(G_1 \times G_2 \times \cdots \times G_n\), given by
                     \[
-                    |(g_1, g_2, \ldots, g_n)| = \text{lcm}(|g_1|, |g_2|, \ldots, |g_n|).
+                    |(g_1, g_2, \ldots, g_n)| = \operatorname{lcm}(|g_1|, |g_2|, \ldots, |g_n|).
                     \]
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Let \(s = |(g_1, g_2, \ldots, g_n)|\) and \(t = \text{lcm}(|g_1|, |g_2|, \ldots, |g_n|)\).
+                        Let \(s = |(g_1, g_2, \ldots, g_n)|\) and \(t = \operatorname{lcm}(|g_1|, |g_2|, \ldots, |g_n|)\).
                     </p>
                     <p>
                         Since \(t\) is a multiple of each \(|g_i|\), we have \(g_i^t = e_i\) for all \(i\). Thus:
                         \[
                         (g_1, g_2, \ldots, g_n)^t = (g_1^t, g_2^t, \ldots, g_n^t) = (e_1, e_2, \ldots, e_n).
                         \]
-                        This means \(s \mid t\) (i.e., \(s\) divides \(t\)).
+                        By <a href="intro_groups.html#T-order_divides_any_power" class="ref-link"><strong>order dividing any annihilating power</strong></a>, this gives \(s \mid t\).
                     </p>
                     <p>
                         Conversely, \((g_1, g_2, \ldots, g_n)^s = (e_1, e_2, \ldots, e_n)\) implies \(g_i^s = e_i\) 
-                        for all \(i\). Thus \(|g_i| \mid s\) for all \(i\), so \(t \mid s\).
+                        for all \(i\). Applying the same theorem componentwise, \(|g_i| \mid s\) for all \(i\). 
+                        Since \(s\) is then a common multiple of all the \(|g_i|\), the definition of lcm yields \(t \mid s\).
                     </p>
                     <p>
                         Since \(s\) and \(t\) are positive integers with \(s \mid t\) and \(t \mid s\), we conclude \(s = t\).
@@ -229,14 +238,14 @@ uses_python: false
                         In \(\mathbb{Z}_6\): the element \(3\) has order \(|3| = 2\) since \(3 + 3 = 6 \equiv 0 \pmod{6}\).
                     </p>
                     <p>
-                        Therefore: \(|(2, 3)| = \text{lcm}(2, 2) = 2\).
+                        Therefore: \(|(2, 3)| = \operatorname{lcm}(2, 2) = 2\).
                     </p>
                     <p>
                         Now consider \((1, 1) \in \mathbb{Z}_4 \times \mathbb{Z}_6\). In \(\mathbb{Z}_4\), the element 
                         \(1\) has order \(4\); in \(\mathbb{Z}_6\), the element \(1\) has order \(6\).
                     </p>
                     <p>
-                        Therefore: \(|(1, 1)| = \text{lcm}(4, 6) = 12\).
+                        Therefore: \(|(1, 1)| = \operatorname{lcm}(4, 6) = 12\).
                     </p>
                 </div>
             </section>
@@ -262,7 +271,7 @@ uses_python: false
                         <br>
                         Suppose \(G \times H\) is cyclic with \(|G| = m\) and \(|H| = n\), so that \(|G \times H| = mn\). 
                         We must show that \(m\) and \(n\) are relatively prime. 
-                        Suppose that \(\text{gcd}(m ,n) = d\) and \((g, h)\) is a generator of \(G \times H\). Since 
+                        Suppose that \(\operatorname{gcd}(m ,n) = d\) and \((g, h)\) is a generator of \(G \times H\). Since 
                         \[
                         (g, h)^{\frac{mn}{d}} = \left((g^m)^{\frac{n}{d}}, (h^n)^{\frac{m}{d}}\right) = (e, e),
                         \]
@@ -270,14 +279,14 @@ uses_python: false
                         \[
                         mn = |(g, h)| \leq \frac{mn}{d}.
                         \]
-                        Thus \(\text{gcd}(m ,n) = d = 1\), which means \(m\) and \(n\) are relatively prime.
+                        Thus \(\operatorname{gcd}(m ,n) = d = 1\), which means \(m\) and \(n\) are relatively prime.
                     </p>
                     <p>
                          \((\Leftarrow)\):
                          <br>
-                         Let \(G = \langle g \rangle\) and \(H = \langle h \rangle\). Suppose \(\text{gcd}(m ,n) = 1\). Then 
+                         Let \(G = \langle g \rangle\) and \(H = \langle h \rangle\). Suppose \(\operatorname{gcd}(m ,n) = 1\). Then 
                          \[
-                         |(g, h)| = \text{lcm}(m, n) = mn = |G \times H|, 
+                         |(g, h)| = \operatorname{lcm}(m, n) = mn = |G \times H|, 
                          \]
                          so that \((g, h)\) is a generator of \(G \times H\).
                     </p>
@@ -325,7 +334,7 @@ uses_python: false
                         \mathbb{Z}_2 \times \mathbb{Z}_4 \not\cong \mathbb{Z}_8.
                         \]
                         The maximum order of an element in \(\mathbb{Z}_2 \times \mathbb{Z}_4\) is 
-                        \(\text{lcm}(2, 4) = 4\), but \(\mathbb{Z}_8\) has an element of order 8.
+                        \(\operatorname{lcm}(2, 4) = 4\), but \(\mathbb{Z}_8\) has an element of order 8.
                     </p>
                     <p>
                         <strong>Three factors:</strong> Since \(\gcd(2, 3) = \gcd(2, 5) = \gcd(3, 5) = 1\):
@@ -336,8 +345,8 @@ uses_python: false
                         \[
                         \begin{align*}
                         \mathbb{Z}_{30} 
-                        &\cong \mathbb{Z}_2 \times \mathbb{Z}_3 \times \mathbb{Z}_5 \\\\
-                        &\cong \mathbb{Z}_5 \times \mathbb{Z}_6 \\\\
+                        &\cong \mathbb{Z}_2 \times \mathbb{Z}_3 \times \mathbb{Z}_5 \\
+                        &\cong \mathbb{Z}_5 \times \mathbb{Z}_6 \\
                         &\cong \mathbb{Z}_3 \times \mathbb{Z}_{10}.
                         \end{align*}
                         \]
@@ -375,7 +384,7 @@ uses_python: false
                         \[
                         U(n_1 n_2 \cdots n_k) \cong U(n_1) \times U(n_2) \times \cdots \times U(n_k)
                         \]
-                        where \(\text{gcd}(n_i, n_j) = 1\) for \(i \neq j\).
+                        where \(\operatorname{gcd}(n_i, n_j) = 1\) for \(i \neq j\).
                     </p>
                 </div>
 
@@ -383,7 +392,7 @@ uses_python: false
                     For example, \(U(105) \cong U(7) \times U(15)\). Here, 
                     \[
                     \begin{align*}
-                    U_{15}(105) &= \{1, 16, 31, 46, 61, 76\} \cong U(7) \\\\
+                    U_{15}(105) &= \{1, 16, 31, 46, 61, 76\} \cong U(7) \\
                     U_{7}(105) &= \{1, 8, 22, 29, 43, 64, 71, 92\} \cong U(15)
                     \end{align*}
                     \]
@@ -392,7 +401,7 @@ uses_python: false
                     We can also decompose \(U(105)\) further:
                     \[
                     \begin{align*}
-                    U(105) &\cong U(3) \times U(5) \times U(7) \\\\
+                    U(105) &\cong U(3) \times U(5) \times U(7) \\
                         &\cong \mathbb{Z}_2 \times \mathbb{Z}_4 \times \mathbb{Z}_6.
                     \end{align*}
                     \]
@@ -452,7 +461,7 @@ uses_python: false
                 <p>
                     We can also find the maximum order of any element in \(U(105)\). Using the decomposition:
                     \[
-                    \text{Maximum order} = \text{lcm}(2, 4, 6) = 12.
+                    \text{Maximum order} = \operatorname{lcm}(2, 4, 6) = 12.
                     \]
                     This means no element in \(U(105)\) has order greater than 12.
                 </p>
