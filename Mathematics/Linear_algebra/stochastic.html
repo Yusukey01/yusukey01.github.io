@@ -27,32 +27,37 @@ uses_python: false
             <section id="sto" class="section-content">
                 <h2>Stochastic Matrix</h2>
 
+                <p>
+                    The previous pages of Section I built up a toolkit — eigenvalues and eigenvectors, diagonalization, matrix norms, the spectral theorem for symmetric matrices, block manipulations. So far these tools have been exercised mostly on static algebraic questions: decomposing a matrix, inverting a low-rank update, computing a determinant. This page is where the same toolkit begins to analyze a <em>dynamical</em> question: given a rule that evolves a state probabilistically, what happens in the long run?
+                </p>
+
                  <p>
                     Many real-world systems evolve probabilistically: a customer's next purchase depends on their current 
                     preferences, a web user's next click depends on the current page, and weather tomorrow depends on 
                     conditions today. To model such processes using linear algebra, we need matrices whose columns (or rows) 
                     represent probability distributions. These are called <strong>stochastic matrices</strong>, and they 
-                    form the algebraic backbone of <strong>Markov chains</strong>.
+                    form the algebraic backbone of <strong>Markov chains</strong>. The eigenvalue structure of a stochastic matrix, we will see, encodes exactly the long-run behavior of the process it governs — a foreshadowing of the deeper probabilistic machinery developed in Section III.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Stochastic Matrix & Probability Vector</span>
+                <div class="theorem" id="D-probability_vector">
+                    <span class="theorem-title">Definition: Probability Vector</span>
                     <p>
-                        A <strong>probability vector</strong> \(x \in \mathbb{R}^n\) is a vector with nonnegative entries that sum 
-                        to 1:
+                        A <strong>probability vector</strong> \(\mathbf{x} \in \mathbb{R}^n\) is a vector with nonnegative entries that sum to 1:
                         \[
                         x_i \geq 0 \text{ for all } i, \quad \sum_{i=1}^n x_i = 1.
                         \]
-                        A <strong>stochastic matrix</strong> (or <strong>transition matrix</strong>) \(P \in \mathbb{R}^{n \times n}\) is 
-                        a square matrix whose columns are probability vectors. That is, \(P_{ij} \geq 0\) for all \(i, j\), 
-                        and \(\sum_{i=1}^n P_{ij} = 1\) for each column \(j\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-stochastic_matrix">
+                    <span class="theorem-title">Definition: Stochastic Matrix</span>
+                    <p>
+                        A <strong>stochastic matrix</strong> (or <strong>transition matrix</strong>) \(P \in \mathbb{R}^{n \times n}\) is a square matrix whose columns are probability vectors. That is, \(P_{ij} \geq 0\) for all \(i, j\), and \(\sum_{i=1}^n P_{ij} = 1\) for each column \(j\).
                     </p>
                 </div>
 
                 <p>
-                    Note that while any matrix satisfying these conditions is a stochastic matrix, further properties such as 
-                    <strong>irreducibility</strong> and <strong>aperiodicity</strong> (making the matrix <strong>regular</strong>) 
-                    are required to guarantee convergence to a unique stationary distribution.
+                    Not every stochastic matrix yields a convergent Markov chain; additional structural conditions on \(P\) — specifically, a combination of <strong>irreducibility</strong> (every state can reach every other) and <strong>aperiodicity</strong> (no cyclic return constraint), sometimes packaged together as <strong>regularity</strong> — are needed to guarantee convergence to a unique stationary distribution. The formal definitions belong to Markov chain theory, treated in Section III; for the linear-algebra discussion below we use "regular" informally, defining it through its spectral consequence at the point where it matters.
                 </p>
                 
                 <p>
@@ -75,8 +80,8 @@ uses_python: false
                         produces a row-stochastic matrix. 
                     </p>
                     <p>
-                        Mathematically, if \(x\) is a column vector, the update rule for a column-stochastic matrix is \(x_{k+1} = P x_k\). 
-                        In code, using row-stochastic matrices and row vectors \(x^\top\), this becomes \(x_{k+1}^\top = x_k^\top P^\top\) 
+                        Mathematically, if \(\mathbf{x}\) is a column vector, the update rule for a column-stochastic matrix is \(\mathbf{x}_{k+1} = P \mathbf{x}_k\). 
+                        In code, using row-stochastic matrices and row vectors \(\mathbf{x}^\top\), this becomes \(\mathbf{x}_{k+1}^\top = \mathbf{x}_k^\top P^\top\) 
                         (often written simply as \(XW\) in linear layers). Always verify the matrix orientation to avoid 
                         incorrect broadcasting or transpositions in your custom layers.
                     </p>
@@ -84,18 +89,18 @@ uses_python: false
                
                 <p>
                     Remember, a <a href="../Probability/markov.html"><strong>Markov chain</strong></a> is a sequence of probability 
-                    vectors \(x_0, x_1, x_2, \cdots \) together with a stochastic matrix \(P\) 
+                    vectors \(\mathbf{x}_0, \mathbf{x}_1, \mathbf{x}_2, \cdots \) together with a stochastic matrix \(P\) 
                     such that 
                     \[
-                    x_1 = P x_0, \quad x_2 = P x_1, \quad x_3 = P x_2, \quad \cdots.
+                    \mathbf{x}_1 = P \mathbf{x}_0, \quad \mathbf{x}_2 = P \mathbf{x}_1, \quad \mathbf{x}_3 = P \mathbf{x}_2, \quad \cdots.
                     \]
                     So, the Markov chain is explained by the first-order difference equation:
                     \[
-                    x_{k+1} = P x_k \quad \text{for } k = 0, 1, 2, \cdots.
+                    \mathbf{x}_{k+1} = P \mathbf{x}_k \quad \text{for } k = 0, 1, 2, \cdots.
                     \]
-                    Here, \(x_k\) is called a <strong>state vector</strong> and we have:
+                    Here, \(\mathbf{x}_k\) is called a <strong>state vector</strong> and we have:
                     \[
-                    x_k = P^k x_0  \quad \text{for } k = 0, 1, 2, \cdots.
+                    \mathbf{x}_k = P^k \mathbf{x}_0  \quad \text{for } k = 0, 1, 2, \cdots.
                     \]
                 </p>
                 
@@ -111,7 +116,7 @@ uses_python: false
                     <p>
                         We observed an initial state distribution:
                         \[
-                        x_0 = \begin{bmatrix} 0.1 \\ 0.9 \end{bmatrix}
+                        \mathbf{x}_0 = \begin{bmatrix} 0.1 \\ 0.9 \end{bmatrix}
                         \]
                         which means that currently, 10% of students are sick and 90% are not.
                     </p>
@@ -129,7 +134,7 @@ uses_python: false
                         \]
                         Then, 
                         \[
-                        x_1 = P x_0 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.1 \\ 0.9 \end{bmatrix} = \begin{bmatrix} 0.075 \\ 0.925 \end{bmatrix}
+                        \mathbf{x}_1 = P \mathbf{x}_0 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.1 \\ 0.9 \end{bmatrix} = \begin{bmatrix} 0.075 \\ 0.925 \end{bmatrix}
                         \]
                         This means that on the next day, approximately 7.5% students are expected to be sick and 92.5% are not.
                     </p>
@@ -137,8 +142,8 @@ uses_python: false
                         We can continue this process:
                         \[
                         \begin{align*}
-                        &x_2 = P x_1 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.075 \\ 0.925 \end{bmatrix} = \begin{bmatrix} 0.06875 \\ 0.93125 \end{bmatrix} \\\\
-                        &x_3 = P x_2 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.06875 \\ 0.93125 \end{bmatrix} = \begin{bmatrix} 0.0671875 \\ 0.9328125 \end{bmatrix}
+                        &\mathbf{x}_2 = P \mathbf{x}_1 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.075 \\ 0.925 \end{bmatrix} = \begin{bmatrix} 0.06875 \\ 0.93125 \end{bmatrix} \\
+                        &\mathbf{x}_3 = P \mathbf{x}_2 = \begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} 0.06875 \\ 0.93125 \end{bmatrix} = \begin{bmatrix} 0.0671875 \\ 0.9328125 \end{bmatrix}
                         \end{align*}
                         \]
                         and so on. 
@@ -150,12 +155,12 @@ uses_python: false
             <section id="ssv" class="section-content">
                 <h2>Steady-State Vector</h2>
 
-                <div class="theorem">
+                <div class="theorem" id="D-steady_state_vector">
                     <span class="theorem-title">Definition: Steady-State Vector</span>
                      <p>
-                        A <strong>steady-state vector</strong> \(q\) for a stochastic matrix \(P\) is defined as 
+                        A <strong>steady-state vector</strong> \(\mathbf{q}\) for a stochastic matrix \(P\) is defined as 
                         \[
-                        P q = q.
+                        P \mathbf{q} = \mathbf{q}.
                         \]
                         In statistics, we also call it <strong>stationary distribution</strong>. 
                     </p>
@@ -163,17 +168,16 @@ uses_python: false
 
                 <p>
                     For a <strong>regular stochastic matrix</strong> (one where some power \(P^k\) has all strictly positive entries), 
-                    the Markov chain \(\{x_k : k = 1, 2, \cdots\}\) converges to a <strong>unique steady-state vector \(q\)</strong> as
-                     \(k \to \infty\), regardless of the initial distribution \(x_0\). This ensures the system eventually settles into a 
+                    the Markov chain \(\{\mathbf{x}_k : k = 1, 2, \cdots\}\) converges to a <strong>unique steady-state vector \(\mathbf{q}\)</strong> as
+                     \(k \to \infty\), regardless of the initial distribution \(\mathbf{x}_0\). This ensures the system eventually settles into a 
                      predictable long-term equilibrium, losing all memory of its starting state.
                 </p>
                 <p>
-                    Algebraically, the steady-state vector \(q\) is the <strong>principal eigenvector</strong> of \(P\) associated with the 
-                    eigenvalue \(\lambda_1 = 1\). The Perron-Frobenius theorem guarantees that for regular matrices, this eigenvalue is unique 
-                    and its corresponding eigenvector can be normalized to form a valid probability distribution.
+                    Algebraically, the steady-state vector \(\mathbf{q}\) is the <strong>principal eigenvector</strong> of \(P\) associated with the 
+                    eigenvalue \(\lambda_1 = 1\). The uniqueness of this eigenvalue, and the fact that its eigenvector can always be normalized into a valid probability distribution, are consequences of the <strong>Perron-Frobenius theorem</strong> for nonnegative matrices — a result whose rigorous justification belongs to Section III, where Markov chain theory is developed in full. Here we take these facts as given and focus on the linear-algebraic structure they imply.
                 </p>
                            
-                <div class="theorem">
+                <div class="theorem" id="D-spectral_radius">
                     <span class="theorem-title">Definition: Spectral Radius</span>
                       <p>
                         For any matrix \(A\), the <strong>spectral radius</strong> \(\rho(A)\) is defined by the maximum absolute value 
@@ -185,22 +189,39 @@ uses_python: false
                     </p>
                 </div>
    
+                <div class="theorem" id="T-stochastic_spectral_radius">
+                    <span class="theorem-title">Theorem: Spectral Radius of a Stochastic Matrix</span>
+                    <p>
+                        For any stochastic matrix \(P\), \(\lambda = 1\) is an eigenvalue, and every eigenvalue \(\lambda_i\) satisfies \(|\lambda_i| \leq 1\). Consequently, the spectral radius is \(\rho(P) = 1\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We prove the two parts separately.
+                    </p>
+                    <p>
+                        <strong>Every eigenvalue satisfies \(|\lambda_i| \leq 1\).</strong> Consider the 
+                        <a href="trace.html#D-induced_norm" class="ref-link"><strong>induced 1-norm</strong></a> 
+                        \(\|A\|_1\), which for a matrix \(A\) equals the maximum absolute column sum. For a column-stochastic matrix, every column sums to exactly \(1\), so \(\|P\|_1 = 1\). The induced 1-norm is submultiplicative — that is, \(\|AB\|_1 \leq \|A\|_1 \|B\|_1\), which follows immediately from its definition as an operator norm: \(\|AB\mathbf{x}\|_1 \leq \|A\|_1 \|B\mathbf{x}\|_1 \leq \|A\|_1 \|B\|_1 \|\mathbf{x}\|_1\). Now if \(\lambda\) is any eigenvalue of \(P\) with eigenvector \(\mathbf{v} \neq \mathbf{0}\), then \(P\mathbf{v} = \lambda \mathbf{v}\) gives
+                        \[
+                        |\lambda| \, \|\mathbf{v}\|_1 = \|\lambda \mathbf{v}\|_1 = \|P \mathbf{v}\|_1 \leq \|P\|_1 \, \|\mathbf{v}\|_1 = \|\mathbf{v}\|_1.
+                        \]
+                        Dividing by \(\|\mathbf{v}\|_1 > 0\), we obtain \(|\lambda| \leq 1\).
+                        <br>
+                        (For a row-stochastic matrix, the same argument applies with the induced \(\infty\)-norm, whose value \(\|P\|_\infty\) is the maximum absolute row sum — again equal to \(1\).)
+                    </p>
+                    <p>
+                        <strong>\(\lambda = 1\) is an eigenvalue.</strong> The all-ones vector \(\mathbf{1} = [1, 1, \ldots, 1]^\top\) satisfies \(\mathbf{1}^\top P = \mathbf{1}^\top\), because the \(j\)-th entry of \(\mathbf{1}^\top P\) is the column sum \(\sum_i P_{ij} = 1\). Thus \(\mathbf{1}\) is a left-eigenvector of \(P\) with eigenvalue \(1\). Since \(\det(P - \lambda I) = \det((P - \lambda I)^\top) = \det(P^\top - \lambda I)\) (using <a href="determinants.html#T-determinant_transpose" class="ref-link"><strong>transpose-invariance of the determinant</strong></a>), \(P\) and \(P^\top\) share the same characteristic polynomial and hence the same eigenvalues; so \(\lambda = 1\) is also a right-eigenvalue.
+                    </p>
+                    <p>
+                        Combining the two parts: all eigenvalues satisfy \(|\lambda_i| \leq 1\) and \(\lambda = 1\) is attained, so \(\rho(P) = 1\). \(\quad\blacksquare\)
+                    </p>
+                </div>
+
                 <p>
-                    By definition, every column of a column-stochastic matrix sums to 1, which means the maximum absolute column sum 
-                    (the <strong>1-norm</strong>, \(\| P \|_1\)) is always 1. According to the property of submultiplicative norms, 
-                    the <strong>spectral radius</strong> satisfies:
-                    \[ 
-                    \rho(P) \leq \| P \|_1 = 1 
-                    \]
-                    (For the row-stochastic matrix, we use the <strong>infinity norm</strong> \(\| P \|_{\infty} = 1\) to reach the 
-                    same conclusion.)
-                </p>
-                <p>
-                    Since the vector \(\mathbf{1}^\top = [1, 1, \dots, 1]\) is a left-eigenvector of \(P\) associated with the 
-                    eigenvalue 1 (satisfying \(\mathbf{1}^\top P = \mathbf{1}^\top\)), we know that \(\lambda = 1\) is always an 
-                    eigenvalue of any stochastic matrix. Therefore, the spectral radius is <strong>exactly 1</strong> (\(\rho(P) = 1\)). 
-                    For a regular stochastic matrix, all other eigenvalues \(\lambda_i\) satisfy \(|\lambda_i| < 1\), which ensures that 
-                    the influence of non-steady-state components vanishes as \(k \to \infty\).
+                    For a <em>regular</em> stochastic matrix, all eigenvalues other than \(\lambda_1 = 1\) satisfy the <em>strict</em> inequality \(|\lambda_i| < 1\); this is what forces convergence \(P^k \mathbf{x}_0 \to \mathbf{q}\) as \(k \to \infty\). Proving this strictness is the content of the Perron-Frobenius theorem for regular nonnegative matrices — beyond the scope of this page, and treated rigorously in Section III.
                 </p>
                     
                 <div class="proof">
@@ -209,10 +230,10 @@ uses_python: false
                         Revisiting our example, 
                         \[
                         \begin{align*}
-                        & P q = q \\\\
-                        &\begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} q_1 \\ q_2 \end{bmatrix} = \begin{bmatrix} q_1 \\ q_2 \end{bmatrix}\\\\
-                        & q_1 + q_2 = 1 \\\\
-                        &\Longrightarrow q = \begin{bmatrix} \frac{1}{15} \\ \frac{14}{15} \end{bmatrix}
+                        & P \mathbf{q} = \mathbf{q} \\
+                        &\begin{bmatrix} 0.3 & 0.05 \\ 0.7 & 0.95 \end{bmatrix} \begin{bmatrix} q_1 \\ q_2 \end{bmatrix} = \begin{bmatrix} q_1 \\ q_2 \end{bmatrix}\\
+                        & q_1 + q_2 = 1 \\
+                        &\Longrightarrow \mathbf{q} = \begin{bmatrix} \frac{1}{15} \\ \frac{14}{15} \end{bmatrix}
                         \end{align*}
                         \]
                         which means that in the long run, about 6.67 % of the students will be sick and about 93.33 % will be not sick.
@@ -221,22 +242,22 @@ uses_python: false
                         Find eigenvalues and corresponding eigenvectors:
                         \[
                         \begin{align*}
-                        &\det(P - \lambda I) = 0 \\\\
-                        &\Longrightarrow \lambda^2 - 1.25\lambda + 0.25 = 0 \\\\
-                        &\Longrightarrow (\lambda -1)(\lambda -0.25) = 0 \\\\
+                        &\det(P - \lambda I) = 0 \\
+                        &\Longrightarrow \lambda^2 - 1.25\lambda + 0.25 = 0 \\
+                        &\Longrightarrow (\lambda -1)(\lambda -0.25) = 0 \\
                         &\Longrightarrow \lambda_1 = 1, \quad \lambda_2 = 0.25.
                         \end{align*}
                         \]
-                        For \(\lambda_1 = 1\), solving \((P -I)v_1 = 0\), we obtain the corresponding eigenvector:
+                        For \(\lambda_1 = 1\), solving \((P -I)\mathbf{v}_1 = 0\), we obtain the corresponding eigenvector:
                         \[
-                        v_1 = \begin{bmatrix} 1 \\ 14 \end{bmatrix}.
+                        \mathbf{v}_1 = \begin{bmatrix} 1 \\ 14 \end{bmatrix}.
                         \]
-                        (Scaling by \(\frac{1}{15}\), we can get the stationary distribution \(q = \frac{1}{15}v_1\)).
+                        (Scaling by \(\frac{1}{15}\), we can get the stationary distribution \(\mathbf{q} = \frac{1}{15}\mathbf{v}_1\)).
                     </p>
                     <p>
-                        For \(\lambda_2 = 0.25\), solving \((P -0.25I)v_2 = 0\), we obtain the corresponding eigenvector:
+                        For \(\lambda_2 = 0.25\), solving \((P -0.25I)\mathbf{v}_2 = 0\), we obtain the corresponding eigenvector:
                         \[
-                        v_2 =  \begin{bmatrix} - 1 \\  1 \end{bmatrix}.
+                        \mathbf{v}_2 =  \begin{bmatrix} - 1 \\  1 \end{bmatrix}.
                         \]
                         So, 
                         \[
@@ -251,7 +272,7 @@ uses_python: false
                         Thus, the transition matrix \(P\) after \(k\) steps can be written as: 
                         \[
                         \begin{align*}
-                        P^k &= V D^k V^{-1} \\\\
+                        P^k &= V D^k V^{-1} \\
                             &= \begin{bmatrix} 1 & - 1 \\ 14 & 1 \end{bmatrix} 
                             \begin{bmatrix} 1^k & 0 \\ 0 & (0.25)^k \end{bmatrix} 
                             \frac{1}{15}\begin{bmatrix} 1 & 1 \\ -14 & 1 \end{bmatrix}.
@@ -271,7 +292,7 @@ uses_python: false
                 </div>
 
                  <p>
-                    In this example, \(P\) is <a href="eigenvectors.html"><strong>diagonalizable</strong></a>, which allowed us 
+                    In this example, \(P\) is <a href="eigenvectors.html#D-diagonalizable_matrix" class="ref-link"><strong>diagonalizable</strong></a>, which allowed us 
                     to express \(P^k\) in closed form and read off the convergence rate directly from the eigenvalues. In general, 
                     stochastic matrices are not always diagonalizable, but the convergence result still holds under mild 
                     conditions (irreducibility and aperiodicity) via the Perron-Frobenius theorem.
@@ -282,7 +303,7 @@ uses_python: false
                     the rows are probability vectors.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-doubly_stochastic_matrix">
                     <span class="theorem-title">Definition: Doubly Stochastic Matrix</span>
                      <p>
                         A nonnegative matrix \(A\) is said to be <strong>doubly stochastic</strong> if both the sum of each row 
@@ -293,22 +314,21 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example: Doubly Stochastic Matrix (\(2 \times 2\))</span>
                     <p>
-                        For \(n = 2\), the doubly stochastic constraint forces the matrix to be symmetric. 
-                        Consider the following doubly stochastic matrix for \(0 < t \leq 1\):
+                        For \(n = 2\), the doubly stochastic constraint forces the matrix to be symmetric. Indeed, writing \(A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}\), the four sum conditions \(a + b = 1\), \(c + d = 1\) (rows), \(a + c = 1\), \(b + d = 1\) (columns) immediately give \(b = c\) (both equal \(1 - a\)) and \(d = a\). The single free parameter is the off-diagonal value; writing it as \(t\),
                         \[
-                        A = \begin{bmatrix} 1 - t & t \\  t & 1 - t \end{bmatrix}.
+                        A = \begin{bmatrix} 1 - t & t \\  t & 1 - t \end{bmatrix}, \qquad 0 \leq t \leq 1.
                         \]
-                        The trace is \(\text{tr}(A) = 2 - 2t\). Since every stochastic matrix has eigenvalue 
-                        \(\lambda_1 = 1\) with corresponding eigenvector \(v_1 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}\), 
+                        The trace is \(\operatorname{tr}(A) = 2 - 2t\). Since every stochastic matrix has eigenvalue 
+                        \(\lambda_1 = 1\) with corresponding eigenvector \(\mathbf{v}_1 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}\), 
                         we can find the second eigenvalue from
                         \[
-                        \lambda_1 + \lambda_2 = \text{tr}(A) = 2 - 2t \quad \Longrightarrow \quad \lambda_2 = 1 - 2t.
+                        \lambda_1 + \lambda_2 = \operatorname{tr}(A) = 2 - 2t \quad \Longrightarrow \quad \lambda_2 = 1 - 2t.
                         \]
                     </p>
                     <p>
                         Since \(A\) is symmetric and the two eigenvalues are distinct (for \(t \neq 0\)), the 
-                        <a href="orthogonality.html">spectral theorem</a> guarantees that the eigenvectors are orthogonal. 
-                        Thus \(v_2 = \begin{bmatrix} 1 \\ -1 \end{bmatrix}\), and the eigendecomposition is
+                        <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a> guarantees that the eigenvectors are orthogonal. 
+                        Thus \(\mathbf{v}_2 = \begin{bmatrix} 1 \\ -1 \end{bmatrix}\), and the eigendecomposition is
                         \[
                         A = \frac{1}{2}\begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix} 
                         \begin{bmatrix} 1  & 0 \\ 0 & 1-2t \end{bmatrix} 
@@ -334,14 +354,19 @@ uses_python: false
                     <p>
                         In <strong>Spectral Clustering</strong>, ensuring the affinity matrix is normalized into a stochastic form 
                         relates to the random walk Laplacian. Since the steady-state of a doubly stochastic matrix is always the 
-                        <strong>uniform distribution</strong> \(q = \frac{1}{n}\mathbf{1}\), these matrices are ideal for modeling 
+                        <strong>uniform distribution</strong> \(\mathbf{q} = \frac{1}{n}\mathbf{1}\) (for a doubly stochastic \(A\), every row sums to 1, so \(A \mathbf{1} = \mathbf{1}\); normalizing by \(n\) gives the uniform probability vector), these matrices are ideal for modeling 
                         systems where no prior bias exists, such as in data shuffling, sorting networks, or fair resource allocation.
                     </p>
                 </div>
+
+                <p>
+                    This page gave a linear-algebra view of probabilistic dynamics: a stochastic matrix is a linear operator on probability vectors, and its spectral structure dictates long-run behavior. The companion probabilistic view — how to <em>make sense</em> of "probability", how to model transitions at the level of random variables, and how convergence to a stationary distribution is formalized and proved — belongs to Section III, where Markov chain theory is developed from measure-theoretic foundations.
+                </p>
 
             </section>
         </div>
        
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
