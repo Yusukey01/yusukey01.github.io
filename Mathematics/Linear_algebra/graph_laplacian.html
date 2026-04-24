@@ -23,6 +23,7 @@ uses_python: true
             <a href="#signal">Graph Signal Processing</a>
             <a href="#computation">Practical Computations</a>
             <a href="#applications">Modern Applications</a>
+            <a href="#ahead">Looking Ahead</a>
         </div> 
 
         <div class="container">
@@ -31,16 +32,33 @@ uses_python: true
                 <h2>Graph Laplacian Fundamentals</h2>
 
                 <p>
-                    Graphs encode relationships between objects, but to apply the powerful machinery of linear 
-                    algebra — eigenvalues, quadratic forms, spectral decompositions — we need a matrix that 
-                    faithfully represents a graph's connectivity structure. The <strong>graph Laplacian</strong> 
-                    is exactly this matrix. It captures how "different" adjacent vertices are from each other, 
-                    making it the natural bridge between 
-                    <a href="../Discrete/intro_graph.html"><strong>graph theory</strong></a> and 
-                    <a href="eigenvectors.html"><strong>spectral analysis</strong></a>.
+                    Throughout Section I, we have built up the vocabulary of linear algebra — 
+                    <a href="vectorspaces.html"><strong>vector spaces</strong></a>, 
+                    <a href="linear_transformation.html"><strong>linear transformations</strong></a>, 
+                    <a href="eigenvectors.html"><strong>eigendecompositions</strong></a>, 
+                    <a href="symmetry.html"><strong>symmetric matrices</strong></a> and their 
+                    <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a>, 
+                    and more specialized tools like the <a href="trace.html"><strong>trace and matrix norms</strong></a>, 
+                    the <a href="kronecker.html"><strong>Kronecker product</strong></a>, and 
+                    <a href="stochastic.html"><strong>stochastic matrices</strong></a>. These tools were developed 
+                    in the abstract, on \(\mathbb{R}^n\) or \(M_n(\mathbb{R})\) with no particular geometric 
+                    context. The question now becomes: <em>what happens when we apply them to a space 
+                    that carries genuine combinatorial structure?</em>
                 </p>
 
-                <div class="theorem">
+                <p>
+                    Graphs are the simplest such structure — a finite set of nodes equipped with 
+                    pairwise relations. To apply the spectral machinery we have built, we need a matrix that 
+                    faithfully encodes a graph's connectivity. The <strong>graph Laplacian</strong> is 
+                    exactly this matrix. It captures how "different" adjacent vertices are from each other, 
+                    making it the natural bridge between 
+                    <a href="../Discrete/intro_graph.html"><strong>graph theory</strong></a> and the 
+                    spectral methods we have spent Section I developing. The bridge turns out to be 
+                    remarkably rich: a single matrix, defined in two lines, will give us connectivity, 
+                    clustering, frequency analysis, and diffusion — all from its eigenstructure.
+                </p>
+
+                <div class="theorem" id="D-graph_laplacian_unnormalized">
                     <span class="theorem-title">Definition: Unnormalized Graph Laplacian</span>
                     <p>
                         For a graph \(G\) with adjacency matrix \(\boldsymbol{A}\) and degree matrix \(\boldsymbol{D}\), 
@@ -101,7 +119,7 @@ uses_python: true
                     which measures how much a signal varies across the edges of the graph.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-dirichlet_energy">
                     <span class="theorem-title">Theorem: Dirichlet Energy</span>
                     <p>
                         For any signal \(\boldsymbol{f} \in \mathbb{R}^n\) defined on the vertices of a 
@@ -114,14 +132,80 @@ uses_python: true
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We work with the weighted adjacency matrix \(\boldsymbol{A} = (w_{ij})\), where 
+                        \(w_{ij} = w_{ji} \geq 0\) and \(w_{ij} = 0\) when \(v_i \not\sim v_j\) (the unweighted 
+                        case is \(w_{ij} \in \{0, 1\}\)). The weighted degree is \(d_i = \sum_{j} w_{ij}\), 
+                        and \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\).
+                        Split the quadratic form:
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} 
+                        = \boldsymbol{f}^\top \boldsymbol{D} \boldsymbol{f} - \boldsymbol{f}^\top \boldsymbol{A} \boldsymbol{f}
+                        = \sum_{i} d_i f_i^2 - \sum_{i,j} w_{ij} f_i f_j.
+                        \]
+                    </p>
+                    <p>
+                        Rewrite the degree term using \(d_i = \sum_{j} w_{ij}\), then symmetrize via 
+                        \(w_{ij} = w_{ji}\):
+                        \[
+                        \sum_{i} d_i f_i^2 
+                        = \sum_{i,j} w_{ij} f_i^2 
+                        = \tfrac{1}{2}\sum_{i,j} w_{ij} f_i^2 + \tfrac{1}{2}\sum_{i,j} w_{ij} f_j^2 
+                        = \tfrac{1}{2}\sum_{i,j} w_{ij} (f_i^2 + f_j^2),
+                        \]
+                        where the second sum in the middle expression is obtained from the first by swapping 
+                        the dummy indices \(i \leftrightarrow j\) (which is free to do) and then using 
+                        \(w_{ji} = w_{ij}\). Now substitute into the split, writing the second term as 
+                        \(\sum_{i,j} w_{ij} f_i f_j = \tfrac{1}{2}\sum_{i,j} w_{ij}(2 f_i f_j)\) so that both 
+                        terms share the prefactor \(\tfrac{1}{2}\):
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} 
+                        = \tfrac{1}{2}\sum_{i,j} w_{ij}(f_i^2 + f_j^2) - \tfrac{1}{2}\sum_{i,j} w_{ij}(2 f_i f_j) 
+                        = \tfrac{1}{2}\sum_{i,j} w_{ij}(f_i - f_j)^2.
+                        \]
+                    </p>
+                    <p>
+                        The remaining sum ranges over all ordered pairs \((i, j)\). Since the summand 
+                        \(w_{ij}(f_i - f_j)^2\) is symmetric in \((i, j)\) and each undirected edge 
+                        \(\{v_i, v_j\}\) contributes once as \((i, j)\) and once as \((j, i)\), the prefactor 
+                        \(\tfrac{1}{2}\) exactly converts the ordered-pair sum into a sum over undirected edges:
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_{(i,j) \in E} w_{ij}(f_i - f_j)^2. \qquad \square
+                        \]
+                    </p>
+                </div>
+
                 <p>
                     The Dirichlet energy is small when adjacent vertices have similar signal values (the signal 
                     is "smooth") and large when adjacent vertices differ significantly. The Laplacian thus acts 
                     as an operator that measures the total variation of a signal across the graph's edges. 
-                    Since \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} \geq 0\) for all \(\boldsymbol{f}\), 
-                    this also shows that \(\boldsymbol{L}\) is 
-                    <a href="symmetry.html#qf"><strong>positive semidefinite</strong></a>.
+                    The nonnegativity of every summand also gives an immediate structural consequence.
                 </p>
+
+                <div class="theorem" id="T-laplacian_psd">
+                    <span class="theorem-title">Corollary: The Graph Laplacian is Positive Semidefinite</span>
+                    <p>
+                        For any graph \(G\) (with nonnegative edge weights), the Laplacian 
+                        \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) is positive semidefinite. 
+                        In particular, every eigenvalue of \(\boldsymbol{L}\) is nonnegative.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By <a href="#T-dirichlet_energy" class="ref-link"><strong>Dirichlet Energy</strong></a>, 
+                        for every \(\boldsymbol{f} \in \mathbb{R}^n\),
+                        \[
+                        \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_{(i,j) \in E} w_{ij}(f_i - f_j)^2 \geq 0,
+                        \]
+                        since each summand has \(w_{ij} \geq 0\) and \((f_i - f_j)^2 \geq 0\). Thus \(\boldsymbol{L} \succeq 0\); 
+                        by the <a href="symmetry.html#T-definiteness_via_eigenvalues" class="ref-link"><strong>spectral characterization of definiteness</strong></a>, 
+                        all eigenvalues of \(\boldsymbol{L}\) are nonnegative. \(\square\)
+                    </p>
+                </div>
 
                 <div class="insight-box">
                     <h3>Insight: Dirichlet Energy as a Regularizer in ML</h3>
@@ -146,17 +230,22 @@ uses_python: true
                     are commonly used.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Normalized Graph Laplacians</span>
+                <div class="theorem" id="D-normalized_laplacian_sym">
+                    <span class="theorem-title">Definition: Symmetric Normalized Laplacian</span>
                     <p>
-                        <strong>1. Symmetric Normalized Laplacian:</strong>
+                        The <strong>symmetric normalized Laplacian</strong> is
                         \[
-                        \mathcal{L}_{sym} = \boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2} = \boldsymbol{I} - \boldsymbol{D}^{-1/2} \boldsymbol{A} \boldsymbol{D}^{-1/2}
+                        \mathcal{L}_{sym} = \boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2} = \boldsymbol{I} - \boldsymbol{D}^{-1/2} \boldsymbol{A} \boldsymbol{D}^{-1/2}.
                         \]
-                        This is a symmetric matrix with eigenvalues in the range \([0, 2]\).
+                        As a symmetric congruence transform of \(\boldsymbol{L}\), it is itself symmetric and admits 
+                        an orthonormal eigenbasis.
                     </p>
+                </div>
+
+                <div class="theorem" id="D-normalized_laplacian_rw">
+                    <span class="theorem-title">Definition: Random Walk Normalized Laplacian</span>
                     <p>
-                        <strong>2. Random Walk Normalized Laplacian:</strong>
+                        The <strong>random walk normalized Laplacian</strong> is
                         \[
                         \begin{align*}
                         \mathcal{L}_{rw} &= \boldsymbol{D}^{-1} \boldsymbol{L}  \\\\
@@ -168,9 +257,66 @@ uses_python: true
                     </p>
                 </div>
 
+                <div class="theorem" id="T-normalized_laplacian_spectrum">
+                    <span class="theorem-title">Theorem: Spectrum of the Normalized Laplacians</span>
+                    <p>
+                        The symmetric and random-walk normalized Laplacians share the same spectrum, and all 
+                        eigenvalues lie in the interval \([0, 2]\):
+                        \[
+                        \sigma(\mathcal{L}_{sym}) = \sigma(\mathcal{L}_{rw}) \subset [0, 2].
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(i) Same spectrum.</strong> A direct computation gives
+                        \[
+                        \mathcal{L}_{rw} = \boldsymbol{D}^{-1} \boldsymbol{L} 
+                        = \boldsymbol{D}^{-1/2} \bigl(\boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2}\bigr) \boldsymbol{D}^{1/2} 
+                        = \boldsymbol{D}^{-1/2} \mathcal{L}_{sym} \boldsymbol{D}^{1/2}.
+                        \]
+                        Thus \(\mathcal{L}_{rw}\) is similar to \(\mathcal{L}_{sym}\) via the invertible transform 
+                        \(\boldsymbol{D}^{1/2}\). Similar matrices have identical eigenvalues, so 
+                        \(\sigma(\mathcal{L}_{rw}) = \sigma(\mathcal{L}_{sym})\).
+                    </p>
+                    <p>
+                        <strong>(ii) Lower bound \(\lambda \geq 0\).</strong> For any \(\boldsymbol{g} \in \mathbb{R}^n\), 
+                        set \(\boldsymbol{f} = \boldsymbol{D}^{-1/2}\boldsymbol{g}\). Then
+                        \[
+                        \boldsymbol{g}^\top \mathcal{L}_{sym} \boldsymbol{g} 
+                        = \boldsymbol{g}^\top \boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2} \boldsymbol{g} 
+                        = \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} \geq 0
+                        \]
+                        since \(\boldsymbol{L}\) is 
+                        <a href="#T-laplacian_psd" class="ref-link"><strong>positive semidefinite</strong></a>. 
+                        Hence \(\mathcal{L}_{sym} \succeq 0\), giving \(\lambda \geq 0\) for every eigenvalue.
+                    </p>
+                    <p>
+                        <strong>(iii) Upper bound \(\lambda \leq 2\).</strong> Equivalently, we show 
+                        \(2\boldsymbol{I} - \mathcal{L}_{sym}\) is PSD. Using 
+                        \(\mathcal{L}_{sym} = \boldsymbol{I} - \boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\),
+                        \[
+                        2\boldsymbol{I} - \mathcal{L}_{sym} = \boldsymbol{I} + \boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}.
+                        \]
+                        A direct edge-sum expansion analogous to the Dirichlet energy calculation gives, 
+                        for any \(\boldsymbol{g} \in \mathbb{R}^n\) (with \(g_i\) the \(i\)-th entry),
+                        \[
+                        \boldsymbol{g}^\top (2\boldsymbol{I} - \mathcal{L}_{sym}) \boldsymbol{g} 
+                        = \sum_{(i,j) \in E} \left(\frac{g_i}{\sqrt{d_i}} + \frac{g_j}{\sqrt{d_j}}\right)^2 \geq 0,
+                        \]
+                        where \(d_i = \deg(v_i)\). (The identity is verified by expanding the square and matching 
+                        the diagonal term \(\sum_i g_i^2\) with \(d_i \cdot (1/d_i) = 1\) contributions from incident 
+                        edges, and the cross term with the off-diagonal entries of \(\boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\).) 
+                        Thus \(2\boldsymbol{I} - \mathcal{L}_{sym} \succeq 0\), giving \(\lambda \leq 2\). \(\square\)
+                    </p>
+                </div>
+
                 <p>
-                    Both normalized forms share the same eigenvalues. The choice between them depends on the application: 
-                    \(\mathcal{L}_{sym}\) is preferred when symmetry is needed (e.g., for the spectral theorem), 
+                    The choice between the two normalized forms depends on the application: 
+                    \(\mathcal{L}_{sym}\) is preferred when symmetry is needed (e.g., for invoking 
+                    the spectral theorem directly, or for GCN-style architectures), 
                     while \(\mathcal{L}_{rw}\) connects directly to random walk analysis.
                 </p>
 
@@ -180,11 +326,12 @@ uses_python: true
                 <h2>Spectral Properties</h2>
 
                 <p>
-                    The Dirichlet energy established that \(\boldsymbol{L}\) is positive semidefinite, which 
-                    immediately constrains its eigenvalue structure. Since \(\boldsymbol{L}\) is also real and 
-                    symmetric, the <a href="symmetry.html#sym"><strong>spectral theorem</strong></a> guarantees a 
-                    complete set of real, nonnegative eigenvalues and orthonormal eigenvectors. These eigenvalues 
-                    and eigenvectors encode remarkably detailed information about the graph's connectivity.
+                    <a href="#T-laplacian_psd" class="ref-link"><strong>The Graph Laplacian is Positive Semidefinite</strong></a> 
+                    (a direct corollary of Dirichlet energy) immediately constrains \(\boldsymbol{L}\)'s eigenvalue structure. 
+                    Since \(\boldsymbol{L}\) is also real and symmetric, the 
+                    <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a> 
+                    guarantees a complete set of real, nonnegative eigenvalues and orthonormal eigenvectors. 
+                    These eigenvalues and eigenvectors encode remarkably detailed information about the graph's connectivity.
                 </p>
                 
                 <p>
@@ -202,22 +349,86 @@ uses_python: true
                     (which form a basis for \(\mathbb{R}^n\)).
                 </p>
 
-                <h3>The Smallest Eigenvalue (\(\lambda_0\))</h3>
+                <h3>The Smallest Eigenvalue (\(\lambda_0 = 0\))</h3>
                 <p>
-                    The smallest eigenvalue \(\lambda_0\) is always 0. Its corresponding eigenvector 
-                    is the constant vector \(\boldsymbol{v}_0 = \boldsymbol{1}\) (a vector of all ones).
+                    A direct computation shows that the constant vector \(\boldsymbol{1} \in \mathbb{R}^n\) 
+                    (all entries equal to one) is always in the kernel of \(\boldsymbol{L}\):
                     \[
                     \boldsymbol{L}\boldsymbol{1} = (\boldsymbol{D} - \boldsymbol{A})\boldsymbol{1} = \boldsymbol{D}\boldsymbol{1} - \boldsymbol{A}\boldsymbol{1} = \boldsymbol{d} - \boldsymbol{d} = \boldsymbol{0}
                     \]
-                    (where \(\boldsymbol{d}\) is the vector of degrees).
+                    (where \(\boldsymbol{d}\) is the vector of degrees). So \(\lambda_0 = 0\) is always an eigenvalue. 
+                    But is it <em>the only</em> zero eigenvalue, and does \(\boldsymbol{1}\) span the entire zero 
+                    eigenspace? The answer depends on whether the graph is connected — and more generally, 
+                    the zero eigenspace encodes the graph's component structure exactly.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Eigenvalue Multiplicity and Connectivity</span>
+                <div class="theorem" id="T-kernel_connectivity">
+                    <span class="theorem-title">Theorem: Kernel of \(\boldsymbol{L}\) and Connected Components</span>
                     <p>
-                        The <strong>multiplicity of the zero eigenvalue</strong> (how many times \(\lambda_k = 0\)) 
-                        is equal to the number of <strong>connected components</strong> in the graph. For any 
-                        connected graph, \(\lambda_0 = 0\) is a simple eigenvalue, meaning \(\lambda_1 > 0\).
+                        Let \(G\) be a graph with \(c\) connected components \(C_1, \ldots, C_c\), and let 
+                        \(\boldsymbol{1}_{C_k} \in \mathbb{R}^n\) denote the indicator vector of \(C_k\) 
+                        (entry \(1\) on vertices in \(C_k\), zero elsewhere). Then
+                        \[
+                        \ker \boldsymbol{L} = \operatorname{span}\{\boldsymbol{1}_{C_1}, \ldots, \boldsymbol{1}_{C_c}\},
+                        \]
+                        so the <strong>multiplicity of the zero eigenvalue</strong> equals the number of 
+                        connected components: \(\dim \ker \boldsymbol{L} = c\). 
+                        In particular, \(G\) is connected if and only if \(\lambda_0 = 0\) is a simple 
+                        eigenvalue, equivalently \(\lambda_1 > 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Step 1: \(\boldsymbol{f} \in \ker \boldsymbol{L}\) iff \(\boldsymbol{f}\) is constant on each connected component.</strong>
+                    </p>
+                    <p>
+                        (\(\Rightarrow\)) If \(\boldsymbol{L}\boldsymbol{f} = \boldsymbol{0}\), then 
+                        \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \boldsymbol{f}^\top \boldsymbol{0} = 0\). 
+                        By <a href="#T-dirichlet_energy" class="ref-link"><strong>Dirichlet Energy</strong></a>,
+                        \[
+                        0 = \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_{(i,j) \in E} w_{ij}(f_i - f_j)^2.
+                        \]
+                        Each summand is nonnegative (weights \(w_{ij} > 0\) on edges), so every edge term 
+                        vanishes: \(f_i = f_j\) whenever \(v_i \sim v_j\). By transitivity along paths within 
+                        each connected component, \(\boldsymbol{f}\) is constant on each component.
+                    </p>
+                    <p>
+                        (\(\Leftarrow\)) Conversely, suppose \(\boldsymbol{f}\) is constant on each component. 
+                        Then \(f_i = f_j\) for every edge \((i, j) \in E\), so 
+                        \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = 0\) by the same Dirichlet formula. 
+                        Since \(\boldsymbol{L}\) is real symmetric, the 
+                        <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a> 
+                        gives an orthonormal eigenbasis \(\boldsymbol{v}_0, \ldots, \boldsymbol{v}_{n-1}\) with 
+                        eigenvalues \(0 \leq \lambda_0 \leq \cdots \leq \lambda_{n-1}\) (nonnegativity by 
+                        <a href="#T-laplacian_psd" class="ref-link"><strong>positive semidefiniteness</strong></a>). 
+                        Expanding \(\boldsymbol{f} = \sum_k c_k \boldsymbol{v}_k\) in this basis,
+                        \[
+                        0 = \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_k \lambda_k c_k^2,
+                        \]
+                        and since each \(\lambda_k c_k^2 \geq 0\), every summand must vanish. Thus \(c_k = 0\) 
+                        whenever \(\lambda_k > 0\), so \(\boldsymbol{f}\) lies in the span of eigenvectors 
+                        with eigenvalue zero — that is, \(\boldsymbol{f} \in \ker \boldsymbol{L}\).
+                    </p>
+                    <p>
+                        <strong>Step 2: \(\{\boldsymbol{1}_{C_1}, \ldots, \boldsymbol{1}_{C_c}\}\) is a basis of \(\ker \boldsymbol{L}\).</strong>
+                    </p>
+                    <p>
+                        Each \(\boldsymbol{1}_{C_k}\) is constant on its own component (value \(1\)) and 
+                        constant on every other component (value \(0\)), so by Step 1, 
+                        \(\boldsymbol{1}_{C_k} \in \ker \boldsymbol{L}\). They are linearly independent 
+                        because their supports \(C_1, \ldots, C_c\) are pairwise disjoint: any nontrivial 
+                        combination \(\sum_k a_k \boldsymbol{1}_{C_k}\) with some \(a_k \neq 0\) is nonzero 
+                        on \(C_k\). Conversely, any \(\boldsymbol{f} \in \ker \boldsymbol{L}\) is, by Step 1, 
+                        constant on each component — say with value \(a_k\) on \(C_k\) — and thus 
+                        \(\boldsymbol{f} = \sum_k a_k \boldsymbol{1}_{C_k}\) lies in the span. Therefore 
+                        \(\dim \ker \boldsymbol{L} = c\).
+                    </p>
+                    <p>
+                        <strong>Step 3: Connected case.</strong> If \(G\) is connected, \(c = 1\) and 
+                        \(\ker \boldsymbol{L} = \operatorname{span}\{\boldsymbol{1}\}\) is one-dimensional. 
+                        Hence \(\lambda_0 = 0\) is simple, and the next eigenvalue satisfies \(\lambda_1 > 0\). \(\square\)
                     </p>
                 </div>
 
@@ -229,24 +440,39 @@ uses_python: true
                     It is arguably the single most informative spectral quantity of a graph.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: The Fiedler Vector and Algebraic Connectivity</span>
+                <div class="theorem" id="D-algebraic_connectivity">
+                    <span class="theorem-title">Definition: Algebraic Connectivity</span>
                     <p>
-                        The eigenvalue \(\lambda_1\) is called the <strong>algebraic connectivity</strong> 
-                        (or <strong>Fiedler value</strong>) of the graph.
+                        The second-smallest eigenvalue \(\lambda_1\) of the Laplacian \(\boldsymbol{L}\) is called the 
+                        <strong>algebraic connectivity</strong> (or <strong>Fiedler value</strong>) of the graph.
                     </p>
-                    
-                    <ul style="padding-left: 40px;">
-                        <li>\(\lambda_1 > 0\) if and only if the graph is connected.</li>
-                        <li>A larger \(\lambda_1\) indicates a more "well-connected" graph (less of a "bottleneck").</li>
-                    </ul><br>
+                </div>
 
+                <div class="theorem" id="D-fiedler_vector">
+                    <span class="theorem-title">Definition: Fiedler Vector</span>
                     <p>
-                        The corresponding eigenvector \(\boldsymbol{v}_1\), known as the <strong>Fiedler vector</strong>,
-                        is central to spectral clustering. The sign of its entries (+/-) provides a natural
-                        partition of the graph's vertices into two sets, often revealing the graph's weakest link.
+                        An eigenvector \(\boldsymbol{v}_1\) corresponding to the algebraic connectivity 
+                        \(\lambda_1\) is called a <strong>Fiedler vector</strong>. The sign of its entries 
+                        (\(+\)/\(-\)) provides a natural partition of the graph's vertices into two sets, 
+                        often revealing the graph's weakest link. This is the foundation of spectral clustering.
                     </p>
-                    
+                </div>
+
+                <div class="theorem" id="T-fiedler_connectivity">
+                    <span class="theorem-title">Theorem: Algebraic Connectivity and Graph Connectedness</span>
+                    <p>
+                        For a graph \(G\):
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(\lambda_1 > 0\) if and only if \(G\) is connected.</li>
+                        <li>A larger \(\lambda_1\) indicates a more "well-connected" graph (less of a "bottleneck").</li>
+                    </ul>
+                    <p>
+                        The first statement is an immediate corollary of 
+                        <a href="#T-kernel_connectivity" class="ref-link"><strong>Theorem: Kernel of \(\boldsymbol{L}\) and Connected Components</strong></a>: 
+                        \(G\) is connected iff \(c = 1\) iff \(\dim \ker \boldsymbol{L} = 1\) iff \(\lambda_1 > 0\). 
+                        The second statement is quantified precisely by Cheeger's inequality below.
+                    </p>
                 </div>
                 
                 <h3>The Spectral Gap and Cheeger's Inequality</h3>
@@ -258,7 +484,7 @@ uses_python: true
                     minimum normalized cut of the graph.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-cheeger_inequality">
                     <span class="theorem-title">Theorem: Cheeger's Inequality</span>
                     <p>
                         Let \(h(G)\) be the <strong>Cheeger constant</strong> (or conductance), which measures the "bottleneck" 
@@ -269,14 +495,21 @@ uses_python: true
                         where \(\text{Vol}(S) = \sum_{v \in S} \deg(v)\).
                     </p>
                     <p>
-                        Cheeger's inequality bounds the second eigenvalue \(\lambda_1\) of the <strong>normalized Laplacian</strong> 
-                        (\(\mathcal{L}_{rw}\) or \(\mathcal{L}_{sym}\)) using this constant:
+                        Let \(\lambda_1^{\mathrm{norm}}\) denote the second smallest eigenvalue of the 
+                        <strong>normalized Laplacian</strong> \(\mathcal{L}_{sym}\) (equivalently \(\mathcal{L}_{rw}\); 
+                        they share the same spectrum by 
+                        <a href="#T-normalized_laplacian_spectrum" class="ref-link"><strong>Spectrum of the Normalized Laplacians</strong></a>). 
+                        Cheeger's inequality states
                         \[
-                        \frac{h(G)^2}{2} \leq \lambda_1 \leq 2h(G)
+                        \frac{h(G)^2}{2} \leq \lambda_1^{\mathrm{norm}} \leq 2 h(G).
                         \]
-                        This fundamental result links the spectral gap directly to the graph's geometric structure: a small \(\lambda_1\) 
-                        guarantees the existence of a "bottleneck" (a sparse cut), while a large \(\lambda_1\) certifies that the graph 
-                        is well-connected (an expander graph).
+                        This fundamental result links the spectral gap directly to the graph's geometric structure: a small 
+                        \(\lambda_1^{\mathrm{norm}}\) guarantees the existence of a "bottleneck" (a sparse cut), while a 
+                        large \(\lambda_1^{\mathrm{norm}}\) certifies that the graph is well-connected (an expander graph). 
+                        Note that this \(\lambda_1^{\mathrm{norm}}\) is for the <em>normalized</em> Laplacian and is distinct 
+                        from the unnormalized Fiedler value \(\lambda_1\) of \(\boldsymbol{L}\) discussed above; the two 
+                        are generally different numerically, though they agree qualitatively on connectivity 
+                        (both are zero iff \(G\) is disconnected).
                     </p>
                 </div>
 
@@ -305,7 +538,7 @@ uses_python: true
                     <a href="../Calculus/fourier_transform.html"><strong>Fourier transform</strong></a> to irregular domains.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_fourier_transform">
                     <span class="theorem-title">Definition: Graph Fourier Transform (GFT)</span>
                     <p>
                         Let \(\boldsymbol{V} = [\boldsymbol{v}_0, \boldsymbol{v}_1, \ldots, \boldsymbol{v}_{n-1}]\) 
@@ -313,7 +546,7 @@ uses_python: true
                         For any signal \(\boldsymbol{f}\) on the graph, its <strong>Graph Fourier Transform</strong> 
                         (\(\hat{\boldsymbol{f}}\)) is its projection onto this basis:
                         \[
-                        \hat{\boldsymbol{f}} = \boldsymbol{V}^T \boldsymbol{f}
+                        \hat{\boldsymbol{f}} = \boldsymbol{V}^\top \boldsymbol{f}
                         \quad \text{(Analysis)}
                         \]
                         And the inverse GFT reconstructs the signal:
@@ -344,10 +577,10 @@ uses_python: true
                 <p>
                     This frequency interpretation connects back to the Dirichlet energy. By expanding 
                     \(\boldsymbol{f}\) in the eigenbasis, we obtain a graph analogue of 
-                    <a href="../Calculus/fourier_series.html#parseval"><strong>Parseval's theorem</strong></a>:
+                    <a href="../Calculus/fourier_series.html#T-parseval_identity" class="ref-link"><strong>Parseval's theorem</strong></a>:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-parseval_graph">
                     <span class="theorem-title">Theorem: Parseval's Identity on Graphs</span>
                     <p>
                         For any graph signal \(\boldsymbol{f}\) with Graph Fourier Transform 
@@ -355,7 +588,7 @@ uses_python: true
                         \[
                         \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = 
                         \boldsymbol{f}^\top (\boldsymbol{V} \boldsymbol{\Lambda} \boldsymbol{V}^\top) \boldsymbol{f} =
-                        (\boldsymbol{V}^T \boldsymbol{f})^\top \boldsymbol{\Lambda} (\boldsymbol{V}^T \boldsymbol{f}) =
+                        (\boldsymbol{V}^\top \boldsymbol{f})^\top \boldsymbol{\Lambda} (\boldsymbol{V}^\top \boldsymbol{f}) =
                         \hat{\boldsymbol{f}}^\top \boldsymbol{\Lambda} \hat{\boldsymbol{f}} =
                         \sum_{k=0}^{n-1} \lambda_k \hat{f}_k^2
                         \]
@@ -447,7 +680,7 @@ uses_python: true
                     \(g(\boldsymbol{\Lambda})\) to the graph signal's "frequencies."
                     \[
                     \boldsymbol{f}_{out} = g(\boldsymbol{L}) \boldsymbol{f}_{in} = 
-                    \boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^T \boldsymbol{f}_{in}
+                    \boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^\top \boldsymbol{f}_{in}
                     \]
                     This is a "convolution" in the graph spectral domain.
                 </p>
@@ -486,7 +719,7 @@ uses_python: true
                     The formal continuous-time model for this is the 
                     <strong>graph heat equation</strong>:
                 </p>
-                <div class="theorem">
+                <div class="theorem" id="T-heat_diffusion_graph">
                     <span class="theorem-title">Theorem: Heat Diffusion on Graphs</span>
                     <p>
                         \[
@@ -498,7 +731,7 @@ uses_python: true
                         \boldsymbol{u}(t) = e^{-t\boldsymbol{L}} \boldsymbol{u}(0)
                         \]
                         Where \(e^{-t\boldsymbol{L}} = \sum_{k=0}^{\infty} \frac{(-t\boldsymbol{L})^k}{k!} = 
-                        \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^T\).
+                        \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top\).
                     </p>
                 </div>
                 <p>
@@ -545,9 +778,17 @@ uses_python: true
                          Foundational to bioinformatics, where GNNs (like those used by AlphaFold) model the 3D structure of proteins by 
                          treating amino acids as nodes and using Laplacian-based graph convolutions to capture bond geometry.
                     </li>
-                    <li><strong>Social Network Analysis:</strong><br>
-                        Continues to be the primary method for community detection (spectral clustering) and identifying network bottlenecks 
-                        (algebraic connectivity \(\lambda_1\)) at scale.
+                    <li><strong>Electrical Networks &amp; Effective Resistance:</strong><br>
+                        Treating each edge as a unit resistor, the 
+                        <a href="leastsquares.html#D-moore_penrose_pseudoinverse" class="ref-link"><strong>pseudoinverse</strong></a> 
+                        \(\boldsymbol{L}^+\) encodes <em>effective resistance</em> between vertex pairs — a geometric 
+                        distance on the graph induced by random walk commute times, with applications in chip design, 
+                        network tomography, and graph embeddings. 
+                    </li>
+                    <li><strong>Matrix-Tree Theorem (Kirchhoff):</strong><br>
+                        Any cofactor of \(\boldsymbol{L}\) equals the number of <strong>spanning trees</strong> of \(G\) — 
+                        a striking combinatorial identity connecting Laplacian spectra to graph enumeration, 
+                        foundational in statistical physics and random graph theory. 
                     </li>
                     <li><strong>Computer Vision:</strong><br>
                          Historically used for image segmentation and denoising via graph cuts (minimum cut problems, which are directly 
@@ -572,10 +813,82 @@ uses_python: true
                 </ol>
 
             </section>
+
+            <section id="ahead" class="section-content">
+                <h2>Looking Ahead</h2>
+
+                <p>
+                    The graph Laplacian closes the main arc of Section I. We began with abstract vector 
+                    spaces and linear maps; we developed the spectral theory of symmetric matrices; and we 
+                    have now deployed that theory on a concrete combinatorial object — a graph — to recover 
+                    connectivity, clustering, frequency, and diffusion, all from a single eigendecomposition. 
+                    The static algebraic tools of Section I have come together into a dynamical, 
+                    geometric picture.
+                </p>
+
+                <h3>Connection to the Incidence Matrix</h3>
+
+                <p>
+                    Our definition \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) is combinatorial: it 
+                    starts from adjacency counts. A second, deeper construction is available. If we orient 
+                    each edge arbitrarily and form the <strong>oriented incidence matrix</strong> 
+                    \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\) — placing \(+1\) at the tail and \(-1\) 
+                    at the head of each edge — then the Laplacian admits the factorization
+                    \[
+                    \boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top.
+                    \]
+                    This is the graph-theoretic analogue of the continuous identity 
+                    \(\Delta = \nabla \cdot \nabla\): the Laplacian is the composition of a discrete 
+                    <em>gradient</em> (\(\boldsymbol{B}^\top\), mapping vertex potentials to edge differences) 
+                    with a discrete <em>divergence</em> (\(\boldsymbol{B}\), mapping edge flows to vertex 
+                    net outflows). The factorization makes positive semidefiniteness immediate — 
+                    \(\boldsymbol{x}^\top\boldsymbol{L}\boldsymbol{x} = \|\boldsymbol{B}^\top\boldsymbol{x}\|^2\) — 
+                    and it opens the door to cycle/cut space decompositions, Kirchhoff's current law, 
+                    and the cohomological picture of graphs. This perspective is developed in full in 
+                    <a href="../Discrete/incidence_structure.html"><strong>Incidence Structure &amp; Cycle/Cut Spaces</strong></a> 
+                    in Section IV, where the Laplacian reappears as the degree-zero case of a much larger 
+                    object: the Hodge Laplacian on a simplicial complex.
+                </p>
+
+                <h3>Toward Continuous Symmetry: Lie Theory</h3>
+
+                <p>
+                    The symmetric matrices that dominated Section I admit a <em>discrete</em> symmetry 
+                    group (the orthogonal group acting by conjugation). The next chapters of Section I 
+                    will upgrade this picture to <em>continuous</em> symmetry. Starting with 
+                    <strong>Lie groups</strong> and their associated <strong>Lie algebras</strong>, we 
+                    will find that the matrix exponential \(e^{tX}\) plays, in the continuous setting, 
+                    exactly the role that the power \(P^t\) played for the stochastic matrices of the 
+                    <a href="stochastic.html"><strong>previous chapter</strong></a>, and that the 
+                    heat-diffusion kernel \(e^{-t\boldsymbol{L}}\) we derived above is the 
+                    graph-theoretic shadow of the same construction. Lie theory will give us the 
+                    vocabulary for rotation, rigid motion, and gauge symmetry — the continuous 
+                    counterparts of the discrete structures on which spectral clustering and the Fiedler 
+                    vector are built.
+                </p>
+
+                <h3>Toward Geometric Deep Learning</h3>
+
+                <p>
+                    The most direct downstream destination of this page is <strong>Graph Neural Networks</strong> 
+                    and, more broadly, <strong>Geometric Deep Learning</strong>. Every architectural idea 
+                    we have met — spectral filtering, Chebyshev polynomial approximations, the GCN 
+                    renormalization trick, heat-kernel diffusion, over-smoothing, graph differential 
+                    equations — rests on properties of \(\boldsymbol{L}\) proved on this page. A GNN 
+                    that respects graph structure is, at its core, a linear algebraic operator designed 
+                    to commute with \(\boldsymbol{L}\) in a controlled way. The same principle generalizes: 
+                    on a smooth manifold, the relevant operator is the Laplace-Beltrami operator; on a 
+                    group, it is the Casimir element; on a simplicial complex, it is the Hodge Laplacian. 
+                    The graph Laplacian is the simplest, cleanest instance of a pattern that will recur 
+                    throughout the geometric tracks of this curriculum.
+                </p>
+
+            </section>
             
         </div>
         
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
 
     </body>
 </html>
