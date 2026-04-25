@@ -64,7 +64,7 @@ uses_python: false
                     Note that \(a_i =0\) if \(i > n\) and \(b_i =0\) if \(i > m\).
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="D-polynomial_addition_multiplication">
                     <span class="theorem-title">Definition: Addition and Multiplication in \(R[x]\)</span>    
                     Let \(R\) be a commutative ring and let
                     \[
@@ -97,6 +97,13 @@ uses_python: false
                 </div>
 
                 <p>
+                    Under these operations, \(R[x]\) inherits the ring axioms from \(R\) coefficient-wise: associativity 
+                    and distributivity reduce to the corresponding identities for finite sums and products of coefficients in \(R\), 
+                    the zero polynomial (all coefficients \(0\)) is the additive identity, and additive inverses are obtained by 
+                    negating each coefficient. We treat \(R[x]\) as a ring throughout this page.
+                </p>
+
+                <p>
                     The formula for \(c_k\) is a <strong>discrete convolution</strong> - the same operation that appears throughout 
                     signal processing and deep learning. In Convolutional Neural Networks (CNNs), the "convolution" of a filter 
                     with an input follows this identical algebraic pattern. Understanding polynomial multiplication thus provides 
@@ -122,14 +129,14 @@ uses_python: false
                     operation, making these structures extremely efficient to implement in hardware.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-leading_coefficient">
                     <span class="theorem-title">Leading Coefficients</span>  
                     If a polynomial \(f(x)\) is written by
                     \[
                     f(x) = a_n x^n + a_{n-1} x^{n-1} + \cdots + a_1 x + a_0,
                     \]
                     where \(a_n \neq 0\), then \(a_n\) is called the <strong>leading coefficient</strong> of \(f(x)\), and \(n\) is 
-                    the <strong>degree</strong> of \(f(x)\), denoted \(\text{deg } f(x)\).
+                    the <strong>degree</strong> of \(f(x)\), denoted \(\operatorname{deg} f(x)\).
                 </div>
 
                 <p>
@@ -137,17 +144,21 @@ uses_python: false
                     This convention ensures the Division Algorithm statement remains valid when the remainder is zero.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-Dx_integral_domain">
                     <span class="theorem-title">Theorem: </span> 
                     If \(D\) is an integral domain, then \(D[x]\) is also an integral domain. 
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    Since \(D[x]\) is a ring, we show that \(D[x]\) is commutative with a unity and has no zero-divisors. It is clear that 
-                    \(D[x]\) is commutative.  
-                    If \(1\) is the unity element of \(D\), it is obvious that \(f(x) = 1 \) is the unity element of \(D[x]\).
-                    Here, suppose that
+                    Since \(D[x]\) is a ring, we show that \(D[x]\) is commutative with a unity and has no zero-divisors. 
+                    Commutativity of \(D[x]\) follows from the commutativity of \(D\): comparing the product formulas 
+                    for \(f(x)g(x)\) and \(g(x)f(x)\), each term \(a_i b_j\) in the former equals \(b_j a_i\) in the latter, 
+                    and the sums collect the same terms. 
+                    For the unity, let \(1\) denote the unity of \(D\); then the constant polynomial \(f(x) = 1\) satisfies 
+                    \(1 \cdot g(x) = g(x)\) for every \(g(x) \in D[x]\) (the product formula reduces to copying \(g\)'s coefficients), 
+                    so \(f(x) = 1\) is the unity of \(D[x]\). 
+                    Now suppose that
                     \[
                     f(x) = a_n x^n + a_{n-1} x^{n-1} + \cdots + a_1 x + a_0
                     \]
@@ -166,11 +177,11 @@ uses_python: false
                     \(F[x]\) is always an integral domain when \(F\) is a field.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-degree_product_integral_domain">
                     <span class="theorem-title">Corollary: Degree of a Product in a Integral Domain</span> 
                     Let \(D\) be an integral domain and let \(f(x), g(x) \in D[x]\) be nonzero polynomials. Then 
                     \[
-                    \text{deg}(f(x)g(x)) = \text{deg } f(x) + \text{deg } g(x).
+                    \operatorname{deg}(f(x)g(x)) = \operatorname{deg} f(x) + \operatorname{deg} g(x).
                     \]
                 </div>
 
@@ -198,16 +209,61 @@ uses_python: false
                     \[
                     f(x) = g(x)q(x) + r(x)
                     \]
-                    and either \(r(x) =0 \) or \(\text{deg } r(x) < \text{deg } g(x)\).
+                    and either \(r(x) =0 \) or \(\operatorname{deg} r(x) < \operatorname{deg} g(x)\).
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">The Essence of the Proof:</span>
-                    The existence of \(q(x)\) and \(r(x)\) is proven by a "descending degree" argument. If the remainder has a degree equal to or 
-                    higher than the divisor, we can always subtract a suitable multiple of the divisor to reduce the degree (this step requires 
-                    dividing by the leading coefficient, which is why \(F\) must be a field). This process must terminate because 
-                    degrees are nonnegative integers. The uniqueness follows from the fact that if two different representations existed, their difference 
-                    would imply a nonzero polynomial of lower degree than possible, leading to a contradiction.
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Existence.</strong> We argue by strong induction on \(n = \operatorname{deg} f(x)\).
+                    </p>
+                    <p>
+                        <em>Base case</em>: if \(f(x) = 0\) or \(\operatorname{deg} f(x) < \operatorname{deg} g(x)\), 
+                        set \(q(x) = 0\) and \(r(x) = f(x)\); the required conditions are immediate.
+                    </p>
+                    <p>
+                        <em>Inductive step</em>: assume \(n = \operatorname{deg} f(x) \geq \operatorname{deg} g(x) = m\), 
+                        and write
+                        \[
+                        f(x) = a_n x^n + \cdots + a_0, \quad g(x) = b_m x^m + \cdots + b_0, \quad a_n \neq 0,\ b_m \neq 0.
+                        \]
+                        Since \(F\) is a field, \(b_m^{-1}\) exists. Define
+                        \[
+                        f_1(x) = f(x) - a_n b_m^{-1} x^{n-m} g(x).
+                        \]
+                        The coefficient of \(x^n\) in \(f_1(x)\) is \(a_n - a_n b_m^{-1} \cdot b_m = 0\), so either 
+                        \(f_1(x) = 0\) or \(\operatorname{deg} f_1(x) < n\). 
+                        Applying the induction hypothesis to \(f_1(x)\) (whose degree is strictly less than \(n\), 
+                        or which is zero), there exist \(q_1(x), r_1(x) \in F[x]\) with
+                        \[
+                        f_1(x) = g(x) q_1(x) + r_1(x), \quad r_1(x) = 0 \text{ or } \operatorname{deg} r_1(x) < \operatorname{deg} g(x).
+                        \]
+                        Substituting back:
+                        \[
+                        f(x) = a_n b_m^{-1} x^{n-m} g(x) + g(x) q_1(x) + r_1(x) = g(x)\bigl[a_n b_m^{-1} x^{n-m} + q_1(x)\bigr] + r_1(x).
+                        \]
+                        Setting \(q(x) = a_n b_m^{-1} x^{n-m} + q_1(x)\) and \(r(x) = r_1(x)\), we have \(f(x) = g(x) q(x) + r(x)\), 
+                        and the condition on \(r(x)\) is inherited from \(r_1(x)\).
+                    </p>
+                    <p>
+                        <strong>Uniqueness.</strong> Suppose \(f(x) = g(x) q(x) + r(x) = g(x) \bar{q}(x) + \bar{r}(x)\), 
+                        where each of \(r(x), \bar{r}(x)\) is either \(0\) or of degree less than \(\operatorname{deg} g(x)\). 
+                        Subtracting:
+                        \[
+                        g(x)\bigl[q(x) - \bar{q}(x)\bigr] = \bar{r}(x) - r(x).
+                        \]
+                        Suppose for contradiction that \(q(x) - \bar{q}(x) \neq 0\). Since \(F[x]\) is an 
+                        <a href="#T-Dx_integral_domain" class="ref-link"><strong>integral domain</strong></a>, the 
+                        <a href="#T-degree_product_integral_domain" class="ref-link"><strong>degree of the product</strong></a> 
+                        on the left equals 
+                        \(\operatorname{deg} g(x) + \operatorname{deg}\bigl(q(x) - \bar{q}(x)\bigr) \geq \operatorname{deg} g(x)\). 
+                        On the right, when \(\bar{r}(x) - r(x) \neq 0\), its degree satisfies 
+                        \(\operatorname{deg}\bigl(\bar{r}(x) - r(x)\bigr) \leq \max\bigl(\operatorname{deg} \bar{r}(x), \operatorname{deg} r(x)\bigr) < \operatorname{deg} g(x)\); 
+                        if instead \(\bar{r}(x) - r(x) = 0\), the right side is \(0\). 
+                        Either way, the right side cannot have degree \(\geq \operatorname{deg} g(x)\), a contradiction. 
+                        Hence \(q(x) - \bar{q}(x) = 0\), giving \(q(x) = \bar{q}(x)\). Substituting back into 
+                        \(g(x)[q(x) - \bar{q}(x)] = \bar{r}(x) - r(x)\) yields \(\bar{r}(x) = r(x)\).
+                    </p>
                 </div>
 
                  <p>
@@ -215,30 +271,57 @@ uses_python: false
                     finite set of remainders. Two immediate and powerful consequences follow:
                 </p>
    
-                <div class="theorem">
+                <div class="theorem" id="T-remainder_theorem">
                     <span class="theorem-title">Corollary: Remainder Theorem</span> 
                     Let \(F\) be a field, \(a \in F\), and \(f(x) \in F[x]\). Then \(f(a)\) is the remainder in 
                     the division of \(f(x)\) by \(x - a\).
                 </div>
 
-                <div class="theorem">
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    By the Division Algorithm, \(f(x) = (x - a) q(x) + r(x)\) with \(r(x) = 0\) or 
+                    \(\operatorname{deg} r(x) < \operatorname{deg}(x - a) = 1\); that is, \(r(x)\) is a constant \(c \in F\). 
+                    Substituting \(x = a\) gives \(f(a) = (a - a)q(a) + c = c\), so the remainder equals \(f(a)\).
+                </div>
+
+                <div class="theorem" id="T-factor_theorem">
                     <span class="theorem-title">Corollary: Factor Theorem</span> 
                     Let \(F\) be a field, \(a \in F\), and \(f(x) \in F[x]\). Then \(a\) is a zero of \(f(x)\) 
                     if and only if \(x -a\) is a factor of \(f(x)\).
                 </div>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: A Polynomial of Degree \(n\) Have at Most \(n\) Zeros,</span> 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    By the <a href="#T-remainder_theorem" class="ref-link"><strong>Remainder Theorem</strong></a>, the remainder 
+                    of \(f(x)\) divided by \(x - a\) equals \(f(a)\). Hence \(x - a\) divides \(f(x)\) (i.e., the remainder is \(0\)) 
+                    if and only if \(f(a) = 0\), i.e., \(a\) is a zero of \(f(x)\).
+                </div>
+
+                <div class="theorem" id="T-poly_at_most_n_zeros">
+                    <span class="theorem-title">Theorem: A Polynomial of Degree \(n\) Has at Most \(n\) Zeros</span> 
                     A polynomial of degree \(n\) over a field has at most \(n\) zeros, counting multiplicity. 
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    We argue by induction on \(n = \operatorname{deg} f(x)\). The case \(n = 0\) is immediate: a nonzero constant 
+                    polynomial has no zeros. For \(n \geq 1\), if \(f(x)\) has no zeros in \(F\), the bound holds vacuously. 
+                    Otherwise, let \(a\) be a zero of \(f(x)\); by the 
+                    <a href="#T-factor_theorem" class="ref-link"><strong>Factor Theorem</strong></a>, 
+                    \(f(x) = (x - a) q(x)\) for some \(q(x) \in F[x]\) with \(\operatorname{deg} q(x) = n - 1\) (by 
+                    <a href="#T-degree_product_integral_domain" class="ref-link"><strong>Degree of a Product</strong></a>, 
+                    using that \(F\) is an integral domain). By induction, \(q(x)\) has at most \(n - 1\) zeros. Any zero \(b\) of \(f\) other than \(a\) 
+                    satisfies \((b - a) q(b) = 0\), and since \(b - a \neq 0\) and \(F\) has no zero-divisors, \(q(b) = 0\). 
+                    Thus \(f\) has at most \(1 + (n - 1) = n\) zeros, counted with multiplicity.
                 </div>
 
                 <p>
                     The Division Algorithm does more than just count zeros - it reveals the ideal structure of polynomial rings. 
-                    Recall that an <strong>ideal</strong> is a subset closed under addition and "absorbing" multiplication from the ring. 
+                    Recall that an <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> is a subset closed under addition and "absorbing" multiplication from the ring. 
                     In \(F[x]\), every ideal turns out to have a remarkably simple form:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-pid">
                     <span class="theorem-title">Definition: Principal Ideal Domain (PID)</span> 
                     A <strong>principal ideal domain</strong> is an integral domain \(R\) in which every ideal has 
                     the form 
@@ -255,18 +338,23 @@ uses_python: false
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    First, we know that \(F[x]\) is an integral domain. Let \(I\) be an ideal of \(F[x]\). If \(I = \{0\}\), 
-                    then \(I = \langle 0 \rangle\). If \(I \neq \{0\}\), then among all the elements of \(I\), let \(g(x)\) be 
+                    First, we know that \(F[x]\) is an integral domain. Let \(I\) be an ideal of \(F[x]\). 
+                    If \(I = \{0\}\), then \(I = \langle 0 \rangle\) (since \(\langle 0 \rangle = \{r \cdot 0 \mid r \in F[x]\} = \{0\}\)). 
+                    If \(I \neq \{0\}\), then among all the nonzero elements of \(I\), let \(g(x)\) be 
                     one of minimum degree. 
-                    Since \(g(x) \in I\), we have \(\langle g(x) \rangle \subseteq I\). Now, let \(f(x) \in I\). 
+                    Since \(g(x) \in I\) and \(I\) is an ideal, every multiple of \(g(x)\) lies in \(I\); that is, 
+                    \(\langle g(x) \rangle = \{r(x) g(x) \mid r(x) \in F[x]\} \subseteq I\). 
+                    Conversely, let \(f(x) \in I\). 
                     Then, by the division algorithm, 
                     \[
                     f(x) = g(x)q(x) + r(x),
                     \]
-                    where \(r(x) = 0\) or \(\text{deg } r(x) < \text{deg } g(x)\).
+                    where \(r(x) = 0\) or \(\operatorname{deg} r(x) < \operatorname{deg} g(x)\).
                     <br>
-                    Since \(r(x) = f(x) - g(x)q(x) \in I\), the minimality of \(\text{deg } g(x)\) implies that the latter condition 
-                    cannot hold. So, \(r(x) = 0\) and thus \(f(x) \in \langle g(x) \rangle\). Therefore, \(I \subseteq \langle g(x) \rangle\).
+                    Since \(r(x) = f(x) - g(x)q(x) \in I\), the minimality of \(\operatorname{deg} g(x)\) implies that the latter condition 
+                    cannot hold. So, \(r(x) = 0\) and thus \(f(x) \in \langle g(x) \rangle\). Therefore, \(I \subseteq \langle g(x) \rangle\). 
+                    Combining both inclusions gives \(I = \langle g(x) \rangle\), so \(I\) is principal. Since this holds for every ideal of \(F[x]\), 
+                    \(F[x]\) is a principal ideal domain.
                 </div>
 
                 <p>
@@ -306,10 +394,29 @@ uses_python: false
                     over \(\mathbb{C}\). For cryptography, we specifically need irreducibility over finite fields like \(\mathbb{Z}_2\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-reducibility_test_2_3">
                     <span class="theorem-title">Theorem: Reducibility Test for Degrees 2 and 3</span> 
-                    Let \(F\) be a field. If \(f(x) \in F[x]\) and \(\text{deg } f(x)\) is 2 or 3, then \(f(x)\) is reducible 
+                    Let \(F\) be a field. If \(f(x) \in F[x]\) and \(\operatorname{deg} f(x)\) is 2 or 3, then \(f(x)\) is reducible 
                     over \(F\) if and only if \(f(x)\) has a zero in \(F\).
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    (\(\Rightarrow\)) Suppose \(f(x)\) is reducible: there exist \(g(x), h(x) \in F[x]\) both nonunit with 
+                    \(f(x) = g(x) h(x)\). Since \(F[x]\) units are exactly the nonzero constants, both \(g(x)\) and \(h(x)\) have degree 
+                    \(\geq 1\). Since \(F\) is a field (hence an integral domain), the 
+                    <a href="#T-degree_product_integral_domain" class="ref-link"><strong>degree of the product</strong></a> gives 
+                    \(\operatorname{deg} f(x) = \operatorname{deg} g(x) + \operatorname{deg} h(x)\). Because \(\operatorname{deg} f(x)\) is 2 or 3, 
+                    at least one of \(g(x), h(x)\) must have degree 1. Say \(g(x) = ax + b\) with \(a \neq 0\). Then \(-a^{-1}b \in F\) is a zero 
+                    of \(g(x)\), and therefore a zero of \(f(x)\).
+                    <br><br>
+                    (\(\Leftarrow\)) Suppose \(f(\alpha) = 0\) for some \(\alpha \in F\). By the 
+                    <a href="#T-factor_theorem" class="ref-link"><strong>Factor Theorem</strong></a>, \(x - \alpha\) is a factor of \(f(x)\), 
+                    so \(f(x) = (x - \alpha) q(x)\) for some \(q(x) \in F[x]\). By the 
+                    <a href="#T-degree_product_integral_domain" class="ref-link"><strong>degree of the product</strong></a>, 
+                    \(\operatorname{deg} q(x) = \operatorname{deg} f(x) - 1 \geq 1\), so \(q(x)\) is nonconstant. 
+                    Both \(x - \alpha\) (degree 1) and \(q(x)\) (degree \(\geq 1\)) have positive degree, so neither is a unit in \(F[x]\). 
+                    Moreover, \(\operatorname{deg} f(x) \geq 2\) ensures \(f(x)\) is itself nonzero and nonunit. Hence \(f(x)\) is reducible over \(F\).
                 </div>
 
                  <p>
@@ -318,7 +425,7 @@ uses_python: false
                     <strong>content</strong>:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-content_primitive_polynomial">
                     <span class="theorem-title">Definition: Content of a Polynomial, Primitive Polynomial</span> 
                     The <strong>content</strong> of a nonzero polynomial \(a_n x^n + a_{n-1} x^{n-1} + \cdots + a_1 x + a_0\), where the \(a\)'s 
                     are integers, is the greatest common divisor of the integers \(a_n, a_{n-1}, \cdots, a_0\). A <strong>primitive polynomial</strong> 
@@ -326,24 +433,78 @@ uses_python: false
                 </div>
 
 
-                <div class="theorem">
+                <div class="theorem" id="T-gauss_lemma">
                     <span class="theorem-title">Theorem: Gauss's Lemma </span> 
                     The product of two primitive polynomials is primitive. 
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    Let \(f(x), g(x) \in \mathbb{Z}[x]\) be primitive, and suppose for contradiction that \(f(x)g(x)\) is not primitive. 
+                    Then there exists a prime \(p\) dividing the content of \(f(x)g(x)\); that is, \(p\) divides every coefficient of \(f(x)g(x)\). 
+                    Let \(\bar{f}(x), \bar{g}(x) \in \mathbb{Z}_p[x]\) be the polynomials obtained from \(f(x), g(x)\) by reducing each 
+                    coefficient modulo \(p\). The map \(\mathbb{Z}[x] \to \mathbb{Z}_p[x]\) given by coefficient-wise reduction is a ring 
+                    homomorphism, so \(\overline{f(x)g(x)} = \bar{f}(x)\bar{g}(x)\). By hypothesis, \(\overline{f(x)g(x)} = 0\) in \(\mathbb{Z}_p[x]\).
+                    <br><br>
+                    Since \(p\) is prime, <a href="intro_rings.html#T-Zp_is_field" class="ref-link"><strong>\(\mathbb{Z}_p\) is a field</strong></a>, 
+                    hence an integral domain. By the result that 
+                    <a href="#T-Dx_integral_domain" class="ref-link"><strong>\(D[x]\) is an integral domain whenever \(D\) is</strong></a>, 
+                    \(\mathbb{Z}_p[x]\) is an integral domain. Thus \(\bar{f}(x)\bar{g}(x) = 0\) forces \(\bar{f}(x) = 0\) or \(\bar{g}(x) = 0\). 
+                    The first case means \(p\) divides every coefficient of \(f(x)\), contradicting the primitivity of \(f(x)\); the second 
+                    case contradicts the primitivity of \(g(x)\). This contradiction completes the proof.
                 </div>
 
                 <p>
                     At first glance, Gauss's Lemma may seem like a niche property of primitive polynomials. However, its true power 
                     lies in how it connects the arithmetic of integers to the arithmetic of rational numbers. Since any polynomial with 
                     rational coefficients can be transformed into a primitive integer polynomial by clearing denominators, we obtain 
-                    the following crucial result:
+                    the following crucial corollary:
                 </p>
 
-                <p style="text-align: center; font-style: italic; margin: 20px 0;">
-                    If \(f(x) \in \mathbb{Z}[x]\) is reducible over \(\mathbb{Q}\), then it is also reducible over \(\mathbb{Z}\).
-                </p>
+                <div class="theorem" id="T-reducible_Q_implies_reducible_Z">
+                    <span class="theorem-title">Theorem: Reducibility over \(\mathbb{Q}\) Implies Reducibility over \(\mathbb{Z}\)</span> 
+                    Let \(f(x) \in \mathbb{Z}[x]\). If \(f(x) = g(x) h(x)\) with \(g(x), h(x) \in \mathbb{Q}[x]\) and 
+                    \(\operatorname{deg} g(x), \operatorname{deg} h(x) < \operatorname{deg} f(x)\), then there exist 
+                    \(g_1(x), h_1(x) \in \mathbb{Z}[x]\) with \(f(x) = g_1(x) h_1(x)\), \(\operatorname{deg} g_1(x) = \operatorname{deg} g(x)\), 
+                    and \(\operatorname{deg} h_1(x) = \operatorname{deg} h(x)\). In particular, if \(f(x)\) is reducible over \(\mathbb{Q}\), 
+                    then it is reducible over \(\mathbb{Z}\).
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <strong>Reduction to primitive \(f(x)\).</strong> Write \(f(x) = c \cdot f'(x)\) where \(c \in \mathbb{Z}\) is the 
+                    content of \(f(x)\) and \(f'(x) \in \mathbb{Z}[x]\) is primitive. Then \(f(x) = g(x) h(x)\) yields 
+                    \(f'(x) = (g(x)/c) \cdot h(x)\) in \(\mathbb{Q}[x]\), still with degrees \(\operatorname{deg}(g(x)/c) = \operatorname{deg} g(x)\) 
+                    and \(\operatorname{deg} h(x)\), both \(< \operatorname{deg} f'(x) = \operatorname{deg} f(x)\). 
+                    If we prove the result for the primitive case — obtaining \(f'(x) = g_1'(x) h_1'(x)\) in \(\mathbb{Z}[x]\) with the 
+                    required degree equalities — then \(f(x) = (c \cdot g_1'(x)) \cdot h_1'(x)\) is the required \(\mathbb{Z}\)-factorization, 
+                    with \(\operatorname{deg}(c \cdot g_1'(x)) = \operatorname{deg} g_1'(x) = \operatorname{deg} g(x)\). 
+                    So we may assume \(f(x)\) is primitive.
+                    <br><br>
+                    <strong>Main argument.</strong> Let \(a\) be the least common multiple of the denominators of the coefficients of \(g(x)\), 
+                    and \(b\) the least common multiple of the denominators of the coefficients of \(h(x)\). Then \(a g(x), b h(x) \in \mathbb{Z}[x]\), and
+                    \[
+                    a b f(x) = a g(x) \cdot b h(x).
+                    \]
+                    Let \(c_1\) be the content of \(a g(x)\) and \(c_2\) the content of \(b h(x)\). Writing \(a g(x) = c_1 g_1(x)\) and 
+                    \(b h(x) = c_2 h_1(x)\) where \(g_1(x), h_1(x) \in \mathbb{Z}[x]\) are primitive, we obtain
+                    \[
+                    a b f(x) = c_1 c_2 g_1(x) h_1(x).
+                    \]
+                    By <a href="#T-gauss_lemma" class="ref-link"><strong>Gauss's Lemma</strong></a>, \(g_1(x) h_1(x)\) is primitive, 
+                    so the content of the right side is \(c_1 c_2\). Since \(f(x)\) is primitive, the content of the left side is \(ab\). 
+                    Therefore \(ab = c_1 c_2\), so \(a b f(x) = ab \cdot g_1(x) h_1(x)\). Since \(\mathbb{Z}[x]\) is an 
+                    <a href="#T-Dx_integral_domain" class="ref-link"><strong>integral domain</strong></a> and \(ab \neq 0\), we may cancel to obtain
+                    \[
+                    f(x) = g_1(x) h_1(x), \quad g_1(x), h_1(x) \in \mathbb{Z}[x].
+                    \]
+                    Since dividing a polynomial by a nonzero integer constant does not change its degree, 
+                    \(\operatorname{deg} g_1(x) = \operatorname{deg}(a g(x)) = \operatorname{deg} g(x)\), and similarly 
+                    \(\operatorname{deg} h_1(x) = \operatorname{deg} h(x)\).
+                </div>
                     
                 <p>
-                    While it may seem intuitive that integer polynomials should have integer factors, Gauss's Lemma provides the formal guarantee 
+                    While it may seem intuitive that integer polynomials should have integer factors, this result provides the formal guarantee 
                     that allows us to ignore the infinite complexity of rational numbers. 
                 </p> 
                 <p> 
@@ -353,12 +514,44 @@ uses_python: false
                     to irreducibility. 
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-mod_p_irreducibility_test">
                     <span class="theorem-title">Theorem: Mod \(p\) Irreducibility Test</span> 
-                    Let \(f(x) \in \mathbb{Z}[x]\) with \(\text{deg } f(x) > 1\) and let \(p\) be a prime that does not divide the 
+                    Let \(f(x) \in \mathbb{Z}[x]\) with \(\operatorname{deg} f(x) > 1\) and let \(p\) be a prime that does not divide the 
                     lead coefficient of \(f(x)\) nor the constant term of \(f(x)\). Let \(\bar{f}(x)\) be the polynomial in 
                     \(\mathbb{Z}_p [x]\) obtained from \(f(x)\) by reducing all the coefficients of \(f(x)\) modulo \(p\). If 
                     \(\bar{f}(x)\) is irreducible over  \(\mathbb{Z}_p\), then \(f(x)\) is irreducible over \(\mathbb{Q}\).
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    We prove the contrapositive: if \(f(x)\) is reducible over \(\mathbb{Q}\), then \(\bar{f}(x)\) is reducible over \(\mathbb{Z}_p\).
+                    <br><br>
+                    Suppose \(f(x)\) is reducible over \(\mathbb{Q}\); that is, \(f(x) = g(x) h(x)\) with \(g(x), h(x) \in \mathbb{Q}[x]\) 
+                    both nonunit, equivalently with \(\operatorname{deg} g(x), \operatorname{deg} h(x) \geq 1\). 
+                    By the <a href="#T-reducible_Q_implies_reducible_Z" class="ref-link"><strong>degree-preserving \(\mathbb{Z}\)-factorization</strong></a>, 
+                    we may assume \(g(x), h(x) \in \mathbb{Z}[x]\) with \(\operatorname{deg} g(x), \operatorname{deg} h(x) < \operatorname{deg} f(x)\). 
+                    Let \(\bar{g}(x), \bar{h}(x)\) be obtained from \(g(x), h(x)\) by reducing coefficients modulo \(p\). 
+                    Since coefficient-wise reduction is a ring homomorphism \(\mathbb{Z}[x] \to \mathbb{Z}_p[x]\), we have 
+                    \(\bar{f}(x) = \bar{g}(x) \bar{h}(x)\).
+                    <br><br>
+                    Since \(p\) does not divide the lead coefficient of \(f(x)\), the leading term survives reduction, 
+                    so \(\operatorname{deg} \bar{f}(x) = \operatorname{deg} f(x)\). Reduction modulo \(p\) cannot increase degree, 
+                    so \(\operatorname{deg} \bar{g}(x) \leq \operatorname{deg} g(x) < \operatorname{deg} f(x) = \operatorname{deg} \bar{f}(x)\), 
+                    and similarly \(\operatorname{deg} \bar{h}(x) < \operatorname{deg} \bar{f}(x)\). 
+                    The hypothesis \(p \nmid\) constant term of \(f(x)\) ensures \(\bar{f}(0) \neq 0\), so \(\bar{g}(0) \neq 0\) and 
+                    \(\bar{h}(0) \neq 0\); in particular, neither \(\bar{g}(x)\) nor \(\bar{h}(x)\) is the zero polynomial.
+                    <br><br>
+                    Since \(p\) is prime, <a href="intro_rings.html#T-Zp_is_field" class="ref-link"><strong>\(\mathbb{Z}_p\) is a field</strong></a>, 
+                    hence an integral domain, so by the result that 
+                    <a href="#T-Dx_integral_domain" class="ref-link"><strong>\(D[x]\) is an integral domain whenever \(D\) is</strong></a>, 
+                    \(\mathbb{Z}_p[x]\) is also an integral domain. The 
+                    <a href="#T-degree_product_integral_domain" class="ref-link"><strong>degree of the product</strong></a> then gives 
+                    \(\operatorname{deg} \bar{g}(x) + \operatorname{deg} \bar{h}(x) = \operatorname{deg} \bar{f}(x)\). 
+                    Combined with \(\operatorname{deg} \bar{g}(x), \operatorname{deg} \bar{h}(x) < \operatorname{deg} \bar{f}(x)\), this forces 
+                    \(\operatorname{deg} \bar{g}(x) \geq 1\) and \(\operatorname{deg} \bar{h}(x) \geq 1\); otherwise one factor would be a 
+                    nonzero constant and the other would have degree equal to \(\operatorname{deg} \bar{f}(x)\). 
+                    Hence neither \(\bar{g}(x)\) nor \(\bar{h}(x)\) is a unit in \(\mathbb{Z}_p[x]\), and \(\bar{f}(x) = \bar{g}(x) \bar{h}(x)\) 
+                    is a nontrivial factorization. So \(\bar{f}(x)\) is reducible over \(\mathbb{Z}_p\), completing the contrapositive.
                 </div>
 
                 <p>
@@ -380,6 +573,33 @@ uses_python: false
                         <li>\(p^2 \nmid a_0\) (the square of the prime does not divide the constant term)</li>
                     </ol><br>
                     Then \(f(x)\) is irreducible over \(\mathbb{Q}\). 
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        We argue by contradiction. Suppose \(f(x)\) is reducible over \(\mathbb{Q}\). By the 
+                        <a href="#T-reducible_Q_implies_reducible_Z" class="ref-link"><strong>degree-preserving Z-factorization</strong></a>, 
+                        there exist \(g(x) = b_r x^r + \cdots + b_0\) and \(h(x) = c_s x^s + \cdots + c_0\) in \(\mathbb{Z}[x]\) with 
+                        \(f(x) = g(x) h(x)\), \(1 \leq r, s\), and \(r + s = n\).
+                    </p>
+                    <p>
+                        Comparing constant terms, \(a_0 = b_0 c_0\). Conditions (2) and (3) — \(p \mid a_0\) but \(p^2 \nmid a_0\) — 
+                        force \(p\) to divide exactly one of \(b_0, c_0\). Without loss of generality, say \(p \mid b_0\) and \(p \nmid c_0\). 
+                        Comparing leading coefficients, \(a_n = b_r c_s\); by condition (1), \(p \nmid a_n\), so \(p \nmid b_r\) (and \(p \nmid c_s\)).
+                    </p>
+                    <p>
+                        Since \(p \mid b_0\) but \(p \nmid b_r\), there is a least index \(t\) with \(1 \leq t \leq r\) such that \(p \nmid b_t\). 
+                        Now examine the coefficient
+                        \[
+                        a_t = \sum_{i + j = t} b_i c_j = b_t c_0 + \sum_{\substack{i + j = t \\ i < t}} b_i c_j,
+                        \]
+                        where the second sum ranges over the valid index pairs \((i, j)\) with \(0 \leq i \leq r\), \(0 \leq j \leq s\), 
+                        and \(i < t\) (this sum has the form \(b_{t-1} c_1 + b_{t-2} c_2 + \cdots\), truncated at \(j = s\) when \(t > s\)).
+                        Since \(t \leq r < n\), condition (2) gives \(p \mid a_t\). By the choice of \(t\), every term in the second sum 
+                        involves some \(b_i\) with \(i < t\) and is therefore divisible by \(p\). Subtracting, \(p \mid b_t c_0\). 
+                        But \(p\) is prime, \(p \nmid b_t\), and \(p \nmid c_0\) — a contradiction.
+                    </p>
                 </div>
 
                 <p>
@@ -410,15 +630,9 @@ uses_python: false
                     <strong>Algorithmic Perspective:</strong> Testing irreducibility is a fundamental operation in <strong>Computer Algebra Systems  (CAS)</strong> 
                     like Mathematica. The tests we've covered (degree 2-3 test, Mod \(p\) test, Eisenstein's Criterion) 
                     are exactly what these systems use internally. For large polynomials over finite fields, more sophisticated algorithms 
-                    are employed: Berlekamp's algorithm (Berlekamp, 1967), a deterministic method based on linear algebra, and the 
-                    Cantor-Zassenhaus algorithm (Cantor & Zassenhaus, 1981), a probabilistic method that is now the dominant approach 
+                    are employed: <strong>Berlekamp's algorithm</strong> (1967), a deterministic method based on linear algebra, and the 
+                    <strong>Cantor-Zassenhaus algorithm</strong> (1981), a probabilistic method that is now the dominant approach 
                     in modern implementations.
-                    <br><br>
-                    References:
-                    <ul style="padding-left: 40px;">
-                        <li>Berlekamp, E. R. (1967). Factoring polynomials over finite fields. Bell System Technical Journal, 46.</li>
-                        <li>Cantor, D. G., & Zassenhaus, H. (1981). A new algorithm for factoring polynomials over finite fields. Mathematics of Computation, 36(154).</li>
-                    </ul>    
                 </p>
 
                 <div class="theorem" id="T-principal_ideal_maximal_iff_irreducible">
@@ -427,19 +641,60 @@ uses_python: false
                     Then \(\langle p(x) \rangle\) is a maximal ideal in \(F[x]\) if and only if \(p(x)\) is irreducible over \(F\).
                 </div>
 
-                <p>
-                    This theorem is the cornerstone for constructing new fields. From our earlier study of rings, we know a fundamental truth: 
-                    a factor ring is a <strong>field</strong> if and only if the ideal we divide by is <strong>maximal</strong>. 
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    (\(\Rightarrow\)) Suppose \(\langle p(x) \rangle\) is a 
+                    <a href="ideals.html#D-maximal_ideal" class="ref-link"><strong>maximal ideal</strong></a> in \(F[x]\). 
+                    Since maximal ideals are proper, \(\langle p(x) \rangle \neq F[x]\), so \(p(x)\) is not a unit. 
+                    Also \(\langle p(x) \rangle \neq \{0\}\) — otherwise, by the 
+                    <a href="ideals.html#T-quotient_field_maximal" class="ref-link"><strong>characterization of factor rings as fields via maximal ideals</strong></a>, 
+                    the quotient \(F[x]/\{0\} \cong F[x]\) would be a field, but \(x \in F[x]\) has no 
+                    multiplicative inverse — so \(p(x) \neq 0\).
+                    <br><br>
+                    Suppose \(p(x) = g(x) h(x)\) with \(g(x), h(x) \in F[x]\). Then \(p(x) \in \langle g(x) \rangle\), so 
+                    \(\langle p(x) \rangle \subseteq \langle g(x) \rangle \subseteq F[x]\). By maximality, either 
+                    \(\langle g(x) \rangle = \langle p(x) \rangle\) or \(\langle g(x) \rangle = F[x]\). In the second case, 
+                    \(1 \in \langle g(x) \rangle\), so \(g(x)\) is a unit. In the first case, \(g(x) \in \langle p(x) \rangle\), so 
+                    \(g(x) = p(x) \ell(x)\) for some \(\ell(x) \in F[x]\); substituting, \(p(x) = p(x) \ell(x) h(x)\), and since 
+                    \(p(x) \neq 0\) and \(F[x]\) is an 
+                    <a href="#T-Dx_integral_domain" class="ref-link"><strong>integral domain</strong></a>, we may cancel to obtain 
+                    \(\ell(x) h(x) = 1\), so \(h(x)\) is a unit. In either case, one of \(g(x), h(x)\) is a unit, so \(p(x)\) is irreducible.
+                    <br><br>
+                    (\(\Leftarrow\)) Suppose \(p(x)\) is irreducible over \(F\), and let \(I\) be any ideal of \(F[x]\) with 
+                    \(\langle p(x) \rangle \subseteq I \subseteq F[x]\). Since 
+                    <a href="#T-Fx_is_pid" class="ref-link"><strong>\(F[x]\) is a principal ideal domain</strong></a>, 
+                    \(I = \langle g(x) \rangle\) for some \(g(x) \in F[x]\). Now \(p(x) \in \langle g(x) \rangle\), so 
+                    \(p(x) = g(x) h(x)\) for some \(h(x) \in F[x]\). Note \(g(x) \neq 0\), since otherwise \(I = \{0\}\) would not contain 
+                    the nonzero \(p(x)\). By irreducibility, either \(g(x)\) or \(h(x)\) is a unit in \(F[x]\).
+                    <br><br>
+                    If \(g(x)\) is a unit, then \(1 = g(x) \cdot g(x)^{-1} \in \langle g(x) \rangle = I\), so \(I = F[x]\). 
+                    If \(h(x)\) is a unit, then \(g(x) = p(x) h(x)^{-1} \in \langle p(x) \rangle\), so 
+                    \(I = \langle g(x) \rangle \subseteq \langle p(x) \rangle\); combined with \(\langle p(x) \rangle \subseteq I\), 
+                    this gives \(I = \langle p(x) \rangle\). Finally, \(\langle p(x) \rangle\) is proper: since \(p(x)\) is irreducible, 
+                    \(p(x)\) is not a unit, so \(\langle p(x) \rangle \neq F[x]\). Hence \(\langle p(x) \rangle\) is a proper ideal, and 
+                    the only ideals of \(F[x]\) containing \(\langle p(x) \rangle\) are \(\langle p(x) \rangle\) and \(F[x]\) themselves; 
+                    therefore \(\langle p(x) \rangle\) is maximal.
+                </div>
 
                 <p>
-                    By combining these two ideas, we reach the ultimate goal of this chapter:
+                    This theorem is the cornerstone for constructing new fields. Combining it with the 
+                    <a href="ideals.html#T-quotient_field_maximal" class="ref-link"><strong>characterization of factor rings as fields via maximal ideals</strong></a>, 
+                    we reach the ultimate goal of this chapter:
                 </p>
 
-                <p style="text-align: center; font-style: italic; margin: 20px 0;">
-                    The quotient ring \(F[x] / \langle p(x) \rangle\) is a field if and only if \(p(x)\) is 
-                    irreducible over \(F\).
-                </p>
+                <div class="theorem" id="T-quotient_field_irreducible">
+                    <span class="theorem-title">Corollary: \(F[x] / \langle p(x) \rangle\) Is a Field iff \(p(x)\) Is Irreducible</span> 
+                    Let \(F\) be a field and let \(p(x) \in F[x]\). Then the quotient ring \(F[x] / \langle p(x) \rangle\) is a field 
+                    if and only if \(p(x)\) is irreducible over \(F\).
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    By the <a href="#T-principal_ideal_maximal_iff_irreducible" class="ref-link"><strong>characterization of \(\langle p(x) \rangle\) as maximal</strong></a>, 
+                    \(\langle p(x) \rangle\) is a maximal ideal in \(F[x]\) if and only if \(p(x)\) is irreducible over \(F\). 
+                    By the <a href="ideals.html#T-quotient_field_maximal" class="ref-link"><strong>characterization of factor rings as fields via maximal ideals</strong></a>, 
+                    \(F[x] / \langle p(x) \rangle\) is a field if and only if \(\langle p(x) \rangle\) is maximal. Combining these two equivalences yields the result.
+                </div>
 
                 <p>
                     For a computer scientist, this is the "Factory" for creating finite fields. If you need a field with 
@@ -450,7 +705,7 @@ uses_python: false
                 </p>
 
                 
-                <div class="theorem">
+                <div class="theorem" id="T-unique_factorization_Zx">
                     <span class="theorem-title">Theorem: Unique Factorization in \(\mathbb{Z}[x]\)</span> 
                     Every polynomial in \(\mathbb{Z}[x]\) that is not the zero polynomial or a unit in \(\mathbb{Z}[x]\) can be 
                     written in the form 
@@ -469,7 +724,7 @@ uses_python: false
                     then \(s =t, \, m = n\), and after renumbering the \(c\)'s and \(q(x)\)'s, we have
                     \[
                     \begin{align*}
-                        b_i &= \pm c_i \text{ for } i = 1, \ldots, s \\\\
+                        b_i &= \pm c_i \text{ for } i = 1, \ldots, s \\
                         p_i(x) &= \pm q_i(x) \text{ for } i = 1, \ldots, m.
                     \end{align*}
                     \]
@@ -511,9 +766,11 @@ uses_python: false
                     <li><strong>The Modulus:</strong> The "clock face" for this modular arithmetic is the irreducible polynomial 
                         \(m(x) = x^8 + x^4 + x^3 + x + 1\). Because \(m(x)\) is irreducible, the ideal it generates is <strong>maximal</strong>, 
                         guaranteeing that the resulting structure is a field.</li>
-                    <li><strong>The S-Box:</strong> The AES <em>SubBytes</em> step (the S-Box) relies on calculating the multiplicative inverse 
-                        \(a^{-1}\) for any byte \(a\). This operation is mathematically defined only because we are working within a field constructed 
-                        from an irreducible modulus.</li>
+                    <li><strong>The S-Box:</strong> The AES <em>SubBytes</em> step (the S-Box) consists of two stages: 
+                        first, computing the multiplicative inverse \(a^{-1}\) of each byte \(a\) within \(GF(2^8)\) 
+                        (with the convention that \(0 \mapsto 0\), since the zero byte has no inverse); second, applying 
+                        an affine transformation over \(GF(2)\). The first stage is mathematically defined only because 
+                        we are working within a field constructed from an irreducible modulus.</li>
                 </ul><br>     
 
                 <p>
