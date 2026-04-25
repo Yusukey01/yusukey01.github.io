@@ -33,13 +33,14 @@ uses_python: false
                     In our familiar world of integers and polynomials, we rely on a comforting assumption: 
                     that every object can be uniquely decomposed into its "prime" building blocks. We trust that \(12\) 
                     is always \(2^2 \times 3\), and never anything else. This property, known as <strong>Unique Factorization</strong>, 
-                    is not just a rule of arithmetic - it is the core of modern algorithms and the hidden guarantee behind public-key 
-                    cryptography like RSA.
+                    is not just a rule of arithmetic — it underlies many modern algorithms, from polynomial factoring in Computer 
+                    Algebra Systems to the parameter setup of public-key cryptosystems like RSA.
                 </p>
                 <p>
                     But as we move deeper into abstract algebra, we discover that this "law" is actually special, not a universal guarantee. 
                     There are mathematical universes where unique factorization collapses completely. In such worlds, the concept of a "prime 
-                    component" becomes ambiguous, and standard algorithms fail.
+                    component" becomes ambiguous, and a single number can have genuinely distinct factorizations into irreducibles — 
+                    forcing us to think more carefully about which rings still admit a sensible notion of "prime decomposition."
                 </p>
                 <p>
                     This chapter marks the finale of our journey through Ring Theory. Here, we categorize rings based on their structural integrity: 
@@ -56,14 +57,20 @@ uses_python: false
                     Understanding this gap is the first step toward seeing why unique factorization can fail.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Associates, Irreducibles, Primes</span>
+                <div class="theorem" id="D-associates">
+                    <span class="theorem-title">Definition: Associates</span>
                     Elements \(a\) and \(b\) of an integral domain \(D\) are called <strong>associates</strong> if \(a = ub\)
                     where \(u\) is a unit of \(D\).
-                    <br><br>
+                </div>
+
+                <div class="theorem" id="D-irreducible_element">
+                    <span class="theorem-title">Definition: Irreducible Element</span>
                     A nonzero element \(a\) of an integral domain \(D\) is called <strong>irreducible</strong> if \(a\) is not a 
                     unit and, whenever \(b, c \in D\) with \(a = bc\), then \(b\) or \(c\) is a unit of \(D\).
-                    <br><br>
+                </div>
+
+                <div class="theorem" id="D-prime_element">
+                    <span class="theorem-title">Definition: Prime Element</span>
                     A nonzero element \(a\) of an integral domain \(D\) is called a <strong>prime</strong> if \(a\) is not a unit 
                     and \(a \mid bc\) implies \(a \mid b\) or \(a \mid c\).
                 </div>
@@ -72,25 +79,30 @@ uses_python: false
                     Let's begin with the following theorem.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-prime_implies_irreducible">
                     <span class="theorem-title">Theorem: Prime implies Irreducible</span>
                     In an integral domain, every prime is an irreducible.
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    Suppose that \(a\) is a prime in an integral domain and \(a = bc\). We must show that \(b\) or \(c\) is 
-                    a unit. By the definition, \(a \mid b\) or \(a \mid c\).
-                    <br>
-                    Here, let \(at = b\). Then
+                    Suppose \(a\) is a prime in an integral domain \(D\) and \(a = bc\). We must show that \(b\) or 
+                    \(c\) is a unit. Note that \(a \mid bc\) trivially (since \(a = bc\)), so by the definition of 
+                    prime, \(a \mid b\) or \(a \mid c\). Without loss of generality, assume \(a \mid c\) — if instead 
+                    \(a \mid b\), the same argument with \(b\) and \(c\) interchanged (permitted because \(D\) is 
+                    commutative, so \(a = bc = cb\)) shows that \(c\) is a unit.
+                    <br><br>
+                    Write \(c = at\) for some \(t \in D\). Substituting into \(a = bc\),
                     \[
-                    1b = b = at = (bc)t = b(ct).
+                    a = b(at) = (ba)t = a(bt),
                     \]
-                    Since \(b \neq 0\) in an integral domain, we can apply the cancellation law:
+                    where the last step uses commutativity. Since \(a \neq 0\) in an integral domain, the 
+                    <a href="intro_rings.html#T-cancellation_law_id" class="ref-link"><strong>Cancellation Law</strong></a> 
+                    yields
                     \[
-                    1 = ct.
+                    1 = bt.
                     \]
-                    Therefore, \(c\) is a unit. 
+                    Therefore \(b\) is a unit.
                 </div>
                 
                 <p>
@@ -149,16 +161,79 @@ uses_python: false
                         No element has a norm of 2. Therefore, the factorization \(4 = 2 \times 2\) cannot exist 
                         in this ring. The number \(2\) is atomically solid (irreducible), even though it fails to be prime.
                     </p>
+                    <p>
+                        <strong>Example: Proving \(1 + \sqrt{-5}\) is Irreducible</strong>
+                        <br>
+                        The same norm argument settles the other factor. Compute \(N(1 + \sqrt{-5}) = 1^2 + 5 \cdot 1^2 = 6\). 
+                        Suppose \(1 + \sqrt{-5} = \alpha \beta\) were a non-trivial factorization (with neither \(\alpha\) nor 
+                        \(\beta\) a unit). Then \(N(\alpha) N(\beta) = 6\). 
+                        <br><br>
+                        We need to know which elements are units. In \(\mathbb{Z}[\sqrt{-5}]\), \(\alpha\) is a unit if and 
+                        only if \(N(\alpha) = 1\): if \(\alpha \beta = 1\), then \(N(\alpha) N(\beta) = N(1) = 1\) forces 
+                        \(N(\alpha) = 1\), and conversely \(a^2 + 5b^2 = 1\) forces \(b = 0\) and \(a = \pm 1\), both of 
+                        which are indeed units. So \(N(\alpha) > 1\) and \(N(\beta) > 1\), meaning both norms are integers 
+                        strictly greater than \(1\) whose product is \(6\). The only such split is \(2 \times 3\), so we 
+                        would need an element of norm \(2\) or norm \(3\) in \(\mathbb{Z}[\sqrt{-5}]\).
+                        <ul style="margin-top: 10px;">
+                            <li>Norm \(2\): \(a^2 + 5b^2 = 2\) — already shown impossible above.</li>
+                            <li>Norm \(3\): \(a^2 + 5b^2 = 3\). Since \(b \in \mathbb{Z}\), if \(b \neq 0\) then 
+                                \(b^2 \geq 1\), so \(5b^2 \geq 5 > 3\); if \(b = 0\) then \(a^2 = 3\) has no integer solution.</li>
+                        </ul>
+                        Neither norm is achievable, so no non-trivial factorization exists. Therefore \(1 + \sqrt{-5}\) is 
+                        irreducible. By the same argument applied to \(N(3) = 9\) and \(N(1 - \sqrt{-5}) = 6\), the 
+                        elements \(3\) and \(1 - \sqrt{-5}\) are also irreducible.
+                    </p>
+                    <p>
+                        Thus all four elements in the two factorizations \(2 \cdot 3 = (1+\sqrt{-5})(1 - \sqrt{-5})\) are 
+                        irreducible, and unique factorization genuinely fails in \(\mathbb{Z}[\sqrt{-5}]\).
+                    </p>
                 </div>
 
                 <p>
-                    Thus, while every prime element is irreducible in any integral domain, the converse is not always true 
-                    A ring where every irreducible is also prime is a very special place - one that allows for unique factorization.
+                    Thus, while every prime element is irreducible in any integral domain, the converse is not always true. 
+                    A ring where every irreducible is also prime is a very special place — one that allows for unique factorization.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-pid_iff_prime_irreducible">
                     <span class="theorem-title">Theorem: PID implies Irreducible equals Prime</span>
                     In a principal ideal domain (PID), an element is an irreducible if and only if it is a prime.
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    The forward direction (prime \(\Rightarrow\) irreducible) holds in any integral domain by 
+                    <a href="#T-prime_implies_irreducible" class="ref-link"><strong>Prime implies Irreducible</strong></a>. 
+                    We prove the converse: in a PID \(R\), every irreducible is prime.
+                    <br><br>
+                    Let \(a \in R\) be irreducible. By the definition of irreducible, \(a \neq 0\) and \(a\) is not a unit, 
+                    so the first two conditions for being prime are inherited automatically; we need only verify the 
+                    divisibility property. Suppose \(a \mid bc\) for some \(b, c \in R\). We must show \(a \mid b\) 
+                    or \(a \mid c\). 
+                    <br><br>
+                    Consider the set \(\langle a, b \rangle = \{ra + sb \mid r, s \in R\}\). This is an ideal of \(R\) 
+                    (closed under addition, subtraction, and multiplication by any ring element). Since \(R\) is a 
+                    <a href="polynomial_rings.html#D-pid" class="ref-link"><strong>PID</strong></a>, there exists 
+                    \(d \in R\) with \(\langle a, b \rangle = \langle d \rangle\). 
+                    <br><br>
+                    In particular, \(a \in \langle d \rangle\), so \(a = dr\) for some \(r \in R\). Since \(a\) is irreducible, 
+                    either \(d\) is a unit or \(r\) is a unit.
+                    <br><br>
+                    <strong>Case 1: \(d\) is a unit.</strong> Then \(1 = d \cdot d^{-1} \in \langle d \rangle\), so 
+                    \(\langle d \rangle = R\), and hence \(\langle a, b \rangle = R\). In particular, 
+                    \(1 \in \langle a, b \rangle\), so we can write \(1 = ax + by\) for some \(x, y \in R\). 
+                    Multiplying both sides by \(c\) gives
+                    \[
+                    c = acx + bcy.
+                    \]
+                    Since \(a \mid bc\), write \(bc = ak\) for some \(k \in R\). Then 
+                    \(c = acx + (ak)y = a(cx + ky)\), so \(a \mid c\).
+                    <br><br>
+                    <strong>Case 2: \(r\) is a unit.</strong> Then \(a = dr\) gives \(d = ar^{-1}\), so 
+                    \(\langle d \rangle \subseteq \langle a \rangle\). Combined with \(a \in \langle d \rangle\) (which gives 
+                    \(\langle a \rangle \subseteq \langle d \rangle\)), we obtain \(\langle a \rangle = \langle d \rangle = \langle a, b \rangle\). 
+                    Since \(b \in \langle a, b \rangle = \langle a \rangle\), we have \(a \mid b\).
+                    <br><br>
+                    In either case, \(a \mid b\) or \(a \mid c\), so \(a\) is prime.
                 </div>
 
                 <p>
@@ -200,13 +275,47 @@ uses_python: false
 
                 <h3>2. Principal Ideal Domains (PID)</h3>
                 <p>
-                    Rings where every ideal is generated by a single element. In a PID, the distinction between primes and irreducibles disappears. 
+                    A <a href="polynomial_rings.html#D-pid" class="ref-link"><strong>principal ideal domain</strong></a> 
+                    is a ring where every ideal is generated by a single element. In a PID, the distinction between primes 
+                    and irreducibles disappears.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-ed_implies_pid">
                     <span class="theorem-title">Theorem: ED implies PID</span>
-                    Every Euclidean  domain (ED) is a principal ideal domain (PID).
+                    Every Euclidean domain (ED) is a principal ideal domain (PID).
                 </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    Let \(R\) be a Euclidean domain with measure \(d\), and let \(I\) be an 
+                    <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> of \(R\). We show \(I\) is principal.
+                    <br><br>
+                    If \(I = \{0\}\), then \(I = \langle 0 \rangle\) (since \(\langle 0 \rangle = \{r \cdot 0 \mid r \in R\} = \{0\}\)), 
+                    which is principal. 
+                    <br><br>
+                    Otherwise, the set \(\{d(x) \mid x \in I,\ x \neq 0\}\) is a nonempty set of nonnegative integers, hence has 
+                    a least element. Choose \(a \in I \setminus \{0\}\) with \(d(a)\) minimal. We claim \(I = \langle a \rangle\).
+                    <br><br>
+                    The inclusion \(\langle a \rangle \subseteq I\) is immediate: \(a \in I\) and \(I\) is an ideal, so 
+                    every multiple \(ra\) lies in \(I\).
+                    <br><br>
+                    For the reverse inclusion, take any \(b \in I\). By the division algorithm (condition 2 of the ED 
+                    definition), there exist \(q, r \in R\) with
+                    \[
+                    b = aq + r, \quad \text{where } r = 0 \text{ or } d(r) < d(a).
+                    \]
+                    Now \(r = b - aq\) lies in \(I\) (since \(b \in I\), \(aq \in I\), and \(I\) is closed under subtraction). 
+                    If \(r \neq 0\), then \(d(r) < d(a)\) contradicts the minimality of \(d(a)\). Hence \(r = 0\), giving 
+                    \(b = aq \in \langle a \rangle\). Therefore \(I \subseteq \langle a \rangle\).
+                    <br><br>
+                    Combining both inclusions, \(I = \langle a \rangle\), so \(I\) is principal.
+                </div>
+
+                <p>
+                    This is a direct generalization of the proof that 
+                    <a href="polynomial_rings.html#T-Fx_is_pid" class="ref-link"><strong>\(F[x]\) is a PID</strong></a>, 
+                    with the polynomial degree playing the role of the abstract measure function \(d\).
+                </p>
 
                 <p>
                     Note that \(\mathbb{Z}[x]\) is famously NOT a PID, so it is not an ED either. 
@@ -234,9 +343,102 @@ uses_python: false
                     Both \(\mathbb{Z}\) and \(\mathbb{Q}[x]\) are UFDs. Actually, in general, every PID is a UFD.
                 </p>
               
-                <div class="theorem">
+                <div class="theorem" id="T-pid_implies_ufd">
                     <span class="theorem-title">Theorem: PID implies UFD</span>
                     Every principal ideal domain (PID) is a unique factorization domain (UFD).
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    Let \(R\) be a PID. We prove existence and uniqueness of irreducible factorizations separately.
+                    <br><br>
+                    <strong>Step 1 (Ascending Chain Condition).</strong> We first show that any strictly ascending 
+                    chain of ideals
+                    \[
+                    \langle a_1 \rangle \subsetneq \langle a_2 \rangle \subsetneq \langle a_3 \rangle \subsetneq \cdots
+                    \]
+                    in \(R\) cannot be infinite. Suppose such a chain exists, and let \(I = \bigcup_{j \geq 1} \langle a_j \rangle\). 
+                    Then \(I\) is an ideal: it is closed under addition (any two elements lie in some common \(\langle a_n \rangle\) 
+                    by the chain property), and closed under multiplication by elements of \(R\) (each \(\langle a_j \rangle\) 
+                    is). Since \(R\) is a PID, \(I = \langle c \rangle\) for some \(c \in R\). Now \(c \in I\), so 
+                    \(c \in \langle a_n \rangle\) for some \(n\). Hence \(I = \langle c \rangle \subseteq \langle a_n \rangle\), 
+                    and combined with \(\langle a_n \rangle \subseteq I\), we get \(I = \langle a_n \rangle\). But this 
+                    forces the chain to terminate at step \(n\), contradicting strict ascent.
+                    <br><br>
+                    <strong>Step 2 (Existence of irreducible factorization).</strong> We show that every nonzero non-unit 
+                    \(a \in R\) is a finite product of irreducibles. Suppose, for contradiction, that some nonzero non-unit 
+                    \(a_1 \in R\) cannot be written as such a product. Then \(a_1\) is itself not irreducible (otherwise 
+                    \(a_1\) is already a one-factor irreducible product), so \(a_1 = b_1 c_1\) with neither \(b_1\) nor 
+                    \(c_1\) a unit.
+                    <br><br>
+                    At least one of \(b_1\), \(c_1\) also fails to be a product of irreducibles — for if both factored, 
+                    so would \(a_1\), contradicting our assumption. Without loss of generality, \(b_1\) fails. Set 
+                    \(a_2 := b_1\). We claim \(\langle a_1 \rangle \subsetneq \langle a_2 \rangle\): the inclusion 
+                    \(\langle a_1 \rangle \subseteq \langle a_2 \rangle\) holds because \(a_1 = b_1 c_1 = a_2 c_1 \in \langle a_2 \rangle\); 
+                    for strictness, if \(a_2 \in \langle a_1 \rangle\), then \(a_2 = a_1 r\) for some \(r\), and substituting 
+                    \(a_1 = a_2 c_1\) gives \(a_2 = a_2 c_1 r\), so by 
+                    <a href="intro_rings.html#T-cancellation_law_id" class="ref-link"><strong>Cancellation</strong></a> 
+                    (\(a_2 \neq 0\) since \(a_2 c_1 = a_1 \neq 0\)) we obtain \(1 = c_1 r\), making \(c_1\) a unit — 
+                    contradiction. Hence the inclusion is strict.
+                    <br><br>
+                    Now \(a_2\) inherits the same property as \(a_1\): nonzero, non-unit, and not a finite product of 
+                    irreducibles. Repeating the argument produces \(a_3, a_4, \ldots\) and a strictly ascending chain
+                    \[
+                    \langle a_1 \rangle \subsetneq \langle a_2 \rangle \subsetneq \langle a_3 \rangle \subsetneq \cdots,
+                    \]
+                    contradicting Step 1. Hence no such \(a_1\) exists, and every nonzero non-unit element factors into irreducibles.
+                    <br><br>
+                    <strong>Step 3 (Prime divides product implies prime divides factor).</strong> Before tackling uniqueness, 
+                    we record an n-factor extension of the prime property. By 
+                    <a href="#T-pid_iff_prime_irreducible" class="ref-link"><strong>PID implies Irreducible equals Prime</strong></a>, 
+                    every irreducible in \(R\) is prime. We claim that if \(p\) is prime and \(p \mid q_1 q_2 \cdots q_n\), 
+                    then \(p \mid q_j\) for some \(j\).
+                    <br><br>
+                    Proceed by induction on \(n\). The base case \(n = 1\) is trivial. For the inductive step, suppose the claim 
+                    holds for products of \(n\) factors, and that \(p \mid q_1 q_2 \cdots q_n q_{n+1}\). Group the product 
+                    as \(p \mid (q_1 q_2 \cdots q_n) \cdot q_{n+1}\); by the prime property (2-factor case), 
+                    \(p \mid q_1 q_2 \cdots q_n\) or \(p \mid q_{n+1}\). In the latter case we are done; in the former, 
+                    the inductive hypothesis gives \(p \mid q_j\) for some \(j \leq n\). \(\blacksquare\)
+                    <br><br>
+                    <strong>Step 4 (Uniqueness).</strong> Suppose 
+                    \[
+                    a = p_1 p_2 \cdots p_m = q_1 q_2 \cdots q_n
+                    \]
+                    are two factorizations of \(a\) into irreducibles, with \(m \leq n\) (without loss of generality). 
+                    Note that \(m \geq 1\) and \(n \geq 1\) since \(a\) is non-unit (the empty product is \(1\), a unit). 
+                    We show by induction on \(m\) that \(m = n\) and the factors can be paired so that each \(p_i\) is an 
+                    associate of the matched \(q_{\sigma(i)}\) for some permutation \(\sigma\).
+                    <br><br>
+                    <em>Base case \(m = 1\).</em> Then \(p_1 = q_1 q_2 \cdots q_n\). Group the right side as 
+                    \(p_1 = q_1 \cdot (q_2 q_3 \cdots q_n)\). Since \(p_1\) is irreducible, either \(q_1\) is a unit or 
+                    \(q_2 q_3 \cdots q_n\) is a unit. The first option is ruled out because \(q_1\) is irreducible, hence 
+                    non-unit. So \(q_2 q_3 \cdots q_n\) must be a unit. But if \(n \geq 2\), writing this as 
+                    \(q_2 \cdot (q_3 \cdots q_n) = \text{unit}\), the same reasoning forces \(q_2\) to be a unit (since 
+                    if \(xy = 1\) then \(x\) is a unit with inverse \(y\)) — contradicting irreducibility of \(q_2\). 
+                    Hence \(n = 1\), and \(p_1 = q_1\), so they are trivially associates (via the unit \(1\)).
+                    <br><br>
+                    <em>Inductive step.</em> Assume the claim holds for left-side factorizations of length \(m - 1\), and 
+                    consider \(m \geq 2\). Since \(p_1\) is irreducible (hence prime by 
+                    <a href="#T-pid_iff_prime_irreducible" class="ref-link"><strong>PID implies Irreducible equals Prime</strong></a>) 
+                    and \(p_1 \mid q_1 q_2 \cdots q_n\), Step 3 gives \(p_1 \mid q_j\) for some \(j\). So 
+                    \(q_j = p_1 u\) for some \(u \in R\). By irreducibility of \(q_j\), either \(p_1\) or \(u\) is a unit; 
+                    since \(p_1\) is non-unit, \(u\) is a unit. Thus \(p_1\) and \(q_j\) are associates.
+                    <br><br>
+                    Substituting \(q_j = u p_1\) into the right-hand factorization and cancelling \(p_1\) from both sides 
+                    (permitted since \(p_1 \neq 0\) and \(R\) is an integral domain) gives
+                    \[
+                    p_2 \cdots p_m = u \cdot q_1 \cdots \widehat{q_j} \cdots q_n,
+                    \]
+                    where \(\widehat{q_j}\) denotes omission of \(q_j\). To apply the inductive hypothesis we need both 
+                    sides to be irreducible factorizations of equal length. Since \(n \geq m \geq 2\), at least one 
+                    index \(k \neq j\) remains; absorb \(u\) into one such \(q_k\) and observe that the product \(u q_k\) 
+                    is irreducible: any factorization \(u q_k = xy\) yields \(q_k = (u^{-1} x) y\), and irreducibility of 
+                    \(q_k\) makes \(u^{-1} x\) or \(y\) a unit, hence \(x\) or \(y\) a unit. So the right-hand side is 
+                    a product of \(n - 1\) irreducibles.
+                    <br><br>
+                    The inductive hypothesis applied to the \((m-1)\)-factor left side gives \(m - 1 = n - 1\), so 
+                    \(m = n\), and a pairing of the remaining \(p_i\) with the remaining \(q_k\) as associates. 
+                    Combined with \(p_1 \leftrightarrow q_j\), this yields the required permutation.
                 </div>
                  
                 <p>
@@ -246,22 +448,27 @@ uses_python: false
                 <p>
                     Gauss's Lemma acts as a crucial bridge: it guarantees that a polynomial is irreducible in \(\mathbb{Z}[x]\) if and only if 
                     it is irreducible in \(\mathbb{Q}[x]\). This "inherited integrity" ensures that the uniqueness we need for factoring polynomials 
-                    is preserved, even in a world where we cannot always rely on the Euclidean Algorithm. For developers, this is why symbolic 
-                    computation and polynomial factoring in Computer Algebra Systems (CAS) remain consistent and reliable.
+                    is preserved, even in a world where we cannot always rely on the Euclidean Algorithm.
                 </p>
 
                 <p>
-                    This distinction is vital for symbolic computation. While we cannot always use the simple Division Algorithm 
-                    in \(\mathbb{Z}[x]\) (since it's not an ED/PID), the UFD property guarantees that polynomial factoring algorithms
-                    - like those used in Computer Algebra Systems (CAS) - will always yield a consistent and unique result. In essence, 
-                    \(\mathbb{Z}[x]\) is the "minimal" structure where we can still talk about the "prime factors" of a polynomial with 
-                    integer coefficients.
+                    For developers, this is why polynomial factoring algorithms — like those used in Computer Algebra Systems (CAS) — 
+                    yield consistent and unique results over \(\mathbb{Z}[x]\). In essence, \(\mathbb{Z}[x]\) is the "minimal" structure 
+                    where we can still talk about the "prime factors" of a polynomial with integer coefficients.
                 </p>
                 
-                 <div class="theorem">
+                 <div class="theorem" id="C-Fx_is_ufd">
                     <span class="theorem-title">Corollary: \(F[x]\) is a UFD</span>
                     Let \(F\) be a field. Then \(F[x]\) is a unique factorization domain.
                  </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    By <a href="polynomial_rings.html#T-Fx_is_pid" class="ref-link"><strong>\(F[x]\) is a PID</strong></a>, 
+                    \(F[x]\) is a principal ideal domain. Combined with 
+                    <a href="#T-pid_implies_ufd" class="ref-link"><strong>PID implies UFD</strong></a>, 
+                    \(F[x]\) is a unique factorization domain.
+                </div>
 
                 <p>
                     The relationships can be summarized by the following chain of inclusions:
@@ -270,9 +477,38 @@ uses_python: false
                     \]
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-Dx_ufd_implies_DxX_ufd">
                     <span class="theorem-title">Theorem: \(D\) is a UFD implies \(D[x]\) is a UFD</span>
                     If \(D\) is a unique factorization domain, then \(D[x]\) is also a unique factorization domain. 
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (sketch):</span>
+                    The argument generalizes the proof that 
+                    <a href="polynomial_rings.html#T-unique_factorization_Zx" class="ref-link"><strong>\(\mathbb{Z}[x]\) is a UFD</strong></a>. 
+                    The key tools are:
+                    <br><br>
+                    <strong>(1) Construct the field of fractions of \(D\)</strong> (the analogue of \(\mathbb{Q}\) for \(\mathbb{Z}\)): 
+                    formally, \(K = \{a/b \mid a, b \in D,\ b \neq 0\}\) with the usual equivalence \(a/b \sim c/d \iff ad = bc\) 
+                    and the usual arithmetic. \(K\) is a field, so \(K[x]\) is a Euclidean domain (degree as measure), hence a PID 
+                    by <a href="#T-ed_implies_pid" class="ref-link"><strong>ED implies PID</strong></a>, hence a UFD by 
+                    <a href="#T-pid_implies_ufd" class="ref-link"><strong>PID implies UFD</strong></a>.
+                    <br><br>
+                    <strong>(2) Extend Gauss's Lemma from \(\mathbb{Z}\) to \(D\):</strong> a polynomial in \(D[x]\) is 
+                    <em>primitive</em> if its coefficients have no common non-unit divisor in \(D\), and the product of two 
+                    primitive polynomials in \(D[x]\) is again primitive. This extension is identical in form to the 
+                    <a href="polynomial_rings.html#T-gauss_lemma" class="ref-link"><strong>\(\mathbb{Z}\)-version</strong></a>, 
+                    with "common factor" interpreted in \(D\).
+                    <br><br>
+                    <strong>Combining (1) and (2):</strong> given a nonzero non-unit \(f \in D[x]\), factor \(f\) as 
+                    \(\text{content}(f) \cdot f_{\text{prim}}\), where \(\text{content}(f) \in D\) is the gcd of \(f\)'s 
+                    coefficients (well-defined up to a unit factor, since \(D\) is a UFD) and \(f_{\text{prim}}\) is primitive. Factor 
+                    \(\text{content}(f)\) in \(D\) using \(D\)'s UFD structure, and factor \(f_{\text{prim}}\) in \(K[x]\); 
+                    the extended Gauss's Lemma then lifts the \(K[x]\)-factorization back to \(D[x]\) — by clearing 
+                    denominators in each \(K[x]\)-factor and rebalancing the resulting scalar factors between content 
+                    and primitive parts, as in the \(\mathbb{Z} \to \mathbb{Q}\) case — with all factors in \(D[x]\). Uniqueness follows from uniqueness in \(K[x]\) combined with uniqueness of content 
+                    (which uses \(D\) being a UFD). The full verification mirrors the \(\mathbb{Z}\)-case detail-for-detail, 
+                    and we omit the remaining bookkeeping.
                 </div>
 
             </section>
@@ -281,15 +517,27 @@ uses_python: false
             <section id="application" class="section-content">
                 <h2>Computational Significance</h2>
                 <p>
-                    For a developer or computer scientist, this classification determines the tools at your disposal:
+                    For a developer or computer scientist, this hierarchy determines which algorithmic tools 
+                    are available at each level:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Efficient Inversion:</strong> If a ring is an <strong>ED</strong>, we can use the Extended Euclidean Algorithm to 
-                        find multiplicative inverses (the core of AES and RSA).</li>
-                    <li><strong>Cryptographic Security:</strong> If unique factorization fails, many assumptions in public-key cryptography 
-                        collapse. We rely on the UFD property to ensure that a public key maps back to a unique private key.</li>
-                    <li><strong>Lattice-based PQC:</strong> Many post-quantum schemes use rings that are NOT PIDs (like polynomial 
-                        quotient rings). Understanding the ideal structure becomes the primary way to evaluate their security.</li>
+                    <li><strong>Modular Inversion (ED):</strong> The Extended Euclidean Algorithm — available 
+                        in any Euclidean domain — computes Bézout coefficients \(ax + by = \gcd(a, b)\). When 
+                        \(\gcd(a, n) = 1\), this immediately yields \(a^{-1} \pmod{n}\). RSA key generation 
+                        uses this in \(\mathbb{Z}\) to compute the private exponent \(d \equiv e^{-1} \pmod{\varphi(n)}\), 
+                        where \(\varphi(n)\) is Euler's totient function (the count of integers in \([1, n]\) coprime to \(n\)); 
+                        AES uses the same idea in \(\mathbb{F}_2[x]\) to invert nonzero elements of 
+                        \(GF(2^8)\) when constructing its \(S\)-box.</li>
+                    <li><strong>Polynomial Factoring (UFD):</strong> Even when no Division Algorithm is available 
+                        — as in \(\mathbb{Z}[x]\), which is a UFD but not a PID — the UFD property guarantees 
+                        that any factoring procedure produces a result unique up to associates and ordering. This 
+                        is the structural reason Computer Algebra Systems return canonical factorizations of 
+                        integer-coefficient polynomials.</li>
+                    <li><strong>The Boundary (UFD failure):</strong> When unique factorization fails, as in 
+                        \(\mathbb{Z}[\sqrt{-5}]\), naive number-theoretic reasoning breaks down: a single element 
+                        can have genuinely distinct factorizations into irreducibles. Recognizing where the 
+                        hierarchy ED \(\subset\) PID \(\subset\) UFD ends — and which rings sit outside it — is 
+                        the first step toward more general theories of factorization.</li>
                 </ul>
 
             </section>
@@ -304,19 +552,17 @@ uses_python: false
                     rules that allow us to calculate, factor, and encode information with mathematical certainty.
                 </p>
                 
-                <p>
                 <h3>Algebraic Landscapes</h3>
                 <div id="algebra-map-root" style="display: flex; flex-direction: column; align-items: center; gap: 20px; margin: 20px 0;"></div>
-                </p>
                 
                 <p>
-                    However, even within the most sophisticated Integral Domains, we often encounter a barrier: we can multiply and factor, 
-                    but we cannot always divide. To break this final ceiling, we must transition from the world of integers and polynomials 
-                    into the realm of Field Theory.
+                    However, even within the most sophisticated Integral Domains, one barrier remains: not every nonzero element 
+                    has a multiplicative inverse. Recovering this missing operation — full divisibility — requires moving beyond 
+                    integral domains into the realm of Field Theory.
                 </p>
 
                 <p>
-                    In the next chapter, we will explore Extension Fields - a powerful framework that allows us to expand our mathematical 
+                    In the next chapter, we will explore <a href="extension_field.html">Extension Fields</a> - a powerful framework that allows us to expand our mathematical 
                     universe. Just as complex numbers were born from the need to solve equations that the real numbers could not handle, 
                     Extension Fields provide the 'missing coordinates' required for advanced error-correction codes, modern cryptography, 
                     and the ultimate resolution of algebraic equations.
