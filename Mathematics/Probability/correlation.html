@@ -28,9 +28,10 @@ uses_python: false
                 <h2>Cross-Covariance</h2>
 
                 <p>
-                    In <a href="covariance.html"><strong>Part 6</strong></a>, the covariance matrix 
+                    Earlier, the 
+                    <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>covariance matrix</strong></a> 
                     \[
-                    \Sigma = \text{Cov}[\boldsymbol{x}]
+                    \Sigma = \operatorname{Cov}[\boldsymbol{x}]
                     \]
                     captured pairwise relationships among the components of a <em>single</em> random vector \(\boldsymbol{x}\). 
                     In many applications, however, we work with two distinct sets of variables - for instance, relating a set 
@@ -39,7 +40,30 @@ uses_python: false
                     variables drawn from <em>different</em> datasets.
                 </p>
 
-                <div class="theorem">
+                <p>
+                    As with the covariance matrix, we have both a population and a sample version. The population version is the 
+                    natural object when \(\boldsymbol{X}\) and \(\boldsymbol{Y}\) are random vectors with known joint distribution; 
+                    the sample version is its empirical estimate from observed data.
+                </p>
+
+                <div class="theorem" id="D-population_cross_covariance_matrix">
+                    <span class="theorem-title">Definition: Population Cross-Covariance Matrix</span>
+                    <p>
+                        Let \(\boldsymbol{X} \in \mathbb{R}^{n_1}\) and \(\boldsymbol{Y} \in \mathbb{R}^{n_2}\) be random vectors on a common 
+                        probability space, with all components having finite second moments and means 
+                        \(\boldsymbol{\mu}_X = \mathbb{E}[\boldsymbol{X}]\), \(\boldsymbol{\mu}_Y = \mathbb{E}[\boldsymbol{Y}]\). 
+                        The <strong>population cross-covariance matrix</strong> is
+                        \[
+                        \Sigma_{XY} = \operatorname{Cov}[\boldsymbol{X}, \boldsymbol{Y}] 
+                        = \mathbb{E}\!\left[(\boldsymbol{X} - \boldsymbol{\mu}_X)(\boldsymbol{Y} - \boldsymbol{\mu}_Y)^\top\right] 
+                        \in \mathbb{R}^{n_1 \times n_2}.
+                        \]
+                        Its \((i, j)\) entry is the covariance between the \(i\)-th component of \(\boldsymbol{X}\) and the \(j\)-th component of \(\boldsymbol{Y}\):
+                        \(\bigl(\Sigma_{XY}\bigr)_{ij} = \operatorname{Cov}[X_i, Y_j]\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-cross_covariance_matrix">
                     <span class="theorem-title">Definition: Sample Cross-Covariance Matrix</span>
                     <p>
                         Given two data matrices \(A \in \mathbb{R}^{m \times n_1}\) and 
@@ -48,22 +72,27 @@ uses_python: false
                         \[
                         K_{AB} = \frac{1}{m-1}(A - \bar{A})^\top (B - \bar{B}) \in \mathbb{R}^{n_1 \times n_2},
                         \]
-                        where \(\bar{A}\) and \(\bar{B}\) denote the matrices of column means.
+                        where the rows of \(A\) are written as column vectors \(\boldsymbol{a}_1, \ldots, \boldsymbol{a}_m \in \mathbb{R}^{n_1}\), 
+                        the column-mean vector is \(\bar{\boldsymbol{a}} = \frac{1}{m}\sum_{k=1}^m \boldsymbol{a}_k\), and 
+                        \(\bar{A} \in \mathbb{R}^{m \times n_1}\) is the matrix whose every row equals \(\bar{\boldsymbol{a}}^\top\); 
+                        \(\boldsymbol{b}_k\), \(\bar{\boldsymbol{b}}\), and \(\bar{B}\) are defined analogously. 
+                        The factor \(m-1\) is the Bessel correction, ensuring that \(K_{AB}\) is an unbiased estimator of the population cross-covariance \(\Sigma_{XY}\) 
+                        when the rows of \(A\) and \(B\) are i.i.d. samples of \(\boldsymbol{X}\) and \(\boldsymbol{Y}\).
                     </p>
                 </div>
 
                 <p>
                     Note that in general \(K_{AB}\) is <em>not</em> square (unless \(n_1 = n_2\)) and <em>not</em> symmetric. 
-                    In the special case \(A = B\), the cross-covariance reduces to the ordinary (sample) covariance matrix, 
-                    sometimes called the <strong>auto-covariance matrix</strong> and denoted \(K_{AA}\), which is exactly 
-                    the matrix \(S\) we studied in Part 6.
+                    In the special case \(A = B\), the cross-covariance reduces to the ordinary 
+                    <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>(sample) covariance matrix</strong></a> 
+                    of \(\boldsymbol{X}\) — sometimes called the <strong>auto-covariance</strong> in the cross-covariance framing — 
+                    which is exactly the matrix \(S\) introduced earlier.
                 </p>
 
                 <p>
                     While cross-covariance quantifies how variables from two datasets co-vary, its magnitude depends on the scales of 
-                    the variables involved. To obtain a  scale-free measure, we turn to the <strong>correlation coefficient</strong>.
+                    the variables involved. To obtain a scale-free measure, we turn to the <strong>correlation coefficient</strong>.
                 </p>
-
             </section>
 
             <section id="corr" class="section-content">
@@ -71,24 +100,23 @@ uses_python: false
                 
                 <p>
                     Covariance tells us whether two variables tend to increase or decrease together, but its numerical value 
-                    depends on the units and scales of the variables. For example, \(\text{Cov}[X, Y] = 500\) might indicate a 
-                    strong relationship when the variables are measured in millimeters, but a weak one when measured in kilometers. 
-                    To obtain a <strong>scale-free</strong> measure of linear association, we normalize the covariance 
-                    by the standard deviations.
+                    depends on the units and scales of the variables. For example, \(\operatorname{Cov}[X, Y] = 500\) might indicate 
+                    a strong relationship when the variables are measured in millimeters, but a weak one when measured in kilometers. 
+                    To obtain a <strong>scale-free</strong> measure of linear association, we normalize the covariance by the standard deviations.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-correlation_coefficient">
                     <span class="theorem-title">Definition: Population Correlation Coefficient</span>
                     <p>
-                        Let \(X\) and \(Y\) be random variables with standard deviations 
+                        Let \(X\) and \(Y\) be random variables with finite, non-zero variances and standard deviations 
                         \(\sigma_X = \sqrt{\mathbb{E}[(X - \mu_X)^2]}\) and 
-                        \(\sigma_Y = \sqrt{\mathbb{E}[(Y - \mu_Y)^2]}\), respectively. Then
+                        \(\sigma_Y = \sqrt{\mathbb{E}[(Y - \mu_Y)^2]}\). Then
                         the <strong>population correlation coefficient</strong> is 
                         \[
                         \begin{align*}
-                        \rho_{X, Y} &= \text{Corr}[X, Y] \\\\
-                                    &= \frac{\text{Cov}[X, Y]}{\sigma_X \sigma_Y} \\\\
-                                    &= \frac{\mathbb{E}[(X - \mu_X)(Y - \mu_Y)]}{\sigma_X \sigma_Y}.
+                        \rho_{X, Y} &= \operatorname{Corr}[X, Y] \\
+                                    &= \frac{\operatorname{Cov}[X, Y]}{\sigma_X\, \sigma_Y} \\
+                                    &= \frac{\mathbb{E}[(X - \mu_X)(Y - \mu_Y)]}{\sigma_X\, \sigma_Y}.
                         \end{align*}
                         \]
                     </p>
@@ -99,20 +127,20 @@ uses_python: false
                     and direction of the <strong>linear</strong> relationship between \(X\) and \(Y\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-sample_correlation_coefficient">
                     <span class="theorem-title">Definition: Sample Correlation Coefficient</span>
                     <p>
-                        Given observed data \((x_1, y_1), \ldots, (x_n, y_n)\), the 
+                        Given observed data \((x_1, y_1), \ldots, (x_m, y_m)\), the 
                         <strong>sample correlation coefficient</strong> is
                         \[
-                        r_{xy} = \frac{1}{(n-1)\,s_x\, s_y}\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})
+                        r_{xy} = \frac{1}{(m-1)\,s_x\, s_y}\sum_{i=1}^m (x_i - \bar{x})(y_i - \bar{y})
                         \]
                         where \(\bar{x}, \bar{y}\) are sample means and \(s_x, s_y\) are the 
                         <strong>corrected sample standard deviations</strong>:
                         \[
-                        s_x = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
+                        s_x = \sqrt{\frac{1}{m-1}\sum_{i=1}^m (x_i - \bar{x})^2}.
                         \]
-                        The factor \(n - 1\) (Bessel's correction) ensures that \(s_x^2\) is an 
+                        The factor \(m - 1\) (Bessel's correction) ensures that \(s_x^2\) is an 
                         unbiased estimator of \(\sigma_X^2\).
                     </p>
                 </div>
@@ -122,41 +150,46 @@ uses_python: false
                     theorem shows that it is always bounded between \(-1\) and \(1\).
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 1: Boundedness of Correlation Coefficient</span> 
+                <div class="theorem" id="T-correlation_bounded">
+                    <span class="theorem-title">Theorem: Boundedness of the Correlation Coefficient</span> 
                     <p>
+                        For any random variables \(X, Y\) with finite, non-zero variances,
                         \[
-                        -1 \leq \rho \leq 1
+                        -1 \leq \rho_{X,Y} \leq 1.
                         \]
-                        Note: 
+                        The endpoints have specific interpretations:
                     </p>
-                    <ul style="padding-left: 40px;">
+                    <ol style="padding-left: 40px;">
                         <li>\(\rho = 1\) indicates a perfect positive linear relationship.</li>
                         <li>\(\rho = -1\) indicates a perfect negative linear relationship.</li>
-                        <li>\(\rho = 0\) indicates no <strong>linear</strong> relationship. </li>
-                    </ul>    
+                        <li>\(\rho = 0\) indicates no <strong>linear</strong> relationship (but possibly nonlinear dependence — the \(X \sim \mathcal{N}(0,1),\, Y = X^2\) counter-example introduced in our covariance discussion shows this can happen).</li>
+                    </ol>    
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        We use the Cauchy-Schwarz inequality for random variables:
+                        The space of zero-mean random variables with finite second moment forms a (real) inner-product space under the bilinear form 
+                        \(\langle U, V \rangle := \mathbb{E}[UV]\), with induced norm \(\|U\| = \sqrt{\mathbb{E}[U^2]}\). (A fully rigorous treatment 
+                        of this \(L^2\) inner-product structure on a probability space — including the standard convention of identifying random 
+                        variables that agree almost surely, so that \(\|U\| = 0\) implies \(U = 0\) — is developed in our later treatment of 
+                        <strong>measure-theoretic probability</strong>; the classical inner-product axioms (bilinearity, symmetry, and non-negativity 
+                        of \(\langle U, U \rangle\)) follow directly from linearity of expectation and the non-negativity of \(\mathbb{E}[U^2]\).) 
+                        The 
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a> 
+                        in any inner-product space gives \(|\langle U, V \rangle| \leq \|U\|\,\|V\|\), which translates to
                         \[
-                        \mathbb{E}[XY]^2 \leq  \mathbb{E}[X^2] \mathbb{E}[Y^2]
+                        \bigl|\mathbb{E}[UV]\bigr| \;\leq\; \sqrt{\mathbb{E}[U^2]\, \mathbb{E}[V^2]}.
                         \]
-                        Note: \(\mathbb{E}[XY]\) is the inner product on the set of random variables \(X\) and \(Y\).
-                    </p>
-                   
-                    <p>
-                        Substitute standardized variables
+                        Applying this to the centered variables \(U = X - \mu_X\) and \(V = Y - \mu_Y\) yields 
+                        \(\bigl|\operatorname{Cov}[X, Y]\bigr| \leq \sigma_X\, \sigma_Y\), and dividing both sides by \(\sigma_X \sigma_Y > 0\) gives
                         \[
-                        \begin{align*}
-                        & \mathbb{E}[\frac{(X - \mathbb{E}[X])}{\sigma_X}\cdot \frac{(Y - \mathbb{E}[Y])}{\sigma_Y}]^2 
-                        \leq  \mathbb{E}[(\frac{(X - \mathbb{E}[X])}{\sigma_X})^2] \, \mathbb{E}[(\frac{(Y - \mathbb{E}[Y])}{\sigma_Y})^2] \\\\
-                        &\Longrightarrow  \rho^2 \leq 1 \cdot 1 \\\\
-                        &\Longrightarrow  -1 \leq \rho \leq 1.
-                        \end{align*}
+                        \bigl|\rho_{X, Y}\bigr| 
+                        = \frac{\bigl|\operatorname{Cov}[X, Y]\bigr|}{\sigma_X\, \sigma_Y} \;\leq\; 1,
                         \]
+                        equivalently \(-1 \leq \rho_{X, Y} \leq 1\). The equality cases \(\rho = \pm 1\) correspond to equality in Cauchy-Schwarz, 
+                        which holds if and only if \(U\) and \(V\) are linearly dependent — i.e., \(Y - \mu_Y = c (X - \mu_X)\) almost surely for some 
+                        constant \(c\), with the sign of \(c\) matching that of \(\rho\).
                     </p>
                 </div>
 
@@ -165,75 +198,84 @@ uses_python: false
                     random vector. Just as the covariance matrix collects all pairwise covariances, the <strong>correlation matrix</strong> 
                     collects all pairwise correlations. It is a standardized version of the covariance matrix in which every entry 
                     lies in \([-1, 1]\). This standardization is particularly useful when features have significantly different scales: 
-                    for example, in <a href="covariance.html"><strong>PCA</strong></a>, performing eigendecomposition on the correlation matrix 
+                    for example, in <a href="covariance.html#pca" class="ref-link"><strong>PCA</strong></a>, performing eigendecomposition on the correlation matrix 
                     rather than the covariance matrix ensures that no single feature dominates the analysis merely because of its scale.
                 </p>
 
-                <p>
-                    For a random vector \(x \in \mathbb{R}^n\), the correlation matrix is defined as:
-                    \[
-                    \begin{align*}
-                    R &= \text{Corr }[x] \\\\
-                                    &= \begin{bmatrix}
-                                    1 & \frac{\mathbb{E }[(X_1-\mu_1)(X_2-\mu_2)]}{\sigma_1 \sigma_2} & \cdots & \frac{\mathbb{E }[(X_1-\mu_1)(X_n-\mu_n)]}{\sigma_1 \sigma_n} \\
-                                    \frac{\mathbb{E }[(X_2-\mu_2)(X_1-\mu_1)]}{\sigma_2 \sigma_1} &  1 & \cdots & \frac{\mathbb{E }[(X_2-\mu_2)(X_n-\mu_n)]}{\sigma_2 \sigma_n} \\
-                                    \vdots  & \vdots & \ddots & \vdots \\
-                                    \frac{\mathbb{E }[(X_n-\mu_n)(X_1-\mu_1)]}{\sigma_n \sigma_1} & \frac{\mathbb{E }[(X_n-\mu_n)(X_2-\mu_2)]}{\sigma_n \sigma_2} & \cdots & 1
-                                    \end{bmatrix} \\\\
-                                &= \begin{bmatrix}
-                                    1 & \text{Corr }[X_1, X_2] & \cdots & \text{Corr }[X_1, X_n] \\
-                                    \text{Corr }[X_2, X_1] &  1 & \cdots & \text{Corr }[X_2, X_n] \\
-                                    \vdots  & \vdots & \ddots & \vdots \\
-                                    \text{Corr }[X_n, X_1] &   \text{Corr }[X_n, X_2] & \cdots & 1
-                                    \end{bmatrix} \\\\
-                    \end{align*}
-                    \]
-                    where \(\mu_i = \text{E }[X_i]\) is the mean and \(\sigma_i = \sqrt{\text{Var }(X_i)}\) is the 
-                    standard deviation of \(X_i\).
-                </p>
+                <div class="theorem" id="D-correlation_matrix">
+                    <span class="theorem-title">Definition: Correlation Matrix</span>
+                    <p>
+                        For a random vector \(\boldsymbol{x} = (X_1, \ldots, X_n)^\top \in \mathbb{R}^n\) with all 
+                        \(\sigma_i = \sqrt{\operatorname{Var}[X_i]} > 0\), the <strong>correlation matrix</strong> 
+                        \(R \in \mathbb{R}^{n \times n}\) has entries
+                        \[
+                        R_{ij} = \operatorname{Corr}[X_i, X_j] = \frac{\operatorname{Cov}[X_i, X_j]}{\sigma_i\, \sigma_j}.
+                        \]
+                        Diagonal entries are \(R_{ii} = 1\), and off-diagonal entries lie in \([-1, 1]\) by the 
+                        <a href="#T-correlation_bounded" class="ref-link"><strong>boundedness theorem</strong></a> above. 
+                        In matrix form,
+                        \[
+                        R = \begin{bmatrix}
+                            1 & \operatorname{Corr}[X_1, X_2] & \cdots & \operatorname{Corr}[X_1, X_n] \\
+                            \operatorname{Corr}[X_2, X_1] &  1 & \cdots & \operatorname{Corr}[X_2, X_n] \\
+                            \vdots  & \vdots & \ddots & \vdots \\
+                            \operatorname{Corr}[X_n, X_1] &   \operatorname{Corr}[X_n, X_2] & \cdots & 1
+                            \end{bmatrix}.
+                        \]
+                    </p>
+                </div>
 
                 <p>
-                    The correlation matrix \(R\) can be derived from only the auto-covariance matrix \(K_{xx}\):
-                    \[
-                        \begin{align*}
-                        K_{xx} &= \mathbb{E}[(x - \mathbb{E}[x])(x - \mathbb{E}[x])^T]  \\\\
-                            &= \begin{bmatrix}
-                                        \text{Var }[X_1] & \text{Cov }[X_1, X_2] & \cdots & \text{Cov }[X_1, X_n] \\
-                                        \text{Cov }[X_2, X_1] &  \text{Var }[X_2] & \cdots & \text{Cov }[X_2, X_n] \\
-                                        \vdots  & \vdots & \ddots & \vdots \\
-                                        \text{Cov }[X_n, X_1] &   \text{Cov }[X_n, X_2] & \cdots & \text{Var }[X_n]
-                                        \end{bmatrix}.
-                        \end{align*}
-                    \]
-                    Here, we define a matrix \(\text{diag }(K_{xx})\), which is a diagonal matrix where each diagonal entry 
-                    corresponds to the variance of a variable, and its inverse square root is given by:
-                    \[
-                    (\text{diag }(K_{xx}))^{-\frac{1}{2}}  = \begin{bmatrix}
-                                                                    \frac{1}{\sqrt{\text{Var }[X_1]}} & 0 & \cdots & 0 \\
-                                                                    0 &   \frac{1}{\sqrt{\text{Var }[X_2]}} & \cdots & 0 \\
-                                                                    \vdots  & \vdots & \ddots & \vdots \\
-                                                                    0 &   0 & \cdots &  \frac{1}{\sqrt{\text{Var }[X_n]}}
-                                                                \end{bmatrix}.
-                    \]
+                    The correlation matrix is determined entirely by the 
+                    <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>covariance matrix</strong></a> 
+                    \(\Sigma\) of \(\boldsymbol{x}\): each correlation entry is just the corresponding covariance entry divided by the product 
+                    of the relevant standard deviations. The following formula encodes this normalization compactly as a matrix product.
                 </p>
 
+                <div class="theorem" id="T-correlation_matrix_standardization">
+                    <span class="theorem-title">Theorem: Standardization Formula for the Correlation Matrix</span>
+                    <p>
+                        Let \(\Sigma\) be the covariance matrix of a random vector \(\boldsymbol{x} \in \mathbb{R}^n\) with all 
+                        \(\sigma_i = \sqrt{\operatorname{Var}[X_i]} > 0\), and let
+                        \[
+                        D = \operatorname{diag}\bigl(\operatorname{Var}[X_1], \ldots, \operatorname{Var}[X_n]\bigr), \qquad
+                        D^{-1/2} = \operatorname{diag}\!\left(\frac{1}{\sigma_1}, \ldots, \frac{1}{\sigma_n}\right).
+                        \]
+                        Then the correlation matrix \(R\) of \(\boldsymbol{x}\) satisfies
+                        \[
+                        R = D^{-1/2}\, \Sigma\, D^{-1/2}.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Compute the \((i, j)\) entry of the right-hand side directly. Since \(D^{-1/2}\) is diagonal with entries 
+                        \((D^{-1/2})_{kk} = 1/\sigma_k\) and zeros elsewhere, the matrix product collapses to a single non-zero term in 
+                        the double sum:
+                        \[
+                        \bigl(D^{-1/2}\, \Sigma\, D^{-1/2}\bigr)_{ij} 
+                        = \sum_{k, \ell} (D^{-1/2})_{ik}\, \Sigma_{k\ell}\, (D^{-1/2})_{\ell j}
+                        = \frac{1}{\sigma_i}\, \Sigma_{ij}\, \frac{1}{\sigma_j}
+                        = \frac{\operatorname{Cov}[X_i, X_j]}{\sigma_i\, \sigma_j}
+                        = R_{ij}.
+                        \]
+                        For the diagonal case \(i = j\), this gives \(\operatorname{Var}[X_i] / (\sigma_i \cdot \sigma_i) = 1\), matching the 
+                        diagonal of \(R\). Thus \(R\) and \(D^{-1/2} \Sigma D^{-1/2}\) agree entry-wise.
+                    </p>
+                </div>
+
                 <p>
-                    To standardize the auto-covariance matrix \(K_{xx}\) into the correlation matrix \(R\), each covariance entry \(\text{Cov }[X_i, X_j]\)
-                    is divided by the product of the standard deviations \(\sqrt{\text{Var }[X_i]} \cdot \sqrt{\text{Var }[X_j]}\).
-                    This task is achieved by: 
-                    \[
-                    R = (\text{diag }(K_{xx}))^{-\frac{1}{2}}K_{xx}(\text{diag }(K_{xx}))^{-\frac{1}{2}}.
-                    \]
-                    This formulation normalizes all rows and columns simultaneously, by dividing each covariance by the corresponding 
-                    standard deviations, and avoids computing each pairwise correlation explicitly.
+                    This formulation normalizes all rows and columns simultaneously through a single matrix expression, avoiding the need 
+                    to compute each pairwise correlation separately.
                 </p>
 
                  <div class="insight-box">
                     <h3>Connections to Machine Learning</h3>
                     <p>
                         The correlation matrix plays a key role in feature engineering and model diagnostics. Highly correlated 
-                        features indicate <strong>multicollinearity</strong>, which can destabilize 
-                        <a href="../Machine_learning/intro_regression.html"><strong>linear regression</strong></a> 
+                        features indicate <strong>multicollinearity</strong>, which can destabilize regression models 
                         and inflate variance in coefficient estimates. In practice, examining the correlation matrix 
                         before training helps identify redundant features, guiding decisions about feature selection 
                         or dimensionality reduction via PCA. In 
@@ -244,8 +286,8 @@ uses_python: false
 
                 <p>
                     With covariance and correlation established for random vectors, we are now prepared to study the most important 
-                    multivariate distribution in statistics and machine learning. In the <a href="mvn.html"><strong>next part</strong></a>, 
-                    we introduce the <strong>multivariate normal distribution</strong>, whose shape is entirely determined 
+                    multivariate distribution in statistics and machine learning. We next introduce the 
+                    <a href="mvn.html"><strong>multivariate normal distribution</strong></a>, whose shape is entirely determined 
                     by a mean vector and a covariance matrix.
                 </p>
                 
