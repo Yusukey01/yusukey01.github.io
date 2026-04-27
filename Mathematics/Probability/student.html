@@ -29,29 +29,76 @@ uses_python: false
                 <h2>Student's \(t\)-Distribution</h2>
 
                 <p>
-                    In <a href="gaussian.html"><strong>Part 4</strong></a>, we saw that the chi-squared distribution governs 
+                    On the <a href="gaussian.html"><strong>normal distribution</strong></a> page, we saw that the chi-squared distribution governs 
                     sums of squared standard normals, and that the sample variance \(s^2\) satisfies \((n-1)s^2/\sigma^2 \sim \chi^2_{n-1}\). 
                     A natural question follows: what happens to our inference when we replace the unknown population standard deviation 
                     \(\sigma\) with its estimate \(s\)? The answer is the <strong>Student's \(t\)-distribution</strong>, which arises as the 
                     ratio of a standard normal to the square root of an independent chi-squared variable divided by its degrees of freedom.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Student's \(t\)-Distribution</span>
+                <div class="theorem" id="D-standard_student_t">
+                    <span class="theorem-title">Definition: Standard Student's \(t\)-Distribution (ratio form)</span>
                     <p>
-                        A random variable \(Y\) has a <strong>Student's \(t\)-distribution</strong> with location 
-                        \(\mu\), scale \(\sigma > 0\) (not the standard deviation), and \(\nu > 0\) <strong>degrees 
-                        of freedom</strong> if its p.d.f. is:
+                        Let \(Z \sim \mathcal{N}(0, 1)\) and \(Q \sim \chi^2_\nu\) with \(Z\) and \(Q\) independent. 
+                        The random variable
                         \[
-                        f(y \mid \mu, \sigma^2, \nu) \propto \left[1 + \frac{1}{\nu}\left(\frac{y - \mu}{\sigma}\right)^2\right]^{-\frac{\nu+1}{2}}.
+                        T \;=\; \frac{Z}{\sqrt{Q/\nu}}
                         \]
-                        The moments are:
+                        is said to follow the <strong>standard Student's \(t\)-distribution</strong> with \(\nu > 0\) 
+                        <strong>degrees of freedom</strong>, written \(T \sim t_\nu\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-student_t_pdf">
+                    <span class="theorem-title">Proposition: Standard \(t\) p.d.f.</span>
+                    <p>
+                        The p.d.f. of \(T \sim t_\nu\) is
                         \[
-                        \text{mean} = \text{mode} = \mu \;(\text{exists if } \nu > 1), \qquad 
-                        \text{Var}(Y) = \frac{\nu\sigma^2}{\nu - 2} \;(\text{exists if } \nu > 2).
+                        f_T(t) \;=\; \frac{\Gamma\!\bigl((\nu+1)/2\bigr)}{\sqrt{\nu\pi}\,\Gamma(\nu/2)}\,
+                                     \left(1 + \frac{t^2}{\nu}\right)^{-(\nu+1)/2}, \qquad t \in \mathbb{R}.
                         \]
                     </p>
                 </div>
+
+                <p>
+                    <strong>Sketch.</strong> The density of \(T\) is obtained by writing the joint density of 
+                    \((Z, Q)\) (which factors as \(\varphi(z)\,f_{\chi^2_\nu}(q)\) by independence), changing variables 
+                    to \((T, Q)\) with \(Z = T\sqrt{Q/\nu}\), and integrating out \(Q\). The integrand reduces to a 
+                    gamma integral that produces the factor \(\Gamma((\nu+1)/2)\); the remaining constants combine into 
+                    the prefactor above. The joint-distribution machinery is developed in 
+                    <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>; 
+                    the bivariate change-of-variables and integration step is standard but not carried out in detail on this site.
+                </p>
+
+                <div class="theorem" id="D-student_t">
+                    <span class="theorem-title">Definition: Student's \(t\)-Distribution (location–scale form)</span>
+                    <p>
+                        For location \(\mu \in \mathbb{R}\) and scale \(\sigma > 0\) (<em>not</em> the standard deviation), 
+                        a random variable \(Y\) follows the <strong>Student's \(t\)-distribution</strong> with parameters 
+                        \((\mu, \sigma, \nu)\), written \(Y \sim t_\nu(\mu, \sigma^2)\), if 
+                        \(Y \;=\; \mu + \sigma T\) for some \(T \sim t_\nu\). The corresponding p.d.f. is
+                        \[
+                        f(y \mid \mu, \sigma, \nu) \;=\; 
+                        \frac{1}{\sigma}\,f_T\!\!\left(\frac{y - \mu}{\sigma}\right) 
+                        \;=\; \frac{\Gamma\!\bigl((\nu+1)/2\bigr)}{\sigma\sqrt{\nu\pi}\,\Gamma(\nu/2)}
+                              \left[1 + \frac{1}{\nu}\!\left(\frac{y - \mu}{\sigma}\right)^{\!2}\right]^{-(\nu+1)/2}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The first moments of \(Y \sim t_\nu(\mu, \sigma^2)\) are
+                    \[
+                    \operatorname{mode}(Y) = \mu \;\;(\text{any } \nu > 0), \qquad
+                    \mathbb{E}[Y] = \mu \;\;(\text{if } \nu > 1), \qquad
+                    \operatorname{Var}(Y) = \frac{\nu\,\sigma^2}{\nu - 2} \;\;(\text{if } \nu > 2).
+                    \]
+                    The mean fails to exist for \(\nu \leq 1\) (the integral is not absolutely convergent — see the 
+                    Cauchy case below), and the variance fails to exist for \(\nu \leq 2\): the density decays only 
+                    like \(|y|^{-(\nu+1)}\) at infinity, so the variance integrand \(y^2 f(y)\) decays like 
+                    \(|y|^{1-\nu}\), which is integrable only when \(\nu > 2\). The mode, by contrast, is 
+                    always well defined: the density is symmetric about \(\mu\) and unimodal there for every \(\nu > 0\).
+                </p>
 
                 <p>
                     The key feature of the \(t\)-distribution is its <strong>heavy tails</strong>: compared to a normal distribution 
@@ -74,7 +121,7 @@ uses_python: false
                     when the degrees of freedom parameter takes its smallest meaningful value.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-cauchy">
                     <span class="theorem-title">Definition: Cauchy Distribution</span>
                     <p>
                         When \(\nu = 1\), the Student's \(t\)-distribution reduces to the <strong>Cauchy distribution</strong> 
@@ -82,6 +129,10 @@ uses_python: false
                         \[
                         f(x \mid \mu, \gamma) = \frac{1}{\gamma\pi}\left[1 + \left(\frac{x - \mu}{\gamma}\right)^2\right]^{-1}.
                         \]
+                        We write \(X \sim \text{Cauchy}(\mu, \gamma)\). 
+                        (Specializing the standard \(t\)-density at \(\nu = 1\) with location \(\mu\) and scale \(\gamma\) 
+                        gives the prefactor \(\Gamma(1)/[\gamma\sqrt{\pi}\,\Gamma(1/2)] = 1/(\gamma\pi)\), 
+                        using \(\Gamma(1/2) = \sqrt{\pi}\).)
                     </p>
                 </div>
 
@@ -89,30 +140,48 @@ uses_python: false
                     Consider the standard Cauchy distribution (\(\mu = 0, \gamma = 1\)). When we attempt to calculate its 
                     expected value:
                     \[
-                    \mathbb{E}[X] = \frac{1}{\pi} \int_{-\infty}^{\infty} \frac{x}{1 + x^2} dx
+                    \mathbb{E}[X] \;=\; \frac{1}{\pi} \int_{-\infty}^{\infty} \frac{x}{1 + x^2}\, dx
                     \]
-                    we find that the integral does not converge. Because the tails decay at a rate of only \(\frac{1}{x^2}\), 
-                    the integrand \(\frac{x}{(1+x^2)}\) behaves like \(\frac{1}{x}\) for large \(x\). The integral \(\int \frac{1}{x} \, dx\) 
-                    diverges logarithmically. (See <a href="../Calculus/riemann.html"><strong>Improper Riemann integrals</strong></a>).
+                    we find that the integral is <strong>not absolutely convergent</strong>: the integrand 
+                    \(x/(1 + x^2)\) behaves like \(1/x\) for large \(|x|\), and \(\int |x|/(1+x^2)\,dx\) diverges 
+                    logarithmically (see <a href="../Calculus/riemann.html"><strong>Improper Riemann Integrals</strong></a>). 
+                    Since the Lebesgue definition of expectation requires absolute convergence — equivalently, the 
+                    finiteness of \(\mathbb{E}[|X|]\) — the mean of a Cauchy random variable is <em>undefined</em>, even 
+                    though the symmetric Cauchy principal value 
+                    \(\lim_{R \to \infty} \int_{-R}^{R} x/(1+x^2)\,dx\) equals zero. By the same logic the variance 
+                    is also undefined.
                 </p>
 
                 <p>
                     <strong>Why this matters:</strong> Since the mean and variance are undefined, the <strong>Law of Large Numbers</strong> 
                     fails. If you average \(n\) independent Cauchy variables, the sample mean \(\bar{X}_n\) does not settle down; 
-                    it follows the <em>exact same</em> Cauchy distribution as the individual observations. We will explore 
-                    this behavior rigorously in <a href="convergence.html"><strong>Part 13: Convergence</strong></a>.
+                    it follows the <em>exact same</em> Cauchy distribution as the individual observations. (Sketch: the 
+                    Cauchy characteristic function is \(\varphi_X(t) = e^{-|t|}\), and by independence 
+                    \(\varphi_{\bar{X}_n}(t) = \prod_{i=1}^{n} \varphi_X(t/n) = e^{-|t|}\) — the same as \(\varphi_X\) itself, 
+                    so \(\bar{X}_n\) has the same distribution as each \(X_i\).) We will explore 
+                    this behavior rigorously on the <a href="convergence.html"><strong>Convergence</strong></a> page.
                 </p>
 
                 <p>
                     Despite these theoretical challenges, the Cauchy distribution is highly useful. In Bayesian modeling, 
                     when we need a heavy-tailed prior over \(\mathbb{R}^+\) that allows for large values while maintaining 
-                    finite density at the origin, we use the <strong>Half-Cauchy distribution</strong> (\(x \geq 0\)):
-                    \[
-                    f(x \mid \gamma) = \frac{2}{\pi \gamma} \left[ 1 + \left(\frac{x}{\gamma}\right)^2\right]^{-1}.
-                    \]
-                    This is often the default choice for scale parameters (hierarchical priors) because it is more 
-                    robust than the Inverse-Gamma distribution.
+                    finite density at the origin, we use the <strong>Half-Cauchy distribution</strong>, defined next.
                 </p>
+
+                <div class="theorem" id="D-half_cauchy">
+                    <span class="theorem-title">Definition: Half-Cauchy Distribution</span>
+                    <p>
+                        The <strong>Half-Cauchy distribution</strong> with scale \(\gamma > 0\) is the standard Cauchy 
+                        \(\text{Cauchy}(0, \gamma)\) restricted to \(x \geq 0\) and renormalized so its total mass is one. 
+                        Its p.d.f. is
+                        \[
+                        f(x \mid \gamma) = \frac{2}{\pi \gamma}\left[1 + \left(\frac{x}{\gamma}\right)^2\right]^{-1}, \qquad x \geq 0.
+                        \]
+                        (The factor \(2\) compensates for the loss of the negative half by the symmetry of the standard 
+                        Cauchy density about the origin.) This is often the default choice for scale parameters in 
+                        hierarchical Bayesian priors because it is more robust than the Inverse-Gamma distribution.
+                    </p>
+                </div>
 
             </section>
 
@@ -125,7 +194,7 @@ uses_python: false
                     while still placing more mass in the tails than the normal distribution, is the <strong>Laplace distribution</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-laplace">
                     <span class="theorem-title">Definition: Laplace Distribution</span>
                     <p>
                         The <strong>Laplace distribution</strong> (also called the double-sided exponential distribution) 
@@ -135,8 +204,29 @@ uses_python: false
                         \]
                         Its moments are:
                         \[
-                        \text{mean} = \text{mode} = \mu, \qquad \text{Var}(Y) = 2b^2.
+                        \operatorname{mode}(Y) = \mathbb{E}[Y] = \mu, \qquad \operatorname{Var}(Y) = 2b^2.
                         \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the Laplace moments:</span>
+                    <p>
+                        Substitute \(u = (y - \mu)/b\), so \(y = \mu + bu\) and \(dy = b\,du\). The density transforms 
+                        to \(f(y)\,dy = \tfrac{1}{2}e^{-|u|}\,du\), and \((y - \mu)^k = b^k u^k\). For the mean,
+                        \[
+                        \mathbb{E}[Y] - \mu = \mathbb{E}[Y - \mu] = b\int_{-\infty}^{\infty} u \cdot \tfrac{1}{2}e^{-|u|}\,du = 0,
+                        \]
+                        since \(u\,e^{-|u|}\) is odd and the integral is absolutely convergent (\(|u|\,e^{-|u|}\) integrates 
+                        to a finite value). For the variance, \(u^2 e^{-|u|}\) is even, so
+                        \[
+                        \operatorname{Var}(Y) = \mathbb{E}[(Y - \mu)^2] 
+                        = b^2 \int_{-\infty}^{\infty} u^2 \cdot \tfrac{1}{2} e^{-|u|}\,du 
+                        = b^2 \int_{0}^{\infty} u^2 e^{-u}\,du 
+                        = b^2 \,\Gamma(3) = 2b^2,
+                        \]
+                        using \(\Gamma(n) = (n-1)!\) for positive integers \(n\). The mode is \(\mu\) because 
+                        \(e^{-|y - \mu|/b}\) attains its maximum exactly at \(y = \mu\).
                     </p>
                 </div>
                 
@@ -159,6 +249,8 @@ uses_python: false
                 </p>
             </section>
         </div> 
+        
         <script src="/js/main.js"></script>  
+        <script src="/js/ref-preview.js"></script>
     </body>
 </html>

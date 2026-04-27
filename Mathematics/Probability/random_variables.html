@@ -30,20 +30,34 @@ uses_python: false
                 <h2>Random Variables</h2>
                 
                 <p>
-                    In <a href="basic.html"><strong>Part 1</strong></a>, we developed probability in terms of events — 
-                    subsets of a sample space. While this framework is logically complete, it is insufficient 
-                    for the quantitative demands of statistics and machine learning. We need to associate 
-                    <em>numerical values</em> with outcomes so that we can compute averages, measure spread, 
-                    and apply the tools of calculus. A <strong>random variable</strong> is precisely this bridge: 
-                    it is a function that maps each outcome in the sample space to a real number.
+                    In our development of <a href="basic.html"><strong>Basic Probability Ideas</strong></a>, we worked
+                    with probability in terms of events — subsets of a sample space. While this framework is logically 
+                    complete, it is insufficient for the quantitative demands of statistics and machine learning. 
+                    We need to associate <em>numerical values</em> with outcomes so that we can compute averages, 
+                    measure spread, and apply the tools of calculus. A <strong>random variable</strong> is precisely 
+                    this bridge: it is a function that maps each outcome in the sample space to a real number.
                 </p>
 
-                <div class="theorem" id = "D-rv">
+                <div class="theorem" id="D-random_variable">
                     <span class="theorem-title">Definition: Random Variable</span>
                     <p>
                         A <strong>random variable</strong> is a function \(X: S \to \mathbb{R}\) that assigns a numerical 
                         value to each outcome in the sample space \(S\). We denote random variables by capital letters 
                         (\(X, Y, Z\)) and specific values they take by the corresponding lowercase letters (\(x, y, z\)).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>A Note on Measurability</h3>
+                    <p>
+                        Strictly speaking, the function \(X\) must satisfy a technical <strong>measurability</strong> 
+                        condition so that \(\{X \in B\}\) is a valid event for every Borel set \(B \subseteq \mathbb{R}\). 
+                        This condition is what makes probabilities like \(P(X \leq x)\) and \(P(a \leq X \leq b)\) 
+                        well-defined. For the discrete and continuous random variables studied here, the condition 
+                        is automatically satisfied for any reasonable function, so we take it for granted. The full 
+                        formulation is developed in 
+                        <a href="measure_probability.html"><strong>Measure-Theoretic Probability</strong></a>, 
+                        where a random variable is recast as a measurable function between probability spaces.
                     </p>
                 </div>
 
@@ -59,7 +73,7 @@ uses_python: false
                     random variable is completely characterized by its <strong>probability mass function</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-pmf">
                     <span class="theorem-title">Definition: Probability Mass Function (p.m.f.)</span>
                     <p>
                         The <strong>probability mass function</strong> of a discrete random variable \(X\) is the function
@@ -80,14 +94,17 @@ uses_python: false
                     especially useful for computing probabilities over intervals.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-cdf_discrete">
                     <span class="theorem-title">Definition: Cumulative Distribution Function (Discrete Case)</span>
                     <p>
                         The <strong>cumulative distribution function (c.d.f.)</strong> of a discrete random variable \(X\) is
                         \[
                         F(x) = P(X \leq x) = \sum_{k \leq x} f(k).
                         \]
-                        It follows that \(P(a \leq X \leq b) = F(b) - F(a-1)\) for integer-valued random variables.
+                        For an integer-valued \(X\) and integers \(a \leq b\), this gives 
+                        \(P(a \leq X \leq b) = F(b) - F(a-1)\). 
+                        More generally, \(P(a \leq X \leq b) = F(b) - P(X < a)\), where \(P(X < a)\) excludes the 
+                        mass at \(x = a\) itself.
                     </p>
                 </div>
 
@@ -100,7 +117,7 @@ uses_python: false
                     probability that \(X\) falls in that interval.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-pdf">
                     <span class="theorem-title">Definition: Probability Density Function (p.d.f.)</span>
                     <p>
                         The <strong>probability density function</strong> of a continuous random variable \(X\) is a 
@@ -117,7 +134,7 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="D-cdf_continuous">
                     <span class="theorem-title">Definition: Cumulative Distribution Function (Continuous Case)</span>
                     <p>
                         The <strong>cumulative distribution function</strong> of a continuous random variable \(X\) is
@@ -128,7 +145,7 @@ uses_python: false
                         \[
                         f(x) = \frac{dF(x)}{dx}
                         \]
-                        at every point where \(F\) is differentiable. Furthermore, 
+                        at every point of continuity of \(f\). Furthermore, 
                         \(P(a \leq X \leq b) = F(b) - F(a)\).
                     </p>
                 </div>
@@ -159,7 +176,7 @@ uses_python: false
                     algorithms minimize expected risk.
                 </p>
 
-                <div class="theorem" id = "D-exp_v">
+                <div class="theorem" id="D-expected_value">
                     <span class="theorem-title">Definition: Expected Value</span>
                     <p>
                         The <strong>expected value</strong> of a random variable \(X\) is defined as:
@@ -185,27 +202,46 @@ uses_python: false
                     regardless of whether the random variables involved are independent.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 1: Linearity of Expectation</span>
+                <div class="theorem" id="T-linearity_expectation">
+                    <span class="theorem-title">Theorem: Linearity of Expectation</span>
                     <p>
-                        For any constants \(a, b \in \mathbb{R}\),
+                        Let \(X\) and \(Y\) be random variables on the same sample space, and let 
+                        \(a, b, c \in \mathbb{R}\) be constants. Then
                         \[
-                        \mathbb{E}[aX + b] = a\,\mathbb{E}[X] + b.
+                        \mathbb{E}[aX + bY + c] = a\,\mathbb{E}[X] + b\,\mathbb{E}[Y] + c,
                         \]
+                        whenever the expectations on the right are well-defined. In particular, 
+                        \(\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]\) and 
+                        \(\mathbb{E}[aX + c] = a\,\mathbb{E}[X] + c\).
+                    </p>
+                    <p>
+                        <strong>Remark.</strong> The additivity \(\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]\) 
+                        holds <em>without</em> any assumption of independence between \(X\) and \(Y\) — a fact that 
+                        will be central in the analyses of estimators, gradient noise, and bias-variance decompositions later.
                     </p>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof (continuous case):</span>
+                    <span class="proof-title">Proof (scalar case \(\mathbb{E}[aX + c] = a\,\mathbb{E}[X] + c\)):</span>
                     <p>
+                        For continuous \(X\) with density \(f\),
                         \[
                         \begin{align*}
-                        \mathbb{E}[aX + b] &= \int_{-\infty}^{\infty} (ax + b)\, f(x)\,dx \\\\
-                                            &= a\int_{-\infty}^{\infty} x\, f(x)\,dx + b\int_{-\infty}^{\infty} f(x)\,dx \\\\
-                                            &= a\,\mathbb{E}[X] + b.
+                        \mathbb{E}[aX + c] &= \int_{-\infty}^{\infty} (ax + c)\, f(x)\,dx \\
+                                            &= a\int_{-\infty}^{\infty} x\, f(x)\,dx + c\int_{-\infty}^{\infty} f(x)\,dx \\
+                                            &= a\,\mathbb{E}[X] + c,
                         \end{align*}
                         \]
-                        The discrete case follows identically by replacing integrals with sums.
+                        using \(\int f(x)\,dx = 1\) in the last step. For discrete \(X\) with p.m.f. \(f\), the same 
+                        argument with sums gives
+                        \[
+                        \mathbb{E}[aX + c] = \sum_{x}(ax + c) f(x) = a\sum_x x\,f(x) + c\sum_x f(x) = a\,\mathbb{E}[X] + c.
+                        \]
+                        The bivariate identity \(\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]\) requires the 
+                        joint distribution of \((X, Y)\), which we postpone until joint and multivariate distributions 
+                        are introduced. The argument runs in parallel — replacing the single sum or integral by a 
+                        double sum or integral over the joint distribution — and crucially does not require \(X\) and 
+                        \(Y\) to be independent.
                     </p>
                 </div>
 
@@ -234,9 +270,9 @@ uses_python: false
                     <p>
                         The <strong>variance</strong> of a random variable \(X\) with mean \(\mu = \mathbb{E}[X]\) is:
                         \[
-                        \text{Var}(X) = \sigma^2 = \mathbb{E}\bigl[(X - \mu)^2\bigr] \geq 0.
+                        \operatorname{Var}(X) = \sigma^2 = \mathbb{E}\bigl[(X - \mu)^2\bigr] \geq 0.
                         \]
-                        The <strong>standard deviation</strong> is \(\sigma = \sqrt{\text{Var}(X)}\), which has the same 
+                        The <strong>standard deviation</strong> is \(\sigma = \sqrt{\operatorname{Var}(X)}\), which has the same 
                         units as \(X\).
                     </p>
                 </div>
@@ -246,14 +282,14 @@ uses_python: false
                     Expanding the square yields a computationally convenient alternative:
                     \[
                     \begin{align*}
-                    \text{Var}(X) = \mathbb{E}\bigl[(X - \mu)^2\bigr]
-                                  &= \mathbb{E}[X^2 - 2\mu X + \mu^2] \\\\
-                                  &= \mathbb{E}[X^2] - 2\mu\,\mathbb{E}[X] + \mu^2 \\\\
+                    \operatorname{Var}(X) = \mathbb{E}\bigl[(X - \mu)^2\bigr]
+                                  &= \mathbb{E}[X^2 - 2\mu X + \mu^2] \\
+                                  &= \mathbb{E}[X^2] - 2\mu\,\mathbb{E}[X] + \mu^2 \\
                                   &= \mathbb{E}[X^2] - \mu^2.
                     \end{align*}
                     \]
                     That is, the variance equals the <strong>mean of the square minus the square of the mean</strong>. 
-                    Note that \(\text{Var}(c) = 0\) for any constant \(c\), since a constant has no spread.
+                    Note that \(\operatorname{Var}(c) = 0\) for any constant \(c\), since a constant has no spread.
                 </p>
 
                 <p>
@@ -261,12 +297,12 @@ uses_python: false
                     expectation, variance is affected by scaling but not by translation.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 2: Variance of a Linear Transformation</span> 
+                <div class="theorem" id="T-variance_linear_transformation">
+                    <span class="theorem-title">Theorem: Variance of a Linear Transformation</span> 
                     <p>
                         For any constants \(a, b \in \mathbb{R}\),
                         \[
-                        \text{Var}(aX + b) = a^2\,\text{Var}(X).
+                        \operatorname{Var}(aX + b) = a^2\,\operatorname{Var}(X).
                         \]
                         The additive constant \(b\) shifts the distribution without changing its spread.
                     </p>
@@ -278,12 +314,12 @@ uses_python: false
                         Using the alternative formula and linearity of expectation:
                         \[
                         \begin{align*}
-                        \text{Var}(aX + b) 
-                        &= \mathbb{E}\bigl[(aX+b)^2\bigr] - \bigl(\mathbb{E}[aX+b]\bigr)^2 \\\\
-                        &= \bigl(a^2\mathbb{E}[X^2] + 2ab\,\mathbb{E}[X] + b^2\bigr) - \bigl(a\,\mathbb{E}[X] + b\bigr)^2 \\\\
-                        &= a^2\mathbb{E}[X^2] + 2ab\,\mathbb{E}[X] + b^2 - a^2(\mathbb{E}[X])^2 - 2ab\,\mathbb{E}[X] - b^2 \\\\
-                        &= a^2\bigl(\mathbb{E}[X^2] - (\mathbb{E}[X])^2\bigr) \\\\
-                        &= a^2\,\text{Var}(X).
+                        \operatorname{Var}(aX + b) 
+                        &= \mathbb{E}\bigl[(aX+b)^2\bigr] - \bigl(\mathbb{E}[aX+b]\bigr)^2 \\
+                        &= \bigl(a^2\mathbb{E}[X^2] + 2ab\,\mathbb{E}[X] + b^2\bigr) - \bigl(a\,\mathbb{E}[X] + b\bigr)^2 \\
+                        &= a^2\mathbb{E}[X^2] + 2ab\,\mathbb{E}[X] + b^2 - a^2(\mathbb{E}[X])^2 - 2ab\,\mathbb{E}[X] - b^2 \\
+                        &= a^2\bigl(\mathbb{E}[X^2] - (\mathbb{E}[X])^2\bigr) \\
+                        &= a^2\,\operatorname{Var}(X).
                         \end{align*}
                         \]
                     </p>
