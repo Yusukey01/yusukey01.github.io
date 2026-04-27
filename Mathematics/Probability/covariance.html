@@ -30,7 +30,7 @@ uses_python: true
                 <h2>Covariance Matrix</h2>
 
                 <p>
-                    In <a href="random_variables.html"><strong>Part 2</strong></a>, we introduced the <strong>variance</strong> as a measure 
+                    Earlier, we introduced the <a href="random_variables.html#D-variance" class="ref-link"><strong>variance</strong></a> as a measure 
                     of how a single random variable deviates from its mean. However, real-world phenomena rarely involve just one variable. 
                     In machine learning, a data point is typically a vector of features, and understanding how these features relate to one 
                     another is essential for tasks ranging from dimensionality reduction to generative modeling. This motivates 
@@ -38,12 +38,12 @@ uses_python: true
                     how pairs of random variables vary together.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-covariance">
                     <span class="theorem-title">Definition: Covariance</span>
                     <p>
                         The <strong>covariance</strong> between two random variables \(X\) and \(Y\) is defined as 
                         \[
-                        \text{Cov}[X, Y] = \mathbb{E}[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])].
+                        \operatorname{Cov}[X, Y] = \mathbb{E}[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])].
                         \]
                     </p>
                 </div>
@@ -55,43 +55,244 @@ uses_python: true
                 </p>
 
                 <p>
-                    Note: A useful computational identity is 
+                    To work with two random variables together, we need a way to describe their joint behavior. The 
+                    individual distributions of \(X\) and \(Y\) — each described by its own pmf or pdf — are not enough: 
+                    two random variables may have identical individual distributions while being either independent or perfectly correlated. 
+                    The required object is the <strong>joint distribution</strong>, which packages how \(X\) and \(Y\) take values together.
+                </p>
+
+                <div class="theorem" id="D-joint_pmf">
+                    <span class="theorem-title">Definition: Joint Probability Mass Function</span>
+                    <p>
+                        Let \(X\) and \(Y\) be discrete random variables on a common probability space, taking values in countable sets 
+                        \(\mathcal{X}, \mathcal{Y} \subseteq \mathbb{R}\). The <strong>joint probability mass function</strong> is
+                        \[
+                        p_{X,Y}(x, y) = P(X = x,\ Y = y), \qquad (x, y) \in \mathcal{X} \times \mathcal{Y},
+                        \]
+                        with \(p_{X,Y}(x,y) \geq 0\) and \(\sum_{x \in \mathcal{X}} \sum_{y \in \mathcal{Y}} p_{X,Y}(x, y) = 1\). The marginal pmfs 
+                        of \(X\) and \(Y\) are recovered by summing out the other variable:
+                        \[
+                        p_X(x) = \sum_{y \in \mathcal{Y}} p_{X,Y}(x, y), \qquad p_Y(y) = \sum_{x \in \mathcal{X}} p_{X,Y}(x, y).
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-joint_pdf">
+                    <span class="theorem-title">Definition: Joint Probability Density Function</span>
+                    <p>
+                        Random variables \(X\) and \(Y\) on a common probability space are said to be <strong>jointly continuous</strong> if there exists 
+                        a non-negative function \(f_{X,Y} : \mathbb{R}^2 \to [0, \infty)\), called the <strong>joint probability density function</strong>, 
+                        such that for every reasonable region \(B \subseteq \mathbb{R}^2\),
+                        \[
+                        P\big((X, Y) \in B\big) = \iint_B f_{X,Y}(x, y)\, dx\, dy,
+                        \]
+                        with \(\iint_{\mathbb{R}^2} f_{X,Y}(x, y)\, dx\, dy = 1\). The marginal densities are recovered by integrating out the other variable:
+                        \[
+                        f_X(x) = \int_{\mathbb{R}} f_{X,Y}(x, y)\, dy, \qquad f_Y(y) = \int_{\mathbb{R}} f_{X,Y}(x, y)\, dx.
+                        \]
+                        The precise meaning of "reasonable region" — namely, Borel subsets of \(\mathbb{R}^2\) — and the rigorous justification of these 
+                        identities require the language of <strong>product measures</strong>, developed in our later treatment of measure-theoretic probability.
+                    </p>
+                </div>
+
+                <p>
+                    The expectation of a function \(g(X, Y)\) of two jointly distributed random variables is, accordingly,
                     \[
-                    \text{Cov}[X, Y] = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]. 
+                    \mathbb{E}[g(X, Y)] = \sum_{x, y} g(x, y)\, p_{X,Y}(x, y) \quad \text{(discrete)}, \qquad
+                    \mathbb{E}[g(X, Y)] = \iint_{\mathbb{R}^2} g(x, y)\, f_{X,Y}(x, y)\, dx\, dy \quad \text{(continuous)},
                     \]
-                    If \(X\) and \(Y\) are independent, then 
-                    \[
-                    \mathbb{E}[XY] = \mathbb{E}[X]\mathbb{E}[Y],
-                    \], 
-                    so 
-                    \[
-                    \text{Cov}[X, Y] = 0.
-                    \] 
-                    However, the converse is <strong>not</strong> true in general: zero covariance indicates only the 
-                    absence of <strong>linear</strong> dependence. A positive (negative) covariance indicates a positive 
-                    (negative) "linear" association between \(X\) and \(Y\).
+                    provided the sum or integral converges absolutely.
+                </p>
+
+                <div class="theorem" id="D-rv_independence_elem">
+                    <span class="theorem-title">Definition: Independence of Random Variables (elementary)</span>
+                    <p>
+                        Two random variables \(X\) and \(Y\) on a common probability space are <strong>independent</strong> if their joint distribution 
+                        factors into the product of the marginal distributions:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>If \(X, Y\) are jointly discrete: \(\;p_{X,Y}(x, y) = p_X(x)\, p_Y(y)\) for all \((x, y)\).</li>
+                        <li>If \(X, Y\) are jointly continuous: \(\;f_{X,Y}(x, y) = f_X(x)\, f_Y(y)\) for all \((x, y)\).</li>
+                    </ol>
+                    <p>
+                        This is the random-variable analog of independence of events: if \(X\) and \(Y\) take values in \(\{0, 1\}\) 
+                        recording whether two events \(A\) and \(B\) occur, the two definitions coincide with 
+                        <a href="basic.html#D-independence_events" class="ref-link"><strong>independence of events</strong></a> 
+                        from the foundations chapter. A fully rigorous formulation in terms of \(\sigma\)-algebras is developed in our later treatment of 
+                        <strong>measure-theoretic probability</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Before deriving the standard computational identity for covariance, we record the bivariate extension of 
+                    linearity of expectation, which goes beyond the 
+                    <a href="random_variables.html#T-linearity_expectation" class="ref-link"><strong>scalar version</strong></a> 
+                    proved earlier (a single random variable scaled and shifted by constants).
+                </p>
+
+                <div class="theorem" id="T-bivariate_linearity_expectation">
+                    <span class="theorem-title">Theorem: Bivariate Linearity of Expectation</span>
+                    <p>
+                        Let \(X\) and \(Y\) be random variables defined on a common probability space, and let \(a, b \in \mathbb{R}\) be constants. Then
+                        \[
+                        \mathbb{E}[aX + bY] = a\,\mathbb{E}[X] + b\,\mathbb{E}[Y],
+                        \]
+                        provided each individual expectation exists. <strong>The result does not require \(X\) and \(Y\) to be independent.</strong>
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        For jointly continuous \((X, Y)\) with 
+                        <a href="#D-joint_pdf" class="ref-link"><strong>joint density</strong></a> 
+                        \(f_{X,Y}(x, y)\), expanding the definition of expectation gives
+                        \[
+                        \mathbb{E}[aX + bY] = \iint_{\mathbb{R}^2} (a x + b y)\, f_{X,Y}(x, y)\, dx\, dy.
+                        \]
+                        Two operations are then performed. First, by linearity of the integral, the integrand splits into two pieces:
+                        \[
+                        \iint a x\, f_{X,Y}(x, y)\, dx\, dy + \iint b y\, f_{X,Y}(x, y)\, dx\, dy.
+                        \]
+                        Second, we write each double integral as an iterated integral with the appropriate inner variable, so that the 
+                        inner integral of \(f_{X,Y}\) recovers a marginal density. For the first piece, integrating out \(y\) inside gives 
+                        \(f_X(x) = \int f_{X,Y}(x, y)\, dy\); for the second, integrating out \(x\) inside gives 
+                        \(f_Y(y) = \int f_{X,Y}(x, y)\, dx\). Thus
+                        \[
+                        \mathbb{E}[aX + bY] = a \int x\, f_X(x)\, dx + b \int y\, f_Y(y)\, dy = a\,\mathbb{E}[X] + b\,\mathbb{E}[Y].
+                        \]
+                        The discrete case is analogous, replacing integrals by sums and densities by joint and marginal mass functions. 
+                        Independence is not invoked — only the existence of the joint distribution and the ability to recover marginals from it. 
+                        The substantive point is that the double integral may be written as an iterated integral in either order: this is 
+                        <strong>Fubini's theorem</strong>, valid here under the existence-of-expectation hypothesis (which guarantees absolute 
+                        integrability). A fully rigorous treatment of Fubini's theorem requires the machinery of product measures, which we 
+                        develop in our later treatment of <strong>measure-theoretic probability</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    With bivariate linearity in hand, we obtain a computational identity for covariance that is often more convenient 
+                    than the definition.
+                </p>
+
+                <div class="theorem" id="T-covariance_computational_identity">
+                    <span class="theorem-title">Proposition: Computational Identity for Covariance</span>
+                    <p>
+                        For any random variables \(X\) and \(Y\) with finite second moments,
+                        \[
+                        \operatorname{Cov}[X, Y] = \mathbb{E}[XY] - \mathbb{E}[X]\,\mathbb{E}[Y].
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(\mu_X = \mathbb{E}[X]\) and \(\mu_Y = \mathbb{E}[Y]\) (constants). Expanding the product inside the definition,
+                        \[
+                        (X - \mu_X)(Y - \mu_Y) = XY - \mu_X Y - X \mu_Y + \mu_X \mu_Y.
+                        \]
+                        Apply linearity of expectation term-by-term — bivariate linearity (extended to four terms by repeated application) 
+                        splits the sum, and the scalar identity \(\mathbb{E}[cZ] = c\,\mathbb{E}[Z]\) handles the constant factors \(\mu_X\), \(\mu_Y\):
+                        \[
+                        \mathbb{E}[(X - \mu_X)(Y - \mu_Y)] = \mathbb{E}[XY] - \mu_X \mathbb{E}[Y] - \mathbb{E}[X] \mu_Y + \mu_X \mu_Y.
+                        \]
+                        Substituting back \(\mu_X = \mathbb{E}[X]\) and \(\mu_Y = \mathbb{E}[Y]\) into the last three terms gives
+                        \[
+                        - \mathbb{E}[X]\,\mathbb{E}[Y] - \mathbb{E}[X]\,\mathbb{E}[Y] + \mathbb{E}[X]\,\mathbb{E}[Y] = -\mathbb{E}[X]\,\mathbb{E}[Y],
+                        \]
+                        which yields the claimed identity \(\operatorname{Cov}[X, Y] = \mathbb{E}[XY] - \mathbb{E}[X]\,\mathbb{E}[Y]\).
+                    </p>
+                </div>
+
+                <p>
+                    Independence of random variables has a powerful consequence for expectations of products: it lets the expectation factor 
+                    across the two variables.
+                </p>
+
+                <div class="theorem" id="T-product_expectation_independent_elem">
+                    <span class="theorem-title">Theorem: Product Expectation Under Independence</span>
+                    <p>
+                        Let \(X\) and \(Y\) be 
+                        <a href="#D-rv_independence_elem" class="ref-link"><strong>independent random variables</strong></a> 
+                        on a common probability space, with finite expectations. Then \(XY\) has finite expectation, and
+                        \[
+                        \mathbb{E}[XY] = \mathbb{E}[X]\,\mathbb{E}[Y].
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        For jointly continuous \((X, Y)\), independence means the joint density factors as 
+                        \(f_{X,Y}(x, y) = f_X(x)\, f_Y(y)\). Substituting into the expectation formula,
+                        \[
+                        \mathbb{E}[XY] = \iint_{\mathbb{R}^2} x y\, f_{X,Y}(x, y)\, dx\, dy 
+                        = \iint_{\mathbb{R}^2} \big(x f_X(x)\big)\big(y f_Y(y)\big)\, dx\, dy.
+                        \]
+                        Writing the double integral as an iterated integral (Fubini's theorem under the absolute-integrability hypothesis), 
+                        the integrand factors and the two integrals separate:
+                        \[
+                        \mathbb{E}[XY] = \left( \int_{\mathbb{R}} x\, f_X(x)\, dx \right) \left( \int_{\mathbb{R}} y\, f_Y(y)\, dy \right) 
+                        = \mathbb{E}[X]\, \mathbb{E}[Y].
+                        \]
+                        For jointly discrete \((X, Y)\), the same argument applies with sums in place of integrals: 
+                        \(p_{X,Y}(x, y) = p_X(x)\,p_Y(y)\) gives
+                        \(\mathbb{E}[XY] = \sum_{x, y} xy\, p_X(x)\,p_Y(y) = \big(\sum_x x\,p_X(x)\big)\big(\sum_y y\,p_Y(y)\big) = \mathbb{E}[X]\,\mathbb{E}[Y]\).
+                        The general case (without joint density or pmf) is treated in measure-theoretic probability via product measures.
+                    </p>
+                </div>
+
+                <div class="theorem">
+                    <span class="theorem-title">Corollary: Independence Implies Zero Covariance</span>
+                    <p>
+                        If \(X\) and \(Y\) are independent random variables with finite second moments, then \(\operatorname{Cov}[X, Y] = 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Combine the 
+                        <a href="#T-covariance_computational_identity" class="ref-link"><strong>Computational Identity</strong></a> 
+                        with the 
+                        <a href="#T-product_expectation_independent_elem" class="ref-link"><strong>Product Expectation Theorem</strong></a>: 
+                        \(\operatorname{Cov}[X, Y] = \mathbb{E}[XY] - \mathbb{E}[X]\,\mathbb{E}[Y] = \mathbb{E}[X]\,\mathbb{E}[Y] - \mathbb{E}[X]\,\mathbb{E}[Y] = 0\).
+                    </p>
+                </div>
+
+                <p>
+                    The converse is <strong>not</strong> true in general: zero covariance indicates only the absence of <strong>linear</strong> dependence, 
+                    not full independence. A standard counter-example is \(X \sim \mathcal{N}(0, 1)\) and \(Y = X^2\). The standard normal density 
+                    \(\varphi(x) = \frac{1}{\sqrt{2\pi}} e^{-x^2/2}\) is an even function (\(\varphi(-x) = \varphi(x)\)), and \(x^3\) is an odd function, 
+                    so \(\mathbb{E}[X^3] = \int_{\mathbb{R}} x^3 \varphi(x)\, dx = 0\) by odd-times-even symmetry on \(\mathbb{R}\); together with 
+                    \(\mathbb{E}[X] = 0\), this gives 
+                    \(\operatorname{Cov}[X, Y] = \mathbb{E}[X^3] - \mathbb{E}[X]\,\mathbb{E}[X^2] = 0\). Yet \(Y\) is fully determined by \(X\), so 
+                    \(X\) and \(Y\) are far from independent. A positive (resp. negative) covariance indicates a positive (resp. negative) linear 
+                    association between \(X\) and \(Y\); the absence of such linear association is what zero covariance certifies.
                 </p>
 
                 <p>
-                    In practice, we extend this idea to \(n\) random variables. Consider a vector \(\boldsymbol{x} \in \mathbb{R}^n\) whose each 
-                    entries represent random variables \(X_1, \ldots X_n\).
+                    In practice, we extend this idea to \(n\) random variables. Consider a vector \(\boldsymbol{x} \in \mathbb{R}^n\) whose entries 
+                    represent random variables \(X_1, \ldots, X_n\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-covariance_matrix">
                     <span class="theorem-title">Definition: Population Covariance Matrix</span>
                     <p>
                         The <strong>population covariance matrix</strong> of a random vector 
                         \(\boldsymbol{x} = (X_1, \ldots, X_n)^\top\) with mean \(\boldsymbol{\mu} = \mathbb{E}[\boldsymbol{x}]\) is
                         \[
                         \begin{align*}
-                        \Sigma  &= \text{Cov}[\boldsymbol{x}] \\\\ 
-                                &= \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]  \\\\
+                        \Sigma  &= \operatorname{Cov}[\boldsymbol{x}] \\
+                                &= \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]  \\
                                 &= \begin{bmatrix}
-                                        \text{Var}[X_1] & \text{Cov}[X_1, X_2] & \cdots & \text{Cov}[X_1, X_n] \\
-                                        \text{Cov}[X_2, X_1] &  \text{Var}[X_2] & \cdots & \text{Cov}[X_2, X_n] \\
+                                        \operatorname{Var}[X_1] & \operatorname{Cov}[X_1, X_2] & \cdots & \operatorname{Cov}[X_1, X_n] \\
+                                        \operatorname{Cov}[X_2, X_1] &  \operatorname{Var}[X_2] & \cdots & \operatorname{Cov}[X_2, X_n] \\
                                         \vdots  & \vdots & \ddots & \vdots \\
-                                        \text{Cov}[X_n, X_1] &   \text{Cov}[X_n, X_2] & \cdots & \text{Var}[X_n]
-                                        \end{bmatrix} \\\\
+                                        \operatorname{Cov}[X_n, X_1] &   \operatorname{Cov}[X_n, X_2] & \cdots & \operatorname{Var}[X_n]
+                                        \end{bmatrix} \\
                                 &= \mathbb{E}[\boldsymbol{x}\boldsymbol{x}^\top] - \boldsymbol{\mu}\boldsymbol{\mu}^\top.
                         \end{align*}
                         \]
@@ -101,11 +302,11 @@ uses_python: true
                  <p>
                     Each diagonal entry \(\Sigma_{ii}\) is the <strong>variance</strong> of \(X_i\), since 
                     \[
-                    \text{Cov}[X_i, X_i] = \mathbb{E}[(X_i - \mathbb{E}[X_i])^2] = \sigma_i^2.
+                    \operatorname{Cov}[X_i, X_i] = \mathbb{E}[(X_i - \mathbb{E}[X_i])^2] = \sigma_i^2.
                     \]
                     The <strong>total variance</strong> is defined as the trace of \(\Sigma\):
                     \[
-                    \text{tr}(\Sigma) = \sum_{i=1}^n \text{Var}[X_i].
+                    \operatorname{tr}(\Sigma) = \sum_{i=1}^n \operatorname{Var}[X_i].
                     \]
                 </p>
 
@@ -117,14 +318,15 @@ uses_python: true
                 <p>
                     First, \(\Sigma\) is <strong>symmetric</strong> because covariance itself is symmetric:
                     \[
-                    \Sigma_{ij} = \text{Cov}[X_i, X_j] = \text{Cov}[X_j, X_i] = \Sigma_{ji}.
+                    \Sigma_{ij} = \operatorname{Cov}[X_i, X_j] = \operatorname{Cov}[X_j, X_i] = \Sigma_{ji}.
                     \]
-                    Equivalently, writing \(\Sigma = \mathbb{E}[(\boldsymbol{x} - \boldsymbol{\mu})(\boldsymbol{x} - \boldsymbol{\mu})^\top]\), 
-                    symmetry follows from the general fact that \((AA^\top)^\top = (A^\top)^\top A^\top = AA^\top \).
+                    Equivalently at the matrix level: for every realization of the random vector, the outer product 
+                    \((\boldsymbol{x} - \boldsymbol{\mu})(\boldsymbol{x} - \boldsymbol{\mu})^\top\) is a symmetric matrix, and the expectation of 
+                    a symmetric-matrix-valued random variable is again symmetric (since \(\mathbb{E}\) is taken entrywise and commutes with transposition).
                 </p>
 
                  <p>
-                    Since \(\Sigma\) is symmetric, by the <a href="../Linear_algebra/symmetry.html"><strong>spectral theorem</strong></a>, 
+                    Since \(\Sigma\) is symmetric, by the <a href="../Linear_algebra/symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a>, 
                     it is <strong>orthogonally diagonalizable</strong>: 
                     \[
                     \Sigma = P D P^\top  
@@ -133,14 +335,14 @@ uses_python: true
                     of the corresponding eigenvalues. In particular, because the trace is invariant under orthogonal similarity, the total 
                     variance equals the sum of eigenvalues:
                     \[
-                    \text{tr}(\Sigma) = \sum_{i=1}^n \text{Var}[X_i] = \text{tr}(D) = \sum_{i=1}^n \lambda_i.
+                    \operatorname{tr}(\Sigma) = \sum_{i=1}^n \operatorname{Var}[X_i] = \operatorname{tr}(D) = \sum_{i=1}^n \lambda_i.
                     \]
                     Note that the individual eigenvalues do <em>not</em> correspond to individual variances 
-                    \(\text{Var}[X_i]\); only the <em>totals</em> agree.
+                    \(\operatorname{Var}[X_i]\); only the <em>totals</em> agree.
                 </p>
 
-                 <div class="theorem">
-                    <span class="theorem-title">Theorem 1: Positive Semi-Definiteness of the Covariance Matrix</span>
+                 <div class="theorem" id="T-covariance_psd">
+                    <span class="theorem-title">Theorem: Positive Semi-Definiteness of the Covariance Matrix</span>
                     <p>
                         Every covariance matrix \(\Sigma\) is positive semi-definite. That is, 
                         for any \(\boldsymbol{v} \in \mathbb{R}^n\),
@@ -157,8 +359,8 @@ uses_python: true
                         \[
                         \begin{align*}
                         \boldsymbol{v}^\top \Sigma\, \boldsymbol{v} 
-                            &= \boldsymbol{v}^\top \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]\, \boldsymbol{v} \\\\
-                            &= \mathbb{E}[\boldsymbol{v}^\top (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top \boldsymbol{v}] \\\\
+                            &= \boldsymbol{v}^\top \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top]\, \boldsymbol{v} \\
+                            &= \mathbb{E}[\boldsymbol{v}^\top (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\top \boldsymbol{v}] \\
                             &= \mathbb{E} \left[(\boldsymbol{v}^\top (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}]))^2\right] \geq 0.
                         \end{align*}
                         \]
@@ -176,18 +378,18 @@ uses_python: true
                 </p>
 
                 <p>
-                    SideNote: \(\mathbb{E }[\boldsymbol{x}\boldsymbol{x}^\top]\) is called the <strong>autocorrelation matrix</strong> 
+                    SideNote: \(\mathbb{E}[\boldsymbol{x}\boldsymbol{x}^\top]\) is called the <strong>autocorrelation matrix</strong> 
                     denoted as \(R_{\boldsymbol{x}\boldsymbol{x}}\):
                     \[
                     \begin{align*}
                             R_{\boldsymbol{x}\boldsymbol{x}} 
-                            &= \mathbb{E }[\\boldsymbol{x}\boldsymbol{x}^\top] \\\\
+                            &= \mathbb{E}[\boldsymbol{x}\boldsymbol{x}^\top] \\
                             &= \begin{bmatrix}
-                                    \mathbb{E }[X_1^2] & \mathbb{E }[X_1 X_2] & \cdots & \mathbb{E }[X_1 X_n] \\
-                                    \mathbb{E }[X_2 X_1] &  \mathbb{E }[X_2^2] & \cdots & \mathbb{E }[X_2 X_n] \\
+                                    \mathbb{E}[X_1^2] & \mathbb{E}[X_1 X_2] & \cdots & \mathbb{E}[X_1 X_n] \\
+                                    \mathbb{E}[X_2 X_1] &  \mathbb{E}[X_2^2] & \cdots & \mathbb{E}[X_2 X_n] \\
                                     \vdots  & \vdots & \ddots & \vdots \\
-                                    \mathbb{E }[X_n X_1] &   \mathbb{E }[X_n X_2] & \cdots & \mathbb{E }[X_n^2].
-                                \end{bmatrix} \\\\
+                                    \mathbb{E}[X_n X_1] &   \mathbb{E}[X_n X_2] & \cdots & \mathbb{E}[X_n^2].
+                                \end{bmatrix}
                     \end{align*}
                     \]
                 </p>
@@ -203,98 +405,180 @@ uses_python: true
                     <strong>Principal Component Analysis (PCA)</strong>, one of the most widely used techniques in data science for dimensionality reduction.
                 </p>
 
+                <p>
+                    Before describing PCA, we establish the precise sense in which "eigenvalue equals variance along its eigenvector." 
+                    This is what makes the spectral decomposition of \(\Sigma\) statistically meaningful in the first place.
+                </p>
+
+                <div class="theorem" id="T-variance_along_direction">
+                    <span class="theorem-title">Proposition: Variance Along a Direction</span>
+                    <p>
+                        Let \(\boldsymbol{x}\) be a random vector in \(\mathbb{R}^n\) with covariance matrix \(\Sigma\). For any unit vector 
+                        \(\boldsymbol{v} \in \mathbb{R}^n\), the scalar projection \(\boldsymbol{v}^\top \boldsymbol{x}\) is a real-valued random variable 
+                        whose variance is
+                        \[
+                        \operatorname{Var}[\boldsymbol{v}^\top \boldsymbol{x}] = \boldsymbol{v}^\top \Sigma\, \boldsymbol{v}.
+                        \]
+                        In particular, if \(\boldsymbol{v} = \boldsymbol{p}_i\) is a unit eigenvector of \(\Sigma\) with eigenvalue \(\lambda_i\), then
+                        \[
+                        \operatorname{Var}[\boldsymbol{p}_i^\top \boldsymbol{x}] = \lambda_i.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By repeated application of 
+                        <a href="#T-bivariate_linearity_expectation" class="ref-link"><strong>bivariate linearity of expectation</strong></a> 
+                        (which extends to any finite linear combination by induction), 
+                        the mean of the scalar \(\boldsymbol{v}^\top \boldsymbol{x} = \sum_i v_i X_i\) is 
+                        \(\mathbb{E}[\boldsymbol{v}^\top \boldsymbol{x}] = \sum_i v_i \mathbb{E}[X_i] = \boldsymbol{v}^\top \boldsymbol{\mu}\) 
+                        (a deterministic constant, since \(\boldsymbol{v}\) and \(\boldsymbol{\mu}\) are non-random). By the definition of variance,
+                        \[
+                        \operatorname{Var}[\boldsymbol{v}^\top \boldsymbol{x}] = \mathbb{E}\!\left[\left(\boldsymbol{v}^\top \boldsymbol{x} - \boldsymbol{v}^\top \boldsymbol{\mu}\right)^2\right] 
+                        = \mathbb{E}\!\left[\left(\boldsymbol{v}^\top (\boldsymbol{x} - \boldsymbol{\mu})\right)^2\right].
+                        \]
+                        This is precisely the quantity computed in the proof of the 
+                        <a href="#T-covariance_psd" class="ref-link"><strong>positive semi-definiteness theorem</strong></a> above; carrying out the same 
+                        algebraic manipulation gives
+                        \[
+                        \mathbb{E}\!\left[\left(\boldsymbol{v}^\top (\boldsymbol{x} - \boldsymbol{\mu})\right)^2\right] = \boldsymbol{v}^\top \Sigma\, \boldsymbol{v}.
+                        \]
+                        For the eigenvector specialization, substituting \(\boldsymbol{v} = \boldsymbol{p}_i\) and using \(\Sigma \boldsymbol{p}_i = \lambda_i \boldsymbol{p}_i\) gives 
+                        \(\boldsymbol{p}_i^\top \Sigma\, \boldsymbol{p}_i = \lambda_i\, \boldsymbol{p}_i^\top \boldsymbol{p}_i = \lambda_i\) since \(\boldsymbol{p}_i\) is a unit vector.
+                    </p>
+                </div>
+
+                <p>
+                    This proposition has an immediate optimization consequence. Expanding any unit vector \(\boldsymbol{v}\) in the orthonormal eigenbasis 
+                    \(\{\boldsymbol{p}_1, \ldots, \boldsymbol{p}_n\}\) as \(\boldsymbol{v} = \sum_i c_i \boldsymbol{p}_i\) with \(\sum_i c_i^2 = 1\), 
+                    a direct computation using \(\Sigma \boldsymbol{p}_i = \lambda_i \boldsymbol{p}_i\) and orthonormality yields 
+                    \(\boldsymbol{v}^\top \Sigma\, \boldsymbol{v} = \sum_i c_i^2 \lambda_i\), a convex combination of the eigenvalues. Ordering 
+                    \(\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq 0\), this combination is maximized by placing all weight on the largest 
+                    eigenvalue:
+                    \[
+                    \max_{\|\boldsymbol{v}\|=1} \operatorname{Var}[\boldsymbol{v}^\top \boldsymbol{x}] = \max_{\|\boldsymbol{v}\|=1} \boldsymbol{v}^\top \Sigma\, \boldsymbol{v} = \lambda_1,
+                    \]
+                    attained at \(\boldsymbol{v} = \boldsymbol{p}_1\). The variance-maximizing direction is the eigenvector of the largest eigenvalue.
+                </p>
+
                 <p> 
                     The orthogonal diagonalization of the covariance matrix \(\Sigma\) is important in statistics and machine learning for 
                     analyzing data and reducing dimensionality:  
                     \[
                     \Sigma = P D P^\top
                     \]
-                    Here, the column vectors of \(P\) (unit eigenvectors of \(\Sigma \)) are called the <strong>principal components(PCs)</strong> 
-                    of the data, and the diagonal entries of \(D\) (eigenvalues of \(\Sigma \)) represent the <strong>variances</strong> along these 
-                    principal components. Each eigenvalue indicates "how much" of the <strong>total variance</strong> of \(\Sigma \) is captured by 
+                    Here, the column vectors of \(P\) (unit eigenvectors of \(\Sigma\)) are called the <strong>principal components (PCs)</strong> 
+                    of the data, and the diagonal entries of \(D\) (eigenvalues of \(\Sigma\)) represent the <strong>variances</strong> along these 
+                    principal components. Each eigenvalue indicates "how much" of the <strong>total variance</strong> of \(\Sigma\) is captured by 
                     its corresponding principal component. 
                 </p>
 
                 <p>
-                    The <strong>first principal component(PC1)</strong> corresponds to the largest eigenvalue and represents the direction in the 
-                    data space where the distribution varies the most(= the direction of maximizing the variance in data). The second principal 
-                    component(PC2) captures the next largest variance and is orthogonal to PC1. Similarly, each subsequent PC capturing less variance 
-                    and maintaining orthogonality to all previous PCs.
+                    The <strong>first principal component (PC1)</strong> corresponds to the largest eigenvalue and represents the direction in the 
+                    data space where the distribution varies the most (the direction maximizing the variance of the data). The second principal 
+                    component (PC2) captures the next largest variance and is orthogonal to PC1. Similarly, each subsequent PC captures less variance 
+                    and maintains orthogonality to all previous PCs.
                 </p>
 
                 <p>
                     For example, suppose you have an observed data matrix \(X \in \mathbb{R}^{m \times 10}\), which contains \(m\) data points, each 
-                    represented as a vector \(\boldsymbol{x}_i \in \mathbb{R}^{10} \). 
+                    represented as a vector \(\boldsymbol{x}_i \in \mathbb{R}^{10}\). 
                     Computing the <strong>sample covariance matrix</strong> and diagonalizing it:
                     \[
                     S = \frac{1}{m-1}(X-\bar{X})^\top (X-\bar{X}) = PDP^\top,
                     \] 
-                    you examine the eigenvalues to determine how much variance each principal component captures comparing with 
-                    the <strong>total variance</strong> of \(S\). 
+                    where \(\bar{X} \in \mathbb{R}^{m \times 10}\) is the matrix whose every row equals the column-mean vector 
+                    \(\bar{\boldsymbol{x}} = \frac{1}{m}\sum_{i=1}^m \boldsymbol{x}_i\). You then examine the eigenvalues to determine how much 
+                    variance each principal component captures, comparing with the <strong>total variance</strong> of \(S\). 
                 </p>
 
                 <p>
                     Let's say PC1: 40%, PC2: 30%, and PC3: 25%. Then, you project the data onto the subspace spanned by the first 3 most 
-                    significant principal components. Even though you discarded the remaining 7 dimensions (noise dimensions), you still retain 
-                    the most significant patterns(trends) in the data. 
+                    significant principal components. Even though you discarded the remaining 7 dimensions (which carry only a small fraction 
+                    of the total variance, typically interpreted as noise or fine-scale variation), you still retain the most significant 
+                    patterns (trends) in the data. 
                     \[
                     \boldsymbol{x}_i \in \mathbb{R}^{10} \to \boldsymbol{z}_i \in \mathbb{R}^3
                     \]
-                    The vector \(z_i\) is known as the <strong>latent vector</strong>.
+                    The vector \(\boldsymbol{z}_i\) is known as the <strong>latent vector</strong>.
                 </p>
 
                 <p>
-                    This <strong>dimensionality reduction</strong> process is called <strong>principal component analysis(PCA)</strong>. By reducing 
+                    This <strong>dimensionality reduction</strong> process is called <strong>principal component analysis (PCA)</strong>. By reducing 
                     dimensions, PCA enables efficient analysis of large datasets while retaining their most meaningful structure. PCA is 
                     widely used in machine learning, image processing, and exploratory data analysis for dimensionality reduction and noise filtering. 
                 </p>
             </section>
 
             <section id="svd" class="section-content">
-                <h2>PCA with Singular Value Decomposition(SVD)</h2>
+                <h2>PCA with Singular Value Decomposition (SVD)</h2>
 
                 <p>
-                    In the derivation above, PCA was formulated through the eigendecomposition of the covariance matrix \(S = PDP^\top\). 
+                    In the derivation above, PCA was formulated through the eigendecomposition of the sample covariance matrix \(S = PDP^\top\). 
                     While conceptually clean, this approach requires explicitly forming \(X^\top X\), which can be expensive for high-dimensional 
                     data and may suffer from numerical instability. The 
-                    <a href="../Linear_algebra/symmetry.html"><strong>singular value decomposition (SVD)</strong></a> 
+                    <a href="../Linear_algebra/symmetry.html#T-svd" class="ref-link"><strong>singular value decomposition (SVD)</strong></a> 
                     provides an elegant alternative that avoids these issues while yielding the same principal components.
                 </p>
 
                 <p>
-                    Given a data matrix in mean-deviation form \(X \in \mathbb{R}^{m \times n}\) where \(m\) is the number of data points 
-                    and \(n\) is the number of features, the matrix \(X^\top X\) is the covariance matrix.
+                    Given a data matrix in mean-deviation form \(X \in \mathbb{R}^{m \times n}\) (so that \(\bar{X} = 0\), where \(m\) is the number 
+                    of data points and \(n\) is the number of features), the sample covariance matrix simplifies to
+                    \[
+                    S = \frac{1}{m-1} X^\top X.
+                    \]
+                    Note: in PCA, it is common to work with \(X^\top X \in \mathbb{R}^{n \times n}\) rather than \(XX^\top \in \mathbb{R}^{m \times m}\) 
+                    because we are typically more interested in understanding the relationships among the \(n\) features than among the \(m\) data points.
                 </p>
 
                 <p>
-                    Note: in PCA, it is common to use \(X^\top X \in  \mathbb{R}^{n \times n}\) rather than \(XX^\top \in \mathbb{R}^{m \times m}\) 
-                    because we are typically more interested in understanding the relationships among the \(n\) "features" than among 
-                    \(m\) data points.
-                </p>
-
-                <p>
-                    Using the SVD of \(X\), we compute the covariance matrix \(X^\top X\) : 
+                    Now apply the SVD to \(X\): write \(X = U \Sigma V^\top\), where \(U \in \mathbb{R}^{m \times m}\) and \(V \in \mathbb{R}^{n \times n}\) 
+                    are orthogonal and \(\Sigma \in \mathbb{R}^{m \times n}\) is the rectangular diagonal matrix of singular values 
+                    \(\sigma_1 \geq \sigma_2 \geq \cdots \geq 0\). (Here \(\Sigma\) denotes the SVD's singular-value matrix in the standard linear-algebra 
+                    convention; it is unrelated to the population covariance matrix introduced earlier in this page, which does not appear in this section.) 
+                    Substituting,
                     \[
                     \begin{align*}
-                    X^\top X &= (U\Sigma V^\top )^\top (U\Sigma V^\top)  \\\\
-                        &= V\Sigma^\top U^\top U\Sigma V^\top \\\\
-                        &= V\Sigma^2V^\top
+                    X^\top X &= (U\Sigma V^\top)^\top (U\Sigma V^\top)  \\
+                        &= V\Sigma^\top U^\top U\Sigma V^\top \\
+                        &= V\,(\Sigma^\top \Sigma)\,V^\top,
                     \end{align*}
                     \] 
-                    This result is equivalent to the eigendecomposition \(X^\top X = PDP^\top\). \(\Sigma^2\) contains the eigenvalues \(\lambda_i\) 
-                    of \(X^\top X\), with \(\sigma_i ^2 = \lambda_i\). Also, \(V\) (right singular vectors) corresponds 
-                    to the eigenvectors (principal components) of \(X^\top X\).
+                    using \(U^\top U = I_m\) (orthogonality of \(U\)). The product \(\Sigma^\top \Sigma\) is the \(n \times n\) square diagonal matrix 
+                    \(\operatorname{diag}(\sigma_1^2, \ldots, \sigma_n^2)\). Dividing by \(m-1\) yields the sample covariance matrix in eigendecomposition form:
+                    \[
+                    S = \frac{1}{m-1} X^\top X = V \cdot \operatorname{diag}\!\left(\frac{\sigma_1^2}{m-1}, \ldots, \frac{\sigma_n^2}{m-1}\right) \cdot V^\top.
+                    \]
+                    Comparing with the eigendecomposition \(S = PDP^\top\) from the previous section, and writing \(\boldsymbol{v}_i\) for the \(i\)-th 
+                    column of \(V\) (the \(i\)-th right singular vector), we read off
+                    \[
+                    P = V, \qquad \boldsymbol{p}_i = \boldsymbol{v}_i, \qquad \lambda_i = \frac{\sigma_i^2}{m-1}.
+                    \]
+                    The right singular vectors are therefore the principal components, and the eigenvalues of \(S\) are the squared singular values 
+                    divided by \(m-1\).
                 </p>
 
                 <p>
-                    Thus, the singular values \(\sigma_i\) represent the <strong>standard deviations</strong> along the principal components, 
-                    and the squared singular values \(\sigma_i^2\) represent the variances.
+                    To interpret these eigenvalues as variances, recall that the 
+                    <a href="#T-variance_along_direction" class="ref-link"><strong>Variance Along a Direction proposition</strong></a> 
+                    was stated for a random vector \(\boldsymbol{x}\) with population covariance \(\Sigma\). The proposition's algebraic identity 
+                    \(\boldsymbol{v}^\top M \boldsymbol{v} = \mathbb{E}[(\boldsymbol{v}^\top (\boldsymbol{x} - \boldsymbol{\mu}))^2]\) does not depend 
+                    on which matrix \(M\) we feed in: applied to the empirical distribution that places mass \(1/m\) on each observed data point, 
+                    \(M = X^\top X / m\) gives the empirical variance along direction \(\boldsymbol{v}\); applied with the Bessel-corrected matrix 
+                    \(M = S = X^\top X / (m-1)\), it gives the unbiased <strong>sample variance</strong>. Thus the eigenvalues of \(S\) are 
+                    precisely the sample variances along the principal components:
+                    \[
+                    \widehat{\operatorname{Var}}\!\left[\boldsymbol{v}_i^\top \boldsymbol{x}\right] = \frac{\sigma_i^2}{m-1}, \qquad 
+                    \text{sample standard deviation along PC } i \;=\; \frac{\sigma_i}{\sqrt{m-1}}.
+                    \]
                 </p>
 
                 <p>
-                    SVD offers several numerical advantages for PCA. For high-dimensional data, computing \(X^\top X\) would be 
-                    expensive or memory-intensive, but SVD can avoid explicitly forming \(X^\top X\) working directly with \(X\), which 
-                    allows direct access to the principal components and variances. 
+                    SVD offers several numerical advantages for PCA. For high-dimensional data, computing \(X^\top X\) explicitly would be 
+                    expensive or memory-intensive, but SVD can be computed directly from \(X\), giving access to the principal components and 
+                    variances without ever forming \(X^\top X\).
                 </p>
 
                 <div class="code-container">
@@ -318,7 +602,7 @@ uses_python: true
                             # Mean-deviation form 
                             return (data - np.mean(data, axis=0) )
 
-                        # PCA with covariance matrix (As refference)
+                        # PCA with covariance matrix (As reference)
                         def pca_via_covariance(data):
                             
                             # "Sample" covariance matrix 
@@ -419,6 +703,7 @@ uses_python: true
         </div>  
         
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
         <script src="/js/runPythonCode.js"></script>
         <script src="/js/collapsible.js"></script>
     </body>
