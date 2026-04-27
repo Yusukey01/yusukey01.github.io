@@ -32,7 +32,7 @@ uses_python: false
 
                 <p>
                     Once we have a statistical model (or <strong>hypothesis</strong>), we need to assess whether it's plausible given our data
-                    \(\mathcal{D}\). In <a href="mle.html"><strong>Part 9</strong></a>, we developed <strong>maximum likelihood estimation</strong> 
+                    \(\mathcal{D}\). On the <a href="mle.html"><strong>MLE page</strong></a>, we developed <strong>maximum likelihood estimation</strong> 
                     as a method for fitting parameters to data. MLE answers the question "what is the best estimate?" but it does not answer a 
                     complementary question: "is the effect we observe real, or could it be due to chance?" 
                     <strong>Hypothesis testing</strong> provides a principled framework for making such decisions under uncertainty.
@@ -44,7 +44,7 @@ uses_python: false
                     more standardized, and provide complementary insights. Here, we introduce the <strong>null hypothesis significance test (NHST)</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-hypotheses">
                     <span class="theorem-title">Definition: Hypotheses</span>
                     <p>
                         A hypothesis test involves two competing statements:
@@ -70,7 +70,7 @@ uses_python: false
                     Because our conclusion can be wrong, we must account for two types of error:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-type_errors">
                     <span class="theorem-title">Definition: Type I and Type II Errors</span>
                     <ul style="padding-left: 40px;">
                         <li><strong>Type I error</strong> (<strong>false positive</strong>):<br>
@@ -89,21 +89,28 @@ uses_python: false
                 </p>
 
                 <p>
-                    To decide whether to reject \(H_0\), we compute a <strong>test statistic</strong> \(\text{test}(\mathcal{D})\) 
+                    To decide whether to reject \(H_0\), we compute a <strong>test statistic</strong> \(T(\mathcal{D})\) 
                     - a function of the data that summarizes the evidence against \(H_0\). We then compare it to the distribution of 
-                    \(\text{test}(\tilde{\mathcal{D}})\) under hypothetical datasets \(\tilde{\mathcal{D}}\) drawn assuming \(H_0\) is true.
+                    \(T(\tilde{\mathcal{D}})\) under hypothetical datasets \(\tilde{\mathcal{D}}\) drawn assuming \(H_0\) is true.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-p_value">
                     <span class="theorem-title">Definition: p-Value</span>
                     <p>
                         The <strong>p-value</strong> is the probability, under \(H_0\), of obtaining 
                         a test statistic at least as extreme as the one observed:
                         \[
-                        p = P\!\left(\text{test}(\tilde{\mathcal{D}}) \geq \text{test}(\mathcal{D}) \;\middle|\; \tilde{\mathcal{D}} \sim H_0\right).
+                        p = P\!\left(T(\tilde{\mathcal{D}}) \geq T(\mathcal{D}) \;\middle|\; \tilde{\mathcal{D}} \sim H_0\right).
                         \]
                     </p>
                 </div>
+
+                <p>
+                    The form above is the <strong>upper-tailed</strong> p-value, appropriate when \(H_1\) predicts larger values of \(T\). 
+                    The lower-tailed variant replaces \(\geq\) with \(\leq\), and the two-sided version uses 
+                    \(P(|T(\tilde{\mathcal{D}})| \geq |T(\mathcal{D})|)\) when the test statistic is symmetric under \(H_0\). 
+                    The choice depends on the alternative hypothesis.
+                </p>
 
                 <p>
                     If \(p < \alpha\), the observed result is deemed unlikely under \(H_0\), and we reject the null hypothesis. 
@@ -141,8 +148,18 @@ uses_python: false
 
                 <p>
                     When the population standard deviation \(\sigma\) is unknown - which is the typical situation in practice - 
-                    we replace it with the sample standard deviation \(s\) and use the <a href="student.html"><strong>Student's t-distribution</strong></a> 
+                    we replace it with the sample standard deviation \(s\) and use the <a href="student.html#D-student_t" class="ref-link"><strong>Student's t-distribution</strong></a> 
                     instead of the normal distribution. The resulting procedure is called a <strong>t-test</strong>.
+                </p>
+
+                <p>
+                    <strong>Distributional assumption.</strong> If \(X_1, \ldots, X_n\) are i.i.d. \(\mathcal{N}(\mu, \sigma^2)\), then the standardized 
+                    sample mean \((\bar{X} - \mu)/(s/\sqrt{n})\) follows a \(t_{n-1}\) distribution exactly. To see this, note that 
+                    \(Z := \sqrt{n}(\bar{X} - \mu)/\sigma \sim \mathcal{N}(0,1)\) and \(Q := (n-1)s^2/\sigma^2 \sim \chi^2_{n-1}\), and that 
+                    \(Z\) and \(Q\) are independent - a fact whose rigorous proof requires the orthogonal decomposition of Gaussian samples 
+                    (Cochran's theorem). The ratio \(Z/\sqrt{Q/(n-1)} = (\bar{X} - \mu)/(s/\sqrt{n})\) then matches the 
+                    <a href="student.html#D-standard_student_t" class="ref-link"><strong>standard t-distribution</strong></a> definition. 
+                    For non-normal populations, the result holds only asymptotically via the Central Limit Theorem.
                 </p>
 
                 <div class="proof">
@@ -179,7 +196,7 @@ uses_python: false
                     </p>
                     <p>
                         The p-value is the probability of observing a test statistic as extreme as (or more extreme than) the calculated 
-                        t-value under the null hypothesis. This follows a <a href="student.html"><strong>Student's t-distribution</strong></a> 
+                        t-value under the null hypothesis. This follows a <a href="student.html#D-student_t" class="ref-link"><strong>Student's t-distribution</strong></a> 
                         with \(n - 1 = 29 \) degrees of freedom.
                    </p>
 
@@ -196,7 +213,7 @@ uses_python: false
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>the new teaching method definitely increases test scores.</li>
-                        <li>the probability that \(H_0\) is true is 0.0021.</li>
+                        <li>the probability that \(H_0\) is true is 0.0018.</li>
                         <li>the effect is practically significant.</li>
                     </ul>       
                 </div>
@@ -213,12 +230,17 @@ uses_python: false
                     interpretation.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-confidence_interval">
                     <span class="theorem-title">Definition: Confidence Interval (Frequentist)</span>
                     <p>
-                        A \(100(1 - \alpha)\%\) <strong>confidence interval</strong> is a random interval 
-                        \([L(\mathcal{D}),\, U(\mathcal{D})]\) such that, if we were to repeat the 
-                        experiment many times and construct such an interval each time, approximately 
+                        A \(100(1 - \alpha)\%\) <strong>confidence interval</strong> for \(\theta\) is a random interval 
+                        \([L(\mathcal{D}),\, U(\mathcal{D})]\) satisfying
+                        \[
+                        P_\theta\!\left(\theta \in [L(\mathcal{D}), U(\mathcal{D})]\right) \;\geq\; 1 - \alpha 
+                        \qquad \text{for all } \theta \in \Theta,
+                        \]
+                        where the probability is taken with respect to the sampling distribution of \(\mathcal{D}\) under parameter \(\theta\). 
+                        Equivalently: if we were to repeat the experiment many times and construct such an interval each time, at least 
                         \(100(1 - \alpha)\%\) of those intervals would contain the true parameter \(\theta\).
                     </p>
                 </div>
@@ -233,7 +255,24 @@ uses_python: false
                 <p>
                     In <a href="bayesian.html"><strong>Bayesian statistics</strong></a>, the interpretation is reversed: 
                     the data are fixed (since they are observed) and the parameter is treated as a random variable with a 
-                    posterior distribution. A <strong>credible interval</strong> directly states that, given the data and the prior, 
+                    posterior distribution.
+                </p>
+
+                <div class="theorem" id="D-credible_interval">
+                    <span class="theorem-title">Definition: Credible Interval (Bayesian)</span>
+                    <p>
+                        A \(100(1 - \alpha)\%\) <strong>credible interval</strong> for \(\theta\) is an interval \([L, U]\) satisfying
+                        \[
+                        P\!\left(\theta \in [L, U] \;\middle|\; \mathcal{D}\right) \;=\; 1 - \alpha,
+                        \]
+                        where the probability is taken with respect to the posterior distribution \(p(\theta \mid \mathcal{D})\). 
+                        A common choice is the <strong>equal-tailed</strong> interval given by the \(\alpha/2\) and \(1 - \alpha/2\) 
+                        posterior quantiles.
+                    </p>
+                </div>
+
+                <p>
+                    Unlike a confidence interval, a credible interval directly states that, given the data and the prior, 
                     the parameter falls within the interval with the stated probability. This is often considered more intuitive.
                 </p>
 
@@ -244,11 +283,11 @@ uses_python: false
                     </p>
                     <p>
                         First, we try the frequentist approach. The point estimate for the probability of heads is 
-                        \(\hat{p} = \frac{60}{100} = 0.6\), and the standard error(SE) for a proportion is given by:
+                        \(\hat{p} = \frac{60}{100} = 0.6\), and the standard error (SE) for a proportion is given by:
                         \[
                         \begin{align*}
-                        \text{SE} &= \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \\\\
-                                &= \sqrt{\frac{0.6 \times 0.4}{100}} \\\\\
+                        \operatorname{SE} &= \sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \\
+                                &= \sqrt{\frac{0.6 \times 0.4}{100}} \\
                                 &\approx 0.049.
                         \end{align*}
                         \]
@@ -258,7 +297,7 @@ uses_python: false
                         For a 95% CI using normal approximation, the <strong>critical value</strong> is \(z_{0.025} \approx 1.96\). Then CI is given by 
                         \[
                         \begin{align*}
-                        \text{CI} &= [\hat{p}-z_{0.025} \times \text{SE}, \quad \hat{p}+z_{0.025}\times \text{SE}] \\\\
+                        \operatorname{CI} &= [\hat{p}-z_{0.025} \times \operatorname{SE}, \quad \hat{p}+z_{0.025}\times \operatorname{SE}] \\
                                 &\approx [0.504, 0.696].
                         \end{align*}
                         \]
@@ -279,16 +318,16 @@ uses_python: false
 
                     <p>
                         In Bayesian approach, we assume a uniform prior for the probability \(p\) which is equivalent to 
-                        a <a href="gamma.html"><strong>Beta distribution</strong></a>: 
+                        a <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>: 
                         \[
-                        p \sim \text{Beta}(1, 1).
+                        p \sim \operatorname{Beta}(1, 1).
                         \]
                         With 60 heads and 40 tails, the likelihood is given by a binomial distribution. In the Bayesian framework, the 
                         <strong>posterior</strong> distribution is:
                         \[
-                        p \sim \text{Beta}(1+60, 1+40) = \text{Beta}(61, 41).
+                        p \sim \operatorname{Beta}(1+60, 1+40) = \operatorname{Beta}(61, 41).
                         \]
-                        (Note: The Beta distribution is a <a href="bayesian.html"><strong>conjugate prior</strong></a> for the binomial likelihood. 
+                        (Note: The Beta distribution is a <a href="bayesian.html#D-conjugate_prior" class="ref-link"><strong>conjugate prior</strong></a> for the binomial likelihood. 
                         This means that when the likelihood is binomial, which is the case for coin tosses, using a Beta prior results in a 
                         posterior distribution that is also a Beta distribution.)
                     </p>
@@ -299,7 +338,7 @@ uses_python: false
                         Beta distribution. For example, 
                         \[
                         \begin{align*}
-                        \text{CrI} &= [\text{invBeta}(0.025, 61, 41), \quad \text{invBeta}(0.975, 61, 41)] \\
+                        \operatorname{CrI} &= [\operatorname{invBeta}(0.025, 61, 41), \quad \operatorname{invBeta}(0.975, 61, 41)] \\
                                 &\approx [0.50, 0.69].
                         \end{align*}
                         \]
@@ -326,20 +365,20 @@ uses_python: false
                     The confidence intervals derived above rely on distributional assumptions - typically, that the sampling 
                     distribution is approximately normal by CLT. When the sample size is small, the estimator is a complex function 
                     of the data, or the underlying distribution is far from normal, these analytical approximations may be 
-                    unreliable. The <strong>bootstrap</strong> method provides a powerful, assumption-free alternative.
+                    unreliable. The <strong>bootstrap</strong> method provides a powerful, <strong>distribution-free</strong> alternative.
                 </p>
 
                 <p>
                     The idea is conceptually simple: treat the observed sample as a proxy for the population and resample from it 
                     with replacement to generate many <strong>bootstrap samples</strong>. By computing the estimator on each bootstrap 
-                    sample, we obtain an empirical approximation of the sampling distribution. This approach provides a flexible, 
+                    sample, we obtain an empirical approximation of the estimator's sampling distribution. This approach provides a flexible, 
                     non-parametric way to assess uncertainty and construct confidence intervals.
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example:</span>
                     <p>
-                        we have a small dataset of 10 people's heights (in cm):
+                        We have a small dataset of 10 people's heights (in cm):
                         \[
                         x = [160,165,170,175,180,185,190,195,200,205].
                         \]
@@ -352,7 +391,7 @@ uses_python: false
                         missing in a given resample. For example, we might obtain:
                         \[
                         \begin{align*}
-                        &x_1 = [165,175,175,190,185,160,200,195,180,185], \\\\
+                        &x_1 = [165,175,175,190,185,160,200,195,180,185], \\
                         &\hat{\mu} = 181.0.
                         \end{align*}
                         \]
@@ -383,7 +422,7 @@ uses_python: false
 
                 <p>
                     With the tools for estimation (MLE) and inference (hypothesis testing, confidence intervals) established, we can now 
-                    apply them to one of the most important models in statistics. In the <a href="linear_regression.html"><strong>next part</strong></a>, 
+                    apply them to one of the most important models in statistics. On the <a href="linear_regression.html"><strong>linear regression page</strong></a>, 
                     we develop <strong>linear regression</strong> as the intersection of least-squares optimization and maximum likelihood estimation 
                     under Gaussian noise.
                 </p>
