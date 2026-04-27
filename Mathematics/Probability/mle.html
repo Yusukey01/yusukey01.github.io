@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Maximum Likelihood Estimation
+title: "Maximum Likelihood Estimation"
 topic_id: prob-9
 level: detail
 uses_math: true
@@ -40,10 +40,19 @@ uses_python: false
                 <div class="theorem" id="D-point_estimator">
                     <span class="theorem-title">Definition: Point Estimator</span>
                     <p>
-                        A <strong>point estimator</strong> \(\hat{\theta}\) is a function of sample 
-                        random variables \(X_1, X_2, \ldots, X_n\) that produces a single value as an 
-                        estimate of the unknown population parameter \(\theta\). For example, the 
-                        sample mean 
+                        Let the population parameter \(\theta\) take values in a <strong>parameter space</strong> 
+                        \(\Theta \subseteq \mathbb{R}^k\) (with \(k = 1\) for scalar parameters). 
+                        A <strong>point estimator</strong> of \(\theta\) is a function 
+                        \[
+                        \hat{\theta} : \mathbb{R}^n \to \Theta, \qquad (X_1, \ldots, X_n) \mapsto \hat{\theta}(X_1, \ldots, X_n)
+                        \]
+                        of the sample random variables that does not itself depend on \(\theta\) — that is, a 
+                        <strong>statistic</strong>. The numerical value 
+                        \(\hat{\theta}(x_1, \ldots, x_n)\) computed from observed data is the corresponding 
+                        <strong>point estimate</strong>.
+                    </p>
+                    <p>
+                        For example, the sample mean
                         \[
                         \bar{X} = \frac{1}{n}\sum_{i=1}^n X_i
                         \]
@@ -55,24 +64,30 @@ uses_python: false
                     Since \(\hat{\theta}\) is a function of random variables, it is itself a random 
                     variable with its own distribution, called the <strong>sampling distribution</strong>. 
                     A natural question is: how close is \(\hat{\theta}\) to the true parameter \(\theta\)? 
-                    Two fundamental properties characterize the quality of an estimator:
+                    Two fundamental properties characterize the quality of an estimator: its <strong>bias</strong> 
+                    measures systematic error, and its <strong>variance</strong> measures precision across samples.
                 </p>
 
-                <ul style="padding-left: 40px;">
-                    <li><strong>Bias:</strong><br>
+                <div class="theorem" id="D-bias">
+                    <span class="theorem-title">Definition: Bias</span>
+                    <p>
+                        The <strong>bias</strong> of an estimator \(\hat{\theta}\) of a parameter \(\theta\) is
                         \[
-                        \text{Bias}(\hat{\theta}) = \mathbb{E}[\hat{\theta}] - \theta.
+                        \operatorname{Bias}(\hat{\theta}) := \mathbb{E}[\hat{\theta}] - \theta.
                         \]
-                        This measures the systematic error - on average, how far off is the estimator from the truth?
-                        An estimator with zero bias is called <strong>unbiased</strong>.
-                    </li>
-                    <li><strong>Variance:</strong><br>
-                        \[
-                        \text{Var}(\hat{\theta}) = \mathbb{E}[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2]
-                        \]
-                        This measures the precision - how much does the estimator vary across different samples?
-                    </li>
-                </ul>
+                        An estimator with \(\operatorname{Bias}(\hat{\theta}) = 0\) for every \(\theta \in \Theta\) is called 
+                        <strong>unbiased</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The variance of an estimator is the standard 
+                    <a href="random_variables.html#D-variance" class="ref-link"><strong>variance</strong></a> 
+                    of \(\hat{\theta}\) viewed as a random variable:
+                    \[
+                    \operatorname{Var}(\hat{\theta}) = \mathbb{E}\!\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2\right].
+                    \]
+                </p>
 
                 <p>
                     An ideal estimator has both low bias and low variance. However, these two goals often 
@@ -83,23 +98,24 @@ uses_python: false
                 <div class="theorem" id="D-MSE">
                     <span class="theorem-title">Definition: Mean Squared Error (MSE)</span>
                     <p>
-                        The <strong>mean squared error</strong> of an estimator \(\hat{\theta}\) is
+                        The <strong>mean squared error</strong> of an estimator \(\hat{\theta}\) of a parameter \(\theta\) is
                         \[
-                        \begin{align*}
-                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\!\left[(\hat{\theta} - \theta)^2\right] \\\\
-                                                &= \text{Var}(\hat{\theta}) + \left[\text{Bias}(\hat{\theta})\right]^2.
-                        \end{align*}
+                        \operatorname{MSE}(\hat{\theta}) := \mathbb{E}\!\left[(\hat{\theta} - \theta)^2\right].
                         \]
                     </p>
                 </div>
 
+                <p>
+                    A short calculation shows that the MSE decomposes into the variance and the squared bias of the estimator.
+                </p>
+
                 <div class="proof">
-                    <span class="proof-title">Derivation:</span>
+                    <span class="proof-title">Bias-variance decomposition:</span>
                     <p>
                         \[
                         \begin{align*}
-                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \theta)^2\right] \\\\
-                                                &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}] + \mathbb{E}[\hat{\theta}] - \theta)^2\right] \\\\
+                        \operatorname{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \theta)^2\right] \\
+                                                &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}] + \mathbb{E}[\hat{\theta}] - \theta)^2\right] \\
                                                 &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2 
                                                     + 2(\hat{\theta} - \mathbb{E}[\hat{\theta}])(\mathbb{E}[\hat{\theta}] - \theta) 
                                                     + (\mathbb{E}[\hat{\theta}] - \theta)^2\right].
@@ -109,11 +125,11 @@ uses_python: false
                         and \(\mathbb{E}[\hat{\theta}]\) is a constant. Thus, \((\mathbb{E}[\hat{\theta}] - \theta)\) is treated as a constant:
                         \[
                         \begin{align*}
-                        \text{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2\right] 
+                        \operatorname{MSE}(\hat{\theta}) &= \mathbb{E}\left[(\hat{\theta} - \mathbb{E}[\hat{\theta}])^2\right] 
                                                     + 2(\mathbb{E}[\hat{\theta}] - \theta)\mathbb{E}\left[\hat{\theta} - \mathbb{E}[\hat{\theta}]\right] 
-                                                    + \mathbb{E}\left[(\mathbb{E}[\hat{\theta}] - \theta)^2\right] \\\\   
-                                                &= \text{Var}(\hat{\theta}) + 2(\mathbb{E}[\hat{\theta}] - \theta)(0) + [\text{Bias}(\hat{\theta})]^2 \\\\
-                                                &= \text{Var}(\hat{\theta}) + [\text{Bias}(\hat{\theta})]^2.
+                                                    + \mathbb{E}\left[(\mathbb{E}[\hat{\theta}] - \theta)^2\right] \\   
+                                                &= \operatorname{Var}(\hat{\theta}) + 2(\mathbb{E}[\hat{\theta}] - \theta)(0) + [\operatorname{Bias}(\hat{\theta})]^2 \\
+                                                &= \operatorname{Var}(\hat{\theta}) + [\operatorname{Bias}(\hat{\theta})]^2.
                         \end{align*}
                         \]
                     </p>
@@ -132,7 +148,7 @@ uses_python: false
                     Once an estimator is selected, we quantify its precision using the <strong>standard error (SE)</strong>, which 
                     is the standard deviation of the estimator's sampling distribution. For the sample mean,
                     \[
-                    \text{SE}(\bar{X}) = \sqrt{\text{Var}(\bar{X})} = \frac{\sigma}{\sqrt{n}}.
+                    \operatorname{SE}(\bar{X}) = \sqrt{\operatorname{Var}(\bar{X})} = \frac{\sigma}{\sqrt{n}}.
                     \]
                     Notice that the standard error decreases as \(n\) grows, confirming the intuition that more data yields more precise 
                     estimates. With the concept of an estimator and its quality in hand, we now ask: what principle should guide 
@@ -154,17 +170,22 @@ uses_python: false
                 <div class="theorem" id="D-likelihood_function">
                     <span class="theorem-title">Definition: Likelihood Function</span>
                     <p>
-                        Suppose observations \(X_1, X_2, \ldots, X_n\) are i.i.d. random variables. 
-                        The "observed" values of these random variables are denoted by 
-                        \(x_1, x_2, \cdots, x_n\) respectively. Then the joint p.d.f. (or p.m.f.) of \(X_1, X_2, \cdots, X_n\) is given by 
+                        Let \(f(\,\cdot \mid \theta)\) denote the joint p.d.f. (or p.m.f.) of a sample 
+                        \((X_1, \ldots, X_n)\), parameterized by an unknown parameter \(\theta \in \Theta\). 
+                        Once the data \((x_1, \ldots, x_n)\) have been observed, they are no longer free 
+                        variables — only \(\theta\) remains unknown. The <strong>likelihood function</strong> 
+                        of \(\theta\) given the observed data is the function
                         \[
-                        f(x_1, x_2, \cdots, x_n \mid \theta) = \prod_{i = 1}^n f(x_i \mid \theta) 
+                        L(\theta \mid x_1, \ldots, x_n) \;:=\; f(x_1, \ldots, x_n \mid \theta),
                         \]
-                        where \(\theta\) is some unknown parameter.
+                        now regarded as a function of \(\theta\) with the observed values held fixed. 
+                        We often write \(L(\theta)\) when the data are clear from context.
                     </p>
                     <p>
-                        This is called the <strong>likelihood function</strong> of \(\theta\) for observed values \(x_1, x_2, \cdots, x_n\),
-                        and is denoted by \(L(\theta \mid x_1, x_2, \cdots, x_n)\), or simply \(L(\theta)\).
+                        For an i.i.d. sample, the joint density factorizes and 
+                        \[
+                        L(\theta) \;=\; \prod_{i=1}^n f(x_i \mid \theta).
+                        \]
                     </p>
                 </div>
 
@@ -189,13 +210,9 @@ uses_python: false
                 <p>
                     In machine learning, model fitting (or training) is the process of estimating unknown parameters 
                     \(\boldsymbol{\theta} = (\theta_1, \ldots, \theta_k)\) from sample data 
-                    \(\mathcal{D} = \{\mathbf{x}_1, \ldots, \mathbf{x}_n\}\). This can be framed as an 
-                    optimization problem:
-                    \[
-                    \hat{\boldsymbol{\theta}} = \arg\min_{\boldsymbol{\theta}} \mathcal{L}(\boldsymbol{\theta})
-                    \]
-                    where \(\mathcal{L}(\boldsymbol{\theta})\) is a loss function (or objective function). 
-                    The most natural and widely used choice is to select the parameter that makes the 
+                    \(\mathcal{D} = \{\mathbf{x}_1, \ldots, \mathbf{x}_n\}\). This is typically framed as the 
+                    optimization of an objective (or loss) function over \(\boldsymbol{\theta}\). 
+                    A widely used choice in frequentist inference is to select the parameter that makes the 
                     observed data most probable.
                 </p>
 
@@ -217,26 +234,32 @@ uses_python: false
                 </div>
 
                 <p>
+                    The argmax need not exist or be unique in general. Standard regularity conditions guarantee 
+                    existence (e.g. compactness of \(\Theta\) with continuous \(L\)) and local uniqueness near the 
+                    truth (e.g. strict concavity of \(\ln L\)); for the examples below, both conditions hold.
+                </p>
+
+                <p>
                     Since the logarithm is a strictly increasing function, maximizing \(L\) is equivalent to maximizing \(\ln L\). 
                     Working with the <strong>log-likelihood</strong> is preferred in practice for two reasons: it converts products 
                     into sums (improving numerical stability) and simplifies differentiation.
                 </p>
 
                 <p>
-                    If \(L(\boldsymbol{\theta})\) is differentiable and the maximum is attained at an interior point of the parameter space, 
-                    the MLE can be found by solving the <strong>score equation</strong>:
+                    If \(L(\boldsymbol{\theta})\) is differentiable in \(\boldsymbol{\theta}\) and the maximum is attained 
+                    at an interior point of the parameter space, the MLE satisfies the <strong>score equation</strong>. 
+                    For an i.i.d. sample,
                     \[
-                    \begin{align*}
-                    &\nabla_{\boldsymbol{\theta}} \ln L(\boldsymbol{\theta}) 
-                        = \nabla_{\boldsymbol{\theta}} \ln \prod_{i = 1}^n f(\mathbf{x}_i \mid \boldsymbol{\theta}) = \mathbf{0}\\\\
-                    &\Longrightarrow
-                    \nabla_{\boldsymbol{\theta}} \ln L(\boldsymbol{\theta})
-                        = \sum_{i=1}^ n \nabla_{\boldsymbol{\theta}} \ln  f(\mathbf{x}_i \mid \boldsymbol{\theta}) = \mathbf{0}.
-                    \end{align*}
+                    \nabla_{\boldsymbol{\theta}} \ln L(\boldsymbol{\theta}) 
+                        = \nabla_{\boldsymbol{\theta}} \sum_{i = 1}^n \ln f(\mathbf{x}_i \mid \boldsymbol{\theta})
+                        = \sum_{i=1}^n \nabla_{\boldsymbol{\theta}} \ln f(\mathbf{x}_i \mid \boldsymbol{\theta})
+                        = \mathbf{0}.
                     \]
-                    The score equation gives a <em>necessary</em> condition for an interior maximum; boundary maxima and non-differentiable 
-                    cases must be handled separately. This gradient of the log-likelihood is called the <strong>score function</strong>, 
-                    which plays a central role in the <a href="fisher_info.html"><strong>Fisher information theory</strong></a>. 
+                    The score equation provides only a <em>necessary</em> condition: critical points must be checked 
+                    against the second-order condition (negative-definite Hessian of \(\ln L\)) to confirm a local maximum, 
+                    and boundary maxima or non-differentiable cases must be handled separately. This gradient of the 
+                    log-likelihood is called the <strong>score function</strong>, which plays a central role in the 
+                    <a href="fisher_info.html"><strong>Fisher information theory</strong></a>. 
                 </p>
 
             </section>
@@ -247,6 +270,16 @@ uses_python: false
 
                 <p>
                     We begin with a discrete example. Consider flipping a coin \(n\) times and observing \(k\) heads.
+                </p>
+
+                <p>
+                    Each flip is a Bernoulli trial; the \(n\) flips together follow \(\text{Binomial}(n, \theta)\). 
+                    We can equivalently view the data as a single observation \(X \sim b(n, \theta)\) with 
+                    likelihood \(L(\theta) = P(X = k \mid \theta)\), or as \(n\) i.i.d. Bernoulli trials with 
+                    likelihood \(\prod_{i=1}^n \theta^{x_i}(1-\theta)^{1-x_i}\) where \(\sum x_i = k\); both yield 
+                    the same log-likelihood up to a \(\theta\)-independent constant. We adopt the single-observation 
+                    view below, so the symbol \(n\) here denotes the number of <em>trials</em> in the binomial 
+                    experiment, not the sample size of the previous section (which is one in this view).
                 </p>
 
                 <div class="proof">
@@ -265,32 +298,34 @@ uses_python: false
                         Note that the combinatorial term \(\ln \binom{n}{k}\) is a constant with respect to \(\theta\) and vanishes:
                         \[
                         \begin{align*}
-                        \frac{d}{d\theta} \ln L(\theta) &= \frac{k}{\theta} - \frac{n-k}{1-\theta} = 0 \\\\
-                        &\Longrightarrow k(1 - \theta) - (n-k)\theta = 0 \\\\
-                        &\Longrightarrow k - k\theta - n\theta + k\theta = 0 \\\\
-                        &\Longrightarrow k = n\theta.
+                        \frac{d}{d\theta} \ln L(\theta) 
+                            &= \frac{k}{\theta} - \frac{n-k}{1-\theta} \\
+                            &= \frac{k(1-\theta) - (n-k)\theta}{\theta(1-\theta)}
+                            = \frac{k - n\theta}{\theta(1-\theta)} \;=\; 0,
                         \end{align*}
                         \]
+                        which holds (for \(\theta \in (0,1)\)) iff \(k = n\theta\).
                         Therefore, 
                         \[
                         \hat{\theta}_{\text{MLE}} = \frac{k}{n}.
                         \]
+                        The second derivative
+                        \(\frac{d^2}{d\theta^2}\ln L(\theta) = -k/\theta^2 - (n-k)/(1-\theta)^2 < 0\)
+                        on \((0,1)\), so this critical point is the unique interior maximum.
                     </p>
                 </div>
 
                 <p>
-                    This is exactly the <strong>sample proportion</strong> \(\hat{p} = \frac{X}{n}\), confirming that the 
-                    intuitively natural estimator for the population proportion coincides with the MLE. We now 
-                     turn to a continuous example where the MLE must be found for two parameters simultaneously.
-                </p>
-                <p>
-                    Note:
+                    This is exactly the <strong>sample proportion</strong> \(\hat{p} = X/n\): the intuitively 
+                    natural estimator coincides with the MLE. Its sampling distribution properties follow from 
+                    \(X \sim b(n, p)\):
                     \[
-                    \begin{align*}
-                    &\mathbb{E}[\hat{p}] = \frac{1}{n}\mathbb{E}[X] = \frac{1}{n}np = p \\\\
-                    &\text{Var }(\hat{p}) = \frac{1}{n^2}\text{Var }[X] = \frac{1}{n^2}np(1-p) = \frac{p(1-p)}{n}.
-                    \end{align*}
+                    \mathbb{E}[\hat{p}] = \frac{1}{n}\mathbb{E}[X] = p, 
+                    \qquad
+                    \operatorname{Var}(\hat{p}) = \frac{1}{n^2}\operatorname{Var}[X] = \frac{p(1-p)}{n},
                     \]
+                    so \(\hat{p}\) is unbiased, with variance shrinking as \(1/n\). We now turn to a continuous 
+                    example where the MLE must be found for two parameters simultaneously.
                 </p>
 
             </section>
@@ -299,7 +334,8 @@ uses_python: false
                 <h2>Example 2: Normal Distribution</h2>
 
                 <p>
-                    Given a random sample \(X_1, X_2, \ldots, X_n\) from the <a href="gaussian.html"><strong>normal distribution</strong></a> 
+                    Given an i.i.d. sample \(X_1, X_2, \ldots, X_n\) from the 
+                    <a href="gaussian.html"><strong>normal distribution</strong></a> 
                     \(\mathcal{N}(\mu, \sigma^2)\), we seek the MLEs for both parameters.
                 </p>
 
@@ -307,73 +343,80 @@ uses_python: false
                     <span class="proof-title">Example:</span>
 
                     <p>
-                        Suppose \(\mathcal{D} = \{x_1, x_2, \cdots, x_n \}\) is from a normal distribution with p.d.f 
+                        With observed values \(\mathcal{D} = \{x_1, x_2, \ldots, x_n\}\) and per-observation density 
                         \[
-                        f(x \mid \mu, \sigma^2) = \frac{1}{\sigma \sqrt{2\pi}}\exp \left\{- \frac{(x - \mu)^2}{2\sigma^2}\right\}.
+                        f(x \mid \mu, \sigma^2) = \frac{1}{\sigma \sqrt{2\pi}}\exp \left\{- \frac{(x - \mu)^2}{2\sigma^2}\right\},
                         \]
-                        And its likelihood function is given by
+                        the likelihood function is
                         \[
                         \begin{align*}
-                        L(\mu, \sigma^2) &= \prod_{i=1}^n [ f(x_i \mid \mu, \sigma^2)] \\\\
+                        L(\mu, \sigma^2) &= \prod_{i=1}^n f(x_i \mid \mu, \sigma^2) \\
                                         &= \left (\frac{1}{\sigma \sqrt{2\pi}}\right)^n \exp \left\{-\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \right\}.
                         \end{align*}
                         \]
                         The log-likelihood function is given by 
                         \[
                         \begin{align*}
-                        \ln L(\mu, \sigma^2) &= n \ln \left(\frac{1}{\sigma \sqrt{2\pi}}\right) -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \\\\
-                                            &= -n \ln (\sigma) - n \ln (\sqrt{2\pi})  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2  \\\\
-                                            &= -\frac{n}{2} \ln (\sigma^2) - \frac{n}{2}\ln (2\pi)  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2. \tag{1} \\\\ 
+                        \ln L(\mu, \sigma^2) &= n \ln \left(\frac{1}{\sigma \sqrt{2\pi}}\right) -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2 \\
+                                            &= -n \ln (\sigma) - n \ln (\sqrt{2\pi})  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2  \\
+                                            &= -\frac{n}{2} \ln (\sigma^2) - \frac{n}{2}\ln (2\pi)  -\frac{1}{2\sigma^2} \sum_{i=1}^n (x_i - \mu)^2. \tag{1}
                         \end{align*}
                         \]
                     </p>
 
                     <p>
-                        Setting the partial derivative of (1) with respect to \(\mu\) equal to zero: 
+                        At any interior critical point of \(\ln L\), both partial derivatives must vanish 
+                        simultaneously. Setting the partial derivative of (1) with respect to \(\mu\) equal to zero:
                         \[
-                        \begin{align*}
-                        &\frac{\partial \ln L(\mu, \sigma^2) }{\partial \mu} = \frac{1}{\sigma^2} \sum_{i=1}^n (x_i - \mu) = 0 \\\\
-                        &\Longrightarrow \sum_{i=1}^n (x_i) - n\mu = 0.
-                        \end{align*}
+                        \frac{\partial \ln L(\mu, \sigma^2)}{\partial \mu} 
+                            = \frac{1}{\sigma^2} \sum_{i=1}^n (x_i - \mu)
+                            = \frac{1}{\sigma^2}\!\left(\sum_{i=1}^n x_i - n\mu\right) = 0,
                         \]
-                        Thus, 
+                        which gives
                         \[
                         \hat{\mu}_{\text{MLE}} = \frac{1}{n} \sum_{i=1}^n x_i = \bar{x}. \tag{2}
                         \]
                     </p>
 
                     <p>
-                        Similarly, taking the partial derivative of (1) with respect to the variance \(\sigma^2\) (treating \(\sigma^2\) as a single variable) 
-                        and setting it to zero:
+                        Similarly, taking the partial derivative of (1) with respect to the variance \(\sigma^2\) 
+                        (treating \(\sigma^2\) as a single variable) and setting it to zero:
                         \[
-                        \begin{align*}
-                        &\frac{\partial \ln L(\mu, \sigma^2) }{\partial (\sigma^2)} = -\frac{n}{2\sigma^2} + \frac{1}{2(\sigma^2)^2}\sum_{i=1}^n (x_i - \mu)^2  = 0 \\\\
-                        &\Longrightarrow -n \sigma^2 + \sum_{i=1}^n (x_i - \mu)^2 = 0.
-                        \end{align*}
+                        \frac{\partial \ln L(\mu, \sigma^2) }{\partial (\sigma^2)} 
+                            = -\frac{n}{2\sigma^2} + \frac{1}{2(\sigma^2)^2}\sum_{i=1}^n (x_i - \mu)^2 = 0
+                            \;\;\iff\;\; 
+                            \sigma^2 = \frac{1}{n}\sum_{i=1}^n (x_i - \mu)^2.
                         \]
-                        To find the maximum, we substitute \(\mu\) with our MLE estimate \(\hat{\mu}_{\text{MLE}} = \bar{x}\) and solve for \(\sigma^2\):
+                        Substituting the value \(\hat{\mu}_{\text{MLE}} = \bar{x}\) obtained above into this 
+                        equation gives the joint critical point
                         \[
                         \hat{\sigma}^2_{\text{MLE}} = \frac{1}{n}\sum_{i=1}^n (x_i - \bar{x})^2.
                         \]
+                        As \(\sigma^2 \to 0^+\) or \(\sigma^2 \to \infty\) the likelihood vanishes, and 
+                        \((\hat{\mu}_{\text{MLE}}, \hat{\sigma}^2_{\text{MLE}})\) is the unique interior critical 
+                        point, so it is the global maximum.
                     </p>
                 </div>
 
                 <p>
                     Note that the MLE for the variance divides by \(n\), not \(n - 1\). This means \(\hat{\sigma}^2_{\text{MLE}}\) 
                     is a <strong>biased</strong> estimator of \(\sigma^2\), with \(\mathbb{E}[\hat{\sigma}^2_{\text{MLE}}] = \frac{n-1}{n}\sigma^2\). 
-                    The unbiased sample variance \(s^2 = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2\) corrects for this by using Bessel's correction. 
+                    Replacing \(n\) with \(n-1\) — <strong>Bessel's correction</strong> — gives the unbiased sample variance 
+                    \(s^2 = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2\). 
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Verification of the bias:</span>
                     <p>
+                        For an i.i.d. sample with finite variance, \(\bar{X}\) has \(\operatorname{Var}(\bar{X}) = \sigma^2/n\) 
+                        (a standard property of sums of independent variables). 
                         Expand using \(\sum_{i=1}^n (X_i - \bar{X})^2 = \sum_{i=1}^n X_i^2 - n\bar{X}^2\) and take expectations. 
-                        Using \(\mathbb{E}[X_i^2] = \sigma^2 + \mu^2\) and \(\mathbb{E}[\bar{X}^2] = \text{Var}(\bar{X}) + (\mathbb{E}[\bar{X}])^2 = \sigma^2/n + \mu^2\):
+                        Using \(\mathbb{E}[X_i^2] = \sigma^2 + \mu^2\) and \(\mathbb{E}[\bar{X}^2] = \operatorname{Var}(\bar{X}) + (\mathbb{E}[\bar{X}])^2 = \sigma^2/n + \mu^2\):
                         \[
                         \begin{align*}
                         \mathbb{E}\!\left[\sum_{i=1}^n (X_i - \bar{X})^2\right]
-                            &= \sum_{i=1}^n \mathbb{E}[X_i^2] - n\,\mathbb{E}[\bar{X}^2] \\\\
-                            &= n(\sigma^2 + \mu^2) - n\!\left(\frac{\sigma^2}{n} + \mu^2\right) \\\\
+                            &= \sum_{i=1}^n \mathbb{E}[X_i^2] - n\,\mathbb{E}[\bar{X}^2] \\
+                            &= n(\sigma^2 + \mu^2) - n\!\left(\frac{\sigma^2}{n} + \mu^2\right) \\
                             &= (n - 1)\sigma^2.
                         \end{align*}
                         \]
@@ -382,13 +425,14 @@ uses_python: false
                 </div>
 
                 <p>
-                    The bias above is one instance of a general phenomenon: under standard <strong>regularity conditions</strong> 
-                    (identifiability, compactness of the parameter space, continuity and domination of the log-likelihood), 
-                    the MLE is <strong>consistent</strong> — that is, 
-                    \(\hat{\boldsymbol{\theta}}_{\text{MLE}} \xrightarrow{P} \boldsymbol{\theta}_{\text{true}}\) as \(n \to \infty\) 
-                    in the sense of <a href="convergence.html#D-convergence_in_probability" class="ref-link"><strong>convergence in probability</strong></a> — 
-                    but not always unbiased for finite samples. The classical consistency theorem is due to Wald; 
-                    see Murphy, <em>Probabilistic Machine Learning: An Introduction</em>, §4.5 for a modern treatment.
+                    The finite-sample bias of \(\hat{\sigma}^2_{\text{MLE}}\) is a general feature of MLE: it can 
+                    be biased for finite \(n\), yet under standard <strong>regularity conditions</strong> 
+                    (identifiability, compactness of the parameter space, continuity and domination of the 
+                    log-likelihood) it is <strong>consistent</strong>, meaning 
+                    \(\hat{\boldsymbol{\theta}}_{\text{MLE}} \xrightarrow{P} \boldsymbol{\theta}_{\text{true}}\) as 
+                    \(n \to \infty\) in the sense of 
+                    <a href="convergence.html#D-convergence_in_probability" class="ref-link"><strong>convergence in probability</strong></a>. 
+                    A classical consistency theorem along these lines is due to Wald (1949).
                 </p>
 
                 <div class="insight-box">
@@ -397,10 +441,11 @@ uses_python: false
                         MLE is the default parameter estimation method across machine learning. 
                         Training a <a href="../Machine_learning/intro_classification.html"><strong>logistic regression</strong></a> 
                         model is equivalent to minimizing the negative log-likelihood (cross-entropy loss). 
-                        Training a <a href="../Machine_learning/neural_network.html"><strong>neural network</strong></a> 
+                        Training a <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> 
                         with mean squared error loss is equivalent to MLE under a Gaussian noise assumption. 
                         The <a href="expfamily.html"><strong>exponential family</strong></a> unifies these 
-                        examples, showing that MLE always reduces to <strong>moment matching</strong>.
+                        examples, showing that, within the exponential family, MLE reduces to 
+                        <strong>moment matching</strong>.
                         In <a href="bayesian.html"><strong>Bayesian inference</strong></a>, MLE corresponds 
                         to the special case of a uniform (flat) prior, and incorporating 
                         regularization is equivalent to choosing a non-uniform prior.
@@ -409,13 +454,15 @@ uses_python: false
 
                 <p>
                     MLE provides point estimates - single "best guess" values for the parameters. But how confident should we be in these estimates? 
-                    In the <a href="hypothesis_testing.html"><strong>next part</strong></a>, we introduce <strong>hypothesis testing</strong> and 
+                    The next page introduces <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> and 
                     <strong>confidence intervals</strong>, which provide principled frameworks for quantifying the uncertainty inherent 
                     in any statistical estimate.
                 </p>
                  
             </section>
         </div>
+        
         <script src="/js/main.js"></script>
+        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
