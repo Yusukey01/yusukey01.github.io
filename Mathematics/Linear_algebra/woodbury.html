@@ -33,15 +33,24 @@ uses_python: false
                 <p>
                     The previous two pages uncovered structural identities — the Frobenius inner product on \(\mathbb{R}^{m \times n}\), and the 
                     <a href="kronecker.html#T-vec_abc_identity" class="ref-link"><strong>vec–Kronecker identity</strong></a> 
-                    \(\operatorname{vec}(ABC) = (C^\top \otimes A)\operatorname{vec}(B)\) — that turn matrix-level computations into vector-level ones with the right algebraic key. This page works in the same spirit, but turned toward a different question: <em>once we have inverted a large matrix, how do we cheaply update the inverse when the matrix changes by a small amount?</em>
+                    \(\operatorname{vec}(ABC) = (C^\top \otimes A)\operatorname{vec}(B)\) — that turn matrix-level computations into vector-level 
+                    ones with the right algebraic key. This page works in the same spirit, but turned toward a different question: <em>once we have 
+                        inverted a large matrix, how do we cheaply update the inverse when the matrix changes by a small amount?</em>
                 </p>
 
                 <p>
-                    The <strong>Woodbury Matrix Identity</strong> answers exactly this. It expresses \((A + UBV)^{-1}\) in terms of \(A^{-1}\) and a much smaller correction, and its rank-1 specialization (the <strong>Sherman-Morrison formula</strong>) is the workhorse of online learning, Kalman filtering, and quasi-Newton optimization. Its companion result, the <strong>Matrix Determinant Lemma</strong>, plays the same role for determinants — essential when evaluating Gaussian likelihoods that change one observation at a time.
+                    The <strong>Woodbury Matrix Identity</strong> answers exactly this. It expresses \((A + UBV)^{-1}\) in terms of \(A^{-1}\) 
+                    and a much smaller correction, and its rank-1 specialization (the <strong>Sherman-Morrison formula</strong>) is the workhorse 
+                    of online learning, Kalman filtering, and quasi-Newton optimization. Its companion result, the <strong>Matrix Determinant Lemma</strong>, 
+                    plays the same role for determinants — essential when evaluating Gaussian likelihoods that change one observation at a time.
                 </p>
 
                 <p>
-                    On a first reading, these identities look like clever algebraic conveniences. They are; but they are also the visible surface of a deeper construction — the <strong>Schur complement</strong>, which expresses the inverse and determinant of a block-partitioned matrix in closed form. We develop the Schur complement first, in the next section, and then revisit Woodbury and the Matrix Determinant Lemma as immediate consequences. For Woodbury, the traditional direct proof is kept side-by-side with the Schur derivation: the algebraic verification makes the identity tangible, while the Schur derivation shows <em>why</em> it holds. Two philosophies, one result.
+                    On a first reading, these identities look like clever algebraic conveniences. They are; but they are also the visible surface of a deeper construction 
+                    — the <strong>Schur complement</strong>, which expresses the inverse and determinant of a block-partitioned matrix in closed form. 
+                    We develop the Schur complement first, in the next section, and then revisit Woodbury and the Matrix Determinant Lemma as immediate consequences. 
+                    For Woodbury, the traditional direct proof is kept side-by-side with the Schur derivation: the algebraic verification makes the identity tangible, 
+                    while the Schur derivation shows <em>why</em> it holds. Two philosophies, one result.
                 </p>
 
                 <div class="insight-box">
@@ -64,17 +73,25 @@ uses_python: false
                 <h2>Schur Complement & Block Matrix Identities</h2>
 
                 <p>
-                    The Woodbury identity and the Matrix Determinant Lemma look, at first encounter, like clever algebraic curiosities. The aim of this section is to expose the unifying object behind them — the <strong>Schur complement</strong> — and to develop, from it, closed-form expressions for the inverse and determinant of a block-partitioned matrix. Once these block identities are in place, both Woodbury and the Matrix Determinant Lemma will fall out as direct consequences.
+                    The Woodbury identity and the Matrix Determinant Lemma look, at first encounter, like clever algebraic curiosities. 
+                    The aim of this section is to expose the unifying object behind them — the <strong>Schur complement</strong> — and to develop, from it, 
+                    closed-form expressions for the inverse and determinant of a block-partitioned matrix. 
+                    Once these block identities are in place, both Woodbury and the Matrix Determinant Lemma will fall out as direct consequences.
                 </p>
 
                 <p>
-                    We build up in three steps. First, a small lemma about determinants of block-triangular matrices. Next, we use it to derive a triangular factorization of a general \(2 \times 2\) block matrix; the off-diagonal "remnant" of this factorization is the Schur complement. Finally, the factorization yields formulas for the inverse and determinant of the original block matrix in one stroke.
+                    We build up in three steps. First, a small lemma about determinants of block-triangular matrices. 
+                    Next, we use it to derive a triangular factorization of a general \(2 \times 2\) block matrix; the off-diagonal "remnant" 
+                    of this factorization is the Schur complement. Finally, the factorization yields formulas for the inverse and determinant 
+                    of the original block matrix in one stroke.
                 </p>
 
                 <h3>A Determinant Lemma for Block-Triangular Matrices</h3>
 
                 <p>
-                    Recall from <a href="determinants.html#T-determinant_triangular" class="ref-link"><strong>the determinant of a triangular matrix</strong></a> that, for a scalar (non-block) triangular matrix, the determinant is the product of the diagonal entries. The block analogue replaces "diagonal entries" with "diagonal blocks":
+                    Recall from <a href="determinants.html#T-determinant_triangular" class="ref-link"><strong>the determinant of a triangular matrix</strong></a> that, 
+                    for a scalar (non-block) triangular matrix, the determinant is the product of the diagonal entries. The block analogue replaces "diagonal entries" 
+                    with "diagonal blocks":
                 </p>
 
                 <div class="theorem" id="T-block_triangular_determinant">
@@ -91,21 +108,28 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Write \(M = \begin{pmatrix} A_{11} & A_{12} \\ 0 & A_{22} \end{pmatrix} \in \mathbb{R}^{(p+q) \times (p+q)}\) and proceed by induction on \(p\).
+                        Write \(M = \begin{pmatrix} A_{11} & A_{12} \\ 0 & A_{22} \end{pmatrix} \in \mathbb{R}^{(p+q) \times (p+q)}\) 
+                        and proceed by induction on \(p\).
                     </p>
                     <p>
-                        <strong>Base case</strong> (\(p = 1\)). Here \(A_{11} = [a_{11}]\), and column 1 of \(M\) has \(a_{11}\) in row 1 and zeros in rows 2 through \(1+q\). Cofactor expansion along column 1 (using <a href="determinants.html#D-cofactor" class="ref-link"><strong>the cofactor definition</strong></a>) collapses to a single term:
+                        <strong>Base case</strong> (\(p = 1\)). Here \(A_{11} = [a_{11}]\), and column 1 of \(M\) has \(a_{11}\) in row 1 and zeros in rows 2 through \(1+q\). 
+                        Cofactor expansion along column 1 (using <a href="determinants.html#D-cofactor" class="ref-link"><strong>the cofactor definition</strong></a>) 
+                        collapses to a single term:
                         \[
                         \det(M) = a_{11} \cdot \det(M^{(1,1)}) = a_{11} \cdot \det(A_{22}) = \det(A_{11}) \det(A_{22}),
                         \]
                         since deleting row 1 and column 1 from \(M\) leaves precisely \(A_{22}\).
                     </p>
                     <p>
-                        <strong>Inductive step</strong>. Assume the identity holds whenever the leading block has size \(p-1\); we prove it for size \(p\). Expand \(\det(M)\) along column 1. Rows \(p+1, \ldots, p+q\) of column 1 are zero (the lower-left block of \(M\) is the zero matrix), so only the first \(p\) terms contribute:
+                        <strong>Inductive step</strong>. Assume the identity holds whenever the leading block has size \(p-1\); we prove it for size \(p\). 
+                        Expand \(\det(M)\) along column 1. Rows \(p+1, \ldots, p+q\) of column 1 are zero (the lower-left block of \(M\) is the zero matrix), 
+                        so only the first \(p\) terms contribute:
                         \[
                         \det(M) = \sum_{i=1}^{p} (-1)^{i+1} (A_{11})_{i1} \, \det(M^{(i,1)}),
                         \]
-                        where \(M^{(i,1)}\) denotes \(M\) with row \(i\) and column 1 deleted. By construction, \(M^{(i,1)}\) is again block upper-triangular: its leading block is \(A_{11}^{(i,1)}\) (the \((i,1)\)-minor of \(A_{11}\), of size \((p-1) \times (p-1)\)), its lower-right block is still \(A_{22}\), and its lower-left block is still zero. The inductive hypothesis gives
+                        where \(M^{(i,1)}\) denotes \(M\) with row \(i\) and column 1 deleted. By construction, \(M^{(i,1)}\) is again block upper-triangular: 
+                        its leading block is \(A_{11}^{(i,1)}\) (the \((i,1)\)-minor of \(A_{11}\), of size \((p-1) \times (p-1)\)), its lower-right block is still \(A_{22}\), 
+                        and its lower-left block is still zero. The inductive hypothesis gives
                         \[
                         \det(M^{(i,1)}) = \det(A_{11}^{(i,1)}) \det(A_{22}).
                         \]
@@ -116,7 +140,9 @@ uses_python: false
                         the last equality being the cofactor expansion of \(\det(A_{11})\) along its own first column.
                     </p>
                     <p>
-                        For the lower-triangular case, observe that \(M^\top = \begin{pmatrix} A_{11}^\top & A_{21}^\top \\ 0 & A_{22}^\top \end{pmatrix}\) is block upper-triangular. By the result just proved and <a href="determinants.html#T-determinant_transpose" class="ref-link"><strong>transpose-invariance of the determinant</strong></a>,
+                        For the lower-triangular case, observe that \(M^\top = \begin{pmatrix} A_{11}^\top & A_{21}^\top \\ 0 & A_{22}^\top \end{pmatrix}\) 
+                        is block upper-triangular. By the result just proved and 
+                        <a href="determinants.html#T-determinant_transpose" class="ref-link"><strong>transpose-invariance of the determinant</strong></a>,
                         \[
                         \det(M) = \det(M^\top) = \det(A_{11}^\top) \det(A_{22}^\top) = \det(A_{11}) \det(A_{22}). \qquad\blacksquare
                         \]
@@ -130,25 +156,32 @@ uses_python: false
                     \[
                     M = \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix},
                     \]
-                    where \(A_{11} \in \mathbb{R}^{p \times p}\) is invertible, \(A_{22} \in \mathbb{R}^{q \times q}\), and \(A_{12} \in \mathbb{R}^{p \times q}\), \(A_{21} \in \mathbb{R}^{q \times p}\). Our goal is to <em>simultaneously</em> eliminate the off-diagonal blocks by multiplying \(M\) by simple block matrices on the left and right.
+                    where \(A_{11} \in \mathbb{R}^{p \times p}\) is invertible, \(A_{22} \in \mathbb{R}^{q \times q}\), and \(A_{12} \in \mathbb{R}^{p \times q}\), 
+                    \(A_{21} \in \mathbb{R}^{q \times p}\). Our goal is to <em>simultaneously</em> eliminate the off-diagonal blocks by multiplying \(M\) 
+                    by simple block matrices on the left and right.
                 </p>
 
                 <p>
-                    To clear \(A_{21}\), apply block Gaussian elimination from the left: subtract \(A_{21} A_{11}^{-1}\) times block-row 1 from block-row 2. In matrix form, this is left-multiplication by \(\begin{pmatrix} I & 0 \\ -A_{21}A_{11}^{-1} & I \end{pmatrix}\). Direct block computation gives
+                    To clear \(A_{21}\), apply block Gaussian elimination from the left: subtract \(A_{21} A_{11}^{-1}\) times block-row 1 from block-row 2. 
+                    In matrix form, this is left-multiplication by \(\begin{pmatrix} I & 0 \\ -A_{21}A_{11}^{-1} & I \end{pmatrix}\). 
+                    Direct block computation gives
                     \[
                     \begin{pmatrix} I & 0 \\ -A_{21}A_{11}^{-1} & I \end{pmatrix} \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix} = \begin{pmatrix} A_{11} & A_{12} \\ 0 & A_{22} - A_{21} A_{11}^{-1} A_{12} \end{pmatrix}.
                     \]
-                    The new \((2,2)\)-block, \(A_{22} - A_{21} A_{11}^{-1} A_{12}\), is the residue of \(A_{22}\) after subtracting the part "explained" by \(A_{11}\) through the off-diagonal couplings — a quantity important enough to deserve its own name.
+                    The new \((2,2)\)-block, \(A_{22} - A_{21} A_{11}^{-1} A_{12}\), is the residue of \(A_{22}\) after subtracting the part "explained" by \(A_{11}\) 
+                    through the off-diagonal couplings — a quantity important enough to deserve its own name.
                 </p>
 
                 <div class="theorem" id="D-schur_complement">
                     <span class="theorem-title">Definition: Schur Complement</span>
                     <p>
-                        Let \(M = \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix}\) be a \(2 \times 2\) block matrix with \(A_{11}\) invertible. The <strong>Schur complement</strong> of \(A_{11}\) in \(M\), denoted \(M / A_{11}\) or simply \(S\) when context is clear, is
+                        Let \(M = \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{pmatrix}\) be a \(2 \times 2\) block matrix with \(A_{11}\) invertible. 
+                        The <strong>Schur complement</strong> of \(A_{11}\) in \(M\), denoted \(M / A_{11}\) or simply \(S\) when context is clear, is
                         \[
                         S = A_{22} - A_{21} A_{11}^{-1} A_{12}.
                         \]
-                        Symmetrically, when \(A_{22}\) is invertible, the <strong>Schur complement of \(A_{22}\)</strong> is \(M / A_{22} = A_{11} - A_{12} A_{22}^{-1} A_{21}\).
+                        Symmetrically, when \(A_{22}\) is invertible, the <strong>Schur complement of \(A_{22}\)</strong> 
+                        is \(M / A_{22} = A_{11} - A_{12} A_{22}^{-1} A_{21}\).
                     </p>
                 </div>
 
@@ -170,7 +203,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Compute the right-hand side directly. First multiply the middle and right factors using <a href="matrix_algebra.html#T-block_multiplication" class="ref-link"><strong>block multiplication</strong></a>:
+                        Compute the right-hand side directly. First multiply the middle and right factors using 
+                        <a href="matrix_algebra.html#T-block_multiplication" class="ref-link"><strong>block multiplication</strong></a>:
                         \[
                         \begin{pmatrix} A_{11} & 0 \\ 0 & S \end{pmatrix} \begin{pmatrix} I & A_{11}^{-1} A_{12} \\ 0 & I \end{pmatrix} = \begin{pmatrix} A_{11} & A_{12} \\ 0 & S \end{pmatrix}.
                         \]
@@ -178,20 +212,24 @@ uses_python: false
                         \[
                         \begin{pmatrix} I & 0 \\ A_{21} A_{11}^{-1} & I \end{pmatrix} \begin{pmatrix} A_{11} & A_{12} \\ 0 & S \end{pmatrix} = \begin{pmatrix} A_{11} & A_{12} \\ A_{21} & A_{21} A_{11}^{-1} A_{12} + S \end{pmatrix}.
                         \]
-                        The \((2,2)\)-block simplifies to \(A_{21} A_{11}^{-1} A_{12} + (A_{22} - A_{21} A_{11}^{-1} A_{12}) = A_{22}\), so the product equals \(M\). \(\quad\blacksquare\)
+                        The \((2,2)\)-block simplifies to \(A_{21} A_{11}^{-1} A_{12} + (A_{22} - A_{21} A_{11}^{-1} A_{12}) = A_{22}\), 
+                        so the product equals \(M\). \(\quad\blacksquare\)
                     </p>
                 </div>
 
                 <h3>Block Matrix Inverse and Determinant</h3>
 
                 <p>
-                    The factorization \(M = LDU\) makes both the inverse and the determinant of \(M\) easy to read off. The two outer factors \(L\) and \(U\) are block triangular with identity blocks on the diagonal, so they are invertible (with explicit elementary inverses) and have determinant \(1\). The middle factor \(D\) is block diagonal, so it is invertible iff \(S\) is.
+                    The factorization \(M = LDU\) makes both the inverse and the determinant of \(M\) easy to read off. 
+                    The two outer factors \(L\) and \(U\) are block triangular with identity blocks on the diagonal, so they are invertible 
+                    (with explicit elementary inverses) and have determinant \(1\). The middle factor \(D\) is block diagonal, so it is invertible iff \(S\) is.
                 </p>
 
                 <div class="theorem" id="T-block_inverse">
                     <span class="theorem-title">Theorem: Block Matrix Inverse via Schur Complement</span>
                     <p>
-                        With \(A_{11}\) invertible, \(M\) is invertible if and only if its Schur complement \(S = A_{22} - A_{21} A_{11}^{-1} A_{12}\) is invertible. In that case,
+                        With \(A_{11}\) invertible, \(M\) is invertible if and only if its Schur complement 
+                        \(S = A_{22} - A_{21} A_{11}^{-1} A_{12}\) is invertible. In that case,
                         \[
                         M^{-1} = \begin{pmatrix} A_{11}^{-1} + A_{11}^{-1} A_{12} S^{-1} A_{21} A_{11}^{-1} & -A_{11}^{-1} A_{12} S^{-1} \\ -S^{-1} A_{21} A_{11}^{-1} & S^{-1} \end{pmatrix}.
                         \]
@@ -201,18 +239,23 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        From the Block LDU Factorization, \(M = LDU\). The factors \(L\) and \(U\) are block lower- and upper-triangular with \(I\) on the diagonal, and direct computation shows
+                        From the Block LDU Factorization, \(M = LDU\). The factors \(L\) and \(U\) are block lower- and upper-triangular with \(I\) on the diagonal, 
+                        and direct computation shows
                         \[
                         L^{-1} = \begin{pmatrix} I & 0 \\ -A_{21} A_{11}^{-1} & I \end{pmatrix}, \qquad U^{-1} = \begin{pmatrix} I & -A_{11}^{-1} A_{12} \\ 0 & I \end{pmatrix}.
                         \]
-                        (Verification: \(L L^{-1} = I\) and \(U U^{-1} = I\) follow immediately from block multiplication.) Hence \(L\) and \(U\) are always invertible.
+                        (Verification: \(L L^{-1} = I\) and \(U U^{-1} = I\) follow immediately from block multiplication.) 
+                        Hence \(L\) and \(U\) are always invertible.
                     </p>
                     <p>
-                        The middle factor \(D = \begin{pmatrix} A_{11} & 0 \\ 0 & S \end{pmatrix}\) is block diagonal; it is invertible if and only if both \(A_{11}\) and \(S\) are. Since we assumed \(A_{11}\) invertible, the condition reduces to invertibility of \(S\). When \(S\) is invertible,
+                        The middle factor \(D = \begin{pmatrix} A_{11} & 0 \\ 0 & S \end{pmatrix}\) is block diagonal; it is invertible 
+                        if and only if both \(A_{11}\) and \(S\) are. Since we assumed \(A_{11}\) invertible, the condition reduces to invertibility of \(S\). 
+                        When \(S\) is invertible,
                         \[
                         D^{-1} = \begin{pmatrix} A_{11}^{-1} & 0 \\ 0 & S^{-1} \end{pmatrix}.
                         \]
-                        Since \(L\) and \(U\) are always invertible, the invertibility of \(M = LDU\) is equivalent to that of \(D\), which in turn is equivalent to that of \(S\). When this holds,
+                        Since \(L\) and \(U\) are always invertible, the invertibility of \(M = LDU\) is equivalent to that of \(D\), which in turn is equivalent 
+                        to that of \(S\). When this holds,
                         \[
                         M^{-1} = U^{-1} D^{-1} L^{-1}.
                         \]
@@ -227,7 +270,8 @@ uses_python: false
                         \[
                         \det(M) = \det(A_{11}) \, \det(S),
                         \]
-                        where \(S = A_{22} - A_{21} A_{11}^{-1} A_{12}\). Symmetrically, when \(A_{22}\) is invertible, \(\det(M) = \det(A_{22}) \, \det(A_{11} - A_{12} A_{22}^{-1} A_{21})\).
+                        where \(S = A_{22} - A_{21} A_{11}^{-1} A_{12}\). 
+                        Symmetrically, when \(A_{22}\) is invertible, \(\det(M) = \det(A_{22}) \, \det(A_{11} - A_{12} A_{22}^{-1} A_{21})\).
                     </p>
                 </div>
 
@@ -238,16 +282,22 @@ uses_python: false
                         \[
                         \det(M) = \det(L) \, \det(D) \, \det(U).
                         \]
-                        Both \(L\) and \(U\) are block-triangular with identity diagonal blocks; by the <a href="#T-block_triangular_determinant" class="ref-link"><strong>Block Triangular Determinant Lemma</strong></a> applied to each,
+                        Both \(L\) and \(U\) are block-triangular with identity diagonal blocks; by 
+                        the <a href="#T-block_triangular_determinant" class="ref-link"><strong>Block Triangular Determinant Lemma</strong></a> applied to each,
                         \[
                         \det(L) = \det(I_p) \det(I_q) = 1, \qquad \det(U) = \det(I_p) \det(I_q) = 1.
                         \]
-                        For the middle factor, \(D\) is block-triangular (in fact block-diagonal) with diagonal blocks \(A_{11}\) and \(S\), so the same lemma gives \(\det(D) = \det(A_{11}) \det(S)\). Combining, \(\det(M) = \det(A_{11}) \det(S)\). The symmetric statement follows by an analogous LDU factorization with \(A_{22}\) playing the role of pivot block. \(\quad\blacksquare\)
+                        For the middle factor, \(D\) is block-triangular (in fact block-diagonal) with diagonal blocks \(A_{11}\) and \(S\), so the same lemma gives 
+                        \(\det(D) = \det(A_{11}) \det(S)\). Combining, \(\det(M) = \det(A_{11}) \det(S)\). 
+                        The symmetric statement follows by an analogous LDU factorization with \(A_{22}\) playing the role of pivot block. \(\quad\blacksquare\)
                     </p>
                 </div>
 
                 <p>
-                    These two formulas — block inverse and block determinant — are everything we need. In the next two sections we revisit the Woodbury identity (where a direct algebraic proof sits alongside a Schur-based derivation) and the Matrix Determinant Lemma (proved from the block determinant formula). Both will fall out of a single, well-tuned embedding of the data into a \(2 \times 2\) block matrix.
+                    These two formulas — block inverse and block determinant — are everything we need. 
+                    In the next two sections we revisit the Woodbury identity (where a direct algebraic proof sits alongside a Schur-based derivation) 
+                    and the Matrix Determinant Lemma (proved from the block determinant formula). Both will fall out of a single, 
+                    well-tuned embedding of the data into a \(2 \times 2\) block matrix.
                 </p>
 
             </section>
@@ -258,14 +308,16 @@ uses_python: false
                     The <strong>Woodbury Matrix Identity</strong> is a fundamental result in matrix algebra that allows us to compute the 
                     inverse of a matrix after a <strong>rank-k update</strong>. In the fields of Machine Learning, Optimization, and 
                     Signal Processing, we often encounter situations where a large matrix \(A\) is modified by adding a product of 
-                    smaller matrices \(UBV\). We give two proofs in turn: a direct algebraic verification, and an alternative derivation that recovers the identity from the block matrix machinery of the previous section.
+                    smaller matrices \(UBV\). We give two proofs in turn: a direct algebraic verification, and an alternative derivation 
+                    that recovers the identity from the block matrix machinery of the previous section.
                 </p>
 
                 <div class="theorem" id="T-woodbury_identity">
                     <span class="theorem-title">Theorem: Woodbury Matrix Identity</span>  
                     <p>
                         Let \(A \in \mathbb{R}^{n \times n}\), \(U \in \mathbb{R}^{n \times k}\), 
-                        \(V \in \mathbb{R}^{k \times n}\), and \(B \in \mathbb{R}^{k \times k}\). Suppose \(A\) and \(B\) are invertible, and \(B^{-1} + VA^{-1}U\) is invertible. Then \(A + UBV\) is invertible, and
+                        \(V \in \mathbb{R}^{k \times n}\), and \(B \in \mathbb{R}^{k \times k}\). Suppose \(A\) and \(B\) are invertible, 
+                        and \(B^{-1} + VA^{-1}U\) is invertible. Then \(A + UBV\) is invertible, and
                         \[
                         (A + UBV)^{-1} = A^{-1} - A^{-1} U (B^{-1} + VA^{-1}U)^{-1} VA^{-1}.
                         \]
@@ -275,27 +327,32 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        We verify the identity by multiplying \((A + UBV)\) on the left by the proposed inverse and showing the product equals \(I\). The argument is purely algebraic; the only non-obvious move is the insertion of \(I = B B^{-1}\) at the marked step, which lets us factor \(B\) out of a sum and trigger the cancellation at the end.
+                        We verify the identity by multiplying \((A + UBV)\) on the left by the proposed inverse and showing the product equals \(I\). 
+                        The argument is purely algebraic; the only non-obvious move is the insertion of \(I = B B^{-1}\) at the marked step, 
+                        which lets us factor \(B\) out of a sum and trigger the cancellation at the end.
                     </p>
                     <p>
                         \[
                         \begin{align*}
-                        &(A + UBV)\{A^{-1} - A^{-1} U (B^{-1} + VA^{-1}U)^{-1} VA^{-1}\} \\
-                        &= I + UBVA^{-1} -U(B^{-1} + VA^{-1}U)^{-1}VA^{-1} -UBVA^{-1}U(B^{-1} + VA^{-1}U)^{-1}VA^{-1}\\
-                        &= I + UBVA^{-1} -U \{(B^{-1} + VA^{-1}U)^{-1} + BVA^{-1}U(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\
-                        &= I + UBVA^{-1} -U \{(I + BVA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\
-                        &\overset{(\star)}{=} I + UBVA^{-1} -U \{(BB^{-1} + BVA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\
-                        &= I + UBVA^{-1} -UB \{(B^{-1} + VA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\
-                        &= I + UBVA^{-1} -UBVA^{-1} \\
+                        &(A + UBV)\{A^{-1} - A^{-1} U (B^{-1} + VA^{-1}U)^{-1} VA^{-1}\} \\\\
+                        &= I + UBVA^{-1} -U(B^{-1} + VA^{-1}U)^{-1}VA^{-1} -UBVA^{-1}U(B^{-1} + VA^{-1}U)^{-1}VA^{-1}\\\\
+                        &= I + UBVA^{-1} -U \{(B^{-1} + VA^{-1}U)^{-1} + BVA^{-1}U(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\\\
+                        &= I + UBVA^{-1} -U \{(I + BVA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\\\
+                        &\overset{(\star)}{=} I + UBVA^{-1} -U \{(BB^{-1} + BVA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\\\
+                        &= I + UBVA^{-1} -UB \{(B^{-1} + VA^{-1}U)(B^{-1} + VA^{-1}U)^{-1}\}VA^{-1} \\\\
+                        &= I + UBVA^{-1} -UBVA^{-1} \\\\
                         &= I.
                         \end{align*}
                         \]
-                        Step \((\star)\) rewrites the leading \(I\) in the brace as \(BB^{-1}\); this is what allows the next line to factor \(B\) on the left. The remaining steps are direct simplification.
+                        Step \((\star)\) rewrites the leading \(I\) in the brace as \(BB^{-1}\); this is what allows the next line to factor \(B\) on the left. 
+                        The remaining steps are direct simplification.
                     </p>   
                 </div>
 
                 <p>
-                    The proof above verifies the identity by direct algebraic manipulation. A second, more conceptual derivation falls out of the block matrix machinery developed in the previous section: Woodbury is precisely what one obtains by inverting a particular \(2 \times 2\) block matrix in two different ways and equating the results.
+                    The proof above verifies the identity by direct algebraic manipulation. 
+                    A second, more conceptual derivation falls out of the block matrix machinery developed in the previous section: 
+                    Woodbury is precisely what one obtains by inverting a particular \(2 \times 2\) block matrix in two different ways and equating the results.
                 </p>
 
                 <div class="proof">
@@ -305,7 +362,9 @@ uses_python: false
                         \[
                         M = \begin{pmatrix} A & -U \\ V & B^{-1} \end{pmatrix},
                         \]
-                        with block dimensions \(n + k\). In the notation of the previous section, this corresponds to \(A_{11} = A\), \(A_{12} = -U\), \(A_{21} = V\), \(A_{22} = B^{-1}\); both \(A_{11}\) and \(A_{22}\) are invertible by assumption.
+                        with block dimensions \(n + k\). In the notation of the previous section, 
+                        this corresponds to \(A_{11} = A\), \(A_{12} = -U\), \(A_{21} = V\), \(A_{22} = B^{-1}\); both \(A_{11}\) and \(A_{22}\) 
+                        are invertible by assumption.
                     </p>
                     <p>
                         <strong>Compute \(M^{-1}\) using \(A_{11}\) as pivot.</strong> The Schur complement of \(A_{11}\) is
@@ -322,14 +381,17 @@ uses_python: false
                         \[
                         S_{A_{22}} = A_{11} - A_{12} A_{22}^{-1} A_{21} = A - (-U)(B^{-1})^{-1} V = A + U B V.
                         \]
-                        By the symmetric form of the block inverse formula (obtained by repeating the LDU derivation with \(A_{22}\) in the pivot role), the \((1,1)\)-block of \(M^{-1}\) is simply \(S_{A_{22}}^{-1} = (A + U B V)^{-1}\).
+                        By the symmetric form of the block inverse formula (obtained by repeating the LDU derivation with \(A_{22}\) in the pivot role), 
+                        the \((1,1)\)-block of \(M^{-1}\) is simply \(S_{A_{22}}^{-1} = (A + U B V)^{-1}\).
                     </p>
                     <p>
                         Since \(M^{-1}\) is unique, both expressions for its \((1,1)\)-block must agree:
                         \[
                         (A + U B V)^{-1} = A^{-1} - A^{-1} U (B^{-1} + V A^{-1} U)^{-1} V A^{-1}.
                         \]
-                        This is precisely the Woodbury identity. Note also that requiring \(M\) to be invertible — necessary for the two computations of \(M^{-1}\) to make sense — translates into invertibility of both Schur complements, which is precisely the prerequisite stated in the theorem. \(\quad\blacksquare\)
+                        This is precisely the Woodbury identity. Note also that requiring \(M\) to be invertible 
+                        — necessary for the two computations of \(M^{-1}\) to make sense — translates into invertibility of both Schur complements, 
+                        which is precisely the prerequisite stated in the theorem. \(\quad\blacksquare\)
                     </p>
                 </div>
 
@@ -372,8 +434,8 @@ uses_python: false
                         With these substitutions:
                         \[
                         \begin{align*}
-                        UBV &= \mathbf{u} \cdot 1 \cdot \mathbf{v}^\top = \mathbf{u}\mathbf{v}^\top \\
-                        B^{-1} &= 1^{-1} = 1 \\
+                        UBV &= \mathbf{u} \cdot 1 \cdot \mathbf{v}^\top = \mathbf{u}\mathbf{v}^\top \\\\
+                        B^{-1} &= 1^{-1} = 1 \\\\
                         VA^{-1}U &= \mathbf{v}^\top A^{-1} \mathbf{u} \quad \text{(scalar)}
                         \end{align*}
                         \]
@@ -381,14 +443,17 @@ uses_python: false
                         Substituting into the Woodbury identity:
                         \[
                         \begin{align*}
-                        (A + UBV)^{-1} &= A^{-1} - A^{-1} U (B^{-1} + VA^{-1}U)^{-1} VA^{-1} \\
-                        (A + \mathbf{u}\mathbf{v}^\top)^{-1} &= A^{-1} - A^{-1} \mathbf{u} (1 + \mathbf{v}^\top A^{-1} \mathbf{u})^{-1} \mathbf{v}^\top A^{-1} \\
-                                        &= A^{-1} - A^{-1} \mathbf{u} \cdot \frac{1}{1 + \mathbf{v}^\top A^{-1} \mathbf{u}} \cdot \mathbf{v}^\top A^{-1} \\
+                        (A + UBV)^{-1} &= A^{-1} - A^{-1} U (B^{-1} + VA^{-1}U)^{-1} VA^{-1} \\\\
+                        (A + \mathbf{u}\mathbf{v}^\top)^{-1} &= A^{-1} - A^{-1} \mathbf{u} (1 + \mathbf{v}^\top A^{-1} \mathbf{u})^{-1} \mathbf{v}^\top A^{-1} \\\\
+                                        &= A^{-1} - A^{-1} \mathbf{u} \cdot \frac{1}{1 + \mathbf{v}^\top A^{-1} \mathbf{u}} \cdot \mathbf{v}^\top A^{-1} \\\\
                                         &= A^{-1} - \frac{A^{-1} \mathbf{u} \mathbf{v}^\top A^{-1}}{1 + \mathbf{v}^\top A^{-1} \mathbf{u}}
                         \end{align*}
                         \]
                         This confirms that the rank-1 update requires only <strong>matrix-vector products</strong> and <strong>outer products</strong>, 
-                        maintaining a computational complexity of \(O(n^2)\). The "only if" direction of the invertibility condition is immediate from the rank-1 case of the Matrix Determinant Lemma proved below: \(\det(A + \mathbf{u}\mathbf{v}^\top) = (1 + \mathbf{v}^\top A^{-1} \mathbf{u}) \det(A)\), so if \(1 + \mathbf{v}^\top A^{-1} \mathbf{u} = 0\) then \(\det(A + \mathbf{u}\mathbf{v}^\top) = 0\) and \(A + \mathbf{u}\mathbf{v}^\top\) is singular.
+                        maintaining a computational complexity of \(O(n^2)\). 
+                        The "only if" direction of the invertibility condition is immediate from the rank-1 case of the Matrix Determinant Lemma proved below: 
+                        \(\det(A + \mathbf{u}\mathbf{v}^\top) = (1 + \mathbf{v}^\top A^{-1} \mathbf{u}) \det(A)\), so if \(1 + \mathbf{v}^\top A^{-1} \mathbf{u} = 0\) 
+                        then \(\det(A + \mathbf{u}\mathbf{v}^\top) = 0\) and \(A + \mathbf{u}\mathbf{v}^\top\) is singular.
                     </p>
                 </div>  
             </section>
@@ -396,13 +461,17 @@ uses_python: false
             <section id="determinant-lemma" class="section-content">
                 <h2>Matrix Determinant Lemma</h2>
                 <p>
-                    The <strong>Matrix Determinant Lemma</strong> provides a formula for computing the determinant of a matrix after a low-rank update. Just like the Woodbury identity for inverses, this lemma is essential for maintaining computational efficiency, particularly when evaluating likelihoods in statistical models. We derive it from the block determinant formula of the Schur section, using the same embedding \(M = \begin{pmatrix} A & -U \\ V & B^{-1} \end{pmatrix}\) that gave the alternative derivation of Woodbury.
+                    The <strong>Matrix Determinant Lemma</strong> provides a formula for computing the determinant of a matrix after a low-rank update. 
+                    Just like the Woodbury identity for inverses, this lemma is essential for maintaining computational efficiency, particularly when evaluating likelihoods 
+                    in statistical models. We derive it from the block determinant formula of the Schur section, using the same embedding 
+                    \(M = \begin{pmatrix} A & -U \\ V & B^{-1} \end{pmatrix}\) that gave the alternative derivation of Woodbury.
                 </p>
 
                 <div class="theorem" id="T-matrix_determinant_lemma">
                     <span class="theorem-title">Theorem: Matrix Determinant Lemma</span> 
                     <p>
-                        Suppose \(A \in \mathbb{R}^{n \times n}\) and \(B \in \mathbb{R}^{k \times k}\) are invertible matrices, and \(U \in \mathbb{R}^{n \times k}, V \in \mathbb{R}^{k \times n}\). 
+                        Suppose \(A \in \mathbb{R}^{n \times n}\) and \(B \in \mathbb{R}^{k \times k}\) are invertible matrices, and 
+                        \(U \in \mathbb{R}^{n \times k}, V \in \mathbb{R}^{k \times n}\). 
                         The determinant of the updated matrix is given by:
                         \[
                         \det(A + UBV) = \det(B^{-1} + VA^{-1}U) \det(B) \det(A)
@@ -421,7 +490,8 @@ uses_python: false
                         \[
                         M = \begin{pmatrix} A & -U \\ V & B^{-1} \end{pmatrix},
                         \]
-                        with \(A_{11} = A\), \(A_{12} = -U\), \(A_{21} = V\), \(A_{22} = B^{-1}\), all invertible by assumption. Apply the <a href="#T-block_determinant" class="ref-link"><strong>block determinant formula</strong></a> in two ways.
+                        with \(A_{11} = A\), \(A_{12} = -U\), \(A_{21} = V\), \(A_{22} = B^{-1}\), all invertible by assumption. 
+                        Apply the <a href="#T-block_determinant" class="ref-link"><strong>block determinant formula</strong></a> in two ways.
                     </p>
                     <p>
                         Using \(A_{11} = A\) as pivot, with Schur complement \(S_{A_{11}} = B^{-1} + V A^{-1} U\),
@@ -436,17 +506,21 @@ uses_python: false
                         \[
                         \det(A + U B V) = \det(A) \, \det(B) \, \det(B^{-1} + V A^{-1} U),
                         \]
-                        which is the Matrix Determinant Lemma. The rank-1 case \(k = 1\) follows by setting \(U = \mathbf{u}\), \(V = \mathbf{v}^\top\), \(B = 1\): then \(\det(B) = 1\) and \(\det(B^{-1} + V A^{-1} U) = \det(1 + \mathbf{v}^\top A^{-1} \mathbf{u}) = 1 + \mathbf{v}^\top A^{-1} \mathbf{u}\) (a scalar). \(\quad\blacksquare\)
+                        which is the Matrix Determinant Lemma. The rank-1 case \(k = 1\) follows by setting \(U = \mathbf{u}\), \(V = \mathbf{v}^\top\), \(B = 1\): 
+                        then \(\det(B) = 1\) and \(\det(B^{-1} + V A^{-1} U) = \det(1 + \mathbf{v}^\top A^{-1} \mathbf{u}) = 1 + \mathbf{v}^\top A^{-1} \mathbf{u}\) (a scalar). \(\quad\blacksquare\)
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Computational & Numerical Insight:</h3>
                     <p>
-                        <strong>Efficiency:</strong> For \(k=1\), the term \((1 + \mathbf{v}^\top A^{-1} \mathbf{u})\) is a scalar. If \(A^{-1}\) and \(\det(A)\) are known, the update requires only \(O(n^2)\) operations (matrix-vector multiplication), avoiding the \(O(n^3)\) cost of a full determinant calculation.
+                        <strong>Efficiency:</strong> For \(k=1\), the term \((1 + \mathbf{v}^\top A^{-1} \mathbf{u})\) is a scalar. 
+                        If \(A^{-1}\) and \(\det(A)\) are known, the update requires only \(O(n^2)\) operations (matrix-vector multiplication), 
+                        avoiding the \(O(n^3)\) cost of a full determinant calculation.
                     </p>
                     <p>
-                        <strong>Numerical Stability:</strong> In practical machine learning applications (e.g., Gaussian Processes), we often work with the <strong>log-determinant</strong> to prevent numerical overflow/underflow:
+                        <strong>Numerical Stability:</strong> In practical machine learning applications (e.g., Gaussian Processes), 
+                        we often work with the <strong>log-determinant</strong> to prevent numerical overflow/underflow:
                         \[ \ln |\det(A + \mathbf{u}\mathbf{v}^\top)| = \ln |\det(A)| + \ln |1 + \mathbf{v}^\top A^{-1} \mathbf{u}| \]
                     </p>
                 </div>
@@ -457,10 +531,13 @@ uses_python: false
                 <p>
                     The <strong>BFGS algorithm</strong> (the most popular quasi-Newton method) provides a perfect example of the Woodbury 
                     identity in action. It maintains a Hessian approximation \(H_t \approx \nabla^2 f(\boldsymbol{\theta}_t)\) and updates it via a 
-                    <strong>symmetric rank-2</strong> correction; what we ultimately need at each step is the inverse \(H_t^{-1}\), which the Sherman-Morrison machinery lets us update directly without ever forming \(H_t^{-1}\) from scratch.
+                    <strong>symmetric rank-2</strong> correction; what we ultimately need at each step is the inverse \(H_t^{-1}\), 
+                    which the Sherman-Morrison machinery lets us update directly without ever forming \(H_t^{-1}\) from scratch.
                 </p>
                 <p>
-                    <em>Notation note.</em> In this section, \(H_t\) denotes the BFGS Hessian approximation — a different object from the matrix \(B\) appearing in the Woodbury identity above. We avoid the customary symbol \(B_t\) used in some references (e.g., Nocedal & Wright) precisely to prevent that collision.
+                    <em>Notation note.</em> In this section, \(H_t\) denotes the BFGS Hessian approximation — a different object from the matrix \(B\) 
+                    appearing in the Woodbury identity above. We avoid the customary symbol \(B_t\) used in some references 
+                    (e.g., Nocedal & Wright) precisely to prevent that collision.
                 </p>
 
                 <div class="insight-box">
@@ -470,13 +547,15 @@ uses_python: false
                         \[ 
                         H_{t+1} = H_t + \frac{\mathbf{y}_t \mathbf{y}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t} - \frac{H_t \mathbf{s}_t \mathbf{s}_t^\top H_t}{\mathbf{s}_t^\top H_t \mathbf{s}_t},
                         \]
-                        where \(\mathbf{s}_t = \boldsymbol{\theta}_{t+1} - \boldsymbol{\theta}_t\) is the parameter step and \(\mathbf{y}_t = \nabla f(\boldsymbol{\theta}_{t+1}) - \nabla f(\boldsymbol{\theta}_t)\) is the gradient change. 
+                        where \(\mathbf{s}_t = \boldsymbol{\theta}_{t+1} - \boldsymbol{\theta}_t\) is the parameter step and 
+                        \(\mathbf{y}_t = \nabla f(\boldsymbol{\theta}_{t+1}) - \nabla f(\boldsymbol{\theta}_t)\) is the gradient change. 
                         By applying the Sherman-Morrison formula <strong>recursively</strong> (first to the rank-1 addition, then to the rank-1 subtraction), 
                         we obtain the update directly for the inverse \(H_{t+1}^{-1}\).
                     </p>
                     <ul style="padding-left: 25px;">
                         <li><strong>Preservation of Structure:</strong><br>
-                            This process ensures that if \(H_t^{-1}\) is symmetric and positive definite, \(H_{t+1}^{-1}\) remains so (provided \(\mathbf{y}_t^\top \mathbf{s}_t > 0\), the so-called curvature condition).
+                            This process ensures that if \(H_t^{-1}\) is symmetric and positive definite, 
+                            \(H_{t+1}^{-1}\) remains so (provided \(\mathbf{y}_t^\top \mathbf{s}_t > 0\), the so-called curvature condition).
                         </li>
                         <li><strong>Efficiency:</strong><br>
                             It transforms an \(O(n^3)\) matrix inversion into a sequence of \(O(n^2)\) outer products and matrix-vector multiplications.
