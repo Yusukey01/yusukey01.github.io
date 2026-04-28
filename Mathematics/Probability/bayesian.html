@@ -33,8 +33,7 @@ uses_python: false
                     for fitting parameters to data, and our treatment of <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> 
                     introduced both frequentist confidence intervals and Bayesian credible intervals as ways to quantify uncertainty. 
                     The credible interval example there gave a first glimpse of the Bayesian approach &mdash; treating the parameter as a 
-                    random variable and computing a posterior via a conjugate prior. The <a href="convergence.html"><strong>convergence theorems</strong></a> 
-                    we subsequently established guarantee that these estimation procedures are well-founded. We now develop the Bayesian framework systematically.
+                    random variable and computing a posterior via a conjugate prior. We now develop the Bayesian framework systematically.
                 </p>
 
                 <p>
@@ -125,7 +124,7 @@ uses_python: false
                     <span class="proof-title">Example 1: Beta-Binomial Model</span>
                     <p>
                         Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as 
-                        \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1 : N\}\). We assume the data are iid.
+                        \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1, \ldots, N\}\). We assume the data are iid.
                     </p>
 
                     <p>
@@ -145,11 +144,11 @@ uses_python: false
                         \[
                         \begin{align*}
                         p(\mathcal{D} \mid \theta) &= \operatorname{Bin}(y \mid N, \theta)  \\\\
-                                                &= \begin{pmatrix} N \\ y \end{pmatrix} \theta^y (1 - \theta)^{N - y} \\\\
+                                                &= \binom{N}{y} \theta^y (1 - \theta)^{N - y} \\\\
                                                 &\propto  \theta^y (1 - \theta)^{N - y}.
                         \end{align*}
                         \]
-                        The combinatorial factor \(\binom{N}{y}\) is absorbed into the normalization of the posterior.
+                        The combinatorial factor \(\binom{N}{y}\) does not depend on \(\theta\), so it will not affect posterior inference up to proportionality.
                     </p>
 
                     <p>
@@ -158,7 +157,7 @@ uses_python: false
                         \[
                         p(\theta) = \operatorname{Unif}(\theta \mid 0, 1).
                         \]
-                        However, "in this example", using the <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>, 
+                        However, in this example, using the <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>, 
                         we can represent the prior as follows:
                         \[
                         \begin{align*}
@@ -170,7 +169,7 @@ uses_python: false
                     </p>
 
                     <p>
-                        Note: If \(a = b = 1\), we get the uninformative prior. 
+                        <strong>Note.</strong> If \(a = b = 1\), we get the uninformative prior. 
                     </p>
 
                     <p>
@@ -179,6 +178,7 @@ uses_python: false
                         \[
                         \begin{align*}
                         p(\theta \mid \mathcal{D}) &\propto [\theta^{y}(1 - \theta)^{N-y}] \cdot [\theta^{a-1}(1-\theta)^{b-1}] \\\\
+                                                &= \theta^{(a+y)-1}(1-\theta)^{(b+N-y)-1} \\\\
                                                 &\propto \operatorname{Beta}(\theta \mid a+y, \, b+N-y) \\\\
                                                 &= \frac{\Gamma(a+b+N)}{\Gamma(a+y)\Gamma(b+N-y)}\theta^{a+y-1}(1-\theta)^{b+N-y-1}. \tag{2}
                         \end{align*}
@@ -194,8 +194,7 @@ uses_python: false
                         \[
                         \bar{\theta} = \mathbb{E}[\theta \mid \mathcal{D}] = \frac{a+y}{a+b+N}.
                         \]
-                        Note: 
-                        By adjusting hyper-parameters \(a\) and \(b\), we can control the influence of the prior on the posterior.
+                        <strong>Note.</strong> By adjusting hyper-parameters \(a\) and \(b\), we can control the influence of the prior on the posterior.
                     </p>
 
                     <p>
@@ -214,7 +213,7 @@ uses_python: false
                                         &= \sqrt{\frac{(a+y)(b+N-y)}{(a+b+N)^2(a+b+N+1)}}.
                         \end{align*}
                         \]
-                        Here, if \(N \gg a, b\), we can simplify the <strong>posterior variance</strong> as follows:
+                        Here, in the data-rich regime where \(N \gg a, b\) and the empirical fraction \(\hat{\theta} = y/N\) is bounded away from 0 and 1, we can simplify the <strong>posterior variance</strong> as follows:
                         \[
                         \begin{align*}
                         \operatorname{Var}[\theta \mid \mathcal{D}] &\approx \frac{y(N-y)}{N^3} \\\\
@@ -231,12 +230,13 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        From (1) and (2), the <strong>marginal likelihood</strong> is given by the ratio of normalization constants(beta functions) 
+                        From (1) and (2), the <strong>marginal likelihood</strong> for the Bernoulli sequence \(\mathcal{D} = \{y_1, \ldots, y_N\}\) is given by the ratio of normalization constants(beta functions) 
                         for the prior and posterior:
                         \[
                         p(\mathcal{D}) = \frac{B(a+y,\, b+N-y)}{B(a, b)}.
                         \]
-                        Note: In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to get the 
+                        (For the Binomial summary \(y = \sum_n y_n\), the marginal likelihood acquires the additional factor \(\binom{N}{y}\).)
+                        <strong>Note.</strong> In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to get the 
                         exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
                     </p>
                     <p>
@@ -257,7 +257,7 @@ uses_python: false
                                                 &= \frac{a+y}{a+b+N}.
                         \end{align*}
                         \]
-                        Note: As you can see, the hyper-parameters \(a\) and \(b\) are critical in the whole process of our inference. 
+                        <strong>Note.</strong> As you can see, the hyper-parameters \(a\) and \(b\) are critical in the whole process of our inference. 
                         In practice, setting up hyper-parameters is one of the most challenging aspects of the project. 
                     </p>
                 </div>
@@ -281,7 +281,7 @@ uses_python: false
 
                 <p>
                     We now apply the same Bayesian framework to the <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>normal distribution</strong></a>. 
-                     Given the univariate normal distribution \(\mathcal{N}(\mu, \sigma^2)\), there are three cases for our target posterior: 
+                    Given the univariate normal distribution \(\mathcal{N}(\mu, \sigma^2)\), there are three cases for our target posterior: 
                 </p>
 
                 <ol style="padding-left: 40px;">
@@ -378,7 +378,7 @@ uses_python: false
                     </p>
 
                     <p>
-                        Note: In this case, \(\mu_0\) and \(\sigma_0^2\) are hyper-parameters of the prior distribution. For example, as you can 
+                        <strong>Note.</strong> In this case, \(\mu_0\) and \(\sigma_0^2\) are hyper-parameters of the prior distribution. For example, as you can 
                         see the form of the posterior mean \(\mu_N\), a small \(\sigma_0^2\) gives more weight to the prior mean \(\mu_0\), while 
                         a large \(\sigma_0^2\) reduces the influence of the prior, making the posterior more rely on the data.
                     </p>
@@ -407,14 +407,15 @@ uses_python: false
                         \begin{align*}
                         p(\mathcal{D} \mid \sigma^2) 
                         &= \frac{1}{(2 \pi \sigma^2)^{\frac{N}{2}}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \\\\
-                        &\propto (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right).            
+                        &\propto (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right),
                         \end{align*}
                         \]
-                        Following the same pattern as before, we conjecture that the <strong>inverse gamma distribution</strong> might serve as a conjugate prior:
+                        where the \(\sigma^2\)-independent factor \((2\pi)^{-N/2}\) has been dropped. Following the same pattern as before, we conjecture that the <strong>inverse gamma distribution</strong> might serve as a conjugate prior:
                         \[
                         \begin{align*}
                         p(\sigma^2) &= \operatorname{InvGamma}(\sigma^2 \mid \, a, b) \\\\
-                                    &= \frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right)
+                                    &= \frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \\\\
+                                    &\propto (\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right)
                         \end{align*}
                         \]
                         where \(a > 0\) is the shape parameter and  \(b > 0\) is the scale parameter.
@@ -426,11 +427,11 @@ uses_python: false
                         \begin{align*}
                         p(\sigma^2 \mid \, \mathcal{D}, \mu) 
                         &\propto \left\{ (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}
-                                      \cdot \left\{\frac{b^a}{\Gamma(a)}(\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \right\} \\\\   
+                                      \cdot \left\{ (\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \right\} \\\\   
                         &= (\sigma^2)^{-(a+\frac{N}{2}+1)} \exp \left\{ - \frac{1}{\sigma^2}\left(b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}.                                                           
                         \end{align*}
                         \]
-                        Letting \(\hat{a} = a + \frac{N}{2}\) and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\), we conclude
+                        Letting \(\hat{a} = a + \frac{N}{2}\) and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\), the right-hand side is the kernel of an inverse-gamma density. Since the posterior is determined by its proportionality class up to normalization, we conclude
                         \[
                         p(\sigma^2 \mid \, \mathcal{D}, \mu) = \operatorname{InvGamma}(\sigma^2 \mid \, \hat{a}, \hat{b}),
                         \]
