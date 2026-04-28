@@ -21,6 +21,7 @@ uses_python: false
             <a href="#fim">Fisher Information Matrix</a>
             <a href="#exp">FIM for the Exponential Family</a>
             <a href="#ngd">Natural Gradient Descent</a>
+            <a href="#cramer-rao">Cramér-Rao Lower Bound</a>
             <a href="#jeffrey">Jeffreys Prior</a>
         </div> 
 
@@ -239,6 +240,86 @@ uses_python: false
                 <p>
                     <strong>Note.</strong> \(F\) is always <strong>positive semi-definite</strong> (and strictly positive definite under standard identifiability conditions); it is also relatively easier to compute and approximate compared to the Hessian matrix. 
                 </p>
+            </section>
+
+            <section id="cramer-rao" class="section-content">
+                <h2>Cramér-Rao Lower Bound</h2>
+
+                <p>
+                    Returning to the frequentist thread anticipated at the start of this chapter: the FIM does not just describe the geometry of the model — it also sets a hard limit on how accurately any unbiased estimator can recover \(\theta\) from data. The smaller the FIM, the less information the data carries, and the larger the unavoidable variance of estimation.
+                </p>
+
+                <p>
+                    Recall from <a href="mle.html#D-bias" class="ref-link">Section on bias of estimators</a> that an estimator \(\hat\theta = \hat\theta(\mathcal{D})\) is <strong>unbiased</strong> if \(\mathbb{E}[\hat\theta] = \theta^*\) for the true parameter \(\theta^*\). Being unbiased is not enough for a good estimator: its <strong>variance</strong> 
+                    \[
+                    \mathbb{V}[\hat\theta] := \mathbb{E}\!\left[\hat\theta^2\right] - \big(\mathbb{E}[\hat\theta]\big)^2
+                    \]
+                    measures how much the estimate fluctuates as the data \(\mathcal{D} \sim p(\mathcal{D} \mid \theta^*)\) varies. The natural question is: how small can this variance be made? The Cramér-Rao bound provides the answer.
+                </p>
+
+                <div class="theorem" id="T-cramer_rao_bound">
+                    <span class="theorem-title">Theorem: Cramér-Rao Lower Bound</span>
+                    <p>
+                        Let \(X_1, \ldots, X_N \overset{\text{iid}}{\sim} p(x \mid \theta^*)\), and let \(\hat\theta = \hat\theta(X_1, \ldots, X_N)\) be an unbiased estimator of the scalar parameter \(\theta^*\). Assume the regularity conditions of the <a href="#T-fim_hessian_form" class="ref-link">Hessian form of the FIM</a>, supplemented by an integrability condition on \(\hat\theta\) ensuring that differentiation under the integral sign is valid for the unbiasedness identity \(\int \hat\theta(\mathcal{D})\, p(\mathcal{D} \mid \theta)\, d\mathcal{D} = \theta\). Then the variance of \(\hat\theta\) satisfies 
+                        \[
+                        \mathbb{V}[\hat\theta] \;\geq\; \frac{1}{N \, F(\theta^*)},
+                        \]
+                        where \(F(\theta^*)\) is the Fisher information (per single observation) evaluated at \(\theta^*\). For vector-valued \(\theta\), the inequality generalizes to \(\operatorname{Cov}[\hat\theta] \succeq \big(N\, F(\theta^*)\big)^{-1}\) in the positive-semi-definite order.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (scalar case).</span>
+                    <p>
+                        Write the score for the full sample as \(s(\theta^*) := \nabla_\theta \log p(\mathcal{D} \mid \theta^*) = \sum_{n=1}^N \nabla_\theta \log p(X_n \mid \theta^*)\), where \(\mathcal{D} = (X_1, \ldots, X_N)\). Each term is a single-observation score, which has zero mean by the <a href="#D-score_function" class="ref-link">zero-mean property of the score</a>; by linearity, \(\mathbb{E}[s(\theta^*)] = 0\). 
+                    </p>
+                    <p>
+                        <strong>Step 1.</strong> Differentiating the unbiasedness identity \(\mathbb{E}_\theta[\hat\theta(\mathcal{D})] = \theta\) under the integral sign,
+                        \[
+                        1 = \nabla_\theta\!\int \hat\theta(\mathcal{D})\, p(\mathcal{D} \mid \theta)\, d\mathcal{D} = \int \hat\theta(\mathcal{D})\, p(\mathcal{D} \mid \theta)\, \nabla_\theta \log p(\mathcal{D} \mid \theta)\, d\mathcal{D} = \mathbb{E}[\hat\theta\, s].
+                        \]
+                        Combined with \(\mathbb{E}[s] = 0\), this gives \(\operatorname{Cov}[\hat\theta, s] = \mathbb{E}[\hat\theta\, s] - \mathbb{E}[\hat\theta]\,\mathbb{E}[s] = 1\).
+                    </p>
+                    <p>
+                        <strong>Step 2.</strong> Independence of the samples gives additivity of the Fisher information:
+                        \[
+                        \mathbb{V}[s(\theta^*)] = \mathbb{V}\!\left[\sum_{n=1}^N \nabla_\theta \log p(X_n \mid \theta^*)\right] = N \, \mathbb{V}\!\left[\nabla_\theta \log p(X_1 \mid \theta^*)\right] = N\, F(\theta^*).
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 3.</strong> Cauchy–Schwarz applied to the random variables \(\hat\theta\) and \(s\) gives \(\operatorname{Cov}[\hat\theta, s]^2 \leq \mathbb{V}[\hat\theta] \, \mathbb{V}[s]\). Substituting Steps 1–2,
+                        \[
+                        1 \;\leq\; \mathbb{V}[\hat\theta] \cdot N\, F(\theta^*),
+                        \]
+                        which rearranges to the claimed scalar bound \(\mathbb{V}[\hat\theta] \geq 1/(N\, F(\theta^*))\). \(\square\)
+                    </p>
+                </div>
+
+                <p>
+                    For vector-valued \(\theta \in \mathbb{R}^d\), the same differentiation argument applied component-wise — that is, differentiating \(\mathbb{E}_\theta[\hat\theta_i] = \theta_i\) with respect to \(\theta_j\) — yields the matrix identity \(\operatorname{Cov}[\hat\theta, s] = I_d\). Combined with \(\operatorname{Cov}[s] = N\, F(\theta^*)\), positive semi-definiteness of the joint covariance 
+                    \[
+                    \operatorname{Cov}\!\begin{pmatrix} \hat\theta \\ s \end{pmatrix} = \begin{pmatrix} \operatorname{Cov}[\hat\theta] & I_d \\ I_d & N\, F(\theta^*) \end{pmatrix} \;\succeq\; 0
+                    \]
+                    forces, by the Schur complement criterion, \(\operatorname{Cov}[\hat\theta] \succeq \big(N\, F(\theta^*)\big)^{-1}\). The scalar argument above captures the essential mechanism.
+                </p>
+
+                <p>
+                    The factor \(N\) in the denominator captures the fundamental scaling: doubling the sample size halves the minimum achievable variance. The Fisher information \(F(\theta^*)\) controls the constant: parameter values where the likelihood is sharply peaked (large \(F\)) admit lower-variance estimators than values where the likelihood is flat (small \(F\)).
+                </p>
+
+                <div class="insight-box">
+                    <h3>MLE is Asymptotically Optimal</h3>
+                    <p>
+                        Under the same regularity conditions, the <a href="mle.html#D-MLE" class="ref-link">MLE</a> \(\hat\theta_{\text{MLE}}\) is asymptotically unbiased and achieves the Cramér-Rao bound in the large-sample limit. A Taylor expansion of the score equation \(\nabla_\theta \log p(\mathcal{D} \mid \hat\theta_{\text{MLE}}) = 0\) around \(\theta^*\), combined with the law of large numbers and central limit theorem, yields the asymptotic distribution 
+                        \[
+                        \sqrt{N}\,(\hat\theta_{\text{MLE}} - \theta^*) \;\xrightarrow{d}\; \mathcal{N}\!\big(0,\; F(\theta^*)^{-1}\big).
+                        \]
+                        A full proof requires the convergence theory of random variables (developed in <a href="convergence.html"><strong>convergence of random variables</strong></a>). The takeaway is that no other (sufficiently regular) unbiased estimator can have smaller asymptotic variance than the MLE — the MLE is <strong>asymptotically optimal</strong>. This is the precise sense in which "maximum likelihood" is, in the large-sample frequentist regime, the right thing to do.
+                    </p>
+                    <p>
+                        This optimality result complements the bias-variance decomposition discussed in <a href="../Machine_learning/regression.html"><strong>regularized regression</strong></a>: while regularized estimators trade a small bias for a much larger variance reduction (often beating the MLE in finite samples), the Cramér-Rao bound certifies that, asymptotically, no unbiased estimator can do better than the MLE in raw variance.
+                    </p>
+                </div>
             </section>
 
             <section id="jeffrey" class="section-content">
