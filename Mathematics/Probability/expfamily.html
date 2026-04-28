@@ -28,7 +28,7 @@ uses_python: false
                 <h2>The Exponential Family</h2>
 
                 <p>
-                    In the <a href="bayesian.html"><strong>previous part</strong></a>, we saw that certain likelihood-prior pairs such 
+                    In the <a href="bayesian.html"><strong>previous chapter on Bayesian statistics</strong></a>, we saw that certain likelihood-prior pairs such 
                     as Binomial-Beta and Normal-Normal produce posteriors in the same family as the prior. This is not a coincidence. 
                     These distributions all belong to the <strong>exponential family</strong>, a unified framework that encompasses 
                     the vast majority of distributions used in statistics and machine learning including the Bernoulli, Poisson, Normal, 
@@ -52,12 +52,12 @@ uses_python: false
                     </li>
                 </ul>
 
-                <div class="theorem">
+                <div class="theorem" id="D-exponential_family">
                     <span class="theorem-title">Definition: Exponential Family</span>
                     <p>
                         The exponential family is a family of probability distributions parameterized by 
                         <strong>natural parameters</strong>(or <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with 
-                        support over \(\mathcal{X}^D \subseteq \mathbb{R}^D\) such that 
+                        support over \(\mathcal{X} \subseteq \mathbb{R}^D\) such that 
                         \[
                         \begin{align*}
                         p(x \mid \eta ) &= \frac{1}{Z(\eta)} h(x) \exp\{\eta^\top \mathcal{T}(x)\}\\\\
@@ -67,9 +67,9 @@ uses_python: false
                         where 
                     </p>
                     <ul style="padding-left: 40px;">
-                        <li>\(h(x)\) is a <strong>base measure</strong>, which is a scaling constant, often 1.</li>
-                        <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is <strong>sufficient statistics</strong>.</li>
-                        <li>\(Z(\eta)\) is a <strong>normalization constant</strong>.</li>
+                        <li>\(h(x)\) is a <strong>base measure</strong> (or <strong>carrier measure</strong>): a function depending only on \(x\) and not on \(\eta\); often equal to \(1\).</li>
+                        <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is the <strong>sufficient statistic</strong> vector. It is called <em>sufficient</em> because the likelihood depends on \(x\) only through \(\mathcal{T}(x)\): all information in \(x\) relevant to estimating \(\eta\) is captured by \(\mathcal{T}(x)\).</li>
+                        <li>\(Z(\eta)\) is the <strong>normalization function</strong>, defined so that \(p(x \mid \eta)\) integrates to one over the support.</li>
                     </ul>
                     <p>
                     Each exponential family is defined by different \(h(x)\) and \(\mathcal{T}(x)\).
@@ -77,17 +77,19 @@ uses_python: false
                 </div>
 
                 <p>
-                    The normalization constant \(Z(\eta)\) is often referred to as the <strong>partition function</strong> in 
+                    The normalization function \(Z(\eta)\) is often referred to as the <strong>partition function</strong> in 
                     statistical physics and machine learning. Especially, the <strong>log-partition function</strong>:
                     \[
                      A(\eta) = \log Z(\eta)
                     \]
-                    is convex over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\). 
-                    In the context of optimization and information geometry, it acts as a <strong>convex potential function</strong> 
+                    is <strong>convex</strong> over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\), 
+                    and is <strong>strictly convex</strong> when the family is minimal. We verify these properties below 
+                    via the Hessian formula \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\). 
+                    In the context of optimization and information geometry, \(A(\eta)\) acts as a <strong>convex potential function</strong> 
                     that links natural parameters to moment parameters.
                 </p>
                 
-                <div class="theorem">
+                <div class="theorem" id="D-minimal_representation">
                     <span class="theorem-title">Definition: Minimal Representation</span>
                     <p>
                         An exponential family is said to be <strong>minimal</strong> if there is no nonzero \(\eta \in \mathbb{R}^K\) such that 
@@ -134,11 +136,11 @@ uses_python: false
 
                
                 <p>
-                    Let \(\eta = f(\phi)\), where \(\phi\) is some other possibly smaller set of parameters, and then 
+                    Let \(\eta = f(\phi)\), where \(\phi \in \mathbb{R}^M\) is some other possibly smaller set of parameters (\(M \leq K\)), and then 
                     \[
                     p(x \mid \phi ) = h(x) \exp\{ f(\phi)^\top \mathcal{T}(x) - A(f(\phi))\}.
                     \]
-                    If the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
+                    If \(M < K\) and the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
                 </p>
 
                 <p>
@@ -159,7 +161,7 @@ uses_python: false
                     <p>
                     \[
                     \begin{align*}
-                    \text{Ber}(x \mid \mu) &= \mu^x (1-\mu)^{1-x} \\\\
+                    \operatorname{Ber}(x \mid \mu) &= \mu^x (1-\mu)^{1-x} \\\\
                                            &= \exp\{x \log (\mu) + (1-x) \log (1-\mu)\}\\\\
                                            &= \exp\{\mathcal{T}(x)^\top \eta\}
                     \end{align*}
@@ -174,11 +176,12 @@ uses_python: false
                     </ul>
                     
                     <p>
-                        In this representation, there is a linear dependence between the features, and then we cannot define 
-                        \(\eta\) uniquely. It is common to use a <strong>minimal representation</strong> so that there is a unique 
-                        \(\eta\) associated with the distribution.
+                        In this representation, the components \(\mathbb{1}\{x=1\}\) and \(\mathbb{1}\{x=0\}\) of \(\mathcal{T}(x)\) satisfy 
+                        \(\mathbb{1}\{x=1\} + \mathbb{1}\{x=0\} = 1\) for all \(x\) in the support, violating the minimality condition with the 
+                        nonzero vector \(\eta = (1, 1)\). Consequently, shifting \(\eta\) by any vector parallel to \((1, 1)\) yields the same 
+                        distribution, so \(\eta\) is not uniquely determined. To restore uniqueness, we use a <strong>minimal representation</strong>:
                         \[
-                        \text{Ber}(x \mid \mu) = \exp\left\{x \log \left(\frac{\mu}{1-\mu}\right) + \log (1-\mu)\right\}
+                        \operatorname{Ber}(x \mid \mu) = \exp\left\{x \log \left(\frac{\mu}{1-\mu}\right) + \log (1-\mu)\right\}
                         \]
                         where 
                     </p>
@@ -225,7 +228,7 @@ uses_python: false
                 <p>
                     The second cumulant is given by  
                     \[
-                    \nabla^2 A(\eta) = \text{Cov }[\mathcal{T}(x)]
+                    \nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]
                     \]
                     which means that for a <strong>minimal</strong> exponential family, the Hessian is <strong>strictly positive definite</strong>, 
                     and thus the log partition function \(A(\eta)\) is <strong>strictly convex</strong> in \(\eta\). 
@@ -241,7 +244,7 @@ uses_python: false
                     <p>
                         \[
                         \begin{align*}
-                        N(x | \mu, \, \sigma^2) &= \frac{1}{\sigma\sqrt{2\pi}}\exp \left\{-\frac{1}{2\sigma^2}(x - \mu)^2 \right\} \\\\
+                        \mathcal{N}(x \mid \mu, \, \sigma^2) &= \frac{1}{\sigma\sqrt{2\pi}}\exp \left\{-\frac{1}{2\sigma^2}(x - \mu)^2 \right\} \\\\
                                                 &= \frac{1}{\sqrt{2\pi}}
                                                     \exp \left\{ \frac{\mu}{\sigma^2}x - \frac{1}{2\sigma^2}x^2 -\frac{1}{2\sigma^2}\mu^2 -\log \sigma \right\}
                         \end{align*}
@@ -261,20 +264,20 @@ uses_python: false
                         \[
                         m = \begin{bmatrix} \mu \\ \mu^2 + \sigma^2 \end{bmatrix}.
                         \]
-                        Note: If \(\sigma = 1\), the distribution becomes a natural exponential family such that 
+                        <strong>Note.</strong> If \(\sigma = 1\), the distribution becomes a natural exponential family such that 
                     </p>
 
                     <ul style="padding-left: 40px;">
                         <li>\(\mathcal{T}(x) = x\)</li>
                         <li>\(\eta = \mu\)</li>
-                        <li>\(A(\eta) = \frac{\mu^2}{2\sigma^2}+\log \sigma = \frac{\mu^2}{2}\)</li>
-                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = N(x \mid 0, 1)\) : Not constant.</li>
+                        <li>\(A(\eta) = \frac{\mu^2}{2} = \frac{\eta^2}{2}\)</li>
+                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = \mathcal{N}(x \mid 0, 1)\) : Not constant.</li>
                     </ul>
                 </div>
 
                 <p>
                     The univariate case extends naturally to higher dimensions. 
-                    The <a href="mvn.html"><strong>multivariate normal distribution</strong></a> introduces the 
+                    The <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> introduces the 
                     <strong>information form</strong> parameterization, which is the natural exponential family 
                     representation for Gaussians and plays a central role in graphical models and message passing algorithms.
                 </p>
@@ -285,8 +288,8 @@ uses_python: false
                     <p>
                         \[
                         \begin{align*}
-                        N(x \mid \mu, \Sigma) &= \frac{1}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
-                                                 \exp \left\{ \frac{1}{2}x^\top \Sigma^{-1}x + x^\top \Sigma^{-1}\mu -\frac{1}{2}\mu^\top \Sigma^{-1}\mu \right\}\\\\
+                        \mathcal{N}(x \mid \mu, \Sigma) &= \frac{1}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
+                                                 \exp \left\{ -\frac{1}{2}x^\top \Sigma^{-1}x + x^\top \Sigma^{-1}\mu -\frac{1}{2}\mu^\top \Sigma^{-1}\mu \right\}\\\\
                                               &= c \exp\left \{x^\top \Sigma^{-1}\mu -\frac{1}{2}x^\top \Sigma^{-1}x \right\}
                         \end{align*}
                         \]
@@ -300,7 +303,7 @@ uses_python: false
                     <p>
                         Now, we represent this model using canonical parameters.
                         \[
-                        N_c (x \mid \xi, \Lambda) = c' \exp \left\{x^\top \xi - \frac{1}{2}x^\top \Lambda x \right\}
+                        \mathcal{N}_c (x \mid \xi, \Lambda) = c' \exp \left\{x^\top \xi - \frac{1}{2}x^\top \Lambda x \right\}
                         \]
                         where 
                     </p>
@@ -315,12 +318,12 @@ uses_python: false
                         This representation is called <strong>information form</strong> and can be converted to exponential family notation as follows:
                         \[
                         \begin{align*}
-                        N_c (x \mid \xi, \Lambda) 
+                        \mathcal{N}_c (x \mid \xi, \Lambda) 
                         &= (2\pi)^{-\frac{D}{2}} \exp \left\{\frac{1}{2}\log | \Lambda | -\frac{1}{2}\xi^\top \Lambda^{-1}\xi \right\}
                                 \exp \left\{-\frac{1}{2}x^\top \Lambda x + x^\top \xi \right\} \\\\
                         &= h(x)g(\eta)\exp \left\{-\frac{1}{2}x^\top \Lambda x + x^\top \xi \right\} \\\\
                         &= h(x)g(\eta)\exp \left \{-\frac{1}{2}(\sum_{i, j}x_i x_j \Lambda_{ij}) + x^\top \xi \right\} \\\\
-                        &= h(x)g(\eta)\exp \left\{-\frac{1}{2}\text{vec}(\Lambda)^\top \text{vec}(xx^\top) + x^\top \xi \right\} \\\\
+                        &= h(x)g(\eta)\exp \left\{-\frac{1}{2}\operatorname{vec}(\Lambda)^\top \operatorname{vec}(xx^\top) + x^\top \xi \right\} \\\\
                         &= h(x)\exp\{\eta^\top \mathcal{T}(x) - A(\eta)\}
                         \end{align*}
                         \]
@@ -328,8 +331,8 @@ uses_python: false
                     </p>
 
                     <ul style="padding-left: 40px;">
-                        <li>\(\mathcal{T}(x) = [x ; \text{vec}(xx^\top)]\)</li>
-                        <li>\(\eta = [\xi ; -\frac{1}{2}\text{vec}(\Lambda)] = [\Sigma^{-1}\mu ; -\frac{1}{2}\text{vec}(\Sigma^{-1})]\)</li>
+                        <li>\(\mathcal{T}(x) = [x ; \operatorname{vec}(xx^\top)]\)</li>
+                        <li>\(\eta = [\xi ; -\frac{1}{2}\operatorname{vec}(\Lambda)] = [\Sigma^{-1}\mu ; -\frac{1}{2}\operatorname{vec}(\Sigma^{-1})]\)</li>
                         <li>\(A(\eta) = -\log g(\eta) = -\frac{1}{2} \log | \Lambda | + \frac{1}{2}\xi^\top \Lambda^{-1} \xi \)</li>
                         <li>\(h(x) = (2\pi)^{-\frac{D}{2}}\).</li>
                     </ul>
@@ -337,12 +340,12 @@ uses_python: false
                     <p>
                         The moment parameters are given by: 
                         \[
-                        m = [\mu ; \mu\mu^\top + \Sigma].
+                        m = [\mu ; \operatorname{vec}(\mu\mu^\top + \Sigma)].
                         \]
-                        Note: This form is <strong>non-minimal</strong> because the precision matrix \(\Lambda\) is symmetric (\(\Lambda_{ij} = \Lambda_{ji}\)), 
-                        so we can split it into lower and upper triangular matrices. However, in practice, non-minimal representation is easier to plug into algorithms 
-                        and stable for certain operations. The minimal representation is optimized for mathematical derivations. 
+                        <strong>Note.</strong> This form is <strong>non-minimal</strong> because the symmetry \(\Lambda_{ij} = \Lambda_{ji}\) of the precision matrix imposes a linear constraint on \(\operatorname{vec}(\Lambda)\): the natural parameter \(\eta\) is over-specified by \(D(D-1)/2\) redundant components. A minimal representation would use only the upper-triangular (or lower-triangular) part of \(\Lambda\). However, in practice, the non-minimal representation is easier to plug into algorithms 
+                        and stable for certain operations, while the minimal form is preferred for mathematical derivations. 
                     </p>
+                </div>
             </section>
 
             <section id="mle" class="section-content">
@@ -350,13 +353,13 @@ uses_python: false
 
                 <p>
                     One of the most elegant consequences of the exponential family structure is that 
-                    <a href="mle.html"><strong>maximum likelihood estimation</strong></a> reduces to a simple condition: 
+                    <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> reduces to a simple condition: 
                     matching empirical moments to theoretical moments. This is because the gradient of the log-likelihood involves only 
                     the sufficient statistics and the log-partition function.
                 </p>
 
                 <p>
-                    The likelihood of an exponential family model is given by: 
+                    Assume \(\mathcal{D} = \{x_1, \ldots, x_N\}\) is an i.i.d. sample from an exponential family distribution with natural parameter \(\eta\). The likelihood is then given by: 
                     \[ 
                     \begin{align*}
                     p(\mathcal{D} \mid \eta) 
@@ -364,12 +367,9 @@ uses_python: false
                     &\propto \exp\{\eta^\top \mathcal{T}(\mathcal{D}) - N A(\eta)\}
                     \end{align*}
                     \]
-                    where \(\mathcal{T}(\mathcal{D})\) are the sufficient statistics: 
+                    where, dropping the \(\eta\)-independent factor \(\prod_n h(x_n)\), we define the <strong>aggregated sufficient statistic</strong>: 
                     \[
-                    \mathcal{T}(\mathcal{D}) 
-                    = \begin{bmatrix}
-                            \sum_{n=1}^N \mathcal{T}_1 (x_n) \\ \vdots \\ \sum_{n=1}^N \mathcal{T}_K (x_n) 
-                      \end{bmatrix}.
+                    \mathcal{T}(\mathcal{D}) := \sum_{n=1}^N \mathcal{T}(x_n) \in \mathbb{R}^K.
                     \]
                 </p>
 
@@ -379,29 +379,28 @@ uses_python: false
                     \begin{align*}
                     \nabla_{\eta} \log p(\mathcal{D} \mid \eta) 
                     &= \nabla_{\eta} \eta^\top \mathcal{T}(\mathcal{D}) - N \nabla_{\eta} A(\eta) \\\\
-                    &=  \mathcal{T}(\mathcal{D}) - N \mathbb{E }[\mathcal{T}(x)].
+                    &= \mathcal{T}(\mathcal{D}) - N \mathbb{E}[\mathcal{T}(x)],
                     \end{align*}
                     \]
+                    where in the second line we used the first-cumulant identity \(\nabla A(\eta) = \mathbb{E}[\mathcal{T}(x)]\) established in the previous section.
                 </p>
 
                 <p>
-                    Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), which must satisfy 
+                    Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), characterized by 
                     \[
-                    \mathbb{E }[\mathcal{T}(x)] = \frac{1}{N}\sum_{n=1}^N \mathcal{T}(x_n).
+                    \mathbb{E}_{\hat{\eta}}[\mathcal{T}(x)] = \frac{1}{N}\sum_{n=1}^N \mathcal{T}(x_n).
                     \]
-                    This means that the empirical average of the sufficient statistics equals to the model's theoretical expected 
-                    sufficient statistics. This principle is called <strong>moment matching</strong>. 
+                    The left-hand side is the theoretical expectation of \(\mathcal{T}(x)\) under the model with natural parameter \(\hat{\eta}\); the right-hand side is the empirical average of the sufficient statistics. This principle is called <strong>moment matching</strong>. 
                 </p>
 
                 <p>
-                    For example, in Gaussian distribution, 
-                    its empirical mean(the first moment) is given by: 
+                    For example, consider the univariate Gaussian \(\mathcal{N}(\mu, \sigma^2)\) with \(\mathcal{T}(x) = [x, x^2]^\top\) (Example 2 above). The moment matching condition becomes 
                     \[
-                    \bar{x} = \frac{1}{N}\sum_{n=1}^N x_n.
+                    \mathbb{E}_{\hat{\eta}}[x] = \bar{x}, \qquad \mathbb{E}_{\hat{\eta}}[x^2] = \overline{x^2} := \frac{1}{N}\sum_{n=1}^N x_n^2.
                     \]
-                    and its expected value(theoretical moment under the model) is 
+                    Using \(\mathbb{E}[x] = \mu\) and \(\mathbb{E}[x^2] = \mu^2 + \sigma^2\), we obtain the closed-form MLE 
                     \[
-                    \mathbb{E}[x] = \mu = \bar{x}.
+                    \hat{\mu}_{\text{MLE}} = \bar{x}, \qquad \widehat{\sigma^2}_{\text{MLE}} = \overline{x^2} - \bar{x}^2 = \frac{1}{N}\sum_{n=1}^N (x_n - \bar{x})^2.
                     \]
                 </p>
 
@@ -414,10 +413,9 @@ uses_python: false
 
                 <p>
                     The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes all distributional information 
-                    through its derivatives. In the next part, we formalize this connection: the second derivative of \(A(\eta)\) - the covariance 
-                    of the sufficient statistics - is precisely the <a href="fisher_info.html"><strong>Fisher information matrix (Part 16)</strong></a>, 
+                    through its derivatives. The second derivative \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) computed above turns out to be precisely the <a href="fisher_info.html"><strong>Fisher information matrix</strong></a>, 
                     which measures how sensitive the distribution is to changes in the natural parameter and governs the geometry of the statistical 
-                    model.
+                    model — the subject of the next chapter.
                 </p>
             </section>
 
