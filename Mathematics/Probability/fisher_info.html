@@ -31,7 +31,7 @@ uses_python: false
                 <h2>Fisher Information Matrix</h2>
 
                 <p>
-                    In the <a href="expfamily.html"><strong>previous page</strong></a>, we saw that the second derivative of the 
+                    In the <a href="expfamily.html"><strong>previous chapter on the exponential family</strong></a>, we saw that the second derivative of the 
                     log-partition function \(A(\eta)\) equals the covariance of the sufficient statistics. This object turns out 
                     to have significance beyond the exponential family: it measures how much information data carries about unknown 
                     parameters, governs the precision of maximum likelihood estimates, and defines a natural geometry on the space of 
@@ -44,34 +44,39 @@ uses_python: false
                     In optimization, it gives rise to <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>.
                 </p>
 
-                <div class="theorem" id="D-fisher_information_matrix">
-                    <span class="theorem-title">Definition: Fisher Information Matrix</span>
+                <div class="theorem" id="D-score_function">
+                    <span class="theorem-title">Definition: Score Function</span>
                     <p>
-                        The <strong>Fisher information matrix (FIM)</strong> is the <a href="covariance.html"><strong>covariance </strong></a> of 
-                        the <strong>score function</strong> \(s(\theta)\):
+                        The <strong>score function</strong> is the gradient of the log-likelihood with respect to the parameter vector \(\theta\):
                         \[
-                        F(\theta) = \mathbb{E}_{x \sim p(x \mid \theta)} [s(\theta)s(\theta)^\top]
-                        \]
-                        where \(s(\theta)\) is the gradient of the log-likelihood with respect to the parameter vector \(\theta\):
-                        \[
-                        s(\theta) = \nabla_{\theta} \log p(x \mid \theta).
+                        s(\theta) := \nabla_{\theta} \log p(x \mid \theta).
                         \]
                     </p>
                 </div>
 
                  <p>
-                    Note: The score function has zero mean, \(\mathbb{E}[s(\theta)] = 0\), under the regularity conditions stated below. 
-                    This is why the FIM equals \(\mathbb{E}[s\,s^\top]\) rather than the full covariance 
-                    \(\mathbb{E}[s\,s^\top] - \mathbb{E}[s]\,\mathbb{E}[s]^\top\).
+                    <strong>Note.</strong> Under the regularity conditions stated in the proof of <a href="#T-fim_hessian_form" class="ref-link">Theorem 1</a> below, the score function has zero mean: \(\mathbb{E}[s(\theta)] = 0\). 
+                    Consequently, its <a href="covariance.html#T-covariance_computational_identity" class="ref-link"><strong>covariance</strong></a> 
+                    \(\mathbb{E}[s\,s^\top] - \mathbb{E}[s]\,\mathbb{E}[s]^\top\) reduces to \(\mathbb{E}[s\,s^\top]\), motivating the following definition.
                 </p>
-                
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 1:</span>
+
+                <div class="theorem" id="D-fisher_information_matrix">
+                    <span class="theorem-title">Definition: Fisher Information Matrix</span>
                     <p>
-                        If \( \log p(x \mid \theta)\) is twice differentiable, and under certain regularity conditions, 
-                        the Fisher information matrix equals the expected Hessian of the negative log likelihood (NLL):
+                        The <strong>Fisher information matrix (FIM)</strong> is the <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>covariance</strong></a> of the score function:
                         \[
-                        F(\theta) = - \mathbb{E}_{x \sim \theta} [\nabla_{\theta}^2 \log p(x \mid \theta)].
+                        F(\theta) = \mathbb{E}_{x \sim p(x \mid \theta)} [s(\theta)\,s(\theta)^\top].
+                        \]
+                    </p>
+                </div>
+                
+                <div class="theorem" id="T-fim_hessian_form">
+                    <span class="theorem-title">Theorem 1 (FIM as Expected Negative Hessian):</span>
+                    <p>
+                        Assume \(p(x \mid \theta)\) is twice differentiable in \(\theta\), and the support of \(p(x \mid \theta)\) does not depend on \(\theta\) 
+                        (so that differentiation may be exchanged with integration). Then the Fisher information matrix equals the expected negative Hessian of the log-likelihood:
+                        \[
+                        F(\theta) = - \mathbb{E}_{x \sim \theta} \!\left[\nabla_{\theta}^2 \log p(x \mid \theta)\right].
                         \]
                     </p>
                 </div>
@@ -79,45 +84,39 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        First, the expected value of the score function \(s(\theta)\) is zero. In scalar case, assuming that
-                         \(p(x \mid \theta)\) is differentiable and 
-                        the bounds of the integral do not depend on \(\theta\), we have 
+                        We work component-wise: fix indices \(i, j\) and show \(F_{ij}(\theta) = -\mathbb{E}\!\left[\partial^2_{\theta_i \theta_j} \log p(x \mid \theta)\right]\). Stacking these into a matrix gives the claim.
+                    </p>
+                    <p>
+                        Starting from the normalization condition \(\int p(x \mid \theta)\, dx = 1\) and differentiating both sides with respect to \(\theta_i\) (exchanging derivative with integral by the regularity assumption):
                         \[
                         \begin{align*}
-                        &\int p(x \mid \theta) dx = 1  \\\\
-                        &\Longrightarrow \frac{\partial}{\partial \theta} \int p(x \mid \theta) dx = 0 \\\\
-                        &\Longrightarrow \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] p(x \mid \theta) dx = 0  \tag{1} \\\\
-                        &\Longrightarrow \mathbb{E}[s(\theta)] = 0
+                        0 &= \frac{\partial}{\partial \theta_i} \int p(x \mid \theta)\, dx \\\\
+                          &= \int \frac{\partial p(x \mid \theta)}{\partial \theta_i}\, dx.
                         \end{align*}
                         \]
-                        where \(\frac{\partial}{\partial \theta} \log p(x \mid \theta) = s(\theta)\).
+                        Using the chain-rule identity \(\frac{\partial p}{\partial \theta_i} = p \cdot \frac{\partial \log p}{\partial \theta_i}\) (valid where \(p > 0\)):
+                        \[
+                        0 = \int \left[\frac{\partial}{\partial \theta_i} \log p(x \mid \theta)\right] p(x \mid \theta)\, dx = \mathbb{E}[s_i(\theta)]. \tag{1}
+                        \]
+                        Hence each component of the score has zero expectation, i.e., \(\mathbb{E}[s(\theta)] = 0\).
                     </p>
                     <p>
-                        Taking derivatives of Equation (1) with respect to \(\theta\), by the product rule, we obtain:
+                        We now differentiate identity (1) once more, this time with respect to \(\theta_j\), to bring out the second-order information. Applying the product rule under the integral:
                         \[
                         \begin{align*}
-
-                        0 &= \frac{\partial}{\partial \theta} \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] p(x \mid \theta) dx \\\\
-
-                        &= \int \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] p(x \mid \theta) dx 
-                                + \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right] \frac{\partial}{\partial \theta} p(x \mid \theta) dx  \\\\
+                        0 &= \frac{\partial}{\partial \theta_j} \int \left[\frac{\partial}{\partial \theta_i} \log p\right] p\, dx \\\\
+                          &= \int \left[\frac{\partial^2}{\partial \theta_i \partial \theta_j} \log p\right] p\, dx + \int \left[\frac{\partial}{\partial \theta_i} \log p\right] \frac{\partial p}{\partial \theta_j}\, dx.
                         \end{align*}
                         \]
-                    </p>
-                    <p>
-                        Using the identity \(\frac{\partial}{\partial \theta} p(x \mid \theta) = p(x \mid \theta) \frac{\partial}{\partial \theta} \log p(x \mid \theta)\) 
-                        (derived from the <strong>chain rule</strong>), the second term can be rewritten as:
+                        Applying the chain-rule identity \(\frac{\partial p}{\partial \theta_j} = p \cdot \frac{\partial \log p}{\partial \theta_j}\) to the second term:
                         \[
-                        0 = \int \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] p(x \mid \theta) dx 
-                            + \int \left[\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right]^2 p(x \mid \theta) dx.
+                        0 = \int \left[\frac{\partial^2}{\partial \theta_i \partial \theta_j} \log p\right] p\, dx + \int \left[\frac{\partial}{\partial \theta_i} \log p\right]\left[\frac{\partial}{\partial \theta_j} \log p\right] p\, dx.
                         \]
-                    </p>
-                    <p>
-                        Therefore, 
+                        Rearranging,
                         \[
-                        - \mathbb{E}_{x \sim \theta } \left[\frac{\partial^2}{\partial \theta^2} \log p(x \mid \theta)\right] 
-                            = \mathbb{E}_{x \sim \theta } \left[ \left(\frac{\partial}{\partial \theta} \log p(x \mid \theta)\right)^2 \right].
+                        -\mathbb{E}\!\left[\frac{\partial^2 \log p}{\partial \theta_i \partial \theta_j}\right] = \mathbb{E}\!\left[\frac{\partial \log p}{\partial \theta_i} \cdot \frac{\partial \log p}{\partial \theta_j}\right] = \mathbb{E}[s_i(\theta)\, s_j(\theta)] = F_{ij}(\theta),
                         \]
+                        where the last equality is the \((i, j)\) entry of the FIM definition. Stacking over all \((i, j)\) yields the matrix identity \(F(\theta) = -\mathbb{E}[\nabla_\theta^2 \log p(x \mid \theta)]\), establishing the <a href="#T-fim_hessian_form" class="ref-link">claim</a>.
                     </p>
                 </div>
                 
@@ -128,7 +127,7 @@ uses_python: false
 
                 <p>
                     For general parametric models, computing the FIM requires evaluating an expectation that may have no closed form. The 
-                    <a href="expfamily.html"><strong>exponential family</strong></a> is special: the FIM reduces to a simple derivative of 
+                    <a href="expfamily.html#D-exponential_family" class="ref-link"><strong>exponential family</strong></a> is special: the FIM reduces to a simple derivative of 
                     the log-partition function, which we have already computed.
                 </p>
 
@@ -140,42 +139,40 @@ uses_python: false
                 </p>
 
                 <p>
-                    Remember that the gradient of the <strong>log partition function</strong> \(A(\eta)\) is the 
-                    expected <strong>sufficient statistics</strong> \(\mathcal{T}(x)\), which is called the moment parameters \(m\): 
+                    By the <a href="expfamily.html#T-cumulants_from_log_partition" class="ref-link">cumulant identities</a> established in the previous chapter, the gradient of the <strong>log partition function</strong> \(A(\eta)\) is the 
+                    expected <strong>sufficient statistic</strong> \(\mathcal{T}(x)\), which is called the moment parameter \(m\): 
                     \[
-                    \nabla_{\eta} A(\eta) = \mathbb{E }[\mathcal{T}(x)] = m.
+                    \nabla_{\eta} A(\eta) = \mathbb{E}[\mathcal{T}(x)] = m.
                     \]
                 </p>
                 <p>
-                    Also, the gradient of the log likelihood is the sufficient statistics minus their expected value: 
+                    Differentiating the log-likelihood \(\log p(x \mid \eta) = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta)\) with respect to \(\eta\), using \(\nabla_\eta \log h(x) = 0\) (since \(h\) is \(\eta\)-independent) and the first-cumulant identity \(\nabla_\eta A(\eta) = \mathbb{E}[\mathcal{T}(x)]\) above:
                     \[
-                    \begin{align*}
-                    &\log p(x \mid \eta) = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta) \\\\
-                    &\Longrightarrow \nabla_{\eta} \log p(x \mid \eta) = \mathcal{T}(x) - \mathbb{E}[\mathcal{T}(x)] = \mathcal{T}(x) - m.
-                    \end{align*}
+                    \nabla_{\eta} \log p(x \mid \eta) = \nabla_\eta \big[\eta^\top \mathcal{T}(x) - A(\eta)\big] = \mathcal{T}(x) - \mathbb{E}[\mathcal{T}(x)] = \mathcal{T}(x) - m.
                     \]
+                    This is the score function \(s(\eta)\) for the exponential family — manifestly mean-zero, in agreement with the general <a href="#D-score_function" class="ref-link">zero-mean property of the score</a> established earlier.
                 </p>
                 <p>
-                    Therefore, the Hessian of the log partition function is the same as the FIM, which is the same as the
-                    covariance of the sufficient statistics: 
+                    By the <a href="#T-fim_hessian_form" class="ref-link">Hessian form of the FIM</a> above, \(F(\eta) = -\mathbb{E}_{p(x|\eta)}[\nabla_\eta^2 \log p(x \mid \eta)]\). Computing the Hessian of \(\log p = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta)\): the term \(\log h(x)\) is \(\eta\)-independent (Hessian zero); the term \(\eta^\top \mathcal{T}(x)\) is linear in \(\eta\) (Hessian zero); only \(-A(\eta)\) contributes. Since \(A(\eta)\) does not depend on \(x\), the expectation passes through:
                     \[
-                    \begin{align*}
-                    F(\eta) &= - \mathbb{E}_{p(x \mid \eta)} \left[\nabla_{\eta}^2 (\eta^\top \mathcal{T}(x) - A(\eta))\right] \\\\
-                            &= \nabla_{\eta}^2 A(\eta) \\\\
-                            &= \text{Cov}[\mathcal{T}(x)].
-                    \end{align*}
+                    F(\eta) = -\mathbb{E}_{p(x|\eta)}\!\left[-\nabla_\eta^2 A(\eta)\right] = \nabla_\eta^2 A(\eta).
+                    \]
+                    Combining with the <a href="expfamily.html#T-cumulants_from_log_partition" class="ref-link">second-cumulant identity</a> \(\nabla_\eta^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) established in the previous chapter,
+                    \[
+                    F(\eta) = \nabla_\eta^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)].
                     \]
                     So, the FIM is indeed the <strong>second cumulant</strong> of the sufficient statistics. 
                 </p>
                 <p>
-                    Note: Sometimes, we need FIM with respect to the moment parameters \(m\): 
+                    <strong>Note.</strong> Sometimes, we need FIM in moment-parameter coordinates \(m\). Under a reparametrization \(\eta \mapsto m\), the FIM transforms as a metric tensor: 
                     \[
-                    m = \nabla_{\eta} A(\eta) \Longrightarrow \frac {dm}{d\eta} = \nabla_{\eta}^2 A(\eta) = F(\eta)
+                    F(m) = J^\top F(\eta)\, J, \qquad \text{where } J = \frac{d\eta}{dm}.
                     \] 
-                    Here, \(F(\eta)\) is the Jacobian matrix and thus:
+                    Since \(m = \nabla_\eta A(\eta)\), the Jacobian \(dm/d\eta = \nabla_\eta^2 A(\eta) = F(\eta)\); inverting, \(J = d\eta/dm = F(\eta)^{-1}\). Substituting,
                     \[
-                    F(m) = \frac{d\eta}{dm} = \left(\frac{dm}{d\eta}\right)^{-1} = F(\eta)^{-1}.
+                    F(m) = F(\eta)^{-1\,\top}\, F(\eta)\, F(\eta)^{-1} = F(\eta)^{-1},
                     \]
+                    where the last equality uses the symmetry of \(F(\eta)\).
                 </p>
             </section>
 
@@ -187,30 +184,34 @@ uses_python: false
                     direction of steepest descent measured by \(\|\delta\|_2\). But when the parameters define a probability distribution, two parameter 
                     vectors that are close in Euclidean distance can correspond to very different distributions (and vice versa). 
                     <a href="../Machine_learning/natural_gd.html"><strong>Natural gradient descent (NGD)</strong></a> 
-                    corrects this by measuring "steepest descent" in terms of the <a href="entropy.html#kl"><strong>KL divergence</strong></a> between distributions 
+                    corrects this by measuring "steepest descent" in terms of the <a href="entropy.html#D-kl_divergence" class="ref-link"><strong>KL divergence</strong></a> between distributions 
                     rather than the Euclidean distance between parameter vectors.
                 </p>
 
                 <p>
-                    For any inputs \(x \in \mathbb{R}^n\), we can approximate the KL divergence in terms of the FIM by the 
-                    second order Taylor series expansion: 
+                    When the model is a <strong>conditional distribution</strong> \(p_\theta(y \mid x)\) for input \(x\) and output \(y\), the conditional FIM is defined as 
+                    \[
+                    F_x(\theta) := \mathbb{E}_{y \sim p_\theta(y \mid x)}\!\left[\nabla_\theta \log p_\theta(y \mid x) \, \nabla_\theta \log p_\theta(y \mid x)^\top\right].
+                    \]
+                    By a second-order Taylor expansion of \(\log p_{\theta+\delta}(y \mid x)\) around \(\theta\), and taking expectation under \(p_\theta(y \mid x)\):
                     \[
                     \begin{align*}
-                    D_{\mathbb{KL}}(p_{\theta}(y \mid x) \, \| \, p_{\theta + \delta} (y \mid x)) 
-                    &\approx -\delta^\top \mathbb{E}_{p_{\theta}(y \mid x)} [\nabla \log p_{\theta}(y \mid x) ] - \frac{1}{2}\delta^\top \mathbb{E}_{p_{\theta}(y \mid x)}[\nabla^2 \log p_{\theta}(y \mid x) ]  \delta \\\\
-                    &= 0 -  \frac{1}{2}\delta^\top F_x(\theta) \delta \\\\
-                    &= \frac{1}{2}\delta^\top F_x \delta
+                    D_{\mathbb{KL}}\!\big(p_\theta(y \mid x) \,\|\, p_{\theta+\delta}(y \mid x)\big) 
+                    &\approx -\delta^\top \mathbb{E}_{p_\theta(y \mid x)}[\nabla_\theta \log p_\theta(y \mid x)] 
+                       - \frac{1}{2}\delta^\top \mathbb{E}_{p_\theta(y \mid x)}[\nabla_\theta^2 \log p_\theta(y \mid x)]\, \delta \\\\
+                    &= 0 + \frac{1}{2}\delta^\top F_x(\theta)\, \delta,
                     \end{align*}
                     \]
-                    where \(\delta\) represents the change in the parameters.        
+                    where the first term vanishes by the <a href="#D-score_function" class="ref-link">zero-mean property of the score</a>, and the second uses the <a href="#T-fim_hessian_form" class="ref-link">Hessian form of the FIM</a>: \(-\mathbb{E}[\nabla_\theta^2 \log p] = F_x(\theta)\). 
+                    Here \(\delta\) represents the change in the parameters.
                 </p>
 
                 <p>
-                    We compute average KL divergence between updated distribution and previous one using 
+                    To compute the average KL divergence between the updated and previous distributions across the data, we use 
                     \[
-                    \frac{1}{2}\delta^\top F  \delta
+                    \frac{1}{2}\delta^\top F(\theta)\, \delta,
                     \]
-                    where \(F\) is the averaged FIM:
+                    where \(F(\theta)\) denotes the <strong>averaged FIM</strong> over the input distribution (extending the <a href="#D-fisher_information_matrix" class="ref-link">unconditional FIM definition</a> to the conditional-model setting):
                     \[
                     F(\theta) = \mathbb{E}_{p_{\mathcal{D}}(x)}[F_x(\theta)].
                     \]
@@ -219,16 +220,24 @@ uses_python: false
                 <p>
                     In NGD, we use the inverse FIM as a preconditioning matrix and update parameters: 
                     \[
-                    \theta_{t+1} = \theta_{t} - \alpha_{t} F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t).
+                    \theta_{t+1} = \theta_{t} - \alpha_{t} F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t),
                     \]
-                    where \(\alpha_t > 0\) is the <strong>learning rate</strong> (or step size) at iteration \(t\).
+                    where \(\alpha_t > 0\) is the <strong>learning rate</strong> (or step size) at iteration \(t\), and \(\mathcal{L}(\theta)\) is the loss function being minimized.
                 </p>
+
+                <div class="theorem" id="D-natural_gradient">
+                    <span class="theorem-title">Definition: Natural Gradient</span>
+                    <p>
+                        Given a loss function \(\mathcal{L}(\theta)\) and Fisher information matrix \(F(\theta)\), the <strong>natural gradient</strong> is the FIM-preconditioned gradient: 
+                        \[
+                        \widetilde{\nabla} \mathcal{L}(\theta) := F(\theta)^{-1} \nabla \mathcal{L}(\theta).
+                        \]
+                        The NGD update can then be written compactly as \(\theta_{t+1} = \theta_t - \alpha_t \widetilde{\nabla}\mathcal{L}(\theta_t)\).
+                    </p>
+                </div>
+
                 <p>
-                    Here, we define the <strong>natural gradient</strong>:
-                    \[
-                    \widetilde{\nabla} \mathcal{L}(\theta_t) = F(\theta_t)^{-1} \nabla \mathcal{L}(\theta_t) = F^{-1}g_t
-                    \]
-                    Note: \(F\) is always positive definite and is relatively easier to compute and approximate compared to the Hessian matrix. 
+                    <strong>Note.</strong> \(F\) is always <strong>positive semi-definite</strong> (and strictly positive definite under standard identifiability conditions); it is also relatively easier to compute and approximate compared to the Hessian matrix. 
                 </p>
             </section>
 
@@ -237,8 +246,7 @@ uses_python: false
                 <p>
                     In <a href="bayesian.html">Bayesian statistics</a>, the FIM is used to derive <strong>Jeffreys prior</strong>, which is a widely used <strong>uninformative prior</strong>. 
                     It allows the posterior to be driven primarily by the data itself. Given a prior \(p_{\theta}(\theta)\) and a transformation \(\phi = f(\theta)\), 
-                    We seek a prior that is <strong>invariant</strong> under reparameterization. This ensures that inference remains consistent regardless of the choice 
-                    of parameterization. The prior should transform as:
+                    we seek a prior whose <strong>construction rule</strong> is invariant under reparameterization: that is, deriving the prior in \(\theta\)-coordinates and then transforming via change-of-variables should give the same result as deriving the prior directly in \(\phi\)-coordinates. The prior should transform as:
                     \[
                     p_{\phi}(\phi) =  p_{\theta}(\theta) \left| \frac{d\theta}{d\phi} \right|
                     \]
@@ -249,7 +257,7 @@ uses_python: false
                     where \(J\) is the Jacobian matrix with entries \(J_{ij} = \frac{\partial\theta_i}{\partial\phi_j}\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-jeffreys_prior">
                     <span class="theorem-title">Definition: Jeffreys Prior</span>
                     <p>
                         The <strong>Jeffreys prior</strong> is 
@@ -279,7 +287,7 @@ uses_python: false
                                     &= \sqrt{F(\phi)}
                     \end{align*}
                     \]
-                    So, the Jeffreys prior is invariant to reparameterizations, and actually, the KL divergence is also invariant to reparameterizations.
+                    So, the Jeffreys prior is invariant to reparameterizations. This is consistent with the fact that the KL divergence between two distributions is itself reparameterization-invariant — both the Jeffreys prior and the KL distance live on the statistical manifold, not on a particular coordinate chart.
                 </p>
                 
                 <div class="proof">
@@ -287,7 +295,7 @@ uses_python: false
                     <p>
                         Consider the Binomial distribution:
                         \[
-                        X \sim \text{Bin }(n, \theta), \, 0 \leq \theta \leq 1 
+                        X \sim \operatorname{Bin}(n, \theta), \, 0 \leq \theta \leq 1 
                         \]
                         \[
                         p(x \mid \theta) = \binom{n}{x} \theta^x (1-\theta)^{n-x}
@@ -312,6 +320,7 @@ uses_python: false
                         \[
                         p_{\theta} (\theta) = \sqrt{F(\theta)} \propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}}.
                         \]
+                        This is the Beta\((1/2,\, 1/2)\) distribution, which is also a special case of the Beta <a href="bayesian.html#D-conjugate_prior" class="ref-link">conjugate prior</a> for the Binomial likelihood with hyperparameters \(a = b = 1/2\).
                     </p>
                     <p>
                         Now, consider the parameterization by \(\phi = \frac{\theta}{1 - \theta}\). 
@@ -352,12 +361,12 @@ uses_python: false
                 </div>
                 
                 <p>
-                    Note: In 1d, the Jeffreys prior is the same as the <strong>reference prior</strong>, which maximizes 
+                    <strong>Note.</strong> In 1d, the Jeffreys prior is the same as the <strong>reference prior</strong>, which maximizes 
                     the expected KL divergence between posterior and prior. In other words, it maximizes the information 
                     provided by the "data" relative to the prior. For multidimensional parameters, they are not the same.
                 </p>
                 <p>
-                    Also, finding a reference prior is equivalent to finding the prior that maximizes <a href="entropy.html"><strong>mutual information</strong></a> 
+                    Also, finding a reference prior is equivalent to finding the prior that maximizes <a href="entropy.html#D-mutual_information" class="ref-link"><strong>mutual information</strong></a> 
                     between \(\theta\) and \(\mathcal{D}\).
                     \[
                     \begin{align*}
@@ -384,7 +393,7 @@ uses_python: false
                     \[
                     p(\theta, \mathcal{D}) = p(\theta \mid \mathcal{D})p(\mathcal{D}).
                     \]
-                    Note: Remember, the mutual information itself is invariant under reparameterization.
+                    <strong>Note.</strong> Remember, the mutual information itself is invariant under reparameterization.
                 </p>
 
                 <div class="insight-box">
@@ -404,7 +413,7 @@ uses_python: false
                         In the field of <strong>Information Geometry</strong>, the FIM acts as a <strong>Riemannian metric</strong>. 
                         From this perspective, the FIM is essentially the second-order Taylor approximation of the KL divergence:
                         \[
-                        D_{KL}(p_{\theta} \| p_{\theta+d\theta}) \approx \frac{1}{2} d\theta^\top F(\theta) d\theta.
+                        D_{\mathbb{KL}}(p_{\theta} \| p_{\theta+d\theta}) \approx \frac{1}{2} d\theta^\top F(\theta) d\theta.
                         \]
                         This identifies the FIM as the fundamental bridge between probability theory and the geometric structure of model parameters.
                     </p>
