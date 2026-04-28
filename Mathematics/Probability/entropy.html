@@ -37,14 +37,24 @@ uses_python: false
                     provides a mathematical framework for quantifying uncertainty - and it turns out to be deeply connected to machine learning, 
                     where the cross-entropy loss is the default objective for classification.
                 </p>
-
+                <p>
+                    <strong>Conventions.</strong> Throughout this page, \(\log\) denotes the natural logarithm (base \(e\)), so
+                    information is measured in <strong>nats</strong>; the alternative base 2, giving <strong>bits</strong>, is standard in coding 
+                    theory but less convenient for calculus-based optimization. We further adopt the limiting conventions
+                    \[
+                    0 \log 0 := 0, \qquad 0 \log \tfrac{0}{q} := 0, \qquad p \log \tfrac{p}{0} := +\infty \;\; (p > 0),
+                    \]
+                    so that terms involving zero probabilities cause no ambiguity in the entropy and KL divergence formulas
+                    introduced below. The first two are justified by \(\lim_{x \to 0^+} x \log x = 0\); the third reflects 
+                    that assigning zero probability to an event that actually occurs incurs infinite description cost.
+                </p>
                 <p>
                     Consider a number guessing game: you must guess a natural number between 1 and 100. If I tell you that the number is not 1, 
                     you still have 99 possibilities, which is not very helpful. But if I tell you that the number is divisible by 11, the possibilities 
                     shrink to 9, which is far more informative. This intuition leads to a precise definition.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-information_content">
                     <span class="theorem-title">Definition: Information Content (Self-Information)</span>
                     <p>
                         The <strong>information content</strong> of an event \(E\) with probability \(p(E)\) is
@@ -56,9 +66,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    The use of the logarithm is not arbitrary - it ensures <strong>additivity</strong> for independent events:
+                    The use of the logarithm is not arbitrary - it ensures <strong>additivity</strong> for independent events.
+                    If \(A\) and \(B\) are independent, then \(p(A \cap B) = p(A) \, p(B)\), so
                     \[
-                    I(A, B) = -\log(p(A) \cdot p(B)) = I(A) + I(B).
+                    I(A \cap B) = -\log p(A \cap B) = -\log\bigl(p(A) \, p(B)\bigr) = I(A) + I(B).
                     \]
                     This converts the multiplication of probabilities into the addition of information, a property essential 
                     for building a consistent theory.
@@ -69,24 +80,18 @@ uses_python: false
                     across all possible outcomes of a discrete random variable \(X\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-shannon_entropy">
                     <span class="theorem-title">Definition: Shannon Entropy</span>
                     <p>
                         The <strong>entropy</strong> of a discrete random variable \(X\) with distribution \(p\) over \(n\) states is
                         \[
                         \begin{align*}
-                        \mathbb{H}(X) &= -\sum_{k=1}^n p(X = k)\,\log p(X = k) \\\\
+                        \mathbb{H}(X) &= -\sum_{k=1}^n p(X = k)\,\log p(X = k) \\
                                       &= \mathbb{E}_X[-\log p(X)].
                         \end{align*}
                         \]
                     </p>
                 </div>
-
-                <p>
-                    The choice of logarithmic base determines the units: base 2 gives <strong>bits</strong>, base \(e\) gives <strong>nats</strong>. 
-                    In machine learning, natural logarithms (nats) are standard because they integrate seamlessly with calculus-based optimization. 
-                    The remaining sections of this page use \(\log\) to denote the natural logarithm unless otherwise stated.
-                </p>
 
             </section>
 
@@ -98,7 +103,7 @@ uses_python: false
                     together, we need a measure of their combined uncertainty.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-joint_entropy">
                     <span class="theorem-title">Definition: Joint Entropy</span>
                     <p>
                         The <strong>joint entropy</strong> of two discrete random variables \(X\) and \(Y\) is
@@ -108,22 +113,53 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="theorem" id="T-joint_entropy_bounds">
+                    <span class="theorem-title">Theorem: Bounds on Joint Entropy</span>
+                    <p>
+                        For discrete random variables \(X\) and \(Y\),
+                        \[
+                        \mathbb{H}(X) + \mathbb{H}(Y) \;\geq\; \mathbb{H}(X, Y) \;\geq\; \max\{\mathbb{H}(X),\, \mathbb{H}(Y)\} \;\geq\; 0,
+                        \]
+                        with the following equality conditions:
+                    </p>
+                    <ul>
+                        <li>
+                            \(\mathbb{H}(X) + \mathbb{H}(Y) = \mathbb{H}(X, Y)\) if and only if \(X\) and \(Y\) are independent.
+                        </li>
+                        <li>
+                            \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) if and only if \(Y\) is a deterministic function of \(X\); 
+                            symmetrically, \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\) if and only if \(X\) is a deterministic function of \(Y\).
+                        </li>
+                        <li>
+                            \(\mathbb{H}(X, Y) = 0\) if and only if both \(X\) and \(Y\) are constants — that is, the joint 
+                            distribution is concentrated on a single outcome.
+                        </li>
+                    </ul>
+                </div>
+
                 <p>
-                    Joint entropy satisfies the subadditivity inequality:
+                    Each of these bounds has a clear intuition. The left inequality says that joint uncertainty is largest 
+                    when neither variable carries information about the other; any statistical dependence reduces 
+                    \(\mathbb{H}(X, Y)\) below the sum. The right inequality says that the joint uncertainty of \((X, Y)\) 
+                    cannot be smaller than the uncertainty of either variable alone — adding a second variable to the picture 
+                    can only preserve or expand the total uncertainty, and equality is reached precisely when one variable is 
+                    fully determined by the other. Non-negativity follows term-by-term, since \(p(x,y) \in [0,1]\) gives 
+                    \(-p(x,y) \log p(x,y) \geq 0\) (using the convention \(0 \log 0 := 0\) established above).
+                </p>
+
+                <p>
+                    A complete proof is deferred to the tools developed below: the right inequality follows from the 
+                    <a href="#T-entropy_chain_rule"><strong>chain rule for entropy</strong></a>, and the left inequality is equivalent 
+                    to the non-negativity of <a href="#mi"><strong>mutual information</strong></a>, which is in turn a 
+                    consequence of <strong>Gibbs' inequality</strong>.
+                </p>
+
+                <p>
+                    These bounds extend to more than two variables: 
                     \[
-                    \mathbb{H}(X) + \mathbb{H}(Y) \geq \mathbb{H}(X, Y) 
-                    \geq \max\{\mathbb{H}(X),\, \mathbb{H}(Y)\} 
-                    \geq 0.
+                    \mathbb{H}(X_1, \ldots, X_n) \leq \sum_{i=1}^n \mathbb{H}(X_i),
                     \]
-                    Equality in the left inequality holds if and only if \(X\) and \(Y\) are independent, in which case 
-                    \[
-                    \mathbb{H}(X,Y) = \mathbb{H}(X) + \mathbb{H}(Y).
-                    \]
-                    Conversely, if \(Y\) is a deterministic function of \(X\), then knowing \(X\) completely determines 
-                    \(Y\), so 
-                    \[\mathbb{H}(X,Y) = \mathbb{H}(X). 
-                    \]
-                    These bounds generalize to more than two random variables.
+                    with equality if and only if \(X_1, \ldots, X_n\) are mutually independent.
                 </p>
 
             </section>
@@ -135,41 +171,107 @@ uses_python: false
                     about <em>another</em>. Conditional entropy answers: on average, how much uncertainty remains in \(Y\) after we observe \(X\)?
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-conditional_entropy">
                     <span class="theorem-title">Definition: Conditional Entropy</span>
                     <p>
-                        The <strong>conditional entropy</strong> of \(Y\) given \(X\) is
+                        For each \(x\) in the support of \(X\), the entropy of the conditional distribution \(p(Y \mid X = x)\) is
                         \[
-                        \mathbb{H}(Y \mid X) = \mathbb{E}_{p(X)}\!\left[\mathbb{H}(p(Y \mid X))\right].
+                        \mathbb{H}(Y \mid X = x) := -\sum_{y} p(y \mid x) \log p(y \mid x).
+                        \]
+                        The <strong>conditional entropy</strong> of \(Y\) given \(X\) is the average of these quantities 
+                        with respect to the marginal of \(X\):
+                        \[
+                        \mathbb{H}(Y \mid X) := \sum_{x} p(x) \, \mathbb{H}(Y \mid X = x).
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-conditional_entropy_decomposition">
+                    <span class="theorem-title">Theorem: Joint–Conditional Decomposition</span>
+                    <p>
+                        For discrete random variables \(X\) and \(Y\),
+                        \[
+                        \mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X),
+                        \]
+                        or equivalently \(\mathbb{H}(Y \mid X) = \mathbb{H}(X, Y) - \mathbb{H}(X)\).
+                    </p>
+                </div>
+
+                <p>
+                    Read in the first form, the theorem decomposes the joint uncertainty of \((X, Y)\) into the uncertainty 
+                    of \(X\) plus the residual uncertainty of \(Y\) once \(X\) is known. The proof below establishes the 
+                    second form by direct computation; the first form is the algebraic rearrangement.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    \[
+                    \begin{align*}
+                    \mathbb{H}(Y \mid X) &= \sum_{x} p(x) \, \mathbb{H}(Y \mid X = x) \\
+                                        &= - \sum_{x} p(x) \sum_{y} p(y \mid x) \log p(y \mid x) \\
+                                        &= - \sum_{x, y} p(x, y) \log p(y \mid x) \\
+                                        &= - \sum_{x, y} p(x, y) \log \frac{p(x,y)}{p(x)}\\
+                                        &= - \sum_{x, y} p(x, y) \log p(x,y) + \sum_{x, y} p(x, y) \log p(x) \\
+                                        &= - \sum_{x, y} p(x, y) \log p(x,y) + \sum_{x} p(x) \log p(x) \\
+                                        &= \mathbb{H}(X, Y) - \mathbb{H}(X) \tag{1}
+                    \end{align*}
+                    \]
+                    <p>
+                        The penultimate step uses the marginal identity \(\sum_{y} p(x, y) = p(x)\) to collapse
+                        the second sum from \((x, y)\) to \(x\) alone.
+                    </p>
+                </div>
+                
+                <div class="theorem" id="T-conditional_entropy_extremes">
+                    <span class="theorem-title">Theorem: Extremes of Conditional Entropy</span>
+                    <p>
+                        For discrete random variables \(X\) and \(Y\),
+                    </p>
+                    <ul>
+                        <li>
+                            \(\mathbb{H}(Y \mid X) = \mathbb{H}(Y)\) if and only if \(X\) and \(Y\) are independent.
+                        </li>
+                        <li>
+                            \(\mathbb{H}(Y \mid X) = 0\) if and only if \(Y\) is a deterministic function of \(X\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    Together, the decomposition and the extremes above complete the proof of the right inequality of 
+                    the <a href="#T-joint_entropy_bounds"><strong>joint entropy bounds</strong></a> deferred in the previous 
+                    section. The inequality itself follows from <strong>non-negativity</strong>: since 
+                    \(\mathbb{H}(Y \mid X) = \sum_{x} p(x) \, \mathbb{H}(Y \mid X = x) \geq 0\) (each term is the 
+                    entropy of a probability distribution), the decomposition gives 
+                    \(\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X) \geq \mathbb{H}(X)\), 
+                    and symmetrically \(\mathbb{H}(X, Y) \geq \mathbb{H}(Y)\). The equality \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) 
+                    holds precisely when \(\mathbb{H}(Y \mid X) = 0\), which by the extremes above means \(Y\) is a 
+                    deterministic function of \(X\); symmetrically for \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\). The left inequality 
+                    \(\mathbb{H}(X) + \mathbb{H}(Y) \geq \mathbb{H}(X, Y)\) and its equality condition (independence) remain 
+                    pending until <a href="#mi"><strong>mutual information</strong></a> is introduced.
+                </p>
+
+                <div class="theorem" id="T-entropy_chain_rule">
+                    <span class="theorem-title">Theorem: Chain Rule of Entropy</span>
+                    <p>
+                        For discrete random variables \(X_1, \ldots, X_n\),
+                        \[
+                        \mathbb{H}(X_1, X_2, \ldots, X_n) = \mathbb{H}(X_1) + \sum_{i=2}^n \mathbb{H}(X_i \mid X_1, \ldots, X_{i-1}).
                         \]
                     </p>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title"> \(\mathbb{H}(Y \mid X) = \mathbb{H}(X, Y) - \mathbb{H}(X)\):</span>
-                    \[
-                    \begin{align*}
-                    \mathbb{H}(Y \mid X) &=  \mathbb{E }_{p(X)}[\mathbb{H}(p(Y \mid X))] \\\\
-                                        &=  \sum_{x} p(x) \mathbb{H}(p(Y \mid X = x)) \\\\
-                                        &= - \sum_{x} p(x) \sum_{y} p(y \mid x) \log p(y \mid x) \\\\\
-                                        &= - \sum_{x, y} p(x, y) \log p(y \mid x) \\\\
-                                        &= - \sum_{x, y} p(x, y) \log \frac{p(x,y)}{p(x)}\\\\
-                                        &= - \sum_{x, y} p(x, y) \log p(x,y) + \sum_{x} p(x) \log p(x) \\\\
-                                        &= \mathbb{H}(X, Y) - \mathbb{H}(X) \tag{1}
-                    \end{align*}
-                    \]
+                    <span class="proof-title">Proof sketch (induction on \(n\)):</span>
+                    <p>
+                        The case \(n = 2\) is the Joint–Conditional Decomposition above. For the inductive step, treat 
+                        \((X_1, \ldots, X_{n-1})\) as a single random variable and apply the two-variable decomposition:
+                        \[
+                        \mathbb{H}(X_1, \ldots, X_n) = \mathbb{H}(X_1, \ldots, X_{n-1}) + \mathbb{H}(X_n \mid X_1, \ldots, X_{n-1}),
+                        \]
+                        then expand the first term by the inductive hypothesis.
+                    </p>
                 </div>
-                
-                <p>
-                    Note: If \(Y\) can be completely determined by \(X\), \(\mathbb{H}(Y \mid X)  = 0\). 
-                    Also, if both \(X\) and \(Y\) are independent each other,  \(\mathbb{H}(Y \mid X)  =  \mathbb{H}(Y) \).
-                </p>
-                <p>
-                    By (1), \(\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X) \). This implies the <strong>chain rule</strong> of entropy: 
-                    \[
-                    \mathbb{H}(X_1, X_2, \cdots, X_n) = \sum_{i =1}^n \mathbb{H}(X_i \mid X_1, \cdots,  X_{i-1}).
-                    \]
-                </p>
             </section>
 
             <section id="cross" class="section-content">
@@ -181,40 +283,37 @@ uses_python: false
                     to encode data that actually follows distribution \(p\)? The answer is the <strong>cross entropy</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-cross_entropy">
                     <span class="theorem-title">Definition: Cross Entropy</span>
                     <p>
-                        The <strong>cross entropy</strong> of a distribution \(q\) relative to a 
-                        distribution \(p\) is
+                        For probability distributions \(p\) and \(q\) on the same finite sample space \(\{1, \ldots, n\}\), 
+                        the <strong>cross entropy</strong> of \(q\) relative to \(p\) is
                         \[
                         \mathbb{H}(p, q) = -\sum_{k=1}^n p_k \log q_k.
                         \]
+                        Note that the order of arguments matters: \(\mathbb{H}(p, q) \neq \mathbb{H}(q, p)\) in general.
                     </p>
                 </div>
 
                 <p>
-                    In machine learning, especially in the context of  <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a> problems and 
-                    <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a>, often we use the 
-                    cross entropy as a loss function. It measures the performance of a model whose output is a probability distribution.
-                    Or, it helps in training models by penalizing the difference between the true labels and the predicted probabilities.
-                    Generally, the smaller the cross entropy loss, the better the predictions are. 
+                    In machine learning — especially for <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a> 
+                    with <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a> — cross entropy is the standard 
+                    loss function. It measures the discrepancy between the true label distribution and the model's predicted 
+                    distribution: smaller cross entropy means better predictions.
                 </p>
                 <p>
-                    For example, consider a <strong>binary classification</strong>(n =2). The true label \(y \in \{0, 1\}\) is represented by 
-                    a distribution \(p = [y, 1-y]\), and the predicted probability \(\hat{y} \in (0, 1)\) is represented by Bernoulli 
-                    distribution \(q = [\hat{y}, 1 - \hat{y}]\). Then we obtain a <strong>cross-entropy loss function</strong>:
+                    For example, consider <strong>binary classification</strong> (\(n = 2\)) with true label \(y \in \{0, 1\}\) 
+                    and predicted probability \(\hat{y} \in (0, 1)\) of class 1. Specializing cross entropy to this case gives the 
+                    <strong>binary cross-entropy loss</strong> (the subscript "ce" denotes the binary specialization of the general cross entropy \(\mathbb{H}(p, q)\) above)
                     \[
-                    \begin{align*}
-                    \mathcal{L}(y, \hat{y}) &= - [y \log (\hat{y}) + (1 - y) \log (1 - \hat{y})] \\\\
-                                            &= - y \log (\hat{y}) - (1 - y) \log (1 - \hat{y}) \\
-                    \end{align*}
+                    \mathbb{H}_{ce}(y, \hat{y}) = -\bigl[\, y \log \hat{y} + (1 - y) \log(1 - \hat{y}) \,\bigr].
                     \]
-                    Let's say the true label is 1, and then the loss function becomes \(- \log (\hat{y})\). 
+                    For instance, when the true label is \(y = 1\), the loss reduces to \(-\log \hat{y}\).
                 </p>
                 <p>
-                    If \(\hat{y}\) is close to 1 (the model is confident and correct), the penalty becomes small. On the other hand, 
-                    if \(\hat{y}\) is close to 0 (the model is confident and wrong), the penalty becomes large. So, the higher penalty(loss) 
-                    indicates the model need to be improved and forces the optimization algorithm to adjust parameters for reducing future error. 
+                    If \(\hat{y}\) is close to 1 (the model is confident and correct), the penalty is small. If \(\hat{y}\) is close to 0 
+                    (the model is confident and wrong), the penalty is large. The higher penalty signals that the model needs to be 
+                    improved, and forces the optimization algorithm to adjust parameters to reduce future error.
                 </p>
             </section>
 
@@ -227,26 +326,21 @@ uses_python: false
                     This "excess cost" is precisely the <strong>Kullback-Leibler divergence</strong>.
                 </p>
 
-
-                <p>
-                    While we might wish for a true distance metric between distributions, KL divergence is only a <strong>divergence measure</strong>, which 
-                    satisfies \(D(p, q) \geq 0\) with equality if and only if \(p = q\), but it is neither 
-                    symmetric nor does it satisfy the triangle inequality.
-                </p>
-
-                <div class="theorem">
+                <div class="theorem" id="D-kl_divergence">
                     <span class="theorem-title">Definition: KL Divergence</span>
                     <p>
                         The <strong>Kullback-Leibler divergence</strong> between two 
                         distributions \(p\) and \(q\) is 
                         \[
                         \begin{align*}
-                        D_{\mathbb{KL}}(p \| q) &= \sum_{k=1}^n p_k \log \frac{p_k}{q_k} \\\\
-                                            &= \sum_{k=1}^n p_k \log p_k - \sum_{k=1}^n p_k \log q_k \\\\
+                        D_{\mathbb{KL}}(p \| q) &= \sum_{k=1}^n p_k \log \frac{p_k}{q_k} \\
+                                            &= \sum_{k=1}^n p_k \log p_k - \sum_{k=1}^n p_k \log q_k \\
                                             &= - \mathbb{H}(p) + \mathbb{H}(p, q) \tag{2}
                         \end{align*}
                         \]
-                        where \(p\) and \(q\) are defined on the same sample space \(\mathcal{X}\).
+                        where \(p\) and \(q\) are defined on the same sample space \(\mathcal{X}\). Following the conventions 
+                        established at the beginning of the page, the sum is finite when \(q_k = 0 \Rightarrow p_k = 0\) for all \(k\); 
+                        otherwise (some \(p_k > 0\) with \(q_k = 0\)), \(D_{\mathbb{KL}}(p \| q) = +\infty\).
                     </p>
                 </div>
 
@@ -263,112 +357,132 @@ uses_python: false
                     So, if \(p(x)\) is fixed, minimizing the cross entropy is equivalent to minimizing KL divergence. 
                 </p>
 
-                <div class="theorem" id = "T-non-negativity_KL">
-                    <span class="theorem-title">Theorem 1: Non-negativity of KL Divergence</span>
-                    \[
-                    D_{\mathbb{KL}}(p \| q)  \geq 0
-                    \]
-                    where \(p\) and \(q\) are discrete distributions defined on the same sample space \(\mathcal{X}\) and with 
-                    equality if and only if \(p = q\).
-                    <br>
-                    Or, the entropy of \(p\) is less than or equal to its cross entropy with any other distribution \(q\):
-                    \[
-                    \begin{align*}
-                    &\sum_{k=1}^n p_k \log p_k - \sum_{k=1}^n p_k \log q_k \geq 0 \\\\
-                    &\Longrightarrow  - \sum_{k=1}^n p_k \log p_k \leq  - \sum_{k=1}^n p_k \log q_k.
-                    \end{align*}
-                    \]
-                    This is called <strong>Gibbs' inequality</strong>.     
-                </div>
-                <p>
-                    There are many ways to prove this theorem, here we introduce <strong>log sum inequality</strong> to prove Theorem 1.
-                </p>
-
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 2: Log Sum Inequality</span>
+                <div class="theorem" id="T-jensen_inequality">
+                    <span class="theorem-title">Theorem: Jensen's Inequality</span>
                     <p>
-                        For nonnegative numbers \(a_1, a_2, \cdots, a_n\) and \(b_1, b_2, \cdots, b_n\), 
+                        Let \(\phi: I \to \mathbb{R}\) be a convex function on an interval \(I \subseteq \mathbb{R}\), 
+                        and let \(X\) be a random variable taking values in \(I\) with finite expectation. Then
                         \[
-                        \sum_{k=1}^n a_k \log \frac{a_k}{b_k} \geq \Big(\sum_{k=1}^n a_k \Big) \log \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k} \tag{3}
+                        \phi(\mathbb{E}[X]) \;\leq\; \mathbb{E}[\phi(X)].
                         \]
-                        with equality if and only if \(\frac{a_k}{b_k} = constant\).
+                        For finitely many points \(x_1, \ldots, x_n \in I\) and weights \(\lambda_1, \ldots, \lambda_n \geq 0\) 
+                        with \(\sum_k \lambda_k = 1\), this specializes to the <strong>finite form</strong>
+                        \[
+                        \phi\Big(\sum_{k=1}^n \lambda_k x_k\Big) \;\leq\; \sum_{k=1}^n \lambda_k \, \phi(x_k).
+                        \]
                     </p>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof of Theorem 2:</span>
+                    <span class="proof-title">Proof sketch (finite form, induction on \(n\)):</span>
                     <p>
-                        Assume without loss of generality that \(a_k >0\) and \(b_k >0\). Consider a function \(f(x) = x \log x\). Since 
-                        \(f'(x) = \log x + 1\) and  \(f''(x) = \frac{1}{x}\), the function is a convex function for all \(x > 0\).
+                        For \(n = 2\), the inequality \(\phi(\lambda_1 x_1 + \lambda_2 x_2) \leq \lambda_1 \phi(x_1) + \lambda_2 \phi(x_2)\) 
+                        with \(\lambda_1 + \lambda_2 = 1\) is the very definition of convexity. For \(n \geq 3\), set 
+                        \(\Lambda = \sum_{k=1}^{n-1} \lambda_k\) (so \(\Lambda + \lambda_n = 1\); assume \(\Lambda > 0\), else the claim is trivial) and write
+                        \[
+                        \sum_{k=1}^n \lambda_k x_k = \Lambda \, \bar{x} + \lambda_n x_n, \qquad \bar{x} := \sum_{k=1}^{n-1} \tfrac{\lambda_k}{\Lambda} x_k.
+                        \]
+                        Since \(I\) is an interval (hence convex), \(\bar{x} \in I\). Applying the \(n = 2\) case to \((\bar{x}, x_n)\) and the inductive hypothesis to \(\bar{x}\),
+                        \[
+                        \phi\Big(\sum_{k=1}^n \lambda_k x_k\Big) \leq \Lambda \, \phi(\bar{x}) + \lambda_n \phi(x_n) \leq \Lambda \sum_{k=1}^{n-1} \tfrac{\lambda_k}{\Lambda} \phi(x_k) + \lambda_n \phi(x_n) = \sum_{k=1}^n \lambda_k \phi(x_k).
+                        \]
+                        The general case (continuous random variables) follows from the measure-theoretic theory of integrals.
                     </p>
+                </div>
+
+                <div class="theorem" id="T-log_sum_inequality">
+                    <span class="theorem-title">Theorem: Log Sum Inequality</span>
                     <p>
-                        Let \(\lambda_i = \frac{b_k}{\sum_{k=1}^n b_k}\), then the left side of inequality (3) becomes
+                        For nonnegative reals \(a_1, \ldots, a_n\) and \(b_1, \ldots, b_n\),
+                        \[
+                        \sum_{k=1}^n a_k \log \frac{a_k}{b_k} \;\geq\; \Big(\sum_{k=1}^n a_k\Big) \log \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k},
+                        \]
+                        with equality if and only if \(a_k / b_k\) is the same for all \(k\) (using the conventions 
+                        \(0 \log 0 := 0\), \(0 \log \tfrac{0}{0} := 0\), and \(a \log \tfrac{a}{0} := +\infty\) for \(a > 0\)).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Zero terms are absorbed by the conventions above (terms with \(a_k = 0\) vanish; terms with 
+                        \(b_k = 0, a_k > 0\) make the left side \(+\infty\), in which case the inequality is trivial). 
+                        Assume henceforth that all \(a_k, b_k > 0\). The function \(f(x) = x \log x\) is convex on \((0, \infty)\), 
+                        since \(f''(x) = 1/x > 0\). Set \(\lambda_k = b_k / \sum_j b_j\), so \(\lambda_k \geq 0\) and \(\sum_k \lambda_k = 1\). Then
                         \[
                         \begin{align*}
                         \sum_{k=1}^n a_k \log \frac{a_k}{b_k}
-                        &= \sum_{k=1}^n b_k \frac{a_k}{b_k} \log \frac{a_k}{b_k} \\\\
-                        &= \sum_{k=1}^n b_k \frac{\sum_{k=1}^n b_k}{\sum_{k=1}^n b_k}f(\frac{a_k}{b_k}) \\\\
-                        &= \Big(\sum_{k=1}^n b_k \Big) \sum_{k=1}^n \lambda_k f(\frac{a_k}{b_k})\\\\
+                        &= \sum_{k=1}^n b_k \cdot \tfrac{a_k}{b_k} \log \tfrac{a_k}{b_k} 
+                        = \Big(\sum_j b_j\Big) \sum_{k=1}^n \lambda_k \, f\Big(\tfrac{a_k}{b_k}\Big) \\
+                        &\geq \Big(\sum_j b_j\Big) \, f\Big(\sum_{k=1}^n \lambda_k \tfrac{a_k}{b_k}\Big) \quad \text{(Jensen's inequality)} \\
+                        &= \Big(\sum_j b_j\Big) \, f\Big(\tfrac{\sum_k a_k}{\sum_j b_j}\Big) 
+                        = \Big(\sum_k a_k\Big) \log \tfrac{\sum_k a_k}{\sum_j b_j}.
                         \end{align*}
                         \]
-                        Here, by <strong>Jensen's inequality</strong>,
-                        \[
-                        \begin{align*}
-                        \Big(\sum_{k=1}^n b_k \Big) \sum_{k=1}^n \lambda_k f(\frac{a_k}{b_k})
-                                                            &\geq \Big(\sum_{k=1}^n b_k \Big) f\Big(\sum_{k=1}^n \lambda_k \frac{a_k}{b_k} \Big) \\\\
-                                                            &= \Big(\sum_{k=1}^n b_k \Big) f\Big( \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k} \Big) \\\\
-                                                            &=  \Big(\sum_{k=1}^n a_k \Big) \log \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k}
-                        \end{align*}
-                        \]
-                        Therefore, 
-                        \[
-                        \sum_{k=1}^n a_k \log \frac{a_k}{b_k} \geq \Big(\sum_{k=1}^n a_k \Big) \log \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k}. 
-                        \]
+                        Equality in Jensen holds if and only if all \(a_k / b_k\) are equal.
                     </p>
                 </div>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem 3: Jensen's inequality</span>
-                    If \(\phi\) is <strong>convex</strong> on an open interval \(I\), and \(X\) is a random variable whose <strong>support</strong> is 
-                    contained in \(I\), and has a finite expected value, then
-                    \[
-                    \phi (\mathbb{E}[X]) \leq \mathbb{E }[\phi (X)].
-                    \]
-                    Note: The support of a discrete random variable \(X\) to be the points in the space of \(X\) which has 
-                    positive probability.
-                    <br><br>
-                    Note: In the above proof, we used the following alternative finite form:
-                    \[
-                    f\Big(\sum_{k=1}^n \lambda_k x_k \Big) \leq \sum_{k=1}^n \lambda_k f(x_k) 
-                    \]
-                    where \(\lambda_k \geq 0\) and \(\sum_{k=1}^n \lambda_k = 1\).
-                </div>
-
-                <p>
-                    Finally, we can easily prove non-negativity of KL divergence using log sum inequality.
-                </p>
-                
-                <div class="proof">
-                    <span class="proof-title">Proof of Theorem 1:</span>
+                <div class="theorem" id="T-kl_non_negativity">
+                    <span class="theorem-title">Theorem: Non-negativity of KL Divergence (Gibbs' Inequality)</span>
                     <p>
-                        Suppose \(\sum_{k=1}^n p_k = \sum_{k=1}^n q_k = 1\) and \(p_k, \, q_k \geq 0\).
-                        By the definition of KL divergence, 
+                        For probability distributions \(p\) and \(q\) on the same sample space,
                         \[
-                        D_{\mathbb{KL}}(p \| q) = \sum_{k=1}^n p_k \log \frac{p_k}{q_k}.
+                        D_{\mathbb{KL}}(p \| q) \;\geq\; 0,
                         \]
-                        Using Log sum inequality with \(a_k = p_k\) and \(b_k = q_k\), 
+                        with equality if and only if \(p = q\). Equivalently, the entropy of \(p\) is bounded above by its 
+                        cross entropy with any other distribution \(q\):
                         \[
-                        \sum_{k=1}^n p_k \log \frac{p_k}{q_k} \geq \Big(\sum_{k=1}^n p_k \Big) \log \frac{\sum_{k=1}^n p_k}{\sum_{k=1}^n q_k}.
+                        \mathbb{H}(p) \;\leq\; \mathbb{H}(p, q).
                         \]
-                        Since \(\sum_{k=1}^n p_k = \sum_{k=1}^n q_k = 1\), 
-                        \[
-                        \sum_{k=1}^n p_k \log \frac{p_k}{q_k} \geq \Big(\sum_{k=1}^n p_k \Big) \log 1 = 0
-                        \]
-                        with equality if and only if \(\forall k, \, p_k = q_k\).
+                        The latter form is known as <strong>Gibbs' inequality</strong>.
                     </p>
                 </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        If \(D_{\mathbb{KL}}(p \| q) = +\infty\) (i.e., some \(q_k = 0\) with \(p_k > 0\)), the inequality is trivial. 
+                        Otherwise, apply the log sum inequality with \(a_k = p_k\) and \(b_k = q_k\):
+                        \[
+                        D_{\mathbb{KL}}(p \| q) = \sum_{k=1}^n p_k \log \frac{p_k}{q_k} \;\geq\; \Big(\sum_{k=1}^n p_k\Big) \log \frac{\sum_{k=1}^n p_k}{\sum_{k=1}^n q_k}.
+                        \]
+                        Since \(p\) and \(q\) are probability distributions, \(\sum_k p_k = \sum_k q_k = 1\), so the right-hand 
+                        side becomes \(1 \cdot \log 1 = 0\). Therefore \(D_{\mathbb{KL}}(p \| q) \geq 0\), with equality if and 
+                        only if \(p_k / q_k\) is constant in \(k\); since both sum to 1, this constant must be 1, i.e., \(p = q\). 
+                        The equivalence with Gibbs' inequality follows immediately from the identity 
+                        \(D_{\mathbb{KL}}(p \| q) = \mathbb{H}(p, q) - \mathbb{H}(p)\) established above.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-uniform_maximizes_entropy">
+                    <span class="theorem-title">Corollary: Uniform Distribution Maximizes Entropy</span>
+                    <p>
+                        For a discrete random variable \(X\) taking values in a finite set \(\mathcal{X}\),
+                        \[
+                        \mathbb{H}(X) \;\leq\; \log |\mathcal{X}|,
+                        \]
+                        with equality if and only if \(X\) is uniformly distributed on \(\mathcal{X}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(u\) denote the uniform distribution on \(\mathcal{X}\), with \(u_k = 1/|\mathcal{X}|\) for each \(k\). 
+                        Apply the non-negativity of KL divergence to \(p\) (the distribution of \(X\)) and \(u\):
+                        \[
+                        0 \;\leq\; D_{\mathbb{KL}}(p \| u) = \sum_k p_k \log \frac{p_k}{1/|\mathcal{X}|} = \sum_k p_k \log p_k + \log |\mathcal{X}| \sum_k p_k = -\mathbb{H}(X) + \log |\mathcal{X}|.
+                        \]
+                        Rearranging gives \(\mathbb{H}(X) \leq \log |\mathcal{X}|\), with equality if and only if \(p = u\), 
+                        i.e., \(X\) is uniform.
+                    </p>
+                </div>
+
                 <p>
-                    Again, KL divergence is NOT a metric. KL divergence is not symmetric and does not satisfy the triangle inequality.
+                    Despite measuring discrepancy between distributions, KL divergence is <em>not</em> a metric: 
+                    it is not symmetric (\(D_{\mathbb{KL}}(p \| q) \neq D_{\mathbb{KL}}(q \| p)\) in general) and does 
+                    not satisfy the triangle inequality.
                 </p>
             </section>
 
@@ -389,46 +503,80 @@ uses_python: false
                     means they are completely independent.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-mutual_information">
                     <span class="theorem-title">Definition: Mutual Information</span>
-                    <p> 
-                        The <strong>mutual information</strong> between two random variable \(X\) and \(Y\) is
+                    <p>
+                        The <strong>mutual information</strong> between two discrete random variables \(X\) and \(Y\) is
+                        \[
+                        \mathbb{I}(X ; Y) := D_{\mathbb{KL}}(p(x,y) \,\|\, p(x)\,p(y)) = \sum_{x, y} p(x, y) \log \frac{p(x, y)}{p(x)\, p(y)}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Since mutual information is a KL divergence, the <a href="#T-kl_non_negativity"><strong>non-negativity 
+                    of KL divergence</strong></a> immediately gives \(\mathbb{I}(X; Y) \geq 0\), with equality if and only if 
+                    \(p(x, y) = p(x)\, p(y)\) — that is, if and only if \(X\) and \(Y\) are independent.
+                </p>
+
+                <div class="theorem" id="T-mutual_information_entropy_forms">
+                    <span class="theorem-title">Theorem: Entropy Expressions for Mutual Information</span>
+                    <p>
+                        For discrete random variables \(X\) and \(Y\),
                         \[
                         \begin{align*}
-                        \mathbb{I}(X ; Y) &=  D_{\mathbb{KL}}(p(x,y) \| p(x)p(y)) \\\\
-                                        &= \sum_{y \in Y} \sum_{x \in X} p(x, y) \log \frac{p(x,y)}{p(x)p(y)} \geq 0.
+                        \mathbb{I}(X; Y) &= \mathbb{H}(X) + \mathbb{H}(Y) - \mathbb{H}(X, Y) \\
+                                         &= \mathbb{H}(X) - \mathbb{H}(X \mid Y) \\
+                                         &= \mathbb{H}(Y) - \mathbb{H}(Y \mid X) \\
+                                         &= \mathbb{H}(X, Y) - \mathbb{H}(X \mid Y) - \mathbb{H}(Y \mid X).
                         \end{align*}
                         \]
                     </p>
                 </div>
 
                 <p>
-                    Or, using entropies: 
-                    \[
-                    \begin{align*}
-                    \mathbb{I}(X ; Y)  &= \sum_{y \in Y} \sum_{x \in X} p(x, y) \log p(x,y) 
-                                        - \sum_{y \in Y} \sum_{x \in X} p(x, y) \log p(x) - \sum_{y \in Y} \sum_{x \in X} p(x, y) \log p(y)  \\\\
-                                        &= \mathbb{H}(X) + \mathbb{H}(Y) -  \mathbb{H}(X, Y).
-                    \end{align*}
-                    \]
+                    The four forms admit complementary readings: union of marginals minus joint; reduction in the 
+                    uncertainty of \(X\) after observing \(Y\); reduction in the uncertainty of \(Y\) after observing 
+                    \(X\); and the joint uncertainty minus both residual conditional entropies, \(\mathbb{H}(X \mid Y)\) and \(\mathbb{H}(Y \mid X)\).
                 </p>
 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For the first form, expand the logarithm in the Definition:
+                        \[
+                        \begin{align*}
+                        \mathbb{I}(X; Y) &= \sum_{x, y} p(x, y) \log p(x, y) - \sum_{x, y} p(x, y) \log p(x) - \sum_{x, y} p(x, y) \log p(y) \\
+                                         &= -\mathbb{H}(X, Y) + \mathbb{H}(X) + \mathbb{H}(Y),
+                        \end{align*}
+                        \]
+                        where the marginal identities \(\sum_y p(x, y) = p(x)\) and \(\sum_x p(x, y) = p(y)\) collapse 
+                        the last two double sums to the single-variable entropies of \(X\) and \(Y\). The reduction 
+                        forms follow by substituting the <a href="#T-conditional_entropy_decomposition"><strong>joint–conditional 
+                        decomposition</strong></a> \(\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X) = \mathbb{H}(Y) + \mathbb{H}(X \mid Y)\) 
+                        into the first form. The fourth form follows by adding the two chain-rule decompositions to obtain 
+                        \(2\,\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y) + \mathbb{H}(X \mid Y) + \mathbb{H}(Y \mid X)\), 
+                        and rearranging gives \(\mathbb{H}(X, Y) - \mathbb{H}(X \mid Y) - \mathbb{H}(Y \mid X) = \mathbb{H}(X) + \mathbb{H}(Y) - \mathbb{H}(X, Y) = \mathbb{I}(X; Y)\) by the first form.
+                    </p>
+                </div>
+
                 <p>
-                    Using the chain rule for entropy: \(\mathbb{H}(X, Y) = \mathbb{H}(Y \mid X) + \mathbb{H}(X) \,\),
-                    we obtain following expressions:
+                    These identities deliver two important consequences. First, combining the union form 
+                    \(\mathbb{I}(X; Y) = \mathbb{H}(X) + \mathbb{H}(Y) - \mathbb{H}(X, Y)\) with non-negativity 
+                    completes the proof of the left inequality of the <a href="#T-joint_entropy_bounds"><strong>joint 
+                    entropy bounds</strong></a> previously deferred:
                     \[
-                    \begin{align*}
-                    \mathbb{I}(X ; Y) &= \mathbb{H}(X) + \mathbb{H}(Y) -  \mathbb{H}(X, Y) \\\\
-                                    &= \mathbb{H}(Y) -  \mathbb{H}(Y \mid X) \\\\
-                                    &= \mathbb{H}(X) -  \mathbb{H}(X \mid Y).
-                    \end{align*}
-                    \]  
-                    \[
-                    \begin{align*}
-                    \mathbb{I}(X ; Y) &= \mathbb{H}(X) - \mathbb{H}(X \mid Y) \\\\
-                                    &= \mathbb{H}(X, Y) -  \mathbb{H}(X \mid Y) -  \mathbb{H}(Y \mid X).
-                    \end{align*}
+                    \mathbb{H}(X) + \mathbb{H}(Y) \;\geq\; \mathbb{H}(X, Y),
                     \]
+                    with equality if and only if \(X\) and \(Y\) are independent. Second, the reduction form 
+                    \(\mathbb{I}(X; Y) = \mathbb{H}(X) - \mathbb{H}(X \mid Y) \geq 0\) implies
+                    \[
+                    \mathbb{H}(X \mid Y) \;\leq\; \mathbb{H}(X)
+                    \qquad \text{(and symmetrically } \mathbb{H}(Y \mid X) \leq \mathbb{H}(Y) \text{)},
+                    \]
+                    that is, <strong>conditioning reduces entropy on average</strong>. Observing \(Y\) can never increase 
+                    the average uncertainty of \(X\); the residual uncertainty after observing \(Y\) is at most the 
+                    prior uncertainty, with equality precisely when \(X\) and \(Y\) are independent.
                 </p>
 
                 <div class="insight-box">
@@ -439,15 +587,15 @@ uses_python: false
                         minimizing it is equivalent to minimizing KL divergence from the true label distribution to the model's predictions 
                         (since \(\mathbb{H}(p)\) is constant with respect to model parameters). <strong>Mutual information</strong> appears in feature 
                         selection (maximizing \(\mathbb{I}(\text{features}; \text{target})\)), in the information bottleneck method for deep learning, 
-                        and in  <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a> where the ELBO involves a KL divergence term. The 
+                        and in <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a> where the ELBO involves a KL divergence term. The 
                         <a href="fisher_info.html"><strong>Fisher information matrix</strong></a> connects to KL divergence through the local 
-                        approximation \(D_{\text{KL}}(p_\theta \| p_{\theta+\delta}) \approx \frac{1}{2}\delta^\top F(\theta)\delta\), 
+                        approximation \(D_{\mathbb{KL}}(p_\theta \| p_{\theta+\delta}) \approx \frac{1}{2}\delta^\top F(\theta)\delta\), 
                         linking information theory to the geometry of statistical models.
                     </p>
                 </div>
 
                 <p>
-                    Entropy and KL divergence provide the language for comparing distributions. In <a href="convergence.html"><strong>Part 13</strong></a>, 
+                    Entropy and KL divergence provide the language for comparing distributions. In <a href="convergence.html"><strong>the next page on convergence</strong></a>, 
                     we study probabilistic <strong>convergence</strong> - the mathematical conditions under which estimators and sample distributions approach 
                     their population counterparts as sample size grows.
                 </p>
