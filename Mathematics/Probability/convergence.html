@@ -43,14 +43,19 @@ uses_python: false
                     result in probability theory.
                 </p>
 
-                <div class="theorem" id="T-as-convergence">
-                    <span class="theorem-title">1. Almost Sure Convergence (\(\xrightarrow{a.s.}\))</span>
+                <div class="theorem" id="D-almost_sure_convergence">
+                    <span class="theorem-title">Definition: Almost Sure Convergence (\(\xrightarrow{a.s.}\))</span>
                     <p>
-                        A sequence \(\{X_n\}\) converges to \(X\) <strong>almost surely</strong> 
-                        if the event where they do <em>not</em> converge has probability zero:
+                        Let \(\{X_n\}\) and \(X\) be random variables on a common probability space \((\Omega, \mathcal{F}, P)\).
+                        We say \(X_n\) converges to \(X\) <strong>almost surely</strong>, written \(X_n \xrightarrow{a.s.} X\), if
                         \[
-                        P\left( \lim_{n \to \infty} X_n = X \right) = 1.
+                        P\!\left(\left\{\omega \in \Omega : \lim_{n \to \infty} X_n(\omega) = X(\omega)\right\}\right) = 1.
                         \]
+                        The convergence event is measurable because it admits the representation
+                        \[
+                        \left\{\lim_{n} X_n = X\right\} \;=\; \bigcap_{k \geq 1} \bigcup_{N \geq 1} \bigcap_{n \geq N} \left\{|X_n - X| < \tfrac{1}{k}\right\},
+                        \]
+                        a countable combination of measurable sets.
                     </p>
                 </div>
 
@@ -71,9 +76,8 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        <em>Proof:</em> Durrett, <em>Probability: Theory and Examples</em>, §2.4, Theorem 2.4.1. 
-                        The classical proof via Kolmogorov's three-series theorem relies on truncation and martingale-style 
-                        estimates that lie beyond this introductory treatment; we accept the result here and deploy it freely.
+                        A rigorous proof lies beyond the scope of this introductory development; 
+                        we accept the result here and use it freely throughout the rest of this section.
                     </p>
                 </div>
 
@@ -82,27 +86,18 @@ uses_python: false
                     this path-level guarantee.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">2. Convergence in Probability (\( \xrightarrow{P} \))</span>
-                    <p>
-                        We say \(X_n\) converges to \(X\) <strong>in probability</strong> if, for every \(\epsilon > 0\), the probability 
-                        of the difference exceeding \(\epsilon\) goes to zero:
-                        \[
-                        \lim_{n \to \infty} P(|X_n - X| \geq \epsilon) = 0.
-                        \]
-                    </p>
-                </div>
-
                 <p>
-                    Convergence in probability says that large deviations from \(X\) become increasingly unlikely, but it does not demand that each 
-                    individual sample path settles down. This mode of convergence corresponds to the Weak Law.
+                    The second mode, <strong>convergence in probability</strong>, demands less: rather than asking 
+                    individual sample paths to settle down on a probability-1 set, it asks only that the probability 
+                    of any fixed-size deviation from \(X\) vanish as \(n \to \infty\). 
+                    The formal definition appears <a href="#D-convergence_in_probability" class="ref-link"><strong>below</strong></a>; this mode corresponds to the Weak Law.
                 </p>
 
                 <div class="theorem" id="T-WLLN">
                     <span class="theorem-title">Theorem: Weak Law of Large Numbers (WLLN)</span>
                     <p>
                         Let \(X_1, X_2, \ldots\) be i.i.d. random variables with 
-                        \(\mathbb{E}[X_1] = \mu\) and \(\text{Var}(X_1) = \sigma^2 < \infty\). Then
+                        \(\mathbb{E}[X_1] = \mu\) and \(\operatorname{Var}(X_1) = \sigma^2 < \infty\). Then
                         \[
                         \bar{X}_n \xrightarrow{P} \mu.
                         \]
@@ -110,42 +105,51 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof sketch (via Chebyshev):</span>
+                    <span class="proof-title">Proof (via Chebyshev's inequality):</span>
                     <p>
-                        The WLLN is often proved using <strong>Chebyshev's inequality</strong>, which requires the assumption of a 
-                        finite variance (\(\sigma^2 < \infty\)). Since \(\text{Var}(\bar{X}_n) = \sigma^2/n\), we have 
+                        First, the variance of the sample mean. By <a href="random_variables.html#T-variance_linear_transformation" class="ref-link"><strong>the scaling rule for variance</strong></a> applied to \(\bar{X}_n = \tfrac{1}{n}\sum_{i=1}^n X_i\),
                         \[
-                        P(|\bar{X}_n - \mu| \geq \epsilon) \leq \frac{\sigma^2}{n\epsilon^2} \to 0.
+                        \operatorname{Var}(\bar{X}_n) \;=\; \frac{1}{n^2}\,\operatorname{Var}\!\left(\sum_{i=1}^n X_i\right).
                         \]
+                        Expanding the variance of the sum,
+                        \[
+                        \operatorname{Var}\!\left(\sum_{i=1}^n X_i\right) \;=\; \mathbb{E}\!\left[\left(\sum_{i=1}^n (X_i - \mu)\right)^{\!2}\right] \;=\; \sum_{i=1}^n \operatorname{Var}(X_i) \;+\; \sum_{i \neq j} \mathbb{E}[(X_i - \mu)(X_j - \mu)].
+                        \]
+                        Since the \(X_i\) are independent, <a href="covariance.html#T-product_expectation_independent_elem" class="ref-link"><strong>independence factors expectations</strong></a>, so for \(i \neq j\),
+                        \[
+                        \mathbb{E}[(X_i - \mu)(X_j - \mu)] \;=\; \mathbb{E}[X_i - \mu] \cdot \mathbb{E}[X_j - \mu] \;=\; 0.
+                        \]
+                        The cross terms vanish, leaving \(\operatorname{Var}(\sum_i X_i) = n\sigma^2\), and hence \(\operatorname{Var}(\bar{X}_n) = \sigma^2/n\).
                     </p>
                     <p>
-                        While this argument requires finite variance, <strong>Khinchin's theorem</strong> shows that the WLLN actually holds 
-                        under the same condition as the SLLN — only a finite mean (\(\mathbb{E}[|X_1|] < \infty\)) is needed. 
-                        See Durrett, <em>Probability: Theory and Examples</em>, §2.2.
+                        Next, the deviation bound. Set \(Z = (\bar{X}_n - \mu)^2 \geq 0\). For any \(\epsilon > 0\),
+                        \[
+                        \mathbb{E}[Z] \;\geq\; \mathbb{E}\!\left[Z \cdot \mathbb{1}\{Z \geq \epsilon^2\}\right] \;\geq\; \epsilon^2 \cdot P(Z \geq \epsilon^2),
+                        \]
+                        the first inequality because \(Z \cdot \mathbb{1}\{Z < \epsilon^2\} \geq 0\) and the second because the indicator restricts to the region \(Z \geq \epsilon^2\). 
+                        Rearranging and using \(\{Z \geq \epsilon^2\} = \{|\bar{X}_n - \mu| \geq \epsilon\}\),
+                        \[
+                        P(|\bar{X}_n - \mu| \geq \epsilon) \;\leq\; \frac{\mathbb{E}[(\bar{X}_n - \mu)^2]}{\epsilon^2} \;=\; \frac{\operatorname{Var}(\bar{X}_n)}{\epsilon^2} \;=\; \frac{\sigma^2}{n\epsilon^2} \;\longrightarrow\; 0.
+                        \]
+                        This is <strong>Chebyshev's inequality</strong> applied to \(\bar{X}_n - \mu\).
+                    </p>
+                    <p>
+                        <em>Remark.</em> The finite-variance assumption above is convenient but not necessary. 
+                        The SLLN guarantees \(\bar{X}_n \xrightarrow{a.s.} \mu\) under the weaker condition 
+                        \(\mathbb{E}[|X_1|] < \infty\) alone, and almost sure convergence implies convergence in probability 
+                        (established <a href="#T-hierarchy_convergence_modes" class="ref-link"><strong>below</strong></a>). 
+                        So the WLLN in fact holds whenever the SLLN does — finite variance is needed only 
+                        for the simple self-contained argument given here.
                     </p>
                 </div>
 
                 <p>
-                    The weakest mode concerns only the distribution functions, not the random 
-                    variables themselves.
-                </p>
-
-                <div class="theorem">
-                    <span class="theorem-title">3. Convergence in Distribution (\( \xrightarrow{D} \))</span>
-                    <p>
-                        This is the weakest form, focusing only on the cumulative distribution functions (CDFs). We say \(X_n\) converges to \(X\) 
-                        <strong>in distribution</strong> if:
-                        \[
-                        \lim_{n \to \infty} F_n(x) = F(x)
-                        \]
-                        for all points \(x\) where \(F\) is continuous.
-                    </p>
-                </div>
-
-                 <p>
-                    Convergence in distribution does not require the random variables to be defined on the same probability space.
-                    It is purely a statement about CDFs. This is the setting of the <strong>Central Limit Theorem (CLT)</strong>, which 
-                    describes how the standardized fluctuations of \(\bar{X}_n\) around \(\mu\) converge to a 
+                    The third and weakest mode, <strong>convergence in distribution</strong>, abandons the random 
+                    variables themselves and tracks only their cumulative distribution functions: 
+                    \(F_{X_n}(x) \to F_X(x)\) at every continuity point of the limit \(F_X\). 
+                    The formal definition is given <a href="#D-convergence_in_distribution" class="ref-link"><strong>further below</strong></a>; 
+                    this is the setting of the <strong>Central Limit Theorem (CLT)</strong>, which describes how the standardized 
+                    fluctuations of \(\bar{X}_n\) around \(\mu\) converge to a 
                     <a href="gaussian.html"><strong>normal distribution</strong></a>.
                 </p>
 
@@ -156,17 +160,47 @@ uses_python: false
                         \[
                         \xrightarrow{a.s.} \;\Longrightarrow\; \xrightarrow{P} \;\Longrightarrow\; \xrightarrow{D}.
                         \]
-                        The reverse is not generally true. However, if the limit \(X\) is a <strong>constant</strong> 
-                        (as in LLN), then convergence in distribution implies convergence in probability.
+                        The reverse implications fail in general; however, if the limit \(X\) is a constant 
+                        (as in the LLN), then \(\xrightarrow{D} \Longrightarrow \xrightarrow{P}\) as well.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\xrightarrow{a.s.}\) implies \(\xrightarrow{P}\)).</strong> 
+                        Suppose \(X_n \xrightarrow{a.s.} X\) and fix \(\epsilon > 0\). 
+                        Set \(Y_n = \mathbb{1}\{|X_n - X| < \epsilon\}\), so \(Y_n \in [0,1]\) for all \(n\). 
+                        On the convergence set (which has probability \(1\)), each \(\omega\) eventually satisfies 
+                        \(|X_n(\omega) - X(\omega)| < \epsilon\), so \(Y_n(\omega) \to 1\). 
+                        Hence \(\liminf_n Y_n = 1\) almost surely, and \(\mathbb{E}[\liminf_n Y_n] = 1\). 
+                        Applying <a href="limit_theorems_product_measures.html#T-prob-fatou" class="ref-link"><strong>Fatou's Lemma</strong></a> to the nonnegative sequence \(\{Y_n\}\),
+                        \[
+                        1 \;=\; \mathbb{E}\!\left[\liminf_{n \to \infty} Y_n\right] \;\leq\; \liminf_{n \to \infty} \mathbb{E}[Y_n] \;=\; \liminf_{n \to \infty} P(|X_n - X| < \epsilon).
+                        \]
+                        Since \(P(|X_n - X| < \epsilon) \leq 1\) for all \(n\), this forces \(P(|X_n - X| < \epsilon) \to 1\), 
+                        equivalently \(P(|X_n - X| \geq \epsilon) \to 0\).
                     </p>
                     <p>
-                        <em>Proof status:</em> The implication \(\xrightarrow{P} \Longrightarrow \xrightarrow{D}\) is proved 
-                        in the <a href="#T-prob_implies_dist" class="ref-link"><strong>next section</strong></a>. 
-                        The implication \(\xrightarrow{a.s.} \Longrightarrow \xrightarrow{P}\) follows from the fact that 
-                        \(\{|X_n - X| \geq \epsilon\}\) is eventually contained in the a.s. null set of non-convergence; 
-                        see Durrett, <em>Probability: Theory and Examples</em>, §2.3, Theorem 2.3.2. 
-                        The partial converse \(\xrightarrow{D} \Longrightarrow \xrightarrow{P}\) for constant limits 
-                        is Durrett, §3.2, Exercise 3.2.3.
+                        <strong>(\(\xrightarrow{P}\) implies \(\xrightarrow{D}\)).</strong> 
+                        Proved as 
+                        <a href="#T-prob_implies_dist" class="ref-link"><strong>Convergence in Probability Implies Convergence in Distribution</strong></a> 
+                        in the section that follows.
+                    </p>
+                    <p>
+                        <strong>(Partial converse: \(\xrightarrow{D} \Longrightarrow \xrightarrow{P}\) when the limit is a constant \(c\)).</strong> 
+                        Suppose \(X_n \xrightarrow{D} c\). The CDF of the constant \(c\) is the step function 
+                        \(F(x) = \mathbb{1}\{x \geq c\}\), whose only discontinuity is at \(x = c\); 
+                        every other point of \(\mathbb{R}\) is a continuity point. Fix \(\epsilon > 0\). 
+                        The points \(c - \epsilon\) and \(c + \epsilon/2\) are both continuity points of \(F\), and
+                        \[
+                        \{|X_n - c| \geq \epsilon\} \;=\; \{X_n \leq c - \epsilon\} \cup \{X_n \geq c + \epsilon\} \;\subseteq\; \{X_n \leq c - \epsilon\} \cup \{X_n > c + \epsilon/2\},
+                        \]
+                        so
+                        \[
+                        P(|X_n - c| \geq \epsilon) \;\leq\; F_{X_n}(c - \epsilon) + \bigl(1 - F_{X_n}(c + \epsilon/2)\bigr) \;\longrightarrow\; F(c - \epsilon) + \bigl(1 - F(c + \epsilon/2)\bigr) \;=\; 0 + (1 - 1) \;=\; 0,
+                        \]
+                        which is convergence in probability.
                     </p>
                 </div>
 
@@ -175,7 +209,7 @@ uses_python: false
                    
                     <p>
                         The distinction between these modes reflects how "well-behaved" a distribution's <strong>moments</strong> are. 
-                        To see why we need these conditions, we first must look at the <a href="student.html#cauchy"><strong>Cauchy Distribution</strong></a>.
+                        To see why we need these conditions, we first must look at the <a href="student.html#D-cauchy" class="ref-link"><strong>Cauchy Distribution</strong></a>.
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>
@@ -225,15 +259,15 @@ uses_python: false
                 <div class="theorem" id="D-convergence_in_probability">
                     <span class="theorem-title">Definition: Convergence in Probability</span>
                     <p>
-                        Let \(\{X_n\}\) be a sequence of random variables and \(X\) be a random variable on a common probability 
-                        space. We say \(X_n\) <strong>converges in probability</strong> to \(X\), written \(X_n \xrightarrow{P} X\), 
+                        Let \(\{X_n\}\) and \(X\) be random variables on a common probability space \((\Omega, \mathcal{F}, P)\). 
+                        We say \(X_n\) <strong>converges in probability</strong> to \(X\), written \(X_n \xrightarrow{P} X\), 
                         if for every \(\epsilon > 0\),
                         \[
-                        \lim_{n \to \infty} P[|X_n - X| \geq \epsilon] = 0,
+                        \lim_{n \to \infty} P(|X_n - X| \geq \epsilon) = 0,
                         \]
                         or equivalently,
                         \[
-                        \lim_{n \to \infty} P[|X_n - X| < \epsilon] = 1.
+                        \lim_{n \to \infty} P(|X_n - X| < \epsilon) = 1.
                         \]
                     </p>
                 </div>
@@ -267,23 +301,11 @@ uses_python: false
                         \]
                         Substituting \(X_n\) for \(x\), we obtain 
                         \[
-                        P[|f(X_n) - f(a)| \geq \epsilon] \leq P [|X_n - a| \geq \delta ].
+                        P(|f(X_n) - f(a)| \geq \epsilon) \leq P(|X_n - a| \geq \delta).
                         \]
                         As \(n \to \infty\), the right-hand side vanishes by assumption, hence \(f(X_n) \xrightarrow{P} f(a)\).
                     </p>
                 </div>
-
-                <p>
-                    More generally, if \(X_n \xrightarrow{P} X\) (where \(X\) is a random variable, not necessarily constant) 
-                    and \(f\) is continuous, then 
-                    \[
-                    f(X_n) \xrightarrow{P} f(X).
-                    \]
-                    <em>Proof:</em> Durrett, <em>Probability: Theory and Examples</em>, §3.2, Theorem 3.2.4. 
-                    The argument handles the non-constant limit via a careful set-theoretic decomposition around the 
-                    discontinuity set of \(f\); the constant case proved above is the pedagogically clean specialization 
-                    we will need in the sequel.
-                </p>
 
                 <p>
                     <strong>Why this matters:</strong> The Continuous Mapping Theorem allows us to transfer convergence results 
@@ -308,7 +330,7 @@ uses_python: false
                     <p>
                         Let \(\{X_n\}\) be a sequence of random variables with CDFs \(F_{X_n}\), and let \(X\) be a random variable 
                         with CDF \(F_X\). We say \(X_n\) <strong>converges in distribution</strong> to \(X\), written \(X_n \xrightarrow{D} X\), 
-                        if for every point \(x \in C(F_X)\) (where \(C(F_X)\) is the set of all points where \(F_X\) is continuous),
+                        if at every continuity point \(x\) of \(F_X\),
                         \[
                         \lim_{n \to \infty} F_{X_n}(x) = F_X(x).
                         \]
@@ -319,7 +341,7 @@ uses_python: false
 
                 <p>
                     <strong>Key distinction:</strong> Convergence in distribution does not imply convergence in probability. 
-                    For example, let \(X \sim N(0,1)\) and define \(X_n = -X\) for all \(n\). Then \(X_n \xrightarrow{D} X\) 
+                    For example, let \(X \sim \mathcal{N}(0,1)\) and define \(X_n = -X\) for all \(n\). Then \(X_n \xrightarrow{D} X\) 
                     (since both have the same standard normal distribution), yet \(|X_n - X| = 2|X|\) does not converge to zero 
                     in probability.
                 </p>
@@ -351,10 +373,10 @@ uses_python: false
                         \(\{X_n \leq x\}\) according to whether \(|X_n - X| < \epsilon\):
                         \[
                         \begin{align*}
-                        F_{X_n}(x) &= P[X_n \leq x] \\
-                                &= P[\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}] + P[\{X_n \leq x\} \cap \{|X_n - X| \geq \epsilon\}] \\
-                                &\leq P[X \leq x + \epsilon] + P[|X_n - X| \geq \epsilon] \\
-                                &= F_X(x + \epsilon) + P[|X_n - X| \geq \epsilon].
+                        F_{X_n}(x) &= P(X_n \leq x) \\
+                                &= P(\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}) + P(\{X_n \leq x\} \cap \{|X_n - X| \geq \epsilon\}) \\
+                                &\leq P(X \leq x + \epsilon) + P(|X_n - X| \geq \epsilon) \\
+                                &= F_X(x + \epsilon) + P(|X_n - X| \geq \epsilon).
                         \end{align*}
                         \]
                         The first inequality holds because \(\{X_n \leq x\} \cap \{|X_n - X| < \epsilon\}\) 
@@ -367,15 +389,21 @@ uses_python: false
 
                     <p>
                         <strong>Lower bound:</strong><br>
-                        Similarly, consider the complementary event:
+                        Similarly, partition the complementary event \(\{X_n > x\}\):
                         \[
                         \begin{align*}
-                        1 - F_{X_n}(x) &= P[X_n > x] \\
-                                &\leq P[X > x - \epsilon] + P[|X_n - X| \geq \epsilon] \\
-                                &= 1 - F_X(x - \epsilon) + P[|X_n - X| \geq \epsilon].
+                        1 - F_{X_n}(x) &= P(X_n > x) \\
+                                &= P(\{X_n > x\} \cap \{|X_n - X| < \epsilon\}) + P(\{X_n > x\} \cap \{|X_n - X| \geq \epsilon\}) \\
+                                &\leq P(X > x - \epsilon) + P(|X_n - X| \geq \epsilon) \\
+                                &= 1 - F_X(x - \epsilon) + P(|X_n - X| \geq \epsilon).
                         \end{align*}
                         \]
-                        Rearranging and taking the limit inferior:
+                        The first inequality holds because \(\{X_n > x\} \cap \{|X_n - X| < \epsilon\}\) 
+                        implies \(X > X_n - \epsilon > x - \epsilon\). Rearranging,
+                        \[
+                        F_{X_n}(x) \geq F_X(x - \epsilon) - P(|X_n - X| \geq \epsilon),
+                        \]
+                        and since \(X_n \xrightarrow{P} X\) the second term vanishes, giving
                         \[
                         \liminf_{n \to \infty} F_{X_n}(x) \geq F_X(x - \epsilon). \tag{2}
                         \]
@@ -389,8 +417,9 @@ uses_python: false
                         Since \(x\) is a point of continuity of \(F_X\), letting \(\epsilon \to 0\) gives 
                         \(F_X(x - \epsilon) \to F_X(x)\) and \(F_X(x + \epsilon) \to F_X(x)\), so
                         \[
-                        \lim_{n \to \infty} F_{X_n}(x) = F_X(x).
+                        F_X(x) \leq \liminf_{n \to \infty} F_{X_n}(x) \leq \limsup_{n \to \infty} F_{X_n}(x) \leq F_X(x),
                         \]
+                        forcing \(\liminf = \limsup = F_X(x)\), hence \(\lim_{n \to \infty} F_{X_n}(x) = F_X(x)\). 
                         Since this holds for every continuity point of \(F_X\), we conclude 
                         \(X_n \xrightarrow{D} X\).
                     </p>
@@ -423,8 +452,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    We can now see that the <strong>Central Limit Theorem (CLT)</strong> - first stated without proof in our 
-                    treatment of the <a href="gaussian.html#clt"><strong>Gaussian distribution</strong></a> - is precisely a statement 
+                    We can now see that the <a href="gaussian.html#T-clt" class="ref-link"><strong>Central Limit Theorem (CLT)</strong></a> — first stated without proof when we introduced the Gaussian distribution — is precisely a statement 
                     about convergence in distribution. To prove the CLT rigorously, we need a tool that characterizes distributions 
                     and behaves well under limits: the moment generating function.
                 </p>
@@ -437,17 +465,17 @@ uses_python: false
                  <p>
                     Verifying convergence in distribution directly - by showing pointwise convergence of CDFs at every continuity point - is 
                     often impractical. The <strong>moment generating function (MGF)</strong> provides a powerful alternative: 
-                    it uniquely determines a distribution (when it exists) and converts the problem of distributional convergence into the 
-                    simpler problem of pointwise convergence of real-valued functions.
+                    it transforms the problem of distributional convergence into the simpler problem of pointwise convergence 
+                    of real-valued functions, via Lévy's continuity theorem (stated below).
                 </p>
 
                 <div class="theorem" id="D-MGF">
                     <span class="theorem-title">Definition: Moment Generating Function (MGF)</span>
                     <p>
-                        Let \(X\) be a random variable such that for some \(h > 0\), the expectation of \(e^{tX}\) exists 
-                        for \(t \in (-h, h)\). The <strong>moment generating function</strong> of \(X\) is defined by
+                        Let \(X\) be a random variable such that for some \(h > 0\), the expectation \(\mathbb{E}[e^{tX}]\) is finite 
+                        for all \(t \in (-h, h)\). The <strong>moment generating function</strong> of \(X\) is defined by
                         \[
-                        M(t) = \mathbb{E}(e^{tX}), \qquad t \in (-h, h).
+                        M(t) = \mathbb{E}[e^{tX}], \qquad t \in (-h, h).
                         \]
                     </p>
                 </div>
@@ -455,21 +483,27 @@ uses_python: false
                 <p>
                     <strong>Why "moment generating"?:</strong> Expanding \(e^{tX}\) as a power series and taking expectations term-by-term:
                     \[
-                    \begin{align*}
-                    M(t) = \mathbb{E}\left[\sum_{k=0}^{\infty} \frac{(tX)^k}{k!}\right] 
-                         = \sum_{k=0}^{\infty} \frac{t^k}{k!} \mathbb{E}(X^k).
-                    \end{align*}
+                    M(t) = \mathbb{E}\!\left[\sum_{k=0}^{\infty} \frac{(tX)^k}{k!}\right] 
+                         = \sum_{k=0}^{\infty} \frac{t^k}{k!} \mathbb{E}[X^k].
                     \]
+                    The interchange of expectation and infinite sum is justified within the radius of convergence by 
+                    <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a> 
+                    applied to the partial sums: the dominating variable is \(\sum_{k=0}^\infty |tX|^k/k! = e^{|tX|}\), 
+                    whose expectation is finite when \(M\) exists in a neighborhood of \(0\) (since \(e^{|tX|} \leq e^{tX} + e^{-tX}\)). 
                     Thus, the \(k\)-th derivative at zero gives the <strong>\(k\)-th moment</strong>: 
                     \[
-                    M^{(k)}(0) = \mathbb{E}(X^k).
+                    M^{(k)}(0) = \mathbb{E}[X^k]
                     \]
+                    (by termwise differentiation of the power series, valid within its radius of convergence).
                 </p>
 
                 <p>
                     <strong>Why require an open interval around 0?</strong> The MGF must exist in a neighborhood of zero 
-                    (not just at \(t = 0\)) to guarantee that it uniquely determines the distribution and that we can 
-                    differentiate to extract moments. If the MGF exists only at \(t = 0\), it provides no useful information.
+                    (not just at \(t = 0\)) for two reasons. First, the moment-extraction formula \(M^{(k)}(0) = \mathbb{E}[X^k]\) 
+                    requires \(M\) to be differentiable at \(0\), which forces existence on more than a single point. 
+                    Second, our convergence strategy below — pointwise convergence of MGFs on an interval implies convergence 
+                    in distribution — needs the MGFs defined on a common interval to compare them at all. If the MGF exists 
+                    only at \(t = 0\), then \(M(0) = 1\) trivially and no useful information is conveyed.
                 </p>
 
                 <p>
@@ -479,20 +513,21 @@ uses_python: false
                 <div class="theorem" id="T-levy_continuity_mgf">
                     <span class="theorem-title">Theorem: Lévy's Continuity Theorem - MGF Version</span>
                     <p>
-                        Let \(\{X_n\}\) be a sequence of random variables with MGFs \(M_n(t)\) that exist for \(t \in (-h, h)\). 
-                        If \(M_n(t) \to M(t)\) for all \(t\) in some <strong>open interval</strong> containing 0, and \(M(t)\) is 
-                        the MGF of a random variable \(X\), then
+                        Let \(\{X_n\}\) be a sequence of random variables, each with an MGF \(M_n\) defined on a 
+                        common open interval \((-h, h)\) for some \(h > 0\). Suppose there exist \(\delta \in (0, h]\) 
+                        and a random variable \(X\) with MGF \(M\) defined on \((-\delta, \delta)\), such that
+                        \[
+                        M_n(t) \to M(t) \quad \text{for every } t \in (-\delta, \delta).
+                        \]
+                        Then
                         \[
                         X_n \xrightarrow{D} X.
                         \]
                     </p>
                     <p>
-                        <em>Proof:</em> The classical form of Lévy's continuity theorem is stated for 
-                        <strong>characteristic functions</strong> \(\varphi_X(t) = \mathbb{E}[e^{itX}]\), which exist for all 
-                        random variables without integrability conditions; see Durrett, <em>Probability: Theory and Examples</em>, 
-                        §3.3, Theorem 3.3.17. The MGF version stated here follows by the same Fourier-analytic argument under 
-                        the stronger hypothesis that the MGF exists in a neighborhood of \(0\) (which forces all moments to be 
-                        finite and the MGF to uniquely determine the distribution).
+                        A rigorous proof lies beyond the scope of this introductory development; we accept the result 
+                        here and use it as the bridge from MGF convergence to distributional convergence in the proof 
+                        of the Central Limit Theorem below.
                     </p>
                 </div>
 
@@ -504,14 +539,15 @@ uses_python: false
                 <div class="theorem" id="T-CLT">
                     <span class="theorem-title">Theorem: Central Limit Theorem (CLT)</span>
                     <p>
-                        Let \(X_1, X_2, \ldots, X_n\) be i.i.d. random variables with mean \(\mu\) and variance \(\sigma^2 > 0\). 
-                        Assume the MGF \(M(t) = \mathbb{E}(e^{tX})\) exists in a neighborhood of zero. Then the standardized sum
+                        Let \(X_1, X_2, \ldots\) be i.i.d. random variables with mean \(\mathbb{E}[X_1] = \mu\) 
+                        and variance \(\operatorname{Var}(X_1) = \sigma^2 \in (0, \infty)\). Assume the common MGF 
+                        \(M(t) = \mathbb{E}[e^{tX_1}]\) exists for \(t\) in a neighborhood of zero. Then the standardized sum
                         \[
                         Y_n = \frac{\sum_{i=1}^{n} X_i - n\mu}{\sigma \sqrt{n}} = \frac{\sqrt{n}(\bar{X}_n - \mu)}{\sigma}
                         \]
                         converges in distribution to a standard normal:
                         \[
-                        Y_n \xrightarrow{D} N(0, 1).
+                        Y_n \xrightarrow{D} \mathcal{N}(0, 1).
                         \]
                     </p>
                 </div>
@@ -520,18 +556,27 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
                     <p>
                         <strong>Step 1: MGF of centered variable.</strong><br>
-                        Define \(W = X - \mu\). The MGF of \(W\) is:
+                        Throughout this proof, write \(X\) for a representative copy of the common distribution 
+                        (so \(\mathbb{E}[X] = \mu\), \(\operatorname{Var}(X) = \sigma^2\), and 
+                        \(M(t) = \mathbb{E}[e^{tX}]\) is the common MGF). Define \(W = X - \mu\). 
+                        The MGF of \(W\) is:
                         \[
                         m(t) = \mathbb{E}[e^{t(X-\mu)}] = e^{-\mu t} M(t), \qquad t \in (-h, h).
                         \]
-                        Note the key properties:
+                        Applying the moment-extraction property \(m^{(k)}(0) = \mathbb{E}[W^k]\) 
+                        (established above for MGFs in their domain of analyticity), together with the linearity of 
+                        expectation and the 
+                        <a href="random_variables.html#D-variance" class="ref-link"><strong>definition of variance</strong></a>:
                         \[
-                        m(0) = 1, \quad m'(0) = \mathbb{E}(X - \mu) = 0, \quad m''(0) = \mathbb{E}[(X-\mu)^2] = \sigma^2.
+                        m(0) = 1, \quad m'(0) = \mathbb{E}[X - \mu] = \mathbb{E}[X] - \mu = 0, \quad m''(0) = \mathbb{E}[(X-\mu)^2] = \operatorname{Var}(X) = \sigma^2.
                         \]
                     </p>
                     <p>
                         <strong>Step 2: Taylor expansion.</strong><br>
-                        By Taylor's theorem with Lagrange remainder, for any \(t\) in the domain, there exists \(\xi\) between \(0\) and \(t\) such that:
+                        By Taylor's theorem with Lagrange remainder (a standard result of one-variable calculus, 
+                        applicable here because the MGF \(m\) is infinitely differentiable on \((-h, h)\) — its 
+                        power series \(\sum_{k=0}^\infty t^k \mathbb{E}[W^k]/k!\) converges on this interval), 
+                        for any \(t \in (-h, h)\) there exists \(\xi\) between \(0\) and \(t\) such that:
                         \[
                         m(t) = m(0) + m'(0)t + \frac{m''(\xi)}{2}t^2 = 1 + \frac{m''(\xi)}{2}t^2.
                         \]
@@ -542,10 +587,21 @@ uses_python: false
                     </p>
                     <p>
                         <strong>Step 3: MGF of the standardized sum.</strong><br>
-                        By independence:
+                        Writing the exponential of a sum as a product of exponentials,
                         \[
-                        M_n(t) = \mathbb{E}\left[\exp\left(t \cdot \frac{\sum_{i=1}^{n}(X_i - \mu)}{\sigma\sqrt{n}}\right)\right] 
-                               = \left[m\left(\frac{t}{\sigma\sqrt{n}}\right)\right]^n.
+                        M_n(t) = \mathbb{E}\!\left[\exp\!\left(t \cdot \frac{\sum_{i=1}^{n}(X_i - \mu)}{\sigma\sqrt{n}}\right)\right] 
+                               = \mathbb{E}\!\left[\prod_{i=1}^n \exp\!\left(\frac{t(X_i - \mu)}{\sigma\sqrt{n}}\right)\right].
+                        \]
+                        Since the \(X_i\) are independent, so are the functions \(\exp(t(X_i - \mu)/(\sigma\sqrt{n}))\) of them. 
+                        By the 
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product rule for expectations of independent variables</strong></a>, 
+                        the expectation factors:
+                        \[
+                        M_n(t) = \prod_{i=1}^n \mathbb{E}\!\left[\exp\!\left(\frac{t(X_i - \mu)}{\sigma\sqrt{n}}\right)\right].
+                        \]
+                        Each factor equals \(m(t/(\sigma\sqrt{n}))\) by the i.i.d. assumption (the \(X_i\) all share the common centered MGF \(m\)), so
+                        \[
+                        M_n(t) = \left[m\!\left(\frac{t}{\sigma\sqrt{n}}\right)\right]^n.
                         \]
                     </p>
                     <p>
@@ -554,17 +610,21 @@ uses_python: false
                         \[
                         m\left(\frac{t}{\sigma\sqrt{n}}\right) = 1 + \frac{t^2}{2n} + \frac{[m''(\xi_n) - \sigma^2]t^2}{2n\sigma^2}
                         \]
-                        where \(\xi_n \in \left(0, \frac{t}{\sigma\sqrt{n}}\right)\). Thus:
+                        where \(\xi_n\) lies between \(0\) and \(t/(\sigma\sqrt{n})\) (the precise sign depending on that of \(t\)). 
+                        Thus:
                         \[
                         M_n(t) = \left\{1 + \frac{t^2}{2n} + \frac{[m''(\xi_n) - \sigma^2]t^2}{2n\sigma^2}\right\}^n.
                         \]
-                        As \(n \to \infty\), we have \(\xi_n \to 0\), and by continuity of \(m''(t)\) at \(t = 0\):
+                        As \(n \to \infty\), we have \(|\xi_n| \leq |t|/(\sigma\sqrt{n}) \to 0\), so \(\xi_n \to 0\). 
+                        By continuity of \(m''\) at \(0\) (which follows from the smoothness of \(m\) on \((-h, h)\) established in Step 2):
                         \[
-                        m''(\xi_n) \to m''(0) = \sigma^2 \implies m''(\xi_n) - \sigma^2 \to 0.
+                        m''(\xi_n) \to m''(0) = \sigma^2 \Longrightarrow m''(\xi_n) - \sigma^2 \to 0.
                         \]
-                        To close the limit, we use the following generalization of the exponential limit: 
+                        To close the limit, we use the following generalization of the classical exponential limit 
+                        \((1 + a_n/n)^n \to e^a\) (valid for any sequence \(a_n \to a\), a standard result of one-variable calculus): 
                         <strong>if \(c_n \to c\) and \(\epsilon_n \to 0\), then \(\left(1 + \frac{c_n}{n} + \frac{\epsilon_n}{n}\right)^n \to e^c\).</strong> 
-                        (This follows by taking logarithms and applying the Taylor expansion \(\ln(1 + x) = x + O(x^2)\).) 
+                        (Proof: take logarithms and use the Taylor expansion \(\ln(1 + x) = x + O(x^2)\) for small \(x\), giving 
+                        \(n \ln(1 + (c_n + \epsilon_n)/n) = (c_n + \epsilon_n) + O((c_n + \epsilon_n)^2/n) \to c\); then exponentiate.) 
                         Applying this with \(c_n \equiv \frac{t^2}{2}\) and \(\epsilon_n = \frac{[m''(\xi_n) - \sigma^2]t^2}{2\sigma^2} \to 0\):
                         \[
                         \lim_{n \to \infty} M_n(t) = e^{t^2/2}.
@@ -572,17 +632,24 @@ uses_python: false
                     </p>
                     <p>
                         <strong>Step 5: Identify the limit.</strong><br>
-                        The function \(e^{t^2/2}\) is the MGF of \(N(0,1)\). By Lévy's Continuity Theorem:
+                        The function \(e^{t^2/2}\) is the MGF of \(\mathcal{N}(0,1)\) (verified below). To apply 
+                        <a href="#T-levy_continuity_mgf" class="ref-link"><strong>Lévy's Continuity Theorem (MGF Version)</strong></a>, 
+                        note that each \(M_n\) is defined on the common open interval \((-h\sigma, h\sigma)\) (since 
+                        \(M_n(t) = [m(t/(\sigma\sqrt{n}))]^n\) requires \(t/(\sigma\sqrt{n}) \in (-h, h)\), and \(\sqrt{n} \geq 1\)), 
+                        the limit MGF \(M(t) = e^{t^2/2}\) is defined on all of \(\mathbb{R}\), and Step 4 established 
+                        \(M_n(t) \to e^{t^2/2}\) for every \(t \in \mathbb{R}\). Taking \(\delta = h\sigma\) in the theorem yields:
                         \[
-                        Y_n = \frac{\sqrt{n}(\bar{X}_n - \mu)}{\sigma} \xrightarrow{D} N(0,1).
+                        Y_n = \frac{\sqrt{n}(\bar{X}_n - \mu)}{\sigma} \xrightarrow{D} \mathcal{N}(0,1).
                         \]
                     </p>
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Verification: MGF of \(N(0,1)\)</span>
+                    <span class="proof-title">Verification: MGF of \(\mathcal{N}(0,1)\)</span>
                     <p>
-                        We confirm that \(e^{t^2/2}\) is the MGF of the standard normal distribution:
+                        We confirm that \(e^{t^2/2}\) is the MGF of the standard normal distribution \(\mathcal{N}(0,1)\), 
+                        whose density is \(\frac{1}{\sqrt{2\pi}} e^{-x^2/2}\) (see the 
+                        <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>definition of the normal distribution</strong></a>):
                         \[
                         \begin{align*}
                         M(t) &= \int_{-\infty}^{\infty} e^{tx} \frac{1}{\sqrt{2\pi}} e^{-x^2/2} \, dx \\
@@ -592,38 +659,42 @@ uses_python: false
                              &= e^{t^2/2}.
                         \end{align*}
                         \]
-                        The key step is completing the square in the exponent and recognizing the remaining integral 
-                        as the total probability of \(N(t, 1)\).
+                        The key step is completing the square in the exponent; the remaining integral equals \(1\) because 
+                        it is the total probability of \(\mathcal{N}(t, 1)\), which (by the same definition) is a probability 
+                        density integrating to \(1\) over \(\mathbb{R}\).
                     </p>
                 </div>
 
                 <p>
                     Without standardization, the CLT can equivalently be written as
                     \[
-                    \sqrt{n}(\bar{X}_n - \mu) \xrightarrow{D} N(0, \sigma^2),
+                    \sqrt{n}(\bar{X}_n - \mu) \xrightarrow{D} \mathcal{N}(0, \sigma^2),
                     \]
+                    (by the scaling property of \(\xrightarrow{D}\) under multiplication by the constant \(\sigma\)), 
                     which makes the role of \(\sigma^2\) explicit: the fluctuations of \(\bar{X}_n\) around \(\mu\) 
                     have order \(\sigma / \sqrt{n}\), and once rescaled by \(\sqrt{n}\), they converge to a Gaussian with variance \(\sigma^2\).
                 </p>
 
                 <p>
                     <strong>Remark on hypotheses.</strong> The assumption that \(M(t)\) exists in a neighborhood of zero is 
-                    convenient for our proof, but is <em>not</em> necessary for the conclusion. The full <strong>Lindeberg-Lévy CLT</strong> 
-                    requires only a finite variance (\(\sigma^2 < \infty\)); the proof uses characteristic functions in place of MGFs 
-                    and the classical Lévy continuity theorem referenced above. See Durrett, <em>Probability: Theory and Examples</em>, 
-                    §3.4, Theorem 3.4.1. In this section we traded generality for a transparent derivation.
+                    convenient for our proof, but is <em>not</em> necessary for the conclusion. A more general CLT requires 
+                    only finite variance; this stronger version will be developed in a forthcoming dedicated treatment. 
+                    In the present section we traded generality for a transparent derivation.
                 </p>
 
                 <div class="insight-box">
                     <h3>Connections to Machine Learning</h3>
                     <p>
                         The convergence results developed in this section are not merely theoretical. The <strong>Law of Large Numbers</strong> 
-                        justifies replacing expectations with sample averages, which is the foundation of empirical risk minimization: 
-                        minimizing the training loss converges to minimizing the true expected loss as the dataset grows. The <strong>CLT</strong> 
-                        explains why confidence intervals and hypothesis tests (from our development of <a href="hypothesis_testing.html"><strong>statistical inference and hypothesis testing</strong></a>) 
-                        work: test statistics are asymptotically normal regardless of the underlying distribution. In deep learning, 
-                        the <strong>Continuous Mapping Theorem</strong> ensures that if parameter estimates converge, so do the predictions of any 
-                        continuous model.
+                        justifies estimating expectations by sample averages — the operating principle behind training neural networks 
+                        on finite datasets. (Whether the <em>minimizer</em> of the sample-average loss converges to the minimizer of the 
+                        true expected loss is a more subtle question requiring uniform laws of large numbers, which lie outside the present scope.) 
+                        The <strong>CLT</strong> explains why confidence intervals and hypothesis tests (from our development of 
+                        <a href="hypothesis_testing.html"><strong>statistical inference and hypothesis testing</strong></a>) work for large samples: 
+                        under finite variance, test statistics built from sample averages are asymptotically normal, even when the underlying 
+                        distribution is non-Gaussian. In deep learning, the <strong>Continuous Mapping Theorem</strong> ensures that if 
+                        parameter estimates converge in probability, then for any fixed input the model's prediction (as a continuous function 
+                        of parameters) converges in probability as well.
                     </p>
                 </div>
 
@@ -631,8 +702,8 @@ uses_python: false
                     We now have the tools to reason rigorously about parameter estimation and inference. 
                     In our development of <a href="bayesian.html"><strong>Bayesian statistics</strong></a>, we adopt a fundamentally 
                     different perspective on inference - treating parameters themselves as random variables with prior 
-                    distributions - where the convergence results developed here ensure that Bayesian and frequentist approaches agree 
-                    in the large-sample limit.
+                    distributions - where the convergence results developed here form the foundation of the large-sample 
+                    analyses that connect the two perspectives.
                 </p>
 
             </section>
