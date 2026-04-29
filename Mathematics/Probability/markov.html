@@ -4,7 +4,7 @@ title: "Markov Chains"
 topic_id: prob-18
 level: detail
 uses_math: true
-uses_python: false
+uses_python: true
 ---
 <!DOCTYPE html>
 <html>
@@ -40,21 +40,66 @@ uses_python: false
                     A <strong>graphical model</strong> uses a <a href="../Discrete/intro_graph.html"><strong>graph</strong></a> to represent a collection of 
                     random variables and their probabilistic dependencies: the vertices represent random variables, and the edges encode conditional 
                     dependence relationships. When the graph is a <strong>directed acyclic graph (DAG)</strong>, the model is called a <strong>Bayesian network</strong>. 
-                    The key structural assumption is that each variable \(X_i\) is <strong>conditionally independent</strong> of all its non-descendants given its parents 
-                    in the DAG. This assumption yields a compact factorization of the joint distribution.
+                    The key structural assumption is that, after numbering the vertices in topological order, each variable \(X_i\) is <strong>conditionally independent</strong> of its non-parent predecessors given its parents. This is the <strong>ordered Markov property</strong>, formalized below, and it yields a compact factorization of the joint distribution.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-bayesian_network">
+                    <span class="theorem-title">Definition: Bayesian Network</span>
+                    <p>
+                        A <strong>Bayesian network</strong> is a pair \((G, \{p_i\}_{i=1}^n)\), where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(G\) is a directed acyclic graph with vertices \(X_1, X_2, \ldots, X_n\); and</li>
+                        <li>\(\{p_i\}_{i=1}^n\) is a family of conditional probability distributions, one per vertex, of the form \(p_i(x_i \mid x_{\operatorname{pa}(i)})\).</li>
+                    </ul>
+                    <p>
+                        Here \(\operatorname{pa}(i) \subseteq \{1, \ldots, n\}\) denotes the <strong>parents</strong> of vertex \(i\) (the indices \(j\) such that \(X_j \to X_i\) is an edge of \(G\)), and \(X_{\operatorname{pa}(i)}\) is shorthand for the tuple of parent variables \((X_j)_{j \in \operatorname{pa}(i)}\). By convention, if \(\operatorname{pa}(i) = \varnothing\), the factor \(p_i\) reduces to the marginal \(p_i(x_i)\).
+                    </p>
+                    <p>
+                        The network is said to satisfy the <strong>ordered Markov property</strong> if, after numbering the vertices in <strong>topological order</strong> (every edge \(X_i \to X_j\) satisfies \(i &lt; j\)), each variable is conditionally independent of its non-parent predecessors given its parents:
+                        \[
+                        X_i \perp X_{\operatorname{pred}(i) \setminus \operatorname{pa}(i)} \;\big|\; X_{\operatorname{pa}(i)} \quad \text{for all } i,
+                        \]
+                        where \(\operatorname{pred}(i) := \{1, \ldots, i-1\}\) denotes the predecessors of \(X_i\) in the ordering.
+                    </p>
+                </div>
+
+                <p>
+                    Under the ordered Markov property, the joint distribution admits a compact factorization in terms of the local conditional distributions.
+                </p>
+
+                <div class="theorem" id="T-bayesian_network_factorization">
                     <span class="theorem-title">Theorem: Factorization of Bayesian Networks</span>
                     <p>
-                        Let \(X_1, X_2, \ldots, X_n\) be random variables (vertices) arranged in topological order 
-                        (i.e., for every directed edge \(X_i \to X_j\), we have \(i < j\)). The joint distribution 
-                        of a Bayesian network factorizes as
+                        Let \((G, \{p_i\}_{i=1}^n)\) be a Bayesian network satisfying the ordered Markov property. Then the joint distribution of \((X_1, X_2, \ldots, X_n)\) factorizes as
                         \[
-                        P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid \text{Parents}(X_i)),
+                        P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid X_{\operatorname{pa}(i)}).
                         \]
-                        where \(\text{Parents}(X_i)\) denotes the set of variables with directed edges into \(X_i\), 
-                        and a variable with no parents is conditioned on the empty set: \(P(X_i \mid \varnothing) = P(X_i)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Assume the vertices are numbered in topological order. By the chain rule of probability,
+                        \[
+                        P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid X_1, X_2, \ldots, X_{i-1}).
+                        \]
+                        The conditioning set on the right is exactly \(X_{\operatorname{pred}(i)}\), since \(\operatorname{pred}(i) = \{1, \ldots, i-1\}\) under the topological ordering. The ordered Markov property states that, conditional on the parents \(X_{\operatorname{pa}(i)}\), the variable \(X_i\) is independent of the remaining predecessors \(X_{\operatorname{pred}(i) \setminus \operatorname{pa}(i)}\); hence the conditioning set in each factor collapses to the parents:
+                        \[
+                        P(X_i \mid X_{\operatorname{pred}(i)}) = P(X_i \mid X_{\operatorname{pa}(i)}).
+                        \]
+                        Substituting into the chain rule expansion yields the claimed factorization. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Beyond Directed Graphs</h3>
+                    <p>
+                        This page works exclusively with <strong>directed</strong> graphical models, where the parent-child relation supplies a natural ordering. An entirely separate framework — <strong>undirected graphical models</strong>, also known as <strong>Markov random fields</strong> (MRFs) — handles symmetric pairwise interactions where no direction is meaningful. Prototypical examples include the Ising model in statistical physics, pixel grids in image processing (denoising, segmentation), and energy-based neural networks such as Boltzmann machines.
+                    </p>
+                    <p>
+                        In the undirected setting, the ordered Markov property is replaced by a family of Markov properties — <strong>local</strong>, <strong>pairwise</strong>, and <strong>global</strong> — describing conditional independence in terms of graph neighborhoods or separating sets, equivalent to one another under mild conditions. Under a positivity assumption on the joint density, the celebrated <strong>Hammersley-Clifford theorem</strong> guarantees that the joint factorizes as a product of potential functions over the <strong>cliques</strong> of the graph (rather than over parent sets). We will not pursue this direction here.
                     </p>
                 </div>
 
@@ -71,7 +116,7 @@ uses_python: false
                 <h2>Language Models</h2>
 
                 <p>
-                    A <strong>Markov chain</strong> is a linear-chain Bayesian network in which each variable depends 
+                    A <strong>Markov chain</strong> is a linear-chain <a href="#D-bayesian_network" class="ref-link"><strong>Bayesian network</strong></a> in which each variable depends 
                     only on a fixed number of preceding variables. This structure is fundamental across many fields -
                     from physics and biology to finance and natural language processing. While the core idea remains 
                     the same, the applications and methods of analysis can differ depending on the domain. Here, we 
@@ -95,8 +140,8 @@ uses_python: false
                     state depends "only" on the current state.
                 </p>
 
-                 <div class="theorem">
-                    <span class="theorem-title">Definition: Markov Property</span>
+                <div class="theorem" id="D-first_order_markov_property">
+                    <span class="theorem-title">Definition: First-Order Markov Property</span>
                     <p>
                         A sequence of random variables \((y_1, y_2, \ldots, y_T)\) satisfies the <strong>first-order Markov 
                         property</strong> if the conditional distribution of each variable depends only on its immediate 
@@ -112,33 +157,37 @@ uses_python: false
                     \[
                     P(y_{1:T})  = P(y_1) \prod_{t = 2}^{T} P(y_t \mid y_{t-1}).
                     \]
-                    This <strong>memoryless property</strong> dramatically reduces the number of parameters needed: 
+                    This is precisely the <a href="#T-bayesian_network_factorization" class="ref-link"><strong>Bayesian-network factorization</strong></a> specialized to the linear-chain DAG, with each \(\operatorname{pa}(t) = \{t-1\}\) for \(t \geq 2\) and \(\operatorname{pa}(1) = \varnothing\). 
+                    This <strong>memoryless property</strong> (formalized above as the first-order Markov property) dramatically reduces the number of parameters needed: 
                     from \(O(K^T)\) for the full joint distribution to \(O(K^2)\) for the transition probabilities.
 
                     The function \(P(y_t \mid y_{t-1})\) is called the <strong>transition function</strong> 
-                    (or <strong>transition kernel</strong>), and it satisfies the properties of a conditional 
+                    (or <strong>transition kernel</strong> — the latter name extends naturally to continuous state spaces, where the matrix is replaced by a Markov kernel between measurable spaces), and it satisfies the properties of a conditional 
                     distribution: \(P(y_t \mid y_{t-1}) \geq 0\) and \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) 
                     for each state \(j\).
-                </p>      
+                </p>
 
-                 <p>
+                <p>
                     We can compactly represent all transition probabilities using a 
-                    <a href="../Linear_algebra/stochastic.html"><strong>row-stochastic matrix</strong></a> 
+                    <strong>row-stochastic matrix</strong> 
                     (also called a <strong>conditional probability table (CPT)</strong>):
                     \[
                     A_{jk} = P(y_t = k \mid y_{t-1} = j),
                     \]
-                    where each row of \(A\) sums to 1. When the transition probabilities do not change with 
+                    where each row of \(A\) sums to 1. (Linear algebra texts often adopt the 
+                    <a href="../Linear_algebra/stochastic.html#D-stochastic_matrix" class="ref-link"><strong>column-stochastic convention</strong></a>, 
+                    the transpose of ours; both encode the same dynamics — see the linked page for the equivalence.) 
+                    When the transition probabilities do not change with 
                     time (i.e., the same matrix \(A\) applies at every step), the model is said to be 
                     <strong>time-homogeneous</strong> (or <strong>time-invariant</strong>).
                 </p>
 
                 <p>
-                    The Markov assumption can be extended to consider the last \(M\) states( or memory length):
+                    The Markov assumption can be extended to consider the last \(M\) states (or memory length):
                     \[
                     P(y_{1:T}) = P(y_{1 : M}) \prod_{t = M + 1}^T P(y_t \mid y_{t - M : t - 1}).
                     \]
-                    This is known as an <strong>M'th order Markov model</strong>. In language modeling, this is equivalent to an \(M+1\)-gram model.
+                    This is known as an <strong>\(M\)-th order Markov model</strong>. In language modeling, this is equivalent to an \(M+1\)-gram model.
                     For example, if \(M = 2\), 
                     each word depends on the two preceding words, leading to a <strong>trigram model</strong>:
                     \[
@@ -146,7 +195,7 @@ uses_python: false
                     \] 
                 </p>
 
-                 <p>
+                <p>
                     Any higher-order Markov model can be converted into a first-order Markov model by redefining the state to include 
                     the past \(M\) observations. For \(M = 2\), we define \(\tilde{y}_t = (y_{t-1}, y_t)\). Then 
                     \[
@@ -165,7 +214,7 @@ uses_python: false
                     to capture long-range dependencies without explicit enumeration. Beyond language modeling, Markov chains are widely 
                     used in sequential data modeling across many domains. In Bayesian statistics, Markov Chain Monte Carlo (MCMC) methods 
                     exploit the Markov property to construct a stochastic process that converges to a target stationary distribution, 
-                    allowing for efficient sampling from complex, high-dimensional posterior distributions
+                    allowing for efficient sampling from complex, high-dimensional posterior distributions.
                 </p>
 
             </section>
@@ -174,24 +223,22 @@ uses_python: false
                 <h2>Parameter Estimation of Markov Models</h2>
 
                 <p>
-                    We now derive the maximum likelihood estimators for the parameters of a first-order Markov chain. Let the parameters 
+                    We now derive the <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimators</strong></a> for the parameters of a first-order Markov chain. Let the parameters 
                     be \(\boldsymbol{\theta} = (\pi, A)\), where \(\pi_j = P(x_1 = j)\) is the initial state distribution and 
                     \(A_{jk} = P(x_t = k \mid x_{t-1} = j)\) is the transition matrix. 
                     (We switch to the notation \(x\) for observed sequences to distinguish from the language model setting above.)
                 </p>
 
                 <p>
-                    The probability of any particular sequence of length \(T\) is given by
+                    The probability of any particular sequence of length \(T\) follows from the Bayesian-network factorization specialized to the Markov-chain DAG:
                     \[
                     \begin{align*}
-                    P(x_{1:T} \mid \boldsymbol\theta) &= \pi (x_1)A(x_1, x_2)\cdots A(x_{T-1}, x_T) \\\\
+                    P(x_{1:T} \mid \boldsymbol{\theta}) &= \pi_{x_1} \, A_{x_1, x_2} \, A_{x_2, x_3} \cdots A_{x_{T-1}, x_T} \\\\
                                         &= \prod_{j=1}^K (\pi_j)^{\mathbb{1}\{x_1 =j\}} \prod_{t=2}^T \prod_{j=1}^K \prod_{k=1}^K 
-                                        (A_{jk})^{\mathbb{1}\{x_t=k,\, x_{t-1}=j\}}, \tag{1}
+                                        (A_{jk})^{\mathbb{1}\{x_t=k,\, x_{t-1}=j\}}.
                     \end{align*}
                     \]
-                    where \(\pi_j\) is the probability that the first symbol is \(j\), and \(A_{jk}\) is the probability of 
-                    transitioning from state \(j\) to state \(k\). The function \(\mathbb{1}\{\cdot\}\) is the 
-                    <strong>indicator function</strong>.
+                    The first equality is the Bayesian-network factorization for the linear-chain DAG (with \(\operatorname{pa}(t) = \{t-1\}\)). The second rewrites the same probability as a product over \((j, k)\) index pairs by introducing indicator functions, which will let us count transitions efficiently. Here \(\pi_j\) is the probability that the first symbol is \(j\), and \(A_{jk}\) is the probability of transitioning from state \(j\) to state \(k\); \(\mathbb{1}\{\cdot\}\) denotes the <strong>indicator function</strong>.
                 </p>
               
                 <p>
@@ -202,29 +249,33 @@ uses_python: false
                                             0 &\text{otherwise}
                                             \end{cases}.
                     \]
-                    This lets us convert sums and products into counts. In Equation 1, only one transition happens at a time, so only 
+                    This lets us convert sums and products into counts. In the indicator-power form above, only one transition happens at a time, so only 
                     one term contributes in each time step.
                 </p>
 
                 <p>
-                    The <strong>log-likelihood</strong> of a set of sequences \(\mathcal{D} = (x_1, \cdots, x_N)\), where 
-                    \(x_i = (x_{i\,1}, \cdots, x_{i \, T_{i}})\) is a sequence of length \(T_i\) is given by 
+                    The <strong>log-likelihood</strong> of a set of sequences \(\mathcal{D} = (x_1, \ldots, x_N)\), where 
+                    \(x_i = (x_{i\,1}, \ldots, x_{i \, T_{i}})\) is a sequence of length \(T_i\), is given by 
                     \[
                     \begin{align*}
-                    \log P(\mathcal{D} \mid \boldsymbol\theta) &= \sum_{i=1}^N \log P(x_i \mid \boldsymbol\theta) \\\\
+                    \log P(\mathcal{D} \mid \boldsymbol{\theta}) &= \sum_{i=1}^N \log P(x_i \mid \boldsymbol{\theta}) \\\\
                                                 &= \sum_j  N_j^1 \log \pi_j + \sum_j \sum_k N_{jk} \log A_{jk}.
                     \end{align*}
                     \]
+                    The second equality follows by substituting the indicator-power form of \(P(x_i \mid \boldsymbol{\theta})\) above, distributing the logarithm across the products, and exchanging the order of summation: the indicator sums over sequences and time steps then collapse into the counts defined below.
+                </p>
+
+                <p>
                     Define the following counts: 
                 </p>
 
                 <ul style="padding-left: 40px;">
                     <li>How often symbol \(j\) is seen at the "start" of a sequence:</li>
                     \[N_j^1 = \sum_{i=1}^N \mathbb{1}\{x_{i,1} = j\}\]
-                    <li> How often symbol \(j\) is seen "anywhere" in a sequence:</li>
-                    \[N_j = \sum_k N_{jk}\]
                     <li>Count of transitions from \(j\) to \(k\):</li>
-                    \[N_{jk}  = \sum_{i=1}^N \sum_{t=1} ^{T_i -1} \mathbb{1}\{x_{i,t}  = j, x_{i, t+1} = k\}\]   
+                    \[N_{jk} = \sum_{i=1}^N \sum_{t=1}^{T_i - 1} \mathbb{1}\{x_{i,t} = j, x_{i, t+1} = k\}\]
+                    <li>Total number of transitions originating from state \(j\):</li>
+                    \[N_j = \sum_k N_{jk}\]   
                 </ul>
 
                 <p>
@@ -235,6 +286,7 @@ uses_python: false
                     &\sum_k A_{jk} = 1 \text{ for each } j
                     \end{align*}
                     \]
+                    (We omit the non-negativity constraints \(\pi_j \geq 0\) and \(A_{jk} \geq 0\); they are automatically satisfied by the closed-form solutions below since the counts are non-negative.)
                 </p>
 
                 <p>
@@ -263,7 +315,7 @@ uses_python: false
                 <p>
                     For \(A_{jk}\), we introduce Lagrange multiplier \(\mu\) and define 
                     \[
-                    \mathcal{L_A} = \sum_j \sum_k N_{jk} \log A_{jk} + \sum_j \mu_j \left(1 - \sum_k A_{jk} \right).
+                    \mathcal{L}_A = \sum_j \sum_k N_{jk} \log A_{jk} + \sum_j \mu_j \left(1 - \sum_k A_{jk} \right).
                     \]
                     Then
                     \[
@@ -292,6 +344,10 @@ uses_python: false
                     We simulate 14 days of weather observations across 10 cities (i.e., 10 independent sequences, each of length 14) 
                     generated from a known transition matrix, then estimate the initial distribution \(\hat{\pi}\) and transition 
                     matrix \(\hat{A}\) from the simulated data.
+                </p>
+
+                <p>
+                    The estimator implements the closed-form MLE solutions derived above: \(\hat{\pi}_j = N_j^1 / \sum_{j'} N_{j'}^1\) and \(\hat{A}_{jk} = N_{jk} / N_j\). The corner case \(N_j = 0\) (a state never visited) is handled by setting the corresponding row of \(\hat{A}\) to zero — a pragmatic choice that foreshadows the sparse-data discussion in the next section, where a Bayesian prior will replace this ad-hoc fix.
                 </p>
                         
                 <div class="code-container"> 
@@ -347,8 +403,11 @@ uses_python: false
                                             N_jk[j, k] += 1
                                 
                                     pi_hat = N1 / np.sum(N1) # Estimate start probabilities π̂
-                                    row_sums = np.sum(N_jk, axis=1, keepdims=True)
-                                    A_hat = np.divide(N_jk, row_sums, out=np.zeros_like(N_jk), where=row_sums != 0) # Estimate transition matrix Â
+                                    row_sums = np.sum(N_jk, axis=1, keepdims=True) # row_sums[j] = N_j (total transitions originating from state j)
+                                    # Estimate transition matrix Â. If state j is never visited (row_sums[j] = 0), 
+                                    # leave A_hat[j, :] as zeros to avoid division-by-zero — this sparse-zero case 
+                                    # motivates the Dirichlet prior introduced in the next section.
+                                    A_hat = np.divide(N_jk, row_sums, out=np.zeros_like(N_jk), where=row_sums != 0)
                                 
                                     return pi_hat, A_hat
                                 
@@ -406,7 +465,7 @@ uses_python: false
                     To address these issues, we often need <strong>smoothing</strong> or <strong>Bayesian approaches</strong> to generalize better. 
                 </p>
                 <p>
-                    The simplest case is the <strong>uniform Dirichlet prior</strong> with \(\alpha_1 = \alpha_2 = \cdots = \alpha_K = \alpha\).
+                    The simplest case is the <strong>symmetric Dirichlet prior</strong> with \(\alpha_1 = \alpha_2 = \cdots = \alpha_K = \alpha\) for some single concentration parameter \(\alpha > 0\). When \(\alpha = 1\), this further reduces to the <strong>uniform distribution on the simplex</strong> (sometimes called the <strong>flat Dirichlet prior</strong>), giving every transition probability vector \(A_{j:}\) equal density a priori.
                 </p>
 
                 <div class="theorem">
@@ -416,7 +475,7 @@ uses_python: false
                         transitioning from state \(j\) to each of the \(K\) possible states, is given a 
                         <strong>symmetric Dirichlet prior</strong>:
                         \[
-                        A_{j:} \sim \text{Dir}(\alpha \, \boldsymbol{1}).
+                        A_{j:} \sim \operatorname{Dir}(\alpha \, \boldsymbol{1}).
                         \]
                     </p>
                     <p>
@@ -436,13 +495,13 @@ uses_python: false
                     To derive this, assume that for the \(j\)-th row, we have observed counts \(N_{jk}\) for transitioning to state \(k\). 
                     The total number of transitions from state \(j\) is
                     \[
-                    N_j = \sum_{k=1}^K N_{jk}
+                    N_j = \sum_{k=1}^K N_{jk}.
                     \]  
                     The likelihood under a multinomial model is: 
                     \[
-                    P(\{N_{jk} \mid A_{j:}\}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
+                    P(\{N_{jk}\} \mid A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
                     \]
-                    Now, with the uniform Dirichlet prior, we have:
+                    Now, with the symmetric Dirichlet prior, we have:
                     \[
                     P(A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{\alpha -1}.
                     \]
@@ -450,7 +509,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    By Bayes's rule, the posterior is proportional to the product of the likelihood and the prior:
+                    By <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' rule</strong></a>, the posterior is proportional to the product of the likelihood and the prior:
                     \[
                     \begin{align*}
                     P(A_{j:} \mid \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
@@ -459,8 +518,9 @@ uses_python: false
                     \]
                     Thus, the posterior distribution for \(A_{j:}\) is a Dirichlet distribution:
                     \[
-                    A_{j:} \mid \{N_{jk}\} \sim \text{ Dir } (N_{j1} +\alpha, N_{j2} +\alpha, \cdots, \, N_{jK} + \alpha).
+                    A_{j:} \mid \{N_{jk}\} \sim \operatorname{Dir}(N_{j1} +\alpha, N_{j2} +\alpha, \ldots, N_{jK} + \alpha).
                     \]
+                    The fact that a Dirichlet prior combined with a multinomial-form likelihood yields a Dirichlet posterior is the canonical example of a <a href="bayesian.html#D-conjugate_prior" class="ref-link"><strong>conjugate prior</strong></a> relationship — the prior and posterior live in the same parametric family, so updating reduces to a simple update of the hyperparameters.
                 </p>
                 <p>
                     There are two common choices for an estimator from a posterior distribution: the posterior mean and the mode (MAP estimate). For a Dirichlet 
@@ -473,8 +533,9 @@ uses_python: false
                     \]
                     This estimator is often used in practice because it is always defined. The <strong>mode</strong> (the "actual" MAP estimate) is given by
                     \[
-                    \text{mode }(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
+                    \operatorname{mode}(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
                     \]
+                    (Strictly speaking, this formula assumes \(\alpha > 1\) so that the posterior Dirichlet has an interior mode; for \(\alpha \leq 1\) the density concentrates on the boundary of the simplex and the notion of mode is degenerate. The case \(\alpha = 1\) below is best read as the formal limit of this expression.)
                 </p>
 
                 <p>
@@ -485,7 +546,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    It is important to note that the symmetric Dirichlet prior assumes a <strong>uniform prior</strong> (each outcome is "equally" likely a priori), which 
+                    It is important to note that the symmetric Dirichlet prior treats all transition probabilities <strong>exchangeably a priori</strong> (each outcome receives the same prior weight), which 
                     may not be realistic in complex models. For more structured problems where capturing group-level variation is important, 
                     <strong>hierarchical Bayesian methods</strong> provide a more flexible approach: each sequence (e.g., each city in our weather example) has 
                     its own transition matrix, but these matrices are drawn from a common hyper-distribution, allowing the model to share statistical 
@@ -496,15 +557,17 @@ uses_python: false
                     <h3>The Algorithmic Bridge</h3>
                     <p>
                         The <strong>transition matrix</strong> formalism links Markov chains directly to 
-                        <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> in linear algebra. 
+                        <a href="../Linear_algebra/stochastic.html#D-stochastic_matrix" class="ref-link"><strong>stochastic matrices</strong></a> in linear algebra. 
                         Here, the <strong>stationary distribution</strong> is characterized as the left eigenvector corresponding to the eigenvalue 1, 
                         describing the long-run behavior of the system—a principle that powers the <strong>PageRank</strong> algorithm.
                     </p>
                     <p>
                         In <a href="../Machine_learning/intro_RL.html"><strong>reinforcement learning</strong></a>, Markov chains 
                         generalize to <strong>Markov decision processes (MDPs)</strong>, where an agent's actions dynamically influence transition 
-                        probabilities. Furthermore, the Bayesian framework for estimating transition counts (using Dirichlet priors) provides the foundation for 
-                        <strong>hidden Markov models (HMMs)</strong> and <strong>conditional random fields (CRFs)</strong> used in sequence modeling.
+                        probabilities. The Bayesian framework for estimating transition counts (using Dirichlet priors) extends naturally to 
+                        <strong>hidden Markov models (HMMs)</strong>, which augment Markov chains with latent states and emission distributions. 
+                        <strong>Conditional random fields (CRFs)</strong> offer a complementary, <em>discriminative</em> approach to sequence labeling — 
+                        they are undirected graphical models (in the Markov-random-field family alluded to earlier in this page) that model the conditional distribution of labels given inputs, typically trained by regularized maximum likelihood rather than by Bayesian conjugate analysis.
                     </p>
                 </div>
                 
