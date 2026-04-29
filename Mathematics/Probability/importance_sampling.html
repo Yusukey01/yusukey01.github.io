@@ -65,7 +65,7 @@ uses_python: false
                 <p>
                     <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
                     (or <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples 
-                    to account for the distribution mismatch. This idea- reusing samples collected under one distribution to estimate 
+                    to account for the distribution mismatch. This idea—reusing samples collected under one distribution to estimate 
                     expectations under another - is one of the most broadly applicable principles in computational statistics.
                 </p>
 
@@ -73,7 +73,7 @@ uses_python: false
                     Importance sampling has become essential in modern AI, particularly in the following domains:
                 </p>
 
-                <h3>1. <a href="..\Machine_learning\intro_RL.html">Reinforcement Learning</a> from Human Feedback (RLHF)</h3>
+                <h3>1. <a href="../Machine_learning/intro_RL.html">Reinforcement Learning</a> from Human Feedback (RLHF)</h3>
                 <p>
                     Modern large language models (LLMs) like ChatGPT are fine-tuned using RLHF, which fundamentally relies on 
                     importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to 
@@ -98,7 +98,7 @@ uses_python: false
                 <h3>3. Variational Inference and Deep Generative Models</h3>
                 <p>
                     Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter bounds on the 
-                    <a href="../Machine_learning/vae.html#vae"><strong>evidence lower bound (ELBO)</strong></a>, 
+                    <a href="../Machine_learning/vae.html#D-elbo" class="ref-link"><strong>evidence lower bound (ELBO)</strong></a>, 
                     leading to better generative models and more accurate uncertainty estimates in Bayesian deep learning.
                 </p>
 
@@ -144,7 +144,7 @@ uses_python: false
                     \(q(\mathbf{x}) > 0\) whenever \(\pi(\mathbf{x}) \neq 0\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-importance_weights">
                     <span class="theorem-title">Definition: Importance Weights</span>
                     <p>
                         Given a target distribution \(\pi(\mathbf{x})\) and a proposal distribution \(q(\mathbf{x})\) with \(q(\mathbf{x}) > 0\) 
@@ -154,7 +154,7 @@ uses_python: false
                         \]
                         For a sample \(\mathbf{x}_n \sim q\), the weight 
                         \[
-                        \tilde{w}_n \triangleq w(\mathbf{x}_n) = \pi(\mathbf{x}_n)/q(\mathbf{x}_n)
+                        \tilde{w}_n := w(\mathbf{x}_n) = \pi(\mathbf{x}_n)/q(\mathbf{x}_n)
                         \] 
                         measures how much more (or less) likely \(\mathbf{x}_n\) is under the target compared to the proposal. 
                         Note that while \(\pi\) and \(q\) are normalized distributions, the weights \(\tilde{w}_n\) do not sum to any particular 
@@ -167,7 +167,7 @@ uses_python: false
                     If we draw \(N_s\) samples \(\mathbf{x}_1, \ldots, \mathbf{x}_{N_s} \sim q(\mathbf{x})\), 
                     the <strong>direct importance sampling estimator</strong> is:
                     \[
-                    \hat{I}_{\text{IS}} = \frac{1}{N_s} \sum_{n=1}^{N_s} \tilde{w}_n \, \varphi(\mathbf{x}_n) \approx \mathbb{E}[\varphi(\mathbf{x})].
+                    \hat{I}_{\text{IS}} := \frac{1}{N_s} \sum_{n=1}^{N_s} \tilde{w}_n \, \varphi(\mathbf{x}_n).
                     \]
                 </p>
 
@@ -185,7 +185,7 @@ uses_python: false
                 <p>
                     While the estimator is unbiased, its variance depends critically on the choice of \(q\):
                     \[
-                    \text{Var}[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\left(\mathbb{E}_q[\tilde{w}_n^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
+                    \operatorname{Var}[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\left(\mathbb{E}_q[\tilde{w}_n^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
                     \]
                 </p>
 
@@ -196,7 +196,7 @@ uses_python: false
                     in two equivalent ways:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-effective_sample_size">
                     <span class="theorem-title">Definition: Effective Sample Size</span>
                     <p>
                         The <strong>effective sample size (ESS)</strong> of a weighted sample 
@@ -216,8 +216,8 @@ uses_python: false
                     negligible contribution to the estimate.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Requirements for Direct Importance Sampling</span>
+                <div class="insight-box">
+                    <h3>Requirements for Direct Importance Sampling</h3>
                     <p>
                         For direct importance sampling to be valid and practical:
                     </p>
@@ -270,7 +270,7 @@ uses_python: false
                     \]
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-self_normalized_importance_sampling">
                     <span class="theorem-title">Definition: Self-Normalized Importance Sampling</span>
                     <p>
                         The <strong>self-normalized importance sampling (SNIS) estimator</strong> is
@@ -287,7 +287,7 @@ uses_python: false
                 <p>
                     This estimator is <strong>biased</strong> for finite \(N_s\) because it involves a ratio of random variables, 
                     but it is <strong>consistent</strong>: as \(N_s \to \infty\), the bias vanishes and the estimator converges 
-                    <a href="..\Calculus\lebesgue.html#c_f"><strong>almost surely</strong></a> to the true expectation.
+                    <a href="convergence.html#D-almost_sure_convergence" class="ref-link"><strong>almost surely</strong></a> to the true expectation.
                 </p>
 
                 <p>
@@ -310,7 +310,7 @@ uses_python: false
                     When the target distribution and proposal distribution have substantial distributional mismatch, 
                     importance sampling often fails due to extremely high variance in the importance weights. 
                     Most samples from the proposal will have near-zero weight under the target, while a few rare samples 
-                    will have enormous weights - a phenomenon known as <strong>weight degeneracy</strong>. 
+                    will have enormous weights—a phenomenon known as <strong>weight degeneracy</strong>. 
                     This leads to a low effective sample size, meaning that despite drawing many samples, 
                     few actually contribute meaningfully to the estimate, making the results unreliable. 
                     <strong>Annealed importance sampling (AIS)</strong> addresses this fundamental limitation by introducing a sequence 
@@ -517,8 +517,8 @@ uses_python: false
                 </p>
                 
                 <h3>1. Weight Diagnostics</h3>
-                <div class="theorem">
-                    <span class="theorem-title">Key Diagnostic Metrics</span>
+                <div class="insight-box">
+                    <h3>Key Diagnostic Metrics</h3>
                     <ul>
                         <li><strong>Effective Sample Size (ESS)</strong>: Should be \(> N_s/2\) for reliable estimates</li>
                         <li><strong>Maximum weight ratio</strong>: \(\max_i W_i\) should be \(< 0.1\) to avoid single-sample domination</li>
@@ -570,9 +570,9 @@ uses_python: false
 
                 <p>
                     Importance sampling, SNIS, and AIS complete our treatment of Monte Carlo methods for 
-                    Bayesian computation. Throughout Parts 19 and 20, we have worked with parametric models 
+                    Bayesian computation. Throughout the Monte Carlo and importance sampling material, we have worked with parametric models 
                     where uncertainty is over a finite-dimensional parameter \(\theta\). In 
-                    <a href="gaussian_process.html"><strong>Part 21: Gaussian Processes</strong></a>, we take 
+                    <a href="gaussian_process.html"><strong>Gaussian Processes</strong></a>, we take 
                     a fundamentally different perspective: instead of placing priors over parameters, we place 
                     priors directly over <em>functions</em>, leading to nonparametric Bayesian models with 
                     built-in uncertainty quantification.
