@@ -43,8 +43,9 @@ uses_python: false
                     Rather than placing a <a href="bayesian.html"><strong>prior distribution</strong></a> over a finite-dimensional parameter vector, 
                     we place a prior directly over <em>functions</em> \(p(f)\), and update it after observing data to obtain the posterior \(p(f \mid \mathcal{D})\). 
                     This function-space view builds on two key prerequisites: 
-                    the <a href="mvn.html"><strong>multivariate normal distribution</strong></a>, which provides the conditioning 
-                    formulas we will need, and <a href="../Linear_algebra/symmetry.html#qf"><strong>positive definite matrices</strong></a>, which 
+                    the <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a>, 
+                    whose conditioning identities we will use to derive the predictive posterior, 
+                    and <a href="../Linear_algebra/symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive definite matrices</strong></a>, which 
                     ensure that our covariance structures are well-defined.
                 </p>
 
@@ -52,7 +53,7 @@ uses_python: false
                     The key insight is to think of a function as an infinite-dimensional vector. 
                     Consider a Gaussian random vector \(\boldsymbol{f} = [f_1, f_2, \ldots, f_N]^\top\), characterized by its 
                     mean \(\boldsymbol{\mu} = \mathbb{E}[\boldsymbol{f}]\) and 
-                    covariance \(\boldsymbol{\Sigma} = \mathrm{Cov}[\boldsymbol{f}]\). 
+                    covariance \(\boldsymbol{\Sigma} = \operatorname{Cov}[\boldsymbol{f}]\). 
                 </p>
 
                 <p>
@@ -68,7 +69,7 @@ uses_python: false
                     of input points, then \(f\) is said to follow a Gaussian process.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-gaussian_process">
                     <span class="theorem-title">Definition: Gaussian Process (GP)</span>
                     <p>
                         A <strong>Gaussian process</strong> is a collection of random variables, any finite subset of which has a joint 
@@ -82,14 +83,15 @@ uses_python: false
                         \]
                         and 
                         \[
-                        \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \mathrm{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')]. 
+                        \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \operatorname{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')]. 
                         \]
-                        The covariance function \(\mathcal{K}\) must be a positive definite <strong>Mercer kernel</strong> to ensure that 
-                        the Gram matrix 
+                        The covariance function \(\mathcal{K}\) is required to be a positive definite <strong>Mercer kernel</strong>: 
+                        equivalently, the Gram matrix 
                         \[
                         \boldsymbol{K}_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)
                         \]
-                        is positive semi-definite for any set of inputs.
+                        is positive semi-definite for every finite set of inputs. This is precisely the condition that the resulting 
+                        finite-dimensional joint distribution is a valid multivariate Gaussian.
                     </p>
                 </div>
 
@@ -125,38 +127,51 @@ uses_python: false
                 <p>
                     While the kernel function intuitively measures similarity between inputs, not every function can serve 
                     as a valid covariance function in a Gaussian process.  
-                    To ensure that the resulting covariance matrix is positive definite for any finite set of inputs - 
-                    a requirement for the GP to define a proper multivariate Gaussian distribution - 
+                    To ensure that the resulting covariance matrix is positive semi-definite for every finite set of inputs — 
+                    a requirement for the GP to define a valid multivariate Gaussian distribution — 
                     we restrict our attention to <strong>Mercer kernels</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-mercer_kernel">
                     <span class="theorem-title">Definition: Mercer Kernel</span>
                     <p>
-                        A <strong>Mercer kernel</strong> (often referred to as a <strong>positive definite kernel</strong>) 
-                        is a symmetric function:
+                        A <strong>Mercer kernel</strong> (also called a <strong>positive definite kernel</strong>) 
+                        is a symmetric function 
                         \[
                         \mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}
                         \]
-                        such that for all \(N \in \mathbb{N}\) and all \(\boldsymbol{x}_i \in \mathcal{X}\)
+                        such that for every \(N \in \mathbb{N}\), every choice of distinct points 
+                        \(\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N \in \mathcal{X}\), and every choice of scalars 
+                        \(c_1, \ldots, c_N \in \mathbb{R}\),
                         \[
-                        \sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0
+                        \sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0.
                         \]
-                        for any choice of numbers  \(c_i \in \mathbb{R}\). 
-                        
-                        The equality allowed when \(\forall i, c_i =0\). For a strictly positive definite kernel, equality 
-                        holds only when \(c_i = 0\) for all \(i\).
+                        Equivalently, the Gram matrix 
+                        \(\boldsymbol{K} = [\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)]_{i,j=1}^N\) 
+                        is positive semi-definite for every finite collection of distinct points. 
+                        A Mercer kernel is called <strong>strictly positive definite</strong> if equality holds only when 
+                        \(c_1 = \cdots = c_N = 0\) — equivalently, every such Gram matrix is strictly positive definite.
                     </p>
                 </div>
 
                 <p>
-                    This means that the corresponding Gram matrix 
-                    \( \boldsymbol{K} = [\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)]_{i,j=1}^N \)
-                    is <strong>positive semidefinite</strong>. Note that this condition does NOT require each individual kernel 
-                    value \(\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\) to be nonnegative.
+                    Note that this condition does NOT require each individual kernel value 
+                    \(\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\) to be nonnegative; only the quadratic form 
+                    built from the Gram matrix \(\boldsymbol{K}\) must be.
                 </p>
 
-                 <p>
+                <p>
+                    The definition above captures everything required to use Mercer kernels in Gaussian processes: 
+                    a finite-sample positive semi-definiteness condition that ensures every Gram matrix 
+                    \(\boldsymbol{K}\) defines a valid covariance for a multivariate Gaussian. A deeper 
+                    treatment — including the connection to <strong>reproducing kernel Hilbert spaces</strong> 
+                    and Mercer's integral-operator decomposition 
+                    \(\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \sum_n \lambda_n e_n(\boldsymbol{x}) e_n(\boldsymbol{x}')\) — 
+                    is developed later in the curriculum, where the same notion appears under the name 
+                    <em>positive definite kernel</em> in the more general functional-analytic setting.
+                </p>
+
+                <p>
                     We often focus on <strong>stationary kernels</strong>, which depend only on the difference between inputs,
                     \(\boldsymbol{r} = \boldsymbol{x} - \boldsymbol{x}'\), and not on their absolute locations. 
                     In many cases, only the Euclidean distance between inputs matters:
@@ -167,8 +182,9 @@ uses_python: false
 
                 <p>
                     One of the most widely used stationary kernels in practice is the <strong>radial basis function (RBF) kernel</strong> 
-                    (also introduced in the context of 
-                    <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>classification</strong></a>):
+                    (also used in 
+                    <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>classification</strong></a>, 
+                    where its random Fourier-feature approximation enables linear-time training):
                     \[
                     \begin{align*}
                     \mathcal{K}_\text{RBF}(r ; \ell) &= \exp \left( -\frac{r^2}{2\ell^2}\right) \\\\
@@ -176,7 +192,7 @@ uses_python: false
                     \end{align*}
                     \]          
                     where \(\ell > 0\) is the <strong>length-scale</strong> parameter controlling how quickly the correlation 
-                    between points decays with distance. This kernel is also known as the  <strong>Gaussian kernel</strong>.
+                    between points decays with distance. This kernel is also known as the <strong>Gaussian kernel</strong>.
                 </p>
                 
                 <p>
@@ -185,7 +201,7 @@ uses_python: false
                     \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
                     = \sigma^2 \exp \left( - \frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r}\right).
                     \]
-                    In the case \(\boldsymbol{\Sigma}\) is diagonal, i.e. \(\boldsymbol{\Sigma} = \mathrm{diag}(\ell_1^2, \ldots, \ell_D^2)\),
+                    In the case \(\boldsymbol{\Sigma}\) is diagonal, i.e. \(\boldsymbol{\Sigma} = \operatorname{diag}(\ell_1^2, \ldots, \ell_D^2)\),
                     we obtain the <strong>Automatic Relevance Determination (ARD) kernel</strong>:
                     \[
                     \mathcal{K}_\text{ARD}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
@@ -286,25 +302,33 @@ uses_python: false
                     where each observation follows
                     \[
                     y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad 
-                    \epsilon_n \sim \mathcal{N}(0, \sigma_y^2).
+                    \epsilon_n \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, \sigma_y^2),
                     \]
+                    and the noise \(\{\epsilon_n\}\) is independent of the latent function \(f\).
                     Under this model, the covariance of the noisy observations is
                     \[
                     \begin{align*}
-                    \mathrm{Cov}[y_i, y_j] 
-                    &= \mathrm{Cov}[f_i, f_j] + \mathrm{Cov}[\epsilon_i, \epsilon_j] \\\\
+                    \operatorname{Cov}[y_i, y_j] 
+                    &= \operatorname{Cov}[f_i, f_j] + \operatorname{Cov}[\epsilon_i, \epsilon_j] \\\\
                     &= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \, \mathbb{1}\{i = j\},
                     \end{align*}
                     \]
                     so that
                     \[
-                    \mathrm{Cov}[\boldsymbol{y} \mid \boldsymbol{X}] 
+                    \operatorname{Cov}[\boldsymbol{y} \mid \boldsymbol{X}] 
                     = \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N.
                     \]
 
                     Because a Gaussian process defines a joint Gaussian distribution 
-                    over any collection of function values, we can express both 
-                    the noisy training outputs and the noise-free test values together as
+                    over any finite collection of function values, we can express both 
+                    the noisy training outputs and the noise-free test values together. 
+                    For test inputs \(\boldsymbol{X}_* = \{\boldsymbol{x}_{*,m}\}_{m=1}^M\), let 
+                    \(\boldsymbol{f}_* = [f(\boldsymbol{x}_{*,1}), \ldots, f(\boldsymbol{x}_{*,M})]^\top\) and 
+                    \(\boldsymbol{\mu}_* = [m(\boldsymbol{x}_{*,1}), \ldots, m(\boldsymbol{x}_{*,M})]^\top\). 
+                    Define the cross-covariance and test-test covariance blocks by 
+                    \((\boldsymbol{K}_{X,*})_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_{*,j})\) and 
+                    \((\boldsymbol{K}_{*,*})_{ij} = \mathcal{K}(\boldsymbol{x}_{*,i}, \boldsymbol{x}_{*,j})\). 
+                    Then
                     \[
                     \begin{bmatrix} 
                     \boldsymbol{y} \\ 
@@ -350,11 +374,13 @@ uses_python: false
                     \]
                 </p>
 
-                 <p>
-                    These formulas are a direct application of the <a href="mvn.html"><strong>multivariate normal conditioning</strong></a>. 
+                <p>
+                    These formulas follow from the standard conditioning identities for the 
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> 
+                    applied to the joint above. 
                     The posterior mean \(\boldsymbol{\mu}_{*|X}\) is a linear combination of the observed outputs \(\boldsymbol{y}\), weighted 
                     by the kernel similarities between test and training points. The posterior covariance \(\boldsymbol{\Sigma}_{*|X}\) starts 
-                    from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the information gained from the observations - the more data 
+                    from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the information gained from the observations — the more data 
                     we observe near a test point, the smaller the posterior uncertainty.
                 </p>
 
@@ -362,7 +388,7 @@ uses_python: false
                     The computational bottleneck is the inversion of the \(N \times N\) matrix \((\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N)\), which 
                     costs \(O(N^3)\) in time and \(O(N^2)\) in storage. This cubic scaling limits standard GP regression to moderate dataset sizes 
                     (typically \(N \lesssim 10^4\)). For larger datasets, sparse approximations (inducing point methods), 
-                    <a href="../Machine_learning/intro_classification.html"><strong>random Fourier features</strong></a>, 
+                    <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>random Fourier features</strong></a>, 
                     and structured kernel interpolation provide scalable alternatives.
                 </p>
 
