@@ -47,6 +47,12 @@ uses_python: false
                 </p>
 
                 <p>
+                    <strong>Convention.</strong> Throughout this page, \(\pi\) denotes the target distribution and 
+                    \(q\) the proposal distribution. The policy notation \(\pi_\theta(a \mid s)\) appearing in the 
+                    RLHF example below is a separate, conventional reuse of the symbol \(\pi\) in reinforcement learning.
+                </p>
+
+                <p>
                     Standard <a href="monte_carlo.html"><strong>Monte Carlo estimation</strong></a> would draw independent samples 
                     \(\mathbf{x}_1, \ldots, \mathbf{x}_{N_s} \sim \pi(\mathbf{x})\) and 
                     approximate:
@@ -66,7 +72,7 @@ uses_python: false
                     <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> 
                     (or <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples 
                     to account for the distribution mismatch. This idea—reusing samples collected under one distribution to estimate 
-                    expectations under another - is one of the most broadly applicable principles in computational statistics.
+                    expectations under another—is one of the most broadly applicable principles in computational statistics.
                 </p>
 
                 <p>
@@ -79,7 +85,7 @@ uses_python: false
                     importance sampling. The <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to 
                     enable multiple gradient updates from the same batch of collected data:
                     \[
-                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\min\left(\frac{\pi_\theta(a|s)}{\mu(a|s)} A(s,a), \text{clip}\left(\frac{\pi_\theta(a|s)}{\mu(a|s)}, 1-\epsilon, 1+\epsilon\right) A(s,a)\right)\right]
+                    L(\theta) = \mathbb{E}_{(s,a) \sim \mu}\left[\min\left(\frac{\pi_\theta(a \mid s)}{\mu(a \mid s)} A(s,a), \text{clip}\left(\frac{\pi_\theta(a \mid s)}{\mu(a \mid s)}, 1-\epsilon, 1+\epsilon\right) A(s,a)\right)\right]
                     \]
                     where \(\mu\) is the behavior policy (data collection policy) and \(\pi_\theta\) is the current policy being optimized. 
                     The importance ratio \(\pi_\theta/\mu\) allows us to reuse data collected under \(\mu\) for multiple updates 
@@ -97,8 +103,8 @@ uses_python: false
 
                 <h3>3. Variational Inference and Deep Generative Models</h3>
                 <p>
-                    Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter bounds on the 
-                    <a href="../Machine_learning/vae.html#D-elbo" class="ref-link"><strong>evidence lower bound (ELBO)</strong></a>, 
+                    Importance-weighted autoencoders (IWAE) use importance sampling to obtain tighter lower bounds on the 
+                    log-evidence than the standard <a href="../Machine_learning/vae.html#D-elbo" class="ref-link"><strong>evidence lower bound (ELBO)</strong></a>, 
                     leading to better generative models and more accurate uncertainty estimates in Bayesian deep learning.
                 </p>
 
@@ -128,20 +134,20 @@ uses_python: false
                 <h2>Direct Importance Sampling</h2>
                 
                 <p>
-                    The key mathematical insight behind importance sampling is the change of measure. We can rewrite the expectation under 
-                    the target distribution \(\pi(\mathbf{x})\) as an expectation under some proposal distribution \(q(\mathbf{x})\):
+                    The key mathematical insight behind importance sampling is the change of measure. 
+                    Suppose \(q(\mathbf{x})\) is a proposal distribution satisfying the <strong>support condition</strong>: 
+                    \(q(\mathbf{x}) > 0\) whenever \(\pi(\mathbf{x}) > 0\). Then we can rewrite the expectation under 
+                    \(\pi(\mathbf{x})\) as an expectation under \(q(\mathbf{x})\):
                     \[
                     \begin{align*}
-                    I &= \int \varphi(\mathbf{x}) \pi(\mathbf{x}) \, d\mathbf{x} \\\\
-                      &= \int \varphi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})} q(\mathbf{x}) \, d\mathbf{x} \\\\
-                      &= \mathbb{E}_{q}\left[\varphi(\mathbf{x}) \frac{\pi(\mathbf{x})}{q(\mathbf{x})}\right]
+                    I &= \int \varphi(\mathbf{x}) \, \pi(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \int_{\{\pi > 0\}} \varphi(\mathbf{x}) \, \frac{\pi(\mathbf{x})}{q(\mathbf{x})} \, q(\mathbf{x}) \, d\mathbf{x} \\\\
+                      &= \mathbb{E}_{q}\!\left[\varphi(\mathbf{x}) \, \frac{\pi(\mathbf{x})}{q(\mathbf{x})}\right].
                     \end{align*}
                     \]
-                </p>
-
-                <p>
-                    This identity holds for any \(q(\mathbf{x})\) that satisfies the support condition: 
-                    \(q(\mathbf{x}) > 0\) whenever \(\pi(\mathbf{x}) \neq 0\).
+                    The second equality uses the support condition, which guarantees that the ratio \(\pi/q\) is well-defined on the integration domain. 
+                    The third equality extends the integration to all of \(\{q > 0\}\) by setting the integrand to zero where \(\pi = 0\); this redefinition 
+                    does not change the integral, since \(\varphi \cdot \pi = 0\) on that set.
                 </p>
 
                 <div class="theorem" id="D-importance_weights">
@@ -172,22 +178,47 @@ uses_python: false
                 </p>
 
                 <p>
-                    This estimator is <strong>unbiased</strong>:
+                    This estimator is <strong>unbiased</strong>. Since \(\mathbf{x}_1, \ldots, \mathbf{x}_{N_s}\) are i.i.d.\ samples from \(q\), 
+                    linearity of expectation gives
                     \[
                     \begin{align*}
-                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \mathbb{E}_q\left[\frac{1}{N_s}\sum_{n=1}^{N_s} \tilde{w}_n(\mathbf{x}_n)\varphi(\mathbf{x}_n)\right] \\\\
-                                                      &= \mathbb{E}_q[\tilde{w}_n(\mathbf{x})\varphi(\mathbf{x})] \\\\
-                                                      &= I
+                    \mathbb{E}_q[\hat{I}_{\text{IS}}] &= \frac{1}{N_s}\sum_{n=1}^{N_s} \mathbb{E}_q\!\left[w(\mathbf{x}_n)\,\varphi(\mathbf{x}_n)\right] \\\\
+                                                      &= \mathbb{E}_q\!\left[w(\mathbf{X})\,\varphi(\mathbf{X})\right] \\\\
+                                                      &= I,
                     \end{align*}
                     \]
+                    where the second equality uses that all terms have the same distribution (we write \(\mathbf{X} \sim q\) for a single representative), 
+                    and the third invokes the change-of-measure identity above.
                 </p>
 
-                <p>
-                    While the estimator is unbiased, its variance depends critically on the choice of \(q\):
-                    \[
-                    \operatorname{Var}[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\left(\mathbb{E}_q[\tilde{w}_n^2(\mathbf{x})\varphi^2(\mathbf{x})] - I^2\right)
-                    \]
-                </p>
+                <div class="theorem" id="T-direct_is_variance">
+                    <span class="theorem-title">Theorem: Variance of the Direct IS Estimator</span>
+                    <p>
+                        Under the support condition, with \(\mathbf{x}_1, \ldots, \mathbf{x}_{N_s} \overset{\text{i.i.d.}}{\sim} q\), 
+                        let \(\mathbf{X} \sim q\) denote a single representative sample. If 
+                        \(\mathbb{E}_q[w(\mathbf{X})^2 \varphi(\mathbf{X})^2] < \infty\), then
+                        \[
+                        \operatorname{Var}_q[\hat{I}_{\text{IS}}] = \frac{1}{N_s}\!\left(\mathbb{E}_q[w(\mathbf{X})^2 \varphi(\mathbf{X})^2] - I^2\right).
+                        \]
+                    </p>
+                </div>
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(Y_n := w(\mathbf{x}_n)\varphi(\mathbf{x}_n)\). Since the \(\mathbf{x}_n\) are i.i.d.\ under \(q\), so are the \(Y_n\). Hence
+                        \[
+                        \operatorname{Var}_q[\hat{I}_{\text{IS}}] = \operatorname{Var}_q\!\left[\frac{1}{N_s} \sum_{n=1}^{N_s} Y_n\right]
+                        = \frac{1}{N_s^2} \sum_{n=1}^{N_s} \operatorname{Var}_q[Y_n]
+                        = \frac{1}{N_s} \operatorname{Var}_q[Y_1],
+                        \]
+                        where the second equality uses independence of the \(Y_n\), and the third their identical distribution. 
+                        The single-sample variance follows from \(\operatorname{Var}[Y] = \mathbb{E}[Y^2] - (\mathbb{E}[Y])^2\) and unbiasedness:
+                        \[
+                        \operatorname{Var}_q[Y_1] = \mathbb{E}_q[w(\mathbf{X})^2 \varphi(\mathbf{X})^2] - \left(\mathbb{E}_q[w(\mathbf{X})\varphi(\mathbf{X})]\right)^2 
+                        = \mathbb{E}_q[w(\mathbf{X})^2 \varphi(\mathbf{X})^2] - I^2.
+                        \]
+                    </p>
+                </div>
 
                 <p>
                     If the importance weights vary dramatically, a few samples will dominate the estimate, leading to high variance. 
@@ -202,16 +233,18 @@ uses_python: false
                         The <strong>effective sample size (ESS)</strong> of a weighted sample 
                         \(\{(\mathbf{x}_n, \tilde{w}_n)\}_{n=1}^{N_s}\) is defined as
                         \[
-                        \text{ESS} = \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} \tilde{w}_n^2}
+                        \operatorname{ESS} := \frac{\left(\sum_{n=1}^{N_s} \tilde{w}_n\right)^2}{\sum_{n=1}^{N_s} \tilde{w}_n^2}
                         = \frac{1}{\sum_{n=1}^{N_s} W_n^2},
                         \]
-                        where \(W_n = \tilde{w}_n / \sum_{n'=1}^{N_s} \tilde{w}_{n'}\) are the normalized weights.
+                        where \(W_n := \tilde{w}_n / \sum_{n'=1}^{N_s} \tilde{w}_{n'}\) are the normalized weights. 
+                        The second equality follows by dividing numerator and denominator of the first expression by 
+                        \(\left(\sum_n \tilde{w}_n\right)^2\).
                     </p>
                 </div>
 
                 <p>
                     The ESS ranges from 1 (maximum degeneracy, where all weight concentrates on a single sample) to \(N_s\) 
-                    (no degeneracy, where all weights are equal). A good rule of thumb is that if \(\text{ESS} < N_s/2\), the 
+                    (no degeneracy, where all weights are equal). A good rule of thumb is that if \(\operatorname{ESS} < N_s/2\), the 
                     proposal distribution \(q(\mathbf{x})\) should be reconsidered, as this indicates that many samples have 
                     negligible contribution to the estimate.
                 </p>
@@ -249,25 +282,30 @@ uses_python: false
 
                 <p>
                     <strong>Self-normalized importance sampling (SNIS)</strong> addresses this by working with unnormalized weights 
-                    and normalizing them within the estimator itself. We can rewrite the expectation as a ratio of two integrals:
+                    and normalizing them within the estimator itself. The key identity rewrites the expectation as a ratio whose 
+                    numerator and denominator can both be approximated by Monte Carlo:
                     \[
                     \begin{align*}
-                    \mathbb{E}[\varphi(\mathbf{x})] &= \int \varphi(\mathbf{x}) \pi(\mathbf{x})d\mathbf{x} \\\\
-                                                    &= \frac{\int \varphi(\mathbf{x})\tilde{\gamma}(\mathbf{x})d\mathbf{x}}
-                                                            {\int \tilde{\gamma}(\mathbf{x})d\mathbf{x}} \\\\
-                                                    &= \frac{\int \varphi(\mathbf{x})\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}}
-                                                            {\int \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}q(\mathbf{x})d\mathbf{x}} \\\\
-                                                    &= \frac{\mathbb{E}_{q}\left[\varphi(\mathbf{x}) \frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
-                                                            {\mathbb{E}_{q}\left[\frac{\tilde{\gamma}(\mathbf{x})}{q(\mathbf{x})}\right]}
+                    \mathbb{E}_\pi[\varphi(\mathbf{x})] &= \int \varphi(\mathbf{x}) \, \pi(\mathbf{x}) \, d\mathbf{x} \\\\
+                                                        &= \frac{\int \varphi(\mathbf{x}) \, \tilde{\gamma}(\mathbf{x}) \, d\mathbf{x}}
+                                                                {\int \tilde{\gamma}(\mathbf{x}) \, d\mathbf{x}} \\\\
+                                                        &= \frac{\mathbb{E}_q\!\left[\varphi(\mathbf{x}) \, \tilde{\gamma}(\mathbf{x})/q(\mathbf{x})\right]}
+                                                                {\mathbb{E}_q\!\left[\tilde{\gamma}(\mathbf{x})/q(\mathbf{x})\right]}.
                     \end{align*}
                     \]
+                    The second equality uses \(\tilde{\gamma} = Z\pi\): the factor \(Z\) appears in both the numerator and the 
+                    denominator (since \(\int \tilde{\gamma} \, d\mathbf{x} = Z\)) and therefore cancels. The third equality applies the 
+                    change-of-measure identity to both integrals, requiring the support condition 
+                    \(q(\mathbf{x}) > 0\) whenever \(\tilde{\gamma}(\mathbf{x}) > 0\).
                 </p>
 
                 <p>
-                    Sampling \(\mathbf{x}_n \sim q(\mathbf{x})\) for \(n = 1, \ldots, N_s\), we define the <strong>unnormalized importance weights</strong>:
+                    Sampling \(\mathbf{x}_n \sim q(\mathbf{x})\) for \(n = 1, \ldots, N_s\), we redefine the importance weights using the unnormalized target:
                     \[
-                    \tilde{w}_n = \frac{\tilde{\gamma}(\mathbf{x}_n)}{q(\mathbf{x}_n)}
+                    \tilde{w}_n := \frac{\tilde{\gamma}(\mathbf{x}_n)}{q(\mathbf{x}_n)}.
                     \]
+                    These weights differ from the importance weights defined earlier by a factor of \(Z\); 
+                    the SNIS estimator below is invariant under this rescaling because the factor cancels between numerator and denominator.
                 </p>
 
                 <div class="theorem" id="D-self_normalized_importance_sampling">
@@ -276,18 +314,63 @@ uses_python: false
                         The <strong>self-normalized importance sampling (SNIS) estimator</strong> is
                         \[
                         \hat{I}_{\text{SNIS}} 
-                        = \frac{\sum_{n=1}^{N_s} \tilde{w}_n \, \varphi(\mathbf{x}_n)}{\sum_{n=1}^{N_s} \tilde{w}_n}
+                        := \frac{\sum_{n=1}^{N_s} \tilde{w}_n \, \varphi(\mathbf{x}_n)}{\sum_{n=1}^{N_s} \tilde{w}_n}
                         = \sum_{n=1}^{N_s} W_n \, \varphi(\mathbf{x}_n),
                         \]
                         where \(\tilde{w}_n = \tilde{\gamma}(\mathbf{x}_n)/q(\mathbf{x}_n)\) are the unnormalized importance weights and 
-                        \(W_n = \tilde{w}_n / \sum_{n'} \tilde{w}_{n'}\) are the normalized weights.
+                        \(W_n := \tilde{w}_n / \sum_{n'=1}^{N_s} \tilde{w}_{n'}\) are the normalized weights.
                     </p>
                 </div>
 
                 <p>
-                    This estimator is <strong>biased</strong> for finite \(N_s\) because it involves a ratio of random variables, 
-                    but it is <strong>consistent</strong>: as \(N_s \to \infty\), the bias vanishes and the estimator converges 
-                    <a href="convergence.html#D-almost_sure_convergence" class="ref-link"><strong>almost surely</strong></a> to the true expectation.
+                    This estimator is <strong>biased</strong> for finite \(N_s\) (the expectation of a ratio is not generally the 
+                    ratio of expectations), but it is <strong>consistent</strong>:
+                </p>
+
+                <div class="theorem" id="T-snis_consistency">
+                    <span class="theorem-title">Theorem: Consistency of the SNIS Estimator</span>
+                    <p>
+                        Assume the support condition \(q(\mathbf{x}) > 0\) whenever \(\tilde{\gamma}(\mathbf{x}) > 0\), 
+                        \(Z := \int \tilde{\gamma}(\mathbf{x}) \, d\mathbf{x} < \infty\), and 
+                        \(\mathbb{E}_q[|w(\mathbf{X}) \varphi(\mathbf{X})|] < \infty\), where \(w(\mathbf{x}) := \tilde{\gamma}(\mathbf{x})/q(\mathbf{x})\). Then
+                        \[
+                        \hat{I}_{\text{SNIS}} \xrightarrow{a.s.} \mathbb{E}_\pi[\varphi(\mathbf{X})] = I \quad \text{as } N_s \to \infty.
+                        \]
+                    </p>
+                </div>
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Write \(\hat{I}_{\text{SNIS}} = A_{N_s} / B_{N_s}\), where
+                        \[
+                        A_{N_s} := \frac{1}{N_s}\sum_{n=1}^{N_s} \tilde{w}_n \, \varphi(\mathbf{x}_n), \qquad
+                        B_{N_s} := \frac{1}{N_s}\sum_{n=1}^{N_s} \tilde{w}_n.
+                        \]
+                        (Multiplying numerator and denominator of \(\hat{I}_{\text{SNIS}}\) by \(1/N_s\) preserves the ratio.) 
+                        Since the \(\mathbf{x}_n\) are i.i.d.\ under \(q\), the 
+                        <a href="convergence.html#T-SLLN" class="ref-link"><strong>Strong Law of Large Numbers</strong></a> gives
+                        \[
+                        A_{N_s} \xrightarrow{a.s.} \mathbb{E}_q\!\left[w(\mathbf{X}) \, \varphi(\mathbf{X})\right], \qquad
+                        B_{N_s} \xrightarrow{a.s.} \mathbb{E}_q\!\left[w(\mathbf{X})\right].
+                        \]
+                        Both expectations evaluate explicitly via change of measure:
+                        \[
+                        \mathbb{E}_q[w(\mathbf{X})] = \int \tilde{\gamma}(\mathbf{x}) \, d\mathbf{x} = Z, \qquad
+                        \mathbb{E}_q[w(\mathbf{X}) \, \varphi(\mathbf{X})] = \int \varphi(\mathbf{x}) \, \tilde{\gamma}(\mathbf{x}) \, d\mathbf{x} = Z \cdot I,
+                        \]
+                        where the second uses \(\tilde{\gamma} = Z\pi\) and \(I = \int \varphi \, \pi \, d\mathbf{x}\). Since both convergences hold a.s.\ on the same 
+                        probability space, the joint convergence \((A_{N_s}, B_{N_s}) \xrightarrow{a.s.} (Z I, Z)\) follows automatically. With \(Z > 0\), the 
+                        function \((a, b) \mapsto a/b\) is continuous at \((Z I, Z)\). Applying the
+                        <a href="convergence.html#T-continuous_mapping" class="ref-link"><strong>continuous mapping theorem</strong></a>,
+                        \[
+                        \hat{I}_{\text{SNIS}} = \frac{A_{N_s}}{B_{N_s}} \xrightarrow{a.s.} \frac{Z \cdot I}{Z} = I.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The estimator converges <a href="convergence.html#D-almost_sure_convergence" class="ref-link"><strong>almost surely</strong></a> 
+                    to the true expectation as \(N_s \to \infty\); the bias, finite at every fixed \(N_s\), vanishes in the limit.
                 </p>
 
                 <p>
@@ -323,19 +406,26 @@ uses_python: false
                     \[
                     p_0(\mathbf{x}) \propto f_0(\mathbf{x}),
                     \]
-                    where sampling is difficult because \(p_0\) may be high-dimensional and/or multimodal.
+                    where sampling is difficult because \(p_0\) may be high-dimensional and/or multimodal. 
+                    Here \(f_0\) is the unnormalized target (the same role played by \(\tilde{\gamma}\) in the previous discussion); 
+                    we adopt the AIS-specific notation \(f_0, f_n\) to emphasize the indexed family of intermediate distributions introduced below.
                 </p>
                 <p>
-                    Suppose that we have a proposal distribution from which we can easily sample (e.g., prior distribution): 
+                    Suppose also that we have a proposal distribution from which we can easily sample (e.g., the prior in a Bayesian setting):
                     \[
                     p_n(\mathbf{x}) \propto f_n(\mathbf{x}).
                     \]
-                    We construct a sequence of \(n+1\) intermediate distributions moving from \(p_n\) to \(p_0\) as follows:
+                    The key idea of AIS is to bridge the gap between proposal and target by constructing a sequence of \(n+1\) intermediate 
+                    distributions \(p_j \propto f_j\), \(j = 0, 1, \ldots, n\), each closer to its neighbors than \(p_0\) is to \(p_n\):
                     \[
-                    f_j (\mathbf{x}) = f_0(\mathbf{x})^{\beta_j}f_n(\mathbf{x})^{1 - \beta_j}
+                    f_j(\mathbf{x}) = f_0(\mathbf{x})^{\beta_j} f_n(\mathbf{x})^{1 - \beta_j},
                     \]
-                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong>.
-                    Each \(\beta_j\) acts as an inverse temperature parameter interpolating between the proposal and the target.
+                    where \(1 = \beta_0 > \beta_1 > \cdots > \beta_n = 0\) defines an <strong>annealing schedule</strong>. 
+                    At the endpoints \(\beta_0 = 1\) gives \(f_0\) (the target) and \(\beta_n = 0\) gives \(f_n\) (the proposal); 
+                    intermediate values produce geometric mixtures.
+                    Each \(\beta_j\) acts as an <strong>inverse temperature</strong> in the statistical-physics sense: small \(\beta_j\) corresponds to 
+                    "high temperature" (closer to the easy proposal), large \(\beta_j\) to "low temperature" (closer to the complicated target). 
+                    The AIS sampling procedure traverses these distributions in reverse, starting from \(p_n\) and ending at \(p_0\).
                 </p>
 
                 <p>
@@ -397,73 +487,106 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Consider the distribution on an extended state space 
-                        \(\mathbf{v} = (\mathbf{v}_0, \ldots, \mathbf{v}_n)\):
-                        \[
-                        \begin{align*}
-                        p(\mathbf{v}) \propto \varphi(\mathbf{v}) 
-                        &= f_0(\mathbf{v}_0) \tilde{T}_0(\mathbf{v}_0, \mathbf{v}_1) \tilde{T}_1(\mathbf{v}_1, \mathbf{v}_2) \cdots \tilde{T}_{n-1}(\mathbf{v}_{n-1}, \mathbf{v}_n) \\\\
-                        &\propto p(\mathbf{v}_0)p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}) 
-                        \end{align*}
-                        \]
-                        where \(\tilde{T}_j\) is the reversal of \(T_j\):
-                        \[
-                        \begin{align*}
-                        \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v})p_j(\mathbf{v}') / p_j(\mathbf{v}) \\\\
-                                                            &=  T_j(\mathbf{v}', \mathbf{v})f_j(\mathbf{v}') / f_j(\mathbf{v})
-                        \end{align*}
-                        \]
+                        The goal is to show that the AIS weight in Equation (1) is a valid importance weight for some target density on the 
+                        extended state space \((\mathbf{v}_0, \mathbf{v}_1, \ldots, \mathbf{v}_n)\). The key technical device is to 
+                        define an <em>extended target distribution</em> on this product space whose marginal on \(\mathbf{v}_0\) is exactly 
+                        \(p_0\), and a corresponding extended proposal whose ratio against the target reproduces the AIS weight.
                     </p>
                     <p>
-                        The invariance of \(f_j\) with respect to \(T_j\) ensures these are valid transitions. 
-                        Summing \(\varphi(\mathbf{v})\) over all states except \(\mathbf{v}_0\) yields 
-                        \[
-                        \sum_{\mathbf{v}_1, \cdots, \mathbf{v}_n} \varphi(\mathbf{v}) = f_0(\mathbf{v}_0),
-                        \]
-                        and thus by sampling from \(p(\mathbf{v})\), we can effectively sample from \(p_0(\mathbf{x})\). 
-                    </p>
-                    <p>
-                        Moreover, we can sample on this extended state space using the AIS procedure, which corresponds to 
-                        the following proposal:
+                        Consider the following unnormalized density on the extended state space:
                         \[
                         \begin{align*}
-                        q(\mathbf{v}) &\propto g(\mathbf{v}) = f_n(\mathbf{v}_n)T_{n-1}(\mathbf{v}_n, \mathbf{v}_{n-1}) \cdots T_1(\mathbf{v}_2, \mathbf{v}_1) T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
-                                    &\propto p(\mathbf{v}_n)p(\mathbf{v}_{n-1} \mid \mathbf{v}_n)\cdots p(\mathbf{v}_1 \mid \mathbf{v}_0).
+                        p(\mathbf{v}) \propto \tilde{f}(\mathbf{v}) 
+                        &= f_0(\mathbf{v}_0) \, \tilde{T}_0(\mathbf{v}_0, \mathbf{v}_1) \, \tilde{T}_1(\mathbf{v}_1, \mathbf{v}_2) \cdots \tilde{T}_{n-1}(\mathbf{v}_{n-1}, \mathbf{v}_n) \\\\
+                        &\propto p(\mathbf{v}_0) \, p(\mathbf{v}_1 \mid \mathbf{v}_0) \cdots p(\mathbf{v}_n \mid \mathbf{v}_{n-1}),
                         \end{align*}
                         \]
-                        One can show that importance weights:
+                        where \(\tilde{T}_j\) is the <strong>reversal</strong> of \(T_j\) with respect to \(p_j\), defined by
                         \[
-                        w = \frac{\varphi(\mathbf{v}_0, \cdots, \mathbf{v}_n)}{g(\mathbf{v}_0, \cdots, \mathbf{v}_n)} 
+                        \begin{align*}
+                        \tilde{T}_j(\mathbf{v}, \mathbf{v}') &= T_j(\mathbf{v}', \mathbf{v}) \, p_j(\mathbf{v}') \, / \, p_j(\mathbf{v}) \\\\
+                                                            &= T_j(\mathbf{v}', \mathbf{v}) \, f_j(\mathbf{v}') \, / \, f_j(\mathbf{v}).
+                        \end{align*}
                         \]
-                        are given by Equation (1). Since marginals of the sampled sequences from this extended model are equivalent to 
-                        samples from \(p_0(\mathbf{x})\), we see that we are using the correct weights. 
+                        The second equality holds because the normalization constant \(Z_j\) of \(p_j = f_j/Z_j\) cancels in the ratio. 
+                        Note that we use a new symbol \(\tilde{f}(\mathbf{v})\) for the unnormalized extended density to avoid clashing with the target 
+                        function \(\varphi(\mathbf{x})\) introduced in the previous sections.
+                    </p>
+                    <p>
+                        The invariance of \(p_j\) with respect to \(T_j\) ensures that each \(\tilde{T}_j\) is a valid Markov transition kernel. 
+                        Explicitly,
+                        \[
+                        \int \tilde{T}_j(\mathbf{v}, \mathbf{v}') \, d\mathbf{v}'
+                        = \frac{1}{f_j(\mathbf{v})} \int T_j(\mathbf{v}', \mathbf{v}) \, f_j(\mathbf{v}') \, d\mathbf{v}'
+                        = \frac{f_j(\mathbf{v})}{f_j(\mathbf{v})} = 1,
+                        \]
+                        where the second equality uses the invariance condition 
+                        \(\int T_j(\mathbf{v}', \mathbf{v}) \, p_j(\mathbf{v}') \, d\mathbf{v}' = p_j(\mathbf{v})\), 
+                        rescaled by \(Z_j\) to remove normalization. To see that the \(\mathbf{v}_0\)-marginal of \(p(\mathbf{v})\) is \(p_0\), 
+                        we integrate out \(\mathbf{v}_1, \ldots, \mathbf{v}_n\):
+                        \[
+                        \int \tilde{f}(\mathbf{v}) \, d\mathbf{v}_1 \cdots d\mathbf{v}_n = f_0(\mathbf{v}_0),
+                        \]
+                        where successive applications of \(\int \tilde{T}_j(\cdot, \mathbf{v}_{j+1}) \, d\mathbf{v}_{j+1} = 1\) collapse the chain from the right. 
+                        Hence sampling from \(p(\mathbf{v})\) yields, as a byproduct, samples from \(p_0(\mathbf{x})\) via \(\mathbf{x} := \mathbf{v}_0\).
+                    </p>
+                    <p>
+                        The AIS procedure samples on this extended state space using a forward chain starting from \(p_n\). This corresponds to 
+                        the proposal:
+                        \[
+                        \begin{align*}
+                        q(\mathbf{v}) \propto g(\mathbf{v}) &= f_n(\mathbf{v}_n) \, T_{n-1}(\mathbf{v}_n, \mathbf{v}_{n-1}) \cdots T_1(\mathbf{v}_2, \mathbf{v}_1) \, T_0(\mathbf{v}_1, \mathbf{v}_0) \\\\
+                                                            &\propto p(\mathbf{v}_n) \, p(\mathbf{v}_{n-1} \mid \mathbf{v}_n) \cdots p(\mathbf{v}_0 \mid \mathbf{v}_1).
+                        \end{align*}
+                        \]
+                        The importance weight on the extended space is then
+                        \[
+                        w = \frac{\tilde{f}(\mathbf{v}_0, \ldots, \mathbf{v}_n)}{g(\mathbf{v}_0, \ldots, \mathbf{v}_n)}.
+                        \]
+                        Substituting the definition of \(\tilde{T}_j\) into \(\tilde{f}\) and dividing by \(g\) produces a telescoping cancellation 
+                        of the forward kernels \(T_j\), leaving exactly the product of ratios \(f_{j-1}(\mathbf{v}_{j-1}) / f_j(\mathbf{v}_{j-1})\) 
+                        appearing in Equation (1). The detailed cancellation is carried out in <em>Neal (2001), Section 3</em>. 
+                        Since the marginal of the extended target on \(\mathbf{v}_0\) is \(p_0\), expectations under \(p_0\) can be approximated 
+                        by self-normalized importance sampling on the extended space using these weights.
                     </p>
                 </div>
 
                 <p>
-                    A key application of AIS is to estimate the ratio of partition functions. Since
+                    A key application of AIS is to estimate the ratio of partition functions. Since the marginal claim above gives 
+                    \(\int \tilde{f}(\mathbf{v}) \, d\mathbf{v}_1 \cdots d\mathbf{v}_n = f_0(\mathbf{v}_0)\), integrating once more yields
                     \[
-                    Z_0 = \int f_0 (\mathbf{x})d\mathbf{x} = \int \varphi(\mathbf{v})d\mathbf{v}
+                    Z_0 = \int f_0(\mathbf{x}) \, d\mathbf{x} = \int \tilde{f}(\mathbf{v}) \, d\mathbf{v},
                     \]
-                    and
+                    and an analogous identity for the proposal side gives
                     \[
-                    Z_n =  \int f_n (\mathbf{x})d\mathbf{x} = \int g(\mathbf{v})d\mathbf{v}
+                    Z_n = \int f_n(\mathbf{x}) \, d\mathbf{x} = \int g(\mathbf{v}) \, d\mathbf{v}.
                     \]
-                    we have: 
+                    Therefore:
                     \[
                     \begin{align*}
-                    \frac{Z_0}{Z_n} &= \frac{\int \varphi(\mathbf{v})d\mathbf{v}}{\int g(\mathbf{v})d\mathbf{v}} \\\\
-                                    &= \frac{\int \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}g(\mathbf{v})d\mathbf{v}} {\int g(\mathbf{v})d\mathbf{v}} \\\\
-                                    &= \mathbb{E}_g \left[ \frac{\varphi(\mathbf{v})}{g(\mathbf{v})}\right] \\\\
-                                    &\approx \frac{1}{S}\sum_{s=1}^S W_s.
+                    \frac{Z_0}{Z_n} &= \frac{\int \tilde{f}(\mathbf{v}) \, d\mathbf{v}}{\int g(\mathbf{v}) \, d\mathbf{v}} \\\\
+                                    &= \frac{\int \frac{\tilde{f}(\mathbf{v})}{g(\mathbf{v})} g(\mathbf{v}) \, d\mathbf{v}}{\int g(\mathbf{v}) \, d\mathbf{v}} \\\\
+                                    &= \mathbb{E}_g\!\left[\frac{\tilde{f}(\mathbf{v})}{g(\mathbf{v})}\right] \\\\
+                                    &\approx \frac{1}{S}\sum_{s=1}^S w_s,
                     \end{align*}
                     \]
-                    where \(W_s = \varphi(\mathbf{v}_s) / g(\mathbf{v}_s)\), and \(S\) is the number of independent AIS runs.
+                    where \(w_s = \tilde{f}(\mathbf{v}_s) / g(\mathbf{v}_s)\) is the AIS weight from Equation (1) for the \(s\)-th run, 
+                    and \(S\) is the number of independent AIS runs. By <em>abuse of notation</em>, \(\mathbb{E}_g\) here denotes 
+                    the expectation under the normalized distribution \(q \propto g\); the normalization constant \(Z_n\) cancels between 
+                    numerator and denominator in the ratio above, so the formula is unaffected by which version of \(g\) is used.
                 </p>
 
                 <p>
-                    If \(f_0\) represents a prior and \(f_n\) the posterior, we can estimate the model evidence (marginal likelihood) \(Z_n = p(\mathcal{D})\) using the above equation, 
-                    provided the normalization constant \(Z_0\) of the prior is known.
+                    A common application is <strong>Bayesian model evidence estimation</strong>. In this use case the AIS roles are 
+                    arranged so that \(f_0(\boldsymbol{\theta}) = p(\boldsymbol{\theta})\) is the prior 
+                    (with known normalization \(Z_0 = 1\)) and \(f_n(\boldsymbol{\theta}) = p(\boldsymbol{\theta}) \, p(\mathcal{D} \mid \boldsymbol{\theta})\) 
+                    is the unnormalized posterior. The above ratio formula then yields
+                    \[
+                    Z_n = p(\mathcal{D}) = \frac{Z_n}{Z_0} \approx \frac{1}{S}\sum_{s=1}^S w_s,
+                    \]
+                    so AIS provides a direct estimator of the marginal likelihood. Note that the assignment of <em>which</em> distribution is 
+                    \(f_0\) and which is \(f_n\) depends on the goal: for posterior sampling the easier prior plays the role of the proposal \(p_n\); 
+                    for evidence estimation, the prior is taken as \(p_0\) instead so that \(Z_n\) becomes the quantity of interest.
                 </p>
 
                 <p>
@@ -517,13 +640,18 @@ uses_python: false
                 </p>
                 
                 <h3>1. Weight Diagnostics</h3>
+                <p>
+                    The following metrics monitor the health of the importance weights at a glance. The Effective Sample Size 
+                    quantifies overall weight degeneracy, while the maximum-weight ratio, coefficient of variation, and entropy 
+                    capture complementary aspects of how concentrated or dispersed the weight distribution is.
+                </p>
                 <div class="insight-box">
                     <h3>Key Diagnostic Metrics</h3>
                     <ul>
-                        <li><strong>Effective Sample Size (ESS)</strong>: Should be \(> N_s/2\) for reliable estimates</li>
-                        <li><strong>Maximum weight ratio</strong>: \(\max_i W_i\) should be \(< 0.1\) to avoid single-sample domination</li>
-                        <li><strong>Coefficient of variation</strong>: \(\text{CV} = \frac{\text{std}(\tilde{w})}{\text{mean}(\tilde{w})}\) should be \(< 1\) for stable estimation</li>
-                        <li><strong>Weight entropy</strong>: \(H(W) = -\sum_i W_i \log W_i\) measures weight uniformity (higher is better)</li>
+                        <li><strong>Effective Sample Size (ESS)</strong>: Should be \(> N_s/2\) for reliable estimates (rule of thumb)</li>
+                        <li><strong>Maximum weight ratio</strong>: \(\max_i W_i\) should be small (typically \(< 0.1\) is recommended) to avoid single-sample domination</li>
+                        <li><strong>Coefficient of variation</strong>: \(\operatorname{CV} = \frac{\operatorname{std}(\tilde{w})}{\operatorname{mean}(\tilde{w})}\) should be \(< 1\) for stable estimation</li>
+                        <li><strong>Weight entropy</strong>: \(H(W) = -\sum_i W_i \log W_i\) measures weight uniformity (higher is better; here \(\log\) is the natural logarithm, so \(H\) is measured in <strong>nats</strong>)</li>
                     </ul>
                 </div>
                 
@@ -535,7 +663,7 @@ uses_python: false
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Solution</th>
                     </tr>
                     <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;">ESS ≪ \(N_s\)</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">\(\operatorname{ESS} \ll N_s\)</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">Poor proposal choice</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">Use heavier-tailed proposal or AIS</td>
                     </tr>
