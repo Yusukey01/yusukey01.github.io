@@ -20,6 +20,8 @@ uses_python: false
         <div class="container">
             <div class="topic-nav">
                 <a href="#intro">Introduction</a>
+                <a href="#continuous">Continuous Parameters: Squared and Absolute Error Loss</a>
+                <a href="#frequentist">Frequentist Risk, Bayes Risk, and Minimax</a>
                 <a href="#class">Classification (Zero-One Loss)</a>
                 <a href="#CM">Confusion Matrix</a>
                 <a href="#ROC">Receiver Operating Characteristic Curves (ROC) Curves</a>
@@ -32,9 +34,9 @@ uses_python: false
                 <h2>Introduction</h2>
 
                 <p>
-                    In <a href="bayesian.html"><strong>Part 14</strong></a>, we introduced Bayesian inference and derived 
-                    posterior distributions for unknown parameters. In <a href="markov.html"><strong>Part 18</strong></a>, 
-                    we developed Markov chains for modeling sequential data, noting that Markov Chain Monte Carlo (MCMC) 
+                    Earlier, we introduced <a href="bayesian.html"><strong>Bayesian inference</strong></a> and derived 
+                    posterior distributions for unknown parameters. We will later develop <a href="markov.html"><strong>Markov chains</strong></a> 
+                    for modeling sequential data, noting that Markov Chain Monte Carlo (MCMC) 
                     methods use the Markov property to sample from complex posterior distributions.
                 </p>
                
@@ -60,7 +62,7 @@ uses_python: false
                     For any action \(a\), the <strong>posterior expected loss</strong> (or <strong>posterior risk</strong>) is defined as follows.
                 </p>
                
-                <div class="theorem">
+                <div class="theorem" id="D-posterior_expected_loss">
                     <span class="theorem-title">Definition: Posterior Expected Loss</span>
                     <p>
                         Given evidence \(\boldsymbol{x}\) and a loss function \(l(h, a)\), the <strong>posterior expected loss</strong> of action 
@@ -76,7 +78,7 @@ uses_python: false
                     of the section.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-bayes_estimator">
                     <span class="theorem-title">Definition: Bayes Estimator</span>
                     <p>
                         The <strong>Bayes estimator</strong> (or <strong>Bayes decision rule</strong> / <strong>optimal policy</strong>) 
@@ -101,9 +103,523 @@ uses_python: false
 
                 <p>
                     The power of this framework lies in its generality: by choosing different loss functions, we recover many 
-                    familiar estimators and decision rules as special cases. We begin with the most common setting in machine 
-                    learning - classification under zero-one loss.
+                    familiar estimators and decision rules as special cases. We will see three such recoveries in this page. 
+                    For continuous parameters, squared-error loss yields the posterior mean and absolute-error loss yields the 
+                    posterior median. For discrete labels, zero-one loss yields the maximum a posteriori (MAP) estimate, 
+                    providing the decision-theoretic justification for choosing the most probable class at inference time. 
+                    After establishing these special cases, we will then connect the Bayesian formulation above to its 
+                    frequentist counterpart, showing that the two perspectives are operationally equivalent under mild regularity.
                 </p>
+
+            </section>
+
+            <section id="continuous" class="section-content">
+                <h2>Continuous Parameters: Squared and Absolute Error Loss</h2>
+
+                <p>
+                    We first specialize the framework to the setting where the unknown state of nature is a continuous 
+                    real-valued parameter. To match standard usage in parametric statistics, we write \(\theta \in \Theta \subseteq \mathbb{R}\) 
+                    in place of \(h \in \mathcal{H}\); the action space \(\mathcal{A}\) is also taken to be \(\Theta\), so 
+                    that an action \(a\) is a candidate value for \(\theta\). This is the situation of <a href="mle.html#D-point_estimator" class="ref-link"><strong>point estimation</strong></a> 
+                    revisited from a decision-theoretic standpoint. We treat the scalar case (\(\Theta \subseteq \mathbb{R}\)) for clarity 
+                    of exposition; the vector extension (\(\boldsymbol{\theta} \in \Theta \subseteq \mathbb{R}^k\) with squared-norm 
+                    loss \(\|\boldsymbol{\theta} - \boldsymbol{a}\|^2\)) follows the same logic and is developed in our later treatment of regression.
+                </p>
+
+                <p>
+                    Two loss functions are particularly natural in this setting: <strong>squared-error loss</strong>, which 
+                    penalizes large deviations heavily, and <strong>absolute-error loss</strong>, which is more robust to 
+                    outliers. Each leads to a familiar Bayesian point estimator as the corresponding optimal action.
+                </p>
+
+                <h3>Squared-Error Loss and the Posterior Mean</h3>
+
+                <div class="theorem" id="D-squared_error_loss">
+                    <span class="theorem-title">Definition: Squared-Error Loss</span>
+                    <p>
+                        For a continuous parameter \(\theta \in \Theta\) and an action \(a \in \Theta\), the 
+                        <strong>squared-error loss</strong> is
+                        \[
+                        l_2(\theta, a) := (\theta - a)^2.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Under this loss, the posterior expected loss admits a clean closed-form minimizer: the posterior mean.
+                </p>
+
+                <div class="theorem" id="T-squared_error_optimal_posterior_mean">
+                    <span class="theorem-title">Theorem: Posterior Mean Minimizes Posterior Expected Squared-Error Loss</span>
+                    <p>
+                        Suppose the posterior \(p(\theta \mid \boldsymbol{x})\) has finite second moment, i.e., 
+                        \(\mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta^2] < \infty\). Then under squared-error loss, 
+                        the posterior expected loss
+                        \[
+                        \rho(a \mid \boldsymbol{x}) = \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[(\theta - a)^2]
+                        \]
+                        is uniquely minimized at the <strong>posterior mean</strong>
+                        \[
+                        a^* = \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta].
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Expanding the square inside the expectation and using linearity,
+                        \[
+                        \rho(a \mid \boldsymbol{x}) = \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta^2] - 2 a \, \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta] + a^2.
+                        \]
+                        The first term does not depend on \(a\); the remaining terms form a quadratic in \(a\). 
+                        Differentiating with respect to \(a\),
+                        \[
+                        \frac{d \rho(a \mid \boldsymbol{x})}{d a} = -2 \, \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta] + 2 a,
+                        \]
+                        and setting the derivative to zero gives \(a^* = \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[\theta]\). 
+                        The second derivative is \(2 > 0\), so this critical point is the unique global minimum. The finite 
+                        second-moment hypothesis ensures that \(\rho(a \mid \boldsymbol{x})\) is finite (and hence the minimum 
+                        is attained at a finite value).
+                    </p>
+                </div>
+
+                <p>
+                    The posterior mean is therefore the Bayes estimator under squared-error loss, often denoted 
+                    \(\hat{\theta}_{\text{MMSE}}\) (<strong>minimum mean squared error</strong>). This connects directly to the 
+                    bias–variance decomposition \(\operatorname{MSE}(\hat{\theta}) = \operatorname{Var}(\hat{\theta}) + \operatorname{Bias}(\hat{\theta})^2\) 
+                    we developed in the context of <a href="mle.html#D-bias" class="ref-link"><strong>maximum likelihood estimation</strong></a>: the 
+                    posterior mean is the unique action that, integrated against the posterior, minimizes this combined 
+                    error metric.
+                </p>
+
+                <h3>Absolute-Error Loss and the Posterior Median</h3>
+
+                <div class="theorem" id="D-absolute_error_loss">
+                    <span class="theorem-title">Definition: Absolute-Error Loss</span>
+                    <p>
+                        For a continuous parameter \(\theta \in \Theta\) and an action \(a \in \Theta\), the 
+                        <strong>absolute-error loss</strong> is
+                        \[
+                        l_1(\theta, a) := |\theta - a|.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Squared-error loss penalizes large deviations more aggressively than small ones — a deviation of 2 incurs 
+                    four times the loss of a deviation of 1. Absolute-error loss is linear in the magnitude of the deviation, 
+                    making it more robust when the posterior has heavy tails. The optimal action under this loss is the 
+                    posterior median.
+                </p>
+
+                <div class="theorem" id="T-absolute_error_optimal_posterior_median">
+                    <span class="theorem-title">Theorem: Posterior Median Minimizes Posterior Expected Absolute-Error Loss</span>
+                    <p>
+                        Suppose the posterior \(p(\theta \mid \boldsymbol{x})\) has finite first moment, i.e., 
+                        \(\mathbb{E}_{p(\theta \mid \boldsymbol{x})}[|\theta|] < \infty\), and admits a continuous CDF 
+                        \(F(\theta \mid \boldsymbol{x}) := \mathbb{P}(\theta \leq a \mid \boldsymbol{x})\). Then the posterior 
+                        expected loss
+                        \[
+                        \rho(a \mid \boldsymbol{x}) = \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[|\theta - a|]
+                        \]
+                        is minimized at any <strong>posterior median</strong> \(m^*\), i.e., any value satisfying 
+                        \(F(m^* \mid \boldsymbol{x}) = \tfrac{1}{2}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Split the expectation according to the sign of \(\theta - a\):
+                        \[
+                        \rho(a \mid \boldsymbol{x}) = \int_{-\infty}^{a} (a - \theta) \, p(\theta \mid \boldsymbol{x}) \, d\theta 
+                        + \int_{a}^{\infty} (\theta - a) \, p(\theta \mid \boldsymbol{x}) \, d\theta.
+                        \]
+                        We differentiate with respect to \(a\) using <strong>Leibniz's rule</strong>, which states that
+                        \[
+                        \frac{d}{da} \int_{\alpha(a)}^{\beta(a)} g(\theta, a) \, d\theta 
+                        = g(\beta(a), a) \, \beta'(a) - g(\alpha(a), a) \, \alpha'(a) + \int_{\alpha(a)}^{\beta(a)} \frac{\partial g}{\partial a}(\theta, a) \, d\theta.
+                        \]
+                        Apply this to the first integral with \(\alpha(a) = -\infty\), \(\beta(a) = a\), and 
+                        \(g(\theta, a) = (a - \theta) p(\theta \mid \boldsymbol{x})\):
+                        \[
+                        \frac{d}{da} \int_{-\infty}^{a} (a - \theta) p(\theta \mid \boldsymbol{x}) \, d\theta 
+                        = \underbrace{(a - a) p(a \mid \boldsymbol{x}) \cdot 1}_{=\, 0 \text{ (boundary)}} 
+                        + \int_{-\infty}^{a} \underbrace{\frac{\partial}{\partial a}(a - \theta)}_{=\, 1} p(\theta \mid \boldsymbol{x}) \, d\theta 
+                        = F(a \mid \boldsymbol{x}).
+                        \]
+                        Similarly for the second integral with \(\alpha(a) = a\), \(\beta(a) = +\infty\) (the upper-limit term vanishes 
+                        in the limit under the finite-first-moment hypothesis), and integrand derivative \(\partial_a(\theta - a) = -1\):
+                        \[
+                        \frac{d}{da} \int_{a}^{\infty} (\theta - a) p(\theta \mid \boldsymbol{x}) \, d\theta 
+                        = \underbrace{-(a - a) p(a \mid \boldsymbol{x})}_{=\, 0 \text{ (boundary)}} 
+                        + \int_{a}^{\infty} (-1) p(\theta \mid \boldsymbol{x}) \, d\theta = -[1 - F(a \mid \boldsymbol{x})].
+                        \]
+                        Summing the two contributions,
+                        \[
+                        \frac{d \rho(a \mid \boldsymbol{x})}{d a} = F(a \mid \boldsymbol{x}) - [1 - F(a \mid \boldsymbol{x})] = 2 F(a \mid \boldsymbol{x}) - 1.
+                        \]
+                        Setting this to zero yields \(F(a \mid \boldsymbol{x}) = \tfrac{1}{2}\), i.e., \(a^* = m^*\) is a posterior median. 
+                        The second derivative is \(2 \, p(a \mid \boldsymbol{x}) \geq 0\), confirming that this critical point is a 
+                        (not necessarily strict) global minimum; uniqueness holds whenever the posterior density is positive at the median.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>The Trio: MAP, Posterior Mean, Posterior Median</h3>
+                    <p>
+                        The three most common Bayesian point estimators correspond to three distinct loss functions:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Zero-one loss</strong> (or its continuous limit) → <strong>MAP estimate</strong> (posterior mode), the action that maximizes the posterior density at a single point.</li>
+                        <li><strong>Squared-error loss</strong> → <strong>posterior mean</strong>, the action that minimizes mean-squared deviation across the posterior.</li>
+                        <li><strong>Absolute-error loss</strong> → <strong>posterior median</strong>, robust to heavy-tailed posteriors.</li>
+                    </ul>
+                    <p>
+                        Far from being arbitrary heuristics, these three estimators are <em>uniquely determined</em> by the 
+                        choice of loss function. In machine learning, this perspective explains why <strong>regression</strong> 
+                        models trained with mean-squared error implicitly target the conditional mean \(\mathbb{E}[y \mid \boldsymbol{x}]\), 
+                        while quantile regression trained with absolute-error loss targets the conditional median — the difference 
+                        is not a matter of taste but a decision-theoretic consequence of the chosen loss. (The connection between 
+                        minimizing posterior expected loss as in our theorems above and minimizing expected loss against the 
+                        data-generating distribution as in machine learning practice is formalized in the next section.)
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="frequentist" class="section-content">
+                <h2>Frequentist Risk, Bayes Risk, and Minimax</h2>
+
+                <p>
+                    So far we have framed decision theory from the Bayesian perspective: given observed data, we minimize 
+                    the expected loss with respect to the posterior. The classical, or <strong>frequentist</strong>, perspective 
+                    inverts this conditioning. There, the parameter \(\theta\) is treated as an <em>unknown but fixed</em> 
+                    quantity, and the data \(\boldsymbol{x}\) is treated as random; we evaluate a decision rule by averaging 
+                    its loss over hypothetical data realizations drawn from the data-generating distribution \(p(\boldsymbol{x} \mid \theta)\).
+                </p>
+
+                <p>
+                    These two perspectives appear to start from opposite premises, yet they are connected by a precise 
+                    equivalence theorem. Establishing this equivalence is the central goal of this section. Along the way, 
+                    we will introduce the third major notion of optimality — <strong>minimax</strong> — and discuss its 
+                    interpretation as a worst-case guarantee.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> Throughout this section, we work in the parametric setting introduced for 
+                    continuous parameters above, but allow \(\theta \in \Theta\) to be either scalar- or vector-valued. The 
+                    state of nature is the parameter \(\theta\) (replacing the general \(h \in \mathcal{H}\) of the introduction), 
+                    and a <strong>decision rule</strong> is a measurable function \(\delta : \mathcal{X} \to \mathcal{A}\) 
+                    mapping data to actions. When \(\mathcal{A} = \Theta\), the decision rule is exactly a 
+                    <a href="mle.html#D-point_estimator" class="ref-link"><strong>point estimator</strong></a> in the sense of statistical inference. 
+                    Whereas \(\pi^*(\boldsymbol{x})\) denoted the <em>optimal</em> decision rule under a given criterion, we 
+                    now use \(\delta\) for an <em>arbitrary</em> candidate decision rule whose risk we wish to evaluate; 
+                    optimality will then be defined as minimization of one of several risk notions introduced below.
+                </p>
+
+                <h3>Frequentist Risk</h3>
+
+                <div class="theorem" id="D-frequentist_risk">
+                    <span class="theorem-title">Definition: Frequentist Risk</span>
+                    <p>
+                        Let \(\delta : \mathcal{X} \to \mathcal{A}\) be a decision rule, and let \(l(\theta, a)\) be a loss 
+                        function. The <strong>frequentist risk</strong> of \(\delta\) at parameter value \(\theta\) is the 
+                        expected loss when the data is drawn from \(p(\boldsymbol{x} \mid \theta)\):
+                        \[
+                        R(\theta, \delta) := \mathbb{E}_{p(\boldsymbol{x} \mid \theta)}[l(\theta, \delta(\boldsymbol{x}))] 
+                        = \int l(\theta, \delta(\boldsymbol{x})) \, p(\boldsymbol{x} \mid \theta) \, d\boldsymbol{x}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Three observations clarify the role of this definition. First, the parameter \(\theta\) is held fixed 
+                    while the data is averaged over — the opposite conditioning from the posterior expected loss \(\rho(a \mid \boldsymbol{x})\). 
+                    Second, \(R(\theta, \delta)\) is a function <em>of \(\theta\)</em>: a single decision rule produces a 
+                    risk function over the entire parameter space, not a single number. Third, comparing two decision rules 
+                    therefore requires comparing two functions, and one risk curve may be lower for some \(\theta\) but 
+                    higher for others. This last observation motivates the notions of admissibility and minimax developed below.
+                </p>
+
+                <h4>Worked Example: Estimating a Gaussian Mean</h4>
+
+                <p>
+                    To make the definition concrete, consider the canonical setting of estimating the mean of a Gaussian. 
+                    Suppose data \(x_1, \ldots, x_N \overset{\text{i.i.d.}}{\sim} \mathcal{N}(\theta, \sigma^2)\) with 
+                    \(\sigma^2\) known, and suppose we use the squared-error loss \(l_2(\theta, a) = (\theta - a)^2\). 
+                    The corresponding risk is the <strong>mean squared error</strong>
+                    \[
+                    R(\theta, \delta) = \mathbb{E}_{p(\boldsymbol{x} \mid \theta)}\!\left[(\theta - \delta(\boldsymbol{x}))^2\right] = \operatorname{MSE}(\delta).
+                    \]
+                    From the bias–variance decomposition introduced for <a href="mle.html#D-bias" class="ref-link"><strong>maximum likelihood estimators</strong></a> 
+                    (where, in the language of estimators, \(\hat{\theta} = \delta(\boldsymbol{x})\)),
+                    \[
+                    \operatorname{MSE}(\delta) = \operatorname{Var}_{p(\boldsymbol{x} \mid \theta)}[\delta(\boldsymbol{x})] + \operatorname{Bias}(\delta)^2,
+                    \qquad \operatorname{Bias}(\delta) := \mathbb{E}_{p(\boldsymbol{x} \mid \theta)}[\delta(\boldsymbol{x})] - \theta.
+                    \]
+                    We use this identity to compute the risk of three estimators.
+                </p>
+
+                <p>
+                    <strong>(i) The sample mean</strong> \(\delta_1(\boldsymbol{x}) = \bar{x} = \tfrac{1}{N}\sum_n x_n\). 
+                    By <a href="random_variables.html#T-linearity_expectation" class="ref-link"><strong>linearity of expectation</strong></a>, \(\mathbb{E}[\bar{x}] = \theta\) (unbiased), and 
+                    \(\operatorname{Var}[\bar{x}] = \sigma^2/N\). Hence
+                    \[
+                    R(\theta, \delta_1) = \frac{\sigma^2}{N}.
+                    \]
+                    The risk is constant in \(\theta\) — the sample mean's quality of estimation does not depend on the true value.
+                </p>
+
+                <p>
+                    <strong>(ii) The constant estimator</strong> \(\delta_2(\boldsymbol{x}) = \theta_0\) for some fixed 
+                    \(\theta_0 \in \mathbb{R}\). The variance is zero, but the bias is \(\theta_0 - \theta\), giving
+                    \[
+                    R(\theta, \delta_2) = (\theta_0 - \theta)^2.
+                    \]
+                    The risk is zero when \(\theta = \theta_0\) (a perfect guess) and grows quadratically as \(\theta\) moves away.
+                </p>
+
+                <p>
+                    <strong>(iii) The shrinkage estimator</strong> \(\delta_3(\boldsymbol{x}) = w \bar{x} + (1 - w) \theta_0\), 
+                    a convex combination of the sample mean and the fixed value \(\theta_0\) with shrinkage weight 
+                    \(w \in (0, 1)\). At this stage we treat \(w\) as an arbitrary tuning parameter; we will see momentarily 
+                    that one particular choice arises from a Bayesian construction. Computing the bias,
+                    \[
+                    \mathbb{E}_{p(\boldsymbol{x} \mid \theta)}[\delta_3] - \theta = w\theta + (1-w)\theta_0 - \theta = (1-w)(\theta_0 - \theta),
+                    \]
+                    and the variance \(\operatorname{Var}[\delta_3] = w^2 \sigma^2 / N\), we obtain
+                    \[
+                    R(\theta, \delta_3) = w^2 \frac{\sigma^2}{N} + (1-w)^2 (\theta_0 - \theta)^2.
+                    \]
+                    The risk interpolates between the two extremes: \(w = 1\) recovers the sample mean and \(w = 0\) recovers 
+                    the constant estimator.
+                </p>
+
+                <p>
+                    <strong>Bayesian origin of the shrinkage weight.</strong> The estimator \(\delta_3\) arises naturally as 
+                    the posterior mean under a Gaussian prior \(\theta \sim \mathcal{N}(\theta_0, \tau^2)\) (with known data 
+                    variance \(\sigma^2\)); the resulting posterior is again Gaussian, and the posterior mean is the 
+                    precision-weighted average above with the specific value
+                    \[
+                    w = \frac{N\tau^2}{N\tau^2 + \sigma^2}.
+                    \]
+                    A diffuse prior (large \(\tau^2\)) gives \(w \to 1\) (the data dominates, \(\delta_3 \to \delta_1\)); a 
+                    sharp prior (small \(\tau^2\)) gives \(w \to 0\) (the prior dominates, \(\delta_3 \to \delta_2\)). The 
+                    full derivation appears in our <a href="bayesian.html#normal"><strong>treatment of the Normal model 
+                    with known variance</strong></a>.
+                </p>
+
+                <p>
+                    Comparing the three risk functions reveals a fundamental phenomenon. The sample mean \(\delta_1\) has 
+                    the lowest risk when \(\theta\) is far from \(\theta_0\) (since the squared-bias term in \(\delta_3\) 
+                    grows quadratically in \(|\theta - \theta_0|\) while \(\delta_1\)'s risk stays at \(\sigma^2/N\)). The 
+                    constant \(\delta_2\) achieves zero risk only at the single point \(\theta = \theta_0\) and is uniformly 
+                    worse than \(\delta_3\) outside a small neighborhood of \(\theta_0\) (the explicit threshold can be 
+                    computed by setting \(R(\theta, \delta_2) = R(\theta, \delta_3)\)). The shrinkage estimator \(\delta_3\) 
+                    is optimal in an intermediate range — close enough to \(\theta_0\) to benefit from the prior, but not so 
+                    close that \(\delta_2\) overtakes it. No single estimator is uniformly best; the optimal choice depends 
+                    on the unknown true \(\theta\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Admissibility in Action</h3>
+                    <p>
+                        The phenomenon just observed — that no single risk curve dominates all others — is exactly the 
+                        situation that the formal notion of admissibility is designed to capture. The constant estimator 
+                        \(\delta_2\) is <em>not</em> dominated by either \(\delta_1\) or \(\delta_3\), because at the single 
+                        point \(\theta = \theta_0\) it achieves zero risk while the others do not. Yet \(\delta_2\) is also 
+                        clearly a poor estimator in any reasonable sense — it ignores the data entirely. Admissibility 
+                        therefore identifies a <em>necessary</em> rationality condition (a dominated rule should never be 
+                        used) but not a <em>sufficient</em> one (admissible rules can still be terrible).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-admissibility">
+                    <span class="theorem-title">Definition: Admissibility</span>
+                    <p>
+                        A decision rule \(\delta'\) is said to <strong>dominate</strong> another decision rule \(\delta\) if
+                        \[
+                        R(\theta, \delta') \leq R(\theta, \delta) \quad \text{for all } \theta \in \Theta,
+                        \]
+                        with strict inequality \(R(\theta_0, \delta') < R(\theta_0, \delta)\) for at least one \(\theta_0 \in \Theta\). 
+                        A decision rule \(\delta\) is <strong>admissible</strong> if no decision rule dominates it; otherwise 
+                        \(\delta\) is <strong>inadmissible</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Admissibility is a partial-order criterion: it rules out estimators that are uniformly worse than some 
+                    alternative, but typically leaves an entire family of admissible candidates from which to choose. To 
+                    select among admissible rules, one needs an additional principle — averaging the risk over a prior 
+                    (the Bayesian solution) or worst-casing it over \(\theta\) (the minimax solution).
+                </p>
+
+                <h3>Bayes Risk and the Equivalence Theorem</h3>
+
+                <p>
+                    The Bayesian approach to selecting among decision rules averages the frequentist risk against a prior 
+                    distribution \(p(\theta)\), collapsing the risk function to a single number per rule.
+                </p>
+
+                <div class="theorem" id="D-bayes_risk">
+                    <span class="theorem-title">Definition: Bayes Risk</span>
+                    <p>
+                        Let \(p(\theta)\) be a prior distribution on the parameter space \(\Theta\), and let \(\delta\) be 
+                        a decision rule. The <strong>Bayes risk</strong> of \(\delta\) under prior \(p\) is
+                        \[
+                        r(p, \delta) := \mathbb{E}_{p(\theta)}[R(\theta, \delta)] = \int R(\theta, \delta) \, p(\theta) \, d\theta.
+                        \]
+                        A decision rule that minimizes \(r(p, \cdot)\) over all decision rules is called a 
+                        <strong>Bayes rule</strong> with respect to the prior \(p\).
+                    </p>
+                </div>
+
+                <p>
+                    The Bayes risk is an integral over both \(\theta\) and \(\boldsymbol{x}\):
+                    \[
+                    r(p, \delta) = \int \int l(\theta, \delta(\boldsymbol{x})) \, p(\boldsymbol{x} \mid \theta) \, p(\theta) \, d\boldsymbol{x} \, d\theta.
+                    \]
+                    The next theorem — the central result of this section — shows that this minimization problem reduces 
+                    to a pointwise one: for each fixed \(\boldsymbol{x}\), choose the action that minimizes the posterior 
+                    expected loss. This is the precise sense in which Bayesian and frequentist optimality coincide.
+                </p>
+
+                <div class="theorem" id="T-bayes_risk_via_posterior">
+                    <span class="theorem-title">Theorem: Bayes Rule via Pointwise Posterior Minimization</span>
+                    <p>
+                        Suppose the loss \(l(\theta, a)\) is jointly measurable and the joint integrability condition
+                        \[
+                        \int \int |l(\theta, \delta(\boldsymbol{x}))| \, p(\boldsymbol{x} \mid \theta) \, p(\theta) \, d\boldsymbol{x} \, d\theta < \infty
+                        \]
+                        holds for any decision rule \(\delta\) we wish to evaluate (so that the Bayes risk \(r(p, \delta)\) is 
+                        well-defined and Fubini's theorem applies). Suppose further that the pointwise minimizer 
+                        \(a^*(\boldsymbol{x}) := \arg\min_{a \in \mathcal{A}} \rho(a \mid \boldsymbol{x})\) exists and is a 
+                        measurable function of \(\boldsymbol{x}\) (this holds, for example, when \(\mathcal{A}\) is a closed subset 
+                        of a Euclidean space and \(l\) is continuous in \(a\)). Then minimizing the Bayes risk \(r(p, \delta)\) is 
+                        equivalent to minimizing the posterior expected loss pointwise: a Bayes rule is given by
+                        \[
+                        \delta^*(\boldsymbol{x}) = \arg\min_{a \in \mathcal{A}} \, \mathbb{E}_{p(\theta \mid \boldsymbol{x})}[l(\theta, a)] = \arg\min_{a \in \mathcal{A}} \rho(a \mid \boldsymbol{x})
+                        \]
+                        for almost every \(\boldsymbol{x}\) under the marginal evidence \(p(\boldsymbol{x}) := \int p(\boldsymbol{x} \mid \theta) \, p(\theta) \, d\theta\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        By definition,
+                        \[
+                        r(p, \delta) = \int \int l(\theta, \delta(\boldsymbol{x})) \, p(\boldsymbol{x} \mid \theta) \, p(\theta) \, d\boldsymbol{x} \, d\theta.
+                        \]
+                        The joint integrability hypothesis allows us to apply <a href="limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a> to interchange the order of 
+                        integration. Using <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' theorem</strong></a> in the form 
+                        \(p(\boldsymbol{x} \mid \theta) p(\theta) = p(\theta \mid \boldsymbol{x}) p(\boldsymbol{x})\) (valid wherever \(p(\boldsymbol{x}) > 0\); 
+                        the null set \(\{p(\boldsymbol{x}) = 0\}\) contributes nothing to the integral),
+                        \[
+                        r(p, \delta) = \int \left[ \int l(\theta, \delta(\boldsymbol{x})) \, p(\theta \mid \boldsymbol{x}) \, d\theta \right] p(\boldsymbol{x}) \, d\boldsymbol{x} 
+                        = \int \rho(\delta(\boldsymbol{x}) \mid \boldsymbol{x}) \, p(\boldsymbol{x}) \, d\boldsymbol{x}.
+                        \]
+                        It remains to show that the decision rule \(\delta^*(\boldsymbol{x}) := a^*(\boldsymbol{x})\) attains the 
+                        minimum of this integral. By the definition of \(a^*(\boldsymbol{x})\) as the pointwise minimizer, for any 
+                        decision rule \(\delta\) we have the pointwise inequality
+                        \[
+                        \rho(\delta(\boldsymbol{x}) \mid \boldsymbol{x}) \geq \rho(a^*(\boldsymbol{x}) \mid \boldsymbol{x}) \qquad \text{for every } \boldsymbol{x}.
+                        \]
+                        Multiplying by \(p(\boldsymbol{x}) \geq 0\) and integrating preserves the inequality (monotonicity of the 
+                        integral), giving
+                        \[
+                        r(p, \delta) = \int \rho(\delta(\boldsymbol{x}) \mid \boldsymbol{x}) \, p(\boldsymbol{x}) \, d\boldsymbol{x} 
+                        \geq \int \rho(a^*(\boldsymbol{x}) \mid \boldsymbol{x}) \, p(\boldsymbol{x}) \, d\boldsymbol{x} = r(p, \delta^*).
+                        \]
+                        Hence \(\delta^*\) is a Bayes rule, and equality holds if and only if 
+                        \(\rho(\delta(\boldsymbol{x}) \mid \boldsymbol{x}) = \rho(a^*(\boldsymbol{x}) \mid \boldsymbol{x})\) for 
+                        \(p(\boldsymbol{x})\)-almost every \(\boldsymbol{x}\), i.e., \(\delta = \delta^*\) up to posterior-equivalence on the support of the marginal.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why This Equivalence Matters</h3>
+                    <p>
+                        The Bayes-rule-via-posterior theorem is the conceptual bridge between two seemingly opposed schools 
+                        of statistics. The frequentist averages loss over hypothetical data, while the Bayesian conditions on 
+                        observed data and averages over the parameter — yet the optimal decision rule is the same in both 
+                        cases (under a chosen prior). This is the technical foundation for the slogan that 
+                        <em>Bayesian methods provide a constructive way of achieving frequentist goals</em>.
+                    </p>
+                    <p>
+                        For machine learning, the practical consequence is profound: instead of solving a hard optimization 
+                        over the space of all decision rules \(\delta : \mathcal{X} \to \mathcal{A}\), we may solve a much 
+                        simpler optimization over actions \(a \in \mathcal{A}\), separately for each input \(\boldsymbol{x}\) 
+                        we encounter. This is exactly what every probabilistic classifier does at <strong>inference time</strong>: 
+                        compute \(p(y \mid \boldsymbol{x})\), then pick \(\arg\max_y p(y \mid \boldsymbol{x})\) — the Bayes 
+                        rule under zero-one loss. The <strong>training-time</strong> procedure (e.g., cross-entropy 
+                        minimization) is a separate matter that aims to <em>learn</em> the conditional distribution 
+                        \(p(y \mid \boldsymbol{x})\) itself, after which the present theorem dictates how to act on that 
+                        distribution.
+                    </p>
+                </div>
+
+                <h3>Maximum Risk and Minimax</h3>
+
+                <p>
+                    The Bayes risk requires a prior, which a strict frequentist may consider unjustified. An alternative 
+                    is to evaluate a rule by its <em>worst-case</em> risk over all parameter values.
+                </p>
+
+                <div class="theorem" id="D-maximum_risk">
+                    <span class="theorem-title">Definition: Maximum Risk</span>
+                    <p>
+                        The <strong>maximum risk</strong> of a decision rule \(\delta\) is
+                        \[
+                        R_{\max}(\delta) := \sup_{\theta \in \Theta} R(\theta, \delta).
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-minimax_rule">
+                    <span class="theorem-title">Definition: Minimax Rule</span>
+                    <p>
+                        A decision rule \(\delta_{\text{MM}}\) is called a <strong>minimax rule</strong> if it minimizes the 
+                        maximum risk:
+                        \[
+                        \delta_{\text{MM}} \in \arg\min_{\delta} R_{\max}(\delta) = \arg\min_{\delta} \sup_{\theta \in \Theta} R(\theta, \delta).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The minimax criterion encodes a deeply pessimistic view: the decision-maker assumes that nature will 
+                    select the worst possible \(\theta\) against the chosen rule, and seeks to minimize the damage in this 
+                    adversarial scenario. In the worked example above, the maximum risks are easily computed: \(R_{\max}(\delta_1) = \sigma^2/N\) 
+                    (the constant risk of the sample mean), while \(R_{\max}(\delta_2) = +\infty\) and \(R_{\max}(\delta_3) = +\infty\) 
+                    (since the squared-bias terms blow up as \(|\theta - \theta_0| \to \infty\)). On the real line, \(\delta_1\) 
+                    is therefore the minimax rule among these three candidates — not because it is uniformly best, but because 
+                    it is the only one with bounded worst-case risk.
+                </p>
+
+                <p>
+                    A deep result in classical decision theory establishes a striking connection between the two optimality 
+                    criteria: under suitable regularity conditions (compactness of \(\Theta\), continuity of the loss, and 
+                    existence of a so-called <strong>least favorable prior</strong> — the prior that maximizes the Bayes risk), 
+                    every minimax rule arises as a Bayes rule against this least favorable prior. The full statement and proof 
+                    require additional machinery (saddle-point theory, complete-class theorems) and are beyond the scope of 
+                    this page; we refer the reader to advanced texts on statistical decision theory.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why Minimax Is Not the Default</h3>
+                    <p>
+                        Despite its mathematical elegance, the minimax criterion is rarely used in practice for two reasons. 
+                        First, it is computationally hard: identifying the worst-case \(\theta\) generally requires solving 
+                        a saddle-point problem. Second, and more fundamentally, the implicit assumption that <em>nature is 
+                        an adversary</em> is unrealistic in most statistical settings. In game-theoretic contexts (adversarial 
+                        machine learning, robust optimization, security applications) where an actual adversary chooses the 
+                        worst-case input, minimax becomes natural — but for inference about a fixed but unknown \(\theta\), 
+                        averaging over a prior (Bayes) or selecting among admissible rules tends to give more useful answers.
+                    </p>
+                </div>
 
             </section>
 
@@ -113,7 +629,9 @@ uses_python: false
                 <p>
                     Perhaps the most common application of Bayesian decision theory in machine learning is 
                     <strong>classification</strong>: given an input \(\boldsymbol{x} \in \mathcal{X}\), we wish to assign 
-                    it the optimal class label. To apply the general framework, we specify the states, actions, and loss function 
+                    it the optimal class label. We now return to the discrete-label setting of the introduction (rather than 
+                    the continuous-parameter setting of the previous two sections), where the state of nature is the unknown 
+                    true class label. To apply the general framework, we specify the states, actions, and loss function 
                     for this particular setting.
                 </p>
 
@@ -127,7 +645,7 @@ uses_python: false
                     misclassification equally regardless of which classes are confused.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-zero_one_loss">
                     <span class="theorem-title">Definition: Zero-One Loss</span>
                     <p>
                         The <strong>zero-one loss</strong> is defined as
@@ -137,6 +655,13 @@ uses_python: false
                         where \(y^*\) is the true label and \(\hat{y}\) is the predicted label.
                     </p>
                 </div>
+
+                <p>
+                    <strong>Notation.</strong> In this classification context, we use the starred symbol \(y^*\) to emphasize 
+                    the true (but unknown) class label, and \(\hat{y}\) for the predicted label, paralleling the estimator 
+                    notation \(\hat{\theta}\) for the predicted value of an unknown parameter. The asterisk plays a purely 
+                    notational role here and does not change the meaning of the symbol.
+                </p>
 
                 <p>
                     Under the zero-one loss, the posterior expected loss for choosing label \(\hat{y}\) becomes
@@ -149,7 +674,7 @@ uses_python: false
                     \]
                     In other words, the optimal decision under zero-one loss is to select the <strong>mode</strong> of the posterior distribution, 
                     which is the <strong>maximum a posteriori (MAP) estimate</strong>. This provides a decision-theoretic justification for 
-                    the MAP estimator that we encountered in <a href="bayesian.html"><strong>Part 14</strong></a>.
+                    the MAP estimator that we encountered in our earlier treatment of <a href="bayesian.html"><strong>Bayesian inference</strong></a>.
                 </p>
 
                 <h3>The Reject Option</h3>
@@ -186,36 +711,49 @@ uses_python: false
                     \[
                     a^* =
                         \begin{cases}
-                        y^* & \text{if } p^* > \lambda^* \\\\
+                        \hat{y}^* & \text{if } p^* > \lambda^* \\\\
                         \text{reject} & \text{otherwise}
                         \end{cases}
                     \]
                     where
                     \[
-                    p^* = \max_{y \in \{1, \ldots, C\}} p(y \mid \boldsymbol{x}), \qquad
-                    \lambda^* = 1 - \frac{\lambda_r}{\lambda_e}.
+                    \hat{y}^* := \arg\max_{y \in \{1, \ldots, C\}} p(y \mid \boldsymbol{x}), \qquad
+                    p^* := p(\hat{y}^* \mid \boldsymbol{x}) = \max_{y \in \{1, \ldots, C\}} p(y \mid \boldsymbol{x}), \qquad
+                    \lambda^* := 1 - \frac{\lambda_r}{\lambda_e}.
                     \]
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Proof that \(\lambda^* = 1 - \frac{\lambda_r}{\lambda_e}\):</span>
+                    <span class="proof-title">Proof.</span>
                     <p>
-                        The optimal decision is to choose the class label \(y\) if and only if its expected loss 
-                        is lower than that of rejecting. The expected loss of choosing \(y\) is
+                        The optimal action minimizes the posterior expected loss \(\rho(a \mid \boldsymbol{x})\) over 
+                        \(a \in \mathcal{A} = \mathcal{Y} \cup \{0\}\). We compute this in two stages: first, we find the best 
+                        candidate among the class labels; second, we compare it against the reject option.
+                    </p>
+                    <p>
+                        <strong>Step 1 (best class label).</strong> For any class label \(y \in \{1, \ldots, C\}\), the loss 
+                        function above gives \(l(y^*, y) = \lambda_e\) when \(y^* \neq y\) and \(l(y, y) = 0\). Hence
                         \[
-                        R(y) = \lambda_e \sum_{y^* \neq y} p(y^* \mid \boldsymbol{x}) = \lambda_e [1 - p(y \mid \boldsymbol{x})],
+                        \rho(y \mid \boldsymbol{x}) = \mathbb{E}_{p(y^* \mid \boldsymbol{x})}[l(y^*, y)] 
+                        = \lambda_e \sum_{y^* \neq y} p(y^* \mid \boldsymbol{x}) = \lambda_e \, [1 - p(y \mid \boldsymbol{x})].
                         \]
-                        while the expected loss of rejecting is \(R(\text{reject}) = \lambda_r\) (since the cost \(\lambda_r\) 
-                        is incurred regardless of the true state). We choose \(y\) if
+                        Minimizing \(\rho(y \mid \boldsymbol{x})\) over \(y \in \{1, \ldots, C\}\) is equivalent to maximizing 
+                        \(p(y \mid \boldsymbol{x})\). The minimizer is therefore 
+                        \(\hat{y}^* = \arg\max_y p(y \mid \boldsymbol{x})\), achieving 
+                        \(\rho(\hat{y}^* \mid \boldsymbol{x}) = \lambda_e \, [1 - p^*]\).
+                    </p>
+                    <p>
+                        <strong>Step 2 (class label vs reject).</strong> The reject action \(a = 0\) incurs cost 
+                        \(\lambda_r\) regardless of the true class, so \(\rho(0 \mid \boldsymbol{x}) = \lambda_r\). 
+                        Comparing the two candidates \(\hat{y}^*\) and \(0\), we choose \(\hat{y}^*\) if and only if
                         \[
                         \begin{align*}
-                        R(y) &< R(\text{reject}) \\\\
-                        \lambda_e [1 - p(y \mid \boldsymbol{x})] &< \lambda_r \\\\
-                        p(y \mid \boldsymbol{x}) &> 1 - \frac{\lambda_r}{\lambda_e} = \lambda^*.
+                        \rho(\hat{y}^* \mid \boldsymbol{x}) &< \rho(0 \mid \boldsymbol{x}) \\\\
+                        \lambda_e \, [1 - p^*] &< \lambda_r \\\\
+                        p^* &> 1 - \frac{\lambda_r}{\lambda_e} = \lambda^*.
                         \end{align*}
                         \]
-                        Thus, if the maximum posterior probability \(p^*\) exceeds the threshold \(\lambda^*\), 
-                        the classifier should choose the corresponding label. Otherwise, it should reject.
+                        Otherwise (\(p^* \leq \lambda^*\)), the reject action achieves the minimum expected loss.
                     </p>
                 </div>
 
@@ -227,9 +765,9 @@ uses_python: false
                 <p>
                     The Bayes estimator tells us what the optimal decision rule is, but in practice, we need to measure how well a 
                     classifier actually performs on real data. The standard tool for this is the <strong>(class) confusion matrix</strong>, which 
-                    provides a complete summary of the outcomes of classification decisions. We recall the four possible outcomes from 
-                    <a href="hypothesis_testing.html"><strong>Part 10: Statistical Inference & Hypothesis Testing</strong></a>, where we first 
-                    introduced Type I and Type II errors.
+                    provides a complete summary of the outcomes of classification decisions. We recall the four possible outcomes from our 
+                    treatment of <a href="hypothesis_testing.html#D-type_errors" class="ref-link"><strong>Type I and Type II errors</strong></a> 
+                    in statistical inference and hypothesis testing.
                 </p>
 
                 <p>
@@ -249,6 +787,13 @@ uses_python: false
                     condition) is typically far more costly than a false positive (raising an unnecessary alarm). For example, in medical 
                     screening, a false positive means unnecessarily alarming a healthy patient, whereas a false negative means failing to 
                     detect a disease in someone who needs treatment.
+                </p>
+
+                <p>
+                    <strong>Notation.</strong> In the confusion matrix below, \(P\) and \(N\) denote the total counts of actual positive 
+                    and actual negative instances respectively (with the hat versions \(\hat{P}\) and \(\hat{N}\) for the predicted totals); 
+                    these symbols are local to this evaluation context and should not be confused with the probability operator \(P(\cdot)\) 
+                    used elsewhere in this curriculum.
                 </p>
 
                 <div class="math-table-container">
@@ -333,28 +878,35 @@ uses_python: false
                     \[
                     \begin{array}{|c|c|c|}
                         \hline
-                        &  1 & 0 \\
+                        & \hat{y}_{\tau}(\boldsymbol{x}_n) = 1 & \hat{y}_{\tau}(\boldsymbol{x}_n) = 0 \\\\
                         \hline
-                        1 & \text{TP}_{\tau} / P = \text{TPR}_{\tau}  & \text{FN}_{\tau} / P = \text{FNR}_{\tau}  \\
+                        y_n = 1 & \text{TP}_{\tau} / P = \text{TPR}_{\tau}  & \text{FN}_{\tau} / P = \text{FNR}_{\tau}  \\\\
                         \hline
-                        0  &  \text{FP}_{\tau} / N = \text{FPR}_{\tau} & \text{TN}_{\tau} / N = \text{TNR}_{\tau}  \\
+                        y_n = 0  &  \text{FP}_{\tau} / N = \text{FPR}_{\tau} & \text{TN}_{\tau} / N = \text{TNR}_{\tau}  \\\\
                         \hline
                     \end{array}
                     \]
                 </div>
                 
+                <p>
+                    <strong>Notation.</strong> Each rate below is defined as an <em>empirical ratio of counts</em>; for large \(N\), 
+                    the law of large numbers identifies it with the corresponding <em>population conditional probability</em>, 
+                    which we write as \(p(\hat{y}_\tau = \cdot \mid y = \cdot)\) using \(\tau\) as a subscript on the prediction 
+                    rather than as a conditioning event (since \(\tau\) is a fixed parameter, not a random variable).
+                </p>
+
                 <ul style="padding-left: 40px;">
                     <li><strong>True positive rate (TPR)</strong> (or <strong>Sensitivity</strong> / <strong>Recall</strong>): \[
-                        \text{TPR}_{\tau} = p(\hat{y} = 1 \mid  y = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
+                        \text{TPR}_{\tau} := \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}} \approx p(\hat{y}_\tau = 1 \mid y = 1).
                         \]</li>
                     <li><strong>False positive rate (FPR)</strong> (or <strong>Type I error rate</strong> / <strong>Fallout</strong>): \[
-                        \text{FPR}_{\tau} = p(\hat{y} = 1 \mid  y = 0, \tau) = \frac{\text{FP}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
+                        \text{FPR}_{\tau} := \frac{\text{FP}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}} \approx p(\hat{y}_\tau = 1 \mid y = 0).
                         \] </li>
                     <li><strong>False negative rate (FNR)</strong> (or <strong>Type II error rate</strong> / <strong>Miss rate</strong>):\[
-                        \text{FNR}_{\tau} = p(\hat{y} = 0 \mid  y = 1, \tau) = \frac{\text{FN}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}}.
+                        \text{FNR}_{\tau} := \frac{\text{FN}_{\tau}}{\text{TP}_{\tau} + \text{FN}_{\tau}} \approx p(\hat{y}_\tau = 0 \mid y = 1).
                         \]</li>
                     <li><strong>True negative rate (TNR)</strong> (or <strong>Specificity</strong>):\[
-                        \text{TNR}_{\tau} = p(\hat{y} = 0 \mid  y = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}}.
+                        \text{TNR}_{\tau} := \frac{\text{TN}_{\tau}}{\text{FP}_{\tau} + \text{TN}_{\tau}} \approx p(\hat{y}_\tau = 0 \mid y = 0).
                         \] </li>
                 </ul>
                 
@@ -395,10 +947,14 @@ uses_python: false
                 <p>
                     The ROC curve provides a comprehensive view of the trade-off between TPR and FPR, but it can be useful to summarize 
                     this trade-off with a single number. The <strong>equal error rate (EER)</strong> is the operating point where 
-                    \(\text{FPR} = \text{FNR}\). This point represents the optimal threshold under the assumption that 
-                    <strong>the prior probabilities and the costs of both types of errors are equal</strong>. This metric is particularly 
-                    important in applications such as biometric authentication (fingerprint or face recognition), where false acceptance and false 
-                    rejection carry comparable costs.
+                    \(\text{FPR} = \text{FNR}\) — the threshold at which the two error rates are <em>symmetric</em>. EER is a 
+                    practical operating-point summary that does not assume a particular cost structure or class prior; it simply 
+                    identifies where the classifier treats both error types equally severely. (Note that this is generally 
+                    <em>not</em> the Bayes-optimal threshold, which under equal priors and equal misclassification costs corresponds 
+                    to a posterior probability of \(1/2\) and depends on the calibration of the classifier's score, not on the 
+                    FPR/FNR symmetry.) EER is particularly useful in applications such as biometric authentication (fingerprint 
+                    or face recognition), where false acceptance and false rejection carry comparable costs and a single 
+                    interpretable operating point is desired for system reporting.
                 </p>
 
                 <p>
@@ -440,11 +996,11 @@ uses_python: false
                     \[
                     \begin{array}{|c|c|c|}
                         \hline
-                        &  \hat{y} = 1 & \hat{y} = 0 \\
+                        & \hat{y}_{\tau}(\boldsymbol{x}_n) = 1 & \hat{y}_{\tau}(\boldsymbol{x}_n) = 0 \\\\
                         \hline
-                        y = 1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\
+                        y_n = 1 & \text{TP}_{\tau} / \hat{P} = \text{PPV}_{\tau}  & \text{FN}_{\tau} / \hat{N} = \text{FOR}_{\tau} \\\\
                         \hline
-                        y = 0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\
+                        y_n = 0  &  \text{FP}_{\tau} / \hat{P} = \text{FDR}_{\tau}  & \text{TN}_{\tau} / \hat{N} = \text{NPV}_{\tau} \\\\
                         \hline
                     \end{array}
                     \]
@@ -452,16 +1008,16 @@ uses_python: false
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Positive predictive value (PPV)</strong> (or <strong>Precision</strong>):\[
-                        \text{PPV}_{\tau} = p(y = 1 \mid \hat{y} = 1, \tau) = \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
+                        \text{PPV}_{\tau} := \frac{\text{TP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}} \approx p(y = 1 \mid \hat{y}_\tau = 1).
                         \] </li>
                     <li><strong>False discovery rate (FDR)</strong>:\[
-                        \text{FDR}_{\tau} = p(y = 0 \mid \hat{y} = 1, \tau) = \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}}.
+                        \text{FDR}_{\tau} := \frac{\text{FP}_{\tau}}{\text{TP}_{\tau} + \text{FP}_{\tau}} \approx p(y = 0 \mid \hat{y}_\tau = 1).
                         \]</li>
                     <li><strong>False omission rate (FOR)</strong>:\[
-                        \text{FOR}_{\tau} = p(y = 1 \mid \hat{y} = 0, \tau) = \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
+                        \text{FOR}_{\tau} := \frac{\text{FN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}} \approx p(y = 1 \mid \hat{y}_\tau = 0).
                         \]</li>
                     <li><strong>Negative predictive value (NPV)</strong>:\[
-                        \text{NPV}_{\tau} = p(y = 0 \mid \hat{y} = 0, \tau) = \frac{\text{TN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}}.
+                        \text{NPV}_{\tau} := \frac{\text{TN}_{\tau}}{\text{FN}_{\tau} + \text{TN}_{\tau}} \approx p(y = 0 \mid \hat{y}_\tau = 0).
                         \]</li>
                 </ul>
 
@@ -484,14 +1040,19 @@ uses_python: false
                 </p>
                 
                 <p>
-                    Let precision be \(\mathcal{P}(\tau)\) and recall be \(\mathcal{R}(\tau)\). If \(\hat{y}_n \in \{0, 1\}\) is the predicted 
-                    label and \(y_n \in \{0, 1\}\) is the true label, then at threshold \(\tau\), precision and recall can be estimated by:
+                    Let precision be \(\mathcal{P}(\tau)\) and recall be \(\mathcal{R}(\tau)\). For binary labels 
+                    \(\hat{y}_n, y_n \in \{0, 1\}\), at threshold \(\tau\) these are computed as
                     \[
-                    \mathcal{P}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n \hat{y}_n}, 
+                    \mathcal{P}(\tau) := \frac{\sum_n y_n \hat{y}_n}{\sum_n \hat{y}_n} = \text{PPV}_\tau, 
                     \quad
-                    \mathcal{R}(\tau) = \frac{\sum_n y_n \hat{y}_n}{\sum_n y_n}.
+                    \mathcal{R}(\tau) := \frac{\sum_n y_n \hat{y}_n}{\sum_n y_n} = \text{TPR}_\tau,
                     \]
-                    By plotting the precision vs recall for various the threshold \(\tau\), we obtain the PR curve.
+                    using \(\mathcal{P}, \mathcal{R}\) (calligraphic) for the precision and recall functions of \(\tau\); these 
+                    are the same quantities as the \(\text{PPV}_\tau\) and \(\text{TPR}_\tau\) introduced earlier, just renamed in 
+                    keeping with standard machine-learning terminology and to emphasize their role as functions of \(\tau\) when 
+                    plotting curves. (The calligraphic \(\mathcal{P}\) is local to this section and is unrelated to the count 
+                    \(P\) of actual positives or to the probability operator.) By plotting \(\mathcal{P}(\tau)\) against 
+                    \(\mathcal{R}(\tau)\) as \(\tau\) varies, we obtain the PR curve.
                 </p>
                 
                 <div style="text-align: center;">
@@ -506,12 +1067,15 @@ uses_python: false
                 <p>
                     A crucial difference between the ROC and PR curves is the <strong>baseline</strong> for a random classifier. While a random 
                     classifier always yields an AUC of 0.5 on an ROC curve, the baseline for a <strong>PR curve</strong> is the fraction of 
-                    positive samples in the dataset: 
+                    positive samples in the dataset:
                     \[
-                    y_{baseline} = \frac{P}{P + N}
+                    y_{\text{baseline}} = \frac{P}{P + N}.
                     \]
-                    This makes the PR curve a much more rigorous evaluation tool for highly imbalanced datasets, as the "no-knowledge" score 
-                    can be near zero while the "perfect" score remains 1.0.
+                    To see why: a random classifier predicting positive with any constant probability \(q\) (independent of the input) achieves 
+                    \(\text{TP} = qP\) and \(\text{FP} = qN\), so its precision is \(\text{TP}/(\text{TP}+\text{FP}) = qP/(qP + qN) = P/(P+N)\) 
+                    regardless of \(q\); varying \(q\) sweeps recall from \(0\) to \(1\) while precision stays constant, tracing a horizontal 
+                    line at this baseline. This makes the PR curve a much more rigorous evaluation tool for highly imbalanced datasets, as the 
+                    "no-knowledge" score can be near zero while the "perfect" score remains 1.0.
                 </p>
 
                 <p>
@@ -519,7 +1083,7 @@ uses_python: false
                     is often computed. For a given recall level \(r\), it is defined as the maximum precision observed for any recall level greater 
                     than or equal to \(r\):
                     \[
-                    \mathcal{P}_{\text{interp}}(r) = \max_{r' \geq r} \mathcal{P}(r')
+                    \mathcal{P}_{\text{interp}}(r) := \max_{r' \geq r} \mathcal{P}(r').
                     \]
                     The <strong>average precision (AP)</strong> is the area under this interpolated PR curve. It provides a single-number summary 
                     that reflects the classifier's ability to maintain high precision as the recall threshold is lowered.
@@ -531,7 +1095,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Note: In settings where multiple PR curves are generated (for example, one for each query in information retrieval or one per class in 
+                    <strong>Note.</strong> In settings where multiple PR curves are generated (for example, one for each query in information retrieval or one per class in 
                     multi-class classification), the <strong>mean average precision (mAP)</strong> is computed as the mean of the AP scores over all 
                     curves. mAP offers an overall performance measure across multiple queries or classes.
                 </p>
@@ -550,9 +1114,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    The <strong>ROC-AUC metric</strong> is often <strong>insensitive</strong> to class imbalance because both TPR and FPR are 
-                    computed within their respective populations - TPR is a ratio within the positive samples and FPR is a ratio within the 
-                    negative samples. Consequently, the class proportions do not directly affect the ROC curve.
+                    The <strong>ROC-AUC metric</strong> is <strong>relatively insensitive</strong> to class imbalance at the population 
+                    level, because both TPR and FPR are computed within their respective populations — TPR is a ratio within the positive 
+                    samples and FPR is a ratio within the negative samples. Consequently, the class proportions do not directly affect the 
+                    population ROC curve. (In practice, however, empirical AUC estimates can become noisy when one class is severely 
+                    under-represented, since the minority sample provides few examples for stable estimation.)
                 </p>
 
                 <p>
@@ -592,8 +1158,9 @@ uses_python: false
                 <p>
                     In summary, PR curves focus on precision and recall, which directly reflect how well a model identifies the minority class. 
                     Precision, in particular, is sensitive to even a small number of false positives, providing a more realistic picture of 
-                    performance when the positive class is scarce. Thus, <strong>PR-AP is generally the preferred metric for imbalanced classification problems</strong> 
-                    because it directly measures performance on the minority class.
+                    performance when the positive class is scarce. Thus, <strong>PR-AP is often the preferred metric when the focus is on correctly 
+                    identifying the minority class</strong> — for example, in fraud detection, rare-disease screening, or anomaly detection. When 
+                    both classes are of comparable practical importance, ROC-AUC remains an informative summary.
                 </p>
 
                 <div class="insight-box">
