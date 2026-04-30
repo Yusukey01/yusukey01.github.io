@@ -30,17 +30,17 @@ uses_python: false
                 <h2>Rooted Trees and Binary Trees</h2>
 
                 <p>
-                    In <a href="intro_graph.html#path"><strong>Introduction to Graph Theory</strong></a>, we defined a 
+                    In <a href="intro_graph.html#T-tree_characterizations" class="ref-link"><strong>Introduction to Graph Theory</strong></a>, we defined a 
                     <strong>tree</strong> as a connected acyclic graph and established that a tree on \(n\) vertices has exactly 
                     \(n - 1\) edges, with a unique path between any pair of vertices. We now impose additional structure by 
                     designating a special vertex as the <strong>root</strong>, transforming the tree from an undirected 
-                    combinatorial object into a hierarchical, recursive data structure — the single most pervasive 
-                    abstraction in computer science.
+                    combinatorial object into a hierarchical, recursive data structure — one of the most pervasive 
+                    abstractions in computer science.
                 </p>
 
                 <h3>Rooted Trees</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-rooted_tree">
                     <span class="theorem-title">Definition: Rooted Tree</span>
                     <p>
                         A <strong>rooted tree</strong> is a pair \((T, r)\), where \(T = (V, E)\) is a tree and \(r \in V\) is a 
@@ -53,6 +53,13 @@ uses_python: false
                             \(u\) is the <strong>parent</strong> of \(v\) and \(v\) is a <strong>child</strong> of \(u\).</li>
                         <li>A vertex with no children is a <strong>leaf</strong>; a non-leaf vertex is an <strong>internal vertex</strong>.</li>
                     </ul>
+                    <p>
+                        For any vertex \(v \in V\), the <strong>subtree rooted at \(v\)</strong>, denoted \(T_v\), is the 
+                        rooted tree consisting of \(v\) together with all its <strong>descendants</strong> — the vertices 
+                        \(w\) whose unique \(r\)-\(w\) path passes through \(v\) — with \(v\) as the new root. In particular, 
+                        the subtrees rooted at the children of any vertex \(v\) partition \(V(T_v) \setminus \{v\}\), 
+                        making rooted trees naturally <strong>recursive</strong> objects.
+                    </p>
                 </div>
 
                 <p>
@@ -67,12 +74,14 @@ uses_python: false
 
                 <h3>Binary Trees</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-binary_tree">
                     <span class="theorem-title">Definition: Binary Tree</span>
                     <p>
-                        A <strong>binary tree</strong> is a rooted tree in which every vertex has at most two children, 
-                        designated as the <strong>left child</strong> and the <strong>right child</strong>. A binary tree is 
-                        <strong>full</strong> (or <strong>proper</strong>) if every internal vertex has exactly two children.
+                        A <strong>binary tree</strong> is a rooted tree in which every vertex has at most two children, with 
+                        each child distinguished as either the <strong>left child</strong> or the <strong>right child</strong> 
+                        (so that a vertex with exactly one child still records whether that child sits in the left slot or the 
+                        right slot). A binary tree is <strong>full</strong> (or <strong>proper</strong>) if every internal 
+                        vertex has exactly two children.
                     </p>
                 </div>
 
@@ -83,7 +92,7 @@ uses_python: false
                     a problem splits into two subproblems at every step.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-full_binary_tree_leaves">
                     <span class="theorem-title">Proposition: Leaves of a Full Binary Tree</span>
                     <p>
                         A full binary tree with \(k\) internal vertices has exactly \(k + 1\) leaves.
@@ -96,13 +105,15 @@ uses_python: false
                         Let \(T\) be a full binary tree with \(k\) internal vertices and \(\ell\) leaves. The total number 
                         of vertices is \(n = k + \ell\). Since \(T\) is a tree, it has \(n - 1\) edges. Every edge connects a 
                         vertex to its parent, and every non-root vertex has exactly one parent, so the number of edges equals 
-                        \(n - 1\) (one edge per non-root vertex). Alternatively, count edges by their <em>sources</em>: each 
-                        internal vertex contributes exactly 2 edges (to its two children), and leaves contribute 0. Thus 
-                        the total number of edges is \(2k\). Equating:
+                        \(n - 1\) (one edge per non-root vertex). Alternatively, orient each edge from parent to child 
+                        (well-defined by the rooted structure) and count edges by their <em>sources</em>: each internal vertex 
+                        is the source of exactly 2 outgoing edges (to its two children), and each leaf is the source of 0. 
+                        Thus the total number of edges is \(2k\). Equating:
                         \[
                         2k = n - 1 = (k + \ell) - 1,
                         \]
-                        which gives \(\ell = k + 1\).
+                        which gives \(\ell = k + 1\). The boundary case \(k = 0\) (a single-vertex tree) is consistent: the 
+                        condition "every internal vertex has exactly two children" is vacuously satisfied, and \(\ell = 1 = k + 1\).
                     </p>
                 </div>
 
@@ -113,13 +124,17 @@ uses_python: false
                     \(h \geq \lceil \log_2(n+1) \rceil - 1\) follows because at depth \(d\) there are at most 
                     \(2^d\) vertices (giving \(n \leq 2^{h+1} - 1\)), and the upper bound \(h = O(\log n)\) 
                     follows from the balance condition, which forces the number of vertices to grow at least 
-                    exponentially with height.
+                    exponentially with height. More precisely, the minimum number of vertices in a height-balanced tree 
+                    of height \(h\) satisfies the Fibonacci-like recurrence 
+                    \(N(h) = N(h-1) + N(h-2) + 1\) with \(N(0) = 1\) and \(N(1) = 2\), yielding 
+                    \(N(h) \geq \varphi^h - 1\) where \(\varphi = (1 + \sqrt{5})/2\); hence 
+                    \(h \leq \log_\varphi(n + 1) = O(\log n)\).
                 </p>
 
                 <h3>Spanning Trees</h3>
 
                 <p>
-                    So far we have studied trees as <em>hierarchical</em> structures — rooted, ordered, with a 
+                    So far we have studied trees as <em>hierarchical</em> structures — rooted, with a 
                     clear parent-child directionality. But trees serve a second, equally fundamental role: as the 
                     minimal connected <strong>skeleton</strong> of an arbitrary graph. A communication network, for 
                     instance, may contain many redundant links; stripping away edges until no cycles remain — while 
@@ -129,11 +144,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    Recall from <a href="intro_graph.html#sub"><strong>Introduction to Graph Theory</strong></a> that a 
+                    Recall from <a href="intro_graph.html#D-subgraph" class="ref-link"><strong>Introduction to Graph Theory</strong></a> that a 
                     <strong>spanning subgraph</strong> of \(G = (V, E)\) is a subgraph that contains all vertices of \(G\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-spanning_tree">
                     <span class="theorem-title">Definition: Spanning Tree</span>
                     <p>
                         A <strong>spanning tree</strong> of a connected graph \(G = (V, E)\) is a spanning subgraph 
@@ -141,7 +156,7 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="T-spanning_tree_existence">
                     <span class="theorem-title">Proposition: Existence of Spanning Trees</span>
                     <p>
                         Every connected graph has a spanning tree.
@@ -151,11 +166,13 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Let \(G = (V, E)\) be connected. If \(G\) is acyclic, it is already a tree. Otherwise, 
-                        \(G\) contains a cycle \(C\). Remove any edge \(e \in E(C)\); the resulting graph \(G - e\) remains 
-                        connected (since the two endpoints of \(e\) are still connected via the rest of the cycle). Repeat 
-                        until no cycles remain. The process terminates because each step removes one edge, and the graph 
-                        stays connected at every step. The result is a connected acyclic spanning subgraph — a spanning tree. 
+                        Let \(G = (V, E)\) be connected. If \(G\) is acyclic, it is already a tree (and a spanning tree of itself). 
+                        Otherwise, \(G\) contains a cycle \(C\). Remove any edge \(e \in E(C)\); the resulting graph \(G - e\) 
+                        remains connected: for any pair \(u, v\) of vertices, a \(u\)-\(v\) path in \(G\) that traverses \(e\) 
+                        can be rerouted through the remaining edges of the cycle \(C\), yielding a \(u\)-\(v\) walk and hence a 
+                        \(u\)-\(v\) path in \(G - e\). Repeat until no cycles remain. The process terminates because each step 
+                        removes one edge, and the graph stays connected at every step. The result is a connected acyclic spanning 
+                        subgraph — a spanning tree.
                     </p>
                 </div>
 
@@ -196,12 +213,12 @@ uses_python: false
 
                 <h3>Binary Search Trees</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-bst">
                     <span class="theorem-title">Definition: Binary Search Tree (BST)</span>
                     <p>
                         A <strong>binary search tree</strong> is a binary tree in which each vertex \(v\) stores a 
-                        key \(k(v)\) from a totally ordered set, satisfying the <strong>BST property</strong>: for 
-                        every vertex \(v\),
+                        key \(k(v)\) drawn from a totally ordered set, with all stored keys distinct, satisfying the 
+                        <strong>BST property</strong>: for every vertex \(v\),
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>every key in the left subtree of \(v\) is strictly less than \(k(v)\), and</li>
@@ -232,11 +249,70 @@ uses_python: false
                     <strong>end</strong>
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="T-bst_operations">
                     <span class="theorem-title">Proposition: BST Operations</span>
                     <p>
                         Search, insertion, and deletion in a binary search tree of height \(h\) each run in 
                         \(O(h)\) time.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Search.</strong> BST-Search descends one edge per step from the root, comparing the 
+                        target with \(k(v)\) at each visited vertex. The path from root to any vertex has length at 
+                        most \(h\), so search visits at most \(h + 1\) vertices and runs in \(O(h)\).
+                    </p>
+                    <p>
+                        <strong>Insertion.</strong> Run BST-Search for the key being inserted (\(O(h)\)). If the tree 
+                        is empty, the new vertex becomes the root. Otherwise, since the key is absent, the search 
+                        terminates at a null position — the empty left or right slot of some vertex \(p\). Attach a 
+                        new vertex carrying the key in that slot. The BST property is preserved: at each vertex \(u\) 
+                        visited during the descent, the search took the left branch iff the new key is less than 
+                        \(k(u)\), placing the new vertex on the correct side of every ancestor.
+                    </p>
+                    <p>
+                        <strong>Deletion.</strong> Locate the target vertex \(v\) by search (\(O(h)\)). Three cases:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>(i) \(v\) is a leaf.</strong> Remove \(v\) (if \(v\) is the root, the tree becomes 
+                            empty). The BST property is preserved trivially: no other vertex's relations are touched.</li>
+                        <li><strong>(ii) \(v\) has exactly one child \(c\).</strong> If \(v\) has a parent \(p\), splice 
+                            \(v\) out by attaching \(c\) (and its subtree) to \(p\) in the slot \(v\) occupied; if \(v\) 
+                            is the root, promote \(c\) to be the new root. Every key formerly in \(c\)'s subtree was 
+                            already a key in \(v\)'s subtree, hence already on the correct side of \(k(p)\) (when \(p\) 
+                            exists) and of every ancestor of \(p\); the relations within \(c\)'s subtree are unchanged. 
+                            So the BST property is preserved.</li>
+                        <li><strong>(iii) \(v\) has two children.</strong> Let \(w\) be the vertex reached by descending 
+                            from \(v\)'s right child along left children until none remain. We claim \(w\) holds the 
+                            minimum key in \(v\)'s right subtree. We prove this by induction on the size of any 
+                            non-empty BST subtree \(S\): the leftmost descendant of \(S\) holds the minimum key in 
+                            \(S\). If the root \(r\) of \(S\) has no left child, then \(r\) is itself the leftmost 
+                            descendant; every other key in \(S\) lies in \(r\)'s right subtree and exceeds \(k(r)\) 
+                            by the BST property. Otherwise, by induction the leftmost descendant of \(r\)'s left 
+                            subtree holds the minimum there; that key is less than \(k(r)\), and \(k(r)\) in turn 
+                            is less than every key in \(r\)'s right subtree, so the leftmost descendant remains 
+                            minimal in all of \(S\). Applying the claim with \(S = v\)'s right subtree gives \(w\) 
+                            as desired.</li>
+                    </ul>
+                    <p>
+                        Now replace \(k(v)\) by \(k(w)\); since \(w\) has no left child, deleting \(w\) itself falls 
+                        into case (i) or (ii). It remains to verify that the modified tree satisfies the BST property:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>Every key in \(v\)'s old left subtree was less than \(k(v)\), and \(k(v) < k(w)\) (since 
+                            \(w\) was in \(v\)'s right subtree); by transitivity, every such key is less than \(k(w)\).</li>
+                        <li>Every remaining key in \(v\)'s right subtree exceeds \(k(w)\) by the minimality of \(k(w)\) 
+                            (\(w\) is removed; the rest are strictly greater since keys are distinct).</li>
+                        <li>For any proper ancestor \(a\) of \(v\) (if \(v\) is the root, there is none): if \(v\) lay 
+                            in \(a\)'s left subtree, every key in \(v\)'s subtree (including \(k(w)\)) was already less 
+                            than \(k(a)\); if \(v\) lay in \(a\)'s right subtree, every such key exceeded \(k(a)\). 
+                            In either case, replacing \(k(v)\) by \(k(w)\) preserves the relation with \(a\).</li>
+                    </ul>
+                    <p>
+                        The descent to \(w\) is \(O(h)\), and the subsequent splice (case (i) or (ii) on \(w\)) is 
+                        \(O(h)\). All three deletion cases run in \(O(h)\) total.
                     </p>
                 </div>
 
@@ -257,7 +333,7 @@ uses_python: false
                     <em>any</em> algorithm can achieve under a natural computational constraint.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-comparison_based_algorithm">
                     <span class="theorem-title">Definition: Comparison-Based Algorithm</span>
                     <p>
                         A <strong>comparison-based algorithm</strong> is one in which all decisions about the input 
@@ -271,11 +347,12 @@ uses_python: false
                     <strong>decision tree</strong>: a binary tree where each internal node represents a comparison 
                     "\(a_i \leq a_j\)?", the left child corresponds to "yes" and the right child to "no", and each 
                     leaf represents a specific permutation of the input — the algorithm's output on that execution path. 
-                    Since the algorithm must be able to produce every one of the \(n!\) possible permutations as output, 
-                    the decision tree must have at least \(n!\) leaves.
+                    Since the algorithm must produce the correct sorted output for every one of the \(n!\) input 
+                    permutations, distinct input permutations must reach distinct leaves; hence the decision tree 
+                    has at least \(n!\) leaves.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-comparison_sorting_lower_bound">
                     <span class="theorem-title">Theorem: Comparison-Based Sorting Lower Bound</span>
                     <p>
                         Any comparison-based sorting algorithm on \(n\) elements requires 
@@ -286,14 +363,19 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        The decision tree is a binary tree with at least \(n!\) leaves. A binary tree of height 
-                        \(h\) has at most \(2^h\) leaves, so the worst-case number of comparisons satisfies
+                        The decision tree is a binary tree with at least \(n!\) leaves. A binary tree of height \(h\) 
+                        has at most \(2^h\) leaves: by induction on \(h\), the root contributes a single leaf when 
+                        \(h = 0\); for \(h \geq 1\), the left and right subtrees each have height at most \(h - 1\), 
+                        hence each at most \(2^{h-1}\) leaves, giving \(2 \cdot 2^{h-1} = 2^h\) in total. Therefore 
+                        the worst-case number of comparisons satisfies
                         \[
                         2^h \geq n! \quad \implies \quad h \geq \log_2(n!).
                         \]
-                        By <strong>Stirling's approximation</strong>, \(n! \geq (n/e)^n\), so
+                        Since \(\log_2 x\) is monotone increasing, for each \(k \geq 2\) we have 
+                        \(\int_{k-1}^{k} \log_2 x \, dx \leq \log_2 k\). Summing over \(k = 2, \ldots, n\):
                         \[
-                        \log_2(n!) \geq n \log_2(n/e) = n \log_2 n - n \log_2 e = \Omega(n \log n).
+                        \log_2(n!) = \sum_{k=2}^{n} \log_2 k \;\geq\; \int_{1}^{n} \log_2 x \, dx 
+                        \;=\; \frac{n \ln n - n + 1}{\ln 2} \;=\; \Omega(n \log n).
                         \]
                         Therefore any comparison-based sorting algorithm requires \(\Omega(n \log n)\) comparisons 
                         in the worst case.
@@ -305,18 +387,26 @@ uses_python: false
                     case, and is therefore optimal in the comparison model. Quicksort achieves \(O(n \log n)\) in 
                     expectation (over random pivot choices) but \(O(n^2)\) in the worst case. Heapsort also achieves 
                     \(O(n \log n)\) worst-case while sorting <em>in place</em>, by exploiting a tree-based data 
-                    structure that maintains a partial order on elements.
+                    structure (the <strong>binary heap</strong>, defined next) in which each parent stores a key 
+                    no greater than those of its children.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-binary_heap">
                     <span class="theorem-title">Definition: Binary Heap</span>
                     <p>
-                        A <strong>(binary min-) heap</strong> is a complete binary tree in which every vertex stores a key, 
-                        and each vertex's key is less than or equal to those of its children. This <strong>heap property</strong> 
-                        ensures that the minimum key resides at the root. Insertion and extract-min both run in 
-                        \(O(\log n)\).
+                        A <strong>(binary min-) heap</strong> is a <strong>complete binary tree</strong> — a binary 
+                        tree in which every level is filled, except possibly the last, which is filled from left to 
+                        right — in which every vertex stores a key, and each vertex's key is less than or equal to 
+                        those of its children. This <strong>heap property</strong> ensures that the minimum key 
+                        resides at the root.
                     </p>
                 </div>
+
+                <p>
+                    The completeness condition forces the height of an \(n\)-vertex heap to be \(\lfloor \log_2 n \rfloor\), 
+                    so insertion and extract-min — implemented by sift-up and sift-down along a single root-to-leaf 
+                    path — both run in \(O(\log n)\) time.
+                </p>
 
                 <p>
                     The heap is the standard implementation of the <strong>priority queue</strong> abstract data type — the 
@@ -342,7 +432,7 @@ uses_python: false
                     <p>
                         The \(\Omega(n \log n)\) lower bound is fundamentally an <strong>information-theoretic</strong> 
                         argument. If the \(n!\) input permutations are equally likely, the initial uncertainty is 
-                        the <a href="../Probability/entropy.html#entropy"><strong>Shannon entropy</strong></a> 
+                        the <a href="../Probability/entropy.html#D-shannon_entropy" class="ref-link"><strong>Shannon entropy</strong></a> 
                         \(\mathbb{H} = \log_2(n!)\) bits. Each binary comparison yields at most one bit of 
                         information — it partitions the remaining possibilities into two groups — so at least 
                         \(\log_2(n!) = \Omega(n \log n)\) comparisons are needed to identify the permutation. 
@@ -370,23 +460,23 @@ uses_python: false
 
                 <h3>The Catalan Numbers</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-catalan_number">
                     <span class="theorem-title">Definition: Catalan Numbers</span>
                     <p>
-                        The <strong>\(n\)-th Catalan number</strong> is
+                        The <strong>\(n\)-th Catalan number</strong> \(C_n\) is the number of structurally distinct 
+                        binary trees on \(n\) nodes (with \(C_0 = 1\) for the empty tree). The first several values are
                         \[
-                        C_n = \frac{1}{n+1}\binom{2n}{n}, \qquad n = 0, 1, 2, \ldots
+                        C_0 = 1,\; C_1 = 1,\; C_2 = 2,\; C_3 = 5,\; C_4 = 14,\; C_5 = 42.
                         \]
-                        The first several values are \(C_0 = 1,\; C_1 = 1,\; C_2 = 2,\; C_3 = 5,\; C_4 = 14,\; C_5 = 42\).
                     </p>
                 </div>
 
                 <p>
-                    The Catalan numbers satisfy a fundamental recurrence that arises from the recursive structure 
-                    of binary trees.
+                    The recursive structure of binary trees yields a recurrence that determines the entire sequence 
+                    from the base case \(C_0 = 1\).
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-catalan_recurrence">
                     <span class="theorem-title">Theorem: Catalan Recurrence</span>
                     <p>
                         The Catalan numbers satisfy
@@ -399,13 +489,11 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof (via root-splitting):</span>
                     <p>
-                        Consider a binary tree on \(n + 1\) nodes. The root has a left subtree with \(i\) nodes 
-                        (for some \(0 \leq i \leq n\)) and a right subtree with \(n - i\) nodes. If we denote by 
-                        \(C_n\) the number of structurally distinct binary trees on \(n\) nodes, then the number 
-                        of trees with \(i\) nodes in the left subtree and \(n - i\) in the right is \(C_i \cdot C_{n-i}\) 
-                        (by the 
-                        <a href="intro_combinatorics.html#count"><strong>Rule of Product</strong></a>). 
-                        Summing over all possible values of \(i\):
+                        Consider a binary tree on \(n + 1\) nodes. Removing the root leaves a left subtree with \(i\) 
+                        nodes (for some \(0 \leq i \leq n\)) and a right subtree with \(n - i\) nodes. By the 
+                        <a href="intro_combinatorics.html#D-counting_principles" class="ref-link"><strong>Rule of Product</strong></a>, 
+                        the number of trees with \(i\) nodes in the left subtree and \(n - i\) in the right is 
+                        \(C_i \cdot C_{n-i}\). Summing over all possible values of \(i\):
                         \[
                         C_{n+1} = \sum_{i=0}^{n} C_i \, C_{n-i}.
                         \]
@@ -413,25 +501,16 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Binary Tree Enumeration</span>
-                    <p>
-                        The number of structurally distinct binary trees on \(n\) nodes is the Catalan number \(C_n\).
-                    </p>
-                </div>
-
                 <h3>The Generating Function</h3>
 
                 <p>
-                    The recurrence \(C_{n+1} = \sum_{i=0}^{n} C_i \, C_{n-i}\) is a <strong>convolution</strong>: the 
-                    right-hand side is the coefficient of \(u^n\) in the product of the generating function with itself. 
-                    Let us exploit this algebraic structure.
-                </p>
-
-                <p>
                     Define the ordinary generating function 
-                    \(C(u) = \sum_{n=0}^{\infty} C_n \, u^n\). The recurrence tells us that 
-                    \(C_{n+1}\) is the \(n\)-th coefficient of \(C(u)^2\), so 
+                    \[
+                    C(u) = \sum_{n=0}^{\infty} C_n \, u^n.
+                    \]
+                    The Catalan recurrence \(C_{n+1} = \sum_{i=0}^{n} C_i \, C_{n-i}\) is a <strong>convolution</strong>: 
+                    by the definition of formal power series multiplication, the right-hand side is the coefficient 
+                    of \(u^n\) in the product \(C(u) \cdot C(u) = C(u)^2\). Hence
                     \(\sum_{n=0}^{\infty} C_{n+1} u^n = C(u)^2\). The left-hand side equals 
                     \(\bigl(C(u) - C_0\bigr)/u = \bigl(C(u) - 1\bigr)/u\). Therefore:
                     \[
@@ -445,7 +524,7 @@ uses_python: false
                     gives \((1 + \sqrt{1 - 4u})/(2u) \to \infty\) as \(u \to 0\), so we take the "\(-\)" root:
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-catalan_generating_function">
                     <span class="theorem-title">Theorem: Catalan Generating Function</span>
                     <p>
                         The ordinary generating function of the Catalan numbers is
@@ -456,14 +535,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    This expression can be verified by expanding \(\sqrt{1 - 4u}\) via the generalized binomial 
-                    series \((1 + z)^{1/2}\) with \(z = -4u\), yielding
+                    The first few coefficients of the right-hand side, expanded as a power series in \(u\), are
                     \[
-                    \sqrt{1 - 4u} = \sum_{k=0}^{\infty} \binom{1/2}{k}(-4u)^k = 1 - 2u - 2u^2 - 4u^3 - 10u^4 - 28u^5 - \cdots
-                    \]
-                    so that
-                    \[
-                    \frac{1 - \sqrt{1 - 4u}}{2u} = 1 + u + 2u^2 + 5u^3 + 14u^4 + 42u^5 + \cdots
+                    \frac{1 - \sqrt{1 - 4u}}{2u} = 1 + u + 2u^2 + 5u^3 + 14u^4 + 42u^5 + \cdots,
                     \]
                     recovering the Catalan sequence.
                 </p>
@@ -475,7 +549,7 @@ uses_python: false
                     bijection between binary trees and lattice paths, combined with the <strong>reflection principle</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-dyck_path">
                     <span class="theorem-title">Definition: Dyck Path</span>
                     <p>
                         A <strong>Dyck path</strong> of length \(2n\) is a lattice path from \((0,0)\) to \((2n, 0)\) 
@@ -501,39 +575,46 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Bijection: Dyck paths \(\leftrightarrow\) balanced parenthesizations.</strong> 
-                    Replace each up-step by "(" and each down-step by ")". A Dyck path of length \(2n\) 
-                    corresponds to a sequence of \(n\) pairs of balanced parentheses. The condition "never passes 
-                    below the \(x\)-axis" translates to "at every prefix, the number of opening parentheses is at 
-                    least the number of closing parentheses" — exactly the definition of a balanced parenthesization.
+                    Equivalently, the encoding above produces a sequence of \(n\) pairs of <strong>balanced parentheses</strong> — 
+                    a string in which every opening parenthesis has a matching closing one and, at every prefix, the number 
+                    of opening parentheses is at least the number of closing ones. The Dyck path / balanced parenthesization 
+                    correspondence (up = "(", down = ")") thus identifies binary trees, Dyck paths, and balanced parenthesizations 
+                    as three views of the same object.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-catalan_closed_form">
                     <span class="theorem-title">Theorem: Closed Form of Catalan Numbers</span>
                     <p>
-                        The number of Dyck paths of length \(2n\) is \(C_n = \frac{1}{n+1}\binom{2n}{n}\).
+                        \[
+                        C_n = \frac{1}{n+1}\binom{2n}{n}.
+                        \]
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof (Reflection Principle):</span>
                     <p>
-                        The total number of lattice paths from \((0,0)\) to \((2n,0)\) with \(n\) up-steps and \(n\) 
-                        down-steps (without any restriction) is \(\binom{2n}{n}\) — we simply choose which \(n\) of the 
-                        \(2n\) steps are up-steps.
+                        By the bijection above, \(C_n\) equals the number of Dyck paths of length \(2n\). We count 
+                        these by subtracting bad paths from the unrestricted total. The total number of lattice paths 
+                        from \((0,0)\) to \((2n,0)\) with \(n\) up-steps and \(n\) down-steps (without any restriction) 
+                        is \(\binom{2n}{n}\) — we simply choose which \(n\) of the \(2n\) steps are up-steps.
                     </p>
                     <p>
                         We must subtract the <strong>bad paths</strong>: those that touch or cross below the \(x\)-axis, 
                         i.e., paths that at some point reach height \(-1\). Consider such a bad path. Let \(P\) be the 
                         first point where the path reaches height \(-1\). <strong>Reflect</strong> the portion of the 
-                        path after \(P\) in the line \(y = -1\): every up-step becomes a down-step and vice versa. The 
-                        reflected path goes from \((0,0)\) to \((2n, -2)\), which consists of \((n-1)\) up-steps and 
+                        path from \(P\) onward in the line \(y = -1\): every up-step becomes a down-step and vice versa. 
+                        The reflected path goes from \((0,0)\) to \((2n, -2)\), which consists of \((n-1)\) up-steps and 
                         \((n+1)\) down-steps.
                     </p>
                     <p>
                         This reflection is a bijection between bad paths from \((0,0)\) to \((2n,0)\) and 
-                        <em>all</em> paths from \((0,0)\) to \((2n, -2)\). The number of the latter is 
-                        \(\binom{2n}{n-1}\) (choosing which \(n-1\) of \(2n\) steps are up-steps). Therefore:
+                        <em>all</em> paths from \((0,0)\) to \((2n, -2)\). Indeed, every path ending at \((2n, -2)\) 
+                        must touch the line \(y = -1\) (since each step changes \(y\) by exactly \(1\) and the endpoint 
+                        is at \(y = -2\)); reflecting the portion from its first such point onward inverts the operation 
+                        and recovers a bad path ending at \((2n, 0)\). The number of paths from \((0,0)\) to \((2n, -2)\) 
+                        is \(\binom{2n}{n-1}\) (choosing which \(n - 1\) of \(2n\) steps are up-steps). Using the 
+                        identity \(\binom{2n}{n-1} = \frac{n}{n+1}\binom{2n}{n}\) (immediate from the factorial form), 
                         \[
                         C_n = \binom{2n}{n} - \binom{2n}{n-1} = \binom{2n}{n} - \frac{n}{n+1}\binom{2n}{n} 
                         = \frac{1}{n+1}\binom{2n}{n}.
@@ -542,10 +623,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    The reflection principle is a powerful technique: the central idea is to establish a bijection 
-                    between "bad" objects and objects of a different, easily counted type. We used the same 
-                    combinatorial thinking — counting via bijections and the subtraction principle — in 
-                    <a href="intro_combinatorics.html"><strong>Introduction to Combinatorics</strong></a>.
+                    The reflection principle exemplifies a powerful pattern in enumerative combinatorics: 
+                    counting hard-to-describe objects (here, Dyck paths) by establishing a bijection with 
+                    objects of a different, easily counted type, and applying the rule of sum on the resulting 
+                    partition.
                 </p>
 
                 <h3>Schröder Numbers and Lattice Path Generalizations</h3>
@@ -555,7 +636,7 @@ uses_python: false
                     down \((1, -1)\). A natural generalization is to allow a third type of step.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-schroder_path">
                     <span class="theorem-title">Definition: Schröder Path</span>
                     <p>
                         A <strong>Schröder path</strong> of length \(2n\) is a lattice path from \((0,0)\) to \((2n, 0)\) 
@@ -585,23 +666,25 @@ uses_python: false
                     (ordered rooted trees where each internal vertex has \(\geq 2\) children) on \(n + 1\) leaves. 
                     For instance, \(s_2 = 3\) counts the three plane trees with 3 leaves: the root with 3 
                     children (all leaves), and the two trees where the root has 2 children with one being an 
-                    internal node bearing 2 leaves. Where the Catalan numbers count full binary trees 
-                    (exactly 2 children per internal node), the little Schröder numbers count the more general 
-                    case where branching can vary — each internal node may have 2, 3, or more children, 
-                    but at least 2.
+                    internal node bearing 2 leaves. Where the Catalan numbers count binary trees on \(n\) nodes 
+                    (each internal node having exactly 2 child slots, possibly empty), the little Schröder numbers 
+                    count the more general case where branching can vary — each internal node may have 2, 3, or 
+                    more children.
                 </p>
 
                 <p>
                     The large Schröder numbers satisfy the recurrence
                     \[
-                    (n+2)\, S_{n+1} = 3(2n+1)\, S_n - (n-1)\, S_{n-1}, \qquad S_0 = 1,\; S_1 = 2.
+                    (n+2)\, S_{n+1} = 3(2n+1)\, S_n - (n-1)\, S_{n-1}, \qquad S_0 = 1,\; S_1 = 2,
                     \]
-                    There is also a convolution-type recurrence that mirrors the Catalan case:
+                    as well as a convolution-type recurrence that mirrors the Catalan case:
                     \[
                     S_{n+1} = S_{n} + \sum_{k=0}^{n} S_k \, S_{n-k}, \qquad S_0 = 1.
                     \]
                     The additional \(S_n\) term (compared to the pure convolution \(C_{n+1} = \sum C_k C_{n-k}\)) 
-                    reflects the extra flat step available in Schröder paths.
+                    reflects the extra flat step available in Schröder paths. Both recurrences can be derived from 
+                    the generating function \(S(x) = (1 - x - \sqrt{1 - 6x + x^2})/(2x)\); we state them without 
+                    proof here, as the Schröder numbers play a supporting role in this page rather than a central one.
                 </p>
 
                 <h3>The Motzkin Numbers</h3>
@@ -621,8 +704,8 @@ uses_python: false
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>Catalan</strong> \(C_n\): full binary trees — each internal node has exactly 2 children 
-                        (\(n\) internal nodes, \(n+1\) leaves).</li>
+                    <li><strong>Catalan</strong> \(C_n\): binary trees on \(n\) nodes — each internal node has at most 
+                        2 children, distinguished as left and right.</li>
                     <li><strong>Motzkin</strong> \(M_n\): unary-binary trees — each internal node has 1 or 2 children 
                         (\(n\) edges).</li>
                     <li><strong>Little Schröder</strong> \(s_n\): plane trees — each internal node has \(\geq 2\) children 
@@ -656,7 +739,7 @@ uses_python: false
                     results in combinatorics.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-cayleys_formula_trees">
                     <span class="theorem-title">Theorem: Cayley's Formula</span>
                     <p>
                         The number of labeled trees on the vertex set \([n] = \{1, 2, \ldots, n\}\) is \(n^{n-2}\) 
@@ -677,7 +760,7 @@ uses_python: false
 
                 <h3>Prüfer Sequences</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-prufer_sequence">
                     <span class="theorem-title">Definition: Prüfer Sequence</span>
                     <p>
                         A <strong>Prüfer sequence</strong> of length \(n - 2\) is a sequence 
@@ -740,33 +823,64 @@ uses_python: false
                 </ol>
 
                 <p>
-                    Note that Step 2 requires no inspection of the remaining sequence entries. The degree 
-                    counter maintains the invariant that at step \(i\), 
-                    \(d(v) = 1 + (\text{number of occurrences of } v \text{ among } a_i, a_{i+1}, \ldots, a_{n-2})\). 
-                    Thus \(d(v) = 1\) guarantees that \(v\) does not appear in the unprocessed portion of the 
-                    sequence, ensuring it is safe to remove \(v\) as a leaf. This invariant also shows that 
-                    decoding runs in \(O(n \log n)\) time using a priority queue (or \(O(n)\) with a more 
-                    careful implementation).
+                    The encoding and decoding procedures are mutual inverses, establishing a bijection between 
+                    labeled trees on \([n]\) and sequences in \([n]^{n-2}\). Verifying this rests on a few 
+                    elementary observations.
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li><strong>Encoding is well-defined.</strong> At each iteration, the current tree has at least 
+                        2 leaves, so the smallest leaf is unambiguously chosen. (Any tree on \(\geq 2\) vertices has 
+                        at least 2 leaves: a tree on \(n\) vertices has \(n - 1\) edges, so by counting each edge 
+                        from both endpoints, \(\sum_v \deg(v) = 2(n-1)\); if at most one vertex had degree 1, the 
+                        sum would be at least \(1 + 2(n-1) = 2n - 1 > 2(n-1)\), a contradiction.) Removing a leaf 
+                        preserves the tree property, so the procedure runs for exactly \(n - 2\) steps.</li>
+                    <li><strong>Decoding is well-defined.</strong> The degree counter \(d(v)\) maintains the invariant 
+                        that at the start of step \(i\), for each unprocessed vertex \(v\),
+                        \[
+                        d(v) = 1 + \#\{j \geq i : a_j = v\},
+                        \]
+                        verifiable by induction on \(i\). Summing over the \(n - i + 1\) unprocessed vertices gives 
+                        \(\sum d(v) = (n - i + 1) + (n - 1 - i) = 2(n - i)\). Since this is strictly less than 
+                        \(2(n - i + 1)\), some unprocessed vertex must have \(d(v) = 1\); the smallest such is 
+                        unambiguously chosen. The resulting graph collects \(n - 1\) edges on \(n\) vertices and 
+                        is acyclic, by the following <em>component invariant</em>: at the start of each step, the 
+                        connected component of any unprocessed vertex \(v\) contains only \(v\) among the unprocessed 
+                        vertices (its other members are previously deactivated \(v_j\)'s, by induction on the step 
+                        index). Hence \(v_i\) and \(a_i\) lie in different components when edge \(\{v_i, a_i\}\) is 
+                        added, so every edge of the constructed graph — including the final edge between the two 
+                        survivors — is a bridge, and the graph is a forest. With \(n - 1\) edges on \(n\) vertices, 
+                        it is in fact a tree.</li>
+                    <li><strong>The two procedures are inverse.</strong> Both are driven by the same recursive 
+                        principle — at each step, the smallest leaf is matched with its unique neighbor — so 
+                        applying decoding to an encoded sequence reconstructs the original tree, and conversely. 
+                        A formal verification proceeds by induction on \(n\).</li>
+                </ul>
+                <p>
+                    A useful consequence: a vertex \(v\) appears in the Prüfer sequence of \(T\) exactly 
+                    \(\deg_T(v) - 1\) times. Indeed, \(v\) is recorded as the neighbor of a removed leaf precisely 
+                    when one of its incident edges is deleted; each such deletion reduces \(\deg(v)\) by 1, and the 
+                    process terminates with \(v\) either still present (when \(\deg_T(v) - 1\) of its edges have been 
+                    removed) or having become itself a leaf and been removed (recording its own neighbor, not \(v\) 
+                    itself). In both cases \(v\) is recorded \(\deg_T(v) - 1\) times. In particular, leaves never 
+                    appear in the sequence, and the two vertices remaining at the end are those whose degree counter 
+                    has been decremented to 1 after all entries are processed.
+                </p>
+                <p>
+                    The decoding implementation runs in \(O(n \log n)\) using a priority queue (or \(O(n)\) with a 
+                    more careful implementation that scans the sequence once to compute final degree counts).
                 </p>
 
                 <p>
-                    <strong>Key observation.</strong> A vertex \(v\) appears in the Prüfer sequence exactly 
-                    \(\deg_T(v) - 1\) times, where \(\deg_T(v)\) is the degree of \(v\) in the tree. In particular, 
-                    leaves (degree 1) never appear in the sequence, and the two vertices remaining at the end are 
-                    those whose degree has been decremented to 1 after all entries are processed.
+                    The vertex-frequency observation has a powerful consequence: it reduces the counting of trees 
+                    with a <em>prescribed degree sequence</em> to a problem about arrangements of symbols in a sequence.
                 </p>
 
-                <p>
-                    This observation has a powerful consequence: it reduces the counting of trees with a 
-                    <em>prescribed degree sequence</em> to a problem about arrangements of symbols in a sequence.
-                </p>
-
-                <div class="theorem">
+                <div class="theorem" id="T-degree_constrained_tree_count">
                     <span class="theorem-title">Theorem: Degree-Constrained Tree Counting</span>
                     <p>
                         The number of labeled trees on \([n]\) in which vertex \(v\) has degree \(d_v\) 
                         (where \(d_v \geq 1\) and \(\sum_{v=1}^{n} d_v = 2(n-1)\)) is the 
-                        <a href="intro_combinatorics.html#count"><strong>multinomial coefficient</strong></a>
+                        <a href="intro_combinatorics.html#D-multinomial_coefficient" class="ref-link"><strong>multinomial coefficient</strong></a>
                         \[
                         \binom{n-2}{d_1 - 1,\; d_2 - 1,\; \ldots,\; d_n - 1} 
                         = \frac{(n-2)!}{(d_1 - 1)!\,(d_2 - 1)! \cdots (d_n - 1)!}.
@@ -786,31 +900,18 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof of Cayley's Formula (two approaches):</span>
+                    <span class="proof-title">Proof of Cayley's Formula:</span>
                     <p>
-                        <strong>Direct counting.</strong> The Prüfer bijection establishes 
+                        The Prüfer bijection establishes 
                         \(\{\text{labeled trees on } [n]\} \longleftrightarrow [n]^{n-2}\). 
                         The set \([n]^{n-2}\) has \(n^{n-2}\) elements (each of the \(n-2\) positions 
                         has \(n\) choices), giving the result immediately.
-                    </p>
-                    <p>
-                        <strong>Via the multinomial theorem.</strong> Alternatively, we sum the 
-                        degree-constrained formula over all valid degree sequences. Setting 
-                        \(e_v = d_v - 1\), the sum becomes
-                        \[
-                        \sum_{\substack{e_1, \ldots, e_n \geq 0 \\ e_1 + \cdots + e_n = n-2}} 
-                        \frac{(n-2)!}{e_1! \cdots e_n!} 
-                        = (\underbrace{1 + 1 + \cdots + 1}_{n})^{n-2} = n^{n-2}
-                        \]
-                        by the multinomial theorem. This second approach is more powerful: it not only 
-                        proves Cayley's formula but reveals how the \(n^{n-2}\) trees are distributed 
-                        across degree sequences.
                     </p>
                 </div>
 
                 <p>
                     Cayley's formula counts the spanning trees of the complete graph \(K_n\). Recall from 
-                    <a href="intro_graph.html#sub"><strong>Introduction to Graph Theory</strong></a> that \(K_n\) is 
+                    <a href="intro_graph.html#D-complete_graph" class="ref-link"><strong>Introduction to Graph Theory</strong></a> that \(K_n\) is 
                     the graph on \(n\) vertices where every pair is connected by an edge — it has \(\binom{n}{2}\) edges, 
                     and Cayley's formula tells us that \(n^{n-2}\) of its \(\binom{\binom{n}{2}}{n-1}\) possible spanning 
                     subgraphs with \(n - 1\) edges are trees.
