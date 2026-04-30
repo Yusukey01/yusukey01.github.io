@@ -53,17 +53,32 @@ uses_python: false
                     (vertices) together with pairwise connections (edges) between them.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph">
                     <span class="theorem-title">Definition: Graph</span>
                     <p>
-                        A <strong>graph</strong> is an ordered pair \(G = (V, E)\), where \(V\) is a set of <strong>vertices</strong> 
-                        (or nodes), and \(E\) is a set of <strong>edges</strong>, each of which connects a pair of vertices. 
-                        We write \(V(G)\) for the vertex set and \(E(G)\) for the edge set of \(G\).
+                        A <strong>graph</strong> is an ordered pair \(G = (V, E)\), where \(V\) is a finite set of 
+                        <strong>vertices</strong> (or nodes) and \(E \subseteq \binom{V}{2}\) is a set of 
+                        <strong>edges</strong>. Here \(\binom{V}{2}\) denotes the set of all 2-element subsets of \(V\), 
+                        so each edge is an unordered pair of two distinct vertices. We write \(V(G)\) for the vertex set 
+                        and \(E(G)\) for the edge set of \(G\).
                     </p>
                 </div>
 
                 <p>
-                    In most cases, we assume graphs are finite, though infinite graphs do arise in certain theoretical contexts. 
+                    Two consequences of the formal condition \(E \subseteq \binom{V}{2}\) are worth noting at the outset. 
+                    First, since 1-element subsets are excluded, no edge has the form \(\{x, x\}\); a graph has no 
+                    <strong>loops</strong> (edges joining a vertex to itself). Second, because \(E\) is a set, no two 
+                    distinct edges can be the same unordered pair; a graph has no <strong>parallel edges</strong>. 
+                    A graph in this sense is sometimes called a <strong>simple graph</strong> for emphasis.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> Throughout this page, the unqualified word "graph" means a finite, 
+                    undirected simple graph as defined above. Variants such as directed, weighted, and multigraphs 
+                    (introduced below) are used only when explicitly named.
+                </p>
+
+                <p>
                     The <strong>order</strong> of \(G\) is the number of its vertices:
                     \[
                     |G| = |V(G)|.
@@ -73,30 +88,26 @@ uses_python: false
 
                 <p>
                     A vertex \(v\) is <strong>incident</strong> with an edge \(e\) if \(v \in e\); we then say that \(e\) is an 
-                    edge <em>at</em> \(v\). The two vertices incident with an edge are its <strong>ends</strong>, and an edge 
-                    <strong>joins</strong> its ends. For brevity, an edge \(\{x, y\} \in E(G)\) is typically written as \(xy \in E(G)\), 
-                    where \(x, y \in V(G)\).
+                    edge <em>at</em> \(v\). The two vertices incident with an edge are its <strong>ends</strong> (or 
+                    <strong>endpoints</strong>), and an edge <strong>joins</strong> its ends. For brevity, an edge 
+                    \(\{x, y\} \in E(G)\) is typically written as \(xy \in E(G)\), with the understanding that \(xy\) and 
+                    \(yx\) denote the same edge.
                 </p>
 
                 <p>
-                    The definition above describes the simplest type of graph - an undirected, simple graph. 
-                    In practice, several important variants arise depending on how edges are defined:
+                    Several important variants of the basic definition arise in practice, obtained by relaxing or modifying 
+                    the edge structure:
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>Undirected graph</strong>:<br>
-                        Each edge has no direction and simply connects two distinct vertices. Formally, edges are unordered pairs:
-                        \[
-                        E \subseteq \binom{V}{2}.
-                        \]
-                        Unless stated otherwise, "graph" in this page means an undirected simple graph.
-                    </li>
                     <li><strong>Directed graph (digraph)</strong>:<br>
                         Each edge (often called an <em>arc</em>) has a direction, pointing from one vertex to another. 
                         Formally, edges are ordered pairs:
                         \[
                         E \subseteq V \times V.
                         \]
+                        In this generality, self-loops \((v, v)\) are typically permitted; a digraph forbidding them is 
+                        called a <em>simple digraph</em>.
                     </li>
                     <li><strong>Weighted graph</strong>:<br>
                         Each edge carries a numerical value (a "weight"), often representing cost, distance, or strength of connection. 
@@ -108,12 +119,15 @@ uses_python: false
                         and network optimization.
                     </li>
                     <li><strong>Multigraph</strong>:<br>
-                        Multiple edges are allowed between the same pair of vertices. A multigraph is represented as 
+                        Multiple edges are allowed between the same pair of vertices. One common formulation is 
                         \[
                         G = (V, E, \mu),
                         \]
-                        where \(\mu: E \to \mathbb{N}\) assigns a multiplicity to each edge, indicating how many parallel 
-                        edges exist between two vertices.
+                        where \(E \subseteq \binom{V}{2}\) and \(\mu: E \to \mathbb{Z}_{\geq 1}\) assigns a positive 
+                        integer multiplicity to each edge, indicating how many parallel edges exist between two 
+                        vertices. (Variants permitting loops 
+                        replace \(\binom{V}{2}\) with the larger set of unordered pairs allowing repetition. Multigraphs 
+                        do not feature in the main development of this page, so we leave the precise variant unspecified.)
                     </li>
                 </ul>
 
@@ -126,11 +140,11 @@ uses_python: false
             <section id="neighbors" class="section-content">
                 <h2>Neighbors</h2>
                 <p>
-                    The notion of adjacency — which vertices are directly connected — is the most basic local property of a graph. 
+                    The notion of adjacency — which vertices are directly joined by an edge — is the most basic local property of a graph. 
                     From adjacency, we derive neighborhoods, independence, and edge-counting between vertex subsets.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_adjacency">
                     <span class="theorem-title">Definition: Adjacency and Neighborhood</span>
                     <p>
                         Two vertices \(x, y \in V(G)\) are <strong>adjacent</strong> (or <strong>neighbors</strong>) if 
@@ -142,7 +156,7 @@ uses_python: false
                     </p>
                 </div>
 
-                <div class="theorem">
+                <div class="theorem" id="D-complete_graph">
                     <span class="theorem-title">Definition: Complete Graph</span>
                     <p>
                         A graph \(G\) is <strong>complete</strong> if every pair of distinct vertices is adjacent. 
@@ -162,11 +176,21 @@ uses_python: false
                     \[
                     e(A, B) = |\{ (a, b) \in A \times B : ab \in E(G) \}|.
                     \]
-                    Since this counts <em>ordered</em> pairs, each edge with one endpoint in \(A\) and one in \(B\) 
-                    contributes 1 if the sets are disjoint, but an edge with both endpoints in \(A \cap B\) is counted twice. 
-                    When \(A\) and \(B\) are disjoint, \(e(A, B)\) simply counts the edges crossing between the two parts -
-                    a quantity central to the study of bipartite graphs and graph cuts.
+                    Since this counts <em>ordered</em> pairs, an edge \(uv \in E(G)\) with \(u \in A\) and \(v \in B\) is 
+                    counted once via the pair \((u, v)\); the same edge is also counted via \((v, u)\) precisely when both 
+                    \(u, v \in A \cap B\), so edges with both endpoints in \(A \cap B\) are counted twice while all other 
+                    edges between \(A\) and \(B\) are counted once. Two consequences are worth recording:
                 </p>
+                <ul style="padding-left: 40px;">
+                    <li>
+                        Taking \(B = A\) gives \(e(A, A) = 2\, e(A)\), since every edge with both endpoints in \(A\) is 
+                        counted twice (once as \((a, b)\) and once as \((b, a)\)).
+                    </li>
+                    <li>
+                        When \(A\) and \(B\) are disjoint, \(e(A, B)\) counts exactly the edges crossing between the two 
+                        parts — a quantity central to the study of bipartite graphs and graph cuts.
+                    </li>
+                </ul>
 
                 <p>
                     Adjacency tells us <em>which</em> vertices are connected. The natural next question is: <em>how many</em> connections 
@@ -182,7 +206,7 @@ uses_python: false
                     that constrains the global structure of any graph.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-vertex_degree">
                     <span class="theorem-title">Definition: Degree</span>
                     <p>
                         For a simple graph \(G\), the <strong>degree</strong> of a vertex \(x\) is the number of its neighbors:
@@ -195,6 +219,21 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="theorem" id="D-degree_sequence">
+                    <span class="theorem-title">Definition: Degree Sequence</span>
+                    <p>
+                        The <strong>degree sequence</strong> of a graph \(G\) on \(n\) vertices is the multiset 
+                        \(\{\deg(v_1), \deg(v_2), \ldots, \deg(v_n)\}\) of vertex degrees, conventionally listed in 
+                        non-increasing order:
+                        \[
+                        d_1 \geq d_2 \geq \cdots \geq d_n,
+                        \]
+                        where \(d_i = \deg(v_i)\) under some ordering of the vertices. Because the multiset itself does 
+                        not depend on how the vertices are labeled, the degree sequence is an intrinsic feature of \(G\) 
+                        — a property we will revisit when we discuss isomorphism invariants.
+                    </p>
+                </div>
+
                 <p>
                     The <strong>minimum degree</strong> and <strong>maximum degree</strong> of \(G\) are denoted respectively by 
                     \[
@@ -204,11 +243,24 @@ uses_python: false
                     \[
                     \delta(G) \leq d(G) \leq \Delta(G).
                     \]
-                    If every vertex of \(G\) has the same degree \(k\), the graph is said to be <strong>\(k\)-regular</strong>. 
-                    For example, the complete graph \(K_n\) is \((n-1)\)-regular.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-k_regular_graph">
+                    <span class="theorem-title">Definition: \(k\)-Regular Graph</span>
+                    <p>
+                        A graph \(G\) is <strong>\(k\)-regular</strong> if every vertex has the same degree \(k\); equivalently, 
+                        \(\delta(G) = \Delta(G) = k\). A graph is <strong>regular</strong> if it is \(k\)-regular for some \(k\).
+                    </p>
+                </div>
+
+                <p>
+                    For example, the complete graph \(K_n\) is \((n-1)\)-regular, every cycle \(C_n\) is \(2\)-regular, 
+                    and the cube graph \(Q_3\) (the \(1\)-skeleton of the 3-cube) is \(3\)-regular. Regularity is a strong 
+                    structural constraint that simplifies many counting arguments and is central to the spectral theory of 
+                    graphs.
+                </p>
+
+                <div class="theorem" id="T-handshaking_lemma">
                     <span class="theorem-title">Proposition: Handshaking Lemma</span>
                     <p>
                         For any graph \(G = (V, E)\),
@@ -218,9 +270,34 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We count incidences — pairs \((x, e) \in V \times E\) with \(x \in e\) — in two ways. 
+                        For each vertex \(x \in V\), the number of edges incident to \(x\) is, by definition, \(\deg(x)\); 
+                        summing over all vertices gives \(\sum_{x \in V} \deg(x)\). On the other hand, each edge 
+                        \(e = xy \in E\) has exactly two endpoints, so it contributes \(2\) to the total count of 
+                        incidences. Equating the two counts yields
+                        \[
+                        \sum_{x \in V} \deg(x) = 2|E|. \qquad \blacksquare
+                        \]
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Extension to Multigraphs</h3>
+                    <p>
+                        The Handshaking Lemma extends to multigraphs (and to graphs with loops) without modification, 
+                        provided each loop at a vertex \(v\) is counted as contributing \(2\) to \(\deg(v)\). Under this 
+                        convention the proof above goes through unchanged: a loop at \(v\) is incident to \(v\) twice, 
+                        and each parallel edge between \(u\) and \(v\) contributes one incidence to each of its endpoints. 
+                        This generality is occasionally useful — for instance, when modelling road networks with 
+                        multiple direct connections, or in classical formulations of Eulerian circuits where parallel 
+                        edges arise naturally (Königsberg's seven bridges being the historical prototype).
+                    </p>
+                </div>
+
                 <p>
-                    The idea is simple: each edge \(xy\) contributes exactly 1 to \(\deg(x)\) and 1 to \(\deg(y)\), 
-                    so summing all degrees counts every edge twice. 
                     Defining \(\varepsilon(G) = |E|/|V|\), the number of edges per vertex, we can rewrite the 
                     Handshaking Lemma as
                     \[
@@ -228,6 +305,38 @@ uses_python: false
                     \]
                     This identity connects the average degree to the edge density and will reappear when we study 
                     the <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>.
+                </p>
+
+                <div class="theorem" id="T-odd_degree_parity">
+                    <span class="theorem-title">Corollary: Number of Odd-Degree Vertices is Even</span>
+                    <p>
+                        In any graph \(G = (V, E)\), the number of vertices of odd degree is even.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Partition \(V\) into the set \(V_{\mathrm{odd}}\) of vertices of odd degree and the set 
+                        \(V_{\mathrm{even}}\) of vertices of even degree. By the Handshaking Lemma,
+                        \[
+                        \sum_{x \in V_{\mathrm{odd}}} \deg(x) \;+\; \sum_{x \in V_{\mathrm{even}}} \deg(x) \;=\; 2|E|.
+                        \]
+                        The right-hand side is even, and the second sum on the left is a sum of even integers, hence 
+                        even. Therefore the first sum, \(\sum_{x \in V_{\mathrm{odd}}} \deg(x)\), is also even. 
+                        Writing each odd term as \(\deg(x) = 2 k_x + 1\) for some \(k_x \in \mathbb{Z}_{\geq 0}\), we obtain
+                        \[
+                        \sum_{x \in V_{\mathrm{odd}}} \deg(x) \;=\; 2 \sum_{x \in V_{\mathrm{odd}}} k_x \;+\; |V_{\mathrm{odd}}|.
+                        \]
+                        The left side is even and the first term on the right is even, so \(|V_{\mathrm{odd}}|\) must 
+                        be even as well. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    This innocent-looking corollary has surprisingly broad consequences: it underpins parity arguments 
+                    throughout graph theory, including the existence criteria for Eulerian circuits that we will encounter 
+                    in the next page.
                 </p>
 
                 <div class="insight-box">
@@ -256,16 +365,17 @@ uses_python: false
                     the vertices of one to obtain the other, preserving all edge relationships.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_isomorphism">
                     <span class="theorem-title">Definition: Graph Isomorphism</span>
                     <p>
                         Two graphs \(G = (V, E)\) and \(G' = (V', E')\) are <strong>isomorphic</strong>, written 
                         \(G \simeq G'\), if there exists a bijection \(\varphi: V \to V'\) such that 
                         \[
-                        \forall\, x, y \in V, \quad xy \in E \iff \varphi(x)\varphi(y) \in E'.
+                        \forall\, x, y \in V \text{ with } x \neq y, \quad xy \in E \iff \varphi(x)\varphi(y) \in E'.
                         \]
-                        Such a map \(\varphi\) is called an <strong>isomorphism</strong>. An isomorphism from \(G\) to itself 
-                        (i.e., \(G = G'\)) is called an <strong>automorphism</strong>.
+                        Such a map \(\varphi\) is called an <strong>isomorphism</strong>. An isomorphism from a graph 
+                        \(G\) to itself — that is, a bijection \(\varphi: V(G) \to V(G)\) preserving edges and non-edges 
+                        — is called an <strong>automorphism</strong> of \(G\).
                     </p>
                 </div>
 
@@ -275,21 +385,36 @@ uses_python: false
                 </p>
 
                 <p>
-                    Isomorphism naturally gives rise to two important concepts:
+                    Isomorphism naturally gives rise to two important concepts, often used in tandem to classify graphs 
+                    and to certify non-isomorphism.
                 </p>
-                <ul style="padding-left: 40px;">
-                    <li>
-                        A <strong>graph property</strong> is a class of graphs that is closed under isomorphism. 
-                        For example, "containing a triangle" (i.e., having a cycle of length 3) is a graph property: 
-                        if \(G\) contains a triangle, then so does every graph isomorphic to \(G\).
-                    </li>
-                    <li>
+
+                <div class="theorem" id="D-graph_property_invariant">
+                    <span class="theorem-title">Definition: Graph Property and Graph Invariant</span>
+                    <p>
+                        A <strong>graph property</strong> is a class \(\mathcal{P}\) of graphs that is closed under 
+                        isomorphism: if \(G \in \mathcal{P}\) and \(G \simeq G'\), then \(G' \in \mathcal{P}\). 
                         A <strong>graph invariant</strong> is a function \(f\) defined on graphs such that 
-                        \(G \simeq G'\) implies \(f(G) = f(G')\). The number of vertices, the number of edges, and 
-                        the degree sequence are all graph invariants. Invariants are the primary tool for proving 
-                        that two graphs are <em>not</em> isomorphic: if any invariant differs, the graphs cannot be isomorphic.
-                    </li>
-                </ul>
+                        \(G \simeq G'\) implies \(f(G) = f(G')\).
+                    </p>
+                </div>
+
+                <p>
+                    The two notions are intertwined: every graph property \(\mathcal{P}\) gives rise to its 
+                    indicator invariant \(\mathbf{1}_{\mathcal{P}}\), and every invariant \(f\) partitions graphs into 
+                    properties by the level sets \(\{G : f(G) = c\}\). For example, "containing a triangle" — having a 
+                    <a href="#D-graph_cycle" class="ref-link"><strong>cycle</strong></a> of length 3 — is a graph 
+                    property: if \(G\) contains a triangle, then so does every graph isomorphic to \(G\). Familiar 
+                    invariants include the number of vertices, the number of edges, and the 
+                    <a href="#D-degree_sequence" class="ref-link"><strong>degree sequence</strong></a>. Invariants are 
+                    the primary tool for proving that two graphs are <em>not</em> isomorphic: if any invariant differs, 
+                    the graphs cannot be isomorphic.
+                </p>
+
+                <p>
+                    Isomorphism captures when two graphs are "the same." We now turn to the complementary notion: 
+                    how to identify and analyze the <em>parts</em> of a single graph — its subgraphs.
+                </p>
             </section>
 
             <section id="sub" class="section-content">
@@ -306,29 +431,64 @@ uses_python: false
                     If \(V \cap V' = \emptyset\) (and hence \(E \cap E' = \emptyset\)), the graphs are said to be <strong>disjoint</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-bipartite_graph">
                     <span class="theorem-title">Definition: Bipartite Graph</span>
                     <p>
-                        A graph \(G = (V, E)\) is <strong>bipartite</strong> if its vertex set can be partitioned into two disjoint sets 
-                        \(U\) and \(W\) such that 
+                        A graph \(G = (V, E)\) is <strong>bipartite</strong> if its vertex set can be partitioned into 
+                        two parts \(U\) and \(W\) such that every edge has one endpoint in \(U\) and the other in 
+                        \(W\); formally,
                         \[
-                        V = U \cup W, \quad U \cap W = \emptyset, \quad E \subseteq \{\,uw : u \in U,\, w \in W\,\}.
+                        E \subseteq \{\,\{u, w\} : u \in U,\, w \in W\,\}.
                         \]
-                        That is, every edge connects a vertex in \(U\) to a vertex in \(W\); no edge joins two vertices within the same part.
+                        Equivalently, no edge joins two vertices within the same part. The pair \((U, W)\) is called a 
+                        <strong>bipartition</strong> of \(G\).
                     </p>
                 </div>
 
                 <p>
                     Bipartite graphs arise naturally in matching problems (e.g., assigning jobs to applicants) and are 
-                    characterized by the absence of odd-length cycles — a fact we will encounter in later discussions.
+                    characterized by the absence of odd-length cycles — see the 
+                    <a href="#T-bipartite_no_odd_cycle" class="ref-link"><strong>characterization theorem</strong></a> 
+                    later in this page.
                 </p>
 
-                <p>
-                    When we <strong>delete</strong> a vertex \(v\) from \(G\), we remove \(v\) and all edges incident to it. 
-                    We write \(G - v\) for the resulting graph.
-                </p>
+                <div class="theorem" id="D-complete_bipartite_graph">
+                    <span class="theorem-title">Definition: Complete Bipartite Graph</span>
+                    <p>
+                        For positive integers \(m, n \geq 1\), the <strong>complete bipartite graph</strong> 
+                        \(K_{m,n}\) is the bipartite graph with parts \(U\) of size \(m\) and \(W\) of size \(n\) in 
+                        which every vertex of \(U\) is adjacent to every vertex of \(W\); formally,
+                        \[
+                        E(K_{m,n}) = \{\,\{u, w\} : u \in U,\, w \in W\,\}.
+                        \]
+                        Thus \(K_{m,n}\) has \(m + n\) vertices and \(mn\) edges. Familiar instances include 
+                        \(K_{1,n}\) (the <em>star graph</em> with \(n\) edges) and \(K_{3,3}\) (the <em>utility graph</em>, 
+                        which will play a central role when we study planarity).
+                    </p>
+                </div>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_modifications">
+                    <span class="theorem-title">Definition: Vertex Deletion and Edge Addition</span>
+                    <p>
+                        Let \(G = (V, E)\) be a graph.
+                    </p>
+                    <ul style="padding-left: 20px;">
+                        <li>
+                            For a vertex \(v \in V\), the <strong>vertex-deleted graph</strong> \(G - v\) is obtained 
+                            by removing \(v\) from \(V\) and all edges incident to \(v\) from \(E\):
+                            \[
+                            G - v = \bigl(V \setminus \{v\},\; \{e \in E : v \notin e\}\bigr).
+                            \]
+                        </li>
+                        <li>
+                            For non-adjacent vertices \(x, y \in V\) with \(xy \notin E\), the 
+                            <strong>edge-added graph</strong> \(G + xy\) is the graph 
+                            \(\bigl(V,\; E \cup \{xy\}\bigr)\).
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="theorem" id="D-subgraph">
                     <span class="theorem-title">Definition: Subgraph, Induced Subgraph, and Spanning Subgraph</span>
                     <p>
                         Let \(G = (V, E)\) and \(G' = (V', E')\) be graphs.
@@ -361,7 +521,8 @@ uses_python: false
                 <p>
                     Finally, a graph \(G\) is said to be <strong>edge-maximal</strong> with respect to a given graph property 
                     if \(G\) has the property, but adding any new edge between non-adjacent vertices destroys it. That is, 
-                    \(G + xy\) fails to have the property for every pair of non-adjacent vertices \(x, y \in V(G)\).
+                    <a href="#D-graph_modifications" class="ref-link"><strong>\(G + xy\)</strong></a> fails to have the 
+                    property for every pair of non-adjacent vertices \(x, y \in V(G)\).
                 </p>
 
                 <p>
@@ -378,16 +539,18 @@ uses_python: false
                     Together, they underpin connectivity, shortest-path algorithms, and the classification of graphs by their cycle structure.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_path">
                     <span class="theorem-title">Definition: Path</span>
                     <p>
                         A <strong>path</strong> is a non-empty graph \(P = (V, E)\) of the form
                         \[
                         V = \{x_0, x_1, x_2, \ldots, x_k\}, \quad E = \{x_0 x_1,\, x_1 x_2,\, \ldots,\, x_{k-1} x_k\},
                         \]
-                        where all vertices \(x_0, x_1, \ldots, x_k\) are distinct. The vertices \(x_0\) and \(x_k\) are the 
-                        <strong>ends</strong> of \(P\); the remaining vertices are its <strong>inner vertices</strong>. 
-                        The <strong>length</strong> of a path is its number of edges.
+                        where all vertices \(x_0, x_1, \ldots, x_k\) are distinct and \(k \geq 0\). The vertices 
+                        \(x_0\) and \(x_k\) are the <strong>ends</strong> of \(P\); the remaining vertices are its 
+                        <strong>inner vertices</strong>. The <strong>length</strong> of a path is its number of edges, 
+                        namely \(k\). In the boundary case \(k = 0\), the path consists of a single vertex with no 
+                        edges; it has length \(0\) and its sole endpoint serves as both \(x_0\) and \(x_k\).
                     </p>
                 </div>
 
@@ -398,12 +561,13 @@ uses_python: false
                     We consistently use the vertex-count convention here.)
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-graph_cycle">
                     <span class="theorem-title">Definition: Cycle</span>
                     <p>
-                        For \(k \geq 3\), if \(P = x_0 x_1 \cdots x_{k-1}\) is a path on \(k\) vertices, then the graph obtained 
-                        by adding the edge \(x_{k-1} x_0\) is called a <strong>\(k\)-cycle</strong>, denoted \(C_k\). 
-                        A \(k\)-cycle has \(k\) vertices and \(k\) edges.
+                        For \(m \geq 3\), if \(P = x_0 x_1 \cdots x_{m-1}\) is a path on \(m\) vertices, then the graph 
+                        obtained by adding the edge \(x_{m-1} x_0\) is called an <strong>\(m\)-cycle</strong>, denoted 
+                        \(C_m\). An \(m\)-cycle has \(m\) vertices and \(m\) edges. The integer \(m\) is the 
+                        <strong>length</strong> of the cycle.
                     </p>
                 </div>
 
@@ -411,12 +575,144 @@ uses_python: false
                     For example, \(C_3\) is a triangle (3 vertices, 3 edges), and \(C_4\) is a square (4 vertices, 4 edges).
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Acyclic Graph (Forest and Tree)</span>
+                <div class="theorem" id="D-connected_graph">
+                    <span class="theorem-title">Definition: Connected Graph</span>
                     <p>
-                        A graph that contains no cycle is called <strong>acyclic</strong> (or a <strong>forest</strong>). 
-                        A connected acyclic graph is called a <strong>tree</strong>. A tree \(T\) on \(n\) vertices has exactly 
-                        \(n - 1\) edges, and there is a unique path between any pair of vertices.
+                        A graph \(G = (V, E)\) is <strong>connected</strong> if for every pair of distinct vertices 
+                        \(x, y \in V\) there exists a path in \(G\) from \(x\) to \(y\). Equivalently, the binary relation 
+                        on \(V\) defined by "\(x \sim y\) iff there is a path from \(x\) to \(y\)" is an equivalence relation 
+                        whose equivalence classes — called the <strong>connected components</strong> of \(G\) — number exactly one.
+                    </p>
+                </div>
+
+                <p>
+                    The "equivalent" formulation requires a brief check: reflexivity is the trivial path \(x = x\) of 
+                    length \(0\); symmetry holds because every path can be traversed in reverse; transitivity follows 
+                    because the concatenation of a path from \(x\) to \(y\) and a path from \(y\) to \(z\) is a walk 
+                    from \(x\) to \(z\), and any walk between two vertices contains a path between them (by repeatedly 
+                    shortcutting at any vertex visited more than once). Connectivity will be the standing 
+                    hypothesis whenever we discuss spanning structures, traversal problems, or component-wise 
+                    decompositions.
+                </p>
+
+                <div class="theorem" id="D-tree_graph">
+                    <span class="theorem-title">Definition: Acyclic Graph, Forest, and Tree</span>
+                    <p>
+                        A graph that contains no cycle is called <strong>acyclic</strong>; an acyclic graph is also called 
+                        a <strong>forest</strong>. A connected acyclic graph is called a <strong>tree</strong>. Equivalently, 
+                        the connected components of a forest are themselves trees.
+                    </p>
+                </div>
+
+                <p>
+                    Trees admit several powerful equivalent characterizations. To prepare the way, we first record a 
+                    basic edge-count lower bound for connected graphs.
+                </p>
+
+                <div class="theorem" id="T-connected_min_edges">
+                    <span class="theorem-title">Lemma: Edge-Count Lower Bound for Connected Graphs</span>
+                    <p>
+                        Any <a href="#D-connected_graph" class="ref-link"><strong>connected</strong></a> graph on 
+                        \(n \geq 1\) vertices has at least \(n - 1\) edges.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Induction on \(n\). The base case \(n = 1\) is immediate (\(0 \geq 0\)). For \(n \geq 2\), let 
+                        \(G\) be a connected graph on \(n\) vertices and pick any vertex \(v \in V(G)\); since \(G\) is 
+                        connected and \(n \geq 2\), we have \(\deg_G(v) \geq 1\). Let \(H = G - v\), the 
+                        <a href="#D-graph_modifications" class="ref-link"><strong>vertex-deleted graph</strong></a>; 
+                        say \(H\) has \(c\) connected components \(H_1, \ldots, H_c\) on \(n_1, \ldots, n_c\) vertices, 
+                        with \(\sum_i n_i = n - 1\).
+                    </p>
+                    <p>
+                        Because \(G\) itself is connected, \(v\) must have at least one neighbor in each component 
+                        \(H_i\): otherwise, the vertices of that component would be unreachable from the rest of \(G\) 
+                        after removing \(v\), contradicting connectivity of \(G\). Hence \(\deg_G(v) \geq c\). Applying 
+                        the induction hypothesis to each \(H_i\) (each of which is connected by definition), we obtain 
+                        \(|E(H_i)| \geq n_i - 1\). Summing,
+                        \[
+                        |E(G)| \;=\; \sum_{i=1}^{c} |E(H_i)| \;+\; \deg_G(v) 
+                        \;\geq\; \sum_{i=1}^{c} (n_i - 1) \;+\; c 
+                        \;=\; (n - 1 - c) + c \;=\; n - 1. \qquad \blacksquare
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    With this lemma in hand, we can state and prove the central characterization theorem.
+                </p>
+
+                <div class="theorem" id="T-tree_characterizations">
+                    <span class="theorem-title">Theorem: Characterizations of Trees</span>
+                    <p>
+                        Let \(T = (V, E)\) be a graph on \(n \geq 1\) vertices. The following are equivalent:
+                    </p>
+                    <ol style="padding-left: 28px;">
+                        <li>\(T\) is a tree (connected and acyclic).</li>
+                        <li>For every pair of vertices \(x, y \in V\), there is a <strong>unique</strong> path in \(T\) from \(x\) to \(y\).</li>
+                        <li>\(T\) is connected and has exactly \(n - 1\) edges.</li>
+                        <li>\(T\) is acyclic and has exactly \(n - 1\) edges.</li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We prove (1) ⟹ (2) ⟹ (3) ⟹ (4) ⟹ (1).
+                    </p>
+                    <p>
+                        <strong>(1) ⟹ (2).</strong> By connectedness, between any two vertices \(x, y\) there exists at 
+                        least one path. Suppose for contradiction that there are two distinct paths \(P_1, P_2\) from 
+                        \(x\) to \(y\). Let \(u\) be the last vertex up to which \(P_1\) and \(P_2\) coincide when 
+                        traversed from \(x\) — that is, the next vertex on \(P_1\) after \(u\) differs from the next 
+                        vertex on \(P_2\) after \(u\). Let \(v\) be the first vertex after \(u\) on \(P_1\) that also 
+                        appears on \(P_2\); such a \(v\) exists because both paths end at \(y\). The portion of \(P_1\) 
+                        from \(u\) to \(v\) and the portion of \(P_2\) from \(u\) to \(v\) share only the endpoints 
+                        \(u\) and \(v\) (by the choice of \(v\) as the first re-meeting point), so their internal 
+                        vertices are disjoint. Concatenating one with the reverse of the other yields a closed walk in 
+                        which all vertices are distinct except that the start equals the end. If both \(u\)-\(v\) 
+                        segments had length \(1\), each would be the single edge \(uv\); but in our simple-graph 
+                        setting there is at most one such edge, forcing \(P_1 = P_2\) at this step and contradicting 
+                        the choice of \(u\) as a divergence point. Hence at least one segment has length \(\geq 2\), so 
+                        the resulting closed walk traverses at least three distinct vertices in cyclic order — that 
+                        is, it is a <a href="#D-graph_cycle" class="ref-link"><strong>cycle</strong></a>. This 
+                        contradicts acyclicity.
+                    </p>
+                    <p>
+                        <strong>(2) ⟹ (3).</strong> Uniqueness of paths trivially implies connectedness. We show 
+                        \(|E| = n - 1\) by induction on \(n\). The case \(n = 1\) is immediate (no edges). For 
+                        \(n \geq 2\), observe that \(T\) must contain a vertex of degree \(1\): pick any longest path 
+                        \(x_0 x_1 \cdots x_p\) in \(T\); its endpoint \(x_p\) cannot have a neighbor outside the path 
+                        (else the path could be extended) nor a second neighbor on the path (else two distinct paths 
+                        from \(x_p\) to that neighbor would exist, contradicting (2)). So \(\deg(x_p) = 1\). Removing 
+                        \(x_p\) and its incident edge yields a graph \(T'\) on \(n - 1\) vertices satisfying (2) 
+                        (uniqueness of paths is preserved under deletion of a degree-\(1\) vertex). By induction 
+                        \(|E(T')| = n - 2\), hence \(|E(T)| = n - 1\).
+                    </p>
+                    <p>
+                        <strong>(3) ⟹ (4).</strong> Suppose \(T\) is connected with \(n - 1\) edges; we must show 
+                        \(T\) is acyclic. If \(T\) contained a cycle \(C\), pick any edge \(e \in E(C)\). Then 
+                        \(T - e\) (the graph obtained by removing the edge \(e\), keeping all vertices) is still 
+                        connected: the two endpoints of \(e\) remain joined by the rest of the cycle, and any path in 
+                        \(T\) using \(e\) can be re-routed around the cycle. But \(T - e\) has \(n\) vertices and 
+                        \(n - 2\) edges, contradicting the 
+                        <a href="#T-connected_min_edges" class="ref-link"><strong>edge-count lower bound</strong></a> 
+                        for connected graphs.
+                    </p>
+                    <p>
+                        <strong>(4) ⟹ (1).</strong> Suppose \(T\) is acyclic with \(n - 1\) edges. Decompose \(T\) into 
+                        its connected components \(T_1, \ldots, T_c\), with \(|V(T_i)| = n_i\) and \(\sum n_i = n\). 
+                        Each \(T_i\) is connected and acyclic — that is, each \(T_i\) is itself a tree on \(n_i\) 
+                        vertices. By the already-proved chain (1) ⟹ (2) ⟹ (3) applied to each \(T_i\), we have 
+                        \(|E(T_i)| = n_i - 1\). Summing,
+                        \[
+                        |E(T)| = \sum_{i=1}^{c} (n_i - 1) = n - c.
+                        \]
+                        Since \(|E(T)| = n - 1\), we conclude \(c = 1\), so \(T\) is connected, hence a tree. 
+                        \(\blacksquare\)
                     </p>
                 </div>
 
@@ -427,13 +723,65 @@ uses_python: false
                     and spanning tree algorithms.
                 </p>
 
+                <div class="theorem" id="T-bipartite_no_odd_cycle">
+                    <span class="theorem-title">Theorem: Bipartiteness via Odd Cycles</span>
+                    <p>
+                        A graph \(G\) is <a href="#D-bipartite_graph" class="ref-link"><strong>bipartite</strong></a> if 
+                        and only if it contains no cycle of odd length.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(⟹)</strong> Suppose \(G\) is bipartite with parts \(U, W\) and let 
+                        \(C = x_0 x_1 \cdots x_{k-1} x_0\) be any cycle in \(G\). Since every edge of \(C\) joins 
+                        \(U\) to \(W\), the vertices \(x_0, x_1, x_2, \ldots\) alternate between the two parts. To return 
+                        to \(x_0 \in U\) after \(k\) steps, we need an even number of crossings, so \(k\) is even.
+                    </p>
+                    <p>
+                        <strong>(⟸)</strong> Suppose \(G\) contains no odd cycle. Without loss of generality assume \(G\) 
+                        is connected (otherwise apply the argument to each connected component and take the union of the 
+                        bipartitions). Fix a vertex \(r \in V\) and define
+                        \[
+                        U = \{\, v \in V : \text{shortest-path distance from } r \text{ to } v \text{ is even}\,\},
+                        \quad
+                        W = V \setminus U.
+                        \]
+                        We claim \((U, W)\) is a valid bipartition, i.e., no edge has both endpoints in the same part. 
+                        Suppose otherwise: an edge \(uv \in E\) has \(u, v \in U\) (the case \(u, v \in W\) is analogous). 
+                        Then the distances \(d(r, u)\) and \(d(r, v)\) are both even. Concatenating a shortest path from 
+                        \(r\) to \(u\), the edge \(uv\), and the reverse of a shortest path from \(r\) to \(v\), we obtain 
+                        a closed walk of length \(d(r, u) + 1 + d(r, v)\), which is odd.
+                    </p>
+                    <p>
+                        It remains to show that any closed walk of odd length contains an odd cycle, which then 
+                        contradicts the hypothesis. We argue by induction on the length \(L\) of the closed walk. If 
+                        the walk has no internal vertex repetition, it is itself a cycle, and odd length makes it an 
+                        odd cycle. Otherwise, locate the first internal repetition \(w_i = w_j\) with \(i < j\); 
+                        splitting at this repetition yields two strictly shorter closed walks — the inner segment 
+                        \(w_i, w_{i+1}, \ldots, w_j\) of length \(j - i\), and the outer segment 
+                        \(w_0, \ldots, w_i, w_{j+1}, \ldots, w_L\) of length \(L - (j - i)\). Their lengths sum to 
+                        \(L\), which is odd, so exactly one of them is odd. By the induction hypothesis applied to that 
+                        shorter odd closed walk, an odd cycle exists. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    This characterization is the cornerstone of bipartite-graph algorithms: testing bipartiteness reduces 
+                    to a depth-first or breadth-first search that 2-colors the graph and checks for parity violations on 
+                    back-edges — an \(O(|V| + |E|)\) procedure. The odd-cycle obstruction will reappear when we study 
+                    Eulerian circuits, planarity, and the spectral theory of graphs.
+                </p>
+
                 <div class="insight-box">
                     <h3>Paths, Cycles, and Trees in CS and ML</h3>
                     <p>
                         These three structures are foundation of algorithmic graph theory. <strong>Shortest paths</strong> 
                         (Dijkstra's algorithm, Bellman-Ford) power routing in networks and are the foundation of 
                         <em>graph distance metrics</em> used in node embedding methods like DeepWalk. 
-                        <strong>Cycle detection</strong> determines whether a graph is a tree or a DAG (directed acyclic graph), 
+                        <strong>Cycle detection</strong> determines whether an undirected graph is a forest (cycle-free) 
+                        and whether a directed graph is a DAG (directed acyclic graph), 
                         which is critical in dependency resolution, topological sorting, and the structure of Bayesian networks. 
                         <strong>Trees</strong> themselves underlie decision trees, random forests, and hierarchical clustering, 
                         while <strong>spanning trees</strong> provide the minimal connected substructure of a graph - 
