@@ -185,6 +185,81 @@ uses_python: false
                         \]
                     </p>
                 </div>
+
+                <h3>Multitape Turing Machines</h3>
+
+                <p>
+                    A natural extension of the basic Turing machine model is to allow several tapes, each with its own 
+                    independent read/write head. Initially the input appears on tape 1, and the remaining tapes start out 
+                    blank. The transition function is generalized to allow simultaneous reading, writing, and head movement 
+                    across all tapes.
+                </p>
+
+                <div class="theorem" id="D-multitape_turing_machine">
+                    <span class="theorem-title">Definition: Multitape Turing Machine</span>
+                    <p>
+                        A <strong>multitape Turing machine</strong> with \(k\) tapes is a Turing machine whose transition 
+                        function has the form
+                        \[
+                        \delta\colon Q \times \Gamma^k \to Q \times \Gamma^k \times \{L, R, S\}^k,
+                        \]
+                        where \(k \geq 1\) is the number of tapes. The expression
+                        \[
+                        \delta(q_i, a_1, \ldots, a_k) = (q_j, b_1, \ldots, b_k, L, R, \ldots, L)
+                        \]
+                        means that if the machine is in state \(q_i\) and the heads on tapes \(1\) through \(k\) are reading 
+                        symbols \(a_1\) through \(a_k\), then the machine transitions to state \(q_j\), writes \(b_1\) through 
+                        \(b_k\) on the corresponding tapes, and directs each head to move left (\(L\)), right (\(R\)), or stay 
+                        in place (\(S\)) as specified.
+                    </p>
+                </div>
+
+                <p>
+                    Multitape Turing machines appear more powerful than the single-tape model — for instance, a two-tape 
+                    machine can recognize the language \(\{0^k 1^k \mid k \geq 0\}\) in linear time, whereas any single-tape 
+                    machine requires \(\Omega(n \log n)\) time. Yet in terms of <em>what</em> can be computed (recognizability 
+                    and decidability), the two models are equivalent.
+                </p>
+
+                <div class="theorem" id="T-multitape_single_tape_equivalence">
+                    <span class="theorem-title">Theorem: Multitape–Single-Tape Equivalence</span>
+                    <p>
+                        Every multitape Turing machine has an equivalent single-tape Turing machine — that is, one that 
+                        recognizes the same language.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof sketch.</span>
+                    <p>
+                        Given a \(k\)-tape Turing machine \(M\), we construct a single-tape machine \(S\) that simulates \(M\). 
+                        The single tape of \(S\) represents the contents of all \(k\) tapes of \(M\) by storing them 
+                        consecutively, separated by a fresh delimiter symbol \(\#\):
+                        \[
+                        \# \, \text{tape}_1 \, \# \, \text{tape}_2 \, \# \, \cdots \, \# \, \text{tape}_k \, \#.
+                        \]
+                        To track each head's position, \(S\) marks the cell where \(M\)'s head currently sits on each tape 
+                        with a "dotted" version of that symbol (a new symbol added to the tape alphabet). For instance, if 
+                        \(M\)'s tape \(i\) contains \(010\) with the head on the middle \(1\), \(S\) records \(\#0\dot{1}0\#\).
+                    </p>
+                    <p>
+                        On input \(w\), \(S\) first formats its tape into this representation (with \(w\) on tape 1 and the 
+                        remaining tapes blank). To simulate one step of \(M\), \(S\) scans across its tape from the leftmost 
+                        \(\#\) to the \((k+1)\)-st \(\#\) to read the symbols under all virtual heads, then makes a second pass 
+                        to update the contents and head positions according to \(M\)'s transition function. If a virtual head 
+                        moves rightward onto a delimiter \(\#\), \(S\) shifts the tape contents to the right of that delimiter 
+                        one cell further right, opening up a fresh blank cell for the head to occupy. \(S\) accepts (or rejects) 
+                        precisely when \(M\) does. Hence \(S\) recognizes the same language as \(M\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    This equivalence justifies our continued use of the single-tape model as the "standard" Turing machine: 
+                    multitape machines may be more convenient to design, but they offer no additional computational power. 
+                    However, when we turn to <em>time complexity</em>, the choice of model does matter — see 
+                    <a href="time_complexity.html#T-single_tape_multitape_simulation" class="ref-link"><strong>single-tape vs. multitape simulation</strong></a>, 
+                    which quantifies the time overhead of this simulation.
+                </p>
             </section>
 
             <section id="algo" class="section-content">

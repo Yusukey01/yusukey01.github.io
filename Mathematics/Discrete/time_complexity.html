@@ -43,8 +43,15 @@ uses_python: true
                 </div>
                 
                 <p>
-                    Usually we are interested in the running time of the algorithm for large inputs, and consider only the highest order 
-                    term of the expression for the running time. This is called <strong>asymptotic analysis</strong>.
+                    Usually we are interested in the running time of the algorithm for large inputs, and consider only 
+                    the highest order term of the expression for the running time, disregarding both its coefficient and 
+                    any lower-order terms. This is called <strong>asymptotic analysis</strong>.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> Throughout this page, \(\mathbb{R}^+\) denotes the set of nonnegative real numbers, 
+                    \(\mathbb{R}^+ = \{x \in \mathbb{R} : x \geq 0\}\), following the convention of Sipser's <em>Introduction to the 
+                    Theory of Computation</em>.
                 </p>
 
                 <div class="theorem" id="D-big_o">
@@ -76,11 +83,11 @@ uses_python: true
                         \]
                         if 
                         \[
-                        \lim_{n \to \infty} \frac{|f(n)|}{|g(n)|} = 0.
+                        \lim_{n \to \infty} \frac{f(n)}{g(n)} = 0.
                         \]
-                        Equivalently, for any real number \(c >0\), a number \(n_0\) exists where 
+                        In other words, for any real number \(c > 0\), a number \(n_0\) exists such that 
                         \[
-                        \forall n \geq n_0, \, f(n) < c \, g(n).
+                        f(n) < c \, g(n) \quad \text{for all } n \geq n_0.
                         \]
                     </p>
                 </div>
@@ -115,10 +122,12 @@ uses_python: true
                 </p>
                 <ol style="padding-left: 40px;">
                     <li>Scan across the tape and reject if a 0 is found to the right of a 1.</li>
-                    <li>Repeat if both 0s and 1s remain on the tape.</li>
-                    <li>Scan across the tape, crossing off a single 0 and a single 1.</li>
-                    <li>If 0s (1s) still remain after all the 1s (0s) have been crossed off, reject. Otherwise, if neither 
-                        0s nor 1s remain on the tape, accept. </li>
+                    <li>Repeat the following if both 0s and 1s remain on the tape:
+                        <ol style="padding-left: 40px; list-style-type: lower-alpha;">
+                            <li>Scan across the tape, crossing off a single 0 and a single 1.</li>
+                        </ol>
+                    </li>
+                    <li>If 0s still remain after all the 1s have been crossed off, or if 1s still remain after all the 0s have been crossed off, reject. Otherwise, if neither 0s nor 1s remain on the tape, accept.</li>
                 </ol>
                 <p>
                     The sample code for \(M_1\) is as follows: 
@@ -173,11 +182,15 @@ uses_python: true
                 </div>
 
                 <p>
-                    The running time is 
+                    Let us analyze the running time of \(M_1\) on an input of length \(n\). Step 1 scans the entire 
+                    tape once, costing \(O(n)\). Step 2 is a loop: each iteration of its body (Step 2a) removes one \(0\) 
+                    and one \(1\), so the loop runs at most \(n/2\) times, and each iteration scans the tape to locate the 
+                    next uncrossed symbols, costing \(O(n)\) per iteration. Step 3 performs one final scan, costing \(O(n)\). 
+                    The total running time is therefore
                     \[
-                    O(n) + \frac{n}{2}O(n) + O(n) = O(n^2). 
+                    \underbrace{O(n)}_{\text{Step 1}} + \underbrace{\tfrac{n}{2} \cdot O(n)}_{\text{Step 2}} + \underbrace{O(n)}_{\text{Step 3}} = O(n^2). 
                     \]
-                    Then we can say that \(A \in \text{ TIME}(n^2)\). This class contains all languages that can be decided in 
+                    Then we can say that \(A \in \text{TIME}(n^2)\). This class contains all languages that can be decided in 
                     \(O(n^2)\) time.
                 </p>
 
@@ -190,15 +203,25 @@ uses_python: true
                 </p>
                 <ol style="padding-left: 40px;">
                     <li>Scan across the tape and reject if a 0 is found to the right of a 1.</li>
-                    <li>Repeat if some 0s and some 1s remain on the tape.</li>
-                    <li>Scan across the tape, checking whether the total number of 0s and 1s remaining is even or odd. If it is odd, reject.</li>
-                    <li>Scan again across the tape, crossing off every other 0 starting with the first 0, and then crossing off every other 1 starting with the first 1.</li>
-                    <li>If no 0s and no 1s remain on the tape accept. Otherwise, reject.</li>
+                    <li>Repeat the following if some 0s and some 1s remain on the tape:
+                        <ol style="padding-left: 40px; list-style-type: lower-alpha;">
+                            <li>Scan across the tape, checking whether the total number of 0s and 1s remaining is even or odd. If it is odd, reject.</li>
+                            <li>Scan again across the tape, crossing off every other 0 starting with the first 0, and then crossing off every other 1 starting with the first 1.</li>
+                        </ol>
+                    </li>
+                    <li>If no 0s and no 1s remain on the tape, accept. Otherwise, reject.</li>
                 </ol>
 
                 <p>
-                    \(M_2\) has time complexity \(O(n) + (1 + \log n )O(n) + O(n) = O(n \log n)\). Moreover, if we introduce another tape, 
-                    time complexity becomes \(O(n)\), <strong>linear time</strong>.  We define \(M_3\) as follows:
+                    For \(M_2\), Step 1 again costs \(O(n)\). Step 2 is a loop whose body (Steps 2a and 2b) halves the count 
+                    of remaining symbols at each iteration (by crossing off every other one starting from the first), so it 
+                    terminates after at most \(\log_2 n + 1\) iterations; each iteration performs full scans of the tape 
+                    in \(O(n)\). Step 3 is a final \(O(n)\) sweep. The total is
+                    \[
+                    \underbrace{O(n)}_{\text{Step 1}} + \underbrace{(\log_2 n + 1) \cdot O(n)}_{\text{Step 2}} + \underbrace{O(n)}_{\text{Step 3}} = O(n \log n).
+                    \]
+                    Hence \(A \in \text{TIME}(n \log n)\). Moreover, if we introduce a second tape, the time complexity 
+                    drops to \(O(n)\), <strong>linear time</strong>. We define \(M_3\) as follows:
                 </p>
 
                 <p>
@@ -214,7 +237,14 @@ uses_python: true
                 </ol>
 
                 <p>
-                    The following code demonstrates the actual running times of \(M_2\) and the <strong>two-tape Turing machine</strong> \(M_3\).
+                    On a two-tape machine, each step of \(M_3\) sweeps each tape at most a constant number of times, 
+                    with no nested loops over the input. Step 1 costs \(O(n)\); Step 2 copies the \(0\)s in \(O(n)\); 
+                    Step 3 reads the \(1\)s and decrements Tape-2 in \(O(n)\); Step 4 is \(O(1)\). The total is
+                    \[
+                    O(n) + O(n) + O(n) + O(1) = O(n).
+                    \]
+                    Hence \(A \in \text{TIME}(n)\) on a two-tape Turing machine. The following code demonstrates the 
+                    actual running times of \(M_2\) and the <a href="turing_machine.html#D-multitape_turing_machine" class="ref-link"><strong>two-tape Turing machine</strong></a> \(M_3\).
                 </p>
                 
                 <div class="code-container"> 
@@ -343,8 +373,40 @@ uses_python: true
                  <div class="theorem" id="T-single_tape_multitape_simulation">
                     <span class="theorem-title">Theorem: Single-Tape vs. Multitape Simulation</span>
                     <p>
-                        Let \(t(n)\) be a function with \(t(n) \geq n\). Every \(t(n)\)-time multitape Turing machine 
+                        Let \(t(n)\) be a function with \(t(n) \geq n\). Every \(t(n)\)-time <a href="turing_machine.html#D-multitape_turing_machine" class="ref-link"><strong>multitape Turing machine</strong></a> 
                         has an equivalent \(O(t^2(n))\)-time single-tape Turing machine.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof sketch.</span>
+                    <p>
+                        We show that the construction from the <a href="turing_machine.html#T-multitape_single_tape_equivalence" class="ref-link"><strong>multitape–single-tape equivalence</strong></a> 
+                        can be carried out within \(O(t^2(n))\) time. Recall that the simulating single-tape machine \(S\) stores the contents 
+                        of the multitape machine \(M\)'s \(k\) tapes consecutively on a single tape, separated by a delimiter \(\#\), with the head 
+                        positions marked by dotted symbols.
+                    </p>
+                    <p>
+                        <strong>Bounding the active portion.</strong> Since \(M\) runs in \(t(n)\) steps, each of \(M\)'s tapes has at most 
+                        \(t(n)\) cells touched by its head. Summing over the \(k\) tapes, the active portion of \(S\)'s tape (between 
+                        the leftmost and \((k+1)\)-st delimiter) has length at most \(k \cdot t(n) = O(t(n))\), since \(k\) is a fixed constant 
+                        of the machine.
+                    </p>
+                    <p>
+                        <strong>Cost per simulated step.</strong> To simulate one step of \(M\), \(S\) makes two passes over its active portion: 
+                        the first to read the symbols under all \(k\) virtual heads, and the second to update the virtual tape contents and 
+                        head positions according to \(M\)'s transition function. Each pass costs \(O(t(n))\). \(S\) may also need to shift a 
+                        portion of its tape rightward by one cell, up to \(k\) times, to make room when a virtual head moves into a 
+                        previously unused cell; each such shift costs \(O(t(n))\). The total cost of simulating one \(M\)-step is therefore 
+                        \(O(t(n))\).
+                    </p>
+                    <p>
+                        <strong>Total time.</strong> The initial reformatting of the input takes \(O(n)\) steps. Simulating all \(t(n)\) steps 
+                        of \(M\) costs \(t(n) \cdot O(t(n)) = O(t^2(n))\). The total running time of \(S\) is
+                        \[
+                        O(n) + O(t^2(n)) = O(t^2(n)),
+                        \]
+                        where the simplification uses the assumption \(t(n) \geq n\). \(\blacksquare\)
                     </p>
                 </div>
 
