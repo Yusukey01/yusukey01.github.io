@@ -68,14 +68,38 @@ uses_python: false
                 </div>
 
                 <p>
-                    Let \(A\) be the set of all strings that machine \(M\) accepts. We say that \(A\) is the <strong>language</strong> of 
-                    machine \(M\) and write:
+                    Given an input string \(w = w_1 w_2 \cdots w_n\) over \(\Sigma\), the machine starts in state \(q_0\) and 
+                    reads \(w\) one symbol at a time, transitioning according to \(\delta\). After reading the final symbol, 
+                    if the resulting state lies in \(F\) we say \(M\) <strong>accepts</strong> \(w\); otherwise \(M\) 
+                    <strong>rejects</strong> \(w\). Let \(A\) be the set of all strings that \(M\) accepts. We say \(A\) is the 
+                    <strong>language</strong> of \(M\) and write:
                     \[
                     L(M) = A 
                     \]
-                    We also say that \(M\) <strong>recognizes</strong> \(A\). Moreover, a language is called a <strong>regular language</strong> if 
-                    some finite automaton recognizes it.
+                    We also say that \(M\) <strong>recognizes</strong> \(A\). Moreover, a language is called a 
+                    <strong>regular language</strong> if some finite automaton recognizes it.
                 </p>
+
+                <div class="theorem" id="D-dfa_computation">
+                    <span class="theorem-title">Definition: Computation and Acceptance</span>
+                    <p>
+                        Let \(M = (Q, \Sigma, \delta, q_0, F)\) be a finite automaton and let \(w = w_1 w_2 \cdots w_n\) be a 
+                        string over \(\Sigma\) (where each \(w_i \in \Sigma\), and the case \(n = 0\) corresponds to the empty 
+                        string \(\epsilon\)). A <strong>computation</strong> of \(M\) on \(w\) is a sequence of states 
+                        \(r_0, r_1, \ldots, r_n \in Q\) satisfying:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(r_0 = q_0\),</li>
+                        <li>\(r_{i+1} = \delta(r_i, w_{i+1})\) for each \(i = 0, 1, \ldots, n-1\).</li>
+                    </ol>
+                    <p>
+                        We say that \(M\) <strong>accepts</strong> \(w\) if \(r_n \in F\), and <strong>rejects</strong> \(w\) 
+                        otherwise. The <strong>language recognized by \(M\)</strong> is then defined formally as
+                        \[
+                        L(M) = \{\, w \in \Sigma^* \mid M \text{ accepts } w \,\}.
+                        \]
+                    </p>
+                </div>
                 <p>
                     Consider the following finite automaton. 
                 </p>
@@ -90,7 +114,7 @@ uses_python: false
                     "accept" or "reject" as output.
                 </p>
                 <p>
-                    For example, if input string is \(1101101\), this automaton processes the string as follows: 
+                    For example, if the input string is <code>1101101</code>, this automaton processes the string as follows: 
                 </p>
 
                 <div style="padding-left: 40px;">
@@ -115,8 +139,8 @@ uses_python: false
                     &emsp;&emsp;&emsp;Return "accept." 
                 </div>
                 <p>
-                    This automaton recognizes strings that end with a 1 followed by an even number of 0s. For example, "10100" is 
-                    accepted because it ends with 1 followed by two 0s, but "1011000" is rejected because it ends with three 0s after 
+                    This automaton recognizes strings that end with a 1 followed by an even number of 0s. For example, <code>10100</code> is 
+                    accepted because it ends with 1 followed by two 0s, but <code>1011000</code> is rejected because it ends with three 0s after 
                     the last 1. Note that a string ending in 1 (with zero trailing 0s) is also accepted, since zero is even.
                 </p>
             </section>
@@ -161,7 +185,7 @@ uses_python: false
                     \begin{align*}
                     &A \cup B = \{black, \, white, \, dog,  \, cat \} \\\\
                     &A \circ B  = \{blackdog, \, blackcat, \, whitedog, \, whitecat\} \\\\
-                    &A^* = \{\epsilon, \, black, \, white, \, blackblack, \, blackwhite, \, whiteblack, \, whitewhite, \, blackblackblack, \, blackblackwhite, \,\ \cdots\}
+                    &A^* = \{\epsilon, \, black, \, white, \, blackblack, \, blackwhite, \, whiteblack, \, whitewhite, \, blackblackblack, \, blackblackwhite, \, \cdots\}
                     \end{align*}
                     \]
                 </p>
@@ -214,10 +238,45 @@ uses_python: false
                         \] 
                         which is the same as \((F_1 \times Q_2) \cup (Q_1 \times F_2)\).
                     </p>
+                    <p>
+                        <strong>Verification.</strong> The key claim is the following: for any input string \(w\), after \(M_3\) 
+                        reads \(w\), its state is exactly \((r_1, r_2)\), where \(r_i\) is the state \(M_i\) reaches after reading 
+                        \(w\). This follows by a straightforward induction on \(|w|\), the crucial point being that \(\delta_3\) 
+                        acts <em>component-wise</em> — at every step, the first component is updated by \(\delta_1\) and the 
+                        second by \(\delta_2\) independently. Once this claim is established, the acceptance condition unfolds as
+                        \[
+                        M_3 \text{ accepts } w \iff (r_1, r_2) \in F_3 \iff r_1 \in F_1 \text{ or } r_2 \in F_2 \iff M_1 \text{ accepts } w \text{ or } M_2 \text{ accepts } w.
+                        \]
+                        Therefore \(L(M_3) = A_1 \cup A_2\), proving that \(A_1 \cup A_2\) is regular.
+                    </p>
                 </div>
                 <p>
-                    Note: If we say \(F_3 = F_1 \times F_2\), the resulting language is the <strong>intersection</strong>. Actually, the class of 
-                    regular languages is closed under intersection too. 
+                    Note: The same product construction with \(F_3 = F_1 \times F_2\) (instead of the union of slices) recognizes 
+                    \(A_1 \cap A_2\), since now \(M_3\) accepts only when <em>both</em> \(M_1\) and \(M_2\) accept. This shows 
+                    that the class of regular languages is also closed under intersection.
+                </p>
+
+                <p>
+                    <strong>Closure under concatenation and Kleene star.</strong> The product construction we just used for union 
+                    does not adapt cleanly to concatenation or Kleene star. The reason is that a DFA reading \(w\) must commit, 
+                    at every position, to a single next state — but to recognize \(A_1 \circ A_2\), the machine would need to 
+                    decide where the prefix from \(A_1\) ends and the suffix from \(A_2\) begins, and this split point is not 
+                    visible from the input alone. Similarly for \(A^*\), the machine would need to decide how many times to 
+                    re-enter \(A\) and where each repetition begins.
+                </p>
+                <p>
+                    The natural way to handle this is to allow the machine to "guess" — that is, to use a 
+                    <strong>nondeterministic</strong> finite automaton (NFA), introduced in the next section. Once NFAs are 
+                    available, the constructions become straightforward: for concatenation, glue the accept states of an NFA 
+                    for \(A_1\) to the start state of an NFA for \(A_2\) via \(\epsilon\)-transitions; for Kleene star, add a 
+                    new start state that loops back from each old accept state. The explicit constructions appear in the proof 
+                    of <a href="#T-regex_fa_equivalence" class="ref-link"><strong>Theorem 3</strong></a> 
+                    (cases 5 and 6 of Part 1). Combined with the 
+                    <a href="#T-nfa_dfa_equivalence" class="ref-link"><strong>NFA–DFA equivalence</strong></a>, 
+                    these show that if \(A_1, A_2\) are regular — that is, recognized by some DFAs, which can themselves be 
+                    viewed as NFAs — then \(A_1 \circ A_2\) and \(A_1^*\) are recognized by NFAs (by the constructions just 
+                    sketched), and therefore by DFAs (by the equivalence). Hence \(A_1 \circ A_2\) and \(A_1^*\) are regular, 
+                    completing the closure result.
                 </p>
             </section>
 
@@ -229,7 +288,9 @@ uses_python: false
                     symbol uniquely determine the next state. However, what if a computation is allowed multiple choices for the 
                     next state? Such a computation is called <strong>nondeterministic</strong>. Every deterministic finite automaton 
                     (<strong>DFA</strong>) is trivially a nondeterministic finite automaton (<strong>NFA</strong>), since determinism 
-                    is a special case of nondeterminism.
+                    is a special case of nondeterminism. Formally, given a DFA with transition function 
+                    \(\delta_D: Q \times \Sigma \to Q\), we view it as an NFA by setting 
+                    \(\delta_N(q, a) = \{\delta_D(q, a)\}\) for each \(a \in \Sigma\) and \(\delta_N(q, \epsilon) = \emptyset\).
                 </p>
 
                 <div class="theorem" id="D-nfa">
@@ -246,6 +307,12 @@ uses_python: false
                     </ul>
                     <p>
                         where \(\Sigma_{\epsilon} = \Sigma \cup \{\epsilon\}\) and \(\mathcal{P}(Q)\) is the <strong>power set</strong> of \(Q\).
+                    </p>
+                    <p>
+                        The transition \(\delta(q, \epsilon)\) defines an <strong>\(\epsilon\)-transition</strong>: the NFA may move 
+                        from state \(q\) to any state in \(\delta(q, \epsilon)\) <em>without consuming any input symbol</em>. This 
+                        is one of the key features that distinguishes NFAs from DFAs and will play a central role when we build 
+                        NFAs from regular expressions in the next section.
                     </p>
                 </div>
 
@@ -272,6 +339,39 @@ uses_python: false
                     <p>
                         Every NFA has an equivalent DFA. That is, for every NFA \(N\), there exists a DFA \(D\) 
                         such that \(L(N) = L(D)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch (Subset Construction)</span>
+                    <p>
+                        Let \(N = (Q, \Sigma, \delta, q_0, F)\) be an NFA. The key idea is that since \(N\) can be in several 
+                        states simultaneously, a single state of the equivalent DFA should encode <em>which subset of \(Q\) 
+                        the NFA is currently in</em>. We first treat the case without \(\epsilon\)-transitions; the general case 
+                        is handled by a small modification described at the end.
+                    </p>
+                    <p>
+                        Construct \(D = (Q', \Sigma, \delta', q_0', F')\) as follows:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>\(Q' = \mathcal{P}(Q)\) — each DFA state is a subset of NFA states.</li>
+                        <li>\(\delta'(R, a) = \displaystyle\bigcup_{r \in R} \delta(r, a)\) — from a subset \(R\), the new subset is the union of all states reachable from any \(r \in R\) on input \(a\).</li>
+                        <li>\(q_0' = \{q_0\}\) — the DFA starts in the singleton subset containing the NFA's start state.</li>
+                        <li>\(F' = \{R \subseteq Q \mid R \cap F \neq \emptyset\}\) — a subset is accepting if it contains at least one NFA accept state.</li>
+                    </ul>
+                    <p>
+                        <strong>Correctness.</strong> By induction on the length of the input, one shows that after reading 
+                        \(w = w_1 w_2 \cdots w_n\), the DFA \(D\) is in the state \(R_n \subseteq Q\) consisting of <em>exactly</em> 
+                        those NFA states that \(N\) can reach after reading \(w\). Therefore \(D\) accepts \(w\) if and only if 
+                        some such reachable state lies in \(F\), which is precisely the condition for \(N\) to accept \(w\). 
+                        Hence \(L(D) = L(N)\).
+                    </p>
+                    <p>
+                        <strong>Handling \(\epsilon\)-transitions.</strong> For each \(R \subseteq Q\), define the 
+                        <strong>\(\epsilon\)-closure</strong> \(E(R)\) as the set of all states reachable from \(R\) by following 
+                        zero or more \(\epsilon\)-transitions. Modify the construction by setting 
+                        \(\delta'(R, a) = E\bigl(\bigcup_{r \in R} \delta(r, a)\bigr)\) and 
+                        \(q_0' = E(\{q_0\})\). The same inductive argument then carries through. \(\blacksquare\)
                     </p>
                 </div>
 
@@ -329,8 +429,11 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof: Part 1</span> 
                     <p>
-                        For each case in the definition, we want to convert regular expression \(R\) into NFA \(M\) recognizing some 
-                        language because we know that if an NFA recognizes the language, then it is regular. 
+                        The proof is by <strong>structural induction</strong> on the regular expression \(R\). The base cases 
+                        (1, 2, 3) handle the atomic regexes built without combination; the inductive cases (4, 5, 6) build an 
+                        NFA for \(R\) from NFAs for the smaller subexpressions \(R_1, R_2\). For each case, we exhibit an NFA 
+                        \(M\) recognizing \(L(R)\), which establishes regularity (since any language recognized by an NFA is 
+                        regular by Theorem 2).
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>\(R = a\) for some \(a \in \Sigma\):<br>
@@ -380,7 +483,7 @@ uses_python: false
                         <li>\(R = (R_1 \cup R_2)\):<br>
                             Then
                             \[
-                            L(R) = (R_1 \cup R_2)
+                            L(R) = L(R_1) \cup L(R_2)
                             \]
                             and the following NFA recognizes \(L(R)\):
                             \[
@@ -399,6 +502,12 @@ uses_python: false
 
                                             \end{cases}
                             \]
+                            <p>
+                                <em>Verification.</em> On input \(w\), \(M\) starts at \(q_0\) and immediately \(\epsilon\)-branches 
+                                into both \(q_{0_1}\) and \(q_{0_2}\), after which the two branches process \(w\) as \(M_1\) and 
+                                \(M_2\) independently. Since the accept set is \(F_1 \cup F_2\), the machine \(M\) accepts iff at 
+                                least one of \(M_1, M_2\) accepts \(w\), i.e., iff \(w \in L(R_1) \cup L(R_2)\).
+                            </p>
                         </li>
                         <div style="text-align: center;">
                             <img src="Images/P1_case4.jpg" alt="Case 4"  class="responsive-image">
@@ -407,7 +516,7 @@ uses_python: false
                         <li>\(R = (R_1 \circ R_2)\):<br>
                             Then
                             \[
-                            L(R) = (R_1 \circ R_2)
+                            L(R) = L(R_1) \circ L(R_2)
                             \]
                             and the following NFA recognizes \(L(R)\):
                             \[
@@ -422,6 +531,14 @@ uses_python: false
                                             \delta_2(q, a) &\text{if \(q \in Q_2\) }. \\
                                         \end{cases}
                             \]
+                            <p>
+                                <em>Verification.</em> On input \(w\), \(M\) starts at \(q_{0_1}\) and processes \(w\) as \(M_1\). 
+                                Whenever computation enters an \(F_1\) state, an \(\epsilon\)-transition to \(q_{0_2}\) becomes 
+                                available — the NFA may nondeterministically take this transition or continue inside \(M_1\). 
+                                Once it jumps, the rest of \(w\) is processed as \(M_2\). Since the accept set is \(F_2\) only, 
+                                \(M\) accepts iff \(w\) splits as \(w = uv\) with \(u \in L(R_1)\) and \(v \in L(R_2)\), i.e., 
+                                iff \(w \in L(R_1) \circ L(R_2)\).
+                            </p>
                         </li>
                         <div style="text-align: center;">
                             <img src="Images/P1_case5.jpg" alt="Case 5"  class="responsive-image">
@@ -430,7 +547,7 @@ uses_python: false
                         <li>\(R = (R_1^*) \):<br>
                             Then
                             \[
-                            L(R) = (R_1^*)
+                            L(R) = L(R_1)^*
                             \]
                             and the following NFA recognizes \(L(R)\):
                             \[
@@ -446,6 +563,15 @@ uses_python: false
                                             \emptyset &\text{if \(q=q_0\) and \(a \neq \epsilon\)}. \\
                                         \end{cases}
                             \]
+                            <p>
+                                <em>Verification.</em> The new start state \(q_0\) is itself accepting, so on input \(\epsilon\) 
+                                the machine \(M\) immediately accepts (and \(\epsilon \in L(R_1)^*\) holds for any \(R_1\)). 
+                                On a non-empty input, \(M\) first \(\epsilon\)-transitions to \(q_{0_1}\) and runs \(M_1\). 
+                                Whenever \(M_1\) reaches an \(F_1\) state, an \(\epsilon\)-transition back to \(q_{0_1}\) allows 
+                                another iteration of \(R_1\); this can be repeated any number of times. Hence \(M\) accepts iff 
+                                \(w\) splits as \(w = w_1 w_2 \cdots w_k\) with \(k \geq 0\) and each \(w_i \in L(R_1)\), i.e., 
+                                iff \(w \in L(R_1)^*\).
+                            </p>
                         </li>
                         <div style="text-align: center;">
                             <img src="Images/P1_case6.jpg" alt="Case 6"  class="responsive-image">
@@ -453,17 +579,52 @@ uses_python: false
                     </ol>
                 </div>
                 <p>
-                    As an example, we convert the regular expression \((01 \cup 1)^*\) into an NFA through a sequence of stages. This expression 
-                    generates strings such as
+                    As an example, we convert the regular expression \((01 \cup 1)^*\) into an NFA through a sequence of stages. 
+                    The language \(L\bigl((01 \cup 1)^*\bigr)\) consists of strings such as
                     \[
                     \{\epsilon, \, 01, \, 1, \, 0101, \, 11, \, 1101, \, 01011101, \, 11111, \, 01101011110111, \, \cdots\}
                     \] 
-                    and the following NFA recognizes these strings. When the NFA follows an \(\epsilon\)-transition, it moves to the next state 
+                    and the following NFA recognizes this language. When the NFA follows an \(\epsilon\)-transition, it moves to the next state 
                     without reading the next symbol from the input string. 
                 </p>
                 
                 <div style="text-align: center;">
                     <img src="Images/NFA_from_RE.jpg" alt="NFA from Regular Expression"  class="responsive-image">
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch: Part 2 (DFA → Regex via state elimination)</span>
+                    <p>
+                        For the converse direction, suppose \(A\) is regular, so a DFA \(M\) recognizes \(A\). We must produce 
+                        a regular expression \(R\) with \(L(R) = A\). The construction proceeds via an intermediate object called 
+                        a <strong>generalized NFA</strong> (GNFA), in which transitions are labeled by regular expressions rather 
+                        than single symbols. A GNFA reads input by consuming, on each transition, any string matching that 
+                        transition's regex label.
+                    </p>
+                    <p>
+                        <strong>Step 1: Convert \(M\) into a GNFA.</strong> Add a new start state \(s\) with an \(\epsilon\)-edge 
+                        to \(M\)'s start state, and a new unique accept state \(t\) with \(\epsilon\)-edges from each of \(M\)'s 
+                        accept states. Then ensure that every pair of internal states \((q_i, q_j)\) has exactly one transition 
+                        between them (labeled by the union of all symbols that previously triggered \(q_i \to q_j\) in \(M\), 
+                        or by the regex \(\emptyset\) if no such symbol existed). The resulting GNFA recognizes exactly \(A\).
+                    </p>
+                    <p>
+                        <strong>Step 2: State elimination.</strong> Repeatedly remove internal states one at a time. To remove 
+                        an internal state \(q_{\mathrm{rip}}\), update each remaining transition \(q_i \to q_j\) (for 
+                        \(q_i \neq t\) and \(q_j \neq s\)) by replacing its old label \(R_{ij}\) with
+                        \[
+                        R_{ij}^{\text{new}} = R_{ij} \cup R_{i,\mathrm{rip}} \, R_{\mathrm{rip},\mathrm{rip}}^* \, R_{\mathrm{rip},j}
+                        \]
+                        — that is, "either bypass \(q_{\mathrm{rip}}\) entirely (old label), or detour through \(q_{\mathrm{rip}}\) 
+                        any number of times before continuing." This new label captures every path that previously went through 
+                        \(q_{\mathrm{rip}}\). The Kleene star is essential here: it accounts for self-loops at \(q_{\mathrm{rip}}\) 
+                        being traversed any number of times.
+                    </p>
+                    <p>
+                        <strong>Step 3: Read off the regex.</strong> After all internal states are eliminated, only \(s\) and 
+                        \(t\) remain, connected by a single transition labeled with some regex \(R\). One can verify that each 
+                        elimination step preserves the recognized language, so the final \(R\) satisfies \(L(R) = A\). \(\blacksquare\)
+                    </p>
                 </div>
                 
             </section>
