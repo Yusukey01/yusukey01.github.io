@@ -33,7 +33,7 @@ uses_python: false
                     The <a href="Eulerian.html#D-hamiltonian_graph" class="ref-link"><strong>Hamiltonian cycle problem</strong></a> illustrates an important phenomenon 
                     called <strong>polynomial verifiability</strong>. Although no known algorithm can determine whether a Hamiltonian 
                     cycle exists in polynomial time (the best known algorithms require exponential time), if someone <em>hands us</em> 
-                    a proposed cycle, we can verify that it is indeed a valid Hamiltonian cycle in polynomial time - simply by checking 
+                    a proposed cycle, we can verify that it is indeed a valid Hamiltonian cycle in polynomial time — simply by checking 
                     that it visits every vertex exactly once.
                 </p>
                 
@@ -44,13 +44,17 @@ uses_python: false
                         \[
                         A = \{w \mid V \text{ accepts } \langle w, c \rangle \text{ for some string } c\}.
                         \]
-                        We measure the time of a verifier only in terms of the length of \(w\), so a polynomial time verifier runs 
+                        We measure the time of a verifier only in terms of the length of \(w\), so a polynomial-time verifier runs 
                         in polynomial time in the length of \(w\). A language \(A\) is <strong>polynomially verifiable</strong> if 
-                        it has a polynomial time verifier. The string \(c\) is called a <strong>certificate</strong> of membership in \(A\). 
+                        it has a polynomial-time verifier. The string \(c\) is called a <strong>certificate</strong> of membership in \(A\). 
+                        Since the verifier runs in time polynomial in \(|w|\), the certificate \(c\) it inspects has length at most 
+                        polynomial in \(|w|\) — there is no time to read more.
                     </p>
                 </div>
                 <p>
-                    (In the context of the Hamiltonian cycle problem, the certificate can be a specific Hamiltonian cycle.)
+                    The string \(c\) plays the role of additional information that supports the claim \(w \in A\); we may think of 
+                    it as a <em>proof</em> of membership presented by an external source. For the Hamiltonian cycle problem, a 
+                    certificate is a specific cycle, and the verifier inspects it to confirm that it visits every vertex exactly once.
                 </p>
             </section>
 
@@ -60,26 +64,94 @@ uses_python: false
                 <div class="theorem" id="D-class_NP">
                     <span class="theorem-title">Definition: Class NP</span>
                     <p>
-                        <strong>NP</strong> is the class of languages that have polynomial time verifiers.
+                        <strong>NP</strong> is the class of languages that have polynomial-time verifiers.
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-nondeterministic_tm">
+                    <span class="theorem-title">Definition: Nondeterministic Turing Machine</span>
+                    <p>
+                        A <strong>nondeterministic Turing machine</strong> (NTM) is a 7-tuple 
+                        \((Q, \Sigma, \Gamma, \delta, q_0, q_{\mathrm{accept}}, q_{\mathrm{reject}})\) defined exactly as a 
+                        <a href="turing_machine.html#D-turing_machine" class="ref-link"><strong>Turing machine</strong></a> 
+                        except that the transition function is multi-valued:
+                        \[
+                        \delta: Q \times \Gamma \to \mathcal{P}(Q \times \Gamma \times \{L, R\}),
+                        \]
+                        where \(\mathcal{P}(\cdot)\) denotes the power set. At each configuration, the machine may have several 
+                        possible next moves, producing a <strong>computation tree</strong> rather than a linear sequence. A 
+                        <strong>branch</strong> is a root-to-leaf path in this tree.
+                    </p>
+                    <p>
+                        An NTM \(N\) <strong>accepts</strong> input \(w\) if <em>at least one</em> branch of its computation 
+                        on \(w\) ends in state \(q_{\mathrm{accept}}\). It <strong>rejects</strong> \(w\) if <em>all</em> 
+                        branches halt in \(q_{\mathrm{reject}}\). The machine <strong>decides</strong> the language 
+                        \(L = \{w \mid N \text{ accepts } w\}\) in time \(t(n)\) if every branch on every input of length 
+                        \(n\) halts within \(t(n)\) steps.
                     </p>
                 </div>
 
                 <p>
-                    There is an equivalent characterization of NP using <strong>nondeterministic Turing machines (NTMs)</strong>. 
-                    A language is in NP if and only if it is decided by some nondeterministic polynomial-time Turing machine. 
-                    The two definitions - polynomial-time verifier and nondeterministic polynomial-time decider - are equivalent.
+                    There is an equivalent characterization of NP using NTMs, in which the certificate \(c\) is replaced by a 
+                    nondeterministic guess. The following theorem makes the equivalence precise.
                 </p>
 
                 <div class="theorem" id="D-ntime_class">
                     <span class="theorem-title">Definition: Nondeterministic Time Complexity Class</span>
                     <p>
+                        Let \(t\colon \mathbb{N} \to \mathbb{R}^+\) be a function. The <strong>nondeterministic time 
+                        complexity class</strong>
                         \[
                         \text{NTIME}(t(n)) = \{L \mid L \text{ is a language decided by an } O(t(n))\text{-time nondeterministic Turing machine}\}.
                         \]
-                        Equivalently,
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-NP_NTM_equivalence">
+                    <span class="theorem-title">Theorem: Verifier–NTM Equivalence</span>
+                    <p>
+                        A language \(A\) is in NP if and only if some nondeterministic polynomial-time Turing machine decides 
+                        \(A\). Consequently,
                         \[
-                        NP = \bigcup_k \text{NTIME}(n^k).
+                        NP = \bigcup_{k \in \mathbb{N}} \text{NTIME}(n^k).
                         \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>(\(\Rightarrow\)) Verifier \(\Rightarrow\) NTM.</strong> Suppose \(A\) has a polynomial-time 
+                        verifier \(V\) running in time \(n^k\) on inputs \(\langle w, c \rangle\) of length \(|w| = n\). By 
+                        the certificate-length bound established in 
+                        <a href="#D-verifier" class="ref-link"><strong>Verifiability</strong></a>, we may assume \(|c| \leq n^k\). 
+                        Construct an NTM \(N\) that, on input \(w\):
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>Nondeterministically writes a string \(c\) of length at most \(n^k\) on the tape (one symbol per 
+                            branch, for at most \(n^k\) steps).</li>
+                        <li>Simulates \(V\) on \(\langle w, c \rangle\), accepting iff \(V\) accepts.</li>
+                    </ol>
+                    <p>
+                        Step 1 takes \(O(n^k)\) steps; step 2 takes \(O(n^k)\) steps. The total time per branch is \(O(n^k)\), 
+                        polynomial in \(n\). Some branch of \(N\) accepts \(w\) iff some certificate \(c\) makes \(V\) accept 
+                        \(\langle w, c \rangle\), iff \(w \in A\).
+                    </p>
+                    <p>
+                        <strong>(\(\Leftarrow\)) NTM \(\Rightarrow\) Verifier.</strong> Suppose an NTM \(N\) decides \(A\) in 
+                        time \(n^k\). Define a deterministic verifier \(V\) that, on input \(\langle w, c \rangle\):
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>Interprets \(c\) as a sequence of nondeterministic choices, one per step of \(N\).</li>
+                        <li>Simulates \(N\) on \(w\) following the choices encoded by \(c\), accepting iff this branch ends 
+                            in \(q_{\mathrm{accept}}\).</li>
+                    </ol>
+                    <p>
+                        Each step of \(N\) has at most \(|\delta_{\max}| := \max_{q,a} |\delta(q,a)|\) choices, which is a 
+                        finite constant since \(Q\) and \(\Gamma\) are finite. Hence \(c\) of length \(O(n^k \log |\delta_{\max}|) 
+                        = O(n^k)\) suffices to encode any branch. The simulation runs in time polynomial in \(|w|\). \(V\) accepts 
+                        \(\langle w, c \rangle\) for some \(c\) iff some branch of \(N\) accepts \(w\), iff \(w \in A\). 
+                        \(\blacksquare\)
                     </p>
                 </div>
                 
@@ -88,26 +160,87 @@ uses_python: false
             <section id="P=NP" class="section-content">
                 <h2>P vs NP Question</h2>
                 
-                <ul  style="padding-left: 40px;">
-                    <li>P is the class of languages for which membership can be <strong>decided</strong> in polynomial time.</li>
-                    <li>NP is the class of languages for which membership can be <strong>verified</strong> in polynomial time.</li>
-                </ul>
+                <p>
+                    Recall that <a href="time_complexity.html#D-class_P" class="ref-link"><strong>P</strong></a> is the class of 
+                    languages for which membership can be <strong>decided</strong> in polynomial time, while 
+                    <a href="#D-class_NP" class="ref-link"><strong>NP</strong></a> is the class of languages for which membership 
+                    can be <strong>verified</strong> in polynomial time.
+                </p>
 
                 <p>
                     Problems like the Hamiltonian cycle are known to be in NP but are not known to be in P. Intuitively, it seems that 
-                    verifying a solution should be easier than finding one - but this has never been proved. The question of whether 
+                    verifying a solution should be easier than finding one — but this has never been proved. The question of whether 
                     \(P = NP\) or \(P \neq NP\) is one of the most important open problems in mathematics and computer science, listed among the 
                     Clay Mathematics Institute's <strong>Millennium Prize Problems</strong> (with a \$1 million prize). 
                     Most researchers believe that \(P \neq NP\).
                 </p>
 
+                <div class="theorem" id="D-EXPTIME">
+                    <span class="theorem-title">Definition: Class EXPTIME</span>
+                    <p>
+                        <strong>EXPTIME</strong> is the class of languages decidable in exponential time on a deterministic 
+                        Turing machine:
+                        \[
+                        \text{EXPTIME} = \bigcup_{k \in \mathbb{N}} \text{TIME}(2^{n^k}).
+                        \]
+                    </p>
+                </div>
+
                 <p>
-                    What is known is the containment
+                    What is known is the chain of containments
                     \[
-                    P \subseteq NP \subseteq \text{EXPTIME} = \bigcup_k \text{TIME}(2^{n^k}).
+                    P \subseteq NP \subseteq \text{EXPTIME}.
                     \]
-                    Whether either inclusion is strict remains open.
+                    Whether either inclusion is strict remains open. The two containments are established by the following 
+                    theorems.
                 </p>
+
+                <div class="theorem" id="T-P_subset_NP">
+                    <span class="theorem-title">Theorem: \(P \subseteq NP\)</span>
+                    <p>
+                        Every language in P is in NP. That is, \(P \subseteq NP\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(A \in P\) and let \(M\) be a deterministic polynomial-time Turing machine deciding \(A\). Define 
+                        a verifier \(V\) that, on input \(\langle w, c \rangle\), ignores \(c\) and simulates \(M\) on \(w\), 
+                        accepting iff \(M\) accepts. Since \(M\) runs in polynomial time, so does \(V\). For any \(w \in A\), 
+                        every \(c\) (including the empty string) is a valid certificate; for any \(w \notin A\), no \(c\) leads 
+                        \(V\) to accept. Hence \(V\) is a polynomial-time verifier for \(A\), so \(A \in NP\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-NP_subset_EXPTIME">
+                    <span class="theorem-title">Theorem: \(NP \subseteq \text{EXPTIME}\)</span>
+                    <p>
+                        Every language in NP is in EXPTIME. That is, \(NP \subseteq \text{EXPTIME}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(A \in NP\). By 
+                        <a href="#T-NP_NTM_equivalence" class="ref-link"><strong>Verifier–NTM Equivalence</strong></a>, 
+                        some NTM \(N\) decides \(A\) in time \(n^k\) for some constant \(k\). Construct a deterministic TM 
+                        \(D\) that, on input \(w\) of length \(n\), simulates every branch of \(N\) on \(w\) by exhaustive 
+                        breadth-first search of the computation tree.
+                    </p>
+                    <p>
+                        Each step of \(N\) has at most \(b := |\delta_{\max}|\) choices, where \(b\) is a finite constant 
+                        determined by \(N\). The computation tree of \(N\) on \(w\) has depth at most \(n^k\), so it contains 
+                        at most \(b^{n^k}\) branches. Simulating one branch takes \(O(n^k)\) steps. Total time:
+                        \[
+                        O(n^k \cdot b^{n^k}) = O(n^k \cdot 2^{n^k \log_2 b}) = 2^{O(n^k)}.
+                        \]
+                        \(D\) accepts iff some branch of \(N\) accepts, iff \(w \in A\). Hence \(D\) runs in time 
+                        \(2^{c \cdot n^k}\) for some constant \(c\). For \(n \geq c\), this is bounded by \(2^{n^{k+1}}\), so 
+                        \(A \in \text{TIME}(2^{n^{k+1}}) \subseteq \text{EXPTIME}\). \(\blacksquare\)
+                    </p>
+                </div>
 
             </section>
 
@@ -115,30 +248,30 @@ uses_python: false
                 <h2>NP-Completeness</h2>
 
                 <p>
-                    Some problems in NP are as hard as <em>any</em> problem in NP - solving any one of them in 
+                    Some problems in NP are as hard as <em>any</em> problem in NP — solving any one of them in 
                     polynomial time would imply \(P = NP\). These are the <strong>NP-complete</strong> problems. 
-                    The Hamiltonian cycle problem is one such example.
+                    The Hamiltonian cycle problem is a classical example, established by reduction from a known 
+                    NP-complete problem; we make the general transfer principle precise below.
                 </p>
 
                 <div class="theorem" id="D-polynomial_time_reduction">
                     <span class="theorem-title">Definition: Polynomial Time Reduction</span>
                     <p>
-                        Language \(A\) is <strong>polynomial time reducible</strong> to language \(B\), denoted 
+                        Language \(A\) is <strong>polynomial-time reducible</strong> to language \(B\), denoted 
                         \[
-                        A \leq_{P} B
+                        A \leq_{P} B,
                         \]
-                        if a <strong>polynomial time computable function</strong> \(f: \Sigma^* \to \Sigma^*\) exists, where 
+                        if a <strong>polynomial-time computable function</strong> \(f: \Sigma^* \to \Sigma^*\) exists such that 
                         \[
-                        \forall w, \, w \in A \Longleftrightarrow f(w) \in B.
+                        w \in A \iff f(w) \in B \quad \text{for all } w \in \Sigma^*.
                         \]
-                        The function \(f\) is called the <strong>polynomial time reduction</strong> of \(A\) to \(B\).
+                        The function \(f\) is called <strong>a polynomial-time reduction</strong> of \(A\) to \(B\).
                     </p>
 
                     <p>
                         Here, a function \(f\) is <strong>polynomial-time computable</strong> if there exists a polynomial-time 
                         Turing machine \(M\) that, on any input \(w\), halts with \(f(w)\) on its tape.
                     </p>
-                   
                 </div>
 
                 <div class="theorem" id="D-NP_completeness">
@@ -155,12 +288,46 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="theorem" id="T-poly_reduction_preserves_p">
+                    <span class="theorem-title">Theorem: Reduction Transfers Tractability</span>
+                    <p>
+                        If \(A \leq_P B\) and \(B \in P\), then \(A \in P\). Consequently, if any NP-complete language 
+                        belongs to P, then \(P = NP\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Part 1.</strong> Let \(f\) be a polynomial-time reduction from \(A\) to \(B\), computable 
+                        by a TM \(M_f\) in time \(O(n^j)\). Let \(M_B\) be a polynomial-time decider for \(B\) running in 
+                        time \(O(m^k)\) on inputs of length \(m\). Define a decider \(M_A\) for \(A\) that, on input \(w\) 
+                        of length \(n\):
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>Computes \(f(w)\) using \(M_f\), in time \(O(n^j)\).</li>
+                        <li>Runs \(M_B\) on \(f(w)\), accepting iff \(M_B\) accepts.</li>
+                    </ol>
+                    <p>
+                        Since \(M_f\) writes at most \(O(n^j)\) symbols, \(|f(w)| = O(n^j)\). Step 2 then runs in time 
+                        \(O((n^j)^k) = O(n^{jk})\). Total time \(O(n^j + n^{jk}) = O(n^{jk})\), polynomial in \(n\). By 
+                        \(A \leq_P B\), \(w \in A \Leftrightarrow f(w) \in B\), so \(M_A\) decides \(A\). Hence \(A \in P\).
+                    </p>
+                    <p>
+                        <strong>Part 2.</strong> Suppose \(B\) is NP-complete and \(B \in P\). For any \(A \in NP\), 
+                        condition 2 of NP-completeness gives \(A \leq_P B\); Part 1 then gives \(A \in P\). Hence 
+                        \(NP \subseteq P\). Combined with 
+                        <a href="#T-P_subset_NP" class="ref-link"><strong>\(P \subseteq NP\)</strong></a>, we get \(P = NP\). 
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
                 <p>
-                    Finally, we introduce the Hamiltonian cycle problem with weighted edges. 
+                    To illustrate, we introduce the closely related Traveling Salesperson Problem. 
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Example: Traveling Salesperson Problem (TSP) - Decision Version</span>
+                    <span class="proof-title">Example: Traveling Salesperson Problem (TSP) — Decision Version</span>
                     <p>
                         Given a set of cities, the distances between them, and a number \(k\), is there a tour that visits each 
                         city exactly once, returns to the starting city, and has total distance \(\leq k\)? 
@@ -168,9 +335,11 @@ uses_python: false
                 </div>
 
                 <p>
-                    The decision version of TSP is NP-complete. The <strong>optimization</strong> version - which asks for the 
-                    shortest possible Hamiltonian cycle — is <strong>NP-hard</strong> but not NP-complete, because it is not 
-                    a decision problem and thus does not belong to NP in the formal sense.
+                    The decision version of TSP is a classical NP-complete problem (proved via reduction from the 
+                    Hamiltonian cycle problem). The <strong>optimization version</strong> — which asks for a tour of 
+                    minimum total weight, rather than testing whether one of weight \(\leq k\) exists — is 
+                    <strong>NP-hard</strong> but not NP-complete, because it is not a decision problem and thus does not 
+                    belong to NP in the formal sense.
                 </p>
 
                 <p>
@@ -181,18 +350,38 @@ uses_python: false
                     <img src="Images/complexity.jpg" alt="complexity"  class="responsive-image">
                 </div>
 
-                <p>
-                    Note: If it were the case that \(P = NP\), then the classes P, NP, and NP-complete would all collapse 
-                    to the same class, since every nontrivial language in P would be NP-complete. 
-                    (\(P = NP = NP\text{-complete}\))
-                </p>
+                <div class="insight-box">
+                    <h3>Aside: Collapse Under \(P = NP\)</h3>
+                    <p>
+                        If \(P = NP\), the classes P, NP, and NP-complete all collapse to a single class. To see why, 
+                        let \(A \in P\) be any <em>nontrivial</em> language (so there exist strings \(a^+ \in A\) and 
+                        \(a^- \notin A\)). For any \(B \in NP = P\), let \(M_B\) be a polynomial-time decider for \(B\). 
+                        The map
+                        \[
+                        f_B(w) = \begin{cases} a^+ & \text{if } M_B \text{ accepts } w, \\ a^- & \text{otherwise} \end{cases}
+                        \]
+                        is a polynomial-time reduction \(B \leq_P A\). Combined with \(A \in NP\), this makes \(A\) 
+                        NP-complete. Hence under \(P = NP\):
+                        \[
+                        P = NP = \text{NP-complete (modulo trivial cases)}.
+                        \]
+                    </p>
+                </div>
 
-                <p>
-                    NP-completeness theory has profound practical implications: when faced with an NP-complete problem 
-                    in applications such as scheduling, routing, or resource allocation, we know that finding an exact 
-                    polynomial-time algorithm is almost certainly impossible. Instead, practitioners turn to 
-                    approximation algorithms, heuristics, and special-case solvers.
-                </p>
+                <div class="insight-box">
+                    <h3>Math ↔ CS: Living with Intractability</h3>
+                    <p>
+                        NP-completeness theory has profound practical implications. When an industrial problem in 
+                        scheduling, routing, network design, or resource allocation is shown to be NP-complete, an 
+                        exact polynomial-time algorithm is almost certainly out of reach. The response is not to give 
+                        up but to <em>change the question</em>: practitioners turn to <strong>approximation 
+                        algorithms</strong> with provable suboptimality bounds, <strong>heuristics</strong> such as 
+                        simulated annealing or genetic algorithms, <strong>fixed-parameter tractable</strong> solvers 
+                        for restricted inputs, and <strong>SAT/SMT solvers</strong> that exploit problem structure 
+                        despite worst-case exponential behavior. The boundary between P and NP-complete thus does not 
+                        end engineering — it reshapes it.
+                    </p>
+                </div>
 
             </section>
         </div>
