@@ -28,9 +28,10 @@ uses_python: false
             <section id="bool" class="section-content">
                 <h2>Boolean Logic</h2>
                 <p>
-                    In <strong>Boolean Logic</strong>, we can only use two values: <strong>TRUE</strong> and <strong>FALSE</strong>. 
-                    This mathematical system is the foundation of digital electronics and computer design. Often we represent TRUE by 1 
-                    and FALSE by 0, but this is just a representation; technically, \(\text{TRUE} \neq 1\). 
+                    In <strong>Boolean Logic</strong>, we work with two values: <strong>TRUE</strong> and <strong>FALSE</strong>, 
+                    customarily encoded as \(1\) and \(0\). Throughout this page we identify the Boolean values with the elements 
+                    of \(\{0, 1\}\). This mathematical system is the foundation of digital electronics, computer design, and the 
+                    algebraic models studied in computational complexity theory.
                 </p>
 
                 <p>
@@ -74,6 +75,24 @@ uses_python: false
                         \(1 \rightarrow 1 = 1,\; 1 \rightarrow 0 = 0,\; 0 \rightarrow 0 = 1\).
                     </li>
                 </ul>
+
+                <p>
+                    All of these operations are special cases of a more general object: any function from finitely 
+                    many Boolean inputs to a single Boolean output.
+                </p>
+
+                <div class="theorem" id="D-boolean_function">
+                    <span class="theorem-title">Definition: Boolean Function</span>
+                    <p>
+                        A <strong>Boolean function</strong> of \(n\) variables (\(n \geq 1\)) is a function 
+                        \[
+                        f: \{0, 1\}^n \to \{0, 1\}.
+                        \]
+                        Equivalently, \(f\) is specified by a <strong>truth table</strong>: a list of the value 
+                        \(f(a_1, \ldots, a_n) \in \{0, 1\}\) for each of the \(2^n\) input assignments 
+                        \((a_1, \ldots, a_n) \in \{0, 1\}^n\).
+                    </p>
+                </div>
                 
             </section>
 
@@ -89,7 +108,7 @@ uses_python: false
                             P \uparrow Q = \neg(P \wedge Q).
                             \]
                             NAND is TRUE unless both \(P\) and \(Q\) are TRUE: 
-                            \(1 \uparrow 1 = 0,\; 1 \uparrow 0 = 1,\; 0 \uparrow 1 = 1,\; 0 \uparrow 0 = 1\)
+                            \(1 \uparrow 1 = 0,\; 1 \uparrow 0 = 1,\; 0 \uparrow 1 = 1,\; 0 \uparrow 0 = 1\).
                         </li>
                         <li><strong>NOR: \(\downarrow\)</strong><br> 
                             The negation of disjunction:
@@ -110,6 +129,35 @@ uses_python: false
                     </p>
                 </div>
 
+                <div class="theorem" id="T-dnf_completeness">
+                    <span class="theorem-title">Theorem: Functional Completeness of \(\{\neg, \wedge, \vee\}\)</span>
+                    <p>
+                        The set \(\{\neg, \wedge, \vee\}\) is functionally complete: every 
+                        <a href="#D-boolean_function" class="ref-link"><strong>Boolean function</strong></a> 
+                        can be expressed as a formula in the variables using only negation, conjunction, and disjunction.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(f: \{0, 1\}^n \to \{0, 1\}\). If \(f\) is identically \(0\), then 
+                        \(f(x_1, \ldots, x_n) = x_1 \wedge \neg x_1\) suffices. Otherwise, let 
+                        \(S = \{(a_1, \ldots, a_n) \in \{0, 1\}^n \mid f(a_1, \ldots, a_n) = 1\}\). For each input 
+                        \(\mathbf{a} = (a_1, \ldots, a_n) \in S\), define the <strong>minterm</strong>
+                        \[
+                        m_{\mathbf{a}}(x_1, \ldots, x_n) = \ell_1 \wedge \ell_2 \wedge \cdots \wedge \ell_n, 
+                        \quad \text{where } \ell_i = \begin{cases} x_i & \text{if } a_i = 1, \\ \neg x_i & \text{if } a_i = 0. \end{cases}
+                        \]
+                        By construction, \(m_{\mathbf{a}}(\mathbf{x}) = 1\) iff \(\mathbf{x} = \mathbf{a}\). The 
+                        <strong>disjunctive normal form</strong> of \(f\) is then
+                        \[
+                        f(x_1, \ldots, x_n) = \bigvee_{\mathbf{a} \in S} m_{\mathbf{a}}(x_1, \ldots, x_n),
+                        \]
+                        which evaluates to \(1\) at exactly the inputs in \(S\), matching \(f\). \(\blacksquare\)
+                    </p>
+                </div>
+
                 <p>
                     Remarkably, both \(\{\uparrow\}\) (NAND alone) and \(\{\downarrow\}\) (NOR alone) are functionally 
                     complete. This means that any Boolean circuit can be built from a single type of gate — a fact 
@@ -125,15 +173,11 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof</span>
+                    <span class="proof-title">Proof.</span>
                     <p>
-                        It is a standard result that the set \(\{\neg, \wedge, \vee\}\) is functionally complete: 
-                        every Boolean function can be written in <strong>disjunctive normal form (DNF)</strong> 
-                        as a disjunction of conjunctions of literals (variables and their negations), constructed 
-                        directly from the function's truth table. We take this fact as given.
-                    </p>
-                    <p>
-                        It therefore suffices to express \(\neg\), \(\wedge\), and \(\vee\) using NAND alone:
+                        By the <a href="#T-dnf_completeness" class="ref-link"><strong>functional completeness of \(\{\neg, \wedge, \vee\}\)</strong></a>, 
+                        every Boolean function can be expressed using these three operations. It therefore suffices to express 
+                        \(\neg\), \(\wedge\), and \(\vee\) using NAND alone:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li><strong>NOT:</strong> \(\quad \neg P = P \uparrow P\)</li>
@@ -141,8 +185,8 @@ uses_python: false
                         <li><strong>OR:</strong> \(\quad P \vee Q = (P \uparrow P) \uparrow (Q \uparrow Q)\)</li>
                     </ul>
                     <p>
-                        Each identity is verified by direct truth-table evaluation. Since AND, OR, and NOT can express 
-                        any Boolean function, and all three can be built from NAND alone, NAND is functionally complete.
+                        Each identity is verified by direct truth-table evaluation. Since AND, OR, and NOT together 
+                        express any Boolean function, and all three can be built from NAND alone, NAND is functionally complete.
                     </p>
                     <p>
                         The analogous constructions using NOR are:
@@ -153,7 +197,7 @@ uses_python: false
                         <li><strong>AND:</strong> \(\quad P \wedge Q = (P \downarrow P) \downarrow (Q \downarrow Q)\)</li>
                     </ul>
                     <p>
-                        By the same argument, NOR is functionally complete.
+                        By the same argument, NOR is functionally complete. \(\blacksquare\)
                     </p>
                 </div>
 
@@ -196,25 +240,28 @@ uses_python: false
                     However, circuits are not only used for physical hardware but also for theoretical models in computer science. When Boolean 
                     functions are used to construct a computational model rather than a physical device, we refer to them as <strong>Boolean circuits</strong>. 
                     These circuits serve as a fundamental concept in computational complexity theory, where they help analyze the efficiency and 
-                    limitations of different computational processes. Here, we only introduce the definition of Boolean circuits. We will revisit this topic 
-                    after learning complexity theory in the future.
+                    limitations of different computational processes. Here we introduce the basic definition; the study of 
+                    <strong>circuit complexity</strong> — classes such as \(\mathrm{AC}^0\), \(\mathrm{NC}\), and \(\mathrm{P/poly}\) defined by 
+                    asymptotic bounds on circuit size and depth — is a subject for future curriculum extensions.
                 </p>
 
                 <div class="theorem" id="D-boolean_circuit">
                     <span class="theorem-title">Definition: Boolean Circuit</span>
                     <p>
-                        A <strong>Boolean circuit</strong> is a <strong>directed acyclic graph (DAG)</strong> 
-                        where nodes (often called gates) represent computational steps. The nodes are classified as:
+                        Fix a <a href="#D-functional_completeness" class="ref-link"><strong>functionally complete set</strong></a> 
+                        of Boolean operations as the available <strong>gate types</strong> (typical choices are 
+                        \(\{\wedge, \vee, \neg\}\) or \(\{\uparrow\}\)). A <strong>Boolean circuit</strong> over this gate set is a 
+                        <strong>directed acyclic graph (DAG)</strong> in which each node belongs to one of three categories:
                     </p>
                     <ul style="padding-left: 40px;">
-                        <li><strong>Input nodes</strong> (sources): Represent Boolean variables.</li>
-                        <li><strong>Gate nodes</strong> (internal): Each computes a Boolean function from a 
-                            <strong>functionally complete set</strong> (e.g., \(\{\wedge, \vee, \neg\}\) or \(\{\uparrow\}\)) of its inputs.</li>
-                        <li><strong>Output nodes</strong> (sinks): Produce the final result(s) of the circuit.</li>
+                        <li><strong>Input nodes</strong> (sources, in-degree \(0\)): each labeled with a Boolean variable.</li>
+                        <li><strong>Gate nodes</strong> (internal): each labeled with one of the available gate types of arity 
+                            \(k \geq 1\), with in-degree exactly \(k\); the gate computes that operation applied to its \(k\) input wires.</li>
+                        <li><strong>Output nodes</strong> (sinks, out-degree \(0\)): each producing one final Boolean result.</li>
                     </ul>
                     <p>
-                        The <strong>size</strong> of a circuit is its total number of gates, and its 
-                        <strong>depth</strong> is the length of the longest path from any input to an output.
+                        The <strong>size</strong> of a circuit is its total number of gate nodes, and its 
+                        <strong>depth</strong> is the length of the longest directed path from any input to any output.
                     </p>
                 </div>   
 
@@ -249,7 +296,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Boolean logic underlies virtually all of computer science - from the physical transistor level to 
+                    Boolean logic underlies virtually all of computer science — from the physical transistor level to 
                     the abstract models studied in complexity theory. The operations introduced here appear throughout 
                     the curriculum: XOR is fundamental to <strong>finite field arithmetic</strong> in abstract algebra, 
                     in cryptography, and Boolean circuits provide a computational model complementary to the 
