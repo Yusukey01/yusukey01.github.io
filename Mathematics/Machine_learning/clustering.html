@@ -151,185 +151,80 @@ uses_python: false
                 </p>
 
                 <p>
-                    The fundamental object in spectral clustering is the <strong>graph Laplacian</strong>, defined as:
+                    The fundamental object in spectral clustering is the 
+                    <a href="../Linear_algebra/graph_laplacian.html#D-graph_laplacian_unnormalized" class="ref-link"><strong>graph Laplacian</strong></a>, 
+                    \(\mathbf{L} = \mathbf{D} - \mathbf{W}\), where \(\mathbf{D}\) is the diagonal degree matrix and \(\mathbf{W}\) is the 
+                    weight (similarity) matrix. The entries of \(\mathbf{L}\) are 
                     \[
-                    \mathbf{L} = \mathbf{D} - \mathbf{W}.
-                    \]
-                    So, the elements of \(\mathbf{L}\) are given by 
-                    \[
-                     \begin{cases}
-                        d_i &\text{if \(i = j\)} \\
-                        -w_{ij} &\text{if } i \neq j \text{ and } w_{ij} \neq 0\\
-                        0 &\text{Otherwise}.
+                    L_{ij} = \begin{cases}
+                        d_i & \text{if } i = j \\
+                        -w_{ij} & \text{if } i \neq j
                     \end{cases}
                     \]
-                    The graph Laplacian captures the structure of the graph in a way that supports clustering via <strong>eigenvector analysis</strong>.
+                    The Laplacian is real symmetric and 
+                    <a href="../Linear_algebra/graph_laplacian.html#T-laplacian_psd" class="ref-link"><strong>positive semi-definite</strong></a>, 
+                    with associated quadratic form 
+                    \[
+                    \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \frac{1}{2} \sum_{i,j} w_{ij}(f_i - f_j)^2,
+                    \]
+                    known as the 
+                    <a href="../Linear_algebra/graph_laplacian.html#T-dirichlet_energy" class="ref-link"><strong>Dirichlet energy</strong></a>. 
+                    It measures the <strong>smoothness</strong> of \(\boldsymbol{f}\) on the graph: small when adjacent nodes (those with \(w_{ij} > 0\)) 
+                    have similar values.
                 </p>
-   
-                <div class="theorem">
-                    <span class="theorem-title">Theorem: Graph Laplacian Nullspace</span>
+
+                <p>
+                    The single result that powers spectral clustering is the connection between the Laplacian's nullspace and the graph's component structure:
+                </p>
+
+                <div class="insight-box">
+                    <h3>Spectral Connectivity (Result Used Below)</h3>
                     <p>
-                        Let \(G\) be an undirected (possibly weighted) graph with Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\). Then the number of connected 
-                        components of \(G\) is equal to the multiplicity \(k\) of the eigenvalue 0 of \(\mathbf{L}\). Moreover, the eigenspace corresponding 
-                        to eigenvalue 0 is spanned by the indicator vectors \(\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_k}\), where each \(S_j\) is a 
-                        connected component of \(G\).
+                        For a graph \(G\) with \(K\) connected components \(S_1, \ldots, S_K\), 
+                        \[
+                        \ker \mathbf{L} = \operatorname{span}\{\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_K}\},
+                        \]
+                        so the multiplicity of the eigenvalue \(0\) equals the number of connected components. The full statement and proof — 
+                        following the standard Dirichlet-energy argument — are developed in our 
+                        <a href="../Linear_algebra/graph_laplacian.html#T-kernel_connectivity" class="ref-link"><strong>graph Laplacian page</strong></a> 
+                        in the linear algebra section.
                     </p>
                 </div>
 
                 <p>
-                    This makes spectral methods especially powerful for separating well-connected groups in a graph.
-                </p>
-
-                <div class="proof">
-                    <span class="proof-title">Proof:</span>
-                    <p>
-                        Let \(G = (V, E)\) be an undirected (possibly weighted) graph with Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\), 
-                        where \(\mathbf{W}\) is a symmetric weight matrix and \(\mathbf{D}\) is the diagonal degree matrix \(D_{ii} = \sum_j w_{ij}\).
-                    </p>
-                    <p>
-                        For any vector \(\boldsymbol{f} \in \mathbb{R}^N\), the quadratic form of the Laplacian is:
-                        \[
-                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \boldsymbol{f}^\top (\mathbf{D} - \mathbf{W})\boldsymbol{f}
-                        = \sum_i D_{ii} f_i^2 - \sum_{i,j} w_{ij} f_i f_j.
-                        \]
-                        Since \(D_{ii} = \sum_j w_{ij}\), we can write:
-                        \[
-                        \sum_i D_{ii} f_i^2 = \sum_{i,j} w_{ij} f_i^2.
-                        \]
-                        So the full expression becomes:
-                        \[
-                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \sum_{i,j} w_{ij} f_i^2 - \sum_{i,j} w_{ij} f_i f_j
-                        \]
-                    </p>
-                    <p>
-                        Now, since \(W\) is symmetric, \(w_{ij} = w_{ji}\), then:
-                        \[
-                        \begin{align*}
-                        \sum_{i,j} w_{ij} f_i^2 &= \frac{1}{2} \sum_{i,j} w_{ij}f_i^2 + \frac{1}{2} \sum_{i,j} w_{ji}f_j^2 \\\\
-                                                &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2).
-                        \end{align*}
-                        \]
-
-                        Plugging this into the expression (1):
-                        \[
-                        \begin{align*}
-                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2) - \sum_{i,j} w_{ij} f_i f_j \\\\
-                                                                &= \frac{1}{2} \sum_{i,j} w_{ij}(f_i^2 + f_j^2 - 2f_i f_j) \\\\
-                                                                &= \boxed{\frac{1}{2} \sum_{i,j} w_{ij} (f_i - f_j)^2.} \tag{1}
-                            \end{align*}
-                        \]
-                    </p>
-                    <p>
-                        <strong>Case 1: \(k = 1\)</strong><br>
-                        Suppose \(\boldsymbol{f} \in \mathbb{R}^N\) is an eigenvector corresponding to eigenvalue 0, i.e., \(\mathbf{L} \boldsymbol{f} = 0\). 
-                        Then:
-                        \[
-                        \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = 0 \quad \Rightarrow \quad \sum_{i,j} w_{ij}(f_i - f_j)^2 = 0.
-                        \]
-                        Since \(w_{ij} \geq 0\), each term \((f_i - f_j)^2\) must be zero wherever \(w_{ij} > 0\). That is, for every edge \((i,j) \in E\), 
-                        we have:
-                        \[
-                        f_i = f_j.
-                        \]
-                        Because the graph is connected, there is a path between any two vertices. Applying the above equality recursively along paths 
-                        in the graph implies that:
-                        \[
-                        f_i = f_j \quad \text{for all } i,j.
-                        \]
-                        Therefore, \(\boldsymbol{f}\) must be constant on all vertices - i.e., \(\boldsymbol{f} \in \text{span}\{\mathbf{1}\}\). 
-                        Hence, the nullspace of \(\mathbf{L}\) is one-dimensional and spanned by the constant vector \(\mathbf{1} = [1, 1, \dots, 1]^\top\). 
-                        This confirms that the eigenvalue 0 has multiplicity 1.
-                    </p>
-                    <p>
-                    <strong>Case 2: \(k > 1\)</strong><br>
-                        Then \(\mathbf{W}\) and \(\mathbf{L}\) can be written in block diagonal form, where each block corresponds to one connected component. 
-                        Specifically,
-                        \[
-                        \mathbf{L} = \begin{bmatrix}
-                                        L_1 & 0 & \cdots & 0 \\
-                                        0 & L_2 & \cdots & 0 \\
-                                        \vdots & \vdots & \ddots & \vdots \\
-                                        0 & 0 & \cdots & L_k
-                                    \end{bmatrix},
-                        \]
-                        where each \(L_i\) is the Laplacian of the \(i\)-th connected component. 
-                    </p>
-                    <p>
-                        From Case 1, each \(L_i\) has nullspace spanned by the constant vector \(\mathbf{1}_{S_i}\) 
-                        (the indicator vector on component \(S_i\)). Therefore, the full nullspace of \(\mathbf{L}\) is spanned 
-                        by \(\mathbf{1}_{S_1}, \ldots, \mathbf{1}_{S_k}\), and the eigenvalue 0 has multiplicity \(k\).
-                    </p>
-                </div>
-
-                <p>
-                    We can consider the graph Laplacian as a <a href="../Linear_algebra/linear_transformation.html"><strong>linear operator</strong></a> 
-                    that acts as a discrete analogue of a differential operator, computing finite differences of \(\boldsymbol{f}\) at each node:
-                    \[
-                    (\mathbf{L}\boldsymbol{f})_i = \sum_{j \in \text{nbr}(i)} w_{ij} (f_i - f_j)
-                    \]
-                    where \(\text{nbr}(i)\) is the set of neighbors of node \(i\).
+                    The intuition for spectral clustering is now immediate: if a graph has \(K\) well-separated clusters joined by weak inter-cluster 
+                    edges, it is approximately a union of \(K\) connected components, and the bottom \(K\) eigenvectors of \(\mathbf{L}\) approximate the 
+                    indicator vectors of those clusters. Spectral clustering exploits this by embedding nodes via these eigenvectors and applying K-means 
+                    in the embedded space.
                 </p>
 
                 <p>
-                    Note that the Laplacian matrix \(\mathbf{L}\) is <strong>symmetric positive semi-definite</strong> because \(w_{ij} \geq 0\), and thus
-                    \(\boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} \geq 0\) for all \(\boldsymbol{f} \in \mathbb{R}^N\). The expression (1) in the above proof 
-                    is called the 
-                    <strong>Laplacian quadratic form</strong>, or the <strong>Dirichlet energy</strong> of \(\boldsymbol{f}\):
-                    \[
-                    \boldsymbol{f}^\top \mathbf{L} \boldsymbol{f} = \frac{1}{2} \sum_{i,j} w_{ij}(f_i - f_j)^2.
-                    \]
-                    It measures the <strong>smoothness</strong> of the function \(\boldsymbol{f}\) on the graph: it becomes small when adjacent nodes 
-                    (i.e., those with \(w_{ij} > 0\)) have similar values. 
-                </p>
-
-                <p>
-                    Moreover, since \(\mathbf{L}\) is symmetric and positive semi-definite, it admits an <a href="../Linear_algebra/symmetry.html"><strong>orthogonal diagonalization</strong></a> 
-                    (also called a <strong>spectral decomposition</strong>):
+                    Since \(\mathbf{L}\) is symmetric and positive semi-definite, it admits a 
+                    <a href="../Linear_algebra/symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral decomposition</strong></a>:
                     \[
                     \mathbf{L} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top,
                     \quad
                     0 = \lambda_1 \le \lambda_2 \le \cdots \le \lambda_N,
                     \]
-                    where \(\boldsymbol{\Lambda}\) contains the real, non-negative eigenvalues \(\lambda_i\) of \(  \mathbf{L}\), and 
-                    the columns of \(\mathbf{V}\) form an orthonormal basis of the corresponding eigenvectors.
+                    where \(\boldsymbol{\Lambda}\) contains the real, non-negative eigenvalues, and the columns of \(\mathbf{V}\) form an orthonormal 
+                    eigenbasis. The smallest eigenvalues correspond to the smoothest variations of a function on the graph — and, in the cluster 
+                    setting, to the indicator structure described above.
                 </p>
 
                 <p>
-                    The smallest eigenvalues correspond to the smoothest variations of a function on the graph. 
-                    This property forms the mathematical foundation of <strong>spectral clustering</strong>, 
-                    which uses the eigenvectors of \(\mathbf{L}\) (or its normalized form) to embed data points into a lower-dimensional space that reveals cluster structure.
-                </p>
-
-                <p>
-                    The <strong>Dirichlet energy</strong> thus plays a central role in <strong>spectral graph theory</strong>. 
-                    In <strong>spectral clustering</strong>, minimizing this energy reveals groupings where nodes are 
-                    densely connected within clusters but sparsely connected across clusters -
-                    making it a powerful tool for uncovering natural structures in complex data.
-                </p>
-                
-                <p>
-                    In practice, graphs often exhibit irregular structure:
-                    nodes may have highly varying degrees, and clusters are not perfectly block-separated. 
-                    This means the raw graph Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) can be dominated by high-degree nodes, 
-                    leading to unbalanced or misleading spectral embeddings.
-                </p>
-
-                <p>
-                    To address this, we use the <strong>normalized graph Laplacian</strong>, which compensates for 
-                    differences in node connectivity and ensures that each node contributes more equally to the 
-                    spectral structure: 
+                    In practice, graphs often exhibit irregular structure: nodes may have highly varying degrees, and clusters are not perfectly 
+                    block-separated. The raw Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) can then be dominated by high-degree nodes, leading 
+                    to unbalanced or misleading spectral embeddings. To address this, we use the 
+                    <a href="../Linear_algebra/graph_laplacian.html#D-normalized_laplacian_sym" class="ref-link"><strong>symmetric normalized Laplacian</strong></a>: 
                     \[
                     \begin{align*}
                     \mathbf{L}_{\text{sym}} &= \mathbf{D}^{-\frac{1}{2}} \mathbf{L} \mathbf{D}^{-\frac{1}{2}} \\\\
                                    &= \mathbf{I} - \mathbf{D}^{-\frac{1}{2}} \mathbf{W} \mathbf{D}^{-\frac{1}{2}}
                     \end{align*}
                     \]
-                    where \(\mathbf{D}\) is the diagonal degree matrix and \(\mathbf{W}\) is the symmetric weight (similarity) matrix. In this case, 
-                    for the normalized graph Laplacian \(\mathbf{L}_{\text{sym}}\), the eigenspace of zero eigenvalue is spanned by 
-                    \[
-                    \mathbf{D}^{\frac{1}{2}} \mathbf{1}_{S_k}, \quad \text{ for } k = 1, \ldots, K
-                    \]
-                    where \(\mathbf{1}_{S_k}\) are the indicator vectors of the connected components.
+                    For \(\mathbf{L}_{\text{sym}}\) the analogous nullspace characterization is that the eigenspace of zero eigenvalue is spanned by 
+                    \(\mathbf{D}^{1/2} \mathbf{1}_{S_k}\) for \(k = 1, \ldots, K\), where \(\mathbf{1}_{S_k}\) are again the indicator vectors of the 
+                    connected components.
                 </p>
 
                 <p>
@@ -349,11 +244,36 @@ uses_python: false
                         <li>Apply K-means clustering to the rows of \(\mathbf{T}\).</li>
                         <li>Assign the original data point \(x_i\) to cluster \(k\) if row \(i\) of \(\mathbf{T}\) is assigned to cluster \(k\).</li>
                     </ol>
-                </div>  
+                </div>
 
-                <p>
-                    See: <a href="../Linear_algebra/graph_laplacian.html"><strong>Graph Laplacians and Spectral Methods</strong></a> for more details.
-                </p>                       
+                <div class="insight-box">
+                    <h3>Looking Ahead — From Spectral Clustering to Geometric Deep Learning</h3>
+                    <p>
+                        Spectral clustering uses a small number of low-frequency Laplacian eigenvectors to partition a graph. Two natural 
+                        generalizations of this idea anchor much of modern graph-based learning:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            The quality of a spectral cut is quantified by the 
+                            <a href="../Linear_algebra/graph_laplacian.html#T-cheeger_inequality" class="ref-link"><strong>Cheeger inequality</strong></a>, 
+                            which links the second-smallest Laplacian eigenvalue (\(\lambda_2\) in our indexing here, often denoted \(\lambda_1\) when 
+                            eigenvalues are 0-indexed) — the <strong>spectral gap</strong> — to the graph's edge expansion. This is the quantitative 
+                            bridge between "small spectral gap" and "well-defined cluster structure."
+                        </li>
+                        <li>
+                            The Laplacian eigenbasis defines a 
+                            <a href="../Linear_algebra/graph_laplacian.html#D-graph_fourier_transform" class="ref-link"><strong>graph Fourier transform</strong></a>, 
+                            extending classical Fourier analysis to functions on graphs. This is the foundational primitive for <strong>graph neural 
+                            networks (GNNs)</strong>, where Laplacian-based filters become learnable signal-processing operators rather than fixed 
+                            spectral cuts.
+                        </li>
+                    </ul>
+                    <p>
+                        Both threads converge in <strong>Geometric Deep Learning</strong>, the unifying framework — referenced from our introduction onward — 
+                        in which neural-network architectures are designed to respect the symmetries and geometric structure of the data they operate on. 
+                        Spectral clustering is the discrete, classical predecessor; GNNs and equivariant architectures are its modern, learnable descendants.
+                    </p>
+                </div>
             </section>
 
              <section id="demo" class="section-content">
@@ -389,9 +309,9 @@ uses_python: false
                 <p>
                     Clustering completes our tour of the core ML toolkit: from supervised methods (<a href="regression.html"><strong>regression</strong></a>, 
                     <a href="intro_classification.html"><strong>classification</strong></a>, <a href="svm.html"><strong>SVMs</strong></a>) through 
-                    unsupervised techniques (<a href="pca.html"><strong>PCA</strong></a>, autoencoders, and clustering). In 
-                    <a href="deep_nn.html"><strong>Part 9: Intro to Deep Neural Networks</strong></a>, we scale up to modern architectures - 
-                    convolutional networks, residual connections, attention mechanisms, and the Transformer - that power today's state-of-the-art systems.
+                    unsupervised techniques (<a href="pca.html"><strong>PCA</strong></a>, autoencoders, and clustering). The 
+                    <a href="deep_nn.html"><strong>deep neural networks</strong></a> page that follows scales up to modern architectures — 
+                    convolutional networks, residual connections, attention mechanisms, and the Transformer — that power today's state-of-the-art systems.
                 </p>
 
             </section>
