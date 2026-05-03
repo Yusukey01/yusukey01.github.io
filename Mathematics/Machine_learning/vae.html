@@ -29,18 +29,20 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    In the intersection of pure mathematics and autonomous systems lies the challenge of <strong>uncertainty</strong>. 
-                    While classical robotics often relies on deterministic models, real-world interaction is inherently stochastic. 
-                    Sensory noise, unobservable physical properties, and environmental variances require a framework that does not 
-                    merely calculate values, but manages probabilities.
+                    A central challenge in machine learning systems that interact with the physical world — 
+                    robotics, autonomous vehicles, embodied agents that the industry has lately taken to 
+                    calling "Physical AI" — is uncertainty. Real-world interaction is inherently stochastic: 
+                    sensor noise, unobserved physical properties, and environmental variability all conspire 
+                    against deterministic models. Even classical robotic systems handle this with probabilistic 
+                    methods (Kalman filtering being the canonical example); modern approaches push further by 
+                    treating system states as full probability distributions rather than point estimates.
                 </p>
                 
                 <p>
-                    The <strong>Variational Autoencoder (VAE)</strong> represents a profound synthesis of information theory and 
-                    Bayesian inference. Unlike standard autoencoders that map data to discrete points in a latent space, the VAE 
-                    learns the underlying <strong>structural manifold</strong> of the data. By encoding inputs into a continuous 
-                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma\)), the VAE provides a principled 
-                    way to quantify what the system knows - and, more importantly, what it does not.
+                    The <strong>Variational Autoencoder (VAE)</strong> is one such approach. It synthesizes 
+                    ideas from information theory and Bayesian inference into a model that learns a continuous 
+                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma\)), providing 
+                    a quantitative handle on what a learned system knows and what it does not.
                 </p>
             </section>
 
@@ -49,14 +51,14 @@ uses_python: false
                 <p>
                     In <a href="../Probability/bayesian.html"><strong>Bayesian statistics</strong></a>, <strong>Variational Inference (VI)</strong> 
                     transforms the problem of posterior inference - which typically involves solving high-dimensional, intractable integrals - 
-                    into a <a href="../Calculus/constrained_opt.html"><strong>constrained optimization problem</strong></a>. 
+                    into a <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a>. 
                 </p>
 
                 <p>
                     While deterministic control algorithms rely on <strong>point-estimates</strong> (e.g., "the center of mass is exactly 
-                    at coordinates \(\mathbf{r}\)"), VI treats the state as a <strong>probability distribution</strong>. This shift is 
-                    mathematically profound: instead of seeking a single value, we search for the parameters of a distribution 
-                    \(q_{\boldsymbol{\theta}}(\mathbf{z})\) that minimize the <a href="../Probability/entropy.html#kl"><strong>Kullback-Leibler (KL) divergence</strong></a> 
+                    at coordinates \(\mathbf{r}\)"), VI treats the state as a <strong>probability distribution</strong>. The structural shift 
+                    is this: instead of seeking a single value, we search for the parameters of a distribution 
+                    \(q_{\boldsymbol{\theta}}(\mathbf{z})\) that minimize the <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler (KL) divergence</strong></a> 
                     from the true, unknown posterior \(p(\mathbf{z} \mid \mathbf{x})\).
                 </p>
 
@@ -67,10 +69,25 @@ uses_python: false
                 </p>
 
                 <p>
-                    For a robot, this mathematical approximation is the key to <strong>real-time safety</strong>. The robot does not merely 
-                    estimate a property; it quantifies the <strong>epistemic uncertainty</strong> (the "spread" of the distribution). 
-                    This variance serves as a rigorous proxy for risk, allowing the AI to distinguish between a confident execution and a 
-                    situation requiring an emergency abort.
+                    For a robot, this approximation is one foundation of uncertainty-aware control. The 
+                    posterior variance — the "spread" of the distribution — provides a quantitative proxy 
+                    for <strong>epistemic uncertainty</strong>, which can in turn inform decisions such as 
+                    whether to proceed with an action or trigger a fallback. This complements rather than 
+                    replaces classical safety mechanisms (limit switches, mechanical fail-safes, model-based 
+                    control bounds).
+                </p>
+
+                <p>
+                    The variational framework introduced here rests on measure-theoretic foundations that are 
+                    developed across our probability section. Speaking of densities \(q(\boldsymbol{z})\) and 
+                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common dominating measure is 
+                    licensed by the <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>, 
+                    and conditional expectation — defined rigorously as a Radon-Nikodym derivative — provides 
+                    the abstract framework underlying both the posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\) 
+                    itself and the ELBO decomposition we develop next. A dedicated variational-inference page, 
+                    forthcoming in the probability section, will close this loop by deriving the ELBO and the 
+                    full VI framework using these tools, situating the VAE's amortized inference as a special 
+                    case of the broader variational principle.
                 </p>
 
             </section>
@@ -150,7 +167,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    To see that this is indeed a lower bound on the log-evidence, apply <a href="../Probability/entropy.html#kl"><strong>Jensen's inequality</strong></a>. 
+                    To see that this is indeed a lower bound on the log-evidence, apply <a href="../Probability/entropy.html#T-jensen_inequality" class="ref-link"><strong>Jensen's inequality</strong></a>. 
                     Since \(\log\) is concave, moving it outside the expectation can only increase the value:
                     \[
                     \begin{align*}
@@ -174,7 +191,7 @@ uses_python: false
                     and rearranging.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-elbo_decomposition">
                     <span class="theorem-title">Theorem: ELBO Decomposition</span>
                     <p>
                         \[
@@ -227,7 +244,7 @@ uses_python: false
                     Since the encoder outputs a diagonal Gaussian, we write
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-reparameterization_trick">
                     <span class="theorem-title">Reparameterization Trick:</span>
                     <p>
                         Sample \(\boldsymbol{z}\) from \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\) via
@@ -480,7 +497,7 @@ uses_python: false
 
                 <h3>Key Takeaways</h3>
                 <p>
-                    This demo illustrates three interconnected ideas from modern <strong>physical AI</strong>:
+                    This demo illustrates three interconnected ideas from modern <strong>Physical AI</strong>:
                 </p>
                 <p>
                     <strong>1. Uncertainty quantification through latent representations:</strong><br>
@@ -490,8 +507,8 @@ uses_python: false
                 <p>
                     <strong>2. Safety-critical decision-making under uncertainty:</strong><br>
                     Rather than blindly executing a motion plan, the robot uses its uncertainty estimate as a gating signal. When \(\sigma\) exceeds 
-                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. This is directly analogous to 
-                    uncertainty-aware reinforcement learning and Bayesian safe control.
+                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. This pattern — using a learned 
+                    uncertainty estimate as a gating signal — appears throughout uncertainty-aware reinforcement learning and Bayesian safe control.
                 </p>
                 <p>
                     <strong>3. The connection between physics and information:</strong><br>
