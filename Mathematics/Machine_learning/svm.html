@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Support Vector Machine (SVM)""
+title: "Support Vector Machine (SVM)"
 topic_id: ml-6
 level: detail
 uses_math: true
@@ -29,11 +29,11 @@ uses_python: false
                 <h2>Support Vector Machine</h2>
 
                 <p>
-                    So far in both regression and classification, we have used <strong>probabilistic predictors</strong> that model \(p(y \mid x)\) 
+                    So far in both regression and classification, we have used <strong>probabilistic predictors</strong> that model \(p(y \mid \mathbf{x})\) 
                     and optimize via maximum likelihood. Here, we take a fundamentally different, geometric approach: rather than modeling probabilities, 
                     we seek the hyperplane that separates the classes with the <strong>largest possible margin</strong>. This formulation leads 
-                    naturally to a <a href="../Calculus/constrained_opt.html"><strong>constrained optimization problem</strong></a> whose 
-                    <a href="../Calculus/duality.html"><strong>dual formulation</strong></a> enables the kernel trick.
+                    naturally to a <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a> whose 
+                    <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual formulation</strong></a> enables the kernel trick.
                 </p>
 
                 <p>
@@ -45,9 +45,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    In binary classification \(h(x) = \text{sign }(f(x))\), the decision boundary (hyperplane) is given by:
+                    In binary classification with labels \(\tilde{y} \in \{-1, +1\}\), the prediction is \(h(\mathbf{x}) = \operatorname{sign}(f(\mathbf{x}))\), and the decision boundary (hyperplane) is defined by
                     \[
-                    f(x) = w^\top x + w_0 \tag{1}
+                    f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b. \tag{1}
                     \]
                     To obtain a robust solution, we would like to <strong>maximize the margin between data points and the decision boundary</strong>.
                 </p>
@@ -57,156 +57,164 @@ uses_python: false
                 </div>
 
                 <p>
-                    To express the distance of the closest point to the decision boundary,
-                    we introduce the orthogonal projection of any point \(x\) onto the boundary \(f(x)\):
+                    To express the distance of the closest point to the decision boundary, we decompose any point \(\mathbf{x}\) as its 
+                    <a href="../Linear_algebra/orthogonality.html#T-orthogonal_decomposition" class="ref-link"><strong>orthogonal projection</strong></a> 
+                    onto the hyperplane \(H = \{\mathbf{x} : f(\mathbf{x}) = 0\}\) plus a signed normal component:
                     \[
-                    x = \text{proj}_{f(x)}x  + r \frac{w}{\| w \|} \tag{2}
+                    \mathbf{x} = \operatorname{proj}_H \mathbf{x} + r \frac{\mathbf{w}}{\|\mathbf{w}\|}, \tag{2}
                     \]
-                    where \(r\) is the distance from \(x\) to the decision boundary whose normal vector is \(w\).
+                    where \(r\) is the signed distance from \(\mathbf{x}\) to \(H\), and \(\mathbf{w}/\|\mathbf{w}\|\) is the unit normal vector to \(H\).
                 </p>
 
                 <p>
-                    Substitute Expression (2) for the decision boundary (1):
+                    Substituting Expression (2) into the boundary function (1):
                     \[
                     \begin{align*}
-                    f(x) &= w^\top \left(\text{proj}_{f(x)}x  + r \frac{w}{\| w \|} + w_0 \right) \\\\
-                         &= w^\top \text{proj}_{f(x)}x + w_0 + r \| w \|.
+                    f(\mathbf{x}) &= \mathbf{w}^\top \!\left(\operatorname{proj}_H \mathbf{x} + r \frac{\mathbf{w}}{\|\mathbf{w}\|}\right) + b \\\\
+                                  &= \underbrace{\mathbf{w}^\top \operatorname{proj}_H \mathbf{x} + b}_{= \, f(\operatorname{proj}_H \mathbf{x}) \, = \, 0} + r \|\mathbf{w}\| \\\\
+                                  &= r \|\mathbf{w}\|.
                     \end{align*}
                     \]
-                    Since \(f(\text{proj}_{f(x)}x ) = 0\), 
+                    Hence
                     \[
-                    r = \frac{f(x)}{\| w \|}
+                    r = \frac{f(\mathbf{x})}{\|\mathbf{w}\|},
                     \]
-                    and each point must be on the correct side of the decision boundary:
+                    and each correctly classified point satisfies
                     \[
-                    f(x_n)\tilde{y}_n > 0.
+                    \tilde{y}_n f(\mathbf{x}_n) > 0.
                     \]
-                    Therefore, our objective is represented by:
+                    Therefore, our objective is
                     \[
-                    \max_{w, w_0} \frac{1}{\| w \|} \min_{n = 1}^N \left[\tilde{y}_n \left(w^\top x_n + w_0 \right)\right].
+                    \max_{\mathbf{w},\, b} \frac{1}{\|\mathbf{w}\|} \min_{1 \leq n \leq N} \tilde{y}_n \!\left(\mathbf{w}^\top \mathbf{x}_n + b\right).
                     \]
-                    Since both \(w\) and \(w_0\) can be freely rescaled without changing the decision boundary, we may normalize so that the 
-                    closest point satisfies \(\tilde{y}_n f(x_n) = 1\) exactly. Under this normalization, the margin equals \(\frac{2}{\|w\|}\).
+                    Since both \(\mathbf{w}\) and \(b\) can be freely rescaled without changing the decision boundary, we may normalize so that the 
+                    closest point satisfies \(\tilde{y}_n f(\mathbf{x}_n) = 1\) exactly. Under this normalization, the margin (distance between the two 
+                    parallel supporting hyperplanes) equals \(\frac{2}{\|\mathbf{w}\|}\).
                 </p>
 
                 <p>
-                    Note that \(\max \frac{1}{\|w\|}\) is equivalent to \(\min \|w\|^2\). Thus our objective becomes:
+                    Note that \(\max \frac{1}{\|\mathbf{w}\|}\) is equivalent to \(\min \|\mathbf{w}\|^2\). Thus our objective becomes:
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Hard-Margin SVM (Primal):</span>
+                <div class="theorem" id="T-svm_primal_hard">
+                    <span class="theorem-title">Hard-Margin SVM (Primal)</span>
                     <p>
                         \[
-                        \min_{w,\, w_0} \;\frac{1}{2}\|w\|^2 
+                        \min_{\mathbf{w},\, b} \;\frac{1}{2}\|\mathbf{w}\|^2 
                         \]
                         subject to
                         \[
-                        \tilde{y}_n(w^\top x_n + w_0) \geq 1, \quad n = 1 : N.
+                        \tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 1, \quad n = 1, \ldots, N.
                         \]
                         The factor of \(\frac{1}{2}\) is included for convenience when differentiating.
                     </p>
                 </div>
                     
                 <p>
-                    This constrained optimization problem, known as the <strong>primal problem</strong>, is difficult to solve directly. However, 
-                    since this is the convex optimization problem, there exists its <a href="../Calculus/duality.html"><strong>dual problem</strong></a> 
-                    using Lagrange multipliers, which often has computational advantages and enables the kernel trick.
+                    This constrained optimization problem, known as the <strong>primal problem</strong>, is difficult to solve directly. Since the 
+                    objective is convex and the inequality constraints are linear, Slater's condition is automatically satisfied, so 
+                    <a href="../Calculus/duality.html#T-strong_duality_slater" class="ref-link"><strong>strong duality</strong></a> holds and the problem 
+                    can equivalently be solved via its <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual</strong></a>, 
+                    which often has computational advantages and enables the kernel trick.
                 </p>
 
                 <p>
-                    Let \(\alpha \in \mathbb{R}^N\) be the dual variables corresponding to Lagrange multipliers:
+                    Let \(\boldsymbol{\alpha} \in \mathbb{R}^N\) be the vector of <a href="../Calculus/constrained_opt.html#D-lagrangian" class="ref-link"><strong>Lagrange multipliers</strong></a> associated with the inequality constraints. The Lagrangian is
                     \[
-                    \mathcal{L}(w, w_0, \alpha) = \frac{1}{2}w^\top w - \sum_{n =1}^N \alpha_n (\tilde{y}_n (w^\top x_n + w_0) -1) \tag{3}
+                    \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}) = \frac{1}{2}\mathbf{w}^\top \mathbf{w} - \sum_{n=1}^N \alpha_n \!\left(\tilde{y}_n (\mathbf{w}^\top \mathbf{x}_n + b) - 1\right). \tag{3}
                     \]
-                    To optimize this, we need a stationary point that satisfies:
+                    A primal-dual optimum \((\hat{\mathbf{w}}, \hat{b}, \hat{\boldsymbol{\alpha}})\) satisfies
                     \[
-                    (\hat{w}, \hat{w}_0, \hat{\alpha}) = \min_{w, w_0} \max_{\alpha} \mathcal{L}(w, w_0, \alpha).
+                    (\hat{\mathbf{w}}, \hat{b}, \hat{\boldsymbol{\alpha}}) = \min_{\mathbf{w}, b} \max_{\boldsymbol{\alpha} \geq \mathbf{0}} \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}).
                     \]
-                    Taking derivatives with respect to \(w\) and \(w_0\) and setting to zero:
+                    Taking derivatives with respect to \(\mathbf{w}\) and \(b\) and setting them to zero (the stationarity condition):
                     \[
                     \begin{align*}
-                    \nabla_w \mathcal{L}(w, w_0, \alpha)  &= w - \sum_{n =1}^N \alpha_n \tilde{y}_n x_n  \\\\
-                    \frac{\partial \mathcal{L}(w, w_0, \alpha)}{\partial w_0} &= - \sum_{n =1}^N \alpha_n \tilde{y}_n.
-                     \end{align*}
-                    \]
-                    Then we have:
-                    \[
-                    \begin{align*}
-                    \hat{w} &= \sum_{n =1}^N \hat{\alpha}_n \tilde{y}_n x_n  \\\\
-                    0 &= \sum_{n =1}^N \hat{\alpha}_n \tilde{y}_n.
+                    \nabla_{\mathbf{w}} \mathcal{L}  &= \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n = \mathbf{0}, \\\\
+                    \frac{\partial \mathcal{L}}{\partial b} &= -\sum_{n=1}^N \alpha_n \tilde{y}_n = 0,
                     \end{align*}
                     \]
-                    Substitute these for the Lagrangian (3), we obtain
+                    which gives
                     \[
                     \begin{align*}
-                     \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) &= \frac{1}{2}\hat{w}^\top \hat{w} - \sum_{n =1}^N \alpha_n \tilde{y}_n \hat{w}^\top x_n
-                                                               - \sum_{n =1}^N \alpha_n \tilde{y}_n w_0 + \sum_{n =1}^N  \alpha_n  \\\\
-                                                             &= \frac{1}{2}\hat{w}^\top \hat{w} - \hat{w}^\top \hat{w} - 0 + \sum_{n =1}^N  \alpha_n \\\\
-                                                             &= - \frac{1}{2} \sum_{i =1}^N \sum_{j = 1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j x_i^\top x_j 
-                                                                + \sum_{n =1}^N \alpha_n.
+                    \hat{\mathbf{w}} &= \sum_{n=1}^N \hat{\alpha}_n \tilde{y}_n \mathbf{x}_n, \\\\
+                    0 &= \sum_{n=1}^N \hat{\alpha}_n \tilde{y}_n.
+                    \end{align*}
+                    \]
+                    Substituting these into the Lagrangian (3):
+                    \[
+                    \begin{align*}
+                    \mathcal{L}(\hat{\mathbf{w}}, \hat{b}, \boldsymbol{\alpha}) 
+                        &= \frac{1}{2}\hat{\mathbf{w}}^\top \hat{\mathbf{w}} - \sum_{n=1}^N \alpha_n \tilde{y}_n \hat{\mathbf{w}}^\top \mathbf{x}_n
+                           - \hat{b} \sum_{n=1}^N \alpha_n \tilde{y}_n + \sum_{n=1}^N \alpha_n \\\\
+                        &= \frac{1}{2}\hat{\mathbf{w}}^\top \hat{\mathbf{w}} - \hat{\mathbf{w}}^\top \hat{\mathbf{w}} - 0 + \sum_{n=1}^N \alpha_n \\\\
+                        &= \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j.
                     \end{align*}
                     \]
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Hard-Margin SVM (Dual):</span>
+                <div class="theorem" id="T-svm_dual_hard">
+                    <span class="theorem-title">Hard-Margin SVM (Dual)</span>
                     <p>
                         \[
-                        \max_{\alpha}  \mathcal{L}(\hat{w}, \hat{w}_0, \alpha) 
+                        \max_{\boldsymbol{\alpha}} \;\sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j
                         \]
                         subject to 
                         \[
-                        \sum_{n =1}^N \alpha_n \tilde{y}_n = 0 \text{ and }  \alpha_n \geq 0, \quad n = 1 : N. 
+                        \sum_{n=1}^N \alpha_n \tilde{y}_n = 0, \qquad \alpha_n \geq 0, \quad n = 1, \ldots, N.
                         \]
-                        The solution must satisfy the <a href="../Calculus/constrained_opt.html"><strong>KKT conditions</strong></a>:
+                        The primal-dual solution must satisfy the <a href="../Calculus/constrained_opt.html#T-kkt_conditions" class="ref-link"><strong>KKT conditions</strong></a>:
                         \[
                         \begin{align*}
-                         \alpha_n &\geq 0 \text{ (Dual feasibility) }\\\\
-                        \tilde{y}_n f(x_n) -1 &\geq 0   \text{ (Primal feasibility) }\\\\
-                        \alpha_n (\tilde{y}_n f(x_n) -1 ) &= 0  \text{ (Complementary slackness) }
+                        \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n &= \mathbf{0}, \quad \sum_{n=1}^N \alpha_n \tilde{y}_n = 0 &&\text{(stationarity)} \\\\
+                        \tilde{y}_n f(\mathbf{x}_n) - 1 &\geq 0 &&\text{(primal feasibility)} \\\\
+                        \alpha_n &\geq 0 &&\text{(dual feasibility)} \\\\
+                        \alpha_n (\tilde{y}_n f(\mathbf{x}_n) - 1) &= 0 &&\text{(complementary slackness)}
                         \end{align*}
                         \]
                     </p>
                 </div>
 
                 <p>
-                    Thus, for each data point, either 
+                    Complementary slackness implies that, for each data point, either 
                     \[
-                    \alpha_n = 0 \, \text{ or } \, \tilde{y}_n (\hat{w}^\top x_n + \hat{w}_0) = 1
+                    \alpha_n = 0 \quad \text{or} \quad \tilde{y}_n (\hat{\mathbf{w}}^\top \mathbf{x}_n + \hat{b}) = 1.
                     \]
-                    must hold. The points satisfying the second condition are called <strong>support vectors</strong>.
+                    The points satisfying the second condition are called <strong>support vectors</strong>.
                 </p>
 
                 <p>
                     Let the set of support vectors be \(\mathcal{S}\). To perform prediction, we expand 
-                    \(\hat{w} = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n x_n\):
+                    \(\hat{\mathbf{w}} = \sum_{n \in \mathcal{S}} \hat{\alpha}_n \tilde{y}_n \mathbf{x}_n\):
                     \[
                     \begin{align*}
-                    f(x;\,\hat{w}, \hat{w}_0) 
-                        &= \hat{w}^\top x + \hat{w}_0 \\\\
-                        &= \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n\, x_n^\top x + \hat{w}_0.
+                    f(\mathbf{x};\, \hat{\mathbf{w}}, \hat{b}) 
+                        &= \hat{\mathbf{w}}^\top \mathbf{x} + \hat{b} \\\\
+                        &= \sum_{n \in \mathcal{S}} \hat{\alpha}_n \tilde{y}_n\, \mathbf{x}_n^\top \mathbf{x} + \hat{b}.
                     \end{align*}
                     \]
-                    By the <a href="intro_classification.html"><strong>kernel trick</strong></a>, replacing inner products with 
-                    kernel evaluations:
+                    By the <a href="intro_classification.html#kernel"><strong>kernel trick</strong></a>, the inner product can be replaced with a 
+                    <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a> 
+                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}') = \langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle\), implicitly mapping inputs to a 
+                    higher- (or infinite-) dimensional feature space without ever computing \(\phi\) explicitly.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">SVM Prediction (Kernel Form):</span>
+                <div class="theorem" id="T-svm_kernel_prediction">
+                    <span class="theorem-title">SVM Prediction (Kernel Form)</span>
                     <p>
                         \[
-                        f(x) = \sum_{n \in \mathcal{S}} \alpha_n \tilde{y}_n \mathcal{K}(x_n, x) + \hat{w}_0
+                        f(\mathbf{x}) = \sum_{n \in \mathcal{S}} \hat{\alpha}_n \tilde{y}_n \mathcal{K}(\mathbf{x}_n, \mathbf{x}) + \hat{b},
                         \]
-                        where the bias is computed from the support vectors:
+                        where the bias is computed by averaging over the support vectors:
                         \[
                         \begin{align*}
-                        \hat{w}_0 &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \hat{w}^\top x_n \right) \\\\
-                                  &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \alpha_m \tilde{y}_m x_m^\top x_n \right).
+                        \hat{b} &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \!\left(\tilde{y}_n - \hat{\mathbf{w}}^\top \mathbf{x}_n \right) \\\\
+                                &= \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \!\left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \hat{\alpha}_m \tilde{y}_m \mathbf{x}_m^\top \mathbf{x}_n \right).
                         \end{align*}
                         \]
-                        Applying the kernel trick to the bias:
+                        Applying the kernel trick to the bias as well:
                         \[
-                        \hat{w}_0 = \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \hat{\alpha}_m \tilde{y}_m \mathcal{K}(x_m, x_n) \right).
+                        \hat{b} = \frac{1}{|\mathcal{S}|} \sum_{n \in \mathcal{S}} \!\left(\tilde{y}_n - \sum_{m \in \mathcal{S}} \hat{\alpha}_m \tilde{y}_m \mathcal{K}(\mathbf{x}_m, \mathbf{x}_n) \right).
                         \]
                     </p>
                 </div>
@@ -217,49 +225,47 @@ uses_python: false
                 <h2>Soft Margin Constraints</h2>
 
                 <p>
-                    Consider the case where the data is NOT linearly separable. In this case there is not feasible solution in which 
-                    \(\forall n, \, \tilde{y}_n f_n \geq 1\). By introducing <a href="../Calculus/constrained_opt.html"><strong>slack variables</strong></a> 
-                    \(\xi_n \geq 0\), we relax the constraints \(\tilde{y}_n f_n \geq 0\) with <strong>soft margin constraints</strong>:
+                    Consider the case where the data is NOT linearly separable. In this case there is no feasible solution in which 
+                    \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\) for all \(n\). By introducing slack variables \(\xi_n \geq 0\), we relax the constraint 
+                    \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\) to the <strong>soft margin constraint</strong>:
                     \[
-                    \tilde{y}_n f_n \geq 1 - \xi_n.
+                    \tilde{y}_n f(\mathbf{x}_n) \geq 1 - \xi_n.
                     \]
                     Thus, our objective becomes: 
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Soft-Margin SVM (Primal):</span>
+                <div class="theorem" id="T-svm_primal_soft">
+                    <span class="theorem-title">Soft-Margin SVM (Primal)</span>
                     <p>
                         \[
-                        \min_{w,\, w_0,\, \xi} \;\frac{1}{2}\|w\|^2 + C\sum_{n=1}^N \xi_n
+                        \min_{\mathbf{w},\, b,\, \boldsymbol{\xi}} \;\frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{n=1}^N \xi_n
                         \]
                         subject to
                         \[
-                        \xi_n \geq 0, \quad \tilde{y}_n(x_n^\top w + w_0) \geq 1 - \xi_n
+                        \xi_n \geq 0, \quad \tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 1 - \xi_n,
                         \]
                         where \(C \geq 0\) is a hyperparameter that controls how many data points are allowed to violate the margin.
                     </p>
                 </div>
 
                 <p>
-                    The Lagrangian becomes:
+                    The Lagrangian becomes
                     \[
-                    \begin{align*}
-                    &\mathcal{L}(w, w_0, \alpha, \xi, \mu)  \\\\
-                    &= \frac{1}{2} w^\top w + C \sum_{n =1}^N \xi_n 
-                            - \sum_{n = 1}^N \alpha_n (\tilde{y}_n(w^\top x_n + w_0) -1 + \xi_n)
-                            - \sum_{n = 1}^N \mu_n \xi_n
-                    \end{align*}
+                    \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}, \boldsymbol{\xi}, \boldsymbol{\mu}) 
+                        = \frac{1}{2} \mathbf{w}^\top \mathbf{w} + C \sum_{n=1}^N \xi_n 
+                          - \sum_{n=1}^N \alpha_n \!\left(\tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) - 1 + \xi_n\right)
+                          - \sum_{n=1}^N \mu_n \xi_n,
                     \]
                     where \(\alpha_n \geq 0\) and \(\mu_n \geq 0\) are Lagrange multipliers.
                 </p>
 
                 <p>
-                    Setting the derivatives of \(\mathcal{L}\) to zero with respect to \(w\), \(w_0\), and \(\xi_n\):
+                    Setting the derivatives of \(\mathcal{L}\) to zero with respect to \(\mathbf{w}\), \(b\), and \(\xi_n\):
                     \[
                     \begin{align*}
-                    \frac{\partial \mathcal{L}}{\partial w} = 0 
-                    &\implies w = \sum_{n=1}^N \alpha_n \tilde{y}_n x_n, \\\\
-                    \frac{\partial \mathcal{L}}{\partial w_0} = 0 
+                    \frac{\partial \mathcal{L}}{\partial \mathbf{w}} = \mathbf{0} 
+                    &\implies \mathbf{w} = \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n, \\\\
+                    \frac{\partial \mathcal{L}}{\partial b} = 0 
                     &\implies \sum_{n=1}^N \alpha_n \tilde{y}_n = 0, \\\\
                     \frac{\partial \mathcal{L}}{\partial \xi_n} = 0 
                     &\implies C - \alpha_n - \mu_n = 0.
@@ -272,11 +278,11 @@ uses_python: false
                     Substituting the first two conditions back into the Lagrangian eliminates the primal variables, yielding the same dual objective 
                     as the hard-margin case:
                     \[
-                    \mathcal{L}(\alpha) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, x_i^\top x_j,
+                    \mathcal{L}(\boldsymbol{\alpha}) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j,
                     \]
-                    but now subject to the constraints:
+                    but now subject to the constraints
                     \[
-                    0 \leq \alpha_n \leq C, \quad 
+                    0 \leq \alpha_n \leq C, \qquad 
                     \sum_{n=1}^N \alpha_n \tilde{y}_n = 0.
                     \]
                     These constraints partition the training points into three cases: 
@@ -309,8 +315,8 @@ uses_python: false
                 <ul style="padding-left: 40px;">
                     <li><strong>Training Data Points</strong>: Solid circles represent training samples with labels \(\tilde{y} \in \{-1, +1\}\)</li>
                     <li><strong>Test Data Points</strong>: Semi-transparent squares show test samples for evaluating generalization</li>
-                    <li><strong>Decision Boundary</strong>: The dark line (linear kernel) or contour (RBF kernel) where \(f(x) = w^\top x + w_0 = 0\)</li>
-                    <li><strong>Margin Boundaries</strong>: Dashed lines showing where \(\tilde{y}_n f(x_n) = 1\)</li>
+                    <li><strong>Decision Boundary</strong>: The dark line (linear kernel) or contour (RBF kernel) where \(f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b = 0\)</li>
+                    <li><strong>Margin Boundaries</strong>: Dashed lines showing where \(\tilde{y}_n f(\mathbf{x}_n) = 1\)</li>
                     <li><strong>Support Vectors</strong>: Points with golden borders that satisfy \(\alpha_n > 0\) and define the decision boundary</li>
                     <li><strong>Slack Variables</strong>: Dotted circles around support vectors visualize \(\xi_n\) for points violating the margin</li>
                 </ul>
@@ -322,12 +328,12 @@ uses_python: false
                 <ul style="padding-left: 40px;">
                     <li><strong>Kernel Type</strong>: 
                         <ul style="padding-left: 40px;">
-                            <li><em>Linear</em>: Uses \(\mathcal{K}(x_i, x_j) = x_i^\top x_j\) for linearly separable data</li>
-                            <li><em>RBF (Gaussian)</em>: Uses \(\mathcal{K}(x_i, x_j) = \exp(-\gamma \|x_i - x_j\|^2)\) for non-linear boundaries</li>
+                            <li><em>Linear</em>: Uses \(\mathcal{K}(\mathbf{x}_i, \mathbf{x}_j) = \mathbf{x}_i^\top \mathbf{x}_j\) for linearly separable data</li>
+                            <li><em>RBF (Gaussian)</em>: Uses \(\mathcal{K}(\mathbf{x}_i, \mathbf{x}_j) = \exp(-\gamma \|\mathbf{x}_i - \mathbf{x}_j\|^2)\) for non-linear boundaries</li>
                         </ul>
                     </li>
                     <li><strong>Regularization Parameter C</strong>: Controls the trade-off between maximizing the margin and minimizing classification errors.
-                        As shown in the soft margin formulation: \(\min_{w, w_0, \xi} \frac{1}{2} \| w \|^2 + C \sum_{n =1}^N \xi_n\)
+                        As shown in the soft margin formulation: \(\min_{\mathbf{w}, b, \boldsymbol{\xi}} \frac{1}{2} \|\mathbf{w}\|^2 + C \sum_{n=1}^N \xi_n\)
                         <ul style="padding-left: 40px;">
                             <li>Low C: Prioritizes wider margins, allows more margin violations</li>
                             <li>High C: Prioritizes correct classification, may lead to overfitting</li>
@@ -339,7 +345,7 @@ uses_python: false
                             <li>High \(\gamma\): Complex boundaries, localized influence around each support vector</li>
                         </ul>
                     </li>
-                    <li><strong>Learning Rate & Iterations</strong>: SGD optimization parameters for training convergence</li>
+                    <li><strong>Learning Rate &amp; Iterations</strong>: SGD optimization parameters for training convergence</li>
                 </ul>
                 
                 <h3>Training Process</h3>
@@ -349,7 +355,7 @@ uses_python: false
                     Click "Train SVM" to watch the algorithm iteratively:
                 </p>
                 <ol style="padding-left: 40px;">
-                    <li>Update weights to minimize the hinge loss: \(\max(0, 1 - \tilde{y}_n f(x_n))\)</li>
+                    <li>Update weights to minimize the hinge loss: \(\max(0, 1 - \tilde{y}_n f(\mathbf{x}_n))\)</li>
                     <li>Apply regularization to control model complexity</li>
                     <li>Identify support vectors that satisfy the KKT conditions</li>
                     <li>Converge to the optimal decision boundary</li>
@@ -360,9 +366,9 @@ uses_python: false
                     After training, the demo verifies the Karush-Kuhn-Tucker (KKT) conditions for each point:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li>For non-support vectors (\(\alpha_n = 0\)): Must have \(\tilde{y}_n f(x_n) \geq 1\)</li>
-                    <li>For support vectors on the margin (\(0 < \alpha_n < C\)): Must have \(\tilde{y}_n f(x_n) = 1\)</li>
-                    <li>For support vectors inside/beyond margin (\(\alpha_n = C\)): May have \(\tilde{y}_n f(x_n) < 1\)</li>
+                    <li>For non-support vectors (\(\alpha_n = 0\)): Must have \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\)</li>
+                    <li>For support vectors on the margin (\(0 < \alpha_n < C\)): Must have \(\tilde{y}_n f(\mathbf{x}_n) = 1\)</li>
+                    <li>For support vectors inside/beyond margin (\(\alpha_n = C\)): May have \(\tilde{y}_n f(\mathbf{x}_n) < 1\)</li>
                 </ul>
                 <p>
                     The percentage of points satisfying these conditions indicates how well the optimization has converged.
@@ -382,7 +388,7 @@ uses_python: false
 
                 <p>
                     SVMs demonstrate how geometric intuition - maximizing the margin - leads to strong generalization guarantees, particularly in 
-                    high-dimensional spaces with limited data. In <a href="pca.html"><strong>Part 7: PCA & Autoencoders</strong></a>, we shift from 
+                    high-dimensional spaces with limited data. In <a href="pca.html"><strong>the PCA &amp; Autoencoders page that follows</strong></a>, we shift from 
                     supervised to <strong>unsupervised learning</strong>, asking how to discover low-dimensional structure in data without any labels 
                     - connecting <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a> to neural network-based 
                     representation learning.
