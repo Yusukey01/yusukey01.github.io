@@ -76,7 +76,13 @@
         footer.className = 'ref-preview-footer';
         const link = document.createElement('a');
         link.href = origHref;
-        link.textContent = 'View full context →';
+        // Same-page references show a different label since "context"
+        // is the current page itself. Clicking still scrolls to the
+        // anchor — but only when the user explicitly opts in.
+        const isSamePageRef = origHref.charAt(0) === '#';
+        link.textContent = isSamePageRef
+            ? 'Jump to definition →'
+            : 'View full context →';
         // This link navigates normally (no preventDefault)
         footer.appendChild(link);
         container.appendChild(footer);
@@ -288,25 +294,42 @@
     function handleRefClick(e) {
         const link = e.currentTarget;
         e.preventDefault();
+        e.stopPropagation();
 
-        const parsed = parseHref(link.getAttribute('href'));
+        const rawHref = link.getAttribute('href');
+        const parsed  = parseHref(rawHref);
         if (!parsed) {
             // Malformed href — fall back to normal navigation
-            window.location.href = link.getAttribute('href');
+            window.location.href = rawHref;
             return;
         }
 
+        // Detect same-page references: href like "#T-foo" (no page part)
+        // or pointing to the current document. For these, we never want
+        // the browser to perform an in-page scroll-to-anchor — the BOX
+        // is the entire interaction.
+        const isSamePage = (parsed.page === '');
+
         ensureData().then(function (data) {
             if (!data || !data[parsed.id]) {
-                // No preview available — navigate normally
-                window.location.href = link.getAttribute('href');
+                // No preview available.
+                if (isSamePage) {
+                    // Same-page target without preview data: do nothing
+                    // rather than scrolling. This prevents the screen
+                    // from sliding to the in-page anchor.
+                    console.warn('ref-preview: no preview data for #' + parsed.id +
+                                 ' (same-page link suppressed).');
+                    return;
+                }
+                // Cross-page link — navigate normally.
+                window.location.href = rawHref;
                 return;
             }
 
-            const entry   = data[parsed.id];
-            const html    = entry.html;
-            const source  = entry.source;
-            const origHref = link.getAttribute('href');
+            const entry    = data[parsed.id];
+            const html     = entry.html;
+            const source   = entry.source;
+            const origHref = rawHref;
 
             if (isDesktop() && hasRoomForSidenote()) {
                 showSidenote(link, parsed.id, html, source, origHref);
