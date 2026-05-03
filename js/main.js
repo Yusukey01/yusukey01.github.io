@@ -52,7 +52,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    // NOTE: .ref-link is excluded — those are handled by ref-preview.js,
+    // which shows a preview box instead of scrolling. Without this exclusion,
+    // both handlers fire and the page scrolls to the in-page anchor while
+    // the preview box opens.
+    document.querySelectorAll('a[href^="#"]:not(.ref-link)').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
             if (href !== '#' && document.querySelector(href)) {
