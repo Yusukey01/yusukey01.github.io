@@ -39,13 +39,13 @@ uses_python: false
                     orthogonal subspaces, recover the 
                     <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a> from first 
                     principles, and lay the foundation for the 
-                    <strong>boundary operator</strong> that drives simplicial homology.
+                    <a href="simplicial_complexes.html#D-boundary_operator" class="ref-link"><strong>boundary operator</strong></a> that drives simplicial homology.
                 </p>
 
-                <div class="theorem" id="D-oriented_graph">
-                    <span class="theorem-title">Definition: Oriented Graph</span>
+                <div class="theorem" id="D-graph_orientation">
+                    <span class="theorem-title">Definition: Orientation of a Graph</span>
                     <p>
-                        Let \(G = (V, E)\) be an undirected graph. An <strong>orientation</strong> of \(G\) is an 
+                        Let \(G = (V, E)\) be an undirected simple graph. An <strong>orientation</strong> of \(G\) is an 
                         assignment, for each edge \(\{u, v\} \in E\), of one of the two possible directions: 
                         either \(u \to v\) or \(v \to u\). The resulting directed graph is called an 
                         <strong>oriented graph</strong>.
@@ -61,11 +61,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    This independence is our first encounter with <strong>gauge freedom</strong>: the orientation 
-                    is a "coordinate choice" imposed on the graph to make the algebra work, and all intrinsic 
-                    quantities are invariant under that choice. Choosing a different orientation for an edge 
-                    merely flips the sign of the corresponding column in the incidence matrix we are about to 
-                    define — and sign flips cancel out in every quantity that matters.
+                    Choosing a different orientation for an edge merely flips the sign of the corresponding 
+                    column in the incidence matrix we are about to define. We will see that every algebraic 
+                    quantity built from this matrix — cycle space, cut space, Laplacian, Dirichlet energy — is 
+                    constructed so that these sign flips cancel out: opposite-orientation columns produce 
+                    opposite-sign contributions that combine to the same result. The orientation is a 
+                    bookkeeping device for the algebra, not a feature of the graph itself. (This kind of 
+                    structural invariance under arbitrary auxiliary choices is what physicists call 
+                    <strong>gauge freedom</strong> — a perspective that becomes central in geometric deep learning.)
                 </p>
 
                 <p>
@@ -131,7 +134,10 @@ uses_python: false
                     <p>
                         For each edge \(e_j\), the column \(\boldsymbol{B}_{:,j}\) has exactly one entry 
                         equal to \(+1\) and one equal to \(-1\), so the sum of entries is \(+1 + (-1) = 0\). 
-                        Since \(\mathbf{1}^\top \boldsymbol{B}\) computes column sums, the result follows.
+                        Since \(\mathbf{1}^\top \boldsymbol{B}\) computes column sums, this gives 
+                        \(\mathbf{1}^\top \boldsymbol{B} = \mathbf{0}^\top\). Taking transpose: 
+                        \(\boldsymbol{B}^\top \mathbf{1} = (\mathbf{1}^\top \boldsymbol{B})^\top = \mathbf{0}\), 
+                        so \(\mathbf{1} \in \ker(\boldsymbol{B}^\top)\).
                     </p>
                 </div>
 
@@ -184,6 +190,20 @@ uses_python: false
                         (\boldsymbol{B}\boldsymbol{x})_i = \sum_{\substack{e_j \text{ leaves } v_i}} x_j 
                         \;-\; \sum_{\substack{e_j \text{ enters } v_i}} x_j.
                         \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Expanding using the matrix definition:
+                        \[
+                        (\boldsymbol{B}\boldsymbol{x})_i = \sum_{j=1}^m B_{ij} \, x_j 
+                        = \sum_{e_j \text{ leaves } v_i} (+1)\, x_j 
+                        \;+\; \sum_{e_j \text{ enters } v_i} (-1)\, x_j 
+                        \;+\; \sum_{e_j \text{ not incident to } v_i} 0 \cdot x_j,
+                        \]
+                        which gives the stated formula after dropping the zero terms.
                     </p>
                 </div>
 
@@ -288,7 +308,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    The notation \(Z_1\) is deliberate. In the sequel on <strong>Homology</strong>, we will 
+                    The notation \(Z_1\) is deliberate. In the sequel on 
+                    <a href="intro_homology.html#D-cycle_boundary_groups" class="ref-link"><strong>Homology</strong></a>, we will 
                     define \(Z_k = \ker(\partial_k)\) for the boundary operator \(\partial_k\). The graph 
                     case is \(k = 1\): the incidence matrix \(\boldsymbol{B}\), viewed as a map from 
                     1-chains (\(\mathbb{R}^m\)) to 0-chains (\(\mathbb{R}^n\)), plays the role of 
@@ -345,11 +366,16 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        This is a direct application of 
-                        the <a href="../Linear_algebra/orthogonality.html#T-orthocomp_row_col" class="ref-link"><strong>fundamental theorem of linear algebra</strong></a>: 
-                        for any matrix \(\boldsymbol{M}\), the null space of \(\boldsymbol{M}\) and the column space of \(\boldsymbol{M}^\top\) 
-                        are orthogonal complements in the domain. Taking \(\boldsymbol{M} = \boldsymbol{B}\) with domain \(\mathbb{R}^m\), we 
-                        have \(\ker(\boldsymbol{B})^\perp = \operatorname{im}(\boldsymbol{B}^\top)\), which gives the stated decomposition.
+                        By the <a href="../Linear_algebra/orthogonality.html#T-orthocomp_row_col" class="ref-link"><strong>fundamental theorem of linear algebra</strong></a> 
+                        applied to \(\boldsymbol{B}\) with domain \(\mathbb{R}^m\): 
+                        \((\operatorname{Row} \boldsymbol{B})^\perp = \ker(\boldsymbol{B})\). Since 
+                        \(\operatorname{Row}(\boldsymbol{B}) = \operatorname{im}(\boldsymbol{B}^\top)\), this 
+                        reads \(\operatorname{im}(\boldsymbol{B}^\top)^\perp = \ker(\boldsymbol{B})\). In the 
+                        finite-dimensional space \(\mathbb{R}^m\), a subspace and its orthogonal complement 
+                        give an orthogonal direct sum decomposition of the ambient space, so 
+                        \(\mathbb{R}^m = \ker(\boldsymbol{B}) \oplus \operatorname{im}(\boldsymbol{B}^\top)\). 
+                        Substituting \(Z_1(G) = \ker(\boldsymbol{B})\) and 
+                        \(B_1(G) = \operatorname{im}(\boldsymbol{B}^\top)\) gives the stated decomposition.
                     </p>
                 </div>
 
@@ -396,9 +422,14 @@ uses_python: false
                         The left null space of \(\boldsymbol{B}\) — i.e., 
                         \(\ker(\boldsymbol{B}^\top) \subset \mathbb{R}^n\) — consists of vectors 
                         \(\boldsymbol{y}\) such that \(\boldsymbol{B}^\top \boldsymbol{y} = \mathbf{0}\). 
-                        By the discrete gradient interpretation, this means 
-                        \(y_u = y_v\) for every edge \(\{u, v\}\), i.e., \(\boldsymbol{y}\) is constant on 
-                        each connected component. Therefore 
+                        By <a href="#T-discrete_gradient" class="ref-link"><strong>Discrete Gradient</strong></a>, 
+                        this is equivalent to \(y_{\text{tail}(e_j)} = y_{\text{head}(e_j)}\) for every edge 
+                        \(e_j\), i.e., \(\boldsymbol{y}\) takes the same value at any two vertices joined by 
+                        an edge. By induction on path length, \(\boldsymbol{y}\) is then constant along any 
+                        path, hence constant on each connected component. The space of such vectors is 
+                        spanned by the indicator vectors \(\boldsymbol{1}_{C_1}, \ldots, \boldsymbol{1}_{C_c}\) 
+                        of the \(c\) connected components, which are linearly independent (their supports 
+                        are disjoint). Therefore 
                         \(\dim(\ker(\boldsymbol{B}^\top)) = c\), and by the rank-nullity theorem applied 
                         to \(\boldsymbol{B}^\top \in \mathbb{R}^{m \times n}\):
                         \[
@@ -585,7 +616,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Similarly, the condition \(\partial^2 = 0\) — the cornerstone of homology theory — holds 
+                    Similarly, the condition <a href="simplicial_complexes.html#T-boundary_squared_zero" class="ref-link">\(\partial^2 = 0\)</a> — the cornerstone of homology theory — holds 
                     vacuously in the graph case: with the convention \(\partial_0 = 0\), the composition 
                     \(\partial_0 \circ \partial_1 = 0\) is automatic. In the simplicial setting, the 
                     composition \(\partial_{k-1} \circ \partial_k = 0\) for \(k \geq 2\) becomes a non-trivial 
