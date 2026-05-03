@@ -26,6 +26,7 @@ uses_python: false
             <a href="#multihead">Multi-Head Attention</a>
             <a href="#position">Positional Encoding</a>
             <a href="#transformer">Transformers</a>
+            <a href="#symmetry">Symmetry as Architectural Principle</a>
             <a href="#demo">Demo</a>
         </div>
 
@@ -35,17 +36,18 @@ uses_python: false
                 <h2>Convolutional Neural Networks (CNNs)</h2>
 
                  <p>
-                    In <a href="neural_networks.html"><strong>Part 4</strong></a>, we introduced the multilayer perceptron and backpropagation; in 
-                    <a href="autodiff.html"><strong>Part 5</strong></a>, we generalized gradient computation to arbitrary computational graphs. 
-                    With these foundations in place, we now survey the major architectural innovations that have shaped modern deep learning - from 
+                    On the previous pages on <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a> and 
+                    <a href="autodiff.html#D-automatic_differentiation" class="ref-link"><strong>automatic differentiation</strong></a>, 
+                    we introduced the multilayer perceptron, backpropagation, and the generalization of gradient computation to arbitrary computational graphs. 
+                    With these foundations in place, we now survey the major architectural innovations that have shaped modern deep learning — from 
                     convolutional networks for spatial data to the Transformer architecture that underpins today's large language models.
                 </p>
 
                 <p>
-                    <strong>Deep neural networks (DNNs)</strong> have undergone remarkable evolution over the past few decades. From early image 
+                    <strong>Deep neural networks (DNNs)</strong> have evolved over the past few decades from early image 
                     classifiers to today's cutting-edge language and multimodal models, the field has progressed through a series of foundational 
                     innovations. Broadly speaking, modern DNNs are typically <strong>feedforward networks</strong>, where information flows in a 
-                    single direction - from input to output - without any loops or recurrence. This design simplifies computations, making them 
+                    single direction — from input to output — without any loops or recurrence. This design simplifies computations, making them 
                     faster and more stable.
                 </p>
 
@@ -61,14 +63,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    The breakthrough came in 2012, when <strong>AlexNet</strong> won the ImageNet competition. It stacked convolution and 
-                    pooling layers, used the ReLU nonlinearity \( \text{ReLU}(x) = \max(0, x) \), and applied dropout to reduce overfitting. 
-                    AlexNet demonstrated that deep CNNs trained on GPUs could vastly outperform traditional vision pipelines.
-                </p>
-
-                <p>
-                    This success led to the deeper architecture, <strong>ResNet</strong> (2015), which introduced <strong>residual connections</strong>.
-                    Such a model advanced image recognition and set the stage for modern vision architectures.
+                    Deep CNNs trained on GPUs and applied to large labeled datasets transformed computer vision, demonstrating that learned 
+                    convolutional features could vastly outperform traditional vision pipelines. A subsequent architectural milestone was the 
+                    introduction of <strong>residual connections</strong>, which enabled training networks of unprecedented depth and set the 
+                    stage for modern vision architectures.
                 </p>
             </section>
 
@@ -79,8 +77,8 @@ uses_python: false
                     <strong>ResNet</strong> is a feedforward architecture built from <strong>residual blocks</strong>:
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Residual Block:</span>
+                <div class="theorem" id="D-residual_block">
+                    <span class="theorem-title">Definition: Residual Block</span>
                     <p>
                         \[
                         \mathbf{z}_{\ell+1} = \mathcal{F}_\ell(\mathbf{z}_\ell) + \mathbf{z}_\ell
@@ -93,9 +91,9 @@ uses_python: false
                 <p>
                     The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
                     \[
-                    \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \mathbf{\theta}_i),
+                    \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \boldsymbol{\theta}_i),
                     \]
-                    where \(\mathbf{\theta}_i\) denotes the parameters of the transformation at layer \(i\).
+                    where \(\boldsymbol{\theta}_i\) denotes the parameters of the transformation at layer \(i\).
                 </p>
 
                 <p>
@@ -104,18 +102,18 @@ uses_python: false
                 </p>
 
                 <p>
-                    Applying the chain rule, the gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) becomes:
+                    Applying the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>, the gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) becomes (we adopt the denominator-layout convention, in which gradients of scalars are column vectors and Jacobians are written so that products read right-to-left along the computation):
                     \[
                     \begin{align*}
-                    \frac{\partial \mathcal{L}}{\partial \mathbf{\theta}_{\ell}} 
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
-                                \left(1 + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i ; \mathbf{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \mathbf{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
+                    \frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_{\ell}} 
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
+                                \left(\mathbf{I} + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i ; \boldsymbol{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
                     \end{align*}
                     \]
-                    The <em>“other terms”</em> in the gradient capture indirect paths through deeper residual blocks and reflect how updates propagate backward 
+                    The <em>"other terms"</em> in the gradient capture indirect paths through deeper residual blocks and reflect how updates propagate backward 
                     through the network. These terms may diminish in magnitude in very deep networks, but they are generally not zero and play a critical role in 
                     learning refined representations. Residual networks avoid the vanishing gradient problem not by eliminating these terms, but by ensuring they 
                     are <strong>not the only path</strong> for gradient flow.
@@ -224,7 +222,9 @@ uses_python: false
                 </p>
                 
                 <p>
-                    A common similarity function is the inner product between query and key vectors. If 
+                    A common similarity function is the 
+                    <a href="../Linear_algebra/orthogonality.html#D-inner_product" class="ref-link"><strong>inner product</strong></a> 
+                    between query and key vectors. If 
                     \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with components that have zero mean and unit variance, 
                     then their inner product \(\mathbf{q}^\top \mathbf{k}\) has zero mean and variance \(d\). 
                     To prevent large variance from pushing the softmax into saturation regions where gradients vanish, we normalize it by \(\sqrt{d}\):
@@ -233,15 +233,16 @@ uses_python: false
                     \]
                     This is known as <strong>scaled dot-product attention score</strong>, where the scale factor 
                     \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable (i.e., \(= 1\)) as the dimension \(d\) increases.  
-                    This is used to compute <strong>attention weights</strong> \(\alpha_{ij}\) after applying the softmax function.
+                    This is used to compute <strong>attention weights</strong> \(\alpha_{ij}\) after applying the 
+                    <a href="intro_classification.html#D-softmax_function" class="ref-link"><strong>softmax function</strong></a>.
                 </p>
 
                 <p>
                     In practice, we compute attention over minibatches of \(n\) query vectors.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Definition: Scaled Dot-Product Attention:</span>
+                <div class="theorem" id="D-scaled_dot_product_attention">
+                    <span class="theorem-title">Definition: Scaled Dot-Product Attention</span>
                     <p>
                         Given queries \(\mathbf{Q} \in \mathbb{R}^{n \times d}\), keys \(\mathbf{K} \in \mathbb{R}^{m \times d}\), and 
                         values \(\mathbf{V} \in \mathbb{R}^{m \times v}\):
@@ -283,7 +284,7 @@ uses_python: false
                     multiple self-attention operations in parallel using different learned projections, called "heads." 
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="D-multi_head_attention">
                     <span class="theorem-title">Definition: Multi-Head Attention</span>
                     <p>
                         Given input \(\mathbf{X} \in \mathbb{R}^{n \times d}\), each head \(i \in \{1,\ldots,h\}\) computes:
@@ -328,7 +329,7 @@ uses_python: false
                     sine and cosine functions of varying frequencies. 
                 </p> 
 
-                <div class="theorem">
+                <div class="theorem" id="D-sinusoidal_positional_encoding">
                     <span class="theorem-title">Definition: Sinusoidal Positional Encoding</span>
                     <p>
                         The positional encoding vector for position \(i\) and dimension \(j\) is defined as:
@@ -385,7 +386,7 @@ uses_python: false
             <section id="transformer" class="section-content">
                 <h2>Transformers</h2>
                 <p> 
-                    The <strong>Transformer</strong> architecture, introduced by Vaswani et al. (2017), replaces recurrence and convolution with 
+                    The <strong>Transformer</strong> architecture replaces recurrence and convolution with 
                     a mechanism based entirely on self-attention. In both the encoder and decoder, the core components are multi-head self-attention 
                     layers, feedforward networks, residual connections, and layer normalization. The design enables full parallelization across 
                     sequence positions during training, and allows the model to capture long-range dependencies through direct pairwise interactions 
@@ -395,9 +396,9 @@ uses_python: false
 
                 <p>
                     Transformer-based models form the basis of many state-of-the-art systems across domains such as text, vision, and multimodal learning. 
-                    In particular, <strong>large language models (LLMs)</strong> such as the <strong>GPT</strong> family, developed by OpenAI, are built on 
-                    stacked Transformer decoder blocks trained on massive text corpora. These models leverage the scalability and expressiveness of the 
-                    Transformer to generate coherent and context-aware output across a wide range of tasks.
+                    In particular, modern <strong>large language models (LLMs)</strong> are built on stacked Transformer decoder blocks trained on massive 
+                    text corpora, leveraging the scalability and expressiveness of the Transformer to generate coherent and context-aware output across a 
+                    wide range of tasks.
                 </p>
 
                 <div class="pseudocode">
@@ -442,14 +443,40 @@ uses_python: false
                 
             </section>
 
+            <section id="symmetry" class="section-content">
+                <h2>Symmetry as Architectural Principle</h2>
+
+                <div class="insight-box">
+                    <h3>From Discrete Permutations to Continuous Lie Groups</h3>
+                    <p>
+                        A pattern recurs across the architectures we have surveyed: each is built around a 
+                        <em>symmetry</em> of the input domain. Convolutional networks are translation-equivariant — their 
+                        convolutional layers commute with shifts of the input image. Self-attention is permutation-equivariant — 
+                        outputs are unchanged when input tokens are reordered — which is precisely why positional encoding must be 
+                        added back to inject ordering information.
+                    </p>
+                    <p>
+                        This perspective generalizes far beyond CNNs and Transformers. Architectures designed for graphs respect 
+                        permutation symmetry of the node ordering; networks processing 3D data such as molecules or point clouds are 
+                        designed to be equivariant under the rotation group \(SO(3)\) or the rigid-body group \(SE(3)\). The 
+                        mathematical machinery for constructing such equivariant layers is the
+                        <a href="../Linear_algebra/lie_groups.html"><strong>Lie group</strong></a> /
+                        <a href="../Linear_algebra/lie_algebras.html"><strong>Lie algebra</strong></a>
+                        correspondence — the continuous limit of the discrete symmetries we first encountered in
+                        <a href="../Linear_algebra/dihedral_group.html"><strong>dihedral groups</strong></a>. 
+                        We will develop these threads in our discussion of geometric deep learning.
+                    </p>
+                </div>
+            </section>
+
             <section id="demo" class="section-content">
                 <h2>Demo</h2>
                  <div id="transformer_demo"></div>
 
                 <p>
                     The Transformer architecture provides the computational backbone for modern AI systems, from language models to vision transformers. 
-                    In <a href="intro_RL.html"><strong>Part 10: Intro to Reinforcement Learning</strong></a>, we explore a fundamentally 
-                    different learning paradigm - where an agent learns through interaction with an environment, guided by reward signals rather 
+                    On the upcoming page on <a href="intro_RL.html"><strong>reinforcement learning</strong></a>, we explore a fundamentally 
+                    different learning paradigm — where an agent learns through interaction with an environment, guided by reward signals rather 
                     than labeled examples.
                 </p>
             </section>
