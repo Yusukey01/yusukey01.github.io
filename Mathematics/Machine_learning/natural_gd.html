@@ -29,23 +29,25 @@ uses_python: false
                 <h2>Introduction</h2>
 
                 <p>
-                    Starting around <strong>2025</strong>, we entered the era of <strong>Physical AI</strong>. Learning is no longer just about 
-                    minimizing a loss function on a screen; it is about aligning internal model representations with the rigid constraints of the 
-                    "physical world." Whether it's robotics, autonomous systems, or neural ODEs, the path an AI takes through its parameter space 
-                    directly impacts its stability and energy efficiency in real-time environments.
+                    Around 2025, "Physical AI" entered the industry vocabulary as a label for machine learning 
+                    systems that act on the physical world — robotics, autonomous vehicles, and embodied agents. 
+                    Whether the label survives or fades, the underlying technical problem it points to is real 
+                    and constraining: when a learned policy controls a physical actuator, the path the optimizer 
+                    takes through parameter space affects stability, sample efficiency, and energy cost during 
+                    deployment, not just final model quality.
                 </p>
 
                 <p>
-                    Deep learning model optimization often relies on finding the path of least resistance. 
-                    Standard <a href="../Calculus/gradient.html#sgd"><strong>Stochastic Gradient Descent (SGD)</strong></a> equips the parameter space 
-                    with the Euclidean metric by default, treating all directions in \(\theta\) as equally costly to move along. 
-                    However, <strong>Information Geometry</strong> reveals that probability 
-                    distributions live on a curved <strong>statistical manifold</strong> whose natural metric is not Euclidean but is given by 
-                    the <a href="../Probability/fisher_info.html#fim"><strong>Fisher Information Matrix (FIM)</strong></a>. 
+                    Standard <a href="../Calculus/gradient.html#sgd"><strong>Stochastic Gradient Descent (SGD)</strong></a> 
+                    equips the parameter space with the Euclidean metric by default, treating all directions in 
+                    \(\theta\) as equally costly to move along. <strong>Information Geometry</strong> reveals that 
+                    probability distributions live on a curved <strong>statistical manifold</strong> whose natural 
+                    metric is not Euclidean but is given by the 
+                    <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix (FIM)</strong></a>. 
                     By respecting this intrinsic geometry, 
-                    <a href="../Probability/fisher_info.html#ngd"><strong>Natural Gradient Descent (NGD)</strong></a> uses the FIM as the metric 
-                    in place of the Euclidean inner product. Let's visualize how this geometry distorts 
-                    our path in a simple mixture model.
+                    <a href="../Probability/fisher_info.html#D-natural_gradient" class="ref-link"><strong>Natural Gradient Descent (NGD)</strong></a> 
+                    uses the FIM as the metric in place of the Euclidean inner product. Let's visualize how this 
+                    geometry distorts our path in a simple mixture model.
                 </p>
 
             </section>
@@ -77,13 +79,18 @@ uses_python: false
                     The family of distributions \(\{p(x \mid \theta) : \theta \in \Theta\}\) forms a <strong>statistical manifold</strong> — 
                     a <strong>smooth manifold</strong> where each point is a probability distribution. 
                     The Fisher Information Matrix (FIM) provides the natural <strong>Riemannian metric</strong> on this manifold. 
-                    (Note: The formal definitions of manifold structures and Riemannian metrics will be explored in depth in 
-                    <strong>Section II: Calculus to Optimization & Analysis</strong> in the near future.)
+                    (The formal definitions of manifold structures and Riemannian metrics will be developed in our forthcoming 
+                    smooth-manifold and Riemannian-geometry pages.)
                 </p>
 
-                <div class="theorem">
+                <div class="insight-box">
+                    <h3>FIM in Component Form (for the Demo)</h3>
                     <p>
-                        At each parameter value \(\theta_0\), the FIM is defined as
+                        The <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix</strong></a> 
+                        is defined abstractly as the covariance of the score function. For the GMM demo it is convenient to 
+                        write it component-wise; the score-square form on the first line equals the negative-Hessian form on 
+                        the second by the standard identity 
+                        <a href="../Probability/fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>(FIM as Expected Negative Hessian)</strong></a>:
                         \[
                         \begin{align*}
                         F(\theta_0)_{ij} &= \mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial \log p(x \mid \theta)}{\partial \theta_i}\,\frac{\partial \log p(x \mid \theta)}{\partial \theta_j}\right]_{\theta = \theta_0} \\\\
@@ -101,7 +108,7 @@ uses_python: false
                     ds^2 = d\theta^\top F(\theta)\, d\theta.
                     \]
                     This is precisely the <strong>second-order Taylor expansion</strong> of 
-                    the <a href="../Probability/entropy.html#kl"><strong>KL divergence</strong></a>: 
+                    the <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>KL divergence</strong></a>: 
                     \[
                     D_{\mathrm{KL}}(p_\theta \,\|\, p_{\theta + d\theta}) \approx \tfrac{1}{2}\,d\theta^\top F(\theta)\,d\theta.
                     \]
@@ -114,7 +121,7 @@ uses_python: false
                     \[
                     \{\delta\theta : \delta\theta^\top F(\theta_0)\,\delta\theta = \varepsilon\}
                     \]
-                    of the local <a href="../Linear_algebra/symmetry.html#qf"><strong>quadratic form</strong></a> at that grid point. 
+                    of the local <a href="../Linear_algebra/symmetry.html#D-quadratic_form" class="ref-link"><strong>quadratic form</strong></a> at that grid point. 
                     The ellipse axes are determined by the eigendecomposition 
                     \[
                     F = Q \Lambda Q^\top
@@ -199,8 +206,10 @@ uses_python: false
                     \[
                     -F(\theta)^{-1}\nabla L(\theta).
                     \]
-                    Each particle traces a geodesic-like path on the statistical manifold - not the shortest Euclidean path toward the loss minimum, 
-                    but the path of steepest descent in KL divergence. Observe how particles near the singularity region are deflected along the 
+                    Each particle follows the <strong>steepest descent direction in the Fisher-Rao metric</strong> at each point — 
+                    the direction of fastest decrease in loss per unit statistical (KL) distance. This is distinct from both 
+                    Euclidean steepest descent and the manifold's geodesics, but shares with the latter the property of respecting 
+                    the underlying geometry. Observe how particles near the singularity region are deflected along the 
                     manifold curvature rather than heading straight toward the nearest handle in Euclidean coordinates. This is the geometric correction 
                     that algorithms such as Natural Gradient Descent (Amari, 1998), KFAC, and the closely related Fisher-preconditioned methods exploit 
                     for faster convergence on the loss landscapes of neural networks and mixture models.
@@ -242,7 +251,7 @@ uses_python: false
                     the <strong>curvature</strong>.
                 </p>
 
-                <div class="theorem">
+                <div class="insight-box">
                     <h3>The K-FAC Idea: Block-Diagonal & Kronecker Factorization</h3>
                     <p>
                         <strong>K-FAC (Kronecker-factored Approximate Curvature)</strong> introduces two major simplifications:
@@ -254,7 +263,7 @@ uses_python: false
                         </li>
                         <li><strong>Kronecker Factorization:</strong><br>
                             For a specific layer, the FIM block \(F_\ell\) is approximated as 
-                            the <a href="../Linear_algebra/kronecker.html#k_pro"><strong>Kronecker product (\(\otimes\))</strong></a> of two 
+                            the <a href="../Linear_algebra/kronecker.html#D-kronecker_product" class="ref-link"><strong>Kronecker product (\(\otimes\))</strong></a> of two 
                             much smaller matrices:
                             \[
                             F_\ell \approx A_{\ell-1} \otimes G_\ell
@@ -266,7 +275,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    The beauty of this factorization lies in the property of the Kronecker product: 
+                    The mechanism of this factorization is the standard Kronecker-inverse identity:
                     \[
                     (A \otimes G)^{-1} = A^{-1} \otimes G^{-1}
                     \]
