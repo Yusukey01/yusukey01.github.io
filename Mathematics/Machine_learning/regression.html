@@ -30,35 +30,19 @@ uses_python: false
                 <h2>Ridge Regression</h2>
 
                 <p>
-                    In <a href="../Probability/linear_regression.html"><strong>Part 11 of Section III</strong></a>, 
-                    we established the linear model: given observed data \(\{(x_i, y_i)\}_{i=1}^n\) with 
-                    \(x_i \in \mathbb{R}^d\) and \(y_i \in \mathbb{R}\), we write
+                    Throughout this page we assume the <a href="../Linear_algebra/leastsquares.html#D-linear_regression_model" class="ref-link"><strong>linear regression model</strong></a> 
+                    \(\boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}\) with i.i.d. Gaussian noise 
+                    \(\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I)\), where \(X \in \mathbb{R}^{n \times d}\) is the design matrix and 
+                    \(\boldsymbol{\beta} \in \mathbb{R}^d\) is the parameter vector. As established in our 
+                    <a href="../Probability/linear_regression.html"><strong>linear regression page</strong></a>, the 
+                    <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimator</strong></a> 
+                    under this model coincides with the 
+                    <a href="../Linear_algebra/leastsquares.html#D-least_squares_solution" class="ref-link"><strong>least-squares solution</strong></a> 
+                    given by the <a href="../Linear_algebra/leastsquares.html#T-normal_equations" class="ref-link"><strong>normal equations</strong></a>:
                     \[
-                    y = Xw + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2 I),
+                    \widehat{\boldsymbol{\beta}}_{\text{LS}} = (X^\top X)^{-1} X^\top \boldsymbol{y} = \widehat{\boldsymbol{\beta}}_{\text{MLE}},
                     \]
-                    where \(X \in \mathbb{R}^{n \times d}\) is the design matrix and \(w \in \mathbb{R}^d\) is the weight vector. 
-                    Under Gaussian noise, the <a href="../Probability/mle.html"><strong>maximum likelihood estimator</strong></a> 
-                    coincides with the <a href="../Linear_algebra/leastsquares.html"><strong>least-squares solution</strong></a>:
-                    \[
-                    \begin{align*}
-                    \widehat{w}_{LS}    &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 \\\\
-                                        &= \arg \min_w \|y - Xw\|_2^2 \\\\
-                                        &= \arg \min_w (y - Xw)^\top (y - Xw) \\\\
-                                        &= \arg \min_w \; y^\top y - y^\top Xw - w^\top X^\top y + w^\top X^\top X w \\\\
-                                        &= \arg \min_w \; J(w).
-                    \end{align*}
-                    \]
-                    Differentiating with respect to \(w\) and setting the gradient to zero:
-                    \[
-                    \begin{align*}
-                        \nabla J(w) &= -X^\top y - X^\top y + 2X^\top Xw \\\\
-                                    &= -2X^\top y + 2 X^\top X w = 0. 
-                    \end{align*}
-                    \]
-                    Thus, if \((X^\top X)^{-1}\) exists,
-                    \[
-                    \widehat{w}_{LS} = (X^\top X)^{-1}X^\top y = \widehat{w}_{MLE}.
-                    \]
+                    valid whenever \(X^\top X\) is invertible.
                 </p>
 
                 <p>
@@ -70,40 +54,38 @@ uses_python: false
                 </p>
                 
                 <p>     
-                    To mitigate this issue, we add a penalty term on the objective. This technique is called <strong>regularization</strong>, 
+                    To mitigate this issue, we add a penalty term to the objective. This technique is called <strong>regularization</strong>, 
                     and the modified version of linear regression is known as <strong>ridge regression</strong>:
                     \[
                     \begin{align*}
-                    \widehat{w}_{ridge} &= \arg \min_w \sum_{i=1}^n (y_i - {x_i}^\top w)^2 +\underbrace{\lambda \|w\|_2^2}_{\text{Squared \(\ell_2\)-norm regularizer}}.\\\\
-                                        &=  \arg \min_w \|y - Xw\|_2^2 + \lambda w^\top w \\\\
-                                        &= \arg \min_w (Xw -y)^\top (Xw-y)+\lambda w^\top w \\\\
-                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top X^\top Xw + w^\top (\lambda I)w \\\\
-                                        &= \arg \min_w y^\top y -2w^\top Xy +w^\top  (X^\top X + \lambda I)w \\\\
-                                        &= \arg \min_w J(w)            
+                    \widehat{\boldsymbol{\beta}}_{\text{ridge}} 
+                        &= \arg \min_{\boldsymbol{\beta}} \|\boldsymbol{y} - X\boldsymbol{\beta}\|_2^2 + \underbrace{\lambda \|\boldsymbol{\beta}\|_2^2}_{\text{squared } \ell_2 \text{-norm regularizer}} \\\\
+                        &= \arg \min_{\boldsymbol{\beta}} \boldsymbol{y}^\top \boldsymbol{y} - 2\boldsymbol{\beta}^\top X^\top \boldsymbol{y} + \boldsymbol{\beta}^\top (X^\top X + \lambda I) \boldsymbol{\beta} \\\\
+                        &=: \arg \min_{\boldsymbol{\beta}} J(\boldsymbol{\beta}).
                     \end{align*}
                     \]
-                    Then
+                    Setting the gradient to zero,
                     \[
-                    \nabla_w J(w) = -2X^\top y +2(X^\top X + \lambda I )w = 0
+                    \nabla_{\boldsymbol{\beta}} J(\boldsymbol{\beta}) = -2 X^\top \boldsymbol{y} + 2(X^\top X + \lambda I) \boldsymbol{\beta} = \mathbf{0},
                     \]
-                    Solving for \(w\), we obtain
+                    yields the closed-form solution
                     \[
-                    \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
+                    \widehat{\boldsymbol{\beta}}_{\text{ridge}} = (X^\top X + \lambda I)^{-1} X^\top \boldsymbol{y},
                     \]
-                    where \(\lambda > 0\) is the <strong>regularization parameter</strong> that controls the strength of the penalty.
+                    where \(\lambda > 0\) is the <strong>regularization parameter</strong> controlling the strength of the penalty.
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Ridge Regression:</span>
+                <div class="theorem" id="T-ridge_regression_solution">
+                    <span class="theorem-title">Theorem: Ridge Regression Solution</span>
                     <p>
                         <strong>Ridge regression</strong> augments the least-squares objective with a squared \(\ell_2\)-norm penalty 
-                        on the weight vector:
+                        on the parameter vector:
                         \[
-                        \widehat{w}_{\text{ridge}} = \arg \min_w \|y - Xw\|_2^2 + \lambda \|w\|_2^2 
-                        = (X^\top X + \lambda I)^{-1} X^\top y,
+                        \widehat{\boldsymbol{\beta}}_{\text{ridge}} = \arg \min_{\boldsymbol{\beta}} \|\boldsymbol{y} - X\boldsymbol{\beta}\|_2^2 + \lambda \|\boldsymbol{\beta}\|_2^2 
+                        = (X^\top X + \lambda I)^{-1} X^\top \boldsymbol{y},
                         \]
                         where \(\lambda > 0\) is the regularization parameter. The addition of \(\lambda I\) guarantees that 
-                        \((X^\top X + \lambda I)\) is <strong>positive definite</strong> and hence invertible, even when 
+                        \(X^\top X + \lambda I\) is <strong>positive definite</strong> and hence invertible, even when 
                         \(X^\top X\) is singular.
                     </p>
                 </div>
@@ -113,8 +95,8 @@ uses_python: false
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{w}_{ridge} \to \widehat{w}_{LS}\).</li>
-                    <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{w}_{ridge} \to 0\), leading to high bias but low variance.</li>
+                    <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} \to \widehat{\boldsymbol{\beta}}_{\text{LS}}\).</li>
+                    <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} \to \mathbf{0}\), leading to high bias but low variance.</li>
                 </ul>
 
                 <p>
@@ -174,83 +156,97 @@ uses_python: false
             <section id="b-v" class="section-content">
                 <h2>Bias-Variance Tradeoff in Ridge Regression</h2>
                 <p>
-                    Let's dive into a formal derivation of expected prediction error in the context of ridge regression. Remember we have 
-                    obtained: 
+                    Whereas <a href="../Probability/mle.html#D-MSE" class="ref-link"><strong>mean squared error</strong></a> 
+                    measures the discrepancy between an estimator and the parameter it estimates, here we examine the closely related 
+                    discrepancy between a model's <em>predictions</em> and the true response. Both decompose into noise, bias, and variance.
+                </p>
+
+                <p>
+                    We assume the probabilistic generative model:
                     \[
-                    \widehat{w}_{ridge} = (X^\top X + \lambda I)^{-1}X^\top y.
+                    \boldsymbol{x}_i \sim P_X, \quad \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I),
                     \]
-                    We assume probabilistic generative model:
-                    \[
-                    x_i \sim P_X, \quad y = Xw + \epsilon, \text{ where } \epsilon \sim \mathcal{N}(0, \sigma^2 I).
-                    \]
-                    The true error at a sample with feature \(x\) is given by: 
+                    and write \(\mathcal{D} = \{(\boldsymbol{x}_i, y_i)\}_{i=1}^n\) for the training sample, with \(\mathbb{E}_{\mathcal{D}}\) denoting expectation 
+                    over the random training set. For a fixed query point \(\boldsymbol{x} \in \mathbb{R}^d\), the prediction error decomposes as follows.
+                </p>
+
+                <div class="theorem" id="T-bias_variance_decomposition">
+                    <span class="theorem-title">Theorem: Bias-Variance Decomposition for Ridge Prediction Error</span>
+                    <p>
+                        Under the linear-Gaussian model above, the expected squared prediction error of the ridge estimator 
+                        \(\widehat{\boldsymbol{\beta}}_{\text{ridge}}\) at a query point \(\boldsymbol{x}\) decomposes as
+                        \[
+                        \begin{align*}
+                        &\mathbb{E}_{y, \mathcal{D} \mid \boldsymbol{x}} \!\left[ \left(y - \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} \right)^2 \mid \boldsymbol{x} \right] \\\\
+                        &= \underbrace{\sigma^2}_{\text{Noise}}
+                            + \underbrace{\Big(\boldsymbol{x}^\top \boldsymbol{\beta} - \mathbb{E}_{\mathcal{D}}\!\left[\boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} \mid \boldsymbol{x}\right] \Big)^2}_{(\text{Bias})^2}
+                            + \underbrace{\mathbb{E}_{\mathcal{D}}\!\left[\Big(\boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} - \mathbb{E}_{\mathcal{D}}\!\left[\boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} \mid \boldsymbol{x}\right] \Big)^2 \mid \boldsymbol{x}\right]}_{\text{Variance}}. \tag{1}
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Derivation:</span>
+                    <p>
+                        Adding and subtracting \(\mathbb{E}[y \mid \boldsymbol{x}] = \boldsymbol{x}^\top \boldsymbol{\beta}\) inside the squared error and expanding yields
+                        \[
+                        \begin{align*}
+                        &\mathbb{E}_{y, \mathcal{D} \mid \boldsymbol{x}} \!\left[ \left(y - \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} \right)^2 \mid \boldsymbol{x} \right] \\\\
+                        &= \mathbb{E}_{y \mid \boldsymbol{x}}\!\left[\left(y - \mathbb{E}[y \mid \boldsymbol{x}]\right)^2 \mid \boldsymbol{x}\right] 
+                            + \mathbb{E}_{\mathcal{D}}\!\left[\left(\mathbb{E}[y \mid \boldsymbol{x}] - \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}}\right)^2 \mid \boldsymbol{x}\right]
+                        \end{align*}
+                        \]
+                        (the cross term vanishes since \(y - \mathbb{E}[y\mid \boldsymbol{x}]\) has mean zero and is independent of \(\widehat{\boldsymbol{\beta}}_{\text{ridge}}\) given \(\boldsymbol{x}\)). 
+                        The first term equals \(\sigma^2\). The second admits a further bias-variance split via the standard identity 
+                        \(\mathbb{E}[(Z - c)^2] = (\mathbb{E}[Z] - c)^2 + \operatorname{Var}(Z)\), applied with 
+                        \(Z = \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}}\) and \(c = \boldsymbol{x}^\top \boldsymbol{\beta}\), giving (1).
+                    </p>
+                </div>
+
+                <h3>Closed Form Under Orthogonal Design</h3>
+                <p>
+                    To make the tradeoff concrete, assume \(X^\top X = n I\). This corresponds to standardized, orthogonal predictors - a 
+                    common simplifying assumption that isolates the shrinkage effect of \(\lambda\) without the confounding influence of 
+                    correlated features. Substituting \(\boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}\) into the ridge solution:
                     \[
                     \begin{align*}
-                    &\mathbb{E}_{y, D  \mid x} \left[ \left(y - x^\top \widehat{w}_{\text{ridge}} \right)^2 \mid x \right] \\\\
-
-                    &= \mathbb{E}_{y \mid x} \left[ \left(y - \mathbb{E}[y \mid x] \right)^2 \mid  x \right]
-                        + \mathbb{E}_D \left[ \left( \mathbb{E}[y \mid  x]  -x^\top \widehat{w}_{ridge} \right)^2  \mid x  \right] \\\\
-
-                    &= \underbrace{ \mathbb{E}_{y \mid x} \left[ \left(y - x^\top w \right)^2 \mid x \right] }_{\text{Irreducible error (Noise)}}
-                        + \mathbb{E}_D \left[ \left(x^\top w - x^\top \widehat{w}_{ridge} \right)^2 \mid x \right] \\\\
-
-                    &= \underbrace{\sigma^2}_{\text{Noise}}
-                        + \underbrace{\left(x^\top w - \mathbb{E}_D \left[x^\top  \widehat{w}_{ridge} \mid x \right] \right)^2  }_{(\text{Bias})^2} 
-                        + \underbrace{ \mathbb{E}_D \left[ \left( x^\top \widehat{w}_{ridge} - \mathbb{E}_D \left[  x^\top \widehat{w}_{ridge} \mid x\right] \right)^2 \mid x \right] }_{\text{Variance}} \tag{1}\\\\
-                      \end{align*}
-                    \]
-                    Now we assume \(X^\top X = n I\) for simplicity. This corresponds to the case where the predictors are orthogonal (uncorrelated) 
-                    and standardized, which is a common simplifying assumption in ridge regression analysis. For orthogonal covariates, the ridge estimator 
-                    takes the simple form \(\widehat{w}_{ridge} = \frac{n}{n+\lambda} \widehat{w}_{LS}\), showing pure shrinkage behavior . 
-                    While this assumption doesn't hold in general, it allows clear illustration of the bias-variance tradeoff without the complexity of 
-                    correlated predictors. Then 
-                    \[
-                    \begin{align*}
-                     \widehat{w}_{ridge} &= (X^\top X + \lambda I)^{-1} X^\top (Xw + \epsilon) \\\\
-                                         &= (nI + \lambda I)^{-1}(nIw + X^\top \epsilon) \\\\
-                                         &= (n + \lambda)^{-1} I (nw + X^\top \epsilon) \\\\
-                                         &= \frac{n}{n + \lambda}w  + \frac{1}{n + \lambda} X^\top \epsilon.
+                    \widehat{\boldsymbol{\beta}}_{\text{ridge}} &= (X^\top X + \lambda I)^{-1} X^\top (X\boldsymbol{\beta} + \boldsymbol{\epsilon}) \\\\
+                                                   &= (n+\lambda)^{-1} I \cdot (n\boldsymbol{\beta} + X^\top \boldsymbol{\epsilon}) \\\\
+                                                   &= \frac{n}{n+\lambda}\boldsymbol{\beta} + \frac{1}{n+\lambda} X^\top \boldsymbol{\epsilon},
                     \end{align*}
                     \]
-                    Thus, 
+                    which exhibits the pure shrinkage form \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} = \frac{n}{n+\lambda} \widehat{\boldsymbol{\beta}}_{\text{LS}}\). Therefore,
                     \[
-                    x^\top \widehat{w}_{ridge} = \underbrace{\frac{n}{n + \lambda}x^\top w}_{\text{Constant}} + \underbrace{\frac{1}{n + \lambda} (Xx)^\top \epsilon}_{\text{Random}}.
-                    \]
-                    Since \(\mathbb{E}[\epsilon] = 0\), the bias term  of Expression 1 is written as: 
-                    \[
-                    \begin{align*}
-                    & \left( x^\top w -\mathbb{E}_D \left[x^\top \widehat{w}_{ridge}\right] \right)^2 \\\\
-                    &= \left( x^\top w -\mathbb{E}_D \left[\frac{n}{n + \lambda}x^\top w + \frac{1}{n + \lambda} (Xx)^\top \epsilon \right] \right)^2 \\\\
-                    &= \left( x^\top w - \frac{n}{n + \lambda}x^\top w  \right)^2 \\\\
-                    &= \frac{\lambda^2}{(n + \lambda)^2}(x^\top w)^2.
-                    \end{align*} 
-                    \]
-                    Since the variance of a constant is always zero, the variance term of Expression 1 is written as: 
-                    \[
-                    \begin{align*}
-                    &\mathbb{E}_D \left[ \left( x^\top \widehat{w}_{ridge} - \mathbb{E}_D \left[  x^\top \widehat{w}_{ridge} \mid x\right] \right)^2 \mid x \right] \\\\
-                    &= \text{Var}\left[ \frac{1}{n + \lambda} (Xx)^\top \epsilon \right] \\\\
-                    &= \frac{1}{(n + \lambda)^2}\text{Var}\left[(Xx)^\top \epsilon \right] \\\\
-                    &= \frac{1}{(n + \lambda)^2}(Xx)^\top \text{Var}[\epsilon] (Xx) \\\\
-                    &= \frac{1}{(n + \lambda)^2}  x^\top X^\top (\sigma^2 I) X x \\\\
-                    &= \frac{\sigma^2}{(n + \lambda)^2}  x^\top (X^\top X) x \\\\
-                    &= \frac{\sigma^2}{(n + \lambda)^2} x^\top (n I) x \\\\
-                    &= \frac{\sigma^2 n}{(n + \lambda)^2} \| x \|_2^2 \\\\
-                    \end{align*} 
-                    \]
-
-                    Therefore, putting it all together: 
-                    \[
-                    \begin{align*}
-                        &\mathbb{E}_{y, D  \mid x} \left[ \left(y - x^\top \widehat{w}_{\text{ridge}} \right)^2 \mid x \right] \\\\
-                        &= \sigma^2 + \frac{\lambda^2}{(n + \lambda)^2}(w^\top x)^2 + \frac{\sigma^2 n}{(n + \lambda)^2} \| x \|_2^2
-                    \end{align*}
+                    \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}} = \underbrace{\frac{n}{n+\lambda}\boldsymbol{x}^\top \boldsymbol{\beta}}_{\text{deterministic}} + \underbrace{\frac{1}{n+\lambda}(X\boldsymbol{x})^\top \boldsymbol{\epsilon}}_{\text{random}}.
                     \]
                 </p>
 
                 <p>
-                    This result makes the tradeoff explicit: as \(\lambda\) increases, the bias term \(\frac{\lambda^2}{(n+\lambda)^2}(w^\top x)^2\) grows 
-                    while the variance term \(\frac{\sigma^2 n}{(n+\lambda)^2}\|x\|_2^2\) shrinks. The optimal \(\lambda\) balances these competing effects, 
+                    Since \(\mathbb{E}[\boldsymbol{\epsilon}] = \mathbf{0}\), the squared bias term in (1) is
+                    \[
+                    \left(\boldsymbol{x}^\top \boldsymbol{\beta} - \frac{n}{n+\lambda}\boldsymbol{x}^\top \boldsymbol{\beta}\right)^2 
+                    = \frac{\lambda^2}{(n+\lambda)^2}(\boldsymbol{x}^\top \boldsymbol{\beta})^2.
+                    \]
+                    The variance term is the variance of the random part:
+                    \[
+                    \begin{align*}
+                    \operatorname{Var}\!\left[\frac{1}{n+\lambda}(X\boldsymbol{x})^\top \boldsymbol{\epsilon}\right] 
+                    &= \frac{1}{(n+\lambda)^2}(X\boldsymbol{x})^\top (\sigma^2 I)(X\boldsymbol{x}) \\\\
+                    &= \frac{\sigma^2}{(n+\lambda)^2}\boldsymbol{x}^\top (X^\top X) \boldsymbol{x} 
+                    = \frac{\sigma^2 n}{(n+\lambda)^2}\|\boldsymbol{x}\|_2^2.
+                    \end{align*}
+                    \]
+                    Combining all three terms:
+                    \[
+                    \mathbb{E}_{y, \mathcal{D} \mid \boldsymbol{x}}\!\left[\left(y - \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}}\right)^2 \mid \boldsymbol{x}\right] 
+                    = \sigma^2 + \frac{\lambda^2}{(n+\lambda)^2}(\boldsymbol{x}^\top \boldsymbol{\beta})^2 + \frac{\sigma^2 n}{(n+\lambda)^2}\|\boldsymbol{x}\|_2^2.
+                    \]
+                </p>
+
+                <p>
+                    This result makes the tradeoff explicit: as \(\lambda\) increases, the bias term \(\frac{\lambda^2}{(n+\lambda)^2}(\boldsymbol{x}^\top \boldsymbol{\beta})^2\) grows 
+                    while the variance term \(\frac{\sigma^2 n}{(n+\lambda)^2}\|\boldsymbol{x}\|_2^2\) shrinks. The optimal \(\lambda\) balances these competing effects, 
                     and in practice is selected via <a href="#CV"><strong>cross-validation</strong></a>. An alternative approach to regularization replaces 
                     the squared \(\ell_2\) penalty with an \(\ell_1\) penalty, yielding a qualitatively different behavior.
                 </p>
@@ -265,43 +261,45 @@ uses_python: false
                     identify and discard uninformative variables. This motivates replacing the squared \(\ell_2\) penalty with an \(\ell_1\) penalty:
                 </p>
 
-                <div class="theorem">
-                    <span class="theorem-title">Lasso Regression:</span>
+                <div class="theorem" id="D-lasso_regression">
+                    <span class="theorem-title">Definition: Lasso Regression</span>
                     <p>
                         The <strong>Least Absolute Shrinkage and Selection Operator (Lasso)</strong> 
                         solves
                         \[
-                        \widehat{w}_{\text{lasso}} = \arg \min_w \|y - Xw\|_2^2 + \lambda \|w\|_1,
+                        \widehat{\boldsymbol{\beta}}_{\text{lasso}} = \arg \min_{\boldsymbol{\beta}} \|\boldsymbol{y} - X\boldsymbol{\beta}\|_2^2 + \lambda \|\boldsymbol{\beta}\|_1,
                         \]
-                        where \(\|w\|_1 = \sum_{j=1}^d |w_j|\) is the \(\ell_1\)-norm and 
+                        where \(\|\boldsymbol{\beta}\|_1 = \sum_{j=1}^d |\beta_j|\) is the \(\ell_1\)-norm and 
                         \(\lambda > 0\) controls the regularization strength.
                     </p>
                 </div>
 
                 <p>
                     The key property of Lasso is that it performs <strong>automatic feature selection</strong>.
-                    The \(\ell_1\) penalty drives many coefficients \(w_j\) to <strong>exactly zero</strong>, effectively dropping those features 
+                    The \(\ell_1\) penalty drives many coefficients \(\beta_j\) to <strong>exactly zero</strong>, effectively dropping those features 
                     from the model. Geometrically, this occurs because the \(\ell_1\) ball has corners (unlike the smooth \(\ell_2\) ball), 
                     so the level sets of the loss function are more likely to intersect the constraint region at a vertex where 
                     one or more coordinates vanish.
                 </p>
 
                 <p>
-                    Unlike ridge regression, the Lasso objective is not differentiable at \(w_j = 0\) due to the absolute value, so 
-                    there is no closed-form solution. In practice, Lasso is solved by coordinate descent or proximal gradient methods.
+                    Unlike ridge regression, the Lasso objective is not differentiable at \(\beta_j = 0\) due to the absolute value, so 
+                    there is no closed-form solution. In practice, Lasso is solved by coordinate descent or proximal gradient methods that 
+                    handle the non-smoothness via the 
+                    <a href="../Calculus/gradient.html#D-subdifferential" class="ref-link"><strong>subdifferential</strong></a> of the \(\ell_1\)-norm.
                 </p>
 
                 <p>
                     After obtaining the Lasso solution, a common practice is to <strong>re-fit ordinary least-squares on the selected features</strong>. 
                     Specifically, define the active set
                     \[
-                    S = \{j : \widehat{w}_{\text{lasso}, j} \neq 0\},
+                    S = \{j : \widehat{\beta}_{\text{lasso}, j} \neq 0\},
                     \]
                     and then solve the unregularized problem restricted to these features:
                     \[
-                    \tilde{w}_S = \arg \min_{w_S} \sum_{i=1}^n (y_i - x_{i,S}^\top w_S)^2,
+                    \tilde{\boldsymbol{\beta}}_S = \arg \min_{\boldsymbol{\beta}_S} \sum_{i=1}^n (y_i - \boldsymbol{x}_{i,S}^\top \boldsymbol{\beta}_S)^2,
                     \]
-                    setting \(\tilde{w}_j = 0\) for \(j \notin S\). This two-stage procedure removes the shrinkage bias that Lasso 
+                    setting \(\tilde{\beta}_j = 0\) for \(j \notin S\). This two-stage procedure removes the shrinkage bias that Lasso 
                     introduces on the selected coefficients.
                 </p>
 
@@ -315,7 +313,7 @@ uses_python: false
 
                  <p>
                     Ridge and Lasso regularization illustrate a core theme in machine learning: controlling model complexity to achieve good generalization. In 
-                    <a href="intro_classification.html"><strong>Part 3: Intro to Classification</strong></a>, we move from predicting continuous values to 
+                    <a href="intro_classification.html"><strong>the classification page that follows</strong></a>, we move from predicting continuous values to 
                     predicting discrete categories, introducing logistic regression and kernel methods that extend the linear framework into nonlinear decision boundaries.
                 </p>
 
