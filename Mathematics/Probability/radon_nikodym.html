@@ -993,10 +993,15 @@ uses_python: false
 
                 <div class="insight-box">
                     <p>
-                        Almost every probabilistic quantity in modern machine learning is, at the foundational level, 
-                        a Radon-Nikodym derivative — and almost every algorithm involving densities is, at the 
-                        foundational level, an instance of the change-of-variables formula (ii). We collect four 
-                        examples that span supervised, generative, and reinforcement learning.
+                        Many probabilistic quantities in modern machine learning are, at the foundational 
+                        level, Radon-Nikodym derivatives, and many algorithms involving densities can be 
+                        read as instances of the change-of-variables formula (ii). The qualification "at 
+                        the foundational level" matters: the rigorous Radon-Nikodym object licenses the 
+                        construction, but the implementation typically works with explicit densities under 
+                        a chosen reference measure, with neural-network surrogates, or with sample-average 
+                        approximations rather than computing the abstract derivative directly. We collect 
+                        four examples that span supervised, generative, and reinforcement learning, noting 
+                        for each how the implementation relates to the underlying Radon-Nikodym structure.
                     </p>
 
                     <p>
@@ -1029,7 +1034,9 @@ uses_python: false
                         Gaussian noise injection along the forward diffusion). This noise injection ensures the absolute 
                         continuity even when the original data distribution \(P_0\) lies on a low-dimensional manifold and 
                         is singular to \(\lambda\). The reverse-time generative SDE is then driven by \(s_\phi\), which 
-                        integrates exactly the Radon-Nikodym derivative \(dP_t/d\lambda\) into the dynamics.
+                        plays the role, in the dynamics, of the Radon-Nikodym derivative \(dP_t/d\lambda\); 
+                        the implementation does not compute the derivative directly but learns its 
+                        gradient \(\nabla_x \log dP_t/d\lambda\) from data via score matching.
                     </p>
 
                     <p>
@@ -1064,17 +1071,29 @@ uses_python: false
                         where \(Q\) places no mass but \(P\) does, and \(D_{\mathrm{KL}}(P \| Q)\) is set to \(+\infty\) 
                         by convention. In reinforcement learning from human feedback (RLHF), the regularizer 
                         \(D_{\mathrm{KL}}(\pi_\theta \| \pi_{\mathrm{ref}})\) — penalizing the trained policy 
-                        \(\pi_\theta\) for drifting from a reference policy \(\pi_{\mathrm{ref}}\) — is finite precisely 
-                        when \(\pi_\theta \ll \pi_{\mathrm{ref}}\), which is enforced by ensuring the trained policy 
-                        cannot place mass where the reference places none (e.g., via shared support or by parameterizing 
-                        \(\pi_\theta\) as \(\pi_{\mathrm{ref}}\) times a strictly positive learned ratio).
+                        \(\pi_\theta\) for drifting from a reference policy \(\pi_{\mathrm{ref}}\) — is finite 
+                        precisely when \(\pi_\theta \ll \pi_{\mathrm{ref}}\). In practice the divergence is estimated 
+                        by the sample average of \(\log(\pi_\theta(y \mid x) / \pi_{\mathrm{ref}}(y \mid x))\) over 
+                        sampled completions, and the absolute-continuity hypothesis is a structural property of 
+                        the model parameterization (e.g., a softmax over a shared vocabulary makes both policies 
+                        positive on the same token set) rather than an explicit runtime check.
                     </p>
 
                     <p>
-                        The recurring pattern: <em>the Radon-Nikodym derivative is the object that algorithms compute 
-                        with, and absolute continuity is the hypothesis that makes the computation well-posed</em>. The 
-                        <a href="#T-radon_nikodym"><strong>Radon-Nikodym theorem</strong></a> proved above is the 
-                        existence proof that licenses every one of these constructions.
+                        The recurring pattern across these four examples is a layered one: <em>the 
+                        Radon-Nikodym derivative is the object whose existence licenses the construction, 
+                        and absolute continuity is the hypothesis that makes the computation well-posed; 
+                        whether the derivative is itself computed depends on the algorithm</em>. 
+                        Importance sampling computes \(dP/dQ\) explicitly and uses it as a multiplicative 
+                        weight. Bayesian posterior density computation works with the explicit ratio 
+                        appearing in Bayes' formula under a chosen reference measure. Score-based 
+                        diffusion learns \(\nabla_x \log dP_t/d\lambda\) implicitly via a neural network 
+                        rather than constructing the derivative directly. RLHF's KL regularizer is 
+                        estimated by sample averages of log-ratios, with absolute continuity inherited 
+                        from the model parameterization. The 
+                        <a href="#T-radon_nikodym"><strong>Radon-Nikodym theorem</strong></a> proved 
+                        above is the existence proof that licenses every one of these constructions; 
+                        what each algorithm actually does with that object varies by application.
                     </p>
                 </div>
             </section>

@@ -69,25 +69,38 @@ uses_python: false
                 </p>
 
                 <p>
-                    For a robot, this approximation is one foundation of uncertainty-aware control. The 
-                    posterior variance — the "spread" of the distribution — provides a quantitative proxy 
-                    for <strong>epistemic uncertainty</strong>, which can in turn inform decisions such as 
-                    whether to proceed with an action or trigger a fallback. This complements rather than 
-                    replaces classical safety mechanisms (limit switches, mechanical fail-safes, model-based 
-                    control bounds).
+                    For a robot, this approximation is one ingredient in uncertainty-aware control. The
+                    posterior variance — the "spread" of the distribution — provides one quantitative
+                    signal that can inform decisions such as whether to proceed with an action or trigger
+                    a fallback. We note, however, that the relation between the VAE's posterior spread
+                    and the conceptual notion of <strong>epistemic uncertainty</strong> (uncertainty due
+                    to limited model knowledge, as distinct from <strong>aleatoric uncertainty</strong>
+                    inherent in the observation noise) is not automatic; the VAE's encoder learns a single
+                    distribution per input and does not by construction separate these two sources.
+                    Established methods for principled epistemic-uncertainty estimation — Monte Carlo
+                    dropout, deep ensembles, Bayesian neural networks — operate on different principles,
+                    and the literature on the reliability of generative-model latent variances as
+                    uncertainty proxies is active and unsettled (e.g., Kendall &amp; Gal, 2017). The
+                    posterior-spread signal complements rather than replaces classical safety mechanisms
+                    (limit switches, mechanical fail-safes, model-based control bounds), and the demo
+                    below should be read as a pedagogical illustration of one such complement, not a
+                    deployment-ready uncertainty-quantification scheme.
                 </p>
 
                 <p>
-                    The variational framework introduced here rests on measure-theoretic foundations that are 
-                    developed across our probability section. Speaking of densities \(q(\boldsymbol{z})\) and 
-                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common dominating measure is 
-                    licensed by the <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>, 
-                    and conditional expectation — defined rigorously as a Radon-Nikodym derivative — provides 
-                    the abstract framework underlying both the posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\) 
-                    itself and the ELBO decomposition we develop next. A dedicated variational-inference page, 
-                    forthcoming in the probability section, will close this loop by deriving the ELBO and the 
-                    full VI framework using these tools, situating the VAE's amortized inference as a special 
-                    case of the broader variational principle.
+                    The variational framework introduced here rests on measure-theoretic foundations that
+                    are developed across our probability section. Speaking of densities \(q(\boldsymbol{z})\) and
+                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common dominating measure is
+                    licensed by the <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>,
+                    and conditional expectation — defined rigorously as a Radon-Nikodym derivative — provides
+                    the idealised abstract framework that the densities and ELBO decomposition implemented
+                    here approximate. The implementation works directly with explicit Gaussian densities,
+                    Monte Carlo samples, and reparameterized gradients; the measure-theoretic construction
+                    is what licenses these computations as approximations to a well-defined object, not a
+                    layer that the code instantiates directly. A dedicated variational-inference page,
+                    forthcoming in the probability section, will close this loop by deriving the ELBO and
+                    the full VI framework using these tools, situating the VAE's amortized inference as a
+                    special case of the broader variational principle.
                 </p>
 
             </section>
@@ -352,8 +365,10 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    where \(\mathbf{r}_{\text{CoM}}\) is the world-space CoM position and \(\mathbf{r}_{\text{grip}}\) is the grip point. 
-                    This torque is the robot's primary sensory signal - it reveals how much the CoM deviates from the grip axis. 
+                    where \(\mathbf{r}_{\text{CoM}}\) is the world-space CoM position and \(\mathbf{r}_{\text{grip}}\) is the grip point.
+                    In this demo the torque vector serves as the input feature on which the encoder is defined; in a deployed
+                    robotic system the input would typically be a higher-dimensional sensor stream (force-torque sensor readings,
+                    joint encoder readings, vision) processed by a learned encoder rather than the closed-form mapping below.
                     The torque vector is displayed as a green arrow on the box during the lift.
                 </p>
 
@@ -383,17 +398,24 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    The encoder maps torque to the posterior parameters as follows:
+                    For the purposes of this pedagogical demo, we do <em>not</em> train an encoder neural network end-to-end.
+                    Instead we hand-design a fixed, interpretable mapping from torque to posterior parameters, chosen so that
+                    the qualitative behaviour of an uncertainty-aware encoder is visible at a glance:
                 </p>
                 <ul style="padding-left: 40px;">
                     <li>\(\boldsymbol{\mu} = (0.07\,\tau_x,\; 0.07\,\tau_z)\) - the posterior mean shifts proportionally to the horizontal torque components</li>
                     <li>\(\sigma = 0.011\,\|\boldsymbol{\tau}\|\) - the posterior spread grows with the torque magnitude</li>
                 </ul>
                 <p>
-                    The key insight is that <strong>\(\sigma\) encodes uncertainty</strong>. 
-                    When the torque is small (CoM near grip axis), \(\sigma\) is small and the robot is confident in its grasp. 
-                    When the torque is large (CoM far off-center), \(\sigma\) grows, reflecting the robot's increasing uncertainty 
-                    about whether the grasp is stable enough to complete the lift.
+                    Under this hand-designed mapping, \(\sigma\) is by construction monotone in
+                    \(\|\boldsymbol{\tau}\|\), and we use it in this demo as a stand-in for an
+                    uncertainty signal: when the torque is small (CoM near grip axis), \(\sigma\) is small;
+                    when the torque is large (CoM far off-center), \(\sigma\) is large. In a learned VAE
+                    encoder the relationship between input features and posterior spread would emerge from
+                    training rather than being prescribed; the qualitative dynamics shown in the simulation
+                    are intended to convey how such a learned signal could be consumed by downstream
+                    safety logic, not to claim that this fixed mapping is itself a learned uncertainty
+                    estimate.
                 </p>
 
                 <h3>The Latent Space Visualization</h3>
@@ -470,9 +492,18 @@ uses_python: false
                     <li><strong>ABORT</strong> &rarr; Three-phase emergency: lower the box, release grip, return home.</li>
                 </ol>
                 <p>
-                    The critical decision is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This is a direct analogy to how real-world 
-                    autonomous systems use learned uncertainty estimates for <strong>out-of-distribution detection</strong>: if the VAE posterior 
-                    is too diffuse, the current observation lies far from the training distribution, and the robot should not trust its control policy.
+                    The critical decision in this demo is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This
+                    is a pedagogical analogy to a class of <strong>out-of-distribution (OOD) detection</strong>
+                    heuristics in which a learned uncertainty score gates further action — if the score
+                    exceeds a threshold, the system flags the observation as untrusted. We caution that
+                    the actual reliability of generative-model latent variances or likelihoods as OOD
+                    detectors is an active research debate, and not a settled solved problem: deep
+                    generative models (including VAEs and normalizing flows) have been shown to assign
+                    higher likelihoods to clearly out-of-distribution inputs than to in-distribution ones
+                    in published experiments (Nalisnick et al., 2019, "Do Deep Generative Models Know What
+                    They Don't Know?"). The simulation here is best read as a clean illustration of how an
+                    uncertainty signal can be wired into a control state machine, not as evidence that
+                    posterior-spread thresholding is a deployment-ready OOD method.
                 </p>
 
                 <h3>What the Parameters Control</h3>
