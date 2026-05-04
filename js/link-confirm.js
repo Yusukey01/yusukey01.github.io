@@ -82,6 +82,10 @@
         if (link.classList.contains('link-confirm-go')) return false;
         // Skip any link inside an existing confirm box (defense in depth)
         if (link.closest('.link-confirm-box')) return false;
+        // Skip any link inside a ref-preview box (e.g. "View full context →").
+        // Those links navigate normally and should not trigger another
+        // confirmation layer.
+        if (link.closest('.ref-preview-container')) return false;
         // Skip pure in-page anchors
         if (href.charAt(0) === '#') return false;
         // Skip non-http schemes (mailto:, tel:, javascript:, etc.)
@@ -370,10 +374,12 @@
         // rather than per link. This handles dynamically-inserted links too.
         sectionContents.forEach(function (sc) {
             sc.addEventListener('click', function (e) {
-                // Defense in depth: if the click originated inside our own
-                // confirm box (which on mobile is inserted as a sibling
-                // inside .section-content), do not re-intercept.
+                // Defense in depth: do not re-intercept clicks that
+                // originated inside our own confirm box, or inside a
+                // ref-preview box (which has its own "View full context"
+                // navigation link).
                 if (e.target.closest('.link-confirm-box')) return;
+                if (e.target.closest('.ref-preview-container')) return;
 
                 const link = e.target.closest('a');
                 if (!link || !sc.contains(link)) return;
