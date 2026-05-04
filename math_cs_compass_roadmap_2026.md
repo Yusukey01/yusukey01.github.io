@@ -44,10 +44,10 @@ There is no isolated "Geometry" or "Physics" section. Geometric and quantum conc
 - **Metric Spaces & Topology (8 pages):** Metric spaces, convergence, continuity, completeness, connectedness, compactness, metric equivalence (homeomorphism), topological spaces.
 - **Functional Analysis (8 pages):** Banach & Hilbert spaces, bounded operators, dual spaces & Riesz representation, weak topologies & Banach-Alaoglu, spectral theory of compact operators, RKHS & kernel methods, Lp spaces (construction & inequalities), Lp completeness & convergence (Riesz-Fischer, MCT/Fatou/DCT, convergence modes).
 
-### Section III: Probability & Statistics (23 pages, expanding)
+### Section III: Probability & Statistics (25 pages as of 5/4/2026, expanding to 26 with prob-26 in progress)
 - **Foundations & Inference:** Probability, distributions, covariance, MVN, MLE, hypothesis testing, linear regression.
 - **Bayesian & Stochastic:** Bayesian inference, exponential family, Fisher information matrix, decision theory, Markov chains, Monte Carlo, importance sampling, Gaussian processes.
-- **Measure-Theoretic Probability (3 pages, deepening phase active):** Random variables as measurable functions, expectation as Lebesgue integral, convergence theorems, limit theorems & product measures, **Radon-Nikodym theorem (prob-24, completed 4/22/2026)**. **Phase 2c continues** with Conditional Expectation (prob-25) and Regular Conditional Distributions (prob-26); **Phase 2d–2e** (Variational Inference foundation, Stochastic Calculus) deferred with trigger-based revisit policy — bringing Section III to the graduate-level depth already achieved in Sections I (Lie theory) and II (Functional Analysis block).
+- **Measure-Theoretic Probability (4 pages, deepening phase active):** Random variables as measurable functions, expectation as Lebesgue integral, convergence theorems, limit theorems & product measures, **Radon-Nikodym theorem (prob-24, completed 4/22/2026, refined 5/4/2026)**, **Conditional expectation (prob-25, completed 5/4/2026)**. **Phase 2c continues** with prob-26 = Variational Inference (Murphy Ch.10 core, redesigned 5/4/2026 from original Regular Conditional Distributions plan). **Phase 2e** (Stochastic Calculus) deferred with trigger-based revisit policy — bringing Section III to the graduate-level depth already achieved in Sections I (Lie theory) and II (Functional Analysis block).
 
 ### Section IV: Discrete Mathematics & Algorithms (15 pages)
 - **Computation & Graph Theory (11 pages):** Graph theory, combinatorics, automata, Boolean logic, context-free languages, Turing machines, time complexity, Eulerian/Hamiltonian, P vs NP, network flow, trees.
@@ -178,8 +178,7 @@ This imbalance became apparent during the peer review of **prob-23** (4/22/2026)
 
 Phase 2c–2e elevates Section III to the same graduate-level depth as Sections I and II, while maintaining the **"three application domains as viewpoints"** philosophy. Each phase creates a **plateau** where accumulated tools are applied to a class of 2026-era ML/AI problems, and from which the next mathematical foundation is motivated:
 
-- **Phase 2c plateau:** Bayesian rigor, Lp duality closure, KL regularization foundation (RLHF).
-- **Phase 2d plateau:** VAE/ELBO rigorous treatment, amortized inference, connection to diffusion models as hierarchical VI.
+- **Phase 2c plateau:** Bayesian rigor + Lp duality closure + KL regularization foundation (RLHF) + VAE/ELBO rigorous treatment + amortized inference + connection to diffusion models as hierarchical VI. (Originally split as 2c-RN/CE + 2d-VI; consolidated 5/4/2026 when prob-26 was redesigned as VI.)
 - **Phase 2e plateau:** Diffusion model SDE foundation, score matching, Neural SDE / Neural ODE.
 
 These plateaus collectively unlock the modern ML frontier (as of 2026): Bayesian Neural Networks, RLHF/DPO alignment, score-based diffusion, flow matching, and the information-theoretic bounds relevant to PAC-Bayes generalization.
@@ -190,68 +189,60 @@ Drawing on the **Lie group series expansion pattern** (planned 2 → actual 4 pa
 
 ---
 
-### Phase 2c: Radon-Nikodym Track (3 pages — 1 complete, 2 in progress)
+### Phase 2c: Radon-Nikodym Track (3 pages — 2 complete, 1 in handout-ready state)
 
-**Goal:** Close the Radon-Nikodym name-usage debt and provide rigorous foundations for measure-theoretic Bayesian inference, including the continuous-case conditional distribution machinery.
+**Status update (5/4/2026):** Original Phase 2c plan was 2 pages (prob-24 + combined CE/RegCondDist prob-25). During prob-25 scoping (4/22), Regular Conditional Distributions was split off into prob-26 following the Lie-series precedent. On 5/4, after prob-25 completion, the prob-26 *content* was redesigned: Regular Conditional Distributions → Variational Inference (Murphy Ch.10 core). The Lie-series-style 1.5–2× expansion factor still holds — the 3-page Phase 2c structure stands, only the prob-26 contents changed. See prob-26 entry below for the pivot rationale.
 
-**Status update (4/22/2026):** Original Phase 2c plan was 2 pages (prob-24 + combined CE/RegCondDist prob-25). During prob-25 scoping, Regular Conditional Distributions was split off into its own page (prob-26) following the Lie-series precedent: Polish space topology is a new conceptual paradigm for Section III, and combining algebraic CE properties with Polish-space disintegration would target ~1500 lines on a single page. The split keeps each page focused and at a sane size.
-
-#### prob-24: Signed Measures & Radon-Nikodym Theorem ✅ (completed 4/22/2026, 1226 lines)
+#### prob-24: Signed Measures & Radon-Nikodym Theorem ✅ (completed 4/22/2026, refined 5/4/2026 to 1253 lines)
 - **Topics covered:** Signed measures, Jordan-Hahn decomposition, absolute continuity, mutual singularity, ε-δ characterization of absolute continuity (with finite-hypothesis counterexample), Radon-Nikodym theorem proved via von Neumann's L² method, uniqueness via zero-integral lemma, chain rule and change-of-variables Proposition (statement (i) → (ii), proof (ii) full → (i) corollary), ML insight box (Bayesian posterior density, score in diffusion models, importance sampling, KL divergence and RLHF), Looking Ahead with three retroactive closures and four future horizons.
 - **Lebesgue decomposition:** Excluded from main text per Phase 2c plan; referenced in Looking Ahead only.
 - **Proof method:** von Neumann's L² method, as planned. Cross-section bridge to calc-25 (`#T-riesz_representation`) and calc-31 (`#T-riesz_fischer`) confirmed in §4.2 proof.
 - **Anchor count:** 9 theorem/definition anchors (`T-radon_nikodym`, `T-rn_chain_rule`, `T-hahn_decomposition`, `T-jordan_decomposition`, `T-absolute_continuity_epsilon_delta`, `D-signed_measure`, `D-total_variation`, `D-absolute_continuity`, `D-mutual_singularity`). **All anchor IDs use the `T-foo_bar` / `D-foo_bar` underscore convention adopted concurrently with prob-24 completion**; pre-prob-24 pages retain their existing hyphen anchors.
 - **Critical review outcome:** 12-unit critical review identified 17 MAJOR + 27 MINOR issues; all addressed via 3-round fix application (CRITICAL/MAJOR → MINOR → final sweep). One genuine proof bug caught (ε-δ characterization: non-monotonic A_n requires `limsup` not `lim`).
-- **Retroactive closures pending application (3 ref-link diffs prepared, awaiting Yusuke local apply):**
-  - `measure_probability.html` (prob-22) L278–284: PDF existence licensed by prob-24 RN theorem
-  - `dual_spaces.html` (calc-25) L126–129: \((L^p)^* \cong L^q\) converse direction licensed by prob-24
-  - `limit_theorems_product_measures.html` (prob-23) L712: conditional expectation preview ref-link to prob-24 (and forward to prob-25 once that page exists)
+- **5/4 honest-framing refinement (Section III ML-bridge audit):** Caught and corrected 3 MAJOR + 2 MEDIUM "rigorous-object as algorithm-input" overclaims in §4 (ML applications): "almost every ML quantity is a RN derivative" → "many, at the foundational level"; "score integrates exactly the RN derivative" → "plays the role, in the dynamics, of the RN derivative; implementation does not compute the derivative directly"; "RN derivative is the object that algorithms compute with" → 4-application breakdown distinguishing "what licenses the construction" vs "what each algorithm actually does"; KL/RLHF "enforced by structural property" → "estimated by sample averages of log-ratios". §1 + §5.3 + "Next Chapter" paragraph also retrofitted with `class="ref-link"` to prob-25's `T-conditional_expectation_definition`. Net: +29 lines, qualitative improvement to ML-bridge honesty calibrated against the philosophy "rigorous existence licenses; whether the derivative is itself computed depends on the algorithm".
+- **Retroactive closures (applied 5/4/2026):**
+  - `measure_probability.html` (prob-22) L278–284: PDF existence licensed by prob-24 RN theorem ✅
+  - `dual_spaces.html` (calc-25) L126–129: \((L^p)^* \cong L^q\) converse direction licensed by prob-24 ✅
+  - `limit_theorems_product_measures.html` (prob-23) L749: conditional expectation preview ref-link to prob-25's `T-conditional_expectation_definition` ✅ (forward target prob-25 now exists)
 - **Reference verified:** Durrett Ch. 1 & 5, Folland Ch. 3, Conway (Riesz representation bridge).
 
-#### prob-25: Conditional Expectation (1 page, drafting handout v1 created 4/22/2026)
-- **Topics:** Conditional expectation \(\mathbb{E}[X | \mathcal{G}]\) defined as Radon-Nikodym derivative of the signed measure \(\nu_X(A) = \int_A X d\mathbb{P}\) with respect to \(\mathbb{P}|_\mathcal{G}\); existence and a.s. uniqueness as one-line corollary of prob-24; defining property (averaging identity); recovery of the discrete case (\(\mathbb{E}[X|A_i]\) consistent with abstract definition); algebraic properties (linearity, monotonicity, take-out, independence collapse, Jensen for CE, \(L^p\) contraction); \(L^2\) projection characterization; tower property; ML applications (EM algorithm, Q-learning value functions, Bayesian posterior predictive, VI ELBO); 4 forward horizons.
-- **Continuous case framing:** §2.4 explicitly defers \(\mathbb{E}[X|Y=y]\) (continuous case as a function of \(y\)) to prob-26 with descriptive forward link, citing the need for Polish space machinery and disintegration.
-- **Estimated size:** 860–1160 lines.
-- **ML connection:** EM algorithm (E-step is CE), Q-value (state value as CE of return; Bellman = tower property), Bayesian posterior predictive (CE under posterior), Variational Inference (ELBO terms reducible to CE-like integrals).
-- **Prereqs:** prob-24.
-- **References:** Durrett Ch. 5, Billingsley (alternate treatment).
+#### prob-25: Conditional Expectation ✅ (completed 5/4/2026, 956 lines)
+- **Topics:** Conditional expectation \(\mathbb{E}[X | \mathcal{G}]\) defined as Radon-Nikodym derivative of the signed measure \(\nu_X(A) = \int_A X d\mathbb{P}\) with respect to \(\mathbb{P}|_\mathcal{G}\); existence and a.s. uniqueness as one-line corollary of prob-24; defining property (averaging identity); recovery of the discrete case (\(\mathbb{E}[X|A_i]\) consistent with abstract definition); algebraic properties (linearity, monotonicity, take-out, independence collapse, Jensen for CE, \(L^p\) contraction); \(L^2\) projection characterization (RN corollary, leveraging calc-25 `T-projection_theorem_hilbert`); tower property; ML applications (EM algorithm with Jensen-for-CE convergence proof, Bellman equation as tower property in disguise, Bayesian posterior predictive, ELBO); §4 closing Looking Ahead with two threads (deferred continuous case + martingale/SDE/diffusion/VI direction) + philosophical observation paragraph on the mathematics-implementation gap and the hypothesis that future ML systems may invoke the construction more directly.
+- **Continuous case framing (final):** §2.4 identifies the pointwise reading \(y \mapsto \mathbb{E}[X|Y=y]\) as the topic of regular conditional distributions in measure-theoretic probability, *without* specifying a particular page that develops it. The deferral is honest and topic-based, not page-promised. Five locations originally written as "the next chapter" / "the upcoming page on regular conditional distributions" were retrofitted to general topic references on 5/4, in line with the hypertext-not-sequential-reading philosophy.
+- **Honest-framing convention (defining commitment of this page):** §1 fourth paragraph and §4 closing observation paragraph both record the position that current ML implementations rarely instantiate the rigorous CE object directly (idealised form vs. density-based / MC-sampling / surrogate approximations), but that "this is a fact about today's implementations, not a verdict on the necessity of the underlying mathematics" — citing the historical pattern of Hilbert spaces preceding quantum mechanics and measure theory preceding modern probability. This framing is the calibration anchor for all subsequent ML-bridge pages.
+- **Final size:** 956 lines (within 860–1160 estimate). 11 theorem blocks, 13 proof blocks, 9 ref-links.
+- **Anchor count:** 10 new IDs (`T-conditional_expectation_definition`, `T-ce_discrete_recovery`, `T-ce_linearity`, `T-ce_monotonicity`, `T-ce_take_out`, `T-ce_independence`, `T-ce_jensen`, `T-ce_lp_contraction`, `T-ce_l2_projection`, `T-ce_tower`).
+- **Prereqs:** `["prob-24", "calc-25"]`. (calc-25 for `T-projection_theorem_hilbert` directly invoked in §3.3, not transitively via prob-24.)
+- **References:** Durrett Ch. 5.
 - **Filename:** `conditional_expectation.html`. Icon: `𝔼[·|𝒢]`.
 
-#### prob-26: Regular Conditional Distributions (1 page, scope sketch in prob-25 handout §8)
-- **Topics:** Polish space hypothesis (separable + complete metric), counterexample showing non-Polish settings where regular conditional distribution fails to exist, disintegration theorem (statement + proof sketch via approximation by partitions), construction of regular versions \(P(\cdot|x)\) such that \(\mathbb{E}[f(Y)|X=x] = \int f(y) P(dy|x)\) holds pointwise (not just a.s.), Markov kernels and transition kernels (preview to Markov chains / SDEs), Bayesian inference rigorously licensed for continuous parameters.
-- **Strategic role:** Promoted from "trigger-based" to "Phase 2c third committed page" because prob-25 §2.4 and §5.2 forward-link to it; trigger-based status would leave prob-25's deferral orphaned.
-- **Estimated size:** 700–1000 lines.
-- **Prereqs:** prob-25, calc-29 (Topological Spaces — Polish space requires topology + metric completeness; calc-29 covers Hausdorff/second-countability infrastructure).
-- **References:** Folland Ch. 5, Kallenberg Ch. 6 (disintegration theorem).
-- **Filename:** `regular_conditional_distributions.html`.
+#### prob-26: Variational Inference (1 page, drafting handout v1 created 5/4/2026) — **redesigned from original Regular Conditional Distributions plan**
+- **Major pivot rationale (5/4/2026):** Original Phase 2c plan had prob-26 = Regular Conditional Distributions (Polish space + disintegration). Discussion during prob-25 completion exposed two issues with that plan: (a) measure-theoretic regular conditional distributions are a topic in *measure-theoretic probability* with limited direct ML utility — they would be needed if Phase 2e SDE / path-space measures pages were active, but those are themselves trigger-based; (b) the ML-bridge philosophy of the curriculum makes Variational Inference, which has been a deferred backlog item (#345) since 3/28 and which prob-25 §4 already foreshadows, the more natural next page. The Regular Conditional Distributions topic is **demoted to trigger-based** (to be authored if Phase 2e SDE work demands the pointwise reading); no orphaning concern, because prob-25 §2.4 was retrofitted on 5/4 to cite "the regular-conditional-distribution framework in measure-theoretic probability" as a topic, *not* as a specific page.
+- **Reference calibration:** Murphy *Probabilistic ML: Advanced Topics* (MLBook2) Chapter 10 (pp. 439–482, 45 subsections). prob-26 covers the **core only** (Murphy 10.1.1, 10.1.2, 10.1.4, 10.2.1, 10.2.3, 10.3.1); deliberately out-of-scope: 10.4 (more accurate posteriors), 10.5 (tighter bounds), 10.6 (wake-sleep), 10.7 (EP). The decision rule is: include topics that are foundational + used in current ML practice + provable in 1 page using prob-25 conditional-expectation tools; defer topics that warrant their own dedicated pages (normalizing flows, IWAE, EP, wake-sleep) to trigger-based future work.
+- **Section structure (5 sections, ~690–960 lines):**
+  - §1 Why Variational Inference? — intractable posterior + variational reformulation + prob-25 connection
+  - §2 The ELBO and the KL Decomposition — ELBO definition, Jensen-based lower bound, exact KL decomposition (rigorous proof using prob-25), mean-field intro
+  - §3 Computing the ELBO Gradient — gradient interchange problem, reparameterization trick (rigorous version of vae.html's), score function (REINFORCE) estimator, bias-variance trade-off
+  - §4 Coordinate Ascent VI and Stochastic VI — CAVI derivation + Bayesian GMM sketch, Stochastic VI (Hoffman et al. 2013) with natural-gradient connection to natural_gd.html
+  - §5 Looking Ahead — VAE / amortized VI (forward link to vae.html, which exists), variational programme generalisations (general topic references, no specific-page promises), honest acknowledgement of out-of-scope
+- **Anchor plan (7 new IDs):** `D-elbo` (ownership migrates from vae.html to prob-26 post-publication; vae.html becomes ref-linker), `T-elbo_lower_bound`, `T-elbo_kl_decomposition`, `T-reparameterization_gradient`, `T-score_function_estimator`, `T-cavi_update`, `D-svi`.
+- **Prereqs:** `["prob-25", "prob-12"]`. (prob-25 for CE / Jensen-for-CE / averaging identity; prob-12 / `Probability/entropy.html` for `D-kl_divergence` and analytic `T-jensen_inequality`.)
+- **Cross-page dependencies:** vae.html (forward and backward), natural_gd.html (`D-fisher_information_matrix`, `D-natural_gradient` via §4.3 SVI bridge), prob-23 `T-dct` (gradient interchange justification), prob-24 `T-radon_nikodym` (dq/dp existence for KL).
+- **Post-publication backlog:** vae.html ELBO + reparameterization sections to be retrofitted with ref-links to prob-26 (separate from prob-26 round 1 work).
+- **References:** Murphy MLBook2 Ch. 10 (primary); Wainwright & Jordan, Blei et al. review (descriptive citations only).
+- **Filename:** `variational_inference.html`. Icon: candidate `ELBO` / `q*` / `D_KL` (verify uniqueness against curriculum.json before commit).
 
-**Phase 2c outcome (revised):** Four deferred items simultaneously resolved upon Phase 2c completion: #340 Lp duality (via prob-24 RN), #341 Conditional expectation (via prob-25), partial #345 Variational Inference foundation (via prob-25 §3 properties needed for ELBO), and Bayesian continuous-parameter inference rigor (via prob-26 disintegration). Section III has a rigorous conditional expectation framework + regular conditional distribution machinery, enabling all downstream Bayesian/VI/martingale/SDE development.
+**Phase 2c outcome (revised 5/4/2026):** Three deferred items resolved upon Phase 2c completion: #340 Lp duality (via prob-24 RN), #341 Conditional expectation (via prob-25), #345 Variational Inference foundation (via prob-26 — see below). Section III now has a rigorous Radon-Nikodym + conditional expectation + variational inference framework, enabling all downstream Bayesian/martingale/SDE/diffusion development. The Bayesian-continuous-parameter rigor item (originally targeted by Regular Conditional Distributions) is reframed: prob-26 §2.3 + §3 cover the variational *workaround* (q-tractable approximation under density assumption), which is the path actually taken in modern ML; the strict pointwise rigor via disintegration is demoted to trigger-based future work.
+
+**Section III ML-bridge honest-framing audit (5/4/2026):** Concurrent with prob-25 completion, a systematic sweep was conducted across all four Section III pages (prob-22, 23, 24, 25) plus two Section V pages that ref-link to them (vae.html, natural_gd.html). The sweep caught and corrected a recurring overclaim pattern: "ML algorithm X *is* / *computes with* / *rests on* the rigorous mathematical object Y" where the implementation actually uses density-based approximation, Monte Carlo sampling, or learned neural surrogates. 12 corrections total (3 MAJOR + 5 MEDIUM + 2 MINOR + retroactive ref-link plumbing). The replacement framing — "in idealised form X; in practice approximated by Y; the rigorous existence licenses the construction" — was canonized in prob-25 §1 fourth paragraph and §4 closing observation paragraph, and serves as the calibration anchor for all future ML-bridge writing. Net file changes: prob-22 +3, prob-23 +7+1=+8, prob-24 +29, prob-25 itself written with this framing, vae.html +31, natural_gd.html +4. See "Completed Work / 5/4 honest-framing audit" section for the full corrections log.
 
 ---
 
-### Phase 2d: Variational Inference (estimated ~1–2 pages, timing TBD, page IDs deferred)
+### Phase 2d: Variational Inference — **ABSORBED INTO PHASE 2c (5/4/2026)**
 
-**Goal:** Treat Variational Inference as a first-class inference framework, not merely as a VAE preamble.
+The original Phase 2d plan (1–2 separate VI pages) is **superseded** by the prob-26 redesign of 5/4/2026. prob-26 = Variational Inference (Murphy Ch.10 core) covers what was originally split as "ELBO & Mean-Field" + part of "Stochastic & Amortized VI". Topics deliberately deferred from prob-26 — normalizing flows as variational families, IWAE / multi-sample bounds, expectation propagation, wake-sleep, hierarchical / structured / implicit posteriors — are demoted to **trigger-based future work** in the deferred items pool. Each could become its own page when a downstream ML page (diffusion model rigorous foundation, Bayesian Neural Networks, etc.) creates pressure.
 
-**Rationale for independence from ml-12 (VAE):** The VI section inside ml-12 (`vae.html`) is pedagogically motivated (leading toward VAE). A dedicated foundation page is required because:
-- The ELBO decomposition \(\log p(x) = \text{ELBO}(q) + D_{KL}(q \| p(\cdot | x))\) admits a **rigorous proof only after conditional expectation (prob-25) is in place**.
-- CAVI (coordinate ascent VI), SVI (stochastic VI), black-box VI, and the variational perspective on diffusion models are not covered in ml-12.
-- Deferred item #345 ("Variational Inference — Implicit in ml-12 but never formally isolated") has been pending since the 3/28 roadmap revision.
-
-#### prob-XX: Variational Inference — ELBO & Mean-Field (~1 page, likely; may expand)
-- **Topics:** Intractable posteriors and variational family selection. ELBO exact decomposition (rigorous proof using prob-25). Mean-field factorization, Coordinate Ascent VI (CAVI) with Bayesian Gaussian Mixture example. α-divergence alternatives (brief).
-- **Prereqs:** prob-24, prob-25, prob-12 (Shannon-level KL).
-- **ML connection:** Bayesian GMM, topic models (LDA), variational Bayesian inference in graphical models.
-- **Tentative filename:** `variational_inference.html`.
-
-#### prob-XX (conditional): Stochastic & Amortized VI (~1 page, if split occurs)
-- **Topics:** Reparameterization trick (elevated from ml-12), score function estimator, Black-box VI, Stochastic VI (Hoffman et al. 2013). Normalizing flows as variational families. Variational perspective on diffusion models (hierarchical VI).
-- **Possible merge with the VI page above:** If the VI page stays tight at 1 page, this material can be compressed into its "Looking Ahead" section or split only if drafting demands expansion.
-- **ML connection:** VAE amortized posterior, Normalizing Flows, Diffusion ELBO (MIT 6.S184 perspective).
-- **Prereqs:** Phase 2d VI page, ml-12 (VAE, retroactive retrofit target).
-- **Tentative filename:** `stochastic_amortized_vi.html` (if split occurs).
-
-**Phase 2d outcome:** Deferred item #345 fully resolved. ml-12 (VAE) receives retroactive ref-links to the Phase 2d page(s). Foundation established for future ml-XX pages on diffusion models, flow matching, and Bayesian Neural Networks.
+**Backlog-style retrofit triggered by Phase 2c completion:** vae.html ELBO definition + Jensen proof + reparameterization trick exposition will be retrofitted to ref-link to prob-26's anchors (`D-elbo`, `T-elbo_lower_bound`, `T-reparameterization_gradient`) post-publication of prob-26. This is a separate backlog item, not part of any Phase.
 
 ---
 
@@ -280,30 +271,6 @@ Drawing on the **Lie group series expansion pattern** (planned 2 → actual 4 pa
 - **Tentative filename:** `sde_fokker_planck.html`.
 
 **Phase 2e outcome:** Deferred item #342 resolved. Direct commitment to 2026 generative AI foundation. Enables future ml-XX pages on diffusion models, flow matching, Neural ODEs, and score matching.
----
-
-### Phase 2e: Stochastic Calculus Light (estimated 2–3 pages, timing TBD)
-
-**Goal:** Provide the continuous-time stochastic foundation required for modern generative AI (score-based diffusion, Neural SDE, continuous-time RL).
-
-**Strategic 2026 AI/ML commitment:** Diffusion models are the dominant paradigm for generative AI as of 2026 (Stable Diffusion, Sora, molecular/audio generation). The mathematical foundation involves Brownian motion, Itô integral, SDE, and Fokker-Planck equations. MIT course 6.S184 (2026) teaches this explicitly as "Generative AI with SDEs." Without Phase 2e, the curriculum cannot rigorously bridge to this frontier.
-
-**Scope "light" definition:** Construction of Brownian motion, Itô integral (basic definition + key properties), Itô's lemma, SDE as a solution concept, Fokker-Planck for the marginal density. **Excluded:** Stratonovich calculus (brief mention), Malliavin calculus, jump processes, stochastic control theory.
-
-#### prob-28: Brownian Motion — Construction & Properties (1 page, likely; may split)
-- **Topics:** Brownian motion axioms (Gaussian increments, independence, continuity), existence (Kolmogorov extension theorem + Kolmogorov-Čentsov continuity, or Lévy-Ciesielski construction), quadratic variation, nowhere-differentiable paths.
-- **Retroactive closure:** prob-23 L529's forward-reference to Kolmogorov extension theorem materializes here.
-
-#### prob-29: Itô Integral & Itô's Lemma (1 page, likely)
-- **Topics:** Predictable processes, Itô integral for elementary processes, extension via L² isometry, Itô's lemma (one-dimensional), SDE existence and uniqueness (statement level).
-- **Prereqs:** prob-28, prob-24 (for measure-change preview), calc-31 (L² completeness).
-
-#### prob-30: SDE & Fokker-Planck Equation (1 page, likely)
-- **Topics:** SDE solution theory overview, generator of a diffusion, Fokker-Planck equation for the marginal density, Girsanov theorem (statement + intuition), score function interpretation.
-- **ML connection:** Score-based diffusion models (DDPM, continuous-time formulation), Neural SDE, Langevin dynamics for sampling, Fokker-Planck as dual of the reverse-time SDE in diffusion generation.
-- **Prereqs:** prob-29, prob-24 (Girsanov uses RN derivative).
-
-**Phase 2e outcome:** Deferred item #342 resolved. Direct commitment to 2026 generative AI foundation. Enables future ml-XX pages on diffusion models, flow matching, Neural ODEs, and score matching.
 
 ---
 
@@ -317,13 +284,13 @@ If Section III deepening continues beyond Phase 2e, the following pages become n
 
 ### Execution Sequence
 
-Phase 2c is committed; Phase 2d/2e/2f timing depends on interleaving with Phase 3 (Smooth Manifolds), ml-13 (GNN), and Phase 4 (Representation Theory). Candidate orderings:
+Phase 2c is committed; Phase 2e/2f timing depends on interleaving with Phase 3 (Smooth Manifolds), ml-13 (GNN), and Phase 4 (Representation Theory). Candidate orderings (Phase 2d removed — absorbed into Phase 2c via prob-26 redesign):
 
-- **Order A (Section III sprint):** prob-24 → prob-25 → prob-26 → Phase 2d (VI) → Phase 2e (Brownian/Itô/SDE), continuous.
-- **Order B (balanced interleave):** prob-24 → prob-25 → prob-26 → calc-32 → manifold series → Phase 2d → ...
-- **Order C (deferred revisit):** prob-24 → prob-25 → prob-26, then return to Phase 3 (manifolds) / ml-13 / Phase 4 (rep theory), and revisit Phase 2d/2e only when a concrete ML page (VAE retrofit, diffusion model page) creates pressure.
+- **Order A (Section III sprint, original):** prob-24 → prob-25 → prob-26 (now VI) → Phase 2e (Brownian/Itô/SDE), continuous.
+- **Order B (balanced interleave):** prob-24 → prob-25 → prob-26 (now VI) → calc-32 → manifold series → Phase 2e → ...
+- **Order C (deferred revisit):** prob-24 → prob-25 → prob-26 (now VI), then return to Phase 3 (manifolds) / ml-13 / Phase 4 (rep theory), and revisit Phase 2e only when a concrete ML page (diffusion model rigorous foundation page) creates pressure.
 
-**Current default:** Order C. Phase 2c (prob-24/25/26) is committed and should be completed before any Phase 2d/2e judgement. Phase 2d/2e triggers are: (a) starting a dedicated ml-XX diffusion model page, (b) starting a dedicated ml-XX Bayesian Neural Networks page, (c) starting a dedicated ml-XX RLHF/DPO alignment page.
+**Current default (5/4/2026):** Order C. Phase 2c (prob-24 ✅ / prob-25 ✅ / prob-26 in handout-ready state) closes upon prob-26 completion. Phase 2e triggers are: (a) starting a dedicated ml-XX diffusion model rigorous foundation page, (b) starting a dedicated ml-XX continuous-time RL / Neural SDE page. Regular Conditional Distributions (the original prob-26 plan) is also a Phase 2e trigger, since SDE / path-space measures require regular conditional distributions on Polish spaces.
 ---
 
 ## Phase 3: Smooth Manifolds (Summer 2026)
@@ -389,29 +356,6 @@ Page IDs deferred. Estimated scope:
 
 ---
 
-## Lee Preparation: Gap Analysis for calc-29
-
-What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* requires:
-
-| Concept | Current Status | Lee Requirement | Action |
-|---------|---------------|-----------------|--------|
-| Open/closed sets, interior, boundary, closure | ✅ calc-16 | Assumed | — |
-| Convergence, Cauchy sequences | ✅ calc-17 | Assumed | — |
-| Continuity (ε-δ, topological) | ✅ calc-18 | Assumed | — |
-| Completeness, Banach fixed-point | ✅ calc-19 | — | — |
-| Connectedness, path-connectedness | ✅ calc-20 | Ch. 4 (Lee) | — |
-| Compactness, Heine-Borel, sequential | ✅ calc-21 | Ch. 4 (Lee) | — |
-| Homeomorphism, topological invariants | ✅ calc-22 | Ch. 2 (Lee) | — |
-| **Axiomatic topology (open-set axioms)** | ❌ Mentioned but not formal | Ch. 2 definition of manifold | **calc-29 §1** ✅ |
-| **Basis for a topology, second countable** | ❌ | Ch. 2 (manifold definition) | **calc-29 §2** ✅ |
-| **Hausdorff separation axiom** | ❌ | Ch. 2 (manifold definition) | **calc-29 §3** ✅ |
-| **Product topology** | ❌ | Ch. 2 (products of manifolds) | **calc-29 §4** ✅ |
-| **Quotient topology** | ❌ | Ch. 3 (quotient manifolds, Lie groups) | **calc-29 §4** ✅ |
-| **Subspace (induced) topology** | ❌ Implicit | Ch. 2 (submanifolds) | **calc-29 §4** ✅ |
-| **Paracompactness, partition of unity** | ❌ | Ch. 2 (existence of Riemannian metrics) | **calc-29 §5** ✅ |
-
----
-
 ## Filename Registry (Forward Links)
 
 ### Completed Pages
@@ -427,9 +371,10 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 | linalg-28 | `matrix_exponential.html` | ✅ |
 | linalg-29 | `lie_algebras.html` | ✅ |
 | linalg-30 | `lie_correspondence.html` | ✅ |
-| prob-22 | `measure_probability.html` | ✅ |
-| prob-23 | `limit_theorems_product_measures.html` | ✅ |
-| prob-24 | `radon_nikodym.html` | ✅ (4/22/2026) |
+| prob-22 | `measure_probability.html` | ✅ (refined 5/4/2026 for ML-bridge framing) |
+| prob-23 | `limit_theorems_product_measures.html` | ✅ (refined 5/4/2026 for ML-bridge framing + retroactive ref-link to prob-25) |
+| prob-24 | `radon_nikodym.html` | ✅ (4/22/2026, refined 5/4/2026 to 1253 lines) |
+| **prob-25** | `conditional_expectation.html` | ✅ **(5/4/2026, 956 lines)** |
 
 ### Planned Pages (ID assigned)
 
@@ -437,8 +382,7 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 |---------|-----------------|--------|
 | calc-32 | `fourier_hilbert.html` | Next |
 | ml-13 | `graph_neural_networks.html` | Next |
-| **prob-25** | `conditional_expectation.html` | **Phase 2c — drafting handout v1 created 4/22/2026** |
-| **prob-26** | `regular_conditional_distributions.html` | **Phase 2c — after prob-25** |
+| **prob-26** | `variational_inference.html` | **Phase 2c — drafting handout v1 created 5/4/2026 (Murphy Ch.10 core, redesigned from original Regular Conditional Distributions plan)** |
 
 ### Planned Pages (ID deferred — assigned at drafting time)
 
@@ -448,8 +392,9 @@ What calc-16~22 already cover vs. what Lee's *Introduction to Smooth Manifolds* 
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | ml-14 | 1 | `equivariant_nn.html` | After representation theory |
-| **Variational Inference (prob-XX, Phase 2d)** | ~1–2 | `variational_inference.html` (+ possibly `stochastic_amortized_vihtml`) | Triggered by Phase 2c completion (prob-25 + prob-26) + VAE retrofit / Bayesian NN / diffusion ml-page demand |
 | **Stochastic Calculus (prob-XX, Phase 2e)** | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Triggered by diffusion ml-page / Neural SDE / physical AI page demand |
+| **Regular Conditional Distributions (prob-XX, demoted from Phase 2c)** | ~1 | `regular_conditional_distributions.html` | Triggered by Phase 2e SDE / path-space measures pages (Polish-space disintegration is required for Itô calculus filtration foundations) |
+| **Advanced VI topics (prob-XX, demoted from original Phase 2d)** | ~1–2 | TBD (`normalizing_flows.html`, `expectation_propagation.html`, `iwae_tighter_bounds.html` candidates) | Triggered by individual ML-application pressure: normalizing flows by diffusion model rigorous foundation, EP by graphical-model inference work, IWAE by tighter-bound research applications |
 | Quivers (disc-XX) | ~1 | `quivers.html` | Backlog |
 | Category Theory (disc-XX) | ~2–3 | TBD | Backlog |
 | DEC (disc-XX) | ~1–2 | TBD | Backlog |
@@ -511,12 +456,11 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 | **Schwartz Space & Distributions** | Requires measure-theoretic machinery beyond calc-30; primarily needed for PDE theory | If a PDE or generalized function page is planned |
 | **Pontryagin Duality** (Fourier on groups) | Elegant but requires locally compact abelian groups + Haar measure; far from current scope | After linalg-27~30 (Lie groups) + calc-32 (Fourier) + linalg-XX (representation theory), if harmonic analysis track emerges |
 | **Spectral Theory of the Laplacian** (continuous) | Natural extension of calc-27 + calc-32; connects Fourier eigenfunctions to Laplace-Beltrami | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
-| **Lp Duality via Radon-Nikodym** | Full proof of (Lp)* ≅ Lq requires Radon-Nikodym derivative | **→ Phase 2c (prob-24):** The RN theorem is the critical bridge; calc-31 retrofit will ref-link to prob-24 after completion |
-| **Conditional Expectation (Radon-Nikodym)** | Measure-theoretic conditional expectation, filtrations, martingale basics | **→ Phase 2c (prob-25):** Conditional expectation proper (filtrations, martingale basics remain deferred to separate Phase 2f candidate page) |
 | **Continuous-Time Stochastic Processes** | Brownian motion, Itô integral, SDEs; requires solid measure-theoretic probability | **→ Phase 2e (prob-XX, ~2–3 pages):** Triggered by diffusion model / Neural SDE / physical AI page demand |
+| **Regular Conditional Distributions** (NEW, demoted from Phase 2c on 5/4/2026) | Polish space + disintegration theorem; required for pointwise reading of \(\mathbb{E}[X\|Y=y]\) and for path-space measures in stochastic calculus | **→ Phase 2e prerequisite** (will be authored when SDE / Itô filtration work creates pressure); not blocking for prob-26 = VI which works under density assumption |
 | **Fiber Bundles & Gauge Theory** | Requires mature manifold theory + Lie groups (linalg-27~30) | If GDL viewpoint page demands gauge equivariance machinery |
 | **String Diagrams** | Categorical tool; requires disc-XX (Category Theory) | After CDL viewpoint page is planned |
-| **Variational Inference** | Implicit in ml-12 (VAE) but never formally isolated | **→ Phase 2d (prob-XX, ~1–2 pages):** Triggered by the need for rigorous ELBO foundation; ml-12 VAE page will receive retroactive ref-links after completion |
+| **Advanced VI topics** (NEW, demoted from original Phase 2d on 5/4/2026) | Normalizing flows as variational families, IWAE / multi-sample bounds, expectation propagation, wake-sleep, hierarchical / structured / implicit posteriors — all topics from Murphy MLBook2 Ch.10 deliberately excluded from prob-26's core scope | **→ Triggered individually by ML-application pressure:** normalizing flows by diffusion model rigorous foundation, EP by graphical-model inference work, IWAE by tighter-bound research applications |
 | **Uniform Integrability & Martingale Convergence** (NEW) | UI + Vitali convergence theorem + discrete-time martingale basics + Doob convergence | **→ Phase 2f candidate page.** Triggered by RL theory / stochastic approximation / bandit algorithms pages; prereq: Phase 2c complete. Resolves prob-23 L290 UI forward-reference. |
 | **Variational Representations & f-Divergences** (NEW) | Donsker-Varadhan formula, f-divergences, Pinsker's inequality; foundation for MINE / f-GAN / InfoNCE / PAC-Bayes | **→ Phase 2f candidate page.** Triggered by contrastive learning / mutual information estimation / generalization theory pages; prereq: Phase 2c complete. |
 | **Characteristic Functions & CLT (Rigorous)** (NEW) | Measure-theoretic version of CLT via characteristic functions + Lévy continuity theorem | **→ Phase 2f candidate page.** Triggered by advanced asymptotic statistics or Gaussian process limiting behavior pages; prereq: Phase 2c + calc-32 (Fourier in Hilbert). |
@@ -551,7 +495,17 @@ These topics are explicitly deferred — not forgotten, but not on the critical 
 ---
 
 ## Changelog
-## Changelog
+- **5/4/2026 (post prob-25 completion):** Phase 2c third-page redesign + Section III ML-bridge honest-framing audit + Filename Registry consolidation.
+  - **prob-25 (`conditional_expectation.html`) completed**: 956 lines (within 860–1160 estimate). 11 theorem blocks, 13 proof blocks, 9 ref-links. 10 new anchor IDs registered. Final structure: 4 sections (Why CE / Definition via RN / Properties / In Practice) — original §5 Looking Ahead absorbed as a closing paragraph in §4 per Yusuke's "1 paragraph at the end is enough" verdict during drafting.
+  - **prob-25 honest-framing convention established**: §1 fourth paragraph and §4 closing observation paragraph jointly establish the framing "in idealised form X; in practice approximated by Y; the rigorous existence licenses the construction" + the meta-observation that "this is a fact about today's implementations, not a verdict on the necessity of the underlying mathematics" with the historical analogy of Hilbert spaces preceding QM and measure theory preceding modern probability. This framing is canonized for all future ML-bridge pages.
+  - **prob-25 5-location specific-page reference removal**: Original prob-25 wrote "the next chapter" / "the upcoming page on regular conditional distributions" in 5 locations (§2 intro, §2.2 closing, §2.4, §4 Bayesian, §4 Looking Ahead). All five retrofitted to general topic references ("a topic in measure-theoretic probability", "the regular-conditional-distribution framework") without specific-page promises. Triggered by Yusuke's observation that the site is hypertext-not-sequential — pages are independent reading units, not chapters in a book.
+  - **prob-26 redesigned: Regular Conditional Distributions → Variational Inference**: Original Phase 2c plan had prob-26 = RegCondDist (Polish + disintegration). After (a) discussion of what current ML actually uses, (b) Yusuke's confirmation that "ML doesn't currently use this" doesn't imply "math is not needed" (so RegCondDist still has long-term curriculum value), but (c) redesign rationale that VI is more directly downstream of prob-25 §4 + has been a deferred backlog item since 3/28, prob-26 is redesigned around Murphy MLBook2 Chapter 10 core (10.1.1, 10.1.2, 10.1.4, 10.2.1, 10.2.3, 10.3.1). RegCondDist demoted to trigger-based future work (will be authored when Phase 2e SDE / path-space measures pages create pressure). prob-25 §2.4 retrofit on 5/4 left no orphaned forward link.
+  - **Phase 2d absorbed into Phase 2c**: prob-26 = VI covers what was originally Phase 2d's first page. Topics deliberately deferred — normalizing flows, IWAE, EP, wake-sleep — demoted to trigger-based "Advanced VI topics" in deferred items pool.
+  - **prob-26 drafting handout v1 created** (`prob26_drafting_handout.md`, 422 lines). Includes: page identity, strategic position with Murphy Ch.10 include/defer/out-of-scope decision table, 5-section plan, 7-anchor ID registry, dependency audit (with vae.html `D-elbo` ownership migration plan), self-review checklist, 3-round drafting plan, 5 open questions to resolve during drafting, post-publication checklist.
+  - **Section III ML-bridge honest-framing audit (12 corrections)**: Systematic sweep across prob-22, 23, 24, 25 + vae.html + natural_gd.html. Caught and corrected recurring overclaim pattern "ML algorithm X *is* / *computes with* the rigorous mathematical object Y". Specific corrections: (a) prob-22 L304 "VAEs routinely operate on mixed distributions" → "discrete-latent VAEs (Gumbel-Softmax, VQ-VAE) and hybrid models require dominating-measure-free framework"; (b) prob-22 L685 "DCT justifies SGD" → "DCT licenses, under stated regularity hypotheses, the gradient interchange in SGD"; (c) prob-23 L353 "DCT is the theoretical foundation of SGD ... gradient clipping motivated by DCT failure" → "one rigorous ingredient + Pascanu-Mikolov-Bengio 2013 historical attribution + DCT-failure interpretation labeled as interpretive"; (d) prob-24 §4 — 4 separate corrections detailed in prob-24 status entry above; (e) vae.html L80–91 measure-theoretic framing → "idealised abstract framework that the densities and ELBO decomposition implemented here approximate"; (f) vae.html L72–78 "posterior variance proxies epistemic uncertainty" → epistemic-vs-aleatoric distinction + Kendall & Gal 2017 reference + caveat that VAE encoder doesn't separate the two; (g) vae.html L460 "real-world systems use VAE σ for OOD detection" → "pedagogical analogy + Nalisnick et al. 2019 published failures of generative-model OOD detection"; (h) vae.html L344+L389 hand-coded encoder mapping presented as "VAE essential property" → explicitly framed as "hand-design a fixed mapping for pedagogical demo, not learned"; (i) natural_gd.html L195 "the correct (information-geometric) metric" → "the information-geometric metric ... not universally the 'correct' notion of distance for every learning problem". Net file deltas: prob-22 +3, prob-23 +8, prob-24 +29, prob-25 written with framing, vae.html +31, natural_gd.html +4. The conventions established here serve as the calibration anchor for prob-26 and all subsequent ML-bridge writing.
+  - **prob-23/24 retroactive ref-link plumbing applied**: 4 pre-existing CE forward references in prob-23 (L749) and prob-24 (§1, §5.3 closing, §5 "Next Chapter") wired to prob-25's `T-conditional_expectation_definition` with `class="ref-link"`. prob-24 "Next Chapter" paragraph also corrected to align with prob-25's continuous-case deferral framing ("subsumes both discrete and continuous case" → "discrete recovered verbatim; continuous requires further machinery, taken up separately").
+  - **curriculum.json prob-25 entry prepared** (`curriculum_prob25_entry.json`, ready for Yusuke manual merge): part 25, icon `𝔼[·|𝒢]`, prereqs `["prob-24", "calc-25"]`, sections list reflects 4-section final structure, mapCoords null per protocol, description and tesseraMessage calibrated to prob-22/23 length norms (description 436 chars, tesseraMessage 148 chars).
+  - **Roadmap consolidation**: Phase 2d section replaced with "ABSORBED" marker; Phase 2c heading updated to "2 complete, 1 in handout-ready state"; Filename Registry's prob-25 row moved from Planned to Completed Pages; prob-26 row updated to `variational_inference.html`; Order C language updated to remove Phase 2d references. Section III page count updated from 23 → 25 (prob-24, 25 added).
 - **4/22/2026 (PM):** prob-24 completed; Phase 2c restructured.
   - **prob-24 (`radon_nikodym.html`) completed**: 1226 lines after critical review. von Neumann L² proof delivered as planned. 9 theorem/definition anchors registered using new `T-foo_bar` / `D-foo_bar` underscore convention. 12-unit critical review identified 17 MAJOR + 27 MINOR issues, all resolved across 3 fix rounds. One genuine proof bug caught (ε-δ characterization required `limsup` not `lim` for non-monotonic sequence). Chain rule + change-of-variables retained as Proposition inside §4 with statement order (i) → (ii) and proof order (ii) full → (i) corollary (per author decision during drafting).
   - **Anchor naming convention update**: `T-` and `D-` prefix retained, but the body separator switched from hyphen to underscore (e.g., `T-radon_nikodym`, not `T-radon-nikodym`). Effective from prob-24 onward. Pre-prob-24 pages (prob-22, prob-23, calc-XX, etc.) retain their existing hyphen anchors.
