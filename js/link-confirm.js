@@ -78,6 +78,10 @@
         if (link.classList.contains('ref-link')) return false;
         // Skip explicit opt-out
         if (link.classList.contains('no-confirm')) return false;
+        // Skip the "Go to page" button inside our own confirm box
+        if (link.classList.contains('link-confirm-go')) return false;
+        // Skip any link inside an existing confirm box (defense in depth)
+        if (link.closest('.link-confirm-box')) return false;
         // Skip pure in-page anchors
         if (href.charAt(0) === '#') return false;
         // Skip non-http schemes (mailto:, tel:, javascript:, etc.)
@@ -193,7 +197,10 @@
         const goLink = document.createElement('a');
         goLink.href = href;
         goLink.textContent = 'Go to page →';
+        goLink.className = 'link-confirm-go';
         // Normal navigation on click — no preventDefault.
+        // The "link-confirm-go" class is checked in shouldIntercept()
+        // to prevent the delegate handler from re-intercepting this link.
         footer.appendChild(goLink);
         container.appendChild(footer);
 
@@ -363,6 +370,11 @@
         // rather than per link. This handles dynamically-inserted links too.
         sectionContents.forEach(function (sc) {
             sc.addEventListener('click', function (e) {
+                // Defense in depth: if the click originated inside our own
+                // confirm box (which on mobile is inserted as a sibling
+                // inside .section-content), do not re-intercept.
+                if (e.target.closest('.link-confirm-box')) return;
+
                 const link = e.target.closest('a');
                 if (!link || !sc.contains(link)) return;
                 if (!shouldIntercept(link)) return;
