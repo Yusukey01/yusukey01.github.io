@@ -115,17 +115,6 @@ Representation Theory        │                    │              │        
   ◈ ml-XX: CDL Overview ← disc-XX (Category Theory), ml-13
   ◈ Quantum computation topics ← calc-32 (Fourier/Hilbert), calc-27 (Spectral)
 ```
-
----
-
-## Completed Work
-
-### Phase 1 — Completed Early (March 2026)
-calc-29 (Topological Spaces), calc-30 (Lp Spaces — Construction), calc-31 (Lp Completeness & Convergence; split from original calc-30 in April), prob-22 & prob-23 (Measure-Theoretic Probability).
-
-### Phase 2a — Lie Group Series (April 2026) ✅
-linalg-27 ~ linalg-30: Lie Groups, Matrix Exponential, Lie Algebras, Lie Correspondence (filenames in Filename Registry). Originally planned as 2 pages, expanded to 4 — the baseline calibration for the Page Count Estimation rule (Key Learnings §5).
-
 ---
 
 ## Phase 2b: Current & Near-Term Work
