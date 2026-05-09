@@ -26,15 +26,12 @@ uses_python: false
 
         <div class="container">
 
-            <!-- ============================================================ -->
-            <!-- §1  Why Conditional Expectation?                              -->
-            <!-- ============================================================ -->
             <section id="intro" class="section-content">
                 <h2>Why Conditional Expectation?</h2>
 
                 <p>
-                    Elementary probability offers two distinct constructions that both go by the name
-                    "conditional expectation." Given an event \(A\) with \(\mathbb{P}(A) > 0\), one writes
+                    Elementary probability offers two distinct constructions that both go by the name <strong>conditional expectation</strong>.
+                    Given an event \(A\) with \(\mathbb{P}(A) > 0\), one writes
                     \[
                     \mathbb{E}[X \mid A] \;=\; \frac{1}{\mathbb{P}(A)} \int_A X \, d\mathbb{P},
                     \]
@@ -43,11 +40,10 @@ uses_python: false
                     \[
                     \mathbb{E}[X \mid Y = y] \;=\; \int x \, p(x \mid y) \, dx,
                     \]
-                    a function of \(y\). These two formulas address visibly different situations: the first
-                    averages over a positive-probability event, the second averages along a measure-zero
-                    fibre using a conditional density. Neither formula reduces to the other, and the second
-                    one is not even well-defined when \(p(x \mid y)\) fails to exist as a function (e.g.,
-                    when \(Y\) is mixed discrete-continuous, or supported on a fractal).
+                    a function of \(y\). These two formulas address visibly different situations: the first averages over a positive-probability event, 
+                    the second averages along a measure-zero fibre using a conditional density. Neither formula reduces to the other, and the second
+                    one is not even well-defined when \(p(x \mid y)\) fails to exist as a function 
+                    (e.g., when \(Y\) is mixed discrete-continuous, or supported on a fractal).
                 </p>
 
                 <p>
@@ -79,64 +75,47 @@ uses_python: false
                 </p>
 
                 <p>
-                    The conditional expectation also underlies, in idealised form, several core
-                    constructions of modern machine learning — though, as the closing section of this
-                    chapter discusses in detail, the rigorous object built here is rarely instantiated
-                    directly in code. The E-step of the expectation-maximisation algorithm is, in its
-                    exact form, a conditional expectation; in practice it is computed by a discrete sum
-                    when the latent variable is finite, and by Monte Carlo sampling otherwise. The
-                    Bellman equation of reinforcement learning is the tower property in disguise; in
-                    practice it is propagated by single-trajectory stochastic approximation rather than
-                    by exact integration. The Bayesian posterior predictive distribution
-                    \(p(x_{\text{new}} \mid D) = \mathbb{E}[p(x_{\text{new}} \mid \theta) \mid D]\) is,
-                    in its exact form, a conditional expectation under the posterior measure; in
-                    practice it is approximated by Markov chain Monte Carlo or by variational surrogates.
-                    The evidence lower bound (ELBO) of variational inference decomposes, exactly, into
-                    terms that are conditional expectations against a variational measure; the
-                    decomposition is the algorithmic foundation of the entire variational programme. The
-                    present chapter installs the rigorous definition against which all of these
-                    constructions — and the approximations actually used to compute them — can be
-                    calibrated. That the rigorous object is not currently instantiated in code is a fact
-                    about today's implementations, not a verdict on the necessity of the underlying
-                    mathematics: the existence of \(\mathbb{E}[X \mid \mathcal{G}]\) as a well-defined
-                    object is what makes any of these approximations approximations of <em>something</em>,
-                    and the history of mathematical foundations entering practice with a lag — Hilbert
-                    spaces preceding quantum mechanics, measure theory preceding modern probability —
-                    suggests that future, more rigorously grounded ML systems may invoke the construction
-                    of this page far more directly than current ones do.
+                    The conditional expectation also underlies, in idealised form, several core constructions of modern machine learning — though, 
+                    as the closing section of this chapter discusses in detail, the rigorous object built here is rarely instantiated
+                    directly in code. The E-step of the expectation-maximisation algorithm is, in its exact form, a conditional expectation; 
+                    in practice it is computed by a discrete sum when the latent variable is finite, and by Monte Carlo sampling otherwise. The
+                    Bellman equation of reinforcement learning is the tower property in disguise; in practice it is propagated by single-trajectory 
+                    stochastic approximation rather than by exact integration. The Bayesian posterior predictive distribution
+                    \[
+                    p(x_{\text{new}} \mid D) = \mathbb{E}[p(x_{\text{new}} \mid \theta) \mid D]
+                    \]
+                    is, in its exact form, a conditional expectation under the posterior measure; in practice it is approximated by Markov chain Monte Carlo 
+                    or by variational surrogates. The <a href="variational_inference.html"><strong>evidence lower bound (ELBO) of variational inference</strong></a> 
+                    decomposes, exactly, into terms that are conditional expectations against a variational measure; the decomposition is the algorithmic foundation 
+                    of the entire variational programme. The present chapter installs the rigorous definition against which all of these
+                    constructions — and the approximations actually used to compute them — can be calibrated. That the rigorous object is not currently instantiated in code 
+                    is a fact about today's implementations, not a verdict on the necessity of the underlying mathematics: the existence of \(\mathbb{E}[X \mid \mathcal{G}]\) 
+                    as a well-defined object is what makes any of these approximations approximations of <em>something</em>, and the history of mathematical foundations 
+                    entering practice with a lag — Hilbert spaces preceding quantum mechanics, measure theory preceding modern probability — suggests that future, more rigorously 
+                    grounded ML systems may invoke the construction of this page far more directly than current ones do.
                 </p>
 
                 <p>
-                    Before turning to the construction, we fix the notation used throughout. The
-                    underlying probability space is \((\Omega, \mathcal{F}, \mathbb{P})\), and \(\mathcal{G}\)
-                    always denotes a sub-\(\sigma\)-algebra of \(\mathcal{F}\) — a smaller collection of
-                    measurable sets representing partial information. The restriction of \(\mathbb{P}\) to
-                    \(\mathcal{G}\) is written \(\mathbb{P}|_{\mathcal{G}}\); it is the same probability
-                    measure regarded as defined only on the smaller \(\sigma\)-algebra. The object we are
-                    going to construct is denoted \(\mathbb{E}[X \mid \mathcal{G}]\), and when
-                    \(\mathcal{G} = \sigma(Y)\) we abbreviate it as \(\mathbb{E}[X \mid Y]\). Throughout,
-                    "\(\mathbb{P}\)-a.s." means almost surely with respect to \(\mathbb{P}\); we use this
-                    qualifier in place of "\(\mathbb{P}\)-a.e." in the probabilistic context, consistent with
+                    Before turning to the construction, we fix the notation used throughout. The underlying probability space is \((\Omega, \mathcal{F}, \mathbb{P})\), 
+                    and \(\mathcal{G}\) always denotes a sub-\(\sigma\)-algebra of \(\mathcal{F}\) — a smaller collection of measurable sets representing partial information. 
+                    The restriction of \(\mathbb{P}\) to \(\mathcal{G}\) is written \(\mathbb{P}|_{\mathcal{G}}\); it is the same probability measure 
+                    regarded as defined only on the smaller \(\sigma\)-algebra. The object we are going to construct is denoted \(\mathbb{E}[X \mid \mathcal{G}]\), 
+                    and when \(\mathcal{G} = \sigma(Y)\) we abbreviate it as \(\mathbb{E}[X \mid Y]\). Throughout, "\(\mathbb{P}\)-a.s." means almost surely 
+                    with respect to \(\mathbb{P}\); we use this qualifier in place of "\(\mathbb{P}\)-a.e." in the probabilistic context, consistent with
                     earlier chapters of this section.
                 </p>
             </section>
 
-            <!-- ============================================================ -->
-            <!-- §2  Definition via Radon-Nikodym                              -->
-            <!-- ============================================================ -->
             <section id="definition" class="section-content">
                 <h2>Definition via Radon-Nikodym</h2>
 
                 <p>
-                    The construction proceeds in three steps. We first associate to each integrable random
-                    variable \(X\) and each sub-\(\sigma\)-algebra \(\mathcal{G}\) a finite signed measure
-                    \(\nu_X\) on \(\mathcal{G}\). We then verify that \(\nu_X\) is absolutely continuous
-                    with respect to \(\mathbb{P}|_{\mathcal{G}}\), so that the Radon-Nikodym theorem applies.
-                    The resulting Radon-Nikodym derivative is, by definition, the conditional expectation.
-                    The discrete case is recovered immediately, and the continuous case is identified as
-                    requiring one further layer of machinery — a topic in its own right within
-                    measure-theoretic probability, namely the framework of regular conditional
-                    distributions and the disintegration theorem.
+                    The construction proceeds in three steps. We first associate to each integrable random variable \(X\) and each 
+                    sub-\(\sigma\)-algebra \(\mathcal{G}\) a finite signed measure \(\nu_X\) on \(\mathcal{G}\). We then verify that 
+                    \(\nu_X\) is absolutely continuous with respect to \(\mathbb{P}|_{\mathcal{G}}\), so that the Radon-Nikodym theorem applies.
+                    The resulting Radon-Nikodym derivative is, by definition, the conditional expectation. The discrete case is recovered immediately, 
+                    and the continuous case is identified as requiring one further layer of machinery — a topic in its own right within
+                    measure-theoretic probability, namely the framework of regular conditional distributions and the disintegration theorem.
                 </p>
 
                 <h3>The Signed Measure Associated with \(X\)</h3>
@@ -154,9 +133,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    Three properties of \(\nu_X\) must be checked before the Radon-Nikodym theorem can be
-                    invoked: that \(\nu_X\) is a signed measure on \((\Omega, \mathcal{G})\), that it is
-                    finite, and that it is absolutely continuous with respect to \(\mathbb{P}|_{\mathcal{G}}\).
+                    Three properties of \(\nu_X\) must be checked before the Radon-Nikodym theorem can be invoked: 
+                    that \(\nu_X\) is a signed measure on \((\Omega, \mathcal{G})\), that it is finite, and 
+                    that it is absolutely continuous with respect to \(\mathbb{P}|_{\mathcal{G}}\).
                 </p>
 
                 <div class="proof">
@@ -164,8 +143,8 @@ uses_python: false
                     <p>
                         We check the conditions of
                         <a href="radon_nikodym.html#D-signed_measure" class="ref-link"><strong>signed measure</strong></a>.
-                        Clearly \(\nu_X(\emptyset) = \int_\emptyset X \, d\mathbb{P} = 0\). For countable
-                        additivity, let \((A_n)_{n \geq 1}\) be a sequence of pairwise disjoint sets in
+                        Clearly \(\nu_X(\emptyset) = \int_\emptyset X \, d\mathbb{P} = 0\). For countable additivity, 
+                        let \((A_n)_{n \geq 1}\) be a sequence of pairwise disjoint sets in
                         \(\mathcal{G}\) and write \(A = \bigsqcup_n A_n\). The sequence
                         \(S_N = \sum_{n=1}^N X \mathbf{1}_{A_n}\) converges \(\mathbb{P}\)-a.s. to
                         \(X \mathbf{1}_A\), and is dominated in absolute value by \(|X| \in L^1(\mathbb{P})\).
@@ -178,10 +157,12 @@ uses_python: false
                         \;=\; \sum_{n=1}^\infty \nu_X(A_n),
                         \]
                         and the series converges absolutely because
-                        \(\sum_n |\nu_X(A_n)| \leq \sum_n \int_{A_n} |X| \, d\mathbb{P}
-                        = \int_A |X| \, d\mathbb{P} \leq \mathbb{E}[|X|] < \infty\). Since \(X \in L^1\),
-                        \(\nu_X\) takes values in \(\mathbb{R}\) (never \(\pm \infty\)), so the
-                        sign-restriction condition is vacuously satisfied.
+                        \[
+                        \sum_n |\nu_X(A_n)| \leq \sum_n \int_{A_n} |X| \, d\mathbb{P}
+                        = \int_A |X| \, d\mathbb{P} \leq \mathbb{E}[|X|] < \infty. 
+                        \]
+                        Since \(X \in L^1\), \(\nu_X\) takes values in \(\mathbb{R}\) 
+                        (never \(\pm \infty\)), so the sign-restriction condition is vacuously satisfied.
                     </p>
                 </div>
 
@@ -404,9 +385,6 @@ uses_python: false
                 </p>
             </section>
 
-            <!-- ============================================================ -->
-            <!-- §3  Properties of Conditional Expectation                     -->
-            <!-- ============================================================ -->
             <section id="properties" class="section-content">
                 <h2>Properties of Conditional Expectation</h2>
 
@@ -782,9 +760,6 @@ uses_python: false
                 </p>
             </section>
 
-            <!-- ============================================================ -->
-            <!-- §4  Conditional Expectation in Practice                       -->
-            <!-- ============================================================ -->
             <section id="applications" class="section-content">
                 <h2>Conditional Expectation in Practice</h2>
 
@@ -906,7 +881,7 @@ uses_python: false
                 <h3>Variational Inference and the ELBO</h3>
 
                 <p>
-                    Variational inference approximates an intractable posterior \(p(z \mid x)\) by a
+                    <a href="variational_inference.html"><strong>Variational inference</strong></a> approximates an intractable posterior \(p(z \mid x)\) by a
                     distribution \(q(z \mid x)\) chosen from a tractable family. The <strong>evidence lower
                     bound</strong>
                     \[
