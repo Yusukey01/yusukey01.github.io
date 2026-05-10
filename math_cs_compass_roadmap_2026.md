@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota
-**Last Updated:** 5/9/2026
+**Last Updated:** 5/10/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -74,19 +74,35 @@ Each return visit happens at a higher mathematical altitude. The pillar is not c
 
 ### 2.3 Open-ended GDL (forward-pointer obligation)
 
-Every GDL-related page must include forward-pointers to "the next mathematics" the reader could pursue from there:
+GDL-related pages must include forward-pointers to "the next mathematics" the reader could pursue from there:
 
 - **ml-13 (GNN)** → manifold series, representation theory, spectral graph theory
-- **ml-14 (Equivariant NN)** → fiber bundles, gauge theory, information geometry
-- **ml-XX (GDL Overview)** → Hodge theory, stochastic geometry, geometric measure theory
 
-This obligation is **not stated explicitly in each page**. Readers will infer the open-endedness from the forward-pointer structure across pages without need for a meta-declaration.
+This obligation is **not stated explicitly in each page**. Readers will infer the open-endedness from the forward-pointer structure without need for a meta-declaration.
 
-### 2.4 Track sequencing (already in current roadmap; no change)
+**Note**: ml-13 is the only Section V page committed to the GDL pillar. Continuous-group equivariance (Equivariant NN, Peter-Weyl) and a GDL Overview page are NOT committed Section V content — see §2.4 below and Part 9.
 
-`ml-13 (GNN) → manifold series (calc-XX, ~3 pages) → representation theory (linalg-XX, ~3–4 pages) → ml-14 (Equivariant NN) → ml-XX (GDL Overview)`
+### 2.4 Track sequencing
 
-The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` remains a prerequisite capstone for the Peter-Weyl bridge later in the sequence. Order: `calc-32` first (capstone of FA block), then `ml-13`, then manifold series.
+`calc-32 (Fourier in Hilbert Spaces) → ml-13 (GNN)`
+
+This is the only committed sequence on the GDL pillar's Section V side. After ml-13, the GDL pillar's Section V "window" role is **fulfilled**. The manifold series (Section II) and representation theory (Section I, deferred) proceed on **their own merit**, not as ml-XX prerequisites — see Part 9 and §2.5.
+
+`calc-32` remains a capstone of the FA block; its motivation now stands on its own (Hilbert-space harmonic analysis as a pure-math endpoint).
+
+### 2.5 Section V is a window, not a prerequisite chain
+
+This is a **load-bearing principle of the entire site architecture** and is recorded here once, in Part 2 (the GDL pillar discussion), because the GDL pillar is where the temptation to build long Section V chains is strongest.
+
+**The principle**: Section V is a window into mathematical applications and a doorway to further mathematics — NOT a venue for systematic mathematical exposition. Section V pages are **co-readable** with Sections I-IV, not strictly downstream.
+
+**Consequences**:
+
+- Section V pages can be written **before** their associated Section I-IV foundation pages exist. Forward pointers using descriptive text are the standard pattern. ml-11 (NGD) is the precedent: written without manifold pages existing in Section II.
+- Deep mathematical content (Lie theory, representation theory, manifolds, category theory, measure-theoretic probability, stochastic calculus) belongs to Sections I-IV. These pages are written for those sections' own merit, **not as ml-XX prerequisites**.
+- The GDL pillar's Section V role is fulfilled by ml-13. Continuous-group equivariance is **not committed** as Section V content. If a serious continuous-group equivariant NN page is ever written, it is on Section I/II terms, not driven by an ml-XX "prerequisite chain."
+
+**Application to all three pillars**: each of GDL, CDL, and Quantum is a "window" from Section V's side. The pillar's Section V role is fulfilled once readers are informed the framework exists; deep mathematical content for any pillar belongs to Sections I-IV.
 
 ---
 
@@ -192,7 +208,7 @@ The asymmetry is decisive: **A is mathematically settled but applied; B is resea
 
 **Sub-domain A + B**: combined into **a single Section V viewpoint page** ("Quantum Information Science Overview" or similar — `ml-XX`).
 - Rationale: A's mathematics is fully covered by the existing FA block (calc-23, 25, 27, 32); a dedicated math page is unnecessary. B introduces tensor product structure, qubit encoding, and headline algorithms (Shor, Grover, VQE) at a viewpoint level. One Section V page suffices to give the reader a structured tour of both, with ref-links back into Section II for the underlying machinery.
-- Position alongside ml-13 (GNN) and ml-14 (Equivariant NN) as a Section V viewpoint, **not** a pillar.
+- Position alongside ml-13 (GNN) and ml-14 (Diffusion) as a Section V viewpoint, **not** a pillar.
 - **Pace**: not on the active path. Trigger-tolerant; can be written when GDL main-track work creates breathing room.
 
 **Sub-domain C**: belongs in **Section I**, as an extension of the existing crypto entry point at linalg-26 (Finite Fields).
@@ -335,10 +351,10 @@ Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had pri
 **Soft prereq from §6.1 (Fourier-PDE mini-track)**: the Fokker-Planck page benefits from the heat equation page being written first (Fokker-Planck = parabolic PDE = heat equation + drift). Not blocking — Phase 2e can begin with Brownian motion and Itō independently — but the Fokker-Planck page should be sequenced after the heat equation page if both tracks are active.
 
 **Bandwidth note**: with Phase 2e promoted, the active track inventory is:
-1. **GDL main track** (calc-32 → ml-13 → manifolds → rep theory → ml-14)
+1. **GDL main track** (calc-32 → ml-13 → ml-14 = Diffusion). ml-13 fulfills the GDL pillar's Section V role; ml-14 pivots to Diffusion (see Part 9). The manifold series and representation theory proceed on Section II/I's own merit, not as ml-XX prerequisites (§2.5).
 2. **CDL slow-burn** (Stage 0: Yusuke reads Leinster Ch.1)
-3. **Phase 2e slow-burn** (BM page first)
-4. **Fourier-PDE mini-track** (3 pages, slow-burn or focused burst, Yusuke's pace)
+3. **Phase 2e slow-burn** (BM page first) — directly motivates ml-14 (Diffusion)
+4. **Fourier-PDE mini-track** (3 pages, slow-burn or focused burst, Yusuke's pace) — heat-equation page lays foundation for Fokker-Planck and indirectly for ml-14
 5. **Crypto Track** (mood-driven, no schedule)
 
 This is a **5-track configuration**, larger than any prior roadmap state. Sustainability check is implicitly delegated to Yusuke's mood-driven prioritization across sessions; if any one track stalls, the others continue. The roadmap does not enforce a single sequence.
@@ -365,17 +381,50 @@ Inner products on tangent spaces, metric tensor \(g\), geodesics, Levi-Civita co
 
 ---
 
-## Part 9 — Phase 4: Representation Theory & Equivariance
+## Part 9 — ml-14: Diffusion Models
 
-### 9.1 linalg-XX: Representation Theory (~3–4 pages)
+**Status**: ml-14 is committed as a **window into Diffusion Models** (score-based generative models, the dominant generative-AI paradigm of the 2020s). This replaces the earlier Part 9 plan (Representation Theory + Equivariant NN), which has been retired — see §9.3.
 
-Group representations, subrepresentations, irreducibility, Maschke, Schur, character theory (finite groups), Lie group representations, Peter-Weyl. Finite group representations fill ≥2 pages; Lie group representations add 1–2 more. **Connection:** Peter-Weyl bridges back to calc-32 (Fourier as harmonic analysis on groups). **Prereqs:** linalg-27~30, linalg-22.
+### 9.1 Why Diffusion
 
-### 9.2 ml-14: Equivariant Neural Networks (`equivariant_nn.html`)
+- **Time-relevant**: Diffusion is the central generative-AI paradigm of 2020s (image, video, 3D, audio generation: Stable Diffusion, DALL-E, Sora, Veo). Section V's "applications" character calls for it.
+- **Mathematically rich**: SDEs, Fokker-Planck, score matching — covers a wide range of forthcoming Section II/III material. Functions both as **window to advanced math** and **showcase of math in application**, fitting Section V's dual role (§2.5).
+- **Coherence with ml-11/12**: continues the probabilistic-modeling thread (ml-11 information geometry → ml-12 latent-variable models → ml-14 stochastic-process models).
+- **No prerequisite blockage**: can be written even though Section II/III don't yet have stochastic-process or SDE pages. Standard ml-11 pattern applies (§2.5).
+- **Direct Phase 2e motivation**: ml-14 retroactively motivates Phase 2e's Brownian / Itō / SDE / Fokker-Planck pages. Phase 2e is no longer "trigger-based slow-burn motivated abstractly by Murphy Ch.25" — it has a concrete Section V destination.
 
-Generalize from permutation invariance (GNN) to continuous group equivariance (SO(3), SE(3)). **Key insight:** "The architecture encodes the symmetry." **Prereqs:** linalg-27~30, linalg-XX (rep theory), ml-13.
+### 9.2 ml-14 sketch (not commitment)
 
-At this point, readers have seen permutation equivariance (GNN), rotation/translation equivariance (Equivariant NN), and Riemannian structure (NGD). The unifying language is GDL — which becomes not a lesson to teach but a pattern the reader has already experienced.
+5-section structure, analogous to ml-13:
+
+| § | Anchor | Content |
+|---|---|---|
+| 1 | `#intro` | Diffusion in 2026 — image/video/3D generation, contrast with VAE/GAN approaches |
+| 2 | `#forward` | Forward noise process \(q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)\); discrete Markov chain; continuous-time SDE limit pointed to as forthcoming |
+| 3 | `#reverse` | Reverse process and score matching; the central object \(\nabla_x \log p_t(x)\); denoising score matching loss |
+| 4 | `#sampling` | DDPM sampling; DDIM and accelerated samplers as named instances |
+| 5 | `#demo` | 2D distribution forward/reverse animation (or 1D Gaussian mixture). Implementation considerably simpler than ml-13's GDL demo (no graph algebra) — likely 1000–1400 line range with the same Module 1–6 structure |
+
+**Forward pointers (descriptive text only)**:
+- Brownian motion, Itō calculus, SDEs → forthcoming Section III (Phase 2e)
+- Fokker-Planck equation → forthcoming Section II (Fourier-PDE mini-track, heat equation page)
+- Score matching theory → either deferred or in-page if compact
+
+**Math density**: ml-13 equivalent. Definition + Algorithm blocks. No proof-system. SDE formal treatment deferred to forthcoming pages.
+
+### 9.3 What was retired
+
+The earlier Part 9 plan — **Representation Theory (linalg-XX, ~3–4 pages) followed by ml-14 = Equivariant Neural Networks** — has been retired. Reasons recorded for future reference:
+
+- **ml-13 already fulfills the GDL pillar's Section V window role** (§2.3, §2.5). Section V doesn't need a second GDL page.
+- **Representation theory is not committed to Section I as an ml-14 prerequisite**. If rep theory is ever written, it is for Section I's own merit, not driven by an ml-XX prerequisite chain (§2.5). The earlier framing — that rep theory was "needed" because ml-14 needed it — is exactly the Section-V-as-prerequisite-chain pattern that §2.5 prohibits.
+- **An Equivariant NN page without rep-theory ref-link targets** would either duplicate ml-13's `#beyond` section or become a forced-thin window page that adds little.
+
+Representation theory is moved to Part 12 (Deferred). A Section V Equivariant NN page is not committed; it sits in Part 12 as a wishlist item with no commitment.
+
+### 9.4 When to write ml-14
+
+After ml-13 is deployed, settled, and Yusuke has chosen to engage with Diffusion as the next page topic. **Not before.** Yusuke's terse approval of an outline does not constitute commitment to draft.
 
 ---
 
@@ -389,24 +438,22 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 |---------|-----------------|--------|
 | calc-32 | `fourier_hilbert.html` | Next |
 | ml-13 | `graph_neural_networks.html` | Next |
+| ml-14 | `diffusion_models.html` | After ml-13 (see Part 9) |
 
 ### Planned Pages (ID deferred — assigned at drafting time)
 
 | Track | Est. Pages | Planned Filenames | Trigger / status |
 |--------|-----------|-------------------|--------|
-| Smooth Manifolds (calc-XX) | ~3 | `smooth_manifolds.html`, `tangent_spaces.html`, `vector_fields_flows.html` | After ml-13 |
+| Smooth Manifolds (calc-XX) | ~3 | `smooth_manifolds.html`, `tangent_spaces.html`, `vector_fields_flows.html` | Section II's own merit; not blocked by, and not blocking, any ml-XX page |
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
-| Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
-| ml-14 | 1 | `equivariant_nn.html` | After rep theory |
 | Section V Quantum Page (ml-XX) | 1 | TBD | After Crypto Track stages 1–4 |
-| Stochastic Calculus (prob-XX) | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Active slow-burn (Part 7) |
-| Fourier-PDE Mini-Track (calc-XX) | 3 | `fourier_pde_heat.html`, `fourier_pde_wave.html`, `fourier_pde_laplace.html` | Active (Part 6) |
+| Stochastic Calculus (prob-XX) | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Active slow-burn (Part 7); now also motivated by ml-14 (Part 9) |
+| Fourier-PDE Mini-Track (calc-XX) | 3 | `fourier_pde_heat.html`, `fourier_pde_wave.html`, `fourier_pde_laplace.html` | Active (Part 6); heat-equation page motivates Fokker-Planck and ml-14 |
 | CDL Track (disc-XX, ml-XX) | ~6–9 | TBD | Active slow-burn (Part 3) |
 | Crypto Track (linalg-XX) | varies | TBD | Mood-driven (Part 5) |
 | Regular Conditional Distributions (prob-XX) | ~1 | `regular_conditional_distributions.html` | Phase 2e prerequisite (SDE / path-space measures) |
 | Advanced VI topics (prob-XX) | ~1–2 | TBD | Triggered individually by ML-application pressure |
 | DEC (disc-XX) | ~1–2 | TBD | Backlog |
-| GDL Overview (ml-XX) | 1 | TBD | Backlog |
 
 ---
 
@@ -426,9 +473,9 @@ This map tracks primary usage for development planning. The site-wide reference 
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
 | **Fong & Spivak — *Seven Sketches in Compositionality*** | → CDL track Stages 3 (and motivation throughout) | Primary for applied / intuitive side of CDL track; free PDF on arXiv |
 | **Menezes et al. — *Handbook of Applied Cryptography*** | linalg-26 → Crypto Track (Part 5) | Primary for Crypto Track; previously tagged niche, lifted as of 5/9/2026 |
-| Bronstein et al. — *Geometric Deep Learning* | Insight Boxes site-wide → ml-13, ml-14, ml-XX (GDL overview) | "Destination viewpoint" text; referenced not followed |
+| Bronstein et al. — *Geometric Deep Learning* | Insight Boxes site-wide → ml-13 | "Destination viewpoint" text; referenced not followed. ml-14 (Diffusion) is no longer a Bronstein-aligned page; ml-XX (GDL overview) retired |
 | Murphy Book 1 — *Probabilistic ML: Introduction* | ml-01~08 → ml-13 | General ML reference |
-| Murphy Book 2 — *Probabilistic ML: Advanced* | ml-09~12, prob-16, prob-26 → ml-14, future diffusion-related ml pages | Information geometry at applied level; sufficient until Amari is needed |
+| Murphy Book 2 — *Probabilistic ML: Advanced* | ml-09~12, prob-16, prob-26 → ml-14 | Information geometry at applied level; Ch.25 (Diffusion) is the ml-14 reference anchor; sufficient until Amari is needed |
 
 ### Completed tracks (no planned pages; on index.html)
 
@@ -448,6 +495,10 @@ This map tracks primary usage for development planning. The site-wide reference 
 - **Amari** *Information Geometry and Its Applications* (2016) — after manifold series if info-geometry page is planned (deepens ml-12 NGD)
 - **Nielsen & Chuang** *Quantum Computation* (2010) — if Section V quantum page (Part 4) is written (supplements calc-32)
 - **Lattice cryptography reference** (Nguyen-Vallée, Peikert survey, or Bernstein-Lange) — when Crypto Track reaches stage 5+ (lattice foundations)
+- **Diffusion model references** — when ml-14 is written (Part 9):
+  - Sohl-Dickstein et al. (2015), *Deep Unsupervised Learning using Nonequilibrium Thermodynamics*
+  - Ho, Jain, Abbeel (2020), *Denoising Diffusion Probabilistic Models* (DDPM)
+  - Song et al. (2021), *Score-Based Generative Modeling through Stochastic Differential Equations* (continuous-time SDE framework)
 
 ---
 
@@ -458,7 +509,9 @@ Topics explicitly deferred — not forgotten, but not on the critical path.
 | Item | Trigger to Revisit |
 |------|-------------------|
 | Schwartz Space & Distributions | If a PDE or generalized function page is planned beyond Fourier-PDE mini-track |
-| Pontryagin Duality (Fourier on groups) | After linalg-27~30 + calc-32 + linalg-XX (rep theory), if harmonic analysis track emerges |
+| **Representation Theory (linalg-XX, ~3–4 pages)** | Section I's own merit — if Yusuke chooses to engage with rep theory as a Section I topic. **NOT triggered by any ml-XX page** (§2.5). Prereqs: linalg-27~30, linalg-22 |
+| **Section V Equivariant NN page (ml-XX)** | Wishlist, no commitment. Trigger: rep theory pages exist AND Yusuke actively wants a second GDL Section V page. ml-13 already fulfills the GDL pillar's window role (§2.3, §9.3) |
+| Pontryagin Duality (Fourier on groups) | After linalg-27~30 + calc-32; further requires the rep-theory deferred-block above to unlock harmonic-analysis-on-groups context |
 | Spectral Theory of the Laplacian (continuous) | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
 | Regular Conditional Distributions | Phase 2e companion — required for SDE / Itô filtration. Not blocking prob-26 (VI works under density assumption). |
 | Fiber Bundles & Gauge Theory | If GDL viewpoint page demands gauge equivariance machinery |
