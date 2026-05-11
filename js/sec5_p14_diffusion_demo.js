@@ -966,9 +966,15 @@ function drawTimeLabel(ctx, t, totalT, direction, sampler, W, H, palette) {
     ctx.fillStyle = palette.label;
     ctx.font = '13px ui-sans-serif, system-ui, sans-serif';
     ctx.textBaseline = 'top';
+    // Forward direction does not depend on the choice of sampler, so we
+    // omit it from the label to avoid implying otherwise. Only the reverse
+    // direction uses a particular sampler (DDPM vs DDIM).
+    const directionLabel = direction === 'forward'
+        ? 'Forward'
+        : `Reverse · ${sampler}`;
     const lines = [
         `t = ${t} / ${totalT}`,
-        `${direction === 'forward' ? 'Forward' : 'Reverse'} · ${sampler}`,
+        directionLabel,
     ];
     const x = 14;
     let y = 14;
@@ -1499,6 +1505,10 @@ html[data-theme="dark"] .diffusion-container {
     color: var(--d-accent-fg);
     font-weight: 500;
 }
+.diffusion-segmented.diffusion-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
 
 /* ===== Action buttons ===== */
 .diffusion-action-row {
@@ -1638,12 +1648,22 @@ function syncDirectionUI(state, refs) {
 }
 
 /**
- * Synchronize the sampler toggle UI to state.sampler.
+ * Synchronize the sampler toggle UI to state.sampler and state.direction.
+ * In forward direction the sampler choice has no effect, so we visually
+ * disable the segmented control and replace the hint with an explanation.
  */
 function syncSamplerUI(state, refs) {
     const isDDPM = state.sampler === 'DDPM';
     setSegmentedActive([refs.samplerDDPMBtn, refs.samplerDDIMBtn], isDDPM ? 0 : 1);
-    refs.samplerHint.textContent = SAMPLER_HINT[state.sampler];
+
+    const samplerSegmented = refs.samplerDDPMBtn.parentElement;
+    if (state.direction === 'forward') {
+        samplerSegmented.classList.add('diffusion-disabled');
+        refs.samplerHint.textContent = 'Applies only to the reverse direction';
+    } else {
+        samplerSegmented.classList.remove('diffusion-disabled');
+        refs.samplerHint.textContent = SAMPLER_HINT[state.sampler];
+    }
 }
 
 /**
@@ -1751,6 +1771,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
         state.direction = newDir;
         resetSliderPosition(state);
         syncDirectionUI(state, refs);
+        syncSamplerUI(state, refs);
         syncTimeUI(state, refs);
         renderFrame(state, ctx, W, H);
     };
