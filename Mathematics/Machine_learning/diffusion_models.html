@@ -693,7 +693,9 @@ uses_python: false
                     A second feature of the DDIM construction is that the step indices need not visit every \(t\) in \(\{1, \ldots, T\}\). Any subsequence
                     \(\tau_1 &lt; \cdots &lt; \tau_S = T\) of the training schedule is valid for sampling, and choosing \(S\) much smaller than \(T\)
                     yields a substantial speedup. Typical practice uses \(S\) on the order of 50 with \(T = 1000\) during training, a twenty-fold
-                    reduction in network evaluations per sample, with image quality close to the full-chain DDPM sampler.
+                    reduction in network evaluations per sample, with image quality that approximates the full-chain DDPM sampler — the closeness
+                    depends on the data dimension and the number of steps retained, and the gap is visible on small low-dimensional examples
+                    even when it is imperceptible on natural images.
                 </p>
 
                 <p>
@@ -779,6 +781,13 @@ uses_python: false
                         the same \(\mathbf{x}_T\) trace different paths to different reconstructions. DDIM follows a deterministic ODE-like path
                         that depends only on \(\mathbf{x}_T\), so the same starting noise always produces the same output, and the path can be
                         traversed in roughly an order of magnitude fewer steps.
+                    </p>
+                    <p>
+                        One thing the demo makes visible. Because DDIM compresses many small DDPM steps into a few large jumps, the reconstruction
+                        in this demo lands close to — but not exactly on — the original logo points; the points look slightly hazier than under DDPM.
+                        This residual is the discretisation error of the few-step DDIM sampler, the small accuracy cost that pays for the speedup.
+                        On high-dimensional image data the same gap exists but is imperceptible at the resolution of natural images, which is why
+                        DDIM is the de facto sampler in production text-to-image systems.
                     </p>
                 </div>
 
