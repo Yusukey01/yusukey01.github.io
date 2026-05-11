@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Diffusion Models"
+title: "Intro to Diffusion Models"
 topic_id: ml-14
 level: detail
 uses_math: true
@@ -12,7 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
 
         <div class="hero-section">
-            <h1 class="webpage-name">Diffusion Models</h1>
+            <h1 class="webpage-name">Intro to Diffusion Models</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -760,9 +760,9 @@ uses_python: false
                 <p>
                     The visualization below applies the full diffusion construction — forward chain, score function, and reverse sampling — to a
                     point cloud built from the MATH-CS COMPASS logo. Each point carries five coordinates: two spatial \((x, y)\) and three colour
-                    \((r, g, b)\), and the diffusion is run jointly on all five. The forward direction destroys both the geometry and the colour of
-                    the logo into pure Gaussian noise; the reverse direction reconstructs both from noise, with the same point cloud emerging as
-                    the data manifold the model is sampling from.
+                    \((r, g, b)\), and the diffusion is run jointly on all five. The forward direction drives both the geometry and the colour of
+                    the logo toward a pure Gaussian distribution; the reverse direction reconstructs points on the data manifold from noise, with
+                    the logo emerging as the support of the distribution being sampled.
                 </p>
 
                 <p>
@@ -773,36 +773,42 @@ uses_python: false
                 <div id="diffusion_demo_visualizer"></div>
 
                 <div class="insight-box">
-                    <h3>DDPM versus DDIM: the Same Noise, Different Paths</h3>
+                    <h3>DDPM versus DDIM: Stochastic versus Deterministic Reverse Paths</h3>
                     <p>
                         The sampler toggle is the most pedagogically informative control. Both DDPM and DDIM start from the same initial draw
-                        \(\mathbf{x}_T\) (use the "regenerate noise" button to draw a new one), and both end at the data manifold. What differs is
-                        the trajectory between them: DDPM follows a stochastic walk in which each step draws fresh Gaussian noise, so two runs from
-                        the same \(\mathbf{x}_T\) trace different paths to different reconstructions. DDIM follows a deterministic ODE-like path
-                        that depends only on \(\mathbf{x}_T\), so the same starting noise always produces the same output, and the path can be
-                        traversed in roughly an order of magnitude fewer steps.
+                        \(\mathbf{x}_T\) (use the "regenerate noise" button to draw a new one), and both end on the data manifold. What differs
+                        is the structure of the trajectory between them. The DDPM update is stochastic: each step draws a fresh Gaussian, so
+                        repeated runs from the same \(\mathbf{x}_T\) would in principle produce different reconstructions (this demo caches a
+                        single such run per noise seed for visualization). The DDIM update is deterministic: the entire trajectory is a fixed
+                        function of \(\mathbf{x}_T\), and the demo's DDIM sampler reaches the data manifold in roughly five times fewer steps
+                        than DDPM (twenty against one hundred here).
                     </p>
                     <p>
                         One thing the demo makes visible. Because DDIM compresses many small DDPM steps into a few large jumps, the reconstruction
                         in this demo lands close to — but not exactly on — the original logo points; the points look slightly hazier than under DDPM.
                         This residual is the discretisation error of the few-step DDIM sampler, the small accuracy cost that pays for the speedup.
                         On high-dimensional image data the same gap exists but is imperceptible at the resolution of natural images, which is why
-                        DDIM is the de facto sampler in production text-to-image systems.
+                        DDIM and its variants have been standard samplers in production text-to-image systems, alongside more recent fast samplers
+                        such as DPM-Solver.
                     </p>
                 </div>
 
                 <p>
-                    The construction visualised here is the same one that powers large-scale text-to-image systems. Replacing the five-dimensional
-                    point cloud with a high-dimensional pixel tensor, the point distribution with the distribution of natural images, and the
-                    analytical score with a trained neural network gives the diffusion model at the core of Stable Diffusion and its successors.
-                    The mathematics on display in this demo is, in every essential respect, the mathematics those systems run.
+                    The construction visualised here is a small instance of the family of mathematics that underlies large-scale text-to-image
+                    systems. Replacing the five-dimensional point cloud with a high-dimensional pixel or latent tensor, the point distribution
+                    with the distribution of natural images, and the analytical score with a trained neural network gives the diffusion models
+                    at the heart of systems like Stable Diffusion (which runs the diffusion in a learned latent space rather than directly on
+                    pixels) and its descendants. Production systems add several ingredients on top — classifier-free guidance, conditioning by
+                    text encoders, alternative parametrisations and samplers — but the discrete-time DDPM and DDIM updates developed on this
+                    page remain the structural core.
                 </p>
 
                 <p>
                     A closing observation. What makes the reverse direction possible is the score function
                     \(\nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\): given the gradient of the log-density of every intermediate marginal,
-                    walking back from noise to data is a matter of integration. In this demo the score is computed exactly from the empirical
-                    point cloud; in practice it is learned from data, which is what diffusion training is really for.
+                    walking back from noise to data is a matter of repeated denoising steps, each one guided by the score evaluated at the
+                    current state. In this demo the score is computed exactly from the empirical point cloud; in practice it is learned from
+                    data, which is what diffusion training is really for.
                 </p>
 
             </section>
