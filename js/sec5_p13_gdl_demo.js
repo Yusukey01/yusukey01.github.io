@@ -743,13 +743,23 @@ function drawShuffleIndicator(ctx, state, W) {
  * @param {number} H                           canvas height
  */
 function renderDemo(ctx, state, displayedH, currentLayer, totalLayers, W, H) {
-    clearCanvas(ctx, W, H);
+    // The interior drawing code (node positions, badge offsets, edge
+    // coordinates) is written against a fixed logical canvas of 700 × 500.
+    // On smaller viewports we draw into the same logical space and uniformly
+    // scale the output to the real canvas size; this keeps the layout intact
+    // (badges don't overlap, nodes don't go off-screen) at the cost of
+    // proportionally smaller text on narrow screens.
+    const LW = 700, LH = 500;
+    ctx.save();
+    ctx.scale(W / LW, H / LH);
+    clearCanvas(ctx, LW, LH);
     drawEdges(ctx, state);
     drawNodes(ctx, state, displayedH);
     drawNodeLabels(ctx, state);
     drawArchitectureBadge(ctx, state.architecture);
-    drawLayerBadge(ctx, currentLayer, totalLayers, W);
-    drawShuffleIndicator(ctx, state, W);
+    drawLayerBadge(ctx, currentLayer, totalLayers, LW);
+    drawShuffleIndicator(ctx, state, LW);
+    ctx.restore();
 }
 
 // ============================================================
