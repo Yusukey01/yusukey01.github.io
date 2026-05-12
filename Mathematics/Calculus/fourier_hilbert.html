@@ -34,8 +34,10 @@ uses_python: false
                     decomposed periodic functions into discrete frequencies and asserted Parseval's identity.
                     In <a href="fourier_transform.html" class="ref-link"><strong>Fourier Transform</strong></a>,
                     we generalized to functions on \(\mathbb{R}\) and stated Plancherel's theorem. In both pages,
-                    several foundational results were stated, used, or sketched — and explicitly deferred to "the
-                    forthcoming page on Fourier analysis in Hilbert spaces." This is that page.
+                    several foundational results were stated, used, or sketched — some explicitly deferred to "the
+                    forthcoming page on Fourier analysis in Hilbert spaces," and others (notably the classical
+                    Parseval identity for Fourier series) proved directly but awaiting recognition as instances
+                    of a more general Hilbert-space structure. This is that page.
                 </p>
 
                 <p>
@@ -48,8 +50,24 @@ uses_python: false
                     developed in the functional-analysis block, together with the
                     <a href="lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a>
                     that places \(L^2\) inside it. With these tools in hand, the classical \(L^2\) Fourier results
-                    cease to be a separate subject: they become specific instances of a single Hilbert-space
-                    structure theorem, recognized retrospectively in the sections that follow.
+                    cease to be a separate subject: they become specific instances of Hilbert-space machinery —
+                    orthonormal-basis decomposition, Bessel's inequality, and bounded extension from a dense
+                    subspace — recognized retrospectively in the sections that follow.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> Throughout this page, all Hilbert spaces are taken over
+                    \(\mathbb{C}\), with inner product linear in the first slot and conjugate-linear in the second.
+                    We inherit the mathematical/PDE convention from the Fourier-series and Fourier-transform pages
+                    (positive sign in the coefficient integral and in the forward transform). Explicitly, the
+                    complex Fourier series on \([-L, L]\) takes the form
+                    \(f(x) = \sum_n c_n\, e^{-i n \pi x / L}\) with coefficients
+                    \(c_n = \tfrac{1}{2L}\int_{-L}^{L} f(x)\, e^{+i n \pi x / L}\, dx\), and the Fourier transform
+                    on \(\mathbb{R}\) is \(\hat f(\xi) = \int_{\mathbb{R}} f(x)\, e^{i\xi x}\, dx\) from the
+                    <a href="fourier_transform.html#D-fourier_transform" class="ref-link"><strong>Fourier Transform</strong></a>
+                    page; under this convention, the normalized map
+                    \(\mathcal{U}: f \mapsto (2\pi)^{-1/2}\hat f\) is the operator we will identify as unitary on
+                    \(L^2(\mathbb{R})\).
                 </p>
             </section>
 
@@ -59,12 +77,12 @@ uses_python: false
 
                 <p>
                     The Fourier-series page introduced the complex exponential system
-                    \(\{e^{in\pi x/L}\}_{n \in \mathbb{Z}}\) on \([-L, L]\) and showed by direct
+                    \(\{e^{-in\pi x/L}\}_{n \in \mathbb{Z}}\) on \([-L, L]\) and showed by direct
                     computation that it is orthogonal with respect to the inner product
                     \(\langle f, g \rangle = \frac{1}{2L}\int_{-L}^{L} f(x)\overline{g(x)}\, dx\).
                     Normalizing, we obtain the orthonormal system
                 \[
-                    e_n(x) \;:=\; \frac{1}{\sqrt{2L}}\, e^{i n \pi x / L}, \qquad n \in \mathbb{Z},
+                    e_n(x) \;:=\; \frac{1}{\sqrt{2L}}\, e^{-i n \pi x / L}, \qquad n \in \mathbb{Z},
                 \]
                     in the Hilbert space \(\mathcal{H} = L^2([-L, L])\) equipped with the unnormalized inner product
                     \(\langle f, g \rangle = \int_{-L}^{L} f(x)\overline{g(x)}\, dx\). The relationship between this
@@ -103,7 +121,7 @@ uses_python: false
 
                 <p>
                     For the trigonometric system, this strategy translates into the following concrete claim: if
-                    \(f \in L^2([-L, L])\) has every Fourier coefficient \(\int_{-L}^{L} f(x)\, e^{-in\pi x/L}\, dx = 0\)
+                    \(f \in L^2([-L, L])\) has every Fourier coefficient \(\int_{-L}^{L} f(x)\, e^{+in\pi x/L}\, dx = 0\)
                     for \(n \in \mathbb{Z}\), then \(f = 0\) almost everywhere. The technical core of the argument lies
                     in approximating an arbitrary continuous periodic function by trigonometric polynomials, and then
                     using density of continuous periodic functions in \(L^2\) to conclude.
@@ -120,8 +138,8 @@ uses_python: false
                     inner products \(\langle f, e_n \rangle\) will be reinstated at the end of this section):
                 \[
                 \begin{align*}
-                    S_N f(x) &\;=\; \sum_{|n| \leq N} c_n\, e^{i n \pi x / L}, \\\\
-                    c_n &\;=\; \frac{1}{2L} \int_{-L}^{L} f(y)\, e^{-i n \pi y / L}\, dy,
+                    S_N f(x) &\;=\; \sum_{|n| \leq N} c_n\, e^{-i n \pi x / L}, \\\\
+                    c_n &\;=\; \frac{1}{2L} \int_{-L}^{L} f(y)\, e^{+i n \pi y / L}\, dy,
                 \end{align*}
                 \]
                     and define the <strong>Cesàro means</strong>
@@ -133,14 +151,19 @@ uses_python: false
                 \[
                     \sigma_N f(x) \;=\; \frac{1}{2L}\int_{-L}^{L} f(y)\, F_N\!\left(\frac{\pi(x-y)}{L}\right) dy,
                 \]
-                    where the <strong>Fejér kernel</strong> \(F_N\), originally defined as the Cesàro average of the
-                    Dirichlet kernels, admits the closed form
+                    where the <strong>Fejér kernel</strong> \(F_N\) is obtained by tracking the same computation
+                    through each partial sum: writing
+                    \(S_n f(x) = \tfrac{1}{2\pi}\int_{-\pi}^{\pi} f(x - Lt/\pi)\, D_n(t)\, dt\) with the
+                    Dirichlet kernel \(D_n(t) = \sum_{k=-n}^{n} e^{ikt}\) and averaging over
+                    \(n = 0, \ldots, N-1\) gives \(F_N = \tfrac{1}{N}(D_0 + D_1 + \cdots + D_{N-1})\),
+                    the Cesàro average of the Dirichlet kernels. This in turn admits the closed form
                 \[
                     F_N(t) \;=\; \frac{1}{N}\, \frac{\sin^2(N t / 2)}{\sin^2(t / 2)}, \qquad t \in (-\pi, \pi) \setminus \{0\},
                 \]
-                    (with the natural limiting value \(F_N(0) = N\)).
-                    To see how this closed form arises, recall that the Dirichlet kernel
-                    \(D_n(t) = \sum_{k=-n}^{n} e^{i k t}\) admits the standard geometric-series evaluation
+                    (with the natural limiting value \(F_N(0) = N\), obtained from
+                    \(\lim_{t \to 0} \sin^2(Nt/2)/\sin^2(t/2) = N^2\); this makes \(F_N\) continuous at \(0\)
+                    and the closed form valid on all of \([-\pi, \pi]\)).
+                    To see how this closed form arises, recall the standard geometric-series evaluation
                     \(D_n(t) = \frac{\sin((n + \tfrac{1}{2}) t)}{\sin(t/2)}\), valid for \(t \not\equiv 0 \pmod{2\pi}\).
                     Substituting this into \(F_N = \tfrac{1}{N}(D_0 + D_1 + \cdots + D_{N-1})\),
                 \[
@@ -164,8 +187,10 @@ uses_python: false
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Positivity:</strong> \(F_N(t) \geq 0\) for all \(t\), since it is a squared modulus divided by a positive quantity.</li>
-                    <li><strong>Unit mass:</strong> \(\frac{1}{2\pi}\int_{-\pi}^{\pi} F_N(t)\, dt = 1\) for every \(N\), inherited from the fact that
-                        \(\frac{1}{2\pi}\int_{-\pi}^{\pi} D_n(t)\, dt = 1\) for each Dirichlet kernel.</li>
+                    <li><strong>Unit mass:</strong> \(\frac{1}{2\pi}\int_{-\pi}^{\pi} F_N(t)\, dt = 1\) for every \(N\),
+                        inherited from the Dirichlet-kernel computation \(\frac{1}{2\pi}\int_{-\pi}^{\pi} D_n(t)\, dt = 1\)
+                        (only the constant term \(e^{i0t} = 1\) in \(D_n = \sum_{k=-n}^n e^{ikt}\) survives integration);
+                        averaging over \(n = 0, \ldots, N-1\) preserves this value.</li>
                     <li><strong>Concentration:</strong> for any \(\delta \in (0, \pi)\),
                         \(\int_{\delta \leq |t| \leq \pi} F_N(t)\, dt \to 0\) as \(N \to \infty\), because \(\sin^2(t/2) \geq c_\delta > 0\)
                         on \(\{\delta \leq |t| \leq \pi\}\), hence \(F_N(t) \leq 1/(N c_\delta)\) uniformly on that region.</li>
@@ -191,32 +216,37 @@ uses_python: false
                     <p>
                         Fix \(\varepsilon &gt; 0\). Because \(f\) is continuous and periodic, it is uniformly continuous on
                         \(\mathbb{R}\); choose \(\delta \in (0, \pi)\) such that \(|f(x - s) - f(x)| &lt; \varepsilon\)
-                        for all \(x\) whenever \(|s| &lt; \delta L / \pi\). Using the unit-mass property of \(F_N\) to
-                        write \(f(x)\) as the convolution of \(f\) against the kernel and changing variables \(t = \pi(x-y)/L\),
+                        for all \(x\) whenever \(|s| &lt; \delta L / \pi\). Since \(f\) is \(2L\)-periodic and \(F_N\) is
+                        \(2\pi\)-periodic, the integrand in the convolution representation of \(\sigma_N f\) is
+                        \(2\pi\)-periodic in the variable \(t = \pi(x-y)/L\), so the integration window may be taken
+                        to be \([-\pi, \pi]\). Using the unit-mass property of \(F_N\) to write \(f(x)\) as a
+                        convolution of \(f\) against the kernel,
                     \[
                         \sigma_N f(x) - f(x)
                         \;=\; \frac{1}{2\pi}\int_{-\pi}^{\pi} \bigl[ f(x - L t / \pi) - f(x) \bigr]\, F_N(t)\, dt.
                     \]
                         Split the integral into \(|t| &lt; \delta\) and \(\delta \leq |t| \leq \pi\). On the first region,
-                        \(|f(x - Lt/\pi) - f(x)| &lt; \varepsilon\) by uniform continuity, so positivity of \(F_N\) and unit mass give
+                        \(|f(x - Lt/\pi) - f(x)| &lt; \varepsilon\) for every \(x\) by uniform continuity, so positivity of
+                        \(F_N\) and unit mass give the bound, uniform in \(x\),
                     \[
                         \left| \frac{1}{2\pi}\int_{|t| &lt; \delta} \bigl[f(x - Lt/\pi) - f(x)\bigr] F_N(t)\, dt \right|
                         \;\leq\; \varepsilon.
                     \]
-                        On the second region, \(|f(x - Lt/\pi) - f(x)| \leq 2\|f\|_\infty\), where \(\|f\|_\infty &lt; \infty\)
-                        by continuity on a compact period. Concentration of \(F_N\) gives
+                        On the second region, \(|f(x - Lt/\pi) - f(x)| \leq 2 \sup_{\mathbb{R}} |f|\), where
+                        \(\sup_{\mathbb{R}} |f| &lt; \infty\) by continuity on a compact period. Concentration of \(F_N\) gives
                     \[
                     \begin{align*}
                         \left| \frac{1}{2\pi}\int_{\delta \leq |t| \leq \pi}
                         \bigl[f(x - Lt/\pi) - f(x)\bigr] F_N(t)\, dt \right|
-                        &\;\leq\; \frac{2\|f\|_\infty}{2\pi} \int_{\delta \leq |t| \leq \pi} F_N(t)\, dt \\\\
+                        &\;\leq\; \frac{2 \sup_{\mathbb{R}} |f|}{2\pi} \int_{\delta \leq |t| \leq \pi} F_N(t)\, dt \\\\
                         &\;\longrightarrow\; 0
                     \end{align*}
                     \]
                         as \(N \to \infty\), uniformly in \(x\). Combining the two estimates,
-                        \(\|\sigma_N f - f\|_\infty \leq \varepsilon + o(1)\), and since \(\varepsilon\) was arbitrary,
-                        \(\sigma_N f \to f\) uniformly. Each \(\sigma_N f\) is a finite linear combination of the
-                        \(e^{in\pi x/L}\), so it is a trigonometric polynomial. \(\square\)
+                        \(\sup_{\mathbb{R}} |\sigma_N f - f| \leq \varepsilon + \eta_N\), where \(\eta_N \to 0\) as
+                        \(N \to \infty\). Since \(\varepsilon\) was arbitrary, \(\sigma_N f \to f\) uniformly. Each
+                        \(\sigma_N f\) is a finite linear combination of the \(e^{-in\pi x/L}\), so it is a trigonometric
+                        polynomial. \(\square\)
                     </p>
                 </div>
 
@@ -234,15 +264,27 @@ uses_python: false
                     <span class="theorem-title">Theorem: Completeness of the Trigonometric System</span>
                     <p>
                         The orthonormal system \(\{e_n\}_{n \in \mathbb{Z}}\), with
-                        \(e_n(x) = (2L)^{-1/2} e^{in\pi x/L}\), is an orthonormal basis of \(L^2([-L, L])\).
+                        \(e_n(x) = (2L)^{-1/2} e^{-in\pi x/L}\), is an orthonormal basis of \(L^2([-L, L])\).
                         Equivalently, the only function \(f \in L^2([-L, L])\) with
-                        \(\int_{-L}^{L} f(x)\, e^{-in\pi x/L}\, dx = 0\) for every \(n \in \mathbb{Z}\) is the
+                        \(\int_{-L}^{L} f(x)\, e^{+in\pi x/L}\, dx = 0\) for every \(n \in \mathbb{Z}\) is the
                         zero function (almost everywhere).
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Two preliminaries.</strong> First, the Hilbert space \(L^2([-L, L])\) is separable:
+                        the density argument below produces a countable dense subset (trigonometric polynomials with
+                        rational-complex coefficients), so the abstract orthonormal-basis machinery applies. Second,
+                        the abstract definition of orthonormal basis and the abstract Parseval identity were stated
+                        for \(\mathbb{N}\)-indexed sequences \(\{e_n\}_{n=1}^\infty\), whereas our trigonometric system
+                        is indexed by \(\mathbb{Z}\). Any bijection \(\phi: \mathbb{Z} \to \mathbb{N}\) transfers
+                        \(\{e_n\}_{n \in \mathbb{Z}}\) to a sequence \(\{e_{\phi^{-1}(k)}\}_{k=1}^\infty\) of the
+                        abstract form; since the relevant Parseval series \(\sum_k |\langle f, e_{\phi^{-1}(k)} \rangle|^2\)
+                        consists of non-negative terms, it converges absolutely and its value is independent of \(\phi\),
+                        so we may freely write the result in the original notation \(\sum_{n \in \mathbb{Z}}\).
+                    </p>
                     <p>
                         By the characterization recalled above, it suffices to show: if \(f \in L^2([-L, L])\) satisfies
                         \(\langle f, e_n \rangle = 0\) for every \(n \in \mathbb{Z}\), then \(f = 0\) almost everywhere.
@@ -255,19 +297,26 @@ uses_python: false
                         <a href="metric_space.html#D-dense_subset" class="ref-link"><strong>dense</strong></a>
                         subspace of \(L^2([-L, L])\). We sketch this in three steps. (i) Simple functions —
                         finite linear combinations of indicator functions of measurable sets of finite measure — are dense
-                        in \(L^2([-L, L])\): writing \(g \in L^2\) as a complex combination of four non-negative measurable
-                        parts, each part admits a monotone increasing sequence of non-negative simple functions converging
-                        to it pointwise (standard construction in the theory of the Lebesgue integral), and the resulting
-                        complex simple functions \(s_n\) satisfy \(|s_n| \leq |g|\) pointwise. Since
-                        \(|s_n - g|^2 \to 0\) pointwise and is dominated by \((2|g|)^2 \in L^1\), the
+                        in \(L^2([-L, L])\): writing \(g \in L^2\) as a signed combination of four non-negative
+                        measurable parts \(g = (\Re g)^+ - (\Re g)^- + i\,(\Im g)^+ - i\,(\Im g)^-\) (each part
+                        dominated pointwise by \(|g|\)), each part admits a monotone increasing sequence of
+                        non-negative simple functions converging to it pointwise (standard construction in the
+                        theory of the Lebesgue integral); the resulting complex simple functions \(s_n\) satisfy
+                        \(|s_n| \leq |g|\) pointwise. Since \(|s_n - g|^2 \to 0\) pointwise and is dominated by
+                        \(4|g|^2 \in L^1\) (because \(g \in L^2\)), the
                         <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
-                        gives \(\|s_n - g\|_2 \to 0\). (ii) Indicators of measurable sets are
-                        approximated in \(L^2\) by indicators of finite unions of open intervals, by regularity of Lebesgue
-                        measure (every measurable set of finite measure is approximated from outside by open sets). (iii)
+                        gives \(\|s_n - g\|_2 \to 0\). (ii) Indicators of measurable sets of finite measure are
+                        approximated in \(L^2\) by indicators of finite unions of open intervals: by outer regularity
+                        of Lebesgue measure, every such set \(E\) is contained in an open set \(U\) with
+                        \(|U \setminus E| < \varepsilon^2 / 2\); decomposing \(U\) as a countable disjoint union of
+                        open intervals \(\bigsqcup_k I_k\) and truncating to a finite union
+                        \(V = I_1 \cup \cdots \cup I_M\) with \(\sum_{k > M} |I_k| < \varepsilon^2 / 2\) gives
+                        \(|V \triangle E| < \varepsilon^2\), hence \(\|\mathbf{1}_V - \mathbf{1}_E\|_2 < \varepsilon\). (iii)
                         An indicator of an open interval \((a, b) \subset [-L, L]\) is approximated in \(L^2\) by continuous
                         functions vanishing outside \([a - \varepsilon, b + \varepsilon]\) and equal to \(1\) on
-                        \([a, b]\) (a trapezoidal cutoff), and by shrinking the cutoff toward \(\pm L\), each such function
-                        extends by zero to a continuous \(2L\)-periodic function on \(\mathbb{R}\). Chaining the three
+                        \([a, b]\) (a trapezoidal cutoff); choosing \(\varepsilon\) small enough that
+                        \([a - \varepsilon, b + \varepsilon] \subset (-L, L)\), each such function extends by zero
+                        to a continuous \(2L\)-periodic function on \(\mathbb{R}\). Chaining the three
                         approximations, every \(g \in L^2([-L, L])\) is the \(L^2\)-limit of continuous \(2L\)-periodic
                         functions. It therefore suffices to show \(\langle f, g \rangle = 0\) for every continuous
                         \(2L\)-periodic \(g\) on \(\mathbb{R}\) — for then \(f\) is orthogonal to a dense subset of
@@ -276,16 +325,17 @@ uses_python: false
                     <p>
                         <strong>From trigonometric polynomials to continuous \(g\) via Fejér.</strong>
                         Fix a continuous \(2L\)-periodic \(g\). By Fejér's theorem above, there exist trigonometric
-                        polynomials \(P_N(x) = \sum_{|n| \leq m_N} a_n^{(N)} e^{in\pi x / L}\) such that
+                        polynomials \(P_N(x) = \sum_{|n| \leq m_N} a_n^{(N)} e^{-in\pi x / L}\) such that
                         \(P_N \to g\) uniformly on \([-L, L]\). Uniform convergence on a bounded interval implies
                         \(L^2\) convergence, since
                     \[
                         \int_{-L}^{L} |P_N(x) - g(x)|^2\, dx \;\leq\; 2L\, \|P_N - g\|_\infty^2 \;\to\; 0.
                     \]
-                        By continuity of the inner product (a consequence of the
-                        <a href="intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>),
-                        \(\langle f, P_N \rangle \to \langle f, g \rangle\). But each \(P_N\) is a finite linear
-                        combination of the \(e^{in\pi x/L}\), and \(f\) is assumed orthogonal to every such exponential,
+                        By the
+                        <a href="intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>,
+                        \(|\langle f, P_N \rangle - \langle f, g \rangle| = |\langle f, P_N - g \rangle| \leq \|f\|_2\, \|P_N - g\|_2 \to 0\),
+                        so \(\langle f, P_N \rangle \to \langle f, g \rangle\). But each \(P_N\) is a finite linear
+                        combination of the \(e^{-in\pi x/L}\), and \(f\) is assumed orthogonal to every such exponential,
                         so \(\langle f, P_N \rangle = 0\) for every \(N\). Passing to the limit, \(\langle f, g \rangle = 0\).
                     </p>
                     <p>
@@ -301,12 +351,12 @@ uses_python: false
                     <a href="intro_analysis.html#T-parseval_identity_hilbert" class="ref-link"><strong>Hilbert-space Parseval identity</strong></a>
                     applies directly to the trigonometric system. Specializing the abstract statement
                     \(\|h\|^2 = \sum_n |\langle h, e_n \rangle|^2\) to \(\mathcal{H} = L^2([-L, L])\) and
-                    \(e_n(x) = (2L)^{-1/2} e^{in\pi x/L}\), the inner product becomes
+                    \(e_n(x) = (2L)^{-1/2} e^{-in\pi x/L}\), the inner product becomes
                 \[
                 \begin{align*}
                     \langle f, e_n \rangle
                     &\;=\; \int_{-L}^{L} f(x)\, \overline{e_n(x)}\, dx \\\\
-                    &\;=\; \frac{1}{\sqrt{2L}} \int_{-L}^{L} f(x)\, e^{-i n \pi x / L}\, dx \\\\
+                    &\;=\; \frac{1}{\sqrt{2L}} \int_{-L}^{L} f(x)\, e^{+i n \pi x / L}\, dx \\\\
                     &\;=\; \sqrt{2L}\, c_n,
                 \end{align*}
                 \]
@@ -323,7 +373,7 @@ uses_python: false
                     <a href="fourier_series.html#T-parseval_identity" class="ref-link"><strong>Parseval's identity</strong></a>
                     in its classical complex-exponential form. The expansion statement of the abstract Parseval theorem
                     similarly produces the \(L^2\)-convergence of partial sums
-                    \(S_N f = \sum_{|n| \leq N} c_n\, e^{in\pi x/L} \to f\) in \(L^2([-L, L])\) for every
+                    \(S_N f = \sum_{|n| \leq N} c_n\, e^{-in\pi x/L} \to f\) in \(L^2([-L, L])\) for every
                     \(f \in L^2([-L, L])\) — settling the mean-square convergence claim of the Fourier-series page,
                     whose proof was deferred to "general Hilbert-space theory applied to an orthonormal basis."
                 </p>
@@ -340,9 +390,10 @@ uses_python: false
                             and used (in Fourier series).</li>
                     </ul>
                     <p>
-                        What was missing was the bridge: the proof that the concrete trigonometric system is, in fact,
-                        an orthonormal basis. That bridge is the theorem of this section. The earlier concrete formula
-                        is now identified, not by analogy but by direct substitution, as a special case of the abstract
+                        What was missing was the link between them: the proof that the concrete trigonometric system
+                        is, in fact, an orthonormal basis. The theorem of this section supplies that link, and the
+                        retrospective recognition above is its first consequence. The earlier concrete formula is
+                        now identified, not by analogy but by direct substitution, as a special case of the abstract
                         theorem — and the convergence in \(L^2\) of the Fourier-series partial sums is no longer an
                         independent assertion but a corollary of basis expansion in a Hilbert space.
                     </p>
@@ -372,7 +423,7 @@ uses_python: false
                     the series \(\sum_{n} |\langle x, e_n \rangle|^2\) converges and is bounded above by \(\|x\|^2\).
                     Convergence of a non-negative series forces its terms to tend to zero. Specializing to the
                     Hilbert space \(L^2([-L, L])\) with the orthonormal basis
-                    \(\{e_n(x) = (2L)^{-1/2} e^{i n \pi x / L}\}_{n \in \mathbb{Z}}\) of the previous section, the
+                    \(\{e_n(x) = (2L)^{-1/2} e^{-i n \pi x / L}\}_{n \in \mathbb{Z}}\) of the previous section, the
                     Fourier coefficients of any \(L^2\) function must vanish in the limit:
                 </p>
 
@@ -380,7 +431,7 @@ uses_python: false
                     <span class="theorem-title">Theorem: Riemann-Lebesgue Lemma (\(L^2\) version)</span>
                     <p>
                         If \(f \in L^2([-L, L])\), then its Fourier coefficients
-                        \(c_n = \tfrac{1}{2L} \int_{-L}^{L} f(x)\, e^{-i n \pi x / L}\, dx\) satisfy
+                        \(c_n = \tfrac{1}{2L} \int_{-L}^{L} f(x)\, e^{+i n \pi x / L}\, dx\) satisfy
                         \(c_n \to 0\) as \(|n| \to \infty\).
                     </p>
                 </div>
@@ -390,11 +441,11 @@ uses_python: false
                     <p>
                         Let \(\langle \cdot, \cdot \rangle\) denote the unnormalized inner product
                         \(\langle f, g \rangle = \int_{-L}^{L} f(x) \overline{g(x)}\, dx\) on \(L^2([-L, L])\).
-                        Computing the inner product of \(f\) against \(e_n(x) = (2L)^{-1/2} e^{in\pi x/L}\),
+                        Computing the inner product of \(f\) against \(e_n(x) = (2L)^{-1/2} e^{-in\pi x/L}\),
                     \[
                     \begin{align*}
                         \langle f, e_n \rangle
-                        &\;=\; \frac{1}{\sqrt{2L}} \int_{-L}^{L} f(x)\, e^{-i n \pi x / L}\, dx \\\\
+                        &\;=\; \frac{1}{\sqrt{2L}} \int_{-L}^{L} f(x)\, e^{+i n \pi x / L}\, dx \\\\
                         &\;=\; \sqrt{2L}\, c_n,
                     \end{align*}
                     \]
@@ -553,20 +604,24 @@ uses_python: false
                     \(L^1 \cap L^2(\mathbb{R})\), on which both the integral definition and Plancherel's identity make sense.
                     Crucially, \(L^1 \cap L^2\) is a 
                     <a href="metric_space.html#D-dense_subset" class="ref-link"><strong>dense</strong></a> 
-                    subspace of \(L^2(\mathbb{R})\): it contains
-                    \(C_c(\mathbb{R})\), which is itself dense in every \(L^p(\mathbb{R})\) for \(1 \leq p &lt; \infty\)
-                    by the standard simple-function/cutoff argument. We use this density to extend the Fourier transform
-                    from its initial domain \(L^1 \cap L^2\) to the entirety of \(L^2(\mathbb{R})\).
+                    subspace of \(L^2(\mathbb{R})\): it contains \(C_c(\mathbb{R})\), which is itself dense in
+                    \(L^2(\mathbb{R})\) by the same chain of approximations used in the proof of trigonometric ONB
+                    completeness above (simple functions in \(L^2\) via dominated convergence, indicators of measurable
+                    sets via outer regularity, indicators of intervals via trapezoidal cutoffs). We use this density
+                    to extend the Fourier transform from its initial domain \(L^1 \cap L^2\) to the entirety of
+                    \(L^2(\mathbb{R})\).
                 </p>
 
                 <p>
                     On \(L^1 \cap L^2\), set \(\mathcal{U} f := \tfrac{1}{\sqrt{2\pi}}\hat{f}\). The classical
-                    <a href="fourier_transform.html#T-plancherel" class="ref-link"><strong>Plancherel identity</strong></a>
-                    \(\|f\|_2^2 = \tfrac{1}{2\pi}\|\hat{f}\|_2^2\) rewrites as
-                    \(\|\mathcal{U} f\|_2 = \|f\|_2\), so \(\mathcal{U}\) is an isometry on \(L^1 \cap L^2\) with values
-                    in \(L^2\). The
+                    <a href="fourier_transform.html#T-plancherel" class="ref-link"><strong>Plancherel identity</strong></a>,
+                    proved on the Schwartz class and extended to \(L^1 \cap L^2\) by Schwartz density together with
+                    norm continuity, gives \(\|f\|_2^2 = \tfrac{1}{2\pi}\|\hat{f}\|_2^2\) for every \(f \in L^1 \cap L^2\),
+                    which rewrites as \(\|\mathcal{U} f\|_2 = \|f\|_2\). Thus \(\mathcal{U}\) is an isometry on
+                    \(L^1 \cap L^2\) with values in \(L^2\). Density of \(L^1 \cap L^2\) in \(L^2(\mathbb{R})\) together
+                    with completeness of \(L^2\) allows us to extend \(\mathcal{U}\) by continuity, giving a unique
                     <a href="bounded_linear_operators.html#D-Bounded_Linear_Operator" class="ref-link"><strong>bounded linear operator</strong></a>
-                    theory now hands us a one-step extension to all of \(L^2\):
+                    on all of \(L^2\):
                 </p>
 
                 <div class="theorem" id="T-fourier_transform_l2_def">
@@ -608,11 +663,11 @@ uses_python: false
                         \(f \in L^2(\mathbb{R})\).
                     </p>
                     <p>
-                        <strong>Compatibility with the integral definition.</strong> If \(f \in L^1 \cap L^2\), one may
-                        choose the constant sequence \(f_n = f\), whence \(\mathcal{U} f\) coincides with
-                        \(\tfrac{1}{\sqrt{2\pi}}\hat{f}\) by Plancherel on \(L^1 \cap L^2\). Uniqueness of the extension
-                        follows from the same density-and-limit argument applied to any candidate operator agreeing with
-                        \(\mathcal{U}\) on the dense subspace \(L^1 \cap L^2\). \(\square\)
+                        <strong>Compatibility with the integral definition.</strong> If \(f \in L^1 \cap L^2\), choosing
+                        the constant sequence \(f_n = f\) gives \(\mathcal{U} f = \tfrac{1}{\sqrt{2\pi}}\hat{f}\)
+                        immediately from the construction. Uniqueness: any bounded linear operator agreeing with
+                        \(\mathcal{U}\) on the dense subspace \(L^1 \cap L^2\) must agree with the limit defined above
+                        by continuity, so the extension is the unique one. \(\square\)
                     </p>
                 </div>
 
@@ -629,9 +684,10 @@ uses_python: false
 
                 <p>
                     Isometry alone does not yield a bijection on an infinite-dimensional Hilbert space — for instance,
-                    the right-shift operator \((x_1, x_2, \ldots) \mapsto (0, x_1, x_2, \ldots)\) on \(\ell^2\) is an
-                    isometry but not surjective. To upgrade \(\mathcal{U}\) from an isometry to a unitary, we must show
-                    that its image is all of \(L^2(\mathbb{R})\). This is exactly where the classical
+                    on the sequence space \(\ell^2\) of square-summable sequences, the right-shift operator
+                    \((x_1, x_2, \ldots) \mapsto (0, x_1, x_2, \ldots)\) is an isometry but not surjective. To upgrade
+                    \(\mathcal{U}\) from an isometry to a unitary, we must show that its image is all of
+                    \(L^2(\mathbb{R})\). This is exactly where the classical
                     <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>Fourier inversion formula</strong></a>
                     enters.
                 </p>
@@ -655,12 +711,21 @@ uses_python: false
                 \]
                     where the second equality uses \(\mathcal{U} f = \hat{f}/\sqrt{2\pi}\) and the third is the classical
                     <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>Fourier inversion formula</strong></a>
-                    applied to \(f\). By the analogous computation with the roles of \(\mathcal{U}\) and \(\mathcal{V}\)
-                    interchanged, \((\mathcal{U} \mathcal{V} g)(x) = g(x)\) for every Schwartz \(g\). Since the Schwartz class
-                    is dense in \(L^2(\mathbb{R})\) (it contains \(C_c^\infty\), which is itself dense in \(L^2\)), the same
+                    applied to \(f\). The reverse identity \(\mathcal{U} \mathcal{V} g = g\) on Schwartz \(g\) follows by
+                    relating \(\mathcal{V}\) to \(\mathcal{U}\) and a reflection. Substituting \(\eta = -\xi\) in the
+                    definition of \(\mathcal{V}\),
+                \[
+                    (\mathcal{V} g)(x) \;=\; \frac{1}{\sqrt{2\pi}}\int g(-\eta)\, e^{i x \eta}\, d\eta
+                    \;=\; (\mathcal{U} \tilde g)(x), \qquad \text{where } \tilde g(\eta) := g(-\eta).
+                \]
+                    Iterating, \(\mathcal{U}\mathcal{V} g = \mathcal{U}^2 \tilde g\). Now the corollary
+                    \(\mathcal{F}\{\mathcal{F}\{f\}\}(x) = 2\pi\, f(-x)\) stated with the Fourier-transform definition
+                    translates to \(\mathcal{U}^2 f(x) = f(-x)\), so \(\mathcal{U}^2 \tilde g(x) = \tilde g(-x) = g(x)\).
+                    Hence \(\mathcal{U}\mathcal{V} g = g\) on the Schwartz class. Since the Schwartz class is dense in
+                    \(L^2(\mathbb{R})\) (it contains \(C_c^\infty\), which is itself dense in \(L^2\)), the same
                     density-and-limit argument extends both identities to all of \(L^2(\mathbb{R})\):
-                    \(\mathcal{V} \mathcal{U} = \mathcal{U} \mathcal{V} = I\) on \(L^2(\mathbb{R})\).
-                    In particular, \(\mathcal{U}\) is surjective with two-sided inverse \(\mathcal{V}\).
+                    \(\mathcal{V} \mathcal{U} = \mathcal{U} \mathcal{V} = I\) on \(L^2(\mathbb{R})\). In particular,
+                    \(\mathcal{U}\) is surjective with two-sided inverse \(\mathcal{V}\).
                 </p>
 
                 <h3>Step 3: the adjoint and the unitarity</h3>
@@ -672,8 +737,11 @@ uses_python: false
                     <a href="fourier_transform.html#T-plancherel" class="ref-link"><strong>Plancherel identity</strong></a>
                     — \(\int f\, \overline{h}\, dx = \tfrac{1}{2\pi}\int \hat{f}\, \overline{\hat{h}}\, d\xi\) — 
                     to the pair \((f, \mathcal{V} g)\). The Fourier transform of \(\mathcal{V} g\) is computable directly:
-                    by Fourier inversion on Schwartz functions, \(\mathcal{F}(\mathcal{V} g) = \sqrt{2\pi}\, g\), since
-                    \(\mathcal{V} g\) is, up to a normalization, the inverse Fourier transform of \(g\). Therefore
+                    comparing definitions with the
+                    <a href="fourier_transform.html#D-fourier_transform" class="ref-link"><strong>Fourier-transform page</strong></a>
+                    shows \(\mathcal{V} g = \sqrt{2\pi}\, \mathcal{F}^{-1}(g)\), hence
+                    \(\mathcal{F}(\mathcal{V} g) = \sqrt{2\pi}\, \mathcal{F}\mathcal{F}^{-1}(g) = \sqrt{2\pi}\, g\) by
+                    Fourier inversion on the Schwartz class. Therefore
                 \[
                 \begin{align*}
                     \langle f,\, \mathcal{V} g \rangle
@@ -704,18 +772,30 @@ uses_python: false
                         \langle \mathcal{U} f, \mathcal{U} g \rangle \;=\; \langle f, g \rangle
                         \qquad \text{for all } f, g \in L^2(\mathbb{R}),
                         \]
-                        and satisfies \(\mathcal{U}^{-1} = \mathcal{U}^*\), the Hilbert-space adjoint. Equivalently,
-                        \(\mathcal{U}^*\) is the operator obtained from \(\mathcal{U}\) by replacing \(e^{i x \xi}\) with
-                        \(e^{-i x \xi}\) — the normalized inverse Fourier transform.
+                        and satisfies \(\mathcal{U}^{-1} = \mathcal{U}^*\), the Hilbert-space adjoint. On the dense
+                        subspace \(L^1 \cap L^2\), the adjoint admits the integral representation
+                        \((\mathcal{U}^* g)(x) = (1/\sqrt{2\pi}) \int_{-\infty}^{\infty} g(\xi)\, e^{-i x \xi}\, d\xi\),
+                        differing from \(\mathcal{U}\) only by the sign of the exponent.
                     </p>
                 </div>
 
-                <p>
-                    The preservation of the inner product is automatic from norm-preservation by polarization:
-                    \(\langle f, g \rangle = \tfrac{1}{4}\sum_{k=0}^3 i^k \|f + i^k g\|^2\) is determined by the norm,
-                    and each norm term is preserved by \(\mathcal{U}\). The bijection and adjoint-inverse statements
-                    are the content of Steps 2 and 3 above.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The four conclusions correspond to the three steps above together with a final polarization
+                        argument. Step 1 (Fourier-Plancherel transform on \(L^2\)) gave the existence of \(\mathcal{U}\)
+                        as a bounded linear operator with \(\|\mathcal{U} f\|_2 = \|f\|_2\). Step 2 (surjectivity via
+                        Fourier inversion) gave bijectivity, with \(\mathcal{V}\) as two-sided inverse:
+                        \(\mathcal{V}\mathcal{U} = \mathcal{U}\mathcal{V} = I\). Step 3 (adjoint identification)
+                        established \(\mathcal{V} = \mathcal{U}^*\), so \(\mathcal{U}^{-1} = \mathcal{V} = \mathcal{U}^*\)
+                        and the integral representation on \(L^1 \cap L^2\) is the defining formula for \(\mathcal{V}\).
+                        Finally, preservation of the inner product follows from norm-preservation by polarization: the
+                        identity \(\langle f, g \rangle = \tfrac{1}{4}\sum_{k=0}^3 i^k \|f + i^k g\|^2\) (valid in any
+                        complex inner-product space under the first-slot-linear convention) determines
+                        \(\langle f, g \rangle\) from norms alone, and each norm term is preserved by \(\mathcal{U}\).
+                        \(\square\)
+                    </p>
+                </div>
 
                 <div class="insight-box">
                     <h3>What the Unitarity Buys</h3>
