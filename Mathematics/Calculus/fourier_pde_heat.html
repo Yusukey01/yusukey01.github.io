@@ -1,0 +1,840 @@
+---
+layout: default
+title: "The Heat Equation"
+topic_id: calc-33
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Heat Equation</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#bounded">Heat Equation on a Bounded Interval</a>
+            <a href="#realline">Heat Equation on the Real Line</a>
+            <a href="#kernel">Properties of the Heat Kernel</a>
+        </div>
+
+        <div class="container">
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+
+                <p>
+                    With the <a href="fourier_series.html"><strong>Fourier series</strong></a> and the
+                    <a href="fourier_transform.html"><strong>Fourier transform</strong></a> in hand, the toolkit of Fourier
+                    analysis appears, from a computer science perspective, essentially complete. Orthogonal decomposition,
+                    Plancherel's identity, convolution as pointwise multiplication, and the FFT cover what most CS curricula
+                    treat as the entirety of the subject — Fourier as the engine of signal processing, image compression,
+                    and spectral algorithms. Yet a question implicit in calc-14 remains unanswered: <em>what was Fourier
+                    analysis invented for?</em> The present page returns to that original purpose. We use the Fourier
+                    machinery already built to solve a partial differential equation.
+                </p>
+
+                <p>
+                    Until recently, partial differential equations sat outside the CS mainstream. PDEs were the province
+                    of physics and applied mathematics — the heat equation belonged to thermodynamics, the wave equation
+                    to acoustics and electromagnetism, the Laplace equation to electrostatics and fluid flow. A CS student
+                    might encounter a discretized PDE in a numerical methods elective, but the continuous theory itself
+                    rarely entered the curriculum. This perception has been overturned by developments of the past several
+                    years. The forward process of a <a href="../Machine_learning/diffusion_models.html"><strong>diffusion
+                    generative model</strong></a> — the mechanism underlying Stable Diffusion, DALL·E, Sora, and Veo — is
+                    in continuous time precisely the stochastic counterpart of the heat equation. Neural ODEs, Fourier
+                    neural operators, flow matching, and score-based generative modelling have placed continuous-time
+                    differential equations at the centre of contemporary machine learning. The continuous domain, long
+                    dismissed as a physicist's concern, has become impossible for the ML researcher to ignore.
+                </p>
+
+                <p>
+                    The heat equation
+                    \[
+                    \partial_t u(x, t) = k\, \partial_{xx} u(x, t)
+                    \]
+                    is the canonical example of a <strong>parabolic</strong> partial differential equation, where
+                    \(u(x, t)\) represents temperature (or, abstractly, the density of a diffusing quantity) at position
+                    \(x\) and time \(t\), and \(k > 0\) is a positive constant called the <strong>diffusivity</strong>.
+                    Two distinct senses motivate its study here. <em>Mathematically</em>, the heat equation is the
+                    parabolic representative of the classical trichotomy — parabolic, hyperbolic, elliptic — whose other
+                    two representatives, the wave equation and the Laplace equation, will be developed in the subsequent
+                    pages of this mini-track. <em>In application</em>, it underlies the Gaussian forward corruption of
+                    diffusion models, the graph heat kernel of spectral graph neural networks, and the Gaussian
+                    scale-space of classical image processing. The treatment is one-dimensional and classical: separation
+                    of variables on a bounded interval, the Fourier transform on the real line, the heat kernel and its
+                    qualitative properties. Higher dimensions, weak solutions in Sobolev spaces, semigroup theory, and
+                    the stochastic interpretation via Brownian motion belong to subsequent tracks of the curriculum.
+                </p>
+            </section>
+
+            <section id="bounded" class="section-content">
+                <h2>Heat Equation on a Bounded Interval</h2>
+
+                <p>
+                    Heat conduction was the very problem that motivated Joseph Fourier to introduce trigonometric
+                    series in his 1822 <em>Théorie analytique de la chaleur</em>. We begin with the prototype on which
+                    the entire theory rests: temperature evolution in a one-dimensional rod of length \(L\) whose two
+                    ends are held at zero temperature. The mathematical formulation is the
+                    <strong>initial-boundary value problem</strong>
+                    \[
+                    \begin{cases}
+                    \partial_t u = k\, \partial_{xx} u, & 0 < x < L,\ t > 0, \\
+                    u(0, t) = u(L, t) = 0, & t \geq 0, \\
+                    u(x, 0) = f(x), & 0 \leq x \leq L,
+                    \end{cases}
+                    \]
+                    where \(f\) is a prescribed initial temperature profile. The boundary conditions
+                    \(u(0,t) = u(L,t) = 0\) are the homogeneous <strong>Dirichlet</strong> conditions, corresponding
+                    physically to the rod ends being held in contact with a thermal reservoir at temperature zero.
+                    Our goal is an explicit solution formula that exposes both how the temperature evolves and how
+                    that evolution reflects the spectral structure of the spatial differential operator
+                    \(\partial_{xx}\) on \([0, L]\).
+                </p>
+
+                <p>
+                    The strategy proceeds in three stages: <em>separation of variables</em> reduces the PDE to two
+                    ordinary differential equations linked by a separation constant; the spatial ODE together with
+                    the boundary conditions becomes an <em>eigenvalue problem</em> whose solutions are the standing
+                    waves of the rod; superposition of these standing waves, weighted by the Fourier sine
+                    coefficients of \(f\), gives the complete solution. The method is due to Daniel Bernoulli
+                    (1700s) and was systematised by Fourier; its scope extends far beyond the heat equation,
+                    underpinning much of the linear theory of partial differential equations on bounded domains.
+                </p>
+
+                <h3>Separation of Variables</h3>
+
+                <p>
+                    We seek solutions in the product form
+                    \[
+                    u(x, t) = \phi(x)\, G(t),
+                    \]
+                    setting aside the initial condition for the moment and demanding only that \(u\) satisfy the PDE
+                    and the homogeneous boundary conditions. Substituting into the heat equation and computing the
+                    relevant partial derivatives gives \(\phi(x) G'(t) = k\, \phi''(x) G(t)\). Dividing both sides
+                    by \(k\, \phi(x)\, G(t)\) — legitimate wherever neither factor vanishes — separates the variables:
+                    \[
+                    \frac{G'(t)}{k\, G(t)} = \frac{\phi''(x)}{\phi(x)}.
+                    \]
+                    The left-hand side depends only on \(t\), the right-hand side only on \(x\). Two functions of
+                    independent variables can agree everywhere only if both are equal to a common constant, which
+                    we denote \(-\lambda\):
+                    \[
+                    \frac{G'(t)}{k\, G(t)} = \frac{\phi''(x)}{\phi(x)} = -\lambda.
+                    \]
+                    The minus sign is a convention chosen with foresight: we shall find that the physically relevant
+                    values of \(\lambda\) are positive, in which case \(G(t)\) decays rather than grows. The
+                    separation equation splits into two ordinary differential equations,
+                    \[
+                    \begin{align*}
+                    \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                    G'(t) + \lambda k\, G(t) &\;=\; 0,
+                    \end{align*}
+                    \]
+                    coupled only through the shared constant \(\lambda\). The homogeneous boundary conditions
+                    \(u(0, t) = u(L, t) = 0\) translate into conditions on \(\phi\) alone: requiring
+                    \(\phi(0)\, G(t) = \phi(L)\, G(t) = 0\) for all \(t\) and rejecting the trivial possibility
+                    \(G \equiv 0\) (which gives \(u \equiv 0\), of no interest), we obtain
+                    \[
+                    \phi(0) = \phi(L) = 0.
+                    \]
+                </p>
+
+                <h3>The Eigenvalue Problem</h3>
+
+                <p>
+                    The spatial problem
+                    \[
+                    \begin{align*}
+                    \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                    \phi(0) = \phi(L) &\;=\; 0,
+                    \end{align*}
+                    \]
+                    is a <strong>boundary value problem</strong>: two conditions are imposed at two distinct points
+                    of the interval, not at a single point as for an initial value problem. It is fundamentally
+                    different in character from the initial value problems familiar from a first course in ordinary
+                    differential equations. The trivial function \(\phi \equiv 0\) satisfies the ODE and both
+                    boundary conditions regardless of \(\lambda\); the question is whether nontrivial solutions
+                    exist, and if so for which values of \(\lambda\).
+                </p>
+
+                <div class="theorem" id="D-heat_eigenvalue_problem">
+                    <span class="theorem-title">Definition: Eigenvalues and Eigenfunctions of the Dirichlet Laplacian on \([0, L]\)</span>
+                    <p>
+                        A real number \(\lambda\) is an <strong>eigenvalue</strong> of the boundary value problem
+                        \[
+                        \begin{align*}
+                        \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                        \phi(0) = \phi(L) &\;=\; 0
+                        \end{align*}
+                        \]
+                        if there exists a nontrivial solution \(\phi \not\equiv 0\). Any such \(\phi\) is called
+                        an <strong>eigenfunction</strong> corresponding to \(\lambda\). The terminology arises
+                        because the problem can be rewritten as \(-\phi'' = \lambda\, \phi\), expressing \(\phi\)
+                        as an eigenvector of the differential operator \(-d^2/dx^2\) acting on twice-differentiable
+                        functions on \([0, L]\) that vanish at both endpoints.
+                    </p>
+                </div>
+
+                <p>
+                    To find the eigenvalues, we solve the ODE directly. The characteristic equation
+                    \(r^2 + \lambda = 0\) has roots \(r = \pm\sqrt{-\lambda}\), and the structure of these roots —
+                    real, zero, or purely imaginary — depends on the sign of \(\lambda\). A complete analysis must
+                    consider three cases.
+                </p>
+
+                <p>
+                    <strong>Case 1: \(\lambda < 0\).</strong> Writing \(\lambda = -s\) with \(s > 0\), the
+                    characteristic roots are \(r = \pm\sqrt{s}\), and the general solution is
+                    \(\phi(x) = c_1 \cosh\sqrt{s}\, x + c_2 \sinh\sqrt{s}\, x\). The condition \(\phi(0) = 0\)
+                    forces \(c_1 = 0\), leaving \(\phi(x) = c_2 \sinh\sqrt{s}\, x\). The condition \(\phi(L) = 0\)
+                    requires \(c_2 \sinh\sqrt{s}\, L = 0\). Since \(\sinh\) vanishes only at zero and
+                    \(\sqrt{s}\, L > 0\), we must have \(c_2 = 0\), giving only the trivial solution. No negative
+                    eigenvalue exists.
+                </p>
+
+                <p>
+                    <strong>Case 2: \(\lambda = 0\).</strong> The ODE reduces to \(\phi'' = 0\) with general
+                    solution \(\phi(x) = c_1 + c_2 x\). The boundary conditions \(\phi(0) = c_1 = 0\) and
+                    \(\phi(L) = c_2 L = 0\) (with \(L > 0\)) force both constants to vanish. \(\lambda = 0\) is
+                    not an eigenvalue.
+                </p>
+
+                <p>
+                    <strong>Case 3: \(\lambda > 0\).</strong> The characteristic roots are purely imaginary,
+                    \(r = \pm i\sqrt{\lambda}\), and the general solution in real form is
+                    \[
+                    \phi(x) = c_1 \cos\sqrt{\lambda}\, x + c_2 \sin\sqrt{\lambda}\, x.
+                    \]
+                    The condition \(\phi(0) = 0\) again forces \(c_1 = 0\). The remaining condition
+                    \(\phi(L) = c_2 \sin\sqrt{\lambda}\, L = 0\) admits nontrivial solutions \((c_2 \neq 0)\)
+                    precisely when \(\sin\sqrt{\lambda}\, L = 0\), that is, when \(\sqrt{\lambda}\, L = n\pi\) for
+                    some positive integer \(n\). (The value \(n = 0\) is excluded because it gives \(\lambda = 0\),
+                    already handled; negative integers yield the same eigenvalues as their positive counterparts.)
+                </p>
+
+                <div class="theorem" id="T-dirichlet_eigenvalues">
+                    <span class="theorem-title">Theorem: Eigenvalues and Eigenfunctions of the Dirichlet Laplacian on \([0, L]\)</span>
+                    <p>
+                        The eigenvalues and corresponding eigenfunctions of the boundary value problem
+                        \[
+                        \begin{align*}
+                        \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                        \phi(0) = \phi(L) &\;=\; 0
+                        \end{align*}
+                        \]
+                        are
+                        \[
+                        \begin{align*}
+                        \lambda_n &\;=\; \left(\frac{n\pi}{L}\right)^{\!2}, \\\\
+                        \phi_n(x) &\;=\; \sin\frac{n\pi x}{L},
+                        \end{align*}
+                        \]
+                        for \(n = 1, 2, 3, \ldots\).
+                        The eigenvalues form a strictly increasing sequence \(0 < \lambda_1 < \lambda_2 < \cdots\)
+                        tending to infinity, with \(\lambda_n = O(n^2)\). Each eigenvalue is simple: its
+                        eigenspace is one-dimensional, spanned by \(\phi_n\) up to scalar multiplication.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        The case analysis above establishes that nontrivial solutions exist only when
+                        \(\lambda > 0\) and \(\sqrt{\lambda}\, L = n\pi\) for some positive integer \(n\), giving
+                        \(\lambda_n = (n\pi/L)^2\). The corresponding eigenfunctions
+                        \(\phi_n(x) = \sin(n\pi x/L)\) are one-dimensional in span: any other solution of the ODE
+                        with eigenvalue \(\lambda_n\) is a linear combination of \(\sin\sqrt{\lambda_n}\, x\) and
+                        \(\cos\sqrt{\lambda_n}\, x\), and the boundary condition at \(x = 0\) eliminates the
+                        cosine component. The eigenvalues are simple and the sequence is monotone increasing with
+                        the stated asymptotic order.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Insight: Spectral Geometry of an Interval</h3>
+                    <p>
+                        The eigenfunctions \(\phi_n(x) = \sin(n\pi x/L)\) are the <strong>standing waves</strong>
+                        of a rod fixed at both ends — the same modes that govern a vibrating string of length \(L\)
+                        with fixed endpoints. The \(n\)th mode has \(n - 1\) internal nodes (zeros) and oscillates
+                        \(n/2\) times along the rod. The eigenvalue \(\lambda_n = (n\pi/L)^2\) measures the
+                        "spatial frequency squared" of the mode: higher modes oscillate more rapidly and, as we
+                        shall see, decay more rapidly in time. The asymptotic \(\lambda_n \sim n^2\) is no accident;
+                        it reflects the fact that the Laplacian on a one-dimensional interval is a second-order
+                        operator, and Weyl's law in higher dimensions generalises this scaling: on a
+                        \(d\)-dimensional domain of volume \(V\), the \(n\)th Dirichlet eigenvalue scales like
+                        \(\lambda_n \sim (n/V)^{2/d}\). The spectral structure of a domain encodes deep geometric
+                        information — a theme that connects to the spectral analysis of graph Laplacians in
+                        <a href="../Linear_algebra/graph_laplacian.html"><strong>spectral graph theory</strong></a>
+                        and to the manifold theory that lies ahead in this curriculum.
+                    </p>
+                </div>
+
+                <h3>Time Evolution and Product Solutions</h3>
+
+                <p>
+                    With the eigenvalues in hand, the time-dependent ODE \(G'(t) + \lambda_n k\, G(t) = 0\)
+                    associated with the \(n\)th mode is a first-order linear equation with constant coefficient
+                    \(\lambda_n k\), whose general solution is the exponential
+                    \[
+                    \begin{align*}
+                    G_n(t) &\;=\; e^{-\lambda_n k\, t} \\\\
+                    &\;=\; \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right),
+                    \end{align*}
+                    \]
+                    chosen with the normalisation \(G_n(0) = 1\) so that the multiplicative constant is absorbed
+                    into the spatial part at the time of superposition. Multiplying the spatial eigenfunction by
+                    its time evolution gives the \(n\)th <strong>product solution</strong> or
+                    <strong>fundamental mode</strong>:
+                    \[
+                    u_n(x, t) = \sin\frac{n\pi x}{L}\, \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right).
+                    \]
+                </p>
+
+                <p>
+                    Each \(u_n\) is a solution of the PDE \(\partial_t u = k\, \partial_{xx} u\) satisfying the
+                    homogeneous Dirichlet boundary conditions. Three features stand out. First, every mode
+                    <em>decays exponentially in time</em>: this is the hallmark of parabolic behaviour and
+                    distinguishes the heat equation sharply from the wave equation, whose modes oscillate without
+                    decay. Second, <em>higher modes decay faster</em>: the decay rate \(k\lambda_n = k(n\pi/L)^2\)
+                    grows quadratically in \(n\), so spatial features of high frequency are damped on a much
+                    shorter timescale than coarse features. The thermal diffusion time of the \(n\)th mode is
+                    \(\tau_n = 1/(k\lambda_n) = L^2/(k n^2 \pi^2)\). Third, the spatial profile is
+                    <em>preserved</em>: each \(u_n\) factors as a pure sine wave times a time-dependent amplitude,
+                    so the shape \(\sin(n\pi x/L)\) is fixed and only its amplitude shrinks.
+                </p>
+
+                <h3>Superposition and the Series Solution</h3>
+
+                <p>
+                    The heat equation is linear and homogeneous, and the boundary conditions are also homogeneous.
+                    Consequently any finite linear combination of product solutions is again a solution:
+                    \[
+                    \sum_{n=1}^{N} B_n\, u_n(x, t)
+                    = \sum_{n=1}^{N} B_n \sin\frac{n\pi x}{L}\, \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right)
+                    \]
+                    satisfies the PDE and the Dirichlet boundary conditions for any choice of coefficients
+                    \(B_1, \ldots, B_N\). The <strong>principle of superposition</strong> extends this to infinite
+                    series, provided the series converges in an appropriate sense: termwise differentiation in
+                    both \(x\) and \(t\) is justified for \(t > 0\) because the exponential factors
+                    \(\exp(-k(n\pi/L)^2 t)\) decay so rapidly in \(n\) that the differentiated series converges
+                    uniformly on every closed half-strip \(0 \leq x \leq L\), \(t \geq t_0 > 0\).
+                </p>
+
+                <p>
+                    To match the initial condition \(u(x, 0) = f(x)\), evaluate the formal infinite series at
+                    \(t = 0\): the exponential factors collapse to unity, leaving
+                    \[
+                    f(x) = \sum_{n=1}^{\infty} B_n \sin\frac{n\pi x}{L}, \qquad 0 \leq x \leq L.
+                    \]
+                    This is precisely a <strong>Fourier sine series expansion</strong> of \(f\) on \([0, L]\). The
+                    <a href="fourier_series.html#T-trig_orthogonality" class="ref-link"><strong>orthogonality of the
+                    trigonometric system</strong></a> established in calc-14 gives the coefficient formula
+                    immediately: multiplying both sides by \(\sin(m\pi x/L)\) and integrating over \([0, L]\)
+                    selects the term with \(n = m\), using
+                    \[
+                    \int_0^L \sin\frac{n\pi x}{L} \sin\frac{m\pi x}{L}\, dx = \begin{cases} L/2, & m = n, \\ 0, & m \neq n. \end{cases}
+                    \]
+                    The resulting coefficients are the Fourier sine coefficients of \(f\). We collect these
+                    observations into a single statement.
+                </p>
+
+                <div class="theorem" id="T-heat_dirichlet_series_solution">
+                    <span class="theorem-title">Theorem: Series Solution of the Heat Equation on a Bounded Interval</span>
+                    <p>
+                        Let \(f \in L^2([0, L])\) be the initial temperature profile. The initial-boundary value
+                        problem
+                        \[
+                        \begin{cases}
+                        \partial_t u = k\, \partial_{xx} u, & 0 < x < L,\ t > 0, \\
+                        u(0, t) = u(L, t) = 0, & t \geq 0, \\
+                        u(x, 0) = f(x), & 0 \leq x \leq L
+                        \end{cases}
+                        \]
+                        admits the solution
+                        \[
+                        u(x, t) = \sum_{n=1}^{\infty} B_n \sin\frac{n\pi x}{L}\, \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right),
+                        \]
+                        where the coefficients are the Fourier sine coefficients of the initial datum,
+                        \[
+                        B_n = \frac{2}{L}\int_0^L f(x) \sin\frac{n\pi x}{L}\, dx.
+                        \]
+                        The series converges in \(L^2([0, L])\) for every \(t \geq 0\) and, for \(t > 0\),
+                        converges absolutely and uniformly on \([0, L]\) together with all of its
+                        \(x\)-derivatives and \(t\)-derivatives.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Termwise the series satisfies the PDE and the Dirichlet boundary conditions, as each
+                        product solution \(u_n\) does. The convergence claims are a consequence of the rapid
+                        decay of the exponential factors. For \(t \geq t_0 > 0\), the bound
+                        \(|B_n| \leq \|f\|_{L^2}\sqrt{2/L}\) (which follows from Bessel's inequality) combined
+                        with \(\exp(-k(n\pi/L)^2 t_0)\) decaying faster than any inverse polynomial in \(n\) gives
+                        absolute and uniform convergence of the series and of all its termwise derivatives;
+                        consequently \(u\) is \(C^\infty\) in \((x, t)\) for \(t > 0\), differentiation can be
+                        carried out under the summation, and \(u\) satisfies the PDE classically. At \(t = 0\),
+                        the series reduces to the Fourier sine series of \(f\), which converges to \(f\) in
+                        \(L^2([0, L])\) by the completeness of the orthonormal system
+                        \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) — a fact established as part of the general
+                        Hilbert-space theory of Fourier series. The continuity of \(u(\cdot, t) \to f\) in \(L^2\)
+                        as \(t \to 0^+\) follows from Parseval's identity applied to the modes.
+                    </p>
+                </div>
+
+                <p>
+                    The solution formula has a strikingly clean structure: <em>each Fourier mode of the initial
+                    datum evolves independently, weighted by an exponential decay whose rate is the eigenvalue
+                    times the diffusivity</em>. The Laplacian \(\partial_{xx}\) on \([0, L]\) with Dirichlet
+                    boundary conditions is diagonalised by the orthonormal basis
+                    \(\{\sqrt{2/L}\sin(n\pi x/L)\}\), and the heat semigroup
+                    \(e^{tk\partial_{xx}}\) acts on this basis by multiplication by \(e^{-tk\lambda_n}\). This is
+                    the prototype example of functional calculus for self-adjoint operators: an abstract framework
+                    we touched in
+                    <a href="fourier_hilbert.html"><strong>Fourier analysis in Hilbert spaces</strong></a> and
+                    one which generalises to elliptic operators on manifolds, graph Laplacians in spectral graph
+                    theory, and ultimately to the spectral theorem itself.
+                </p>
+
+                <h3>A Worked Example</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Parabolic Initial Profile</span>
+                    <p>
+                        Take \(L = 1\) and the initial datum \(f(x) = x(1 - x)\), a parabolic bump vanishing
+                        at both endpoints and reaching its maximum \(1/4\) at the midpoint \(x = 1/2\). The
+                        Fourier sine coefficients are computed by direct integration:
+                        \[
+                        B_n = 2\int_0^1 x(1 - x) \sin(n\pi x)\, dx.
+                        \]
+                        Two integrations by parts, or the standard tabulated identities, give
+                        \[
+                        \begin{align*}
+                        \int_0^1 x \sin(n\pi x)\, dx &\;=\; \frac{(-1)^{n+1}}{n\pi}, \\\\
+                        \int_0^1 x^2 \sin(n\pi x)\, dx &\;=\; \frac{(-1)^{n+1}}{n\pi} - \frac{2[1 - (-1)^n]}{(n\pi)^3}.
+                        \end{align*}
+                        \]
+                        Subtracting yields
+                        \[
+                        \begin{align*}
+                        B_n &\;=\; 2\!\left(\frac{(-1)^{n+1}}{n\pi} - \left[\frac{(-1)^{n+1}}{n\pi} - \frac{2[1-(-1)^n]}{(n\pi)^3}\right]\right) \\\\
+                        &\;=\; \frac{4[1 - (-1)^n]}{(n\pi)^3}.
+                        \end{align*}
+                        \]
+                        Since \(1 - (-1)^n\) equals \(2\) when \(n\) is odd and \(0\) when \(n\) is even, only
+                        odd modes contribute, and writing \(n = 2j + 1\),
+                        \[
+                        \begin{align*}
+                        B_{2j+1} &\;=\; \frac{8}{(2j+1)^3 \pi^3}, \\\\
+                        B_{2j} &\;=\; 0.
+                        \end{align*}
+                        \]
+                        The solution is therefore
+                        \[
+                        u(x, t) = \frac{8}{\pi^3} \sum_{j=0}^{\infty} \frac{1}{(2j+1)^3}\, \sin((2j+1)\pi x)\,
+                        \exp\!\left(-k (2j+1)^2 \pi^2 t\right).
+                        \]
+                        Three qualitative features illustrate the general structure. The vanishing of even-mode
+                        coefficients reflects the spatial symmetry of \(f\) about \(x = 1/2\): the initial profile
+                        is even with respect to that midpoint, and the even-indexed eigenfunctions
+                        \(\sin(2j\pi x)\) are odd about it, hence orthogonal. The coefficients decay as
+                        \(1/(2j+1)^3\), an algebraic rate set by the smoothness of \(f\) and its compatibility
+                        with the boundary conditions; smoother initial data produce more rapidly decaying
+                        coefficients. Finally, the time exponential \(\exp(-k(2j+1)^2 \pi^2 t)\) damps high modes
+                        far faster than the fundamental \((j = 0)\) mode \(\sin(\pi x) e^{-k\pi^2 t}\): for any
+                        \(t > 0\) of moderate size, the solution is well approximated by its first nonzero term
+                        and resembles a sine arch whose amplitude shrinks exponentially. The parabolic initial
+                        profile relaxes, on the timescale \(1/(k\pi^2)\), to a sine arch and thence to the zero
+                        equilibrium.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Insight: From Bounded Interval to Real Line</h3>
+                    <p>
+                        The series formula above is the complete solution of the heat equation on
+                        \([0, L]\) with Dirichlet boundary conditions — every initial profile decomposes
+                        into Dirichlet eigenmodes, each evolving independently by exponential damping
+                        with rate \(k(n\pi/L)^2\). The structure is rigid: a countable basis, a discrete
+                        spectrum, a sum. The next section removes the bounded interval and asks what
+                        happens on the entire real line, where the boundary is sent to infinity. The
+                        Dirichlet eigenmodes \(\sin(n\pi x/L)\) lose their normalisation as \(L \to \infty\),
+                        and the discrete spectrum thickens into a continuum. The replacement of the
+                        Fourier series by the Fourier transform — already developed in calc-15 — is
+                        precisely what is needed, and the heat equation on \(\mathbb{R}\) will be solved
+                        by a single integral kernel of striking simplicity.
+                    </p>
+                </div>
+            </section>
+
+            <section id="realline" class="section-content">
+                <h2>Heat Equation on the Real Line</h2>
+
+                <p>
+                    Replacing the rod \([0, L]\) by the full line \(\mathbb{R}\) changes the analytic
+                    situation in a structurally important way. On a bounded interval, the Dirichlet
+                    eigenfunctions \(\sin(n\pi x/L)\) provide a countable orthonormal basis and the
+                    solution is a discrete sum over normal modes. On the real line, no such basis of
+                    eigenfunctions of \(-\partial_{xx}\) exists in \(L^2(\mathbb{R})\); the formal
+                    eigenfunctions \(e^{i\xi x}\) are bounded but not square-integrable, and the
+                    "expansion in eigenmodes" must be replaced by an integral over a continuous
+                    frequency variable. This is precisely the passage from Fourier series to the
+                    <a href="fourier_transform.html#D-fourier_transform" class="ref-link" data-id="D-fourier_transform">Fourier transform</a>
+                    developed in the preceding page; here we put that machinery to its first serious
+                    use, solving an initial-value problem on an unbounded domain.
+                </p>
+
+                <p>
+                    The problem we now consider is:
+                    \[
+                    \begin{cases}
+                    \partial_t u = k\, \partial_{xx} u, & x \in \mathbb{R},\ t > 0, \\
+                    u(x, 0) = f(x), & x \in \mathbb{R},
+                    \end{cases}
+                    \]
+                    with \(k > 0\) and \(f \in L^1(\mathbb{R}) \cap L^2(\mathbb{R})\) sufficiently regular
+                    and decaying at infinity. We additionally require that \(u(\cdot, t)\) decays as
+                    \(|x| \to \infty\) for each \(t > 0\), which selects a unique solution in the natural
+                    function class and rules out, for instance, the addition of a constant temperature
+                    or a polynomially growing background field.
+                </p>
+
+                <h3 style="padding-left: 20px;">2.1 &nbsp; Fourier-Transforming the Equation</h3>
+
+                <p>
+                    Define the spatial Fourier transform of \(u(\cdot, t)\) for each fixed \(t\):
+                    \[
+                    \hat{u}(\xi, t) = \int_{-\infty}^{\infty} u(x, t)\, e^{ix\xi}\, dx.
+                    \]
+                    Applying the transform to both sides of the heat equation and using the
+                    <a href="fourier_transform.html#T-ft_differentiation" class="ref-link" data-id="T-ft_differentiation">differentiation property</a>
+                    of the Fourier transform — which on \(\partial_{xx}\) produces the factor
+                    \((-i\xi)^2 = -\xi^2\) — converts the partial differential equation in \((x, t)\)
+                    into an ordinary differential equation in \(t\) alone, with \(\xi\) entering only
+                    as a parameter:
+                </p>
+
+                <div class="theorem" id="T-heat_fourier_ode">
+                    <span class="theorem-title">Theorem: Fourier-Transformed Heat Equation</span>
+                    <p>
+                        Let \(u(x, t)\) solve the heat equation on \(\mathbb{R}\) with \(u(\cdot, t)\)
+                        decaying at infinity for each \(t \geq 0\), and let
+                        \(\hat{u}(\xi, t)\) denote its spatial Fourier transform. Then, for each
+                        \(\xi \in \mathbb{R}\), the function \(t \mapsto \hat{u}(\xi, t)\) satisfies
+                        \[
+                        \partial_t \hat{u}(\xi, t) = -k \xi^2\, \hat{u}(\xi, t), \qquad
+                        \hat{u}(\xi, 0) = \hat{f}(\xi).
+                        \]
+                        The unique solution is
+                        \[
+                        \hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k \xi^2 t}.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Differentiation under the integral is justified by the decay hypothesis on
+                        \(u\) and its spatial derivatives. Then
+                        \[
+                        \begin{align*}
+                        \partial_t \hat{u}(\xi, t) &= \int_{-\infty}^{\infty} \partial_t u(x, t)\, e^{ix\xi}\, dx \\\\
+                                                   &= \int_{-\infty}^{\infty} k\, \partial_{xx} u(x, t)\, e^{ix\xi}\, dx \\\\
+                                                   &= k \cdot (-i\xi)^2\, \hat{u}(\xi, t) \\\\
+                                                   &= -k\xi^2\, \hat{u}(\xi, t),
+                        \end{align*}
+                        \]
+                        where the third equality applies the differentiation property of the Fourier
+                        transform twice (the integration by parts that produces it is justified by the
+                        decay of \(u\) and \(\partial_x u\) at infinity).
+                    </p>
+                    <p>
+                        For each fixed \(\xi\), the equation
+                        \(\partial_t \hat{u}(\xi, t) = -k\xi^2\, \hat{u}(\xi, t)\) is a scalar linear
+                        ODE in \(t\) with constant coefficient \(-k\xi^2\) (\(\xi\) is held fixed). Its
+                        unique solution with initial condition \(\hat{u}(\xi, 0) = \hat{f}(\xi)\) is
+                        \(\hat{u}(\xi, t) = \hat{f}(\xi) e^{-k\xi^2 t}\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    This is the central simplification: the Fourier transform diagonalises the spatial
+                    derivative operator, turning a partial differential equation into a family of
+                    decoupled scalar ODEs indexed by frequency. Each frequency \(\xi\) decays
+                    independently at rate \(k\xi^2\) — proportional to the square of the frequency, so
+                    that high-frequency components are suppressed exponentially faster than
+                    low-frequency ones. The smoothing phenomenon is, in the frequency domain, simply
+                    multiplication by a rapidly decaying Gaussian envelope.
+                </p>
+
+                <h3 style="padding-left: 20px;">2.2 &nbsp; The Heat Kernel</h3>
+
+                <p>
+                    To recover \(u(x, t)\) we must invert the Fourier transform of the right-hand side,
+                    that is, identify the function whose Fourier transform is \(e^{-k\xi^2 t}\). This is
+                    the moment at which the Gaussian calculation done once in the preceding page
+                    pays for itself across all of parabolic theory. There it was established (as a
+                    worked example) that
+                    \[
+                    \widehat{e^{-x^2/(2\sigma^2)}}(\xi) = \sigma \sqrt{2\pi}\, e^{-\sigma^2 \xi^2 / 2}
+                    \]
+                    for any \(\sigma > 0\). Choosing \(\sigma^2 = 2kt\) makes the right-hand side equal
+                    \(\sigma\sqrt{2\pi}\, e^{-k\xi^2 t}\), which differs from the target \(e^{-k\xi^2 t}\)
+                    only by the normalisation factor \(\sigma\sqrt{2\pi} = \sqrt{4\pi kt}\). Dividing
+                    through gives the function whose Fourier transform is \(e^{-k\xi^2 t}\). This
+                    function is fundamental enough to deserve a name.
+                </p>
+
+                <div class="theorem" id="D-heat_kernel">
+                    <span class="theorem-title">Definition: Heat Kernel on \(\mathbb{R}\)</span>
+                    <p>
+                        The <strong>heat kernel</strong> (or <strong>fundamental solution of the heat
+                        equation</strong>) on \(\mathbb{R}\) with diffusivity \(k > 0\) is
+                        \[
+                        K_t(x) \;=\; \frac{1}{\sqrt{4\pi k t}}\, \exp\!\left(-\frac{x^2}{4kt}\right),
+                        \qquad t > 0,\ x \in \mathbb{R}.
+                        \]
+                        Its spatial Fourier transform is
+                        \[
+                        \widehat{K_t}(\xi) \;=\; e^{-k \xi^2 t}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The Fourier identity in the definition is the substitution \(\sigma^2 = 2kt\)
+                    applied to the boxed Gaussian Fourier result of the preceding page, divided by
+                    \(\sqrt{4\pi kt}\); no fresh integration is required. In the spatial variable,
+                    \(K_t\) is a centred Gaussian bell whose width \(\sqrt{2kt}\) grows like
+                    \(\sqrt{t}\) — the characteristic length scale of diffusive spreading.
+                </p>
+
+                <h3 style="padding-left: 20px;">2.3 &nbsp; Solution by Convolution</h3>
+
+                <p>
+                    With \(\hat{u}(\xi, t) = \hat{f}(\xi)\, \widehat{K_t}(\xi)\), the
+                    <a href="fourier_transform.html#T-convolution_theorem" class="ref-link" data-id="T-convolution_theorem">convolution theorem</a>
+                    inverts the right-hand side at once: a pointwise product of Fourier transforms is
+                    the Fourier transform of a convolution. The solution in the spatial variable is
+                    therefore the convolution of the initial datum with the heat kernel.
+                </p>
+
+                <div class="theorem" id="T-heat_kernel_solution">
+                    <span class="theorem-title">Theorem: Heat Kernel Solution on \(\mathbb{R}\)</span>
+                    <p>
+                        Let \(f \in L^1(\mathbb{R})\) (or more generally \(f\) bounded and continuous
+                        with sufficient decay). The unique decaying solution of the heat equation
+                        \(\partial_t u = k\, \partial_{xx} u\) on \(\mathbb{R} \times (0, \infty)\) with
+                        \(u(x, 0) = f(x)\) is the convolution of \(f\) with the heat kernel:
+                        \[
+                        u(x, t) \;=\; (f * K_t)(x) \;=\; \int_{-\infty}^{\infty} K_t(x - y)\, f(y)\, dy.
+                        \]
+                        Explicitly,
+                        \[
+                        u(x, t) \;=\; \frac{1}{\sqrt{4\pi kt}} \int_{-\infty}^{\infty}
+                            \exp\!\left(-\frac{(x - y)^2}{4kt}\right) f(y)\, dy.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        From the Fourier-transformed heat equation,
+                        \(\hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k\xi^2 t} = \hat{f}(\xi)\, \widehat{K_t}(\xi)\).
+                        By the convolution theorem applied in reverse,
+                        \(\hat{f}(\xi)\, \widehat{K_t}(\xi) = \widehat{f * K_t}(\xi)\). By the
+                        injectivity of the Fourier transform on the relevant function class,
+                        \(u(\cdot, t) = f * K_t\). The integral form is the definition of convolution,
+                        and the symmetry \(K_t(x - y) = K_t(y - x)\) (since \(K_t\) is even) makes the
+                        two integrals interchangeable. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The convolution form admits a transparent physical reading: the temperature at
+                    \(x\) at time \(t\) is a weighted average of the initial temperature, with weights
+                    given by the heat kernel centred at \(x\). The kernel is sharply peaked at
+                    \(y = x\) for small \(t\) and broadens with width \(\sqrt{2kt}\), so that nearby
+                    initial values contribute heavily at first and progressively more distant values
+                    contribute as time advances. In the limit \(t \to 0^+\), \(K_t\) concentrates into
+                    a Dirac mass at \(0\), and the convolution recovers \(f(x)\) — confirming that the
+                    initial condition is attained in a distributional sense.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: The Heat Kernel as a Gaussian Density</h3>
+                    <p>
+                        The expression for \(K_t\) is not a new special function: setting
+                        \(\sigma^2 = 2kt\),
+                        \[
+                        K_t(x) \;=\; \frac{1}{\sqrt{2\pi \sigma^2}}\, \exp\!\left(-\frac{x^2}{2\sigma^2}\right),
+                        \]
+                        which is the probability density function of the
+                        <a href="../Probability/gaussian.html#D-normal_distribution" class="ref-link" data-id="D-normal_distribution">normal distribution</a>
+                        with mean \(0\) and variance \(2kt\). The identity \(\int K_t(x)\, dx = 1\)
+                        — which we will exploit in the next section as conservation of total heat —
+                        is, viewed in this light, the
+                        <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link" data-id="T-gaussian_integral">Gaussian integral</a>.
+                    </p>
+                    <p>
+                        The agreement is not coincidence. The heat equation governs the time evolution
+                        of the probability density of <strong>Brownian motion</strong>: if \(B_t\) is a
+                        standard Brownian motion scaled to have variance \(2kt\) at time \(t\), then
+                        its density satisfies \(\partial_t p = k\, \partial_{xx} p\) with initial mass
+                        concentrated at the origin, and the unique solution is \(p(x, t) = K_t(x)\).
+                        The convolution \(u(x, t) = (f * K_t)(x)\) admits the probabilistic reading
+                        \(u(x, t) = \mathbb{E}[f(x + B_t)]\): temperature at \((x, t)\) is the expected
+                        value of the initial profile sampled along a random walk emanating from
+                        \(x\). The width \(\sqrt{2kt}\) is then nothing but the standard deviation of
+                        the random walk's displacement, growing as \(\sqrt{t}\) — the hallmark of
+                        diffusive scaling, in contrast to the linear-in-\(t\) growth of ballistic
+                        motion. The full development of Brownian motion, the Itô calculus that
+                        formalises this connection, and the Fokker-Planck equation that generalises
+                        it to drift-diffusion processes belong to a later track of the curriculum;
+                        what is established here is the bridge from a purely analytic computation to
+                        a probabilistic object, set up so that the bridge can be crossed in either
+                        direction when the time comes.
+                    </p>
+                </div>
+            </section>
+
+            <section id="kernel" class="section-content">
+                <h2>Properties of the Heat Kernel</h2>
+
+                <p>
+                    The convolution solution \(u(x, t) = (f * K_t)(x)\) places the qualitative behaviour
+                    of every initial-value problem on the same Gaussian footing: <em>all</em> features of
+                    the solution can be read off from a single object, the heat kernel \(K_t\). Four
+                    properties — mass conservation, instantaneous smoothing, the maximum principle, and
+                    the ill-posedness of the backward problem — capture the essential character of
+                    parabolic evolution and, taken together, distinguish the heat equation from the
+                    other two members of the parabolic-hyperbolic-elliptic trichotomy.
+                </p>
+
+                <h3 style="padding-left: 20px;">3.1 &nbsp; Conservation of Total Heat</h3>
+
+                <p>
+                    The total integral of the temperature is preserved in time. For the heat kernel
+                    itself, this is the statement that \(K_t\) is a probability density: the Gaussian
+                    integral
+                    <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link" data-id="T-gaussian_integral">established in Section III</a>
+                    gives
+                    \[
+                    \int_{-\infty}^{\infty} K_t(x)\, dx \;=\; \frac{1}{\sqrt{4\pi kt}} \int_{-\infty}^{\infty}
+                        e^{-x^2/(4kt)}\, dx \;=\; \frac{1}{\sqrt{4\pi kt}} \cdot \sqrt{4\pi kt} \;=\; 1
+                    \]
+                    for every \(t > 0\). For a general initial datum \(f \in L^1(\mathbb{R})\), Fubini's
+                    theorem applied to the convolution \(u = f * K_t\) gives
+                    \[
+                    \begin{align*}
+                    \int_{-\infty}^{\infty} u(x, t)\, dx
+                        &= \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} K_t(x - y)\, f(y)\, dy\, dx \\\\
+                        &= \int_{-\infty}^{\infty} f(y) \left( \int_{-\infty}^{\infty} K_t(x - y)\, dx \right) dy \\\\
+                        &= \int_{-\infty}^{\infty} f(y)\, dy,
+                    \end{align*}
+                    \]
+                    so \(\int u(\cdot, t) = \int f\) for all \(t > 0\). Physically: heat is neither
+                    created nor destroyed; it merely redistributes itself across the line. The same
+                    identity, viewed probabilistically, says that the diffusing density remains a
+                    probability density at every time, a fact that lies at the foundation of the
+                    Fokker-Planck equation.
+                </p>
+
+                <h3 style="padding-left: 20px;">3.2 &nbsp; Instantaneous Smoothing</h3>
+
+                <p>
+                    The most characteristic feature of parabolic evolution is that the solution becomes
+                    smooth instantly, no matter how rough the initial datum is. The mechanism is most
+                    transparent in the frequency domain. From
+                    \(\hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k\xi^2 t}\), the high-frequency content of
+                    \(u(\cdot, t)\) is suppressed by a Gaussian factor that decays super-exponentially
+                    in \(|\xi|\). Concretely, for any \(t > 0\) and any \(n \in \mathbb{N}\),
+                    \[
+                    |\xi|^n\, |\hat{u}(\xi, t)| \;\leq\; \|f\|_{L^1} \cdot |\xi|^n\, e^{-k\xi^2 t}
+                    \]
+                    (using the elementary bound \(|\hat{f}(\xi)| \leq \|f\|_{L^1}\) valid for any
+                    \(f \in L^1\)). The right-hand side is integrable in \(\xi\) for every \(n\), since
+                    polynomial growth is beaten by Gaussian decay. By the Fourier inversion formula
+                    and differentiation under the integral, \(u(\cdot, t)\) is therefore of class
+                    \(C^n\) for every \(n\), and indeed \(C^\infty\), even if \(f\) is merely \(L^1\)
+                    with jump discontinuities or worse. The smoothing acts in an arbitrarily short
+                    time: any \(t > 0\), however small, produces an infinitely differentiable function.
+                </p>
+
+                <p>
+                    The same conclusion can be reached from the convolution side: \(K_t \in C^\infty\)
+                    and decays together with all its derivatives, and convolution with a smooth
+                    rapidly decaying kernel inherits the kernel's smoothness regardless of the
+                    regularity of the other factor. The frequency-domain argument is preferred here
+                    because it identifies the precise quantitative mechanism — Gaussian damping of
+                    high frequencies — and makes the rate of smoothing explicit.
+                </p>
+
+                <h3 style="padding-left: 20px;">3.3 &nbsp; The Maximum Principle</h3>
+
+                <p>
+                    Because \(K_t\) is non-negative and integrates to one, the convolution
+                    \(u(x, t) = \int K_t(x - y)\, f(y)\, dy\) is a <em>weighted average</em> of the
+                    values of \(f\), with weights given by the heat kernel. A weighted average cannot
+                    exceed the supremum of its inputs nor fall below their infimum:
+                    \[
+                    \inf_{y \in \mathbb{R}} f(y) \;\leq\; u(x, t) \;\leq\; \sup_{y \in \mathbb{R}} f(y)
+                    \qquad \text{for all } x \in \mathbb{R},\ t > 0.
+                    \]
+                    This is the <strong>maximum principle</strong> on the real line. It states that the
+                    temperature at any point at any time is bounded above by the maximum initial
+                    temperature and below by the minimum — heat does not spontaneously concentrate to
+                    produce hot spots hotter than what was initially present, nor cold spots colder.
+                    The result is genuinely a statement about parabolic evolution: it fails dramatically
+                    for the wave equation, where waves can constructively interfere to produce
+                    amplitudes exceeding any single initial value, and is replaced for the Laplace
+                    equation by a related but distinct boundary-data form.
+                </p>
+
+                <h3 style="padding-left: 20px;">3.4 &nbsp; The Backward Problem is Ill-Posed</h3>
+
+                <p>
+                    Smoothing is irreversible. The same Gaussian factor \(e^{-k\xi^2 t}\) that damps
+                    high frequencies in forward time amplifies them exponentially when run backwards.
+                    To attempt to recover \(u(\cdot, 0) = f\) from knowledge of \(u(\cdot, T)\) at some
+                    later time \(T > 0\), one would need to multiply \(\hat{u}(\xi, T)\) by
+                    \(e^{+k\xi^2 T}\). At frequency \(\xi = 10\) with \(kT = 0.14\), the amplification
+                    factor is \(e^{14} \approx 1.2 \times 10^6\); at \(\xi = 20\) it exceeds \(10^{24}\).
+                    Any high-frequency noise present in \(u(\cdot, T)\) — whether from measurement
+                    error, numerical round-off, or any other source — is amplified beyond all bounds.
+                    The map \(f \mapsto u(\cdot, T)\) is well-defined and even smoothing, but its
+                    inverse fails to be continuous on any reasonable function space; this is what is
+                    meant by saying the <strong>backward heat equation</strong> is <em>ill-posed</em>
+                    in the sense of Hadamard.
+                </p>
+
+                <p>
+                    The asymmetry of forward and backward evolution — the arrow of time built into
+                    parabolic dynamics — is mathematically the same phenomenon as the smoothing
+                    discussed above, seen from the opposite direction. Forward in time, information
+                    about fine spatial structure is irretrievably destroyed by exponential damping;
+                    backward in time, recovering it would require an exponentially unstable
+                    amplification. This stands in sharp contrast to the time-reversibility of the
+                    wave equation, where the backward problem is as well-posed as the forward one and
+                    no information is lost. In the context of diffusion generative models, the forward
+                    (noising) process is precisely the well-posed direction; the difficulty of
+                    reversing it — of denoising a corrupted sample back to its origin — is the heat
+                    equation's ill-posed backward problem, which a neural network learns to
+                    approximate by exploiting strong prior assumptions on the data distribution.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>
