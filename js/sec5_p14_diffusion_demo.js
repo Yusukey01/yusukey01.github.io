@@ -872,21 +872,30 @@ function getPalette() {
 }
 
 /**
- * Initialize a canvas to a fixed logical size with DPR support.
+ * Initialize a canvas with DPR support, sized to fit its wrapper.
  *
- * @param canvas DOM canvas element
- * @param logicalSize size in CSS pixels (canvas is square)
- * @returns {ctx, W, H} where W=H=logicalSize
+ * The canvas's CSS size is controlled by CSS, which scales to
+ * wrapper.clientWidth. We synchronize the canvas's internal pixel buffer
+ * to that CSS size so the drawing surface stays sharp on any viewport
+ * (mobile included).
+ *
+ * @param canvas  DOM canvas element
+ * @param wrapper DOM element whose clientWidth dictates the canvas size
+ * @returns {ctx, W, H} where W=H is the CSS pixel size used for drawing
  */
-function setupDiffusionCanvas(canvas, logicalSize = CANVAS_LOGICAL_SIZE) {
+function setupDiffusionCanvas(canvas, wrapper) {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width  = logicalSize * dpr;
-    canvas.height = logicalSize * dpr;
-    canvas.style.width  = logicalSize + 'px';
-    canvas.style.height = logicalSize + 'px';
+    const cssSize = Math.min(
+        (wrapper && wrapper.clientWidth) || CANVAS_LOGICAL_SIZE,
+        CANVAS_LOGICAL_SIZE
+    );
+    canvas.width  = Math.round(cssSize * dpr);
+    canvas.height = Math.round(cssSize * dpr);
+    // Do NOT set canvas.style.width/height — CSS handles sizing.
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);  // reset before scaling (re-setup safety)
     ctx.scale(dpr, dpr);
-    return { ctx, W: logicalSize, H: logicalSize };
+    return { ctx, W: cssSize, H: cssSize };
 }
 
 /**
@@ -1677,8 +1686,9 @@ function syncSpeedUI(state, refs) {
 /**
  * Animation loop using requestAnimationFrame.
  * Advances state.tIdx by 1 each "tick" based on state.speed.
+ * `canvasState` is read at draw time so a resize mid-animation is picked up.
  */
-function animationLoop(state, refs, ctx, W, H) {
+function animationLoop(state, refs, canvasState) {
     if (!state.playing) return;
     const now = performance.now();
     const fps = SPEED_FPS[state.speed] || 20;
@@ -1699,12 +1709,12 @@ function animationLoop(state, refs, ctx, W, H) {
             }
         }
         syncTimeUI(state, refs);
-        renderFrame(state, ctx, W, H);
+        renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
         if (!state.playing) updatePlayButton(refs, false);
     }
     if (state.playing) {
         state.animationHandle = requestAnimationFrame(
-            () => animationLoop(state, refs, ctx, W, H)
+            () => animationLoop(state, refs, canvasState)
         );
     }
 }
@@ -1724,7 +1734,7 @@ function stopAnimation(state, refs) {
 /**
  * Start (or resume) the animation.
  */
-function startAnimation(state, refs, ctx, W, H) {
+function startAnimation(state, refs, canvasState) {
     // If we're at the natural endpoint, jump back to start before playing.
     if (state.direction === 'forward' && state.tIdx >= T) {
         state.tIdx = 0;
@@ -1737,7 +1747,7 @@ function startAnimation(state, refs, ctx, W, H) {
     state.lastFrameTime = 0;
     updatePlayButton(refs, true);
     state.animationHandle = requestAnimationFrame(
-        () => animationLoop(state, refs, ctx, W, H)
+        () => animationLoop(state, refs, canvasState)
     );
 }
 
@@ -1754,14 +1764,21 @@ function hideStatus(refs) {
 
 /**
  * Bind all interactive event handlers.
+ *
+ * `canvasState` is an object {ctx, W, H} that the resize handler mutates
+ * in place. Event handlers read its current properties at the moment of
+ * invocation, so a resize between bind-time and click-time is correctly
+ * reflected in the next render.
  */
-function bindEventHandlers(state, refs, ctx, W, H) {
+function bindEventHandlers(state, refs, canvasState) {
+    const render = () => renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
+
     // Time slider — manual scrubbing pauses any running animation.
     refs.timeSlider.addEventListener('input', (e) => {
         stopAnimation(state, refs);
         state.tIdx = parseInt(e.target.value, 10);
         refs.timeReadout.textContent = `${state.tIdx} / ${T}`;
-        renderFrame(state, ctx, W, H);
+        render();
     });
 
     // Direction toggle
@@ -1773,7 +1790,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
         syncDirectionUI(state, refs);
         syncSamplerUI(state, refs);
         syncTimeUI(state, refs);
-        renderFrame(state, ctx, W, H);
+        render();
     };
     refs.directionFwdBtn.addEventListener('click', () => onDirectionChange('forward'));
     refs.directionRevBtn.addEventListener('click', () => onDirectionChange('reverse'));
@@ -1784,7 +1801,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
         stopAnimation(state, refs);
         state.sampler = newSampler;
         syncSamplerUI(state, refs);
-        renderFrame(state, ctx, W, H);
+        render();
     };
     refs.samplerDDPMBtn.addEventListener('click', () => onSamplerChange('DDPM'));
     refs.samplerDDIMBtn.addEventListener('click', () => onSamplerChange('DDIM'));
@@ -1794,7 +1811,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
         if (state.playing) {
             stopAnimation(state, refs);
         } else {
-            startAnimation(state, refs, ctx, W, H);
+            startAnimation(state, refs, canvasState);
         }
     });
 
@@ -1803,7 +1820,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
         stopAnimation(state, refs);
         resetSliderPosition(state);
         syncTimeUI(state, refs);
-        renderFrame(state, ctx, W, H);
+        render();
     });
 
     // Regenerate noise — heavy computation, show status overlay
@@ -1820,7 +1837,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
                 state.tIdx = T;
                 syncTimeUI(state, refs);
             }
-            renderFrame(state, ctx, W, H);
+            render();
             hideStatus(refs);
         }, 30);
     });
@@ -1840,9 +1857,9 @@ function bindEventHandlers(state, refs, ctx, W, H) {
  * Watch for theme changes on the <html> element and re-render the canvas
  * so the visualization tracks site theme without a page reload.
  */
-function observeThemeChanges(state, ctx, W, H) {
+function observeThemeChanges(state, canvasState) {
     const obs = new MutationObserver(() => {
-        renderFrame(state, ctx, W, H);
+        renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
     });
     obs.observe(document.documentElement, {
         attributes: true,
@@ -1866,8 +1883,11 @@ function initDiffusionDemo() {
     container.innerHTML = buildDemoHTML();
     const refs = collectDOMRefs(container);
 
-    // Canvas first so its dimensions are known before any rendering.
-    const { ctx, W, H } = setupDiffusionCanvas(refs.canvas);
+    // Canvas setup. We wrap (ctx, W, H) in an object so that the resize
+    // handler can replace them in place — any closure that holds a reference
+    // to canvasState (rather than the values) will see the new surface.
+    const initial = setupDiffusionCanvas(refs.canvas, refs.canvasWrap);
+    const canvasState = { ctx: initial.ctx, W: initial.W, H: initial.H };
 
     // Load the COMPASS logo data set.
     const dataPts = loadDataPoints();
@@ -1875,6 +1895,9 @@ function initDiffusionDemo() {
         refs.statusText.textContent = 'Error: logo data not loaded.';
         return;
     }
+
+    // Convenience wrapper: always renders with the current canvas surface.
+    const render = (state) => renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
 
     // Defer the heavy state construction so the status overlay gets a
     // chance to render. ~30 ms is plenty for one paint cycle.
@@ -1884,8 +1907,26 @@ function initDiffusionDemo() {
         const elapsed = (performance.now() - t0).toFixed(0);
         console.log(`[ml-14 demo] state built in ${elapsed} ms`);
 
-        bindEventHandlers(state, refs, ctx, W, H);
-        observeThemeChanges(state, ctx, W, H);
+        // Resize handler: rebuild the canvas drawing surface to match the
+        // wrapper's current width. Throttle with rAF so rapid resize events
+        // (mobile rotation, devtools open/close) don't thrash the canvas.
+        let resizePending = false;
+        const onResize = () => {
+            if (resizePending) return;
+            resizePending = true;
+            requestAnimationFrame(() => {
+                resizePending = false;
+                const next = setupDiffusionCanvas(refs.canvas, refs.canvasWrap);
+                canvasState.ctx = next.ctx;
+                canvasState.W = next.W;
+                canvasState.H = next.H;
+                render(state);
+            });
+        };
+        window.addEventListener('resize', onResize);
+
+        bindEventHandlers(state, refs, canvasState);
+        observeThemeChanges(state, canvasState);
 
         // Initial sync of all UI to default state
         syncDirectionUI(state, refs);
@@ -1893,7 +1934,7 @@ function initDiffusionDemo() {
         syncSpeedUI(state, refs);
         syncTimeUI(state, refs);
 
-        renderFrame(state, ctx, W, H);
+        render(state);
         hideStatus(refs);
     }, 30);
 }
