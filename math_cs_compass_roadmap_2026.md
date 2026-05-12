@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 116 pages as of 5/12/2026.**
+**Total: 117 pages as of 5/12/2026.**
 
 ---
 
@@ -86,7 +86,7 @@ This obligation is **not stated explicitly in each page**. Readers will infer th
 
 `ml-13 (GNN) → manifold series (calc-XX, ~3 pages) → representation theory (linalg-XX, ~3–4 pages) → ml-XX (Equivariant NN) → ml-XX (GDL Overview)`
 
-The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` remains the next active page in the GDL main track and a prerequisite capstone for the Peter-Weyl bridge later in the sequence. With `ml-13` already complete, the active ordering from here is: `calc-32` (capstone of FA block) → manifold series → representation theory → `ml-XX` (Equivariant NN).
+The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` has been completed and remains a prerequisite capstone for the Peter-Weyl bridge later in the sequence. With `ml-13` and `calc-32` already complete, the active ordering from here is: manifold series → representation theory → `ml-XX` (Equivariant NN).
 
 ---
 
@@ -335,7 +335,7 @@ Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had pri
 **Soft prereq from §6.1 (Fourier-PDE mini-track)**: the Fokker-Planck page benefits from the heat equation page being written first (Fokker-Planck = parabolic PDE = heat equation + drift). Not blocking — Phase 2e can begin with Brownian motion and Itō independently — but the Fokker-Planck page should be sequenced after the heat equation page if both tracks are active.
 
 **Bandwidth note**: with Phase 2e promoted, the active track inventory is:
-1. **GDL main track** (calc-32 → manifolds → rep theory → ml-XX (Equivariant NN)); ml-13 already complete
+1. **GDL main track** (manifolds → rep theory → ml-XX (Equivariant NN)); ml-13 and calc-32 already complete
 2. **CDL slow-burn** (Stage 0: Yusuke reads Leinster Ch.1)
 3. **Phase 2e slow-burn** (BM page first)
 4. **Fourier-PDE mini-track** (3 pages, slow-burn or focused burst, Yusuke's pace)
@@ -345,7 +345,7 @@ This is a **5-track configuration**, larger than any prior roadmap state. Sustai
 
 ## Part 8 — Phase 3: Smooth Manifolds
 
-An earlier plan allotted a single page (calc-32) for smooth manifolds; this proved inadequate. Lee Ch. 1–3 + Ch. 8 require ≥3 pages. Page IDs are assigned at drafting time.
+Lee Ch. 1–3 + Ch. 8 require ≥3 pages. Page IDs are assigned at drafting time.
 
 ### 8.1 calc-XX: Smooth Manifolds & Atlases (~1 page, `smooth_manifolds.html`)
 
@@ -383,17 +383,11 @@ At this point, readers have seen permutation equivariance (GNN), rotation/transl
 
 Forward-link target reservations for **planned pages**. Completed pages are tracked in `curriculum.json` (authoritative); this registry exists to lock in filenames before drafting so cross-page references can be written ahead of time.
 
-### Planned Pages (ID assigned)
-
-| Page ID | Planned Filename | Status |
-|---------|-----------------|--------|
-| calc-32 | `fourier_hilbert.html` | Next |
-
 ### Planned Pages (ID deferred — assigned at drafting time)
 
 | Track | Est. Pages | Planned Filenames | Trigger / status |
 |--------|-----------|-------------------|--------|
-| Smooth Manifolds (calc-XX) | ~3 | `smooth_manifolds.html`, `tangent_spaces.html`, `vector_fields_flows.html` | After calc-32 |
+| Smooth Manifolds (calc-XX) | ~3 | `smooth_manifolds.html`, `tangent_spaces.html`, `vector_fields_flows.html` | Next |
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
@@ -417,10 +411,10 @@ This map tracks primary usage for development planning. The site-wide reference 
 
 | Book | Pages (existing → planned) | Role |
 |------|----------------------------|------|
-| **Conway — *A Course in Functional Analysis*** | calc-23~28 (FA block), calc-30, calc-31 → calc-32 | Primary for all of Section II advanced analysis |
+| **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
 | **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
 | **Lee — *Introduction to Smooth Manifolds*** | calc-29 → calc-XX manifold series, calc-XX Riemannian | Primary for manifold track |
-| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15 → calc-32, Fourier-PDE mini-track (Part 6) | Primary for Fourier and classical PDE applications |
+| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32 → Fourier-PDE mini-track (Part 6) | Primary for Fourier and classical PDE applications |
 | **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
 | **Fong & Spivak — *Seven Sketches in Compositionality*** | → CDL track Stages 3 (and motivation throughout) | Primary for applied / intuitive side of CDL track; free PDF on arXiv |
