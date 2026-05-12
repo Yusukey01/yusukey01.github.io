@@ -32,11 +32,11 @@ uses_python: false
                 <p>
                     With the <a href="fourier_series.html"><strong>Fourier series</strong></a> and the
                     <a href="fourier_transform.html"><strong>Fourier transform</strong></a> in hand, the toolkit of Fourier
-                    analysis appears, from a computer science perspective, essentially complete. Orthogonal decomposition,
+                    analysis can appear, from a computer science perspective, essentially complete. Orthogonal decomposition,
                     Plancherel's identity, convolution as pointwise multiplication, and the FFT cover what most CS curricula
                     treat as the entirety of the subject — Fourier as the engine of signal processing, image compression,
-                    and spectral algorithms. Yet a question implicit in calc-14 remains unanswered: <em>what was Fourier
-                    analysis invented for?</em> The present page returns to that original purpose. We use the Fourier
+                    and spectral algorithms. Yet a question implicit in our earlier development of Fourier series remains
+                    unanswered: <em>what was Fourier analysis invented for?</em> The present page returns to that original purpose. We use the Fourier
                     machinery already built to solve a partial differential equation.
                 </p>
 
@@ -47,10 +47,11 @@ uses_python: false
                     might encounter a discretized PDE in a numerical methods elective, but the continuous theory itself
                     rarely entered the curriculum. This perception has been overturned by developments of the past several
                     years. The forward process of a <a href="../Machine_learning/diffusion_models.html"><strong>diffusion
-                    generative model</strong></a> — the mechanism underlying Stable Diffusion, DALL·E, Sora, and Veo — is
-                    in continuous time precisely the stochastic counterpart of the heat equation. Neural ODEs, Fourier
-                    neural operators, flow matching, and score-based generative modelling have placed continuous-time
-                    differential equations at the centre of contemporary machine learning. The continuous domain, long
+                    generative model</strong></a> — the mechanism underlying contemporary image and video synthesis — is
+                    in continuous time a stochastic diffusion whose density evolution is governed by the heat equation
+                    and its drift-augmented relatives. Neural ODEs, Fourier neural operators, flow matching, and
+                    score-based generative modelling have placed continuous-time differential equations at the centre
+                    of contemporary machine learning. The continuous domain, long
                     dismissed as a physicist's concern, has become impossible for the ML researcher to ignore.
                 </p>
 
@@ -216,7 +217,9 @@ uses_python: false
                     \(\phi(L) = c_2 \sin\sqrt{\lambda}\, L = 0\) admits nontrivial solutions \((c_2 \neq 0)\)
                     precisely when \(\sin\sqrt{\lambda}\, L = 0\), that is, when \(\sqrt{\lambda}\, L = n\pi\) for
                     some positive integer \(n\). (The value \(n = 0\) is excluded because it gives \(\lambda = 0\),
-                    already handled; negative integers yield the same eigenvalues as their positive counterparts.)
+                    already handled; a negative integer \(n = -m\) with \(m \geq 1\) yields the same eigenvalue
+                    \(\lambda_m\) and, since \(\sin(-m\pi x/L) = -\sin(m\pi x/L)\), the same eigenfunction up
+                    to sign.)
                 </p>
 
                 <div class="theorem" id="T-dirichlet_eigenvalues">
@@ -244,16 +247,22 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        The case analysis above establishes that nontrivial solutions exist only when
-                        \(\lambda > 0\) and \(\sqrt{\lambda}\, L = n\pi\) for some positive integer \(n\), giving
-                        \(\lambda_n = (n\pi/L)^2\). The corresponding eigenfunctions
-                        \(\phi_n(x) = \sin(n\pi x/L)\) are one-dimensional in span: any other solution of the ODE
-                        with eigenvalue \(\lambda_n\) is a linear combination of \(\sin\sqrt{\lambda_n}\, x\) and
-                        \(\cos\sqrt{\lambda_n}\, x\), and the boundary condition at \(x = 0\) eliminates the
-                        cosine component. The eigenvalues are simple and the sequence is monotone increasing with
-                        the stated asymptotic order.
+                        The case analysis above establishes that nontrivial real-valued solutions exist
+                        only when \(\lambda > 0\) and \(\sqrt{\lambda}\, L = n\pi\) for some positive
+                        integer \(n\), giving \(\lambda_n = (n\pi/L)^2\). The corresponding eigenfunctions
+                        \(\phi_n(x) = \sin(n\pi x/L)\) are one-dimensional in span: any other solution of
+                        the ODE with eigenvalue \(\lambda_n\) is a linear combination of
+                        \(\sin\sqrt{\lambda_n}\, x\) and \(\cos\sqrt{\lambda_n}\, x\), and the boundary
+                        condition at \(x = 0\) eliminates the cosine component while \(\phi(L) = 0\) is
+                        automatically satisfied by \(\sin\sqrt{\lambda_n}\, x\). The sequence is strictly
+                        increasing because \(\lambda_{n+1} - \lambda_n = (2n + 1)\pi^2/L^2 > 0\), and the
+                        asymptotic \(\lambda_n = O(n^2)\) is immediate from \(\lambda_n/n^2 = \pi^2/L^2\).
+                        Restricting attention to real \(\lambda\) is harmless: the operator
+                        \(-d^2/dx^2\) with these boundary conditions is symmetric on the appropriate
+                        function space, so all of its eigenvalues are real — a fact whose general
+                        formulation belongs to the spectral theory of self-adjoint operators.
                     </p>
                 </div>
 
@@ -335,7 +344,7 @@ uses_python: false
                     \]
                     This is precisely a <strong>Fourier sine series expansion</strong> of \(f\) on \([0, L]\). The
                     <a href="fourier_series.html#T-trig_orthogonality" class="ref-link"><strong>orthogonality of the
-                    trigonometric system</strong></a> established in calc-14 gives the coefficient formula
+                    trigonometric system</strong></a> gives the coefficient formula
                     immediately: multiplying both sides by \(\sin(m\pi x/L)\) and integrating over \([0, L]\)
                     selects the term with \(n = m\), using
                     \[
@@ -372,7 +381,7 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
                         Termwise the series satisfies the PDE and the Dirichlet boundary conditions, as each
                         product solution \(u_n\) does. The convergence claims are a consequence of the rapid
@@ -383,15 +392,32 @@ uses_python: false
                         consequently \(u\) is \(C^\infty\) in \((x, t)\) for \(t > 0\), differentiation can be
                         carried out under the summation, and \(u\) satisfies the PDE classically. At \(t = 0\),
                         the series reduces to the Fourier sine series of \(f\), which converges to \(f\) in
-                        \(L^2([0, L])\) by the completeness of the orthonormal system
-                        \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) — a fact established as part of the general
-                        Hilbert-space theory of Fourier series. The continuity of \(u(\cdot, t) \to f\) in \(L^2\)
-                        as \(t \to 0^+\) follows from Parseval's identity applied to the modes.
+                        \(L^2([0, L])\) because \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) is a complete
+                        orthonormal system on \(L^2([0, L])\), as established in our treatment of Fourier
+                        series. The \(L^2\)-continuity \(u(\cdot, t) \to f\) as \(t \to 0^+\) follows from
+                        Parseval's identity:
+                        \[
+                        \|u(\cdot, t) - f\|_{L^2}^2 \;=\; \frac{L}{2}\sum_{n=1}^{\infty} B_n^2
+                            \left(e^{-k\lambda_n t} - 1\right)^2,
+                        \]
+                        which tends to \(0\) as \(t \to 0^+\) by dominated convergence — each term vanishes
+                        pointwise, and is bounded uniformly in \(t \geq 0\) by \(B_n^2\) (since
+                        \(0 \leq e^{-k\lambda_n t} \leq 1\)) with
+                        \((L/2)\sum_n B_n^2 = \|f\|_{L^2}^2 < \infty\).
                     </p>
                 </div>
 
                 <p>
-                    The solution formula has a strikingly clean structure: <em>each Fourier mode of the initial
+                    The theorem asserts existence. Uniqueness within the appropriate function class holds
+                    as well, but it is genuinely a separate result whose proof requires machinery beyond
+                    the present scope (a standard tool is the energy estimate
+                    \(\frac{d}{dt}\!\int_0^L u(x,t)^2\, dx \leq 0\), valid for any sufficiently regular
+                    solution with the given boundary conditions). We use uniqueness as a fact when it is
+                    needed.
+                </p>
+
+                <p>
+                    The solution formula has a clean structure: <em>each Fourier mode of the initial
                     datum evolves independently, weighted by an exponential decay whose rate is the eigenvalue
                     times the diffusivity</em>. The Laplacian \(\partial_{xx}\) on \([0, L]\) with Dirichlet
                     boundary conditions is diagonalised by the orthonormal basis
@@ -468,9 +494,9 @@ uses_python: false
                         happens on the entire real line, where the boundary is sent to infinity. The
                         Dirichlet eigenmodes \(\sin(n\pi x/L)\) lose their normalisation as \(L \to \infty\),
                         and the discrete spectrum thickens into a continuum. The replacement of the
-                        Fourier series by the Fourier transform — already developed in calc-15 — is
-                        precisely what is needed, and the heat equation on \(\mathbb{R}\) will be solved
-                        by a single integral kernel of striking simplicity.
+                        Fourier series by the Fourier transform — already developed in our preceding
+                        page — is precisely what is needed, and the heat equation on \(\mathbb{R}\) will
+                        be solved by a single integral kernel.
                     </p>
                 </div>
             </section>
@@ -543,8 +569,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Differentiation under the integral is justified by the decay hypothesis on
-                        \(u\) and its spatial derivatives. Then
+                        Differentiation under the integral sign is justified by the regularity and
+                        decay hypotheses on \(u\) stated at the start of this section. Then
                         \[
                         \begin{align*}
                         \partial_t \hat{u}(\xi, t) &= \int_{-\infty}^{\infty} \partial_t u(x, t)\, e^{ix\xi}\, dx \\\\
@@ -554,15 +580,17 @@ uses_python: false
                         \end{align*}
                         \]
                         where the third equality applies the differentiation property of the Fourier
-                        transform twice (the integration by parts that produces it is justified by the
-                        decay of \(u\) and \(\partial_x u\) at infinity).
+                        transform twice; the boundary terms that arise from the two integrations by
+                        parts, namely \([u\, e^{ix\xi}]_{-\infty}^{\infty}\) and
+                        \([\partial_x u \cdot e^{ix\xi}]_{-\infty}^{\infty}\), vanish by the assumed
+                        decay of \(u\) and \(\partial_x u\) at infinity.
                     </p>
                     <p>
                         For each fixed \(\xi\), the equation
                         \(\partial_t \hat{u}(\xi, t) = -k\xi^2\, \hat{u}(\xi, t)\) is a scalar linear
                         ODE in \(t\) with constant coefficient \(-k\xi^2\) (\(\xi\) is held fixed). Its
                         unique solution with initial condition \(\hat{u}(\xi, 0) = \hat{f}(\xi)\) is
-                        \(\hat{u}(\xi, t) = \hat{f}(\xi) e^{-k\xi^2 t}\). \(\blacksquare\)
+                        \(\hat{u}(\xi, t) = \hat{f}(\xi) e^{-k\xi^2 t}\).
                     </p>
                 </div>
 
@@ -656,7 +684,14 @@ uses_python: false
                         injectivity of the Fourier transform on the relevant function class,
                         \(u(\cdot, t) = f * K_t\). The integral form is the definition of convolution,
                         and the symmetry \(K_t(x - y) = K_t(y - x)\) (since \(K_t\) is even) makes the
-                        two integrals interchangeable. \(\blacksquare\)
+                        two integrals interchangeable.
+                    </p>
+                    <p>
+                        Uniqueness within the class of decaying solutions follows from a standard
+                        argument we do not detail here; we note only that the decay condition is
+                        essential — without it, non-trivial solutions of the same initial-value problem
+                        exist (a classical counterexample due to Tychonoff), so the "decaying" qualifier
+                        in the theorem is doing genuine work.
                     </p>
                 </div>
 
@@ -725,9 +760,8 @@ uses_python: false
 
                 <p>
                     The total integral of the temperature is preserved in time. For the heat kernel
-                    itself, this is the statement that \(K_t\) is a probability density: the Gaussian
-                    integral
-                    <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link" data-id="T-gaussian_integral">established in Section III</a>
+                    itself, this is the statement that \(K_t\) is a probability density: the
+                    <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link" data-id="T-gaussian_integral">Gaussian integral identity</a>
                     gives
                     \[
                     \int_{-\infty}^{\infty} K_t(x)\, dx \;=\; \frac{1}{\sqrt{4\pi kt}} \int_{-\infty}^{\infty}
@@ -764,11 +798,28 @@ uses_python: false
                     \]
                     (using the elementary bound \(|\hat{f}(\xi)| \leq \|f\|_{L^1}\) valid for any
                     \(f \in L^1\)). The right-hand side is integrable in \(\xi\) for every \(n\), since
-                    polynomial growth is beaten by Gaussian decay. By the Fourier inversion formula
-                    and differentiation under the integral, \(u(\cdot, t)\) is therefore of class
-                    \(C^n\) for every \(n\), and indeed \(C^\infty\), even if \(f\) is merely \(L^1\)
-                    with jump discontinuities or worse. The smoothing acts in an arbitrarily short
-                    time: any \(t > 0\), however small, produces an infinitely differentiable function.
+                    polynomial growth is beaten by Gaussian decay.
+                </p>
+
+                <p>
+                    To conclude smoothness from this integrability, recall the Fourier inversion
+                    formula
+                    \[
+                    u(x, t) \;=\; \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{u}(\xi, t)\, e^{-ix\xi}\, d\xi.
+                    \]
+                    Differentiating \(n\) times in \(x\) under the integral sign brings down a factor
+                    \((-i\xi)^n\):
+                    \[
+                    \partial_x^n u(x, t) \;=\; \frac{1}{2\pi}\int_{-\infty}^{\infty} (-i\xi)^n\, \hat{u}(\xi, t)\, e^{-ix\xi}\, d\xi.
+                    \]
+                    Differentiation under the integral is justified precisely because the bound above
+                    makes the integrand absolutely integrable in \(\xi\), uniformly in \(x\); the same
+                    bound also makes the right-hand side a continuous function of \(x\) by the
+                    dominated convergence theorem. Hence \(\partial_x^n u(\cdot, t)\) exists and is
+                    continuous for every \(n\), so \(u(\cdot, t)\) is of class \(C^n\) for every \(n\),
+                    and therefore of class \(C^\infty\) — even if \(f\) is merely \(L^1\) with jump
+                    discontinuities or worse. The smoothing acts in an arbitrarily short time: any
+                    \(t > 0\), however small, produces an infinitely differentiable function.
                 </p>
 
                 <p>
@@ -781,6 +832,15 @@ uses_python: false
                 </p>
 
                 <h3 style="padding-left: 20px;">3.3 &nbsp; The Maximum Principle</h3>
+
+                <p>
+                    For this subsection we strengthen our hypotheses and assume that the initial datum
+                    \(f\) is <strong>bounded</strong> on \(\mathbb{R}\), so that
+                    \(\inf_{y \in \mathbb{R}} f(y)\) and \(\sup_{y \in \mathbb{R}} f(y)\) are both finite
+                    real numbers. Boundedness is essential for the statement that follows: the argument
+                    interprets \(u(x, t)\) as a weighted average of values of \(f\), and a weighted
+                    average is bounded by the input range only when that range is finite.
+                </p>
 
                 <p>
                     Because \(K_t\) is non-negative and integrates to one, the convolution
