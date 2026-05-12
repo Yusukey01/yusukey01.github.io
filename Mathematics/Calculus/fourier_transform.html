@@ -199,19 +199,22 @@ uses_python: true
                     </p>
                 </div>
 
-                <p>
-                    Plancherel's theorem follows from Fourier inversion by a density argument. For Schwartz functions \(f \in \mathcal{S}(\mathbb{R})\), substituting the inversion formula for \(\overline{f(x)}\) and applying Fubini gives
-                    \[
-                    \int_{-\infty}^{\infty} |f(x)|^2\,dx 
-                    = \frac{1}{2\pi}\iint f(x)\,e^{+ix\xi}\,\overline{\hat f(\xi)}\,dx\,d\xi
-                    = \frac{1}{2\pi}\int_{-\infty}^{\infty} |\hat f(\xi)|^2\,d\xi,
-                    \]
-                    and the polarized form follows analogously. Since \(\mathcal{S}(\mathbb{R})\) is dense in \(L^2(\mathbb{R})\), 
-                    the identity extends to all of \(L^2\) by continuity. 
-                    A conceptually cleaner derivation 
-                    — identifying the normalized Fourier transform directly as a unitary operator on \(L^2(\mathbb{R})\) — 
-                    will appear in the forthcoming page on Fourier analysis in Hilbert spaces.
-                </p>
+                <div class="proof">
+                    <span class="proof-title">Proof (sketch):</span>
+                    <p>
+                        Plancherel's theorem follows from Fourier inversion by a density argument. For Schwartz functions \(f \in \mathcal{S}(\mathbb{R})\), substituting the inversion formula for \(\overline{f(x)}\) and applying Fubini gives
+                        \[
+                        \int_{-\infty}^{\infty} |f(x)|^2\,dx 
+                        = \frac{1}{2\pi}\iint f(x)\,e^{+ix\xi}\,\overline{\hat f(\xi)}\,dx\,d\xi
+                        = \frac{1}{2\pi}\int_{-\infty}^{\infty} |\hat f(\xi)|^2\,d\xi,
+                        \]
+                        and the polarized form follows analogously. Since \(\mathcal{S}(\mathbb{R})\) is dense in \(L^2(\mathbb{R})\), the identity extends to all of \(L^2\) by continuity — a step made rigorous by constructing the Fourier transform on \(L^2(\mathbb{R})\) as the unique bounded extension of its restriction to a dense subspace, carried out in the
+                        <a href="fourier_hilbert.html#T-fourier_transform_l2_def" class="ref-link"><strong>Fourier-Plancherel transform construction</strong></a>
+                        on the Fourier analysis in Hilbert spaces page. The same page provides a conceptually cleaner derivation, identifying the normalized Fourier transform \(f \mapsto \tfrac{1}{\sqrt{2\pi}}\hat{f}\) directly as a
+                        <a href="fourier_hilbert.html#T-plancherel_unitary" class="ref-link"><strong>unitary operator</strong></a>
+                        on \(L^2(\mathbb{R})\). \(\square\)
+                    </p>
+                </div>
 
                 <p>
                     This generalizes <a href="fourier_series.html#parseval"><strong>Parseval's identity</strong></a> 
@@ -233,11 +236,74 @@ uses_python: true
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof (Schwartz class):</span>
+                    <p>
+                        We prove the formula for Schwartz \(f \in \mathcal{S}(\mathbb{R})\); the extension to the wider \(L^1\) class indicated in the theorem statement requires the additional argument outlined after the proof. The technique on Schwartz is <strong>Gaussian regularization</strong>: insert a Gaussian damping factor that makes Fubini applicable, then remove it in the limit.
+                    </p>
+                    <p>
+                        <strong>Step 1: regularized inverse.</strong> For \(\epsilon &gt; 0\), define
+                        \[
+                        I_\epsilon(x) \;:=\; \frac{1}{2\pi} \int_{-\infty}^{\infty} \hat{f}(\xi)\, e^{-\epsilon \xi^2/2}\, e^{-ix\xi}\, d\xi.
+                        \]
+                        Since \(\hat f \in \mathcal{S}(\mathbb{R})\) (the Fourier transform preserves Schwartz), the integrand is absolutely integrable for every \(\epsilon \geq 0\); in particular the integral converges and \(I_\epsilon(x)\) is well-defined.
+                    </p>
+                    <p>
+                        <strong>Step 2: Fubini interchange.</strong> Substituting \(\hat f(\xi) = \int f(y) e^{iy\xi}\, dy\) and observing that the resulting double integrand satisfies
+                        \(\bigl|f(y)\, e^{iy\xi}\, e^{-\epsilon\xi^2/2}\, e^{-ix\xi}\bigr| = |f(y)|\, e^{-\epsilon\xi^2/2} \in L^1(\mathbb{R} \times \mathbb{R})\)
+                        (the product of an \(L^1\) function in \(y\) with an \(L^1\) function in \(\xi\)),
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        permits the order swap:
+                        \[
+                        I_\epsilon(x) \;=\; \int_{-\infty}^{\infty} f(y)\, K_\epsilon(y - x)\, dy,
+                        \qquad
+                        K_\epsilon(z) \;:=\; \frac{1}{2\pi} \int_{-\infty}^{\infty} e^{iz\xi}\, e^{-\epsilon\xi^2/2}\, d\xi.
+                        \]
+                        The kernel \(K_\epsilon\) is the Fourier transform of a centered Gaussian; specializing the Gaussian-transform calculation above (set \(\sigma^2 = 1/\epsilon\)) gives the closed form
+                        \[
+                        K_\epsilon(z) \;=\; \frac{1}{\sqrt{2\pi\epsilon}}\, e^{-z^2/(2\epsilon)},
+                        \]
+                        a Gaussian of unit mass: \(\int K_\epsilon(z)\, dz = 1\).
+                    </p>
+                    <p>
+                        <strong>Step 3: convolution limit.</strong> By the substitution \(z = y - x\),
+                        \(I_\epsilon(x) = \int f(x + z)\, K_\epsilon(z)\, dz\). Using \(\int K_\epsilon = 1\) to write
+                        \(f(x) = \int f(x)\, K_\epsilon(z)\, dz\), 
+                        \[
+                        I_\epsilon(x) - f(x) \;=\; \int_{-\infty}^{\infty} \bigl[ f(x + z) - f(x) \bigr]\, K_\epsilon(z)\, dz.
+                        \]
+                        Fix \(\eta &gt; 0\). Schwartz functions are uniformly continuous on \(\mathbb{R}\) (a consequence of bounded derivative and rapid decay), so there exists \(\delta &gt; 0\) such that \(|f(x + z) - f(x)| &lt; \eta\) whenever \(|z| \leq \delta\), uniformly in \(x\). Split the integral accordingly. On the inner region \(|z| \leq \delta\), positivity of \(K_\epsilon\) and unit mass give
+                        \[
+                        \left| \int_{|z| \leq \delta} [f(x+z) - f(x)]\, K_\epsilon(z)\, dz \right| \;\leq\; \eta.
+                        \]
+                        On the outer region \(|z| &gt; \delta\), the substitution \(u = z/\sqrt{\epsilon}\) shows
+                        \[
+                        \int_{|z| &gt; \delta} K_\epsilon(z)\, dz \;=\; \int_{|u| &gt; \delta/\sqrt{\epsilon}} \frac{1}{\sqrt{2\pi}}\, e^{-u^2/2}\, du \;\longrightarrow\; 0 \quad \text{as } \epsilon \to 0,
+                        \]
+                        since the lower bound \(\delta/\sqrt{\epsilon} \to \infty\) and the integrand is the standard-normal density. Combined with the trivial bound \(|f(x+z) - f(x)| \leq 2 \sup_{\mathbb{R}} |f|\) on the outer region,
+                        \[
+                        \limsup_{\epsilon \to 0}\, |I_\epsilon(x) - f(x)| \;\leq\; \eta.
+                        \]
+                        Since \(\eta &gt; 0\) was arbitrary, \(\lim_{\epsilon \to 0} I_\epsilon(x) = f(x)\).
+                    </p>
+                    <p>
+                        <strong>Step 4: spectral-side limit.</strong> Returning to the definition of \(I_\epsilon\), the integrand \(\hat f(\xi)\, e^{-\epsilon \xi^2/2}\, e^{-ix\xi}\) is dominated by \(|\hat f(\xi)| \in L^1(\mathbb{R})\) uniformly in \(\epsilon\) and converges pointwise to \(\hat f(\xi)\, e^{-ix\xi}\) as \(\epsilon \to 0\). By the
+                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>,
+                        \[
+                        \lim_{\epsilon \to 0} I_\epsilon(x) \;=\; \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat f(\xi)\, e^{-ix\xi}\, d\xi.
+                        \]
+                        Equating the two limits established in Steps 3 and 4 yields the inversion formula for every \(f \in \mathcal{S}(\mathbb{R})\). \(\square\)
+                    </p>
+                </div>
+
                 <p>
-                    A rigorous proof — establishing inversion first on the Schwartz class via a Gaussian mollifier, then extending by density. 
-                    The inversion formula also admits a clean Hilbert-space interpretation: on \(L^2(\mathbb{R})\), 
-                    the normalized Fourier transform \(f \mapsto \tfrac{1}{\sqrt{2\pi}}\hat{f}\) is a unitary operator, whose inverse is exactly its adjoint. 
-                    This viewpoint will be developed in the forthcoming page on Fourier analysis in Hilbert spaces.
+                    <strong>On the \(L^1\) extension.</strong> The Schwartz proof above does not directly extend to the larger class \(\{f \in L^1(\mathbb{R}) : \hat f \in L^1(\mathbb{R})\}\) by a one-line density argument: although Schwartz functions are dense in \(L^1\), the resulting approximation \(\hat{f_n} \to \hat f\) is only uniform, not \(L^1\), so the right-hand side of the inversion formula does not pass to the limit for free. A rigorous \(L^1\) treatment proceeds by integrating both sides of the Schwartz identity against test functions and invoking the theory of tempered distributions — material that lies outside the present page.
+                </p>
+
+                <p>
+                    A distinct but related question is the \(L^2\) inversion. The classes \(L^1\) and \(L^2\) are mutually non-contained on \(\mathbb{R}\) (for instance \((1+|x|)^{-1} \in L^2 \setminus L^1\), while \(|x|^{-1/2}\mathbf{1}_{[0,1]} \in L^1 \setminus L^2\)), so neither result subsumes the other. For \(L^2\) the inversion is structurally different and, thanks to the completeness of \(L^2\) as a Hilbert space, technically easier to establish: the normalized Fourier transform is a unitary operator on \(L^2(\mathbb{R})\), and its inverse coincides with its Hilbert-space adjoint, as developed in the
+                    <a href="fourier_hilbert.html#T-plancherel_unitary" class="ref-link"><strong>Fourier-Plancherel unitary</strong></a>
+                    construction on the Fourier analysis in Hilbert spaces page.
                 </p>
 
             </section>
