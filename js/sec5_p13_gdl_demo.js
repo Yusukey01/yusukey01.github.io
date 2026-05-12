@@ -1465,6 +1465,7 @@ function collectGDLDOMRefs(container) {
 
     return {
         canvas:        $('#gdl-canvas'),
+        canvasWrapper: $('.gdl-canvas-wrapper'),
         archButtons:   $$('.gdl-seg-btn'),
         archDesc:      $('#gdl-arch-desc'),
         depthSlider:   $('#gdl-depth-slider'),
@@ -1673,7 +1674,7 @@ function syncLayerSlider(refs, state) {
  */
 const PER_LAYER_MS = 600;
 
-function startLayerAnimation(state, refs, ctx, W, H) {
+function startLayerAnimation(state, refs, canvasState) {
     if (state._animationFrameId) {
         cancelAnimationFrame(state._animationFrameId);
         state._animationFrameId = null;
@@ -1703,15 +1704,15 @@ function startLayerAnimation(state, refs, ctx, W, H) {
         if (refs.layerSlider) refs.layerSlider.value = String(iHigh);
         if (refs.layerReadout) refs.layerReadout.textContent = `${iHigh} / ${state.numLayers}`;
 
-        renderDemo(ctx, state, animH, iHigh, state.numLayers, W, H);
+        renderDemo(canvasState.ctx, state, animH, iHigh, state.numLayers, canvasState.W, canvasState.H);
 
         if (tGlobal < 1) {
             state._animationFrameId = requestAnimationFrame(frame);
         } else {
             state._animationFrameId = null;
             state.displayedLayer = state.numLayers;
-            renderDemo(ctx, state, state.layerHistory[state.numLayers],
-                       state.numLayers, state.numLayers, W, H);
+            renderDemo(canvasState.ctx, state, state.layerHistory[state.numLayers],
+                       state.numLayers, state.numLayers, canvasState.W, canvasState.H);
         }
     }
 
@@ -1722,21 +1723,21 @@ function startLayerAnimation(state, refs, ctx, W, H) {
 // Top-level redraw (no animation)
 // ============================================================
 
-function redrawAtCurrentLayer(state, refs, ctx, W, H) {
+function redrawAtCurrentLayer(state, refs, canvasState) {
     if (state._animationFrameId) {
         cancelAnimationFrame(state._animationFrameId);
         state._animationFrameId = null;
     }
     const k = state.displayedLayer;
     const h = state.layerHistory[k];
-    renderDemo(ctx, state, h, k, state.numLayers, W, H);
+    renderDemo(canvasState.ctx, state, h, k, state.numLayers, canvasState.W, canvasState.H);
 }
 
 // ============================================================
 // Full state refresh: forward pass + table + meter + canvas
 // ============================================================
 
-function fullRefresh(state, refs, ctx, W, H, animate) {
+function fullRefresh(state, refs, canvasState, animate) {
     runForwardPass(state);                         // updates state.layerHistory
     refreshOriginalForward(state);                 // updates state.originalLayerHistory, originalY
     computeEquivarianceError(state);               // updates state.equivarianceError
@@ -1745,9 +1746,9 @@ function fullRefresh(state, refs, ctx, W, H, animate) {
     syncLayerSlider(refs, state);
     if (animate) {
         state.displayedLayer = 0;
-        startLayerAnimation(state, refs, ctx, W, H);
+        startLayerAnimation(state, refs, canvasState);
     } else {
-        redrawAtCurrentLayer(state, refs, ctx, W, H);
+        redrawAtCurrentLayer(state, refs, canvasState);
     }
 }
 
@@ -1755,7 +1756,7 @@ function fullRefresh(state, refs, ctx, W, H, animate) {
 // Event handlers
 // ============================================================
 
-function bindEventHandlers(state, refs, ctx, W, H) {
+function bindEventHandlers(state, refs, canvasState) {
 
     // Architecture buttons
     for (const btn of refs.archButtons) {
@@ -1764,7 +1765,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
             if (state.architecture === newArch) return;
             state.architecture = newArch;
             setActiveArchButton(refs, newArch);
-            fullRefresh(state, refs, ctx, W, H, /* animate */ true);
+            fullRefresh(state, refs, canvasState, /* animate */ true);
         });
     }
 
@@ -1775,7 +1776,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
             if (refs.depthVal) refs.depthVal.textContent = String(newL);
             if (newL === state.numLayers) return;
             state.numLayers = newL;
-            fullRefresh(state, refs, ctx, W, H, /* animate */ true);
+            fullRefresh(state, refs, canvasState, /* animate */ true);
         });
     }
 
@@ -1785,7 +1786,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
             const k = parseInt(refs.layerSlider.value, 10);
             state.displayedLayer = k;
             if (refs.layerReadout) refs.layerReadout.textContent = `${k} / ${state.numLayers}`;
-            redrawAtCurrentLayer(state, refs, ctx, W, H);
+            redrawAtCurrentLayer(state, refs, canvasState);
         });
     }
 
@@ -1795,7 +1796,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
             const seed = (Date.now() & 0xffffffff) >>> 0;
             const perm = randomPermutation(state.n, mulberry32(seed));
             applyPermutationToState(state, perm);
-            fullRefresh(state, refs, ctx, W, H, /* animate */ true);
+            fullRefresh(state, refs, canvasState, /* animate */ true);
         });
     }
 
@@ -1803,7 +1804,7 @@ function bindEventHandlers(state, refs, ctx, W, H) {
     if (refs.resetBtn) {
         refs.resetBtn.addEventListener('click', () => {
             resetPermutation(state);
-            fullRefresh(state, refs, ctx, W, H, /* animate */ false);
+            fullRefresh(state, refs, canvasState, /* animate */ false);
         });
     }
 }
@@ -1816,17 +1817,23 @@ function bindEventHandlers(state, refs, ctx, W, H) {
  * Configure the canvas for crisp rendering at the device pixel ratio.
  * Returns the logical (CSS) dimensions used for layout coordinates.
  */
-function setupCanvas(canvas) {
-    const W_logical = 700;
-    const H_logical = 500;
+function setupCanvas(canvas, wrapper) {
+    // Logical aspect: 700 × 500 (7:5). We scale uniformly to fit the wrapper
+    // up to that maximum. CSS handles the visual size; we just match the
+    // internal pixel buffer for crisp rendering.
+    const ASPECT_W = 700;
+    const ASPECT_H = 500;
+    const MAX_W = 700;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width  = W_logical * dpr;
-    canvas.height = H_logical * dpr;
-    canvas.style.width  = W_logical + 'px';
-    canvas.style.height = H_logical + 'px';
+    const cssW = Math.min((wrapper && wrapper.clientWidth) || MAX_W, MAX_W);
+    const cssH = cssW * (ASPECT_H / ASPECT_W);
+    canvas.width  = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    // Do NOT set canvas.style.width/height — CSS handles sizing.
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);  // reset before scaling (re-setup safety)
     ctx.scale(dpr, dpr);
-    return {ctx, W: W_logical, H: H_logical};
+    return {ctx, W: cssW, H: cssH};
 }
 
 // ============================================================
@@ -1847,8 +1854,11 @@ function initGDLDemo() {
     // Collect DOM refs
     const refs = collectGDLDOMRefs(container);
 
-    // Setup canvas
-    const {ctx, W, H} = setupCanvas(refs.canvas);
+    // Setup canvas. We wrap (ctx, W, H) in an object so that the resize
+    // handler can replace them in place — any closure that holds a
+    // reference to canvasState (not the values) sees the new surface.
+    const initial = setupCanvas(refs.canvas, refs.canvasWrapper);
+    const canvasState = { ctx: initial.ctx, W: initial.W, H: initial.H };
 
     // Initialize state
     const state = createDemoState(DEFAULT_DEMO_CONFIG);
@@ -1867,10 +1877,29 @@ function initGDLDemo() {
     if (refs.layerReadout) refs.layerReadout.textContent = `0 / ${state.numLayers}`;
 
     // Initial forward pass + render with animation
-    fullRefresh(state, refs, ctx, W, H, /* animate */ true);
+    fullRefresh(state, refs, canvasState, /* animate */ true);
 
     // Bind handlers
-    bindEventHandlers(state, refs, ctx, W, H);
+    bindEventHandlers(state, refs, canvasState);
+
+    // Resize handler: rebuild the canvas drawing surface to match the
+    // wrapper's current width. Throttle with rAF so rapid resize events
+    // (mobile rotation, devtools open/close) don't thrash the canvas.
+    let resizePending = false;
+    const onResize = () => {
+        if (resizePending) return;
+        resizePending = true;
+        requestAnimationFrame(() => {
+            resizePending = false;
+            const next = setupCanvas(refs.canvas, refs.canvasWrapper);
+            canvasState.ctx = next.ctx;
+            canvasState.W = next.W;
+            canvasState.H = next.H;
+            // Redraw at the currently displayed layer without restarting animation.
+            redrawAtCurrentLayer(state, refs, canvasState);
+        });
+    };
+    window.addEventListener('resize', onResize);
 }
 
 // ============================================================
