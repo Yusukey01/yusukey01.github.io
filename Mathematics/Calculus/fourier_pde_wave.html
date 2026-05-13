@@ -1,0 +1,953 @@
+---
+layout: default
+title: "The Wave Equation"
+topic_id: calc-34
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Wave Equation</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#bounded">Wave Equation on a Bounded Interval</a>
+            <a href="#realline">Wave Equation on the Real Line</a>
+            <a href="#energy">Energy Conservation</a>
+        </div>
+
+        <div class="container">
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+
+                <p>
+                    The <a href="fourier_pde_heat.html"><strong>previous page</strong></a> closed with an
+                    observation we left as a marker. The heat equation is irreversible — fine spatial
+                    structure is destroyed by exponential damping, and recovering it from the future state
+                    would require an exponentially unstable amplification — and we noted that this stands
+                    in sharp contrast to <em>the time-reversibility of the wave equation, where the backward
+                    problem is as well-posed as the forward one and no information is lost</em>. We now
+                    return to that marker. Replacing the first-order time derivative of the heat equation
+                    by a second-order one, while keeping the same spatial Laplacian, the same Dirichlet
+                    boundary problem, and the same Fourier machinery, produces an evolution that inverts
+                    the parabolic case in every qualitative respect: oscillation in place of decay,
+                    reversibility in place of dissipation, energy conservation in place of irreversible
+                    smoothing.
+                </p>
+
+                <p>
+                    The <strong>wave equation</strong>
+                    \[
+                    \partial_{tt} u(x, t) = c^2\, \partial_{xx} u(x, t)
+                    \]
+                    is the canonical example of a <strong>hyperbolic</strong> partial differential equation,
+                    where \(u(x, t)\) represents the transverse displacement of a vibrating string — or, more
+                    abstractly, the amplitude of a propagating wave — at position \(x\) and time \(t\), and
+                    \(c > 0\) is a positive constant called the <strong>wave speed</strong>. The equation
+                    governs small-amplitude vibrations of a taut elastic string, the propagation of sound in
+                    a one-dimensional medium, and, in higher-dimensional analogues, the propagation of
+                    light, sound, and gravitational waves in physical space. Where the heat equation's
+                    natural physical content is dissipation — the smoothing-out of inhomogeneities by
+                    diffusion — the wave equation's natural physical content is propagation: a localized
+                    disturbance travels through the medium at a definite finite speed, retaining its shape
+                    along characteristic directions in spacetime.
+                </p>
+
+                <p>
+                    The wave equation is the second representative of the classical trichotomy of linear
+                    second-order PDEs — parabolic, hyperbolic, elliptic — whose third member, the Laplace
+                    equation, will be developed in a subsequent page. The present treatment is
+                    one-dimensional and classical: separation of variables on a bounded interval, the
+                    method of characteristics on the real line, the d'Alembert formula, and the proof
+                    that mechanical energy is exactly conserved — closing with a contrast against the
+                    heat equation that runs through reversibility, regularity, propagation speed, and
+                    the conservation law itself. Higher-dimensional wave equations
+                    (Kirchhoff's formula in three dimensions, the method of descent in two), the general
+                    theory of hyperbolic Cauchy problems, and weak solutions in distributional or Sobolev
+                    settings belong to more advanced treatments and are not pursued here.
+                </p>
+            </section>
+
+            <section id="bounded" class="section-content">
+                <h2>Wave Equation on a Bounded Interval</h2>
+
+                <p>
+                    We begin with the prototype problem that runs in parallel with the heat conduction
+                    setup of the previous page: transverse vibrations of a taut elastic string of length
+                    \(L\) clamped at both ends. The mathematical formulation is the
+                    <strong>initial-boundary value problem</strong>
+                    \[
+                    \begin{cases}
+                    \partial_{tt} u = c^2\, \partial_{xx} u, & 0 < x < L,\ t > 0, \\
+                    u(0, t) = u(L, t) = 0, & t \geq 0, \\
+                    u(x, 0) = f(x), & 0 \leq x \leq L, \\
+                    \partial_t u(x, 0) = g(x), & 0 \leq x \leq L,
+                    \end{cases}
+                    \]
+                    where \(f\) prescribes the initial displacement and \(g\) prescribes the initial
+                    velocity. Two initial conditions appear in place of the heat equation's single
+                    \(u(\cdot, 0) = f\): this is the first concrete consequence of replacing a first-order
+                    time derivative by a second-order one, since a well-posed second-order ODE in \(t\)
+                    requires two pieces of data at \(t = 0\). The boundary conditions
+                    \(u(0,t) = u(L,t) = 0\) are again the homogeneous <strong>Dirichlet</strong> conditions,
+                    corresponding physically to the two ends of the string being pinned in place. Our goal is
+                    an explicit solution formula that exposes both how the displacement evolves and the
+                    sharp structural inversion from the parabolic case — exponential decay replaced by
+                    sustained oscillation, single initial datum replaced by two.
+                </p>
+
+                <h3>Separation of Variables</h3>
+
+                <p>
+                    We seek solutions in the product form
+                    \[
+                    u(x, t) = \phi(x)\, G(t),
+                    \]
+                    again setting aside the initial conditions and demanding only that \(u\) satisfy the PDE
+                    and the homogeneous boundary conditions. Substituting into the wave equation gives
+                    \(\phi(x)\, G''(t) = c^2\, \phi''(x)\, G(t)\). Dividing both sides by
+                    \(c^2\, \phi(x)\, G(t)\) separates the variables:
+                    \[
+                    \frac{G''(t)}{c^2\, G(t)} = \frac{\phi''(x)}{\phi(x)} = -\lambda,
+                    \]
+                    where the common constant is again denoted \(-\lambda\) by a sign convention chosen with
+                    foresight — as for the heat equation, the physically relevant eigenvalues will turn out
+                    to be positive, but now positive \(\lambda\) drives \(G(t)\) into <em>oscillation</em>
+                    rather than exponential decay. The separation produces two ordinary differential
+                    equations,
+                    \[
+                    \begin{align*}
+                    \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                    G''(t) + \lambda c^2\, G(t) &\;=\; 0,
+                    \end{align*}
+                    \]
+                    coupled only through \(\lambda\). The Dirichlet boundary conditions translate, as before,
+                    into \(\phi(0) = \phi(L) = 0\). The spatial equation and its boundary conditions are
+                    identical to those of the heat case; only the temporal equation has changed — and its
+                    change, from first order to second order, is precisely the source of every qualitative
+                    difference between the two evolutions.
+                </p>
+
+                <h3>The Spatial Eigenvalue Problem</h3>
+
+                <p>
+                    The spatial boundary value problem
+                    \[
+                    \begin{align*}
+                    \phi''(x) + \lambda\, \phi(x) &\;=\; 0, \\\\
+                    \phi(0) = \phi(L) &\;=\; 0
+                    \end{align*}
+                    \]
+                    is identical to the eigenvalue problem that arose in the separation analysis of the
+                    heat equation. The three-case analysis (\(\lambda < 0\), \(\lambda = 0\), \(\lambda > 0\))
+                    that ruled out non-positive eigenvalues and produced the sine eigenfunctions for positive
+                    \(\lambda\) was carried out in full there; we do not repeat it. The result is summarised
+                    by the previous page's
+                    <a href="fourier_pde_heat.html#T-dirichlet_eigenvalues" class="ref-link" data-id="T-dirichlet_eigenvalues"><strong>theorem on the eigenvalues and eigenfunctions of the Dirichlet Laplacian on \([0, L]\)</strong></a>:
+                    \[
+                    \lambda_n = \left(\frac{n\pi}{L}\right)^{\!2}, \qquad
+                    \phi_n(x) = \sin\frac{n\pi x}{L}, \qquad n = 1, 2, 3, \ldots
+                    \]
+                    What changes between the heat and wave equations is not the spatial spectrum — both
+                    problems diagonalize the same operator — but how each eigenvalue acts on its mode in
+                    time.
+                </p>
+
+                <h3>The Temporal ODE</h3>
+
+                <p>
+                    With \(\lambda = \lambda_n\) fixed, the time-dependent equation
+                    \[
+                    G''(t) + \lambda_n c^2\, G(t) = 0
+                    \]
+                    is a second-order linear ODE with constant positive coefficient \(\lambda_n c^2\). Writing
+                    \(\omega_n := c\sqrt{\lambda_n} = n\pi c / L\) for the <strong>circular frequency of the
+                    \(n\)th mode</strong>, the characteristic roots are \(r = \pm i \omega_n\), and the
+                    general solution is the linear combination
+                    \[
+                    G_n(t) = B_n \cos\omega_n t + C_n \sin\omega_n t,
+                    \]
+                    with two free constants \(B_n, C_n\) reflecting the two initial conditions of the
+                    second-order ODE. The contrast with the heat case is exact and instructive: there,
+                    \(G'(t) + \lambda_n k\, G(t) = 0\) is a first-order equation whose general solution is
+                    a one-parameter family \(G_n(t) = B_n e^{-\lambda_n k t}\); here, the temporal evolution
+                    is a two-parameter family of trigonometric oscillations of frequency \(\omega_n\). The
+                    decay rate of the parabolic case has been replaced by a temporal frequency: heat's
+                    \(e^{-\lambda_n k t}\) is the wave equation's \(\cos(c\sqrt{\lambda_n}\, t)\) and
+                    \(\sin(c\sqrt{\lambda_n}\, t)\), with the same eigenvalue \(\lambda_n\) playing
+                    structurally opposite roles in the two evolutions.
+                </p>
+
+                <p>
+                    A note on notation. The letter \(B_n\) is the same symbol used in the previous page
+                    for the Fourier sine coefficient of the initial datum, and we shall presently see that
+                    in the wave case it again denotes the Fourier sine coefficient of \(f\); the choice is
+                    deliberate, preserving cross-page consistency. The letter \(C_n\), new to this page, is
+                    introduced for the second family of coefficients arising from the second initial
+                    condition; it will carry information from the initial velocity \(g\).
+                </p>
+
+                <p>
+                    The \(n\)th <strong>product solution</strong> or <strong>standing wave</strong> is the
+                    product of the spatial eigenfunction with its temporal evolution:
+                    \[
+                    u_n(x, t) = \sin\frac{n\pi x}{L}\, \bigl[B_n \cos\omega_n t + C_n \sin\omega_n t\bigr].
+                    \]
+                    Each \(u_n\) solves the wave equation and the Dirichlet boundary conditions. Where the
+                    heat equation's modes are sine waves of fixed shape damped by a decaying amplitude, the
+                    wave equation's modes are sine waves of fixed shape modulated by an oscillating amplitude
+                    that does not decay. The shape \(\sin(n\pi x / L)\) is again preserved in \(x\); what is
+                    new is that the amplitude does not shrink — it swings periodically at frequency
+                    \(\omega_n\), and the \(n\)th mode <em>vibrates indefinitely</em>.
+                </p>
+
+                <h3>Superposition and the Series Solution</h3>
+
+                <p>
+                    The wave equation is linear and homogeneous, and the boundary conditions are also
+                    homogeneous; consequently any finite linear combination of product solutions is again a
+                    solution of the PDE and the boundary conditions. The <strong>principle of
+                    superposition</strong> extends this, formally, to infinite series. To match both
+                    initial conditions, we must allow both the cosine and the sine temporal components in
+                    each mode, and so the full ansatz takes the form
+                    \[
+                    u(x, t) = \sum_{n=1}^{\infty} \sin\frac{n\pi x}{L}\,
+                    \Bigl[B_n \cos\frac{n\pi c t}{L} + C_n \sin\frac{n\pi c t}{L}\Bigr],
+                    \]
+                    in which two independent families of coefficients \(\{B_n\}\) and \(\{C_n\}\) jointly
+                    encode the two initial conditions. The heat case carried a single Fourier family because
+                    its first-order time evolution accommodated only one initial datum; the wave case carries
+                    two, one for each.
+                </p>
+
+                <p>
+                    To find the coefficients, we impose the initial conditions on the series. Evaluating at
+                    \(t = 0\) collapses the cosine terms to one and the sine terms to zero, leaving
+                    \[
+                    u(x, 0) = \sum_{n=1}^{\infty} B_n \sin\frac{n\pi x}{L} = f(x),
+                    \]
+                    a Fourier sine series expansion of \(f\) on \([0, L]\). Differentiating the series
+                    termwise in \(t\) and then evaluating at \(t = 0\) collapses the new cosine terms to
+                    one and the new sine terms to zero, leaving
+                    \[
+                    \partial_t u(x, 0) = \sum_{n=1}^{\infty} C_n\, \frac{n\pi c}{L}\, \sin\frac{n\pi x}{L} = g(x),
+                    \]
+                    a Fourier sine series expansion of \(g\) — except that each term carries the extra
+                    factor \(n\pi c / L\) introduced by differentiating \(\sin(n\pi ct/L)\) in \(t\). The
+                    <a href="fourier_series.html#T-trig_orthogonality" class="ref-link" data-id="T-trig_orthogonality"><strong>orthogonality of the trigonometric system</strong></a>
+                    on \([0, L]\) extracts the coefficients from each series in the standard way: multiplying
+                    by \(\sin(m\pi x / L)\), integrating over \([0, L]\), and using
+                    \[
+                    \int_0^L \sin\frac{n\pi x}{L} \sin\frac{m\pi x}{L}\, dx = \begin{cases} L/2, & m = n, \\ 0, & m \neq n. \end{cases}
+                    \]
+                    The first series gives \(B_n\) directly; the second gives \(C_n \cdot n\pi c / L\), which
+                    we solve for \(C_n\). We collect all of this into a single statement.
+                </p>
+
+                <div class="theorem" id="T-wave_dirichlet_series_solution">
+                    <span class="theorem-title">Theorem: Series Representation of the Solution on a Bounded Interval</span>
+                    <p>
+                        Let \(f \in C^2([0, L])\) and \(g \in C^1([0, L])\) satisfy the boundary
+                        compatibility conditions
+                        \[
+                        f(0) = f(L) = 0, \qquad g(0) = g(L) = 0.
+                        \]
+                        Then the solution of the initial-boundary value problem
+                        \[
+                        \begin{cases}
+                        \partial_{tt} u = c^2\, \partial_{xx} u, & 0 < x < L,\ t > 0, \\
+                        u(0, t) = u(L, t) = 0, & t \geq 0, \\
+                        u(x, 0) = f(x), \quad \partial_t u(x, 0) = g(x), & 0 \leq x \leq L
+                        \end{cases}
+                        \]
+                        is represented by the Fourier series
+                        \[
+                        u(x, t) = \sum_{n=1}^{\infty} \sin\frac{n\pi x}{L}\,
+                        \Bigl[B_n \cos\frac{n\pi c t}{L} + C_n \sin\frac{n\pi c t}{L}\Bigr],
+                        \]
+                        where the coefficients are determined from the initial data by
+                        \[
+                        \begin{align*}
+                        B_n &\;=\; \frac{2}{L}\int_0^L f(x)\, \sin\frac{n\pi x}{L}\, dx, \\\\
+                        C_n &\;=\; \frac{2}{n\pi c}\int_0^L g(x)\, \sin\frac{n\pi x}{L}\, dx.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The series above is built constructively from the eigenfunction decomposition, and
+                    each partial sum satisfies the wave equation and the Dirichlet boundary conditions
+                    termwise, by direct differentiation; the coefficient formulas follow from the
+                    orthogonality of the Fourier sine system applied to the initial conditions, exactly
+                    as in the parabolic case. A rigorous proof that the full infinite series, together
+                    with its first and second \(x\)- and \(t\)-derivatives, converges uniformly and yields
+                    a classical \(C^2\) solution is more delicate than the parabolic analogue: it
+                    requires initial data of strictly higher regularity than the natural class
+                    \(f \in C^2, g \in C^1\) admitted in the hypotheses above. We do not pursue this
+                    technicality. Existence of a classical solution under the natural assumptions is
+                    established by a different route in the next section, where the method of
+                    characteristics yields an explicit \(C^2\) solution formula by a construction that
+                    sidesteps the series-convergence problem entirely.
+                </p>
+
+                <p>
+                    The contrast with the heat equation, which deserves emphasis, is exactly this:
+                    the heat equation's exponential damping \(e^{-\lambda_n k t}\) regularizes initial
+                    data of any \(L^2\) class into \(C^\infty\) for every \(t > 0\), as established on
+                    the previous page; any roughness or incompatibility between the initial datum and
+                    the boundary conditions is instantaneously smoothed away. The wave equation has no
+                    such factor. The regularity of \(u(\cdot, t)\) at any time \(t > 0\) reflects exactly
+                    the regularity of the initial data, including any boundary incompatibility, which is
+                    propagated forward in time rather than dissipated. Initial data lying merely in
+                    \(L^2\) — weaker than the hypotheses of the theorem above — generate a series
+                    convergent in \(L^2\) at each \(t\), but the resulting \(u\) need not be twice
+                    classically differentiable, and the equation
+                    \(\partial_{tt} u = c^2 \partial_{xx} u\) holds only in a distributional sense beyond
+                    the present scope. This is the wave equation's first qualitative inversion of the
+                    parabolic case, and we return to it as a structural property in the heat-vs-wave
+                    contrast that closes the next section.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: Standing Waves and the Vibrating String</h3>
+                    <p>
+                        Each term in the series solution,
+                        \[
+                        \sin\frac{n\pi x}{L}\, \bigl[B_n \cos\omega_n t + C_n \sin\omega_n t\bigr],
+                        \qquad \omega_n = \frac{n\pi c}{L},
+                        \]
+                        is a <strong>standing wave</strong>: a spatial profile fixed in shape, oscillating
+                        in time at the circular frequency \(\omega_n\). The mode \(n = 1\), with the lowest
+                        frequency \(\omega_1 = \pi c / L\), is the <strong>fundamental</strong>; the modes
+                        \(n \geq 2\) are its <strong>harmonics</strong>, with frequencies \(\omega_n = n \omega_1\)
+                        organised as integer multiples of the fundamental. The \(n\)th mode has exactly
+                        \(n - 1\) interior zeros — its <strong>nodes</strong>, points of the string that do
+                        not move — while the points midway between adjacent nodes oscillate with maximal
+                        amplitude.
+                    </p>
+                    <p>
+                        The frequency \(\omega_n = n\pi c / L\) depends on the wave speed \(c\) and the
+                        string length \(L\). Recalling that \(c^2 = T_0 / \rho_0\) for a string of tension
+                        \(T_0\) and linear mass density \(\rho_0\), the fundamental frequency is
+                        \(\omega_1 = (\pi / L)\sqrt{T_0 / \rho_0}\): a string sounds higher when tightened
+                        (larger \(T_0\)), when shortened (smaller \(L\)), or when made of a lighter material
+                        (smaller \(\rho_0\)). This is the mathematical content of how a guitarist tunes a
+                        string and how a violinist fingers a note by clamping the string at a chosen point
+                        — physical operations whose effect on pitch is, exactly, a perturbation of the
+                        Dirichlet eigenvalue spectrum.
+                    </p>
+                    <p>
+                        A single standing wave admits an alternative description as the superposition of two
+                        travelling waves moving in opposite directions. The product-to-sum identity gives
+                        \[
+                        \sin\frac{n\pi x}{L}\, \sin\frac{n\pi c t}{L}
+                        \;=\; \tfrac{1}{2}\cos\frac{n\pi}{L}(x - ct) - \tfrac{1}{2}\cos\frac{n\pi}{L}(x + ct),
+                        \]
+                        and analogously for the cosine-cosine combination. Each standing mode is the
+                        interference of a right-moving wave \(\cos(n\pi(x - ct)/L)\) and a left-moving wave
+                        \(\cos(n\pi(x + ct)/L)\), each travelling at speed \(c\). This decomposition is not
+                        an artefact of the trigonometric identity. It is the bounded-interval echo of a
+                        deeper structure: on the real line, every solution of the wave equation is a sum of
+                        a right-moving and a left-moving travelling wave, with no eigenvalue spectrum
+                        involved at all. We pursue that picture next.
+                    </p>
+                </div>
+            </section>
+
+            <section id="realline" class="section-content">
+                <h2>Wave Equation on the Real Line</h2>
+
+                <p>
+                    We turn to the wave equation on the entire real line:
+                    \[
+                    \partial_{tt} u = c^2\, \partial_{xx} u, \qquad
+                    x \in \mathbb{R},\ t > 0,
+                    \]
+                    with initial conditions \(u(x, 0) = f(x)\) and
+                    \(\partial_t u(x, 0) = g(x)\) and no boundary conditions imposed at any finite
+                    point. Removing the boundary changes the picture entirely. There is no longer a
+                    discrete spectrum to expand against; the eigenfunction expansion of the bounded
+                    case has nothing to attach itself to. In its place a different mechanism appears,
+                    one that is hidden by the standing-wave decomposition on the interval but central
+                    to the hyperbolic nature of the equation: solutions are built from
+                    <em>travelling waves</em> whose existence is a direct algebraic consequence of
+                    the second-order operator's factorization. We develop this picture by first
+                    sketching a brief Fourier-transform argument, which both yields and motivates the
+                    right structural decomposition, and then constructing the solution rigorously by
+                    a route that does not depend on Fourier analysis.
+                </p>
+
+                <h3>Motivation: A Fourier-Transform Sketch</h3>
+
+                <p>
+                    Taking the spatial Fourier transform of the wave equation in \(x\), with the
+                    convention \(\hat u(\xi, t) = \int_{\mathbb{R}} u(x, t)\, e^{i x \xi}\, dx\) and
+                    the
+                    <a href="fourier_transform.html#T-ft_differentiation" class="ref-link" data-id="T-ft_differentiation"><strong>differentiation rule</strong></a>
+                    \(\partial_x \mapsto -i\xi\), the PDE becomes the family of second-order ODEs in
+                    \(t\),
+                    \[
+                    \partial_{tt} \hat u(\xi, t) = -c^2 \xi^2\, \hat u(\xi, t),
+                    \qquad \xi \in \mathbb{R},
+                    \]
+                    one equation per spatial frequency \(\xi\). The general solution at each
+                    frequency is a linear combination of two trigonometric oscillations,
+                    \[
+                    \hat u(\xi, t) = A(\xi) \cos(c\xi t) + B(\xi) \sin(c\xi t),
+                    \]
+                    with \(\xi\)-dependent amplitudes determined by the initial data \(\hat f,
+                    \hat g\). Rewriting the cosine and sine as complex exponentials,
+                    \(\cos(c\xi t) = \tfrac{1}{2}(e^{i c\xi t} + e^{-i c\xi t})\) and similarly for
+                    sine, regroups \(\hat u(\xi, t)\) as a sum of two terms of the form
+                    \(\alpha(\xi)\, e^{i c\xi t}\) and \(\beta(\xi)\, e^{-i c\xi t}\). Each such
+                    term contains a time-dependent phase factor in the frequency variable, and by
+                    the
+                    <a href="fourier_transform.html#T-ft_translation" class="ref-link" data-id="T-ft_translation"><strong>translation property of the Fourier transform</strong></a>
+                    — which converts a phase shift \(e^{i a \xi}\) in frequency into a spatial
+                    translation by \(-a\) in physical space — its inverse transform is a function
+                    of \(x - ct\) or \(x + ct\) alone. Specifically, if \(\widetilde F\) and
+                    \(\widetilde G\) denote the inverse transforms of \(\alpha\) and \(\beta\),
+                    then the inverse transform of \(\alpha(\xi)\, e^{i c\xi t}\) is
+                    \(\widetilde F(x - ct)\) and the inverse transform of
+                    \(\beta(\xi)\, e^{-i c\xi t}\) is \(\widetilde G(x + ct)\) — waves of arbitrary
+                    spatial shape translated rigidly at speed \(c\), to the right and to the left.
+                    The transform calculation foretells the structure of the solution — every
+                    component of \(u\) is a superposition of two travelling waves — without telling
+                    us how to construct it without the transform. The construction below recovers
+                    this structure directly from the PDE, with no reliance on Fourier machinery
+                    and at the level of regularity natural to the problem.
+                </p>
+
+                <h3>The First-Order Transport Equation</h3>
+
+                <p>
+                    Before factoring the second-order wave operator, we record the elementary fact
+                    that drives the entire construction. Consider the first-order linear PDE
+                    \[
+                    \partial_t \psi + c\, \partial_x \psi = 0,
+                    \qquad x \in \mathbb{R},\ t > 0,
+                    \]
+                    with arbitrary initial datum \(\psi(x, 0) = \psi_0(x)\). We claim that its
+                    solution is the rigid translation \(\psi(x, t) = \psi_0(x - ct)\) — the initial
+                    profile \(\psi_0\) carried unchanged to the right at speed \(c\).
+                </p>
+
+                <p>
+                    The verification is direct: for any differentiable function \(\psi_0\), the
+                    chain rule applied to \(\psi(x, t) = \psi_0(x - ct)\) gives
+                    \[
+                    \partial_t \psi = -c\, \psi_0'(x - ct), \qquad
+                    \partial_x \psi = \psi_0'(x - ct),
+                    \]
+                    and therefore \(\partial_t \psi + c\, \partial_x \psi = 0\). Conversely, the
+                    derivative of \(\psi(x_0 + ct, t)\) along the line
+                    \(\{(x_0 + ct, t) : t \geq 0\}\) equals
+                    \(c\, \partial_x \psi + \partial_t \psi = 0\), so \(\psi\) is constant along
+                    such lines, which forces \(\psi(x, t) = \psi(x - ct, 0) = \psi_0(x - ct)\). The
+                    lines along which \(\psi\) is preserved are the <strong>characteristics</strong>
+                    of the equation, parametrized by \(x_0 = x - ct = \) constant. Reversing the
+                    sign of \(c\), the analogous equation
+                    \(\partial_t \psi - c\, \partial_x \psi = 0\) is solved by left-translation:
+                    \(\psi(x, t) = \psi_0(x + ct)\), constant along the characteristics
+                    \(x + ct = \) constant. We will use both directions.
+                </p>
+
+                <h3>Reduction to Two Transport Equations</h3>
+
+                <p>
+                    The wave equation contains both directions at once. Observe the operator
+                    factorization
+                    \[
+                    \partial_{tt} - c^2 \partial_{xx}
+                    \;=\; (\partial_t - c\, \partial_x)(\partial_t + c\, \partial_x)
+                    \;=\; (\partial_t + c\, \partial_x)(\partial_t - c\, \partial_x),
+                    \]
+                    where the two factorizations are equal because the constant-coefficient
+                    first-order operators \(\partial_t \pm c\, \partial_x\) commute. The
+                    second-order wave operator is the composition of two first-order transport
+                    operators, one moving structure to the right at speed \(c\) and one moving it
+                    to the left at the same speed. This algebraic factorization is the entire
+                    content of the method of characteristics: it converts a single second-order
+                    equation into a system of two first-order equations, each of which we know how
+                    to solve.
+                </p>
+
+                <p>
+                    Acting on this observation, we introduce the auxiliary variables
+                    \[
+                    w := \partial_t u - c\, \partial_x u, \qquad
+                    v := \partial_t u + c\, \partial_x u.
+                    \]
+                    These are not separate unknowns. They are linear combinations of the first
+                    derivatives of \(u\) chosen to diagonalize the second-order operator into two
+                    independent transport problems. Applying \(\partial_t + c\, \partial_x\) to
+                    \(w\) gives
+                    \[
+                    (\partial_t + c\, \partial_x) w
+                    \;=\; (\partial_t + c\, \partial_x)(\partial_t - c\, \partial_x) u
+                    \;=\; \partial_{tt} u - c^2 \partial_{xx} u
+                    \;=\; 0,
+                    \]
+                    where the last equality is the wave equation itself. Therefore \(w\) satisfies
+                    the first-order transport equation
+                    \[
+                    \partial_t w + c\, \partial_x w = 0,
+                    \]
+                    whose solution, by the lemma above, is \(w(x, t) = P(x - ct)\) for some
+                    function \(P\) determined by the initial data:
+                    \(P(x) = w(x, 0) = \partial_t u(x, 0) - c\, \partial_x u(x, 0)
+                    = g(x) - c f'(x)\), provided \(f\) is differentiable. Symmetrically, applying
+                    \(\partial_t - c\, \partial_x\) to \(v\) gives
+                    \((\partial_t - c\, \partial_x) v = \partial_{tt} u - c^2 \partial_{xx} u = 0\),
+                    so \(v\) satisfies \(\partial_t v - c\, \partial_x v = 0\) with general solution
+                    \(v(x, t) = Q(x + ct)\), where \(Q(x) = v(x, 0) = g(x) + c f'(x)\).
+                </p>
+
+                <p>
+                    The auxiliary variables \(w\) and \(v\) thus carry, respectively, the
+                    right-moving and left-moving components of the dynamics, and each is determined
+                    explicitly by the initial data. To recover \(u\) from \(w\) and \(v\) we use
+                    their definitions as a linear system: \(v - w = 2c\, \partial_x u\) and
+                    \(v + w = 2\, \partial_t u\), from which
+                    \(\partial_t u = (v + w)/2 = [P(x - ct) + Q(x + ct)]/2\) and
+                    \(\partial_x u = (v - w)/(2c) = [Q(x + ct) - P(x - ct)]/(2c)\). The wave
+                    equation has been reduced to a pair of explicit first-order data on the
+                    derivatives of \(u\), each living on its own characteristic family. The
+                    integration of these data into a formula for \(u\) itself is the content of the
+                    next step.
+                </p>
+
+                <h3>The General Solution</h3>
+
+                <p>
+                    The expressions for \(\partial_t u\) and \(\partial_x u\) obtained in the previous
+                    step have each been written as a sum of a function of \(x - ct\) and a function
+                    of \(x + ct\). We now show that the same structural decomposition is forced on
+                    \(u\) itself: any \(C^2\) solution of the wave equation on the real line is a
+                    sum of a right-moving and a left-moving travelling wave.
+                </p>
+
+                <p>
+                    Let \(\mathcal{P}\) and \(\mathcal{Q}\) be antiderivatives of \(P\) and \(Q\),
+                    respectively, so that \(\mathcal{P}' = P\) and \(\mathcal{Q}' = Q\). Define
+                    \[
+                    F(s) := -\frac{1}{2c}\mathcal{P}(s), \qquad G(s) := \frac{1}{2c}\mathcal{Q}(s),
+                    \]
+                    and consider the function \(\tilde u(x, t) := F(x - ct) + G(x + ct)\). Direct
+                    differentiation gives
+                    \[
+                    \partial_t \tilde u = -c\, F'(x-ct) + c\, G'(x+ct)
+                    = \frac{P(x-ct) + Q(x+ct)}{2} = \partial_t u,
+                    \]
+                    using \(F' = -P/(2c)\) and \(G' = Q/(2c)\), and similarly
+                    \[
+                    \partial_x \tilde u = F'(x-ct) + G'(x+ct)
+                    = \frac{-P(x-ct) + Q(x+ct)}{2c} = \partial_x u.
+                    \]
+                    Thus \(u\) and \(\tilde u\) have the same first-order partial derivatives
+                    everywhere on \(\mathbb{R} \times [0, \infty)\) and therefore differ by a global
+                    additive constant, which we absorb into the definition of either \(F\) or \(G\)
+                    without loss of generality. The wave equation's general solution on the real
+                    line has been determined.
+                </p>
+
+                <div class="theorem" id="T-dalembert_general_solution">
+                    <span class="theorem-title">Theorem: General Solution of the One-Dimensional Wave Equation</span>
+                    <p>
+                        Every \(C^2\) solution \(u : \mathbb{R} \times [0, \infty) \to \mathbb{R}\)
+                        of the wave equation
+                        \[
+                        \partial_{tt} u - c^2 \partial_{xx} u = 0
+                        \]
+                        admits a representation of the form
+                        \[
+                        u(x, t) = F(x - ct) + G(x + ct)
+                        \]
+                        for some functions \(F, G \in C^2(\mathbb{R})\), called the
+                        <strong>right-moving</strong> and <strong>left-moving</strong> components
+                        of the solution respectively. Conversely, for any \(F, G \in C^2(\mathbb{R})\),
+                        the function \(u(x, t) = F(x - ct) + G(x + ct)\) is a \(C^2\) solution of
+                        the wave equation on \(\mathbb{R} \times [0, \infty)\). This result is due
+                        to d'Alembert (1747).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The forward direction was established above: given a \(C^2\) solution \(u\),
+                        the auxiliary variables \(w = u_t - c u_x\) and \(v = u_t + c u_x\) satisfy
+                        \(w(x, t) = P(x - ct)\) and \(v(x, t) = Q(x + ct)\) by the transport lemma,
+                        and the antiderivatives \(\mathcal{P}, \mathcal{Q}\) furnish functions
+                        \(F = -\mathcal{P}/(2c)\) and \(G = \mathcal{Q}/(2c)\) for which
+                        \(u(x, t) - [F(x - ct) + G(x + ct)]\) has vanishing first derivatives in
+                        both \(x\) and \(t\), hence is constant on the connected domain. Absorbing
+                        the constant into \(F\) or \(G\) yields the stated representation.
+                    </p>
+                    <p>
+                        The converse is a direct computation. For any \(F, G \in C^2(\mathbb{R})\)
+                        and \(u(x, t) = F(x - ct) + G(x + ct)\),
+                        \[
+                        \partial_{tt} u = c^2 F''(x - ct) + c^2 G''(x + ct), \qquad
+                        c^2 \partial_{xx} u = c^2 F''(x - ct) + c^2 G''(x + ct),
+                        \]
+                        so \(\partial_{tt} u = c^2 \partial_{xx} u\) identically.
+                    </p>
+                </div>
+
+                <h3>Solving the Initial-Value Problem</h3>
+
+                <p>
+                    The general solution \(u(x, t) = F(x - ct) + G(x + ct)\) contains two arbitrary
+                    \(C^2\) functions, exactly matching the two initial conditions of the wave
+                    equation. To determine \(F\) and \(G\) from \(f\) and \(g\), we impose the
+                    initial conditions on the general representation. At \(t = 0\),
+                    \[
+                    u(x, 0) = F(x) + G(x) = f(x),
+                    \]
+                    while
+                    \[
+                    \partial_t u(x, 0) = -c F'(x) + c G'(x) = g(x).
+                    \]
+                    Differentiating the first equation gives \(F'(x) + G'(x) = f'(x)\). Together
+                    with the second equation, this is a linear system in \(F', G'\),
+                    \[
+                    \begin{cases}
+                    F'(x) + G'(x) = f'(x), \\
+                    -c F'(x) + c G'(x) = g(x),
+                    \end{cases}
+                    \]
+                    whose solution is
+                    \[
+                    F'(x) = \frac{1}{2}f'(x) - \frac{1}{2c}g(x), \qquad
+                    G'(x) = \frac{1}{2}f'(x) + \frac{1}{2c}g(x).
+                    \]
+                    Integrating from \(0\) to \(s\) yields
+                    \[
+                    F(s) = \frac{1}{2}f(s) - \frac{1}{2c}\int_0^s g(\sigma)\, d\sigma + \kappa, \qquad
+                    G(s) = \frac{1}{2}f(s) + \frac{1}{2c}\int_0^s g(\sigma)\, d\sigma - \kappa,
+                    \]
+                    where the integration constants are constrained by
+                    \(F(0) + G(0) = f(0)\), leaving one free parameter \(\kappa\) that cancels when
+                    \(F\) and \(G\) are added. Evaluating \(F(x - ct) + G(x + ct)\) yields the
+                    explicit formula.
+                </p>
+
+                <div class="theorem" id="T-dalembert_formula">
+                    <span class="theorem-title">Theorem: D'Alembert's Formula</span>
+                    <p>
+                        Let \(f \in C^2(\mathbb{R})\) and \(g \in C^1(\mathbb{R})\). The unique
+                        \(C^2\) solution of the initial-value problem
+                        \[
+                        \begin{cases}
+                        \partial_{tt} u = c^2\, \partial_{xx} u, & x \in \mathbb{R},\ t > 0, \\
+                        u(x, 0) = f(x), & x \in \mathbb{R}, \\
+                        \partial_t u(x, 0) = g(x), & x \in \mathbb{R}
+                        \end{cases}
+                        \]
+                        is given by <strong>d'Alembert's formula</strong>:
+                        \[
+                        u(x, t) = \frac{f(x - ct) + f(x + ct)}{2}
+                        + \frac{1}{2c}\int_{x - ct}^{x + ct} g(\sigma)\, d\sigma.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Existence: direct substitution. For \(f \in C^2\) and \(g \in C^1\), the
+                        function on the right-hand side belongs to
+                        \(C^2(\mathbb{R} \times [0, \infty))\) — the integral term lies in \(C^2\)
+                        by the fundamental theorem of calculus applied to its \(C^1\) integrand —
+                        and the derivation above shows it solves the PDE and matches both initial
+                        conditions.
+                    </p>
+                    <p>
+                        Uniqueness: any \(C^2\) solution \(\tilde u\) of the same initial-value
+                        problem admits the form
+                        \(\tilde u = \tilde F(x - ct) + \tilde G(x + ct)\) by the general
+                        representation theorem above. Imposing \(\tilde u(\cdot, 0) = f\) and
+                        \(\partial_t \tilde u(\cdot, 0) = g\) determines \(\tilde F'\) and
+                        \(\tilde G'\) uniquely as solutions of the same linear system as \(F', G'\),
+                        whose integration with constraint
+                        \(\tilde F(0) + \tilde G(0) = f(0)\) gives \(\tilde F\) and \(\tilde G\)
+                        differing from \(F, G\) only by additive constants whose sum is zero. The
+                        sum \(\tilde u = \tilde F(x - ct) + \tilde G(x + ct)\) is therefore
+                        identical to \(u\).
+                    </p>
+                </div>
+
+                <p>
+                    This formula completes the existence question deferred at the end of the
+                    previous section. The series representation given there was an existence
+                    statement of formal character on the bounded interval; d'Alembert's formula is
+                    the rigorous classical existence result on the real line, and it does so under
+                    exactly the natural Cauchy-data class \(f \in C^2, g \in C^1\), with no extra
+                    regularity required and no infinite series whose convergence to a \(C^2\)
+                    function would have to be checked term by term. The hyperbolic equation admits
+                    a closed-form classical solution by a finite chain of algebraic and integration
+                    steps. This is a structural feature distinguishing the wave equation from both
+                    the heat equation — where the closed form is the convolution with a Gaussian
+                    heat kernel — and from the elliptic case, which we encounter in a subsequent
+                    page.
+                </p>
+
+                <h3>Domain of Dependence and Range of Influence</h3>
+
+                <p>
+                    D'Alembert's formula determines \(u(x, t)\) from values of \(f\) at the two
+                    points \(x \pm ct\) and values of \(g\) on the interval \([x - ct, x + ct]\).
+                    The solution at the spacetime point \((x, t)\) therefore depends only on
+                    initial data lying within this bounded interval — no information from outside
+                    \([x - ct, x + ct]\) reaches \((x, t)\). The interval is called the
+                    <strong>domain of dependence</strong> of \(u\) at \((x, t)\); it is bounded by
+                    the two characteristic lines through \((x, t)\) traced backward in time at
+                    speed \(c\), and forms a closed triangle with apex at \((x, t)\) and base on
+                    the initial line \(t = 0\).
+                </p>
+
+                <p>
+                    The same picture, traced forward in time, gives the dual notion. The initial
+                    data \(f(x_0), g(x_0)\) at a single initial point \(x_0\) affect the solution
+                    \(u(x, t)\) only at spacetime points \((x, t)\) with \(t \geq 0\) satisfying
+                    \(|x - x_0| \leq ct\) — equivalently, points reachable from \((x_0, 0)\) by a
+                    signal travelling at speed at most \(c\) in either direction. This open
+                    spacetime region is the <strong>range of influence</strong> of the initial
+                    data at \(x_0\); it is the upward cone bounded by the two characteristic lines
+                    issuing from \((x_0, 0)\) at slopes \(\pm 1/c\).
+                </p>
+
+                <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" role="img"
+                     aria-labelledby="lightcone-title lightcone-desc"
+                     style="width: 100%; height: auto; max-width: 700px; display: block; margin: 1.5em auto;">
+                    <title id="lightcone-title">Domain of dependence and range of influence for the one-dimensional wave equation</title>
+                    <desc id="lightcone-desc">Two side-by-side spacetime diagrams. The left panel shows a downward triangle with apex at (x, t) on top and base on the t=0 axis from x-ct to x+ct, illustrating the interval of initial data on which the solution at (x, t) depends. The right panel shows an upward cone issuing from a single initial point x sub zero on the t=0 axis and opening at slopes plus and minus one over c, illustrating the spacetime region influenced by the data at x sub zero.</desc>
+
+                    <!-- Panel (a): Domain of dependence -->
+                    <g>
+                        <polygon points="80,240 320,240 200,80" fill="rgba(46, 125, 50, 0.25)" stroke="none"/>
+                        <line x1="60" y1="240" x2="340" y2="240" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="80" y1="240" x2="200" y2="80" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="320" y1="240" x2="200" y2="80" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="200" cy="80" r="3" fill="currentColor"/>
+                        <circle cx="80" cy="240" r="2.5" fill="currentColor"/>
+                        <circle cx="320" cy="240" r="2.5" fill="currentColor"/>
+                        <text x="210" y="78" font-size="14" fill="currentColor">(x, t)</text>
+                        <text x="50" y="260" font-size="14" fill="currentColor">x − ct</text>
+                        <text x="290" y="260" font-size="14" fill="currentColor">x + ct</text>
+                        <text x="343" y="245" font-size="14" fill="currentColor" font-style="italic">x</text>
+                        <text x="95" y="305" font-size="13" fill="currentColor" font-style="italic">(a) Domain of dependence</text>
+                    </g>
+
+                    <!-- Panel (b): Range of influence -->
+                    <g>
+                        <polygon points="500,240 350,80 650,80" fill="rgba(46, 125, 50, 0.25)" stroke="none"/>
+                        <line x1="380" y1="240" x2="680" y2="240" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="500" y1="240" x2="350" y2="80" stroke="currentColor" stroke-width="1.5"/>
+                        <line x1="500" y1="240" x2="650" y2="80" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="500" cy="240" r="3" fill="currentColor"/>
+                        <text x="490" y="260" font-size="14" fill="currentColor">x₀</text>
+                        <text x="362" y="72" font-size="14" fill="currentColor">x = x₀ − ct</text>
+                        <text x="580" y="72" font-size="14" fill="currentColor">x = x₀ + ct</text>
+                        <text x="683" y="245" font-size="14" fill="currentColor" font-style="italic">x</text>
+                        <text x="430" y="305" font-size="13" fill="currentColor" font-style="italic">(b) Range of influence</text>
+                    </g>
+                </svg>
+
+                <p>
+                    The slope \(\pm 1/c\) of the characteristic lines in the spacetime diagram
+                    encodes the central physical content of the hyperbolic equation:
+                    <strong>finite propagation speed</strong>. A localized disturbance in the
+                    initial data — say \(f\) or \(g\) supported in a small interval near \(x_0\) —
+                    cannot influence the solution at any spacetime point outside the upward cone
+                    issuing from \((x_0, 0)\), because the d'Alembert formula evaluates \(u(x, t)\)
+                    only on the backward triangle, which intersects the support of the data only
+                    if \((x, t)\) lies in the cone. Information about the initial state travels
+                    through the medium at speed exactly \(c\), neither faster nor instantaneously.
+                </p>
+
+                <h3>Contrast with the Heat Equation</h3>
+
+                <p>
+                    The dichotomy with the parabolic case is sharp and structural. The
+                    <a href="fourier_pde_heat.html#T-heat_kernel_solution" class="ref-link" data-id="T-heat_kernel_solution"><strong>heat kernel solution</strong></a>
+                    on the real line is the convolution
+                    \[
+                    u(x, t) \;=\; \int_{-\infty}^{\infty} K_t(x - y)\, f(y)\, dy,
+                    \]
+                    in which the kernel \(K_t\) is strictly positive everywhere on \(\mathbb{R}\)
+                    for every \(t > 0\). Consequently \(u(x, t)\) depends on the initial datum
+                    \(f\) at <em>every</em> point of \(\mathbb{R}\), not on a bounded interval; the
+                    domain of dependence of the heat equation is all of \(\mathbb{R}\).
+                    Reciprocally, the data \(f(x_0)\) at a single point affect \(u(x, t)\) at
+                    every \((x, t)\) with \(t > 0\) — the range of influence is the full upper
+                    half-plane. Information propagates instantaneously: an arbitrarily small
+                    perturbation of \(f\) on an arbitrarily small interval changes the parabolic
+                    solution everywhere at every positive time. This is the parabolic counterpart
+                    of the hyperbolic equation's finite-speed-of-propagation property, and it lies
+                    at the root of every qualitative difference between the two evolutions —
+                    irreversibility, smoothing, backward ill-posedness on the heat side;
+                    reversibility, regularity preservation, backward well-posedness on the wave
+                    side.
+                </p>
+            </section>
+
+            <section id="energy" class="section-content">
+                <h2>Energy Conservation</h2>
+
+                <p>
+                    The qualitative inversions catalogued at the close of the previous section —
+                    reversibility, regularity preservation, backward well-posedness — were
+                    articulated as structural features of the wave equation, in direct contrast
+                    with the parabolic case. We now sharpen the contrast with one quantitative
+                    statement: the wave equation admits a conserved quantity, and the form this
+                    quantity takes is itself a structural diagnostic. Where the heat equation's
+                    natural quantity is the \(L^2\) mass \(\int u^2\,dx\), which is monotonically
+                    non-increasing and tends to zero under Dirichlet boundary conditions, the
+                    wave equation conserves a different quadratic functional — the
+                    <strong>mechanical energy</strong> of the solution — exactly, for all time,
+                    in both forward and backward time directions.
+                </p>
+
+                <p>
+                    For a sufficiently regular solution \(u\) of the wave equation on a domain
+                    \(\Omega\) — either the bounded interval \([0, L]\) with homogeneous Dirichlet
+                    boundary conditions, or the entire real line with \(u(\cdot, t)\) and its
+                    derivatives decaying sufficiently rapidly at infinity — define the
+                    <strong>mechanical energy</strong> at time \(t\) by
+                    \[
+                    E(t) \;:=\; \frac{1}{2}\int_\Omega
+                    \Bigl[\bigl(\partial_t u(x, t)\bigr)^2
+                    + c^2 \bigl(\partial_x u(x, t)\bigr)^2\Bigr] dx.
+                    \]
+                    The two terms have a direct physical interpretation in the vibrating string
+                    model of §2: the first is the <strong>kinetic energy density</strong>,
+                    proportional to the squared instantaneous velocity of each point of the string,
+                    and the second is the <strong>potential energy density</strong>, proportional to
+                    the squared local strain — the elastic energy stored in the displacement. Their
+                    sum, integrated over the spatial domain, is the total mechanical energy of the
+                    string at time \(t\). The factor \(c^2 = T_0/\rho_0\) in the potential term
+                    couples the spatial slope to the physical parameters of the string in the manner
+                    dictated by the wave equation itself.
+                </p>
+
+                <div class="theorem" id="T-wave_energy_conservation">
+                    <span class="theorem-title">Theorem: Conservation of Mechanical Energy</span>
+                    <p>
+                        Let \(u\) be a \(C^2\) solution of the wave equation
+                        \(\partial_{tt} u = c^2 \partial_{xx} u\) on \(\Omega \times [0, \infty)\),
+                        where either
+                    </p>
+                    <p>
+                        (i) \(\Omega = [0, L]\) and \(u\) satisfies the homogeneous Dirichlet
+                        boundary conditions \(u(0, t) = u(L, t) = 0\) for all \(t \geq 0\); or
+                    </p>
+                    <p>
+                        (ii) \(\Omega = \mathbb{R}\) and, for each \(t \geq 0\), both
+                        \(\partial_t u(\cdot, t)\) and \(\partial_x u(\cdot, t)\) decay
+                        sufficiently rapidly at infinity that their product vanishes as
+                        \(|x| \to \infty\).
+                    </p>
+                    <p>
+                        Then the mechanical energy is conserved:
+                        \[
+                        \frac{dE}{dt}(t) \;=\; 0
+                        \qquad\text{for all } t \geq 0,
+                        \]
+                        and consequently \(E(t) = E(0)\) for every \(t \geq 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Differentiating \(E(t)\) under the integral sign — justified by the
+                        regularity of \(u\) and, in case (ii), the decay assumption — gives
+                        \[
+                        \frac{dE}{dt}
+                        \;=\; \int_\Omega \bigl[\partial_t u \cdot \partial_{tt} u
+                        + c^2 \partial_x u \cdot \partial_x(\partial_t u)\bigr] dx.
+                        \]
+                        Substituting the wave equation \(\partial_{tt} u = c^2 \partial_{xx} u\)
+                        into the first term and integrating the second term by parts in \(x\),
+                        \[
+                        \frac{dE}{dt}
+                        \;=\; \int_\Omega c^2 \partial_t u \cdot \partial_{xx} u\, dx
+                        + \Bigl[c^2 \partial_x u \cdot \partial_t u\Bigr]_{\partial\Omega}
+                        - \int_\Omega c^2 \partial_{xx} u \cdot \partial_t u\, dx.
+                        \]
+                        The two volume integrals are identical and cancel, leaving only the
+                        boundary term:
+                        \[
+                        \frac{dE}{dt}
+                        \;=\; \Bigl[c^2 \partial_x u(x, t) \cdot \partial_t u(x, t)\Bigr]_{\partial\Omega}.
+                        \]
+                        In case (i), \(\partial_t u\) vanishes at both endpoints because
+                        \(u(0, t) = u(L, t) = 0\) for every \(t\) implies \(\partial_t u(0, t) =
+                        \partial_t u(L, t) = 0\) by differentiating the boundary conditions in
+                        \(t\); the boundary contribution vanishes. In case (ii), the assumed
+                        decay of \(\partial_x u\) and \(\partial_t u\) at infinity makes their
+                        product vanish as \(|x| \to \infty\), and again the boundary contribution
+                        vanishes. In either case, \(\frac{dE}{dt} = 0\). Integrating from \(0\)
+                        to \(t\) yields \(E(t) = E(0)\).
+                    </p>
+                </div>
+
+                <p>
+                    The conservation law has a structural significance that goes beyond its
+                    statement. The heat equation also admits a natural quadratic quantity, the
+                    \(L^2\) mass
+                    \(M(t) = \tfrac{1}{2}\int_\Omega u(x, t)^2\, dx\), and the
+                    corresponding identity — obtained by multiplying the heat equation by \(u\)
+                    and integrating by parts — yields \(\frac{dM}{dt} = -k\int_\Omega
+                    (\partial_x u)^2\, dx \leq 0\), strictly negative whenever \(u\) is not
+                    spatially constant. The parabolic quantity is monotonically non-increasing
+                    and, under Dirichlet conditions, dissipates to zero; the hyperbolic quantity
+                    is exactly preserved. The wave equation's natural invariant is not the
+                    \(L^2\) mass of the solution but the more elaborate mechanical energy
+                    involving both temporal and spatial derivatives — kinetic <em>and</em>
+                    potential, balanced against each other. This is the precise sense in which
+                    the wave equation, unlike the heat equation, has no preferred direction in
+                    time: every quantity quadratic in \((\partial_t u, \partial_x u)\)
+                    that is conserved must treat the two derivatives symmetrically, and the
+                    mechanical energy is the canonical such invariant.
+                </p>
+
+                <p>
+                    The conservation law closes a marker placed in the previous page. There we
+                    introduced the energy estimate
+                    \(\frac{d}{dt}\!\int_0^L u(x, t)^2\, dx \leq 0\)
+                    as the standard machinery underlying uniqueness for the heat equation, and
+                    deferred the proof of that inequality to a more general setting. The wave
+                    equation analogue \(\frac{dE}{dt} = 0\) — the equality form rather than an
+                    inequality — has now been proved in full, and the structural shift from
+                    \(\int u^2\) to
+                    \(\int [(\partial_t u)^2 + c^2 (\partial_x u)^2]\)
+                    is the quantitative content of the heat-vs-wave inversion. Uniqueness for the
+                    wave equation in case (i) and case (ii) follows from this conservation
+                    immediately: if two solutions \(u_1, u_2\) share the same initial data, their
+                    difference \(\eta = u_1 - u_2\) solves the wave equation with zero initial data,
+                    has zero energy at \(t = 0\), and therefore zero energy for all \(t\); but
+                    \(E(t) = 0\) forces \(\partial_t \eta \equiv 0\) and \(\partial_x \eta \equiv 0\)
+                    everywhere (the integrand is non-negative and continuous, hence zero pointwise),
+                    so \(\eta\) is constant in spacetime; the initial condition \(\eta(x, 0) = 0\)
+                    identifies the constant as zero, so \(\eta \equiv 0\). The hyperbolic uniqueness
+                    theorem is a one-line consequence of the conservation theorem.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>
