@@ -282,18 +282,22 @@ Not yet in `references.json`, **likely needed when track reaches stage 5+**:
 - Yusuke learns the material alongside the writing process; Claude's role is closer to learner-reviewer's reference than expert-reviewer's verifier.
 - After the first page, decide whether to continue parallel or shift to focused-burst mode.
 
-**First page**: `prob-XX` Brownian Motion (`brownian_motion.html`). Natural starting point because:
-- prob-23 carries a forward-reference to Kolmogorov extension theorem that this page retroactively closes.
-- BM construction (Kolmogorov extension + Kolmogorov-Čentsov continuity, or Lévy-Ciesielski) is the gateway to the entire stochastic-calculus track.
-- No prereq dependencies on other active tracks — BM page can proceed independently.
+**Starting point rationale**: BM is the natural foundation because
+- prob-23 carries a forward-reference to Kolmogorov extension theorem that the BM treatment retroactively closes.
+- BM construction is the gateway to the entire stochastic-calculus track.
+- No prereq dependencies on other active tracks — BM can proceed independently.
 
-**Track scope**: 2–3 pages.
+Combining BM with the Itō integral on a single nominal page reflects the structural logic: the pathological path properties of BM (nowhere differentiability, non-zero quadratic variation) are exactly what motivate the L² construction of the Itō integral.
 
-| Page | Filename | Topics |
+**Track scope**: nominally three pages, but the page count is **not fixed** — the track follows the precedent of recent multi-page tracks (Lie groups 2→4, Lp spaces 1→2, Fourier-PDE 1→3) where conceptual paradigm shifts expand the initial estimate by a factor of 1.5–3×. The expectation here is that one or more of the three nominal pages will split as the material is developed. The structure below states **scope and sequence**, not a page-count commitment.
+
+| Nominal page | Filename | Scope |
 |---|---|---|
-| `prob-XX` | `brownian_motion.html` | BM axioms, existence (Kolmogorov extension + Kolmogorov-Čentsov, or Lévy-Ciesielski), quadratic variation, nowhere-differentiable paths |
-| `prob-XX` | `ito_integral.html` | Predictable processes, Itō integral via L² isometry extension, Itō's lemma (1D), SDE existence-uniqueness (statement-level) |
-| `prob-XX` | `sde_fokker_planck.html` | SDE solution overview, diffusion generator, Fokker-Planck equation, Girsanov (statement + intuition), score function interpretation |
+| 1 | `brownian_motion_ito.html` | Axiomatic BM (Gaussian process + independent increments + continuity); existence (Kolmogorov extension + Čentsov, statement-level with proof pushed to Durrett); path properties (quadratic variation, nowhere differentiability); Itō integral construction via L² isometry; Itō formula (1D). May split into BM page + Itō page if the L² isometry construction expands. |
+| 2 | `sde_diffusion.html` | SDE definition; existence-uniqueness (Lipschitz drift/diffusion); canonical examples (geometric BM, Ornstein–Uhlenbeck, Langevin); infinitesimal generator; Dynkin's formula; Girsanov theorem (statement + intuition). |
+| 3 | `fokker_planck_diffusion_model.html` | Fokker-Planck equation as the generator's adjoint; heat equation as the special case (calc-33 back-link); score function and Stein's identity (with optional ml-11 NGD back-link); reverse-time SDE (Anderson 1982); diffusion-model bridge to ml-14. |
+
+**First page priority**: `brownian_motion_ito.html`. Even if it splits during writing, BM + Itō are conceptually one unit (path pathology motivates the L² construction), so they are written together and split only if section count forces it.
 
 **Application priority anchor**: diffusion models are currently in production (Stable Diffusion, DALL-E, Sora, Veo), and the site already covers them at the discrete-DDPM/DDIM level in `ml-14` (Intro to Diffusion Models). Phase 2e provides the continuous-time foundations — Brownian motion, Itō calculus, Fokker-Planck — that `ml-14` deliberately defers; together the two complete what Murphy MLBook2 Ch.25 compresses.
 
@@ -304,7 +308,7 @@ Not yet in `references.json`, **likely needed when track reaches stage 5+**:
 | **CDL slow-burn** | Category theory | Learning = writing (trial parallel) |
 | **Phase 2e slow-burn** | Stochastic analysis | Learning = writing (trial parallel) |
 
-Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had prior knowledge and operated in expert-reviewer / fact-check mode. The two slow-burn tracks share a different rhythm: slower per-page progress, more dialog at the conceptual layer, page-count expansion likely (CDL: 6→9 anticipated; Phase 2e: 2-3 may grow if learning gaps surface).
+Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had prior knowledge and operated in expert-reviewer / fact-check mode. The two slow-burn tracks share a different rhythm: slower per-page progress, more dialog at the conceptual layer, and page-count expansion expected (CDL: 6→9 anticipated; Phase 2e: page splits anticipated as the L² construction, Fokker-Planck adjoint argument, and reverse-time SDE bridge each surface their own complexities).
 
 **Soft prereq from the Fourier-PDE pages (calc-33/34/35, completed)**: the Fokker-Planck page builds directly on calc-33 (heat equation) — Fokker-Planck is a parabolic PDE, the heat equation generalized with a drift term. The completed heat equation page already covers the spectral and kernel machinery the Fokker-Planck page will cite.
 
@@ -365,7 +369,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
 | Section V Quantum Page (ml-XX) | 1 | TBD | After Crypto Track stages 1–4 |
-| Stochastic Calculus (prob-XX) | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Active slow-burn (Part 6) |
+| Stochastic Calculus (prob-XX) | 3+ | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` (splits anticipated) | Active slow-burn (Part 6) |
 | CDL Track (disc-XX, ml-XX) | ~6–9 | TBD | Active slow-burn (Part 3) |
 | Crypto Track (linalg-XX) | varies | TBD | Mood-driven (Part 5) |
 | Regular Conditional Distributions (prob-XX) | ~1 | `regular_conditional_distributions.html` | Phase 2e prerequisite (SDE / path-space measures) |
