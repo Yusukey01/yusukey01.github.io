@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota
-**Last Updated:** 5/12/2026
+**Last Updated:** 5/14/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 117 pages as of 5/12/2026.**
+**Total: 120 pages as of 5/14/2026.**
 
 ---
 
@@ -271,33 +271,7 @@ Not yet in `references.json`, **likely needed when track reaches stage 5+**:
 
 ---
 
----
-
-## Part 6 — Fourier × PDE Mini-Track
-
-**Recognition recorded**: the site has been quietly avoiding partial differential equations. calc-14 (Fourier Series) and calc-15 (Fourier Transform) cover the analysis (orthogonal decomposition, Plancherel, convolution, FFT) and modern applications (signal processing, Fourier neural operators) but **omit the classical PDE applications that are Fourier's historical raison d'être**. Stein-Shakarchi *Fourier Analysis* — the section's primary reference — opens with the heat, wave, and Laplace equations as motivating problems and develops them across multiple chapters; the site cites the book but skips this material.
-
-This is **not the same issue as "the site lacks an ODE / PDE foundations page"**. Basic ODE/PDE concepts (existence-uniqueness, Cauchy problem, the form of the heat equation) sit at the **early-undergraduate prerequisite level** that the site explicitly assumes — comparable to how the site never re-explains set theory or elementary calculus. The site can use these concepts in passing without owning them.
-
-**The Fourier-PDE gap is contextual**: when a page is *about* Fourier analysis, omitting the classical PDE applications is a content-level omission, not a prerequisite-level omission. This is what needs to be repaired.
-
-**Decision**: a 3-page Fourier-PDE mini-track, structured as one page per classical equation:
-
-| Page | Filename (proposed) | Topic | Mathematical structure |
-|---|---|---|---|
-| `calc-XX` | `fourier_pde_heat.html` | Heat equation \( \partial_t u = \Delta u \) | 1D bounded interval (separation of variables), 1D infinite line (Fourier transform), heat kernel \( K(x,t) = \frac{1}{\sqrt{4\pi t}} e^{-x^2/4t} \), maximum principle, smoothing, well-posedness | parabolic |
-| `calc-XX` | `fourier_pde_wave.html` | Wave equation \( \partial_t^2 u = \Delta u \) | d'Alembert solution (1D infinite), separation of variables (1D bounded), energy conservation, finite propagation speed, sharp contrast with heat equation (no smoothing, time-reversibility) | hyperbolic |
-| `calc-XX` | `fourier_pde_laplace.html` | Laplace equation \( \Delta u = 0 \) | Boundary value problems (Dirichlet / Neumann), mean-value property, maximum principle, disk solution (Fourier series), half-plane solution (Poisson kernel), regularity of harmonic functions | elliptic |
-
-**Prerequisites (DAG, not linear)**: each page takes `calc-14` (Fourier Series) and/or `calc-15` (Fourier Transform) as prereq; the heat equation page also takes `calc-12` (Lebesgue integration) for the heat kernel convolution argument. Map placement (`mapCoords`) is Yusuke's decision and is not part of the roadmap. The three pages can be written in any order; the mini-track is structurally a sub-tree of the Fourier topic-group, not a chain.
-
-**Page-count expansion tolerance**: a 3 → 4 or 3 → 5 expansion is acceptable without re-evaluating the track's status. The calibration risk is low because PDE content is concrete (separation of variables, kernel convolution, d'Alembert formula substitution) compared to the conceptual leaps required by the recent tracks (Lie groups, functional analysis, measure-theoretic probability, planned category theory and stochastic analysis).
-
-**Relationship to Phase 2e (Stochastic Calculus)**: the heat equation page becomes a natural **prereq for Phase 2e's Fokker-Planck page** — Fokker-Planck is a parabolic PDE, the heat equation generalized with a drift term. Writing the Fourier-PDE mini-track first lays foundation for Phase 2e's Fokker-Planck content. This is a soft dependency (Phase 2e could in principle introduce its own minimum PDE machinery), but the site rigor standard prefers the explicit ordering.
-
-**Pace and ownership**: not yet assigned. Slow-burn alongside the GDL main track is a natural fit; could also be done as a focused burst before Phase 2e activation. Decision deferred to Yusuke when the track is activated.
-
-## Part 7 — Phase 2e: Stochastic Calculus (Active Slow-Burn)
+## Part 6 — Phase 2e: Stochastic Calculus (Active Slow-Burn)
 
 **Promotion**: trigger-based → active slow-burn track. Joins CDL as the second concurrent slow-burn track running parallel to the GDL main track.
 
@@ -311,7 +285,7 @@ This is **not the same issue as "the site lacks an ODE / PDE foundations page"**
 **First page**: `prob-XX` Brownian Motion (`brownian_motion.html`). Natural starting point because:
 - prob-23 carries a forward-reference to Kolmogorov extension theorem that this page retroactively closes.
 - BM construction (Kolmogorov extension + Kolmogorov-Čentsov continuity, or Lévy-Ciesielski) is the gateway to the entire stochastic-calculus track.
-- No prereq dependencies on the not-yet-written Fourier-PDE mini-track (§6.1) — BM page can proceed independently.
+- No prereq dependencies on other active tracks — BM page can proceed independently.
 
 **Track scope**: 2–3 pages.
 
@@ -332,46 +306,45 @@ This is **not the same issue as "the site lacks an ODE / PDE foundations page"**
 
 Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had prior knowledge and operated in expert-reviewer / fact-check mode. The two slow-burn tracks share a different rhythm: slower per-page progress, more dialog at the conceptual layer, page-count expansion likely (CDL: 6→9 anticipated; Phase 2e: 2-3 may grow if learning gaps surface).
 
-**Soft prereq from §6.1 (Fourier-PDE mini-track)**: the Fokker-Planck page benefits from the heat equation page being written first (Fokker-Planck = parabolic PDE = heat equation + drift). Not blocking — Phase 2e can begin with Brownian motion and Itō independently — but the Fokker-Planck page should be sequenced after the heat equation page if both tracks are active.
+**Soft prereq from the Fourier-PDE pages (calc-33/34/35, completed)**: the Fokker-Planck page builds directly on calc-33 (heat equation) — Fokker-Planck is a parabolic PDE, the heat equation generalized with a drift term. The completed heat equation page already covers the spectral and kernel machinery the Fokker-Planck page will cite.
 
 **Bandwidth note**: with Phase 2e promoted, the active track inventory is:
 1. **GDL main track** (manifolds → rep theory → ml-XX (Equivariant NN)); ml-13 and calc-32 already complete
 2. **CDL slow-burn** (Stage 0: Yusuke reads Leinster Ch.1)
 3. **Phase 2e slow-burn** (BM page first)
-4. **Fourier-PDE mini-track** (3 pages, slow-burn or focused burst, Yusuke's pace)
-5. **Crypto Track** (mood-driven, no schedule)
+4. **Crypto Track** (mood-driven, no schedule)
 
-This is a **5-track configuration**, larger than any prior roadmap state. Sustainability check is implicitly delegated to Yusuke's mood-driven prioritization across sessions; if any one track stalls, the others continue. The roadmap does not enforce a single sequence.
+This is a **4-track configuration**. Sustainability check is implicitly delegated to Yusuke's mood-driven prioritization across sessions; if any one track stalls, the others continue. The roadmap does not enforce a single sequence.
 
-## Part 8 — Phase 3: Smooth Manifolds
+## Part 7 — Phase 3: Smooth Manifolds
 
 Lee Ch. 1–3 + Ch. 8 require ≥3 pages. Page IDs are assigned at drafting time.
 
-### 8.1 calc-XX: Smooth Manifolds & Atlases (~1 page, `smooth_manifolds.html`)
+### 7.1 calc-XX: Smooth Manifolds & Atlases (~1 page, `smooth_manifolds.html`)
 
 Topological manifolds, charts, atlases, transition maps, smooth structure, smooth maps. **Payoff:** calc-29's Hausdorff + second-countability are revealed as specifications excluding pathological spaces. **Prereqs:** calc-29, linalg-27~30.
 
-### 8.2 calc-XX: Tangent Spaces & The Pushforward (~1 page, `tangent_spaces.html`)
+### 7.2 calc-XX: Tangent Spaces & The Pushforward (~1 page, `tangent_spaces.html`)
 
 Tangent vectors (curves and derivations), \(T_pM\), pushforward / differential, Jacobian in local coordinates. **CS angle:** pushforward = forward propagation Jacobian; pullback ↔ backprop. **Payoff:** \(T_I G\) from linalg-29 is a special case of the abstract tangent space.
 
-### 8.3 calc-XX: Vector Fields, Flows & The Tangent Bundle (~1 page, `vector_fields_flows.html`)
+### 7.3 calc-XX: Vector Fields, Flows & The Tangent Bundle (~1 page, `vector_fields_flows.html`)
 
 \(TM\), vector fields, integral curves and flows, Lie bracket of vector fields. **CS angle:** ODE solvers on manifolds; Neural ODE and fluid simulation as flows. **Payoff:** the matrix commutator \([A, B] = AB - BA\) from linalg-29 is revealed as the matrix representation of the Lie bracket of vector fields.
 
-### 8.4 calc-XX: Riemannian Metrics & Beyond (~2 pages, scope TBD)
+### 7.4 calc-XX: Riemannian Metrics & Beyond (~2 pages, scope TBD)
 
 Inner products on tangent spaces, metric tensor \(g\), geodesics, Levi-Civita connection, curvature, Laplace-Beltrami \(\Delta_g\). Likely splits into 2 pages (metrics & geodesics vs. curvature & Laplace-Beltrami). **Prereqs:** manifold series above, calc-25 (Riesz — musical isomorphisms).
 
 ---
 
-## Part 9 — Phase 4: Representation Theory & Equivariance
+## Part 8 — Phase 4: Representation Theory & Equivariance
 
-### 9.1 linalg-XX: Representation Theory (~3–4 pages)
+### 8.1 linalg-XX: Representation Theory (~3–4 pages)
 
 Group representations, subrepresentations, irreducibility, Maschke, Schur, character theory (finite groups), Lie group representations, Peter-Weyl. Finite group representations fill ≥2 pages; Lie group representations add 1–2 more. **Connection:** Peter-Weyl bridges back to calc-32 (Fourier as harmonic analysis on groups). **Prereqs:** linalg-27~30, linalg-22.
 
-### 9.2 ml-XX: Equivariant Neural Networks (`equivariant_nn.html`)
+### 8.2 ml-XX: Equivariant Neural Networks (`equivariant_nn.html`)
 
 Generalize from permutation invariance (GNN) to continuous group equivariance (SO(3), SE(3)). **Key insight:** "The architecture encodes the symmetry." **Prereqs:** linalg-27~30, linalg-XX (rep theory), ml-13.
 
@@ -379,7 +352,7 @@ At this point, readers have seen permutation equivariance (GNN), rotation/transl
 
 ---
 
-## Part 10 — Filename Registry
+## Part 9 — Filename Registry
 
 Forward-link target reservations for **planned pages**. Completed pages are tracked in `curriculum.json` (authoritative); this registry exists to lock in filenames before drafting so cross-page references can be written ahead of time.
 
@@ -392,8 +365,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
 | Section V Quantum Page (ml-XX) | 1 | TBD | After Crypto Track stages 1–4 |
-| Stochastic Calculus (prob-XX) | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Active slow-burn (Part 7) |
-| Fourier-PDE Mini-Track (calc-XX) | 3 | `fourier_pde_heat.html`, `fourier_pde_wave.html`, `fourier_pde_laplace.html` | Active (Part 6) |
+| Stochastic Calculus (prob-XX) | ~2–3 | `brownian_motion.html`, `ito_integral.html`, `sde_fokker_planck.html` | Active slow-burn (Part 6) |
 | CDL Track (disc-XX, ml-XX) | ~6–9 | TBD | Active slow-burn (Part 3) |
 | Crypto Track (linalg-XX) | varies | TBD | Mood-driven (Part 5) |
 | Regular Conditional Distributions (prob-XX) | ~1 | `regular_conditional_distributions.html` | Phase 2e prerequisite (SDE / path-space measures) |
@@ -403,7 +375,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 
 ---
 
-## Part 11 — Reference Map: Books × Pages
+## Part 10 — Reference Map: Books × Pages
 
 This map tracks primary usage for development planning. The site-wide reference index (`data/references.json`) is authoritative for bibliography format.
 
@@ -414,7 +386,7 @@ This map tracks primary usage for development planning. The site-wide reference 
 | **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
 | **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
 | **Lee — *Introduction to Smooth Manifolds*** | calc-29 → calc-XX manifold series, calc-XX Riemannian | Primary for manifold track |
-| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32 → Fourier-PDE mini-track (Part 6) | Primary for Fourier and classical PDE applications |
+| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32, calc-33, calc-34, calc-35 | Primary for Fourier and classical PDE applications |
 | **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
 | **Fong & Spivak — *Seven Sketches in Compositionality*** | → CDL track Stages 3 (and motivation throughout) | Primary for applied / intuitive side of CDL track; free PDF on arXiv |
@@ -444,13 +416,13 @@ This map tracks primary usage for development planning. The site-wide reference 
 
 ---
 
-## Part 12 — Deferred Items (Non-Blocking)
+## Part 11 — Deferred Items (Non-Blocking)
 
 Topics explicitly deferred — not forgotten, but not on the critical path.
 
 | Item | Trigger to Revisit |
 |------|-------------------|
-| Schwartz Space & Distributions | If a PDE or generalized function page is planned beyond Fourier-PDE mini-track |
+| Schwartz Space & Distributions | If a PDE or generalized function page is planned beyond calc-33/34/35 |
 | Pontryagin Duality (Fourier on groups) | After linalg-27~30 + calc-32 + linalg-XX (rep theory), if harmonic analysis track emerges |
 | Spectral Theory of the Laplacian (continuous) | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
 | Regular Conditional Distributions | Phase 2e companion — required for SDE / Itô filtration. Not blocking prob-26 (VI works under density assumption). |
@@ -463,7 +435,7 @@ Topics explicitly deferred — not forgotten, but not on the critical path.
 
 ---
 
-## Part 13 — Key Learnings & Development Principles
+## Part 12 — Key Learnings & Development Principles
 
 1. **Notation Consistency is Non-Negotiable:** Calligraphic letters for spaces (\(\mathcal{X}, \mathcal{Y}, \mathcal{Z}, \mathcal{H}, \mathcal{X}^*, \mathcal{X}^{**}\)); functionals as \(\varphi\); operator norm as \(\|\varphi\|_{\mathcal{X}^*}\). All new Section II pages match the notation in calc-23~28.
 
@@ -473,8 +445,8 @@ Topics explicitly deferred — not forgotten, but not on the critical path.
 
 4. **Fisher Information vs. Hessian Distinction:** The real distinction is reparametrization invariance (Čencov's theorem) vs. loss-dependence and non-guaranteed positive definiteness — not "global vs. local."
 
-5. **Page Count Estimation:** Topics requiring new conceptual paradigms consistently expand 1.5–4× initial estimates. Plan for expansion and defer ID assignment until drafting begins. Calibrations: Lie group series (planned 2 → actual 4), calc-30 split (1 → 2), Phase 2c (planned 2 → actual 3), Fourier-PDE mini-track (Claude initially proposed 1 → ratified as 3, may grow further). The CDL track is expected to follow this pattern (proposed ~6–9, may grow to 9–12+).
+5. **Page Count Estimation:** Topics requiring new conceptual paradigms consistently expand 1.5–4× initial estimates. Plan for expansion and defer ID assignment until drafting begins. Calibrations: Lie group series (planned 2 → actual 4), calc-30 split (1 → 2), Phase 2c (planned 2 → actual 3), Fourier-PDE pages (Claude initially proposed 1 → ratified as 3, delivered as calc-33/34/35). The CDL track is expected to follow this pattern (proposed ~6–9, may grow to 9–12+).
 
 6. **Per-topic prior-knowledge calibration (added 2026/5/9):** Yusuke's prior knowledge varies sharply by topic. Lie theory was familiar (linalg-27~30 ran in expert-reviewer mode); category theory and continuous-time stochastic analysis are not (CDL and Phase 2e are learn-while-writing). Track-character assignments must be calibrated per topic, not against a global expertise label.
 
-7. **Mood-driven dispatch over forced sequencing (added 2026/5/9):** the active 5-track configuration (GDL main + CDL + Phase 2e + Fourier-PDE + Crypto) does not enforce a single sequence. Yusuke prioritizes per session; if any one track stalls, the others continue.
+7. **Mood-driven dispatch over forced sequencing (added 2026/5/9):** the active 4-track configuration (GDL main + CDL + Phase 2e + Crypto) does not enforce a single sequence. Yusuke prioritizes per session; if any one track stalls, the others continue.
