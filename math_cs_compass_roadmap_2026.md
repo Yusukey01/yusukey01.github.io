@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 120 pages as of 5/14/2026.**
+**Total: 122 pages as of 5/14/2026.**
 
 ---
 
@@ -411,12 +411,21 @@ This map tracks primary usage for development planning. The site-wide reference 
 - **Diestel** *Graph Theory* → disc-01, disc-12
 - **Merris** *Combinatorics* → disc-02
 - **Edelsbrunner & Harer** *Computational Topology* → disc-14, disc-15
+- **Avigad et al.** *Theorem Proving in Lean 4* + **Avigad-Massot** *Mathematics in Lean* → disc-16, disc-17
 
 ### Not yet on index.html (acquire when triggered)
 
 - **Amari** *Information Geometry and Its Applications* (2016) — after manifold series if info-geometry page is planned (deepens ml-12 NGD)
 - **Nielsen & Chuang** *Quantum Computation* (2010) — if Section V quantum page (Part 4) is written (supplements calc-32)
 - **Lattice cryptography reference** (Nguyen-Vallée, Peikert survey, or Bernstein-Lange) — when Crypto Track reaches stage 5+ (lattice foundations)
+
+---
+
+## Part 10.5 — Completed Tracks Log
+
+| Track | Pages | Completed | Notes |
+|---|---|---|---|
+| Formal Methods | disc-16 (`formal_methods.html`), disc-17 (`lean_in_practice.html`) | 5/14/2026 | Section IV third pillar (disc-4, 16, 17) established. Bidirectional bridge with disc-12 (Four Color Theorem) via `T-four_color_theorem` anchor. Full continuity in `formal_methods_track_handout_v3.md`. |
 
 ---
 
