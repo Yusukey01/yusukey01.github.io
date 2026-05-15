@@ -426,11 +426,22 @@ uses_python: false
                     automation, no tactics, no high-level convenience features. In Lean, the kernel is written in C++ and
                     consists of a few thousand lines of code. In Coq, similarly small. The smallness is deliberate. The kernel
                     is the only part of the system whose correctness must be trusted on faith; everything else is checked by
-                    the kernel. This design principle — that a proof assistant should produce proof terms verifiable by a small,
-                    independent kernel — is known as the <strong>de Bruijn criterion</strong>, after N.G. de Bruijn, whose 1968
-                    Automath system was the first working proof checker built around it. The kernel-based architectures of
-                    Coq, Lean, and Isabelle all descend, conceptually if not always genealogically, from this design.
+                    the kernel.
                 </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">The de Bruijn Criterion</span>
+                    <p>
+                        A proof assistant should produce proof terms verifiable by a small, independent kernel. The kernel is the
+                        only component whose correctness must be trusted by inspection; every other component — including the
+                        elaborator, the tactic framework, and the library — is checked against the kernel.
+                    </p>
+                    <p>
+                        Named after N.G. de Bruijn, whose 1968 Automath system was the first working proof checker built around
+                        this principle. The kernel-based architectures of Coq, Lean, and Isabelle all descend, conceptually if
+                        not always genealogically, from this design.
+                    </p>
+                </div>
 
                 <p>
                     A notable feature of Lean's design is that almost everything <em>above</em> the kernel — the elaborator
@@ -491,25 +502,70 @@ uses_python: false
                 </p>
 
                 <p>
-                    Yet two different ceilings limit proof discovery, and the popular discourse often conflates them.
-                    In a consistent formal system strong enough to express arithmetic, there exist true propositions
-                    that cannot be proved within the system at all — this is Gödel's first incompleteness theorem (1931).
-                    It is a statement about the gap between truth and provability, not about search; no algorithm — not
-                    in 1931, not now, not ever — can derive a proof that the system itself cannot produce.
+                    Yet three distinct ceilings limit proof discovery, and the popular discourse routinely conflates them.
+                    The first is logical. In a consistent formal system strong enough to express arithmetic, there exist
+                    true propositions that cannot be proved within the system at all — this is Gödel's first incompleteness
+                    theorem (1931). It is a statement about the gap between truth and provability, not about search; no
+                    algorithm — not in 1931, not now, not ever — can derive a proof that the system itself cannot produce.
                 </p>
 
                 <p>
-                    The second ceiling concerns propositions that <em>are</em> provable: even there, whether a proof can be
-                    found by mechanical search reduces to combinatorial explosion. First-order logic's provability problem is
-                    semi-decidable: if a proposition is provable, an exhaustive search procedure will eventually find a proof;
-                    if it is not, the search may never terminate. In practice, the search space grows fast enough that exhaustive
-                    methods are useless beyond toy cases, and the practical limits of automated discovery are determined by
-                    computational complexity — the same kind of considerations that underlie
-                    <a href="p_vs_np.html#D-class_P"><strong>P vs NP</strong></a> — rather than by Gödel's
-                    theorem. Within the domains where decision procedures exist and run quickly (linear arithmetic, polynomial
-                    identities, propositional logic), automation is essentially complete; outside them, human strategy or learned
-                    heuristics drive the search.
+                    The second ceiling is computability-theoretic. Even for propositions that <em>are</em> provable, whether
+                    a proof can be located by mechanical search depends on the decidability of the underlying problem.
+                    First-order logic's provability problem is <strong>semi-decidable</strong>: if a proposition is provable,
+                    an exhaustive search procedure will eventually find a proof; if it is not, the search may never terminate.
+                    Semi-decidability is a partial guarantee, not a limitation pulled from Gödel — it concerns the structure
+                    of algorithmic decision, not the gap between truth and provability.
                 </p>
+
+                <p>
+                    The third ceiling is complexity-theoretic. Even within domains where decision procedures exist and
+                    terminate, the practical limits of automated discovery are determined by the rate at which the search
+                    space grows. The same kind of considerations that underlie
+                    <a href="p_vs_np.html#D-class_P" class="ref-link"><strong>P vs NP</strong></a> apply here: in domains
+                    where decision procedures run quickly (linear arithmetic, polynomial identities, propositional logic),
+                    automation is essentially complete; outside them, human strategy or learned heuristics drive the search.
+                    Most claims of the form "automation cannot achieve X" point to this ceiling, not to Gödel's.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Three Ceilings on Proof Search</h3>
+                    <p>
+                        The three layers are independent. Confusing them is the most common error in popular discussions
+                        of what proof assistants can and cannot do.
+                    </p>
+                    <table style="margin: 1em auto; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid currentColor;">
+                                <th style="padding: 8px 18px; text-align: left;">Ceiling</th>
+                                <th style="padding: 8px 18px; text-align: left;">Field</th>
+                                <th style="padding: 8px 18px; text-align: left;">What it actually says</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 6px 18px;"><strong>Logical</strong></td>
+                                <td style="padding: 6px 18px;">Logic (Gödel 1931)</td>
+                                <td style="padding: 6px 18px;">Some true propositions are not provable in the system at all. Not about search.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;"><strong>Computability</strong></td>
+                                <td style="padding: 6px 18px;">Computability theory</td>
+                                <td style="padding: 6px 18px;">First-order provability is semi-decidable: search finds proofs of provable statements; may not terminate on unprovable ones.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;"><strong>Complexity</strong></td>
+                                <td style="padding: 6px 18px;">Complexity theory (P vs NP)</td>
+                                <td style="padding: 6px 18px;">Even decidable problems may be infeasible at scale. This is where practical automation limits actually live.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        The honest reading: most "automation cannot solve X" claims should cite combinatorial explosion or
+                        complexity-theoretic intractability, not Gödel. Gödel rules out a small, specific class of
+                        propositions; complexity rules out feasible search on a much larger class.
+                    </p>
+                </div>
 
                 <p>
                     <strong>The system verifies what is written, not what was meant.</strong> Lean checks that a given proof
