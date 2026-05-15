@@ -187,7 +187,8 @@ uses_python: false
                 <h3>The four moves and their names</h3>
 
                 <p>
-                    <strong>Move 1: Use a characterization to rewrite the goal.</strong> The mathematician's
+                    <strong>Move 1: Use a characterization to rewrite the goal.</strong><br>
+                    The mathematician's
                     instinct, faced with \(|x + y| \leq |x| + |y|\), is to recall that \(|a| \leq b\) is
                     equivalent to a conjunction of two simpler inequalities, and to apply that equivalence to
                     transform the goal. The Lean tactic that performs this substitution along a known equivalence
@@ -198,7 +199,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Move 2: Decompose a conjunction into its two parts.</strong> Having a single goal of
+                    <strong>Move 2: Decompose a conjunction into its two parts.</strong><br>
+                    Having a single goal of
                     the form \(P \land Q\), the mathematician separates the two pieces and addresses them
                     independently. The Lean tactic for this is <code>constructor</code>. After
                     <code>constructor</code>, what was a single goal \(P \land Q\) becomes two subgoals — \(P\)
@@ -213,7 +215,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Move 3: Introduce a known fact as a named premise.</strong> When the mathematician
+                    <strong>Move 3: Introduce a known fact as a named premise.</strong><br>
+                    When the mathematician
                     writes "we know that \(x \leq |x|\)" and proceeds to use this fact, the act is one of bringing
                     an external lemma into the local context and giving it a name. The Lean tactic for this is
                     <code>have</code>. The syntax <code>have h : x ≤ |x| := le_abs_self x</code> reads almost as
@@ -231,7 +234,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Move 4: Close the goal by routine arithmetic.</strong> The final step in each branch
+                    <strong>Move 4: Close the goal by routine arithmetic.</strong><br>
+                    The final step in each branch
                     of the proof is to combine two facts of the form \(a \leq b\) by addition. This is the kind of
                     arithmetic that a mathematician performs without comment, and it is also the kind of step
                     that Lean is willing to perform without comment. The tactic <code>linarith</code> (short for
@@ -428,62 +432,66 @@ x y : ℝ
                     remain and the proof is complete.
                 </p>
 
-                <h3>Partial proofs and the role of <code>sorry</code></h3>
+                <div class="insight-box">
+                    <h3>Top-Down Construction with <code>sorry</code></h3>
 
-                <p>
-                    One feature of Lean that is worth seeing even in a first encounter is the keyword
-                    <code>sorry</code>. A reader constructing the proof above for the first time might want to
-                    establish the overall structure before filling in the details — to see whether the
-                    rewriting, the case split, and the introduction of named hypotheses are correctly arranged,
-                    and only afterward worry about whether <code>linarith</code> actually closes each goal.
-                    Replacing the final tactic in each branch with <code>sorry</code> produces a script that
-                    Lean accepts as a proof outline:
-                </p>
+                    <p>
+                        One feature of Lean that is worth seeing even in a first encounter is the keyword
+                        <code>sorry</code>. A reader constructing the proof above for the first time might want to
+                        establish the overall structure before filling in the details — to see whether the
+                        rewriting, the case split, and the introduction of named hypotheses are correctly arranged,
+                        and only afterward worry about whether <code>linarith</code> actually closes each goal.
+                        Replacing the final tactic in each branch with <code>sorry</code> produces a script that
+                        Lean accepts as a proof outline:
+                    </p>
 
-                <pre style="background: rgba(0,0,0,0.04); padding: 14px; border-radius: 6px; line-height: 1.5;"><code>
-                    theorem triangle_inequality (x y : ℝ) : |x + y| ≤ |x| + |y| := by
-                    rw [abs_le]
-                    constructor
-                    · have h1 : -|x| ≤ x := neg_abs_le x
-                        have h2 : -|y| ≤ y := neg_abs_le y
-                        sorry
-                    · have h1 : x ≤ |x| := le_abs_self x
-                        have h2 : y ≤ |y| := le_abs_self y
-                        sorry</code>
-                </pre>
+                    <pre style="background: rgba(0,0,0,0.04); padding: 14px; border-radius: 6px; line-height: 1.5;"><code>
+                        theorem triangle_inequality (x y : ℝ) : |x + y| ≤ |x| + |y| := by
+                        rw [abs_le]
+                        constructor
+                        · have h1 : -|x| ≤ x := neg_abs_le x
+                            have h2 : -|y| ≤ y := neg_abs_le y
+                            sorry
+                        · have h1 : x ≤ |x| := le_abs_self x
+                            have h2 : y ≤ |y| := le_abs_self y
+                            sorry</code>
+                    </pre>
 
-                <p>
-                    Lean reports two warnings — one for each <code>sorry</code> — but otherwise accepts the
-                    script. The author has demonstrated, to the system and to themself, that the strategic
-                    skeleton is sound. The arithmetic steps remain to be filled in, but their place in the
-                    proof is fixed. This top-down style of proof construction, with <code>sorry</code> as a
-                    placeholder for "the rest will follow," is one of the principal ways that Lean proofs are
-                    written in practice.
-                </p>
+                    <p>
+                        Lean reports two warnings — one for each <code>sorry</code> — but otherwise accepts the
+                        script. The author has demonstrated, to the system and to themself, that the strategic
+                        skeleton is sound. The arithmetic steps remain to be filled in, but their place in the
+                        proof is fixed. This top-down style of proof construction, with <code>sorry</code> as a
+                        placeholder for "the rest will follow," is one of the principal ways that Lean proofs are
+                        written in practice.
+                    </p>
+                </div>
 
-                <h3>What happens when something goes wrong</h3>
+                <div class="insight-box">
+                    <h3>Errors as Information</h3>
 
-                <p>
-                    Suppose the author types <code>le_abs_self</code> where <code>neg_abs_le</code> was meant.
-                    The line
-                </p>
+                    <p>
+                        Suppose the author types <code>le_abs_self</code> where <code>neg_abs_le</code> was meant.
+                        The line
+                    </p>
 
-                <pre style="background: rgba(0,0,0,0.04); padding: 12px; border-radius: 6px;"><code>  have h1 : -|x| ≤ x := le_abs_self x</code></pre>
+                    <pre style="background: rgba(0,0,0,0.04); padding: 12px; border-radius: 6px;"><code>  have h1 : -|x| ≤ x := le_abs_self x</code></pre>
 
-                <p>
-                    asks Lean to bind <code>h1</code> to a proof of \(-|x| \leq x\), but offers a term whose
-                    type is \(x \leq |x|\). The types do not match, and Lean reports the mismatch. The error is
-                    not a punishment for making a mistake; it is information about where the script's stated
-                    intent and its actual content have come apart. The author either repairs the lemma name or
-                    repairs the stated type — whichever was wrong — and the script proceeds.
-                </p>
+                    <p>
+                        asks Lean to bind <code>h1</code> to a proof of \(-|x| \leq x\), but offers a term whose
+                        type is \(x \leq |x|\). The types do not match, and Lean reports the mismatch. The error is
+                        not a punishment for making a mistake; it is information about where the script's stated
+                        intent and its actual content have come apart. The author either repairs the lemma name or
+                        repairs the stated type — whichever was wrong — and the script proceeds.
+                    </p>
 
-                <p>
-                    This back-and-forth is the working rhythm of tactic-mode proof construction. The proof is
-                    rarely written from top to bottom in a single pass. The author writes, the system reports
-                    states and errors, the author adjusts. What looks on the page like a static sequence of
-                    tactics is the residue of a dialogue.
-                </p>
+                    <p>
+                        This back-and-forth is the working rhythm of tactic-mode proof construction. The proof is
+                        rarely written from top to bottom in a single pass. The author writes, the system reports
+                        states and errors, the author adjusts. What looks on the page like a static sequence of
+                        tactics is the residue of a dialogue.
+                    </p>
+                </div>
             </section>
 
             <section id="verification-loop" class="section-content">
@@ -540,69 +548,73 @@ x y : ℝ
                     the skill of constructing the proof.
                 </p>
 
-                <h3>The same theorem, in one line</h3>
+                <div class="insight-box">
+                    <h3>The Realistic Proof Is One Line</h3>
 
-                <p>
-                    A search of mathlib for the triangle inequality returns it as the lemma <code>abs_add_le</code>,
-                    whose statement is exactly \(\forall a\, b : \mathbb{R},\ |a + b| \leq |a| + |b|\). With this
-                    lemma in hand, the entire proof reduces to one line:
-                </p>
+                    <p>
+                        A search of mathlib for the triangle inequality returns it as the lemma <code>abs_add_le</code>,
+                        whose statement is exactly \(\forall a\, b : \mathbb{R},\ |a + b| \leq |a| + |b|\). With this
+                        lemma in hand, the entire proof reduces to one line:
+                    </p>
 
-                <pre style="background: rgba(0,0,0,0.04); padding: 12px; border-radius: 6px;"><code>theorem triangle_inequality (x y : ℝ) : |x + y| ≤ |x| + |y| := abs_add_le x y</code></pre>
+                    <pre style="background: rgba(0,0,0,0.04); padding: 12px; border-radius: 6px;"><code>theorem triangle_inequality (x y : ℝ) : |x + y| ≤ |x| + |y| := abs_add_le x y</code></pre>
 
-                <p>
-                    The proof term is <code>abs_add_le x y</code> — the library lemma applied to the two specific
-                    real numbers. No tactic mode, no <code>have</code>, no <code>linarith</code>. A mathlib
-                    library of over two hundred thousand theorems would not omit a result this basic; the
-                    one-line proof is the realistic Lean style for any theorem already in the library.
-                </p>
+                    <p>
+                        The proof term is <code>abs_add_le x y</code> — the library lemma applied to the two specific
+                        real numbers. No tactic mode, no <code>have</code>, no <code>linarith</code>. A mathlib
+                        library of over two hundred thousand theorems would not omit a result this basic; the
+                        one-line proof is the realistic Lean style for any theorem already in the library.
+                    </p>
 
-                <p>
-                    The reconstruction in the previous section was therefore not the proof that a working Lean
-                    user would write in practice. It was a reconstruction <em>as if</em> the relevant lemmas —
-                    but not the theorem itself — were available. That reconstruction had a pedagogical purpose:
-                    to exhibit the translation between strategic moves and tactic invocations on a theorem
-                    familiar enough that the strategic moves themselves required no explanation. A practitioner
-                    who encounters the same theorem in their own work looks first to mathlib; only when the
-                    relevant result is absent does the longer reconstruction become the actual workflow. Most
-                    of working with Lean is the alternation between these two regimes — finding what is already
-                    there, and proving what is not.
-                </p>
+                    <p>
+                        The reconstruction in the previous section was therefore not the proof that a working Lean
+                        user would write in practice. It was a reconstruction <em>as if</em> the relevant lemmas —
+                        but not the theorem itself — were available. That reconstruction had a pedagogical purpose:
+                        to exhibit the translation between strategic moves and tactic invocations on a theorem
+                        familiar enough that the strategic moves themselves required no explanation. A practitioner
+                        who encounters the same theorem in their own work looks first to mathlib; only when the
+                        relevant result is absent does the longer reconstruction become the actual workflow. Most
+                        of working with Lean is the alternation between these two regimes — finding what is already
+                        there, and proving what is not.
+                    </p>
+                </div>
 
-                <h3>What the kernel verified</h3>
+                <div class="theorem">
+                    <span class="theorem-title">What the Kernel Verified</span>
 
-                <p>
-                    Once the proof was written and accepted, the verifying agent was not the tactic framework,
-                    not the <code>linarith</code> decision procedure, not mathlib. Tactics build candidate
-                    proof terms; the kernel inspects those terms. A buggy tactic that produces an ill-typed
-                    term, or a tactic that gestures at a proof without actually constructing the required term,
-                    cannot bypass the kernel — the kernel re-checks each term against the proposition with no
-                    reference to how the term was produced. This is the structure that the preceding page laid
-                    out under the name of the de Bruijn criterion. The triangle-inequality proof is an
-                    instance of it.
-                </p>
+                    <p>
+                        Once the proof was written and accepted, the verifying agent was not the tactic framework,
+                        not the <code>linarith</code> decision procedure, not mathlib. Tactics build candidate
+                        proof terms; the kernel inspects those terms. A buggy tactic that produces an ill-typed
+                        term, or a tactic that gestures at a proof without actually constructing the required term,
+                        cannot bypass the kernel — the kernel re-checks each term against the proposition with no
+                        reference to how the term was produced. This is the structure that the preceding page laid
+                        out under the name of the de Bruijn criterion. The triangle-inequality proof is an
+                        instance of it.
+                    </p>
 
-                <p>
-                    The instance is worth pausing over. The script in the previous section was authored by a
-                    person working out a strategy in informal mathematical prose, then translating that
-                    strategy into named tactic invocations. Nothing in that authoring process was verified by
-                    Lean. The verification began only at the moment the script was submitted to the kernel.
-                    The same script, had it been authored by some other agent — by a different mathematician,
-                    by a machine, by an automated proof-search routine — would have been verified by exactly
-                    the same procedure to exactly the same standard. The kernel reads the term; the kernel
-                    accepts or rejects.
-                </p>
+                    <p>
+                        The instance is worth pausing over. The script in the previous section was authored by a
+                        person working out a strategy in informal mathematical prose, then translating that
+                        strategy into named tactic invocations. Nothing in that authoring process was verified by
+                        Lean. The verification began only at the moment the script was submitted to the kernel.
+                        The same script, had it been authored by some other agent — by a different mathematician,
+                        by a machine, by an automated proof-search routine — would have been verified by exactly
+                        the same procedure to exactly the same standard. The kernel reads the term; the kernel
+                        accepts or rejects.
+                    </p>
 
-                <p>
-                    This is the operative content of the distinction, drawn on the preceding page, between
-                    proof verification and proof discovery. Discovery is what the human did in the opening
-                    section, in informal prose, before any Lean tactic was invoked. Verification is what the
-                    kernel did, after the script was complete, by inspecting the proof term that the tactics
-                    produced. The two activities are separable, and Lean's architecture insists on the
-                    separation. A formal proof, in the modern sense, is not a proof that a human has been
-                    relieved of constructing; it is a proof whose construction is open to any agent capable of
-                    producing a verifiable term, while the standard of correctness remains fixed at the kernel.
-                </p>
+                    <p>
+                        This is the operative content of the distinction, drawn on the preceding page, between
+                        proof verification and proof discovery. Discovery is what the human did in the opening
+                        section, in informal prose, before any Lean tactic was invoked. Verification is what the
+                        kernel did, after the script was complete, by inspecting the proof term that the tactics
+                        produced. The two activities are separable, and Lean's architecture insists on the
+                        separation. A formal proof, in the modern sense, is not a proof that a human has been
+                        relieved of constructing; it is a proof whose construction is open to any agent capable of
+                        producing a verifiable term, while the standard of correctness remains fixed at the kernel.
+                    </p>
+                </div>
 
                 <h3>What remains, and what does not</h3>
 
