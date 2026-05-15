@@ -1,0 +1,660 @@
+---
+layout: default
+title: "Formal Methods: Machine-Verified Proof"
+topic_id: disc-16
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Formal Methods<span class="hero-subtitle">Machine-Verified Proof</span></h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#why">Why Formalize?</a>
+            <a href="#curry-howard">The Curry-Howard Correspondence</a>
+            <a href="#landscape">Proof Assistants: A Landscape</a>
+            <a href="#ai-fm">The 2026 Inflection: Machine Learning × Formal Methods</a>
+        </div>
+
+        <div class="container">
+
+            <section id="why" class="section-content">
+                <h2>Why Formalize?</h2>
+
+                <p>
+                    Readers of the discrete mathematics section have already met an unfinished story. In
+                    <a href="planar_graphs.html#T-four_color_theorem" class="ref-link"><strong>planar graphs</strong></a>,
+                    we proved the Five Color Theorem in roughly a page using Kempe chains, and then stated the
+                    Four Color Theorem with the brief note that its proof <em>requires computer verification of a finite case analysis</em>.
+                    We did not say what that means. We did not say whether such a proof can be trusted in the same sense as a hand-written one.
+                    We left the question open.
+                </p>
+
+                <p>
+                    This page closes it. The answer is a thirty-year episode, beginning in 1976 and resolving in 2005,
+                    about what counts as a proof when computers are involved — and the structural reorganization of mathematical
+                    trust that made the resolution possible.
+                </p>
+
+                <h3>From Hilbert to Gödel: certainty reorients</h3>
+
+                <p>
+                    The goal of formalizing all of mathematics is older than computers. In the first decades of the twentieth century,
+                    David Hilbert articulated a program: codify the axioms and inference rules of mathematics so completely that every
+                    true mathematical statement could, in principle, be derived from them, and prove the entire system's consistency by
+                    purely finite means. This was the most ambitious form of the program — certainty established by construction.
+                </p>
+
+                <p>
+                    In 1931, Kurt Gödel proved that the goal, taken literally, is impossible. Any consistent formal system strong enough
+                    to express elementary arithmetic contains true statements that cannot be derived within it, and cannot prove its own
+                    consistency by its own rules. The project was not abandoned, however; it was reoriented.
+                </p>
+
+                <p>
+                    The new goal is more modest and, in retrospect, more useful: not absolute certainty, but
+                    <strong>a structured allocation of trust</strong>. Make explicit which parts of mathematical reasoning can be
+                    mechanically verified, which require human judgment, and where the boundary between them lies.
+                    Place the unavoidable acts of trust precisely, rather than scattering them invisibly throughout proofs.
+                </p>
+
+                <h3>The Four Color crisis (1976-2005)</h3>
+
+                <p>
+                    In 1976, Kenneth Appel and Wolfgang Haken announced a proof of the
+                    <a href="planar_graphs.html#T-four_color_theorem" class="ref-link"><strong>Four Color Theorem</strong></a>.
+                    The strategy was to reduce the question to a finite list of <em>unavoidable configurations</em> and
+                    verify the reducibility of each. The verification consumed roughly 1,200 hours of computer time on the
+                    machines of the era.
+                </p>
+
+                <p>
+                    The mathematical community split. One camp accepted the proof: the logical reduction was rigorous, the verification
+                    mechanical and reproducible, and machines were arguably more reliable than human referees at checking thousands of
+                    cases without fatigue. Another camp rejected it. The philosopher Thomas Tymoczko, in a 1979 paper, argued that a proof
+                    a human cannot read in entirety is not a proof at all; Paul Halmos echoed the sentiment more bluntly. The dispute was
+                    not about whether the theorem was true. It was about whether the means of establishing it counted as a proof.
+                </p>
+
+                <p>
+                    The structural reason the dispute could not be settled is worth stating directly. The verification programs were
+                    written in conventional languages (a mix of C and assembler in the original; later reimplementations in other
+                    languages). To trust the proof, one had to trust those programs. To trust the programs, one had to inspect their
+                    source code by hand — exactly the activity the computer was supposed to replace. The chain of justification bottomed
+                    out in unverified imperative code, with no independent mechanism to break the regress. Disagreement could not be
+                    resolved because the parties were not pointing to a common, inspectable foundation.
+                </p>
+
+                <p>
+                    The next two decades sustained the doubt. A 1981 independent verification effort discovered, and corrected, small
+                    errors in the original — not catastrophic, but enough to keep the question of program correctness open. In 1996, a
+                    simpler proof by Robertson, Sanders, Seymour, and Thomas reduced the configuration count and tightened the argument,
+                    but the proof remained computer-assisted and the philosophical objection remained intact.
+                </p>
+
+                <p>
+                    The resolution arrived in 2005. Georges Gonthier, working with the Coq proof assistant, reformulated the entire
+                    Four Color Theorem — logical core and configuration analysis alike — inside a single formal system whose verification
+                    procedure is a small, fixed, inspectable kernel program. Coq's kernel did the checking. The chain of justification
+                    became explicit: trust the Coq kernel, and the proof follows. Anyone who disagrees can now point to a specific object
+                    of disagreement — the kernel — and audit it. The thirty-year dispute did not end by consensus. It ended structurally,
+                    by clarification of where the residual trust resides.
+                </p>
+
+                <h3>The pattern repeats</h3>
+
+                <p>
+                    Once stated, the pattern recurs across modern mathematics. Thomas Hales announced a proof of the Kepler conjecture
+                    in 1998. The <em>Annals of Mathematics</em> referees, after years of effort, were unable to declare full confidence
+                    in the proof's correctness — a public admission with no major precedent. Hales responded by launching the Flyspeck Project
+                    in 2003 to formalize the proof entirely in HOL Light and Isabelle. Eleven years later, in 2014, the formalization
+                    was complete and the Kepler conjecture passed from "almost certainly proven" to <em>proven</em> in the same sense
+                    the Four Color Theorem now is.
+                </p>
+
+                <p>
+                    The 2020s have accelerated the trend. In 2021, Peter Scholze publicly asked the Lean community to verify a key
+                    result in condensed mathematics — the so-called Liquid Tensor Experiment — because he was not personally certain
+                    his own proof was correct. It was the first time a frontier mathematician requested formalization for his own
+                    epistemic comfort. The community completed it in months. In 2023, Terence Tao led a Lean formalization of the
+                    Polynomial Freiman-Ruzsa conjecture within weeks of the paper's publication; formal methods entered the active
+                    research workflow.
+                </p>
+
+                <h3>The principle</h3>
+
+                <p>
+                    Formal methods do not deliver absolute certainty. The reorientation after Gödel was permanent, not a temporary
+                    retreat. What formal methods deliver is something more useful: a <strong>structured allocation of trust</strong>.
+                    Without that structure, debates about the correctness of a proof — especially a long, computer-assisted, or
+                    machine-generated one — reduce to disputes about preferences. With it, disagreements become specific. "Do you trust
+                    the kernel?" is a question that admits an answer; "is this really a proof?" is not.
+                </p>
+
+                <p>
+                    The remainder of this page explains how the structure works. The conceptual heart is the discovery, made twice
+                    independently in the 1930s and unified in the 1960s, that propositions and types — proofs and programs — are not
+                    two analogous things but a single mathematical structure seen from two angles. This is the Curry-Howard correspondence,
+                    and it is what makes a proof assistant possible.
+                </p>
+            </section>
+
+            <section id="curry-howard" class="section-content">
+                <h2>The Curry-Howard Correspondence</h2>
+
+                <p>
+                    The Curry-Howard correspondence is not the name of a tool, a model, or a particular formal system. It is the name
+                    of a <strong>mathematical discovery</strong>: that logic and type theory — propositions and types, proofs and
+                    programs — are two surface presentations of the same underlying structure. The discovery is what licenses the
+                    architecture of Lean, Coq, Agda, and every other modern proof assistant. Understanding it is the entry point to
+                    understanding why such systems work.
+                </p>
+
+                <h3>The name</h3>
+
+                <p>
+                    The correspondence carries two names because two logicians, working independently, found pieces of it at different
+                    times. Haskell Curry — for whom the programming language Haskell and the technique of <em>currying</em> are both
+                    named — observed in 1934, and elaborated in 1958, that the type \(A \to B\) of functions from \(A\) to \(B\) obeys
+                    the same inference rules as the logical proposition "\(A\) implies \(B\)". The implication arrow and the function
+                    arrow are not analogous; they are the same arrow.
+                </p>
+
+                <p>
+                    William Alvin Howard, in a 1969 manuscript circulated privately and published in 1980, extended Curry's observation
+                    into a systematic correspondence covering every logical connective. Conjunction, disjunction, negation, universal
+                    and existential quantification each acquired a type-theoretic counterpart, and the operations on proofs (modus ponens,
+                    case analysis, generalization) became the operations on programs (function application, pattern matching, binding).
+                </p>
+
+                <p>
+                    In the 1980s, Joachim Lambek added a third side. The same structure that appears in logic and in type theory also
+                    appears in category theory, where the relevant categorical structure (cartesian closed categories, in the simplest
+                    case) is a third equivalent presentation. The full three-way correspondence — <em>Curry-Howard-Lambek</em> — places
+                    logic, programming, and category theory as three faces of one mathematical object. We will encounter the categorical
+                    side later in the curriculum; the next section will plant a deliberate pointer.
+                </p>
+
+                <h3>Three layers</h3>
+
+                <p>
+                    The correspondence has substance at three depths.
+                </p>
+
+                <p>
+                    <strong>The static layer</strong> identifies <em>propositions with types</em>. Each proposition corresponds to a type;
+                    each type can be read as a proposition. The proposition "\(P\) and \(Q\)" is the product type \(P \times Q\); the
+                    proposition "\(P\) implies \(Q\)" is the function type \(P \to Q\). This is the layer at which the correspondence is
+                    most easily stated.
+                </p>
+
+                <p>
+                    <strong>The dynamic layer</strong> identifies <em>proofs with programs</em>. A specific proof of \(P \land Q\) is a
+                    specific pair \(\langle p, q \rangle\) consisting of a proof \(p\) of \(P\) and a proof \(q\) of \(Q\). A specific
+                    proof of \(P \to Q\) is a specific function that, given any proof of \(P\), produces a proof of \(Q\). Proofs are
+                    not described by programs; they <em>are</em> programs, in the same way that the number 3 is not described by the
+                    successor of 2 but is the successor of 2.
+                </p>
+
+                <p>
+                    <strong>The operational layer</strong> identifies <em>proof normalization with computation</em>. Proofs can be
+                    simplified — a proof that constructs a pair and immediately projects out the first component can be reduced to a
+                    proof that just uses the first component directly. Programs can be executed — the expression that constructs a pair
+                    and projects its first component evaluates to the first component. These are the same operation: \(\beta\)-reduction
+                    in logic and \(\beta\)-reduction in the lambda calculus are not analogous procedures, they are the same procedure
+                    viewed through two vocabularies. When a proof assistant checks a proof, it is, mathematically, executing a program.
+                </p>
+
+                <h3>The correspondence in full</h3>
+
+                <p>
+                    The complete table of correspondences for the standard logical connectives:
+                </p>
+
+                <div class="theorem" id="T-curry_howard_table">
+                    <span class="theorem-title">The Curry-Howard Correspondence — Connective Table</span>
+                    <p>The standard logical connectives and their type-theoretic counterparts:</p>
+                    <table style="margin: 0 auto; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid currentColor;">
+                                <th style="padding: 8px 24px; text-align: left;">Logic</th>
+                                <th style="padding: 8px 24px; text-align: left;">Type theory</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="padding: 6px 24px;">Proposition \(P\)</td><td style="padding: 6px 24px;">Type \(P\)</td></tr>
+                            <tr><td style="padding: 6px 24px;">\(P \land Q\)</td><td style="padding: 6px 24px;">Product type \(P \times Q\)</td></tr>
+                            <tr><td style="padding: 6px 24px;">\(P \lor Q\)</td><td style="padding: 6px 24px;">Sum type \(P \oplus Q\)</td></tr>
+                            <tr><td style="padding: 6px 24px;">\(P \to Q\)</td><td style="padding: 6px 24px;">Function type \(P \to Q\)</td></tr>
+                            <tr><td style="padding: 6px 24px;">\(\neg P\)</td><td style="padding: 6px 24px;">\(P \to \bot\)</td></tr>
+                            <tr><td style="padding: 6px 24px;"><strong>\(\forall x : X,\; P(x)\)</strong></td><td style="padding: 6px 24px;"><strong>Dependent function type \((x : X) \to P(x)\)</strong></td></tr>
+                            <tr><td style="padding: 6px 24px;"><strong>\(\exists x : X,\; P(x)\)</strong></td><td style="padding: 6px 24px;"><strong>Dependent pair type \((x : X) \times P(x)\)</strong></td></tr>
+                            <tr><td style="padding: 6px 24px;">\(\top\) (true)</td><td style="padding: 6px 24px;">Unit type</td></tr>
+                            <tr><td style="padding: 6px 24px;">\(\bot\) (false)</td><td style="padding: 6px 24px;">Empty type</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    The two bold rows introduce the universal and existential quantifiers, which require a feature called
+                    <strong>dependent types</strong> — types whose form depends on a value. To express "for every natural number \(n\),
+                    \(n + 0 = n\)", we need a type whose elements are <em>functions taking an \(n\) and producing a proof of \(n + 0 = n\), where the proposition being proved changes with \(n\)</em>. Conventional programming languages cannot express such
+                    types; the dependent-type machinery is what gives proof assistants their full expressive power. We will encounter
+                    it more concretely on the following page.
+                </p>
+
+                <h3>Reframing the Boolean connectives, retroactively</h3>
+
+                <p>
+                    A reader who has worked through
+                    <a href="boolean.html" class="ref-link"><strong>Boolean Logic</strong></a> has already worked with every connective
+                    in the table above, in a different vocabulary. The truth table of \(P \land Q\) records its <em>value</em>:
+                    given the values of \(P\) and \(Q\), it returns \(1\) if both are \(1\), and \(0\) otherwise. The Curry-Howard
+                    reading shifts focus from the value to the structure of the evidence: a proof of \(P \land Q\) consists of a proof
+                    of \(P\) together with a proof of \(Q\) — a <em>pair</em>. The two readings are not the same statement; they live
+                    at different layers — one external (evaluation in a two-element set) and one internal (construction of evidence).
+                    What carries across is the syntax and the operational intuition, not the underlying logical system. The connectives
+                    \(\land, \lor, \to, \neg\) appearing in propositional logic and in the type theory of a proof assistant are formally
+                    distinct objects that share a notation.
+                </p>
+
+                <p>
+                    Concretely: to <em>construct</em> a proof of \(P \land Q\), build a pair from a proof of \(P\) and a proof of \(Q\).
+                    To <em>use</em> a proof of \(P \land Q\), project out either component — the left projection gives a proof of \(P\),
+                    the right projection gives a proof of \(Q\). The introduction and elimination rules of conjunction in natural
+                    deduction are, exactly, the constructor and projections of the product type. The same pattern holds for the other
+                    connectives:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>To prove \(P \to Q\), define a function taking proofs of \(P\) to proofs of \(Q\); to use such a proof, apply it.</li>
+                    <li>To prove \(P \lor Q\), provide a proof of \(P\) <em>or</em> a proof of \(Q\) tagged with which one; to use it, case-analyze.</li>
+                    <li>To prove \(\neg P\), define a function from \(P\) to \(\bot\); to use it on a proof of \(P\), derive \(\bot\) (contradiction).</li>
+                </ul>
+
+                <h3>A first look at the syntax</h3>
+
+                <p>
+                    Lean is the proof assistant we will use to make these abstractions concrete. A first taste: the proof that
+                    \(P \land Q\) implies \(P\) can be written in two equivalent ways.
+                </p>
+
+                <pre style="background: rgba(127,127,127,0.08); padding: 12px 16px; border-radius: 6px; overflow-x: auto;"><code>
+                    -- Term mode: the proof is written directly as an expression
+                    theorem and_left (P Q : Prop) (h : P ∧ Q) : P := h.left
+
+                    -- Tactic mode: the proof is constructed step by step
+                    theorem and_left' (P Q : Prop) (h : P ∧ Q) : P := by
+                    exact h.left</code>
+                </pre>
+
+                <p>
+                    In both, the hypothesis <code>h</code> has type <code>P ∧ Q</code> — it is a pair of a proof of <code>P</code> and
+                    a proof of <code>Q</code>. The expression <code>h.left</code> projects out the first component, yielding a proof
+                    of <code>P</code>. Term mode states this projection directly; tactic mode wraps it in a <code>by ... </code> block
+                    that, in larger proofs, allows constructing the proof interactively, step by step. The two forms produce the same
+                    final proof object internally; the choice between them is a matter of authoring style. The next section returns to
+                    this distinction.
+                </p>
+            </section>
+
+            <section id="landscape" class="section-content">
+                <h2>Proof Assistants: A Landscape</h2>
+
+                <p>
+                    The Curry-Howard correspondence is a mathematical observation. A <strong>proof assistant</strong> is a software
+                    system that implements it: a programming language whose type system is rich enough to encode mathematical
+                    propositions, together with the infrastructure to construct, check, and organize proofs as programs in that
+                    language. Several such systems exist; this section surveys the major ones and the architectural feature they
+                    share.
+                </p>
+
+                <h3>The major systems</h3>
+
+                <p>
+                    Four proof assistants account for most contemporary work in formal mathematics:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Lean</strong>: originated at Microsoft Research in 2013 under Leonardo de Moura, with a major
+                        redesign released in 2023; now developed by the Lean Focused Research Organization and a large community
+                        of contributors. Based on dependent type theory.
+                        Its mathematical library, <strong>mathlib</strong>, surpassed 210,000 formalized theorems in 2025 and
+                        continues to grow. The system that hosted Liquid Tensor, the Polynomial Freiman-Ruzsa formalization,
+                        and the bulk of machine-generated theorem proving research in 2024–2026.
+                    </li>
+                    <li>
+                        <strong>Coq</strong> (1989–; later renamed <strong>Rocq</strong>): the historical workhorse of
+                        dependent-type-based formalization. Used in the seminal cases — Gonthier's 2005 Four Color formalization,
+                        and Compcert, Xavier Leroy's formally verified C compiler. Coq's design and Lean's are close cousins;
+                        their underlying type theories differ in details that matter to specialists but not to first encounters.
+                    </li>
+                    <li>
+                        <strong>Isabelle/HOL</strong> (first released 1991): based on higher-order logic rather than dependent type theory.
+                        Used for seL4 (a formally verified operating-system microkernel) and Hales's Flyspeck completion of
+                        Kepler. The higher-order-logic foundation trades some expressive power for simpler proof automation
+                        in many practical cases.
+                    </li>
+                    <li>
+                        <strong>Agda</strong> (2007–): the closest of the major systems to pure dependent type theory,
+                        often used in programming-language theory and in the study of constructive mathematics for its own
+                        sake. Less infrastructure than Lean or Coq, but a clearer view of the type-theoretic foundations
+                        through the surface syntax.
+                    </li>
+                </ul>
+
+                <p>
+                    The choice of system in any given project depends on the existing libraries, the surrounding community,
+                    and the foundational preferences of the authors. The mathematics being formalized is essentially the same
+                    in each. We will use Lean in the next page for its current research momentum, its large mathematical
+                    library, and the clean separation between its two proof-authoring modes.
+                </p>
+
+                <h3>Tactic mode and term mode, in practice</h3>
+
+                <p>
+                    The two writing styles introduced at the end of the previous section deserve a closer look, because the
+                    distinction governs how mathematicians actually use these systems.
+                </p>
+
+                <p>
+                    <strong>Term mode</strong> is the direct presentation: the proof is written as a single expression of the
+                    appropriate type. It is concise, fits well in displayed equations, and matches the Curry-Howard slogan
+                    most cleanly — a proof of a proposition is a term of the corresponding type.
+                </p>
+
+                <p>
+                    <strong>Tactic mode</strong> is the interactive presentation: the proof is constructed step by step inside
+                    a <code>by ... </code> block, with the system displaying, at each step, the current state of the proof —
+                    what hypotheses are available, what remains to be shown. The state is presented in a standardized format,
+                    with the available hypotheses listed above a horizontal rule and the current goal below it. A small example:
+                    suppose we wish to prove that if \(P \land Q\) holds, then \(Q \land P\) holds.
+                </p>
+
+                <pre style="background: rgba(127,127,127,0.08); padding: 12px 16px; border-radius: 6px; overflow-x: auto;"><code>
+                    example (P Q : Prop) (h : P ∧ Q) : Q ∧ P := by
+                    constructor
+                    · exact h.right
+                    · exact h.left</code>
+                </pre>
+
+                <p>
+                    The <code>constructor</code> tactic decomposes a goal of the form \(Q \land P\) into two subgoals — one for
+                    \(Q\), one for \(P\) — reflecting the Curry-Howard reading that to construct a pair, one must construct each
+                    component. After <code>constructor</code> runs, the proof state shows:
+                </p>
+
+                <pre style="background: rgba(127,127,127,0.08); padding: 12px 16px; border-radius: 6px; overflow-x: auto;"><code>
+                    case left
+                    P Q : Prop
+                    h : P ∧ Q
+                    ⊢ Q
+
+                    case right
+                    P Q : Prop
+                    h : P ∧ Q
+                    ⊢ P</code>
+                </pre>
+
+                <p>
+                    The turnstile <code>⊢</code> separates the hypotheses (above) from the goal (below). The two cases are
+                    dispatched by the two lines beginning with <code>·</code>, each producing the required proof from
+                    components of <code>h</code>. The experience is close to writing a proof on a blackboard, with the system
+                    tracking what has been established and what remains.
+                </p>
+
+                <p>
+                    The two modes are extensionally equivalent: internally, Lean executes tactics and produces a term-mode
+                    proof, which is then checked by the kernel. The kernel never sees tactics. This separation is the structural
+                    foundation of the trust architecture, which is the next subject.
+                </p>
+
+                <h3>The kernel and self-hosting trust</h3>
+
+                <p>
+                    Every proof assistant has a <strong>kernel</strong> — a small program whose sole job is to check whether a
+                    given proof term is valid. The kernel implements the rules of the underlying logic and nothing else: no
+                    automation, no tactics, no high-level convenience features. In Lean, the kernel is written in C++ and
+                    consists of a few thousand lines of code. In Coq, similarly small. The smallness is deliberate. The kernel
+                    is the only part of the system whose correctness must be trusted on faith; everything else is checked by
+                    the kernel. This design principle — that a proof assistant should produce proof terms verifiable by a small,
+                    independent kernel — is known as the <strong>de Bruijn criterion</strong>, after N.G. de Bruijn, whose 1968
+                    Automath system was the first working proof checker built around it. The kernel-based architectures of
+                    Coq, Lean, and Isabelle all descend, conceptually if not always genealogically, from this design.
+                </p>
+
+                <p>
+                    A notable feature of Lean's design is that almost everything <em>above</em> the kernel — the elaborator
+                    that converts surface syntax into proof terms, the tactic framework, mathlib itself — is written in Lean
+                    itself. The system is largely <strong>self-hosting</strong>. This creates a trust loop with a useful
+                    properties: the high-level machinery is itself a Lean program, and its correctness is, in principle, the
+                    sort of thing the kernel can verify. In practice, the high-level machinery is not exhaustively verified
+                    to date, but the architecture makes such verification possible in principle, with the kernel as the fixed
+                    point of the trust chain.
+                </p>
+
+                <p>
+                    This is exactly the structural property that was missing from the Appel-Haken proof
+                    in 1976. The verification programs were ordinary C and assembler code; to trust the proof, one had to
+                    trust those programs by inspection, and the inspection could not be mechanized. Gonthier's 2005 Coq
+                    formalization replaced the unverified imperative code with a Coq proof checked by Coq's kernel. The
+                    physical fact of the proof did not change; what changed was the structure of the trust chain. A present-day
+                    reader can locate exactly where the residual trust lives — in the few thousand lines of the Coq kernel —
+                    and audit it.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Universal Pattern</h3>
+                    <p>
+                        The technique of <em>attaching additional structured information to each primitive operation, and letting
+                        composition rules carry the information through automatically</em> recurs across mathematics and computer
+                        science:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li><strong>Automatic differentiation</strong> attaches <em>derivatives</em> to functions; the chain rule is the composition law.</li>
+                        <li><strong>Formal methods</strong> attach <em>proofs of correctness</em> to programs; logical inference is the composition law.</li>
+                        <li><strong>Probabilistic programming</strong> attaches <em>probability distributions</em>; Bayes's rule is the composition law.</li>
+                        <li><strong>Quantum computation</strong> attaches <em>unitary evolution</em>; tensor product is the composition law.</li>
+                    </ul>
+                    <p>
+                        These are not analogies, but instances of a single mathematical structure. The language that names this
+                        structure is <strong>category theory</strong>, and we will return to it as a viewpoint of its own later
+                        in the curriculum. For now, the recognition that the same pattern recurs is the substantive observation.
+                    </p>
+                </div>
+
+                <h3>Lean's boundaries</h3>
+
+                <p>
+                    A clear-eyed account of any tool must say where the tool ends. Two boundaries circumscribe what a proof
+                    assistant does.
+                </p>
+
+                <p>
+                    <strong>Verification is not discovery.</strong> Lean's primary function is to <em>check</em> proofs that
+                    are provided to it. Finding a proof in the first place is a separate problem, and the degree of
+                    automation depends on the domain. Some tactics close goals entirely on their own: <code>rfl</code>
+                    settles equalities that hold by definition; <code>omega</code> solves linear arithmetic over the
+                    integers; <code>ring</code> handles polynomial identities in commutative rings; <code>simp</code>
+                    simplifies using a registered database of lemmas. Other tactics search heuristically: <code>aesop</code>
+                    attempts general goal-directed search. And learning-augmented tactics increasingly suggest or generate proofs
+                    in open-ended cases.
+                </p>
+
+                <p>
+                    Yet two different ceilings limit proof discovery, and the popular discourse often conflates them.
+                    In a consistent formal system strong enough to express arithmetic, there exist true propositions
+                    that cannot be proved within the system at all — this is Gödel's first incompleteness theorem (1931).
+                    It is a statement about the gap between truth and provability, not about search; no algorithm — not
+                    in 1931, not now, not ever — can derive a proof that the system itself cannot produce.
+                </p>
+
+                <p>
+                    The second ceiling concerns propositions that <em>are</em> provable: even there, whether a proof can be
+                    found by mechanical search reduces to combinatorial explosion. First-order logic's provability problem is
+                    semi-decidable: if a proposition is provable, an exhaustive search procedure will eventually find a proof;
+                    if it is not, the search may never terminate. In practice, the search space grows fast enough that exhaustive
+                    methods are useless beyond toy cases, and the practical limits of automated discovery are determined by
+                    computational complexity — the same kind of considerations that underlie
+                    <a href="p_vs_np.html#D-class_P" class="ref-link"><strong>P vs NP</strong></a> — rather than by Gödel's
+                    theorem. Within the domains where decision procedures exist and run quickly (linear arithmetic, polynomial
+                    identities, propositional logic), automation is essentially complete; outside them, human strategy or learned
+                    heuristics drive the search.
+                </p>
+
+                <p>
+                    <strong>The system verifies what is written, not what was meant.</strong> Lean checks that a given proof
+                    establishes the proposition stated. Whether that proposition is the one the author intended to prove is
+                    a separate question — one the system cannot answer. A trivial example illustrates the point: the
+                    statement <code>theorem length_nonneg (L : List α) : 0 ≥ 0 := by rfl</code> is true and admits a one-line
+                    proof, but if the author meant to assert that the length of a list is non-negative, the actual proposition
+                    being proved has nothing to do with lists. The error is invisible to Lean. This is the <strong>specification
+                    problem</strong>: the gap between intent and the formal statement of intent.
+                </p>
+
+                <p>
+                    The trust structure of a formal development can be drawn as a pyramid. At the base sits the kernel — small,
+                    inspectable, the only piece that must be trusted by direct audit. Above it sits the proof term, which the
+                    kernel checks mechanically. Above the proof sits the specification — the proposition being proved — which
+                    a human writes and a human must review. At the top sits the author's intent, which lives in cognition
+                    and cannot be formalized at all. Formal methods do not eliminate the top of the pyramid; they
+                    <em>locate</em> it precisely. Each layer's responsibility is explicit.
+                </p>
+
+                <p>
+                    In practice, these gaps are mitigated rather than closed. Specifications can be written as computable
+                    predicates and tested against examples, surfacing many drafting errors. Multiple independent specifications
+                    of the same intent can be cross-checked. Specification design typically receives the same kind of scrutiny
+                    as proof design — in the Compcert and seL4 projects, the documented experience was that getting the
+                    specification right took longer than producing the proofs. None of these techniques eliminate the
+                    specification problem, but they make it tractable.
+                </p>
+
+                <p>
+                    These boundaries are not flaws to be lamented; they are the price of explicitness. Every formal system has
+                    them. What distinguishes formal methods is that the boundaries are <em>visible</em>: each act of trust is
+                    located, each unverified assumption is named. A system that promises "absolute correctness" hides its
+                    trust chain; a system that promises "correctness relative to a stated specification" exposes it. The
+                    second promise is the one worth making.
+                </p>
+            </section>
+
+            <section id="ai-fm" class="section-content">
+                <h2>The 2026 Inflection: Machine Learning × Formal Methods</h2>
+
+                <p>
+                    The decade beginning around 2020 has been a period of rapid acceleration for formal methods, driven by two
+                    converging forces: the maturation of large mathematical libraries (chiefly mathlib) and the arrival of
+                    machine learning systems capable of generating proofs in the form a proof assistant can check. Together,
+                    these have produced a qualitative shift in what formal verification can accomplish at scale.
+                </p>
+
+                <h3>The acceleration</h3>
+
+                <p>
+                    The most visible developments since 2024:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        In 2024, a DeepMind system known as <strong>AlphaProof</strong> achieved silver-medal-level performance on the International
+                        Mathematical Olympiad by generating Lean-formal proofs of the contest problems. This was the first
+                        widely-reported demonstration that a machine learning system could produce machine-checkable proofs at
+                        olympiad-mathematics level.
+                    </li>
+                    <li>
+                        The <strong>IMO 2025</strong> contest saw multiple independent machine learning systems achieve gold-medal-equivalent
+                        performance, with their proofs presented as Lean terms that the kernel verified directly.
+                    </li>
+                    <li>
+                        By 2026, open-source machine learning proof agents had appeared under permissive licenses, bringing
+                        machine-assisted theorem proving into the public domain rather than keeping it inside proprietary systems.
+                    </li>
+                    <li>
+                        A community effort known as <strong>CSLib</strong>, launched in 2026, set out to formalize the standard undergraduate
+                        algorithms and theory-of-computation curriculum in Lean — extending the formal-mathematics project
+                        into computer science proper.
+                    </li>
+                </ul>
+
+                <p>
+                    The cumulative effect is that the practice of formalizing mathematics, and of generating proofs by machine,
+                    has shifted from a specialist research activity to standard infrastructure for both mathematics and
+                    computer science. The pace of mathlib's growth has steepened sharply since 2024.
+                </p>
+
+                <h3>Why the trust structure makes this possible</h3>
+
+                <p>
+                    The architecture of the trust pyramid, developed in the previous section, is exactly what licenses the
+                    pairing of machine learning with formal verification. When a machine learning system generates a proof:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>The <strong>specification</strong> remains human-written and human-reviewed. The intent-to-specification gap, identified earlier as the irreducible top of the pyramid, is unaffected by the involvement of a learning system.</li>
+                    <li>The <strong>proof</strong> is generated by the learning system and verified by the kernel. The generator may be unreliable, opaque, or stochastic; the kernel does not care. If the proof passes verification, it is valid; if not, it is rejected and the generator tries again.</li>
+                    <li>The <strong>kernel</strong> remains fixed and small, audited by humans on its own merits.</li>
+                </ul>
+
+                <p>
+                    A consequence sometimes summarized in the field is that when a learning system produces a kernel-verified
+                    proof, a human reviewer adds no additional reliability. The kernel has already absorbed whatever errors the
+                    learning system might have introduced. This is not a claim that machine-generated proofs are intrinsically
+                    trustworthy; it is a precise statement about where reliability lives in the system-plus-kernel architecture.
+                    The reliability lives in the kernel. The learning system is, structurally, an untrusted but useful proof-search
+                    procedure.
+                </p>
+
+                <p>
+                    This division of labor matters because it dissolves an apparent contradiction. Machine learning systems are
+                    known to be unreliable at many tasks; formal verification demands absolute reliability of the verified output.
+                    The two coexist because the verification step sits between them, mechanically converting "unreliable
+                    candidate proof" into either "verified theorem" or "rejected attempt". No middle ground exists. The
+                    learning system's fallibility is bounded by the kernel.
+                </p>
+
+                <h3>What this implies</h3>
+
+                <p>
+                    Several trends follow from the structural compatibility of machine-generated proofs with kernel verification.
+                    Formalization, historically a slow and labor-intensive process, is becoming faster as machine learning systems
+                    handle routine proof construction. Mathematical theorems that previously could not be formalized for lack of
+                    human time enter mathlib at growing rates. Engineering verification — the formal proof of correctness of
+                    software systems, as in Compcert and seL4 — is becoming accessible to projects below the scale of flagship
+                    academic efforts.
+                </p>
+
+                <p>
+                    The longer-term implication for the curriculum is the basis on which formal methods are introduced here.
+                    Formal verification is on a trajectory to become standard infrastructure for both
+                    pure mathematics and software engineering — comparable in significance to the way numerical linear algebra
+                    became standard infrastructure for scientific computing in the late twentieth century. A mathematics
+                    education that does not name this development risks producing readers who encounter it later without
+                    a framework to understand what they are seeing.
+                </p>
+
+                <h3>From description to practice</h3>
+
+                <p>
+                    This page has discussed formal methods entirely from the outside: their history, their conceptual core,
+                    their architecture, their limits, and their current moment. To understand them from the inside requires
+                    using one. The <a href="lean_in_practice.html">next page</a> is a guided walk through Lean itself,
+                    beginning with a theorem the reader already knows — the triangle inequality
+                    \(|x + y| \leq |x| + |y|\) — and showing how a mathematician's 
+                    natural strategic decomposition translates, step by step, into a Lean proof. The translation, as we will
+                    see, is more direct than it may at first appear.
+                </p>
+            </section>
+
+        </div>
+</body>
+</html>
