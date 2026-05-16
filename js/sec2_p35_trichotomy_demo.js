@@ -1449,6 +1449,22 @@ function buildDemoHTML() {
 
   </div>
 
+  <!-- Legend (applies to all three panels) -->
+  <div class="tri-legend">
+    <span class="tri-legend-item">
+      <span class="tri-legend-swatch tri-legend-solid"></span>
+      current solution u(·,&thinsp;t)
+    </span>
+    <span class="tri-legend-item">
+      <span class="tri-legend-swatch tri-legend-dashed"></span>
+      initial profile f(x)
+    </span>
+    <span class="tri-legend-item">
+      <span class="tri-legend-swatch tri-legend-bound"></span>
+      pointwise bound (heat &amp; Laplace only)
+    </span>
+  </div>
+
   <!-- Controls -->
   <div class="tri-controls">
 
@@ -1674,6 +1690,52 @@ html[data-theme="dark"] .trichotomy-container {
 .tri-readout-value.tri-status-ok    { color: var(--tri-readout-ok);   }
 .tri-readout-value.tri-status-warn  { color: var(--tri-readout-warn); }
 .tri-readout-value.tri-status-bad   { color: var(--tri-readout-bad);  }
+
+/* ===== Legend ===== */
+.tri-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    background: var(--tri-bg-frame);
+    border: 1px solid var(--tri-border);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    color: var(--tri-fg-muted);
+    align-items: center;
+}
+.tri-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+.tri-legend-swatch {
+    display: inline-block;
+    width: 22px;
+    height: 0;
+    border-top-width: 2px;
+    border-top-style: solid;
+    flex-shrink: 0;
+}
+.tri-legend-solid {
+    /* Use the wave accent as the neutral "all-panels" representative color.
+       In practice each panel uses its own color (blue/green/amber); the swatch
+       conveys the dash pattern, not the panel identity. */
+    border-top-color: var(--tri-fg);
+}
+.tri-legend-dashed {
+    border-top-style: dashed;
+    border-top-color: var(--tri-fg-muted);
+    border-top-width: 1.5px;
+}
+.tri-legend-bound {
+    border-top-style: dashed;
+    border-top-color: var(--tri-fg);
+    border-top-width: 1px;
+    opacity: 0.7;
+}
 
 /* ===== Controls ===== */
 .tri-controls {
