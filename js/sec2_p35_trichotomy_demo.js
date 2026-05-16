@@ -1682,10 +1682,11 @@ function buildDemoHTML() {
 
     <!-- Heat panel -->
     <div class="tri-panel tri-panel-heat">
+      <span class="tri-panel-tag tri-tag-heat">H</span>
       <div class="tri-canvas-wrap" id="tri-wrap-H">
         <canvas id="tri-canvas-H"></canvas>
       </div>
-      <div class="tri-readouts">
+      <div class="tri-readouts tri-readouts-desktop">
         <div class="tri-readout-row">
           <span class="tri-readout-label">max u</span>
           <span class="tri-readout-value" id="tri-readout-H-max">1.0000</span>
@@ -1699,14 +1700,20 @@ function buildDemoHTML() {
           <span class="tri-readout-value tri-readout-muted">[0, 1]</span>
         </div>
       </div>
+      <div class="tri-readouts-compact">
+        <span class="tri-readout-compact-value" id="tri-readout-H-max-c">1.00</span>
+        <span class="tri-readout-compact-sep">/</span>
+        <span class="tri-readout-compact-value" id="tri-readout-H-min-c">0.00</span>
+      </div>
     </div>
 
     <!-- Wave panel -->
     <div class="tri-panel tri-panel-wave">
+      <span class="tri-panel-tag tri-tag-wave">W</span>
       <div class="tri-canvas-wrap" id="tri-wrap-W">
         <canvas id="tri-canvas-W"></canvas>
       </div>
-      <div class="tri-readouts">
+      <div class="tri-readouts tri-readouts-desktop">
         <div class="tri-readout-row">
           <span class="tri-readout-label">E(t) / E(0)</span>
           <span class="tri-readout-value" id="tri-readout-W-ratio">1.0000</span>
@@ -1720,14 +1727,20 @@ function buildDemoHTML() {
           <span class="tri-readout-value" id="tri-readout-W-max">1.0000</span>
         </div>
       </div>
+      <div class="tri-readouts-compact">
+        <span class="tri-readout-compact-value" id="tri-readout-W-ratio-c">1.00</span>
+        <span class="tri-readout-compact-sep">·</span>
+        <span class="tri-readout-compact-value" id="tri-readout-W-max-c">1.00</span>
+      </div>
     </div>
 
     <!-- Laplace panel -->
     <div class="tri-panel tri-panel-laplace">
+      <span class="tri-panel-tag tri-tag-laplace">L</span>
       <div class="tri-canvas-wrap" id="tri-wrap-L">
         <canvas id="tri-canvas-L"></canvas>
       </div>
-      <div class="tri-readouts">
+      <div class="tri-readouts tri-readouts-desktop">
         <div class="tri-readout-row">
           <span class="tri-readout-label">max u</span>
           <span class="tri-readout-value" id="tri-readout-L-max">1.0000</span>
@@ -1740,6 +1753,11 @@ function buildDemoHTML() {
           <span class="tri-readout-label">bound</span>
           <span class="tri-readout-value tri-readout-muted">[0, 1]</span>
         </div>
+      </div>
+      <div class="tri-readouts-compact">
+        <span class="tri-readout-compact-value" id="tri-readout-L-max-c">1.00</span>
+        <span class="tri-readout-compact-sep">/</span>
+        <span class="tri-readout-compact-value" id="tri-readout-L-min-c">0.00</span>
       </div>
     </div>
 
@@ -1948,6 +1966,7 @@ html[data-theme="dark"] .trichotomy-container {
     border: 1px solid var(--tri-border);
     border-radius: 6px;
     overflow: hidden;
+    position: relative;     /* anchor for the absolute-positioned panel tag */
     transition: border-color 0.15s ease;
 }
 .tri-panel-heat    { border-top: 3px solid var(--tri-accent-heat);    }
@@ -2001,6 +2020,47 @@ html[data-theme="dark"] .trichotomy-container {
 .tri-readout-value.tri-status-ok    { color: var(--tri-readout-ok);   }
 .tri-readout-value.tri-status-warn  { color: var(--tri-readout-warn); }
 .tri-readout-value.tri-status-bad   { color: var(--tri-readout-bad);  }
+
+/* ===== Mobile compact readout (visible only on narrow screens) ===== */
+/* Single-line readout placed below the canvas; activated by media query */
+.tri-readouts-compact {
+    display: none;       /* hidden on desktop; shown below 900px */
+    padding: 4px 6px;
+    background: var(--tri-bg-frame);
+    border-top: 1px solid var(--tri-border);
+    font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--tri-fg);
+    font-weight: 600;
+}
+.tri-readout-compact-value.tri-status-ok    { color: var(--tri-readout-ok);   }
+.tri-readout-compact-value.tri-status-warn  { color: var(--tri-readout-warn); }
+.tri-readout-compact-value.tri-status-bad   { color: var(--tri-readout-bad);  }
+.tri-readout-compact-sep {
+    color: var(--tri-fg-subtle);
+    margin: 0 4px;
+}
+
+/* ===== Mobile panel tag (corner letter H/W/L) ===== */
+/* Hidden on desktop where panel titles inside the canvas are visible;
+   shown on mobile as a tiny colored letter in the panel's top-left corner */
+.tri-panel-tag {
+    display: none;
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 2;
+    pointer-events: none;
+}
+.tri-tag-heat    { color: var(--tri-accent-heat);    }
+.tri-tag-wave    { color: var(--tri-accent-wave);    }
+.tri-tag-laplace { color: var(--tri-accent-laplace); }
 
 /* ===== Legend ===== */
 .tri-legend {
@@ -2219,27 +2279,55 @@ html[data-theme="dark"] .trichotomy-container {
     border-color: var(--tri-fg-muted);
 }
 
-/* ===== Mobile breakpoint ===== */
+/* ===== Mobile breakpoint (compact horizontal layout) =====
+ *
+ * On narrow screens we KEEP the three panels side-by-side rather than
+ * stacking them vertically. The trichotomy demo's pedagogical value is
+ * the synchronous side-by-side comparison; stacking destroys that and
+ * also pushes the controls absurdly far down. Instead we shrink the
+ * panels, swap the multi-row desktop readout for a single-line compact
+ * one, and label panels with a small colored letter (H/W/L) in the
+ * corner since the in-canvas title becomes hard to read at this size.
+ */
 @media (max-width: 900px) {
-    .tri-panel-row {
-        flex-direction: column;
+    .trichotomy-container { padding: 10px; }
+    .tri-title-row {
+        margin-bottom: 10px;
+        padding-bottom: 6px;
     }
-    /* In column mode, flex: 1 1 0 would try to height-share among panels,
-       but the row has no fixed height — yielding zero-height panels and
-       invisible canvases. Switch to natural sizing instead. */
+    .tri-title { font-size: 0.85rem; }
+    .tri-subtitle { font-size: 0.7rem; }
+
+    /* Panels stay in a row, just smaller */
+    .tri-panel-row {
+        gap: 6px;
+    }
     .tri-panel {
-        flex: 0 0 auto;
+        flex: 1 1 0;
+        min-width: 0;
     }
     .tri-canvas-wrap {
-        /* aspect-ratio is supported, but be defensive against older mobile
-           browsers and ensure a usable minimum height */
-        min-height: 220px;
+        aspect-ratio: 7 / 6;
+        min-height: 90px;   /* keeps drawings visible even on very narrow screens */
     }
+
+    /* Show panel-corner tag, hide desktop readout, show compact readout */
+    .tri-panel-tag       { display: block; }
+    .tri-readouts-desktop { display: none; }
+    .tri-readouts-compact { display: block; }
+
+    /* Legend: tighter spacing */
+    .tri-legend {
+        gap: 10px;
+        padding: 6px 8px;
+        font-size: 0.66rem;
+    }
+
+    /* Controls: 2-column grid (already in earlier spec) */
     .tri-controls {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto;   /* let rows auto-flow */
+        grid-template-rows: auto;
     }
-    /* Reset the desktop-only row pinning so items flow naturally on mobile */
     .tri-control-g,
     .tri-control-actions {
         grid-column: 1 / -1;
@@ -2249,6 +2337,8 @@ html[data-theme="dark"] .trichotomy-container {
         grid-column: 1 / -1;
     }
 }
+
+/* Extra-narrow screens: collapse controls to a single column */
 @media (max-width: 480px) {
     .tri-controls {
         grid-template-columns: 1fr;
@@ -2258,7 +2348,12 @@ html[data-theme="dark"] .trichotomy-container {
     .tri-control-actions {
         grid-column: auto;
     }
-    .trichotomy-container { padding: 12px; }
+    /* Make the compact readout even tighter */
+    .tri-readouts-compact {
+        font-size: 0.62rem;
+        padding: 3px 4px;
+    }
+    .tri-panel-tag { font-size: 0.62rem; }
 }
 `;
 
@@ -2303,13 +2398,21 @@ function collectTrichotomyDOMRefs(container) {
         wrapW:   q('#tri-wrap-W'),
         wrapL:   q('#tri-wrap-L'),
 
-        // Readouts
+        // Readouts (desktop multi-row)
         readoutHmax:   q('#tri-readout-H-max'),
         readoutHmin:   q('#tri-readout-H-min'),
         readoutWratio: q('#tri-readout-W-ratio'),
         readoutWmax:   q('#tri-readout-W-max'),
         readoutLmax:   q('#tri-readout-L-max'),
         readoutLmin:   q('#tri-readout-L-min'),
+
+        // Readouts (mobile compact, shown only below 900px)
+        readoutHmaxC:   q('#tri-readout-H-max-c'),
+        readoutHminC:   q('#tri-readout-H-min-c'),
+        readoutWratioC: q('#tri-readout-W-ratio-c'),
+        readoutWmaxC:   q('#tri-readout-W-max-c'),
+        readoutLmaxC:   q('#tri-readout-L-max-c'),
+        readoutLminC:   q('#tri-readout-L-min-c'),
 
         // Controls
         profileButtons:  container.querySelectorAll('button[data-profile]'),
@@ -2518,9 +2621,17 @@ function renderFullFrame(state, canvases, refs) {
  *   - Wave: E(t)/E(0) is banded green/amber/red by deviation from 1
  */
 function updateReadouts(state, refs) {
-    // Helper: set text and swap status class
+    // Helper: set text and swap status class on a (possibly null) element
     function setStatus(el, text, statusClass) {
+        if (!el) return;
         el.textContent = text;
+        el.classList.remove('tri-status-ok', 'tri-status-warn', 'tri-status-bad');
+        if (statusClass) el.classList.add(statusClass);
+    }
+    // Compact variant: 2-decimal text and a different class set
+    function setCompact(el, val, statusClass) {
+        if (!el) return;
+        el.textContent = val.toFixed(2);
         el.classList.remove('tri-status-ok', 'tri-status-warn', 'tri-status-bad');
         if (statusClass) el.classList.add(statusClass);
     }
@@ -2528,8 +2639,12 @@ function updateReadouts(state, refs) {
     // Heat max/min — green if bound satisfied, red if violated
     const hMax = formatBoundReadout(state.maxUH, 1.0, 'upper');
     const hMin = formatBoundReadout(state.minUH, 0.0, 'lower');
-    setStatus(refs.readoutHmax, hMax.text, hMax.violated ? 'tri-status-bad' : 'tri-status-ok');
-    setStatus(refs.readoutHmin, hMin.text, hMin.violated ? 'tri-status-bad' : 'tri-status-ok');
+    const hMaxCls = hMax.violated ? 'tri-status-bad' : 'tri-status-ok';
+    const hMinCls = hMin.violated ? 'tri-status-bad' : 'tri-status-ok';
+    setStatus(refs.readoutHmax, hMax.text, hMaxCls);
+    setStatus(refs.readoutHmin, hMin.text, hMinCls);
+    setCompact(refs.readoutHmaxC, state.maxUH, hMaxCls);
+    setCompact(refs.readoutHminC, state.minUH, hMinCls);
 
     // Wave energy — banded
     const wE = formatEnergyReadout(state.Et, state.E0);
@@ -2537,17 +2652,23 @@ function updateReadouts(state, refs) {
     if (wE.band === 'amber') statusW = 'tri-status-warn';
     else if (wE.band === 'red') statusW = 'tri-status-bad';
     setStatus(refs.readoutWratio, wE.text, statusW);
+    setCompact(refs.readoutWratioC, state.E0 > 0 ? state.Et / state.E0 : 1, statusW);
 
     // Wave max u — amber if bound broken (g ≠ 0 effect, not a bug)
     const wMax = formatWaveBoundReadout(state.maxUW);
     const statusWmax = (wMax.band === 'amber') ? 'tri-status-warn' : 'tri-status-ok';
     setStatus(refs.readoutWmax, wMax.text, statusWmax);
+    setCompact(refs.readoutWmaxC, state.maxUW, statusWmax);
 
     // Laplace max/min — same logic as heat
     const lMax = formatBoundReadout(state.maxUL, 1.0, 'upper');
     const lMin = formatBoundReadout(state.minUL, 0.0, 'lower');
-    setStatus(refs.readoutLmax, lMax.text, lMax.violated ? 'tri-status-bad' : 'tri-status-ok');
-    setStatus(refs.readoutLmin, lMin.text, lMin.violated ? 'tri-status-bad' : 'tri-status-ok');
+    const lMaxCls = lMax.violated ? 'tri-status-bad' : 'tri-status-ok';
+    const lMinCls = lMin.violated ? 'tri-status-bad' : 'tri-status-ok';
+    setStatus(refs.readoutLmax, lMax.text, lMaxCls);
+    setStatus(refs.readoutLmin, lMin.text, lMinCls);
+    setCompact(refs.readoutLmaxC, state.maxUL, lMaxCls);
+    setCompact(refs.readoutLminC, state.minUL, lMinCls);
 
     // Slider numeric labels
     refs.readoutTau.textContent = 'τ = ' + state.tau.toFixed(2);
