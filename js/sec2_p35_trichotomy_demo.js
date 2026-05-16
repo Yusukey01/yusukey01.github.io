@@ -524,6 +524,88 @@ function buildProfile(name) {
 
 
 // ------------------------------------------------------------
+// Wave initial-velocity profiles g(x)
+// ------------------------------------------------------------
+// The general wave equation needs two initial data: u(x,0) = f(x) and
+// u_t(x,0) = g(x). Setting g ≡ 0 (the default for this demo's first
+// version) yields u(x,t) = [f̃(x-ct) + f̃(x+ct)]/2, which is the
+// arithmetic mean of two samples of f̃ and therefore satisfies
+// min f ≤ u ≤ max f pointwise — a degenerate case that masks the
+// fact that wave equation has no general pointwise bound. The
+// non-zero g profiles below break that artificial bound and reveal
+// the genuine pointwise unboundedness of hyperbolic dynamics.
+
+/**
+ * g(x) = 0 — initially at rest, the demo's original setting.
+ */
+function gProfileAtRest() {
+    return new Float64Array(N);   // all zeros
+}
+
+/**
+ * g(x) = A · sign(x) · exp(-x²/(2σ²))  with A = 2.0, σ = 0.15
+ *
+ * Physical interpretation: the string is initially shaped like f, and
+ * simultaneously "kicked outward" — the right half moving right, the
+ * left half moving left, with intensity decaying away from the centre.
+ * Discontinuous at x = 0 (g(0+) = +A, g(0-) = -A); we set g(0) = 0 by
+ * convention. Localized: g ≈ 0 outside |x| > 3σ.
+ *
+ * Numerical effect with the Gaussian f: max u ≈ 1.13, min u ≈ -0.13
+ * (the bound [0,1] is breached on both sides).
+ */
+function gProfileOutwardKick() {
+    const g = new Float64Array(N);
+    const A = 2.0;
+    const sigmaG = 0.15;
+    for (let j = 0; j < N; j++) {
+        const x = X_GRID[j];
+        if (Math.abs(x) < 1e-12) {
+            g[j] = 0;
+        } else {
+            g[j] = A * Math.sign(x) * Math.exp(-x*x / (2*sigmaG*sigmaG));
+        }
+    }
+    return g;
+}
+
+/**
+ * g(x) = A  (constant, A = 0.5)
+ *
+ * Physical interpretation: the entire string is given a uniform upward
+ * velocity at t = 0 — as if a stage lifts the whole string while
+ * simultaneously the string had the shape f.
+ *
+ * Numerical effect: max u ≈ 1.25 (Gauss), ≈ 1.68 (Bimodal). The
+ * solution rises monotonically until the travelling components carry
+ * the disturbance out of the window.
+ */
+function gProfileUniformPush() {
+    const g = new Float64Array(N);
+    const A = 0.5;
+    for (let j = 0; j < N; j++) g[j] = A;
+    return g;
+}
+
+/**
+ * Build the g profile selected by name.
+ *
+ * @param {'at_rest'|'outward_kick'|'uniform_push'} name
+ * @returns {Float64Array} length-N tabulated g
+ */
+function buildGProfile(name) {
+    switch (name) {
+        case 'at_rest':       return gProfileAtRest();
+        case 'outward_kick':  return gProfileOutwardKick();
+        case 'uniform_push':  return gProfileUniformPush();
+        default:
+            console.error('[calc35] Unknown g profile:', name, '— falling back to at_rest');
+            return gProfileAtRest();
+    }
+}
+
+
+// ------------------------------------------------------------
 // Profile self-tests (executed once at module load)
 // ------------------------------------------------------------
 // Verify the construction invariants (max f = 1, min f = 0, tail < 10^-5).
@@ -617,60 +699,130 @@ function evolveHeat(fHatRe, fHatIm, t, k, re, im) {
 
 
 // ------------------------------------------------------------
-// Wave equation solver (d'Alembert formula)
+// Wave equation solver (d'Alembert formula with non-zero g)
 // ------------------------------------------------------------
 
 /**
  * Evolve the wave equation u_tt = c² u_xx on the real line with
- * initial profile f and zero initial velocity (g ≡ 0). Implements
- * the d'Alembert formula
+ * initial profile f and initial velocity g. Implements the full
+ * d'Alembert formula:
  *     u(x, t) = [f̃(x − ct) + f̃(x + ct)] / 2
- * where f̃ denotes f extended by zero outside [-1, 1].
+ *             + (1/(2c)) ∫_{x-ct}^{x+ct} g̃(s) ds
+ * where f̃ and g̃ denote f, g extended by zero outside [-1, 1].
  *
- * The interpolation handles the off-grid query points x ± ct.
+ * The integral term is computed by trapezoidal rule on the interior
+ * grid points falling inside [x-ct, x+ct], with linear interpolation
+ * at the endpoints. To avoid O(N²) per-frame cost, we precompute the
+ * cumulative integral
+ *     G(s) = ∫_{-1}^{s} g̃(σ) dσ   (length N+1 with G(-1) = 0)
+ * which can be supplied by the caller (computed once per g-profile
+ * change). Then ∫_{x-ct}^{x+ct} g̃ ds = G̃(x+ct) − G̃(x-ct) where G̃ is
+ * a "constant continuation" of G outside [-1, 1] — at s ≤ -1 we have
+ * G̃(s) = 0 (g vanishes there), at s ≥ +1 we have G̃(s) = G(+1) (total
+ * mass of g), interpreted as the contribution of g over [-1, 1] only.
+ * Linear interpolation of G inside [-1, 1].
+ *
+ * Cost: O(N) per call (one interp per grid point).
  *
  * @param {Float64Array} f       initial profile on the grid, length N
+ * @param {Float64Array} gCumul  cumulative integral G of g̃ on the grid, length N+1
+ *                                (caller supplies; precompute via cumulativeIntegrate)
  * @param {number}       t       physical time
  * @param {number}       c       wave speed
  * @param {Float64Array} uOut    output buffer for u(·, t), length N
  */
-function evolveWave(f, t, c, uOut) {
+function evolveWave(f, gCumul, t, c, uOut) {
     const shift = c * t;
+    const invTwoC = (c > 1e-12) ? (1.0 / (2.0 * c)) : 0.0;
     for (let j = 0; j < N; j++) {
         const x = X_GRID[j];
+        // First term: f̃ averaged at characteristics
         const left  = interp1d(f, x - shift);
         const right = interp1d(f, x + shift);
-        uOut[j] = 0.5 * (left + right);
+        const fAvg  = 0.5 * (left + right);
+        // Second term: (1/2c) · [G̃(x+ct) − G̃(x-ct)]
+        // gCumul has length N+1 with knots at x = -1, -1+DX, ..., +1
+        const Gleft  = interpCumul(gCumul, x - shift);
+        const Gright = interpCumul(gCumul, x + shift);
+        uOut[j] = fAvg + invTwoC * (Gright - Gleft);
     }
+}
+
+/**
+ * Compute the cumulative integral G(s) = ∫_{-1}^{s} g̃(σ) dσ tabulated
+ * at the N+1 knots s_k = -1 + k·DX for k = 0, ..., N. Trapezoidal rule.
+ *
+ * @param {Float64Array} g       g sampled on the grid, length N
+ * @returns {Float64Array}       length-(N+1) cumulative integral, G[0] = 0
+ */
+function cumulativeIntegrate(g) {
+    const G = new Float64Array(N + 1);
+    // G[0] = 0 (integral from -1 to -1)
+    // The grid samples g[j] are at positions x = -1 + j·DX for j = 0,...,N-1.
+    // The k-th knot is at s_k = -1 + k·DX. Trapezoidal between consecutive
+    // knots uses the average of g at the two endpoints; for the last
+    // knot (k = N, position +1), we use g[N-1] alone since g is sampled
+    // only at indices 0..N-1.
+    for (let k = 1; k <= N; k++) {
+        const gThis = g[k - 1];
+        const gPrev = (k >= 2) ? g[k - 2] : g[0];
+        // Trapezoid: ∫_{s_{k-1}}^{s_k} g ds ≈ DX · (g_{k-1} + g_k)/2
+        // where g_k is interpolated. With knots at sample positions
+        // (offset by half), we use a simple midpoint-like rule:
+        G[k] = G[k - 1] + DX * 0.5 * (gPrev + gThis);
+    }
+    return G;
+}
+
+/**
+ * Interpolate the cumulative integral G at an arbitrary position s.
+ * For s ≤ -1, return 0; for s ≥ +1, return G[N] (the total mass).
+ * Inside [-1, +1], linear interpolation between the two surrounding
+ * knots G[k], G[k+1].
+ *
+ * @param {Float64Array} G   length-(N+1) cumulative integral
+ * @param {number}       s   query point
+ * @returns {number}         G̃(s)
+ */
+function interpCumul(G, s) {
+    if (s <= -1.0) return 0.0;
+    if (s >= +1.0) return G[N];
+    const u = (s + 1.0) / DX;
+    const k = Math.floor(u);
+    const w = u - k;
+    const kClamp = Math.max(0, Math.min(N - 1, k));
+    return (1.0 - w) * G[kClamp] + w * G[kClamp + 1];
 }
 
 /**
  * Compute the discrete energy
  *     E(t) = (Δx / 2) · Σ_j [(∂_t u)² + c² (∂_x u)²]
- * at the current frame, given the precomputed grid sampling of f'.
- *
- * The partial derivatives are computed analytically from the d'Alembert
- * form (per spec §1.3 revised energy strategy):
+ * at the current frame, using the analytic d'Alembert derivatives
  *     ∂_x u(x, t) = [f̃'(x − ct) + f̃'(x + ct)] / 2
+ *                  + (1/(2c)) · [g̃(x + ct) − g̃(x − ct)]
  *     ∂_t u(x, t) = c · [-f̃'(x − ct) + f̃'(x + ct)] / 2
+ *                  + (1/2) · [g̃(x + ct) + g̃(x − ct)]
  *
- * Both formulas are evaluated by linear interpolation of the supplied
- * f' grid sampling at the off-grid points x ± ct.
+ * At t = 0 these reduce to ∂_x u = f', ∂_t u = g.
  *
  * @param {Float64Array} fPrime  centered-difference f' on the grid, length N
+ * @param {Float64Array} g       g sampled on the grid, length N
  * @param {number}       t       physical time
  * @param {number}       c       wave speed
  * @returns {number}             discrete energy E(t)
  */
-function waveEnergy(fPrime, t, c) {
+function waveEnergy(fPrime, g, t, c) {
     const shift = c * t;
+    const invTwoC = (c > 1e-12) ? (1.0 / (2.0 * c)) : 0.0;
     let acc = 0.0;
     for (let j = 0; j < N; j++) {
         const x = X_GRID[j];
         const fpL = interp1d(fPrime, x - shift);   // f'(x - ct)
         const fpR = interp1d(fPrime, x + shift);   // f'(x + ct)
-        const ux  = 0.5 * (fpL + fpR);             // ∂_x u
-        const ut  = 0.5 * c * (fpR - fpL);         // ∂_t u
+        const gL  = interp1d(g,      x - shift);   // g(x - ct)
+        const gR  = interp1d(g,      x + shift);   // g(x + ct)
+        const ux  = 0.5 * (fpL + fpR) + invTwoC * (gR - gL);     // ∂_x u
+        const ut  = 0.5 * c * (fpR - fpL) + 0.5 * (gR + gL);     // ∂_t u
         acc += ut * ut + c * c * ux * ux;
     }
     return 0.5 * DX * acc;
@@ -751,6 +903,14 @@ function evolveLaplace(f, y, uOut) {
     const fHatReCache = fHat.re;     // these get mutated by ifft, so keep copies
     const fHatImCache = fHat.im;
 
+    // Wave-test auxiliaries: g profiles and their cumulative integrals
+    const gZero  = gProfileAtRest();
+    const gKick  = gProfileOutwardKick();
+    const gPush  = gProfileUniformPush();
+    const GZero  = cumulativeIntegrate(gZero);
+    const GKick  = cumulativeIntegrate(gKick);
+    const GPush  = cumulativeIntegrate(gPush);
+
     // Test H1: heat conservation of the DC mode
     //   The spectral heat semigroup leaves û(ξ_0) untouched (since ξ_0 = 0
     //   gives damp = 1), so the discrete sum Σ_j u_j(t) is conserved
@@ -799,33 +959,98 @@ function evolveLaplace(f, y, uOut) {
         }
     }
 
-    // Test W1: wave energy conservation
+    // Test W1: wave energy conservation, g = 0
     //   E(t) = E(0) for all t (within tolerance)
-    // Use the Gaussian (smooth profile) for the cleanest numerical test.
     {
         const c = 0.3;
-        const E0 = waveEnergy(fp, 0.0, c);
+        const E0 = waveEnergy(fp, gZero, 0.0, c);
         for (const t of [0.3, 0.7, 1.0]) {
-            const Et = waveEnergy(fp, t, c);
+            const Et = waveEnergy(fp, gZero, t, c);
             const ratio = Et / E0;
             if (Math.abs(ratio - 1.0) > 0.01) {
-                console.error('[calc35 PDE self-test W1] Wave energy drift at t=', t,
+                console.error('[calc35 PDE self-test W1] Wave energy drift (g=0) at t=', t,
                     ': E(t)/E(0)=', ratio.toFixed(6));
             }
         }
     }
 
-    // Test W2: wave initial condition u(·, 0) = f
-    //   d'Alembert at t = 0 is just [f(x) + f(x)] / 2 = f(x).
+    // Test W2: wave initial condition u(·, 0) = f, g = 0
+    //   d'Alembert at t = 0: [f(x) + f(x)] / 2 + 0 = f(x).
     {
         const uW = new Float64Array(N);
-        evolveWave(f, 0.0, 0.3, uW);
+        evolveWave(f, GZero, 0.0, 0.3, uW);
         let maxErr = 0;
         for (let j = 0; j < N; j++) {
             maxErr = Math.max(maxErr, Math.abs(uW[j] - f[j]));
         }
         if (maxErr > 1e-14) {
-            console.error('[calc35 PDE self-test W2] Wave at t=0 differs from f, max err=', maxErr);
+            console.error('[calc35 PDE self-test W2] Wave at t=0 (g=0) differs from f, max err=', maxErr);
+        }
+    }
+
+    // Test W3: wave energy conservation, g ≠ 0 (outward kick)
+    //   For small t (disturbance stays inside [-1, 1]), energy should
+    //   be conserved within tolerance. Large t suffers window loss.
+    {
+        const c = 0.3;
+        const E0 = waveEnergy(fp, gKick, 0.0, c);
+        for (const t of [0.1, 0.2]) {
+            const Et = waveEnergy(fp, gKick, t, c);
+            const ratio = Et / E0;
+            if (Math.abs(ratio - 1.0) > 0.02) {
+                console.error('[calc35 PDE self-test W3] Wave energy drift (g=kick) at t=', t,
+                    ': E(t)/E(0)=', ratio.toFixed(6));
+            }
+        }
+    }
+
+    // Test W4: wave initial condition u(·, 0) = f even with g ≠ 0
+    //   The integral term has zero width at t = 0, so u(·, 0) = f
+    //   regardless of g.
+    {
+        const uW = new Float64Array(N);
+        evolveWave(f, GKick, 0.0, 0.3, uW);
+        let maxErr = 0;
+        for (let j = 0; j < N; j++) {
+            maxErr = Math.max(maxErr, Math.abs(uW[j] - f[j]));
+        }
+        if (maxErr > 1e-13) {
+            console.error('[calc35 PDE self-test W4] Wave at t=0 (g≠0) differs from f, max err=', maxErr);
+        }
+    }
+
+    // Test W5: cumulativeIntegrate consistency
+    //   For uniform g = 0.5, ∫_{-1}^{+1} g dx = 1.0 expected.
+    //   For zero g, total = 0.
+    {
+        const total = GPush[N];
+        const expected = 0.5 * 2.0;
+        if (Math.abs(total - expected) > 0.01) {
+            console.error('[calc35 PDE self-test W5a] cumulativeIntegrate uniform g:',
+                'got', total, 'expected', expected);
+        }
+        if (Math.abs(GZero[N]) > 1e-14) {
+            console.error('[calc35 PDE self-test W5b] cumulativeIntegrate of zero g not zero:',
+                GZero[N]);
+        }
+    }
+
+    // Test W6: bound violation for g ≠ 0 (uniform push)
+    //   Confirm the pedagogical claim: max u > 1 for some (x, t) when
+    //   g is the uniform_push profile.
+    {
+        const c = 0.3;
+        const uW = new Float64Array(N);
+        let maxOverall = -Infinity;
+        for (const t of [0.5, 1.0, 1.5]) {
+            evolveWave(f, GPush, t, c, uW);
+            for (let j = 0; j < N; j++) {
+                if (uW[j] > maxOverall) maxOverall = uW[j];
+            }
+        }
+        if (maxOverall <= 1.05) {
+            console.error('[calc35 PDE self-test W6] Wave bound-violation insufficient:',
+                'max u =', maxOverall.toFixed(4), '(expected > 1.05)');
         }
     }
 
@@ -939,6 +1164,7 @@ function getPalette() {
             axisLabel:    'rgba(230,232,240,0.65)',
             refCurve:     'rgba(255,255,255,0.18)',    // initial f reference
             boundLine:    'rgba(255,255,255,0.30)',    // dashed sup/inf lines
+            gCurve:       'rgba(77, 208, 225, 0.55)',  // teal: initial velocity g(x) on wave panel
             // Per-panel accent colors
             heatCurve:    '#4a9eff',    // blue (cool color for heat)
             heatFill:     'rgba(74, 158, 255, 0.16)',
@@ -956,6 +1182,7 @@ function getPalette() {
             axisLabel:    'rgba(40,42,50,0.70)',
             refCurve:     'rgba(0,0,0,0.22)',
             boundLine:    'rgba(0,0,0,0.35)',
+            gCurve:       'rgba(0, 131, 143, 0.65)',   // teal: g(x) on wave panel
             heatCurve:    '#1565c0',
             heatFill:     'rgba(21, 101, 192, 0.12)',
             waveCurve:    '#2e7d32',
@@ -1145,6 +1372,42 @@ function drawReferenceProfile(ctx, f, W, H, palette) {
 }
 
 /**
+ * Draw the wave's initial-velocity profile g(x) as a thin dotted teal
+ * curve on the Wave panel only. Used to visually convey "the string was
+ * also moving when released" — the second initial condition that the
+ * wave equation requires.
+ *
+ * The g profile is drawn at its raw value (no normalization). For the
+ * default at_rest profile (g ≡ 0) this is a flat line on the x-axis
+ * — barely visible against the axis itself, which is the intended
+ * "nothing happening" signal. For outward_kick (g reaches ±2), the
+ * peaks lie outside the visible y-range and are clipped; the visible
+ * part is the rapid sign-flip near x = 0, which is precisely the
+ * pedagogical feature ("the centre is at rest, the flanks are moving").
+ * For uniform_push (g = 0.5 constant), the line sits at y = 0.5, well
+ * inside the visible range.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Float64Array} g     initial velocity sampled on the grid
+ * @param {number} W           canvas width (logical pixels)
+ * @param {number} H           canvas height (logical pixels)
+ * @param {object} palette
+ */
+function drawInitialVelocity(ctx, g, W, H, palette) {
+    ctx.save();
+    ctx.strokeStyle = palette.gCurve;
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([2, 3]);   // dotted (shorter than refCurve's 3,3 dashes)
+    ctx.beginPath();
+    ctx.moveTo(mathToPixelX(X_GRID[0], W), mathToPixelY(g[0], H));
+    for (let j = 1; j < N; j++) {
+        ctx.lineTo(mathToPixelX(X_GRID[j], W), mathToPixelY(g[j], H));
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+/**
  * Draw horizontal dashed lines at y = bound (max f and min f), as visual
  * indicators of the pointwise bound for Heat and Laplace.
  * Wave panel skips this (its invariant is the energy integral, not a
@@ -1213,23 +1476,23 @@ function renderHeatPanel(ctx, state, W, H, palette) {
  * Render the Wave panel.
  *
  * Layout:
- *   - Reference profile f (faint dashed)
- *   - NO bound lines: the wave equation conserves energy as an integral
- *     invariant; no pointwise bound by initial data holds in general.
- *     (Although for this demo's profiles with g ≡ 0 and the d'Alembert
- *     formula u = [f̃(x-ct) + f̃(x+ct)]/2, the solution does satisfy
- *     min f ≤ u ≤ max f because it is a literal arithmetic mean of two
- *     samples of f. We deliberately do NOT show this as a bound line,
- *     because it's a special-case artifact of g = 0, not a feature of
- *     hyperbolic dynamics — and showing it would dilute the pedagogical
- *     contrast with the elliptic and parabolic cases.)
- *   - Current solution u_W(·, t) (solid, filled below)
+ *   - Reference profile f (faint grey dashed)
+ *   - Initial velocity g(x) (thin dotted teal) — visible only when g ≠ 0
+ *   - NO bound lines: the wave equation has no general pointwise bound;
+ *     for g = 0 the solution happens to satisfy min f ≤ u ≤ max f
+ *     (as the arithmetic mean of two samples of f), but this is a
+ *     degenerate special case of d'Alembert and we do not show a
+ *     pseudo-bound that holds only for g = 0. With a non-zero g the
+ *     bound is genuinely broken and the solution can exceed max f or
+ *     fall below min f.
+ *   - Current solution u_W(·, t) (solid green, filled)
  *   - Title "Wave — ∂_tt u = c² ∂_xx u"
  */
 function renderWavePanel(ctx, state, W, H, palette) {
     drawBackground(ctx, W, H, palette);
     drawAxes(ctx, W, H, palette);
     drawReferenceProfile(ctx, state.f, W, H, palette);
+    drawInitialVelocity(ctx, state.g, W, H, palette);
     drawCurve(ctx, state.uW, W, H, palette.waveCurve, palette.waveFill, 2);
     drawPanelTitle(ctx, 'Wave   ∂\u209C\u209C u = c² ∂\u02E3\u02E3 u', palette);
 }
@@ -1306,6 +1569,28 @@ function formatEnergyReadout(Et, E0) {
     return { text: ratio.toFixed(4), band };
 }
 
+/**
+ * Format the wave max-u readout, with a tri-state color.
+ * Unlike Heat and Laplace where exceeding [min f, max f] indicates a
+ * numerical bug, on the wave panel a non-zero g profile can legitimately
+ * push the solution beyond max f. We therefore use amber (not red) for
+ * bound-violation: the message is "this is wave equation in action",
+ * not "this is a bug".
+ *
+ * Status mapping:
+ *   - green if |max u − 1| ≤ TOL (default g = 0 case, bound respected)
+ *   - amber if max u > 1 + TOL (g ≠ 0 case, bound legitimately broken)
+ *
+ * @param {number} maxU  current max of u_W
+ * @returns {{text: string, band: 'green'|'amber'}}
+ */
+function formatWaveBoundReadout(maxU) {
+    const text = maxU.toFixed(4);
+    const TOL = 2e-4;
+    const band = (maxU > 1.0 + TOL) ? 'amber' : 'green';
+    return { text, band };
+}
+
 
 // ------------------------------------------------------------
 // Compute frame diagnostics
@@ -1324,22 +1609,27 @@ function formatEnergyReadout(Et, E0) {
  */
 function updateFrameDiagnostics(state) {
     let mxH = -Infinity, mnH = +Infinity;
+    let mxW = -Infinity, mnW = +Infinity;
     let mxL = -Infinity, mnL = +Infinity;
     for (let j = 0; j < N; j++) {
         const uh = state.uH[j];
+        const uw = state.uW[j];
         const ul = state.uL[j];
         if (uh > mxH) mxH = uh;
         if (uh < mnH) mnH = uh;
+        if (uw > mxW) mxW = uw;
+        if (uw < mnW) mnW = uw;
         if (ul > mxL) mxL = ul;
         if (ul < mnL) mnL = ul;
     }
     state.maxUH = mxH;
     state.minUH = mnH;
+    state.maxUW = mxW;
+    state.minUW = mnW;
     state.maxUL = mxL;
     state.minUL = mnL;
-    // Energy is computed by Module 3's waveEnergy on demand, but for caller
-    // convenience we also expose state.Et if precomputed; otherwise the
-    // wiring layer is responsible for invoking waveEnergy() before this.
+    // Energy (state.Et) is computed by waveEnergy() in computeWavePanel
+    // before this function is called; we don't recompute it here.
 }
 
 
@@ -1419,9 +1709,9 @@ function buildDemoHTML() {
           <span class="tri-readout-label">invariant</span>
           <span class="tri-readout-value tri-readout-muted">energy = 1</span>
         </div>
-        <div class="tri-readout-row tri-readout-aux">
-          <span class="tri-readout-label">&nbsp;</span>
-          <span class="tri-readout-value tri-readout-muted">&nbsp;</span>
+        <div class="tri-readout-row">
+          <span class="tri-readout-label">max u</span>
+          <span class="tri-readout-value" id="tri-readout-W-max">1.0000</span>
         </div>
       </div>
     </div>
@@ -1458,6 +1748,10 @@ function buildDemoHTML() {
     <span class="tri-legend-item">
       <span class="tri-legend-swatch tri-legend-dashed"></span>
       initial profile f(x)
+    </span>
+    <span class="tri-legend-item">
+      <span class="tri-legend-swatch tri-legend-gvel"></span>
+      initial velocity g(x) (wave only)
     </span>
     <span class="tri-legend-item">
       <span class="tri-legend-swatch tri-legend-bound"></span>
@@ -1507,6 +1801,15 @@ function buildDemoHTML() {
              id="tri-slider-c" min="0.1" max="0.6" step="0.01" value="0.30">
     </div>
 
+    <div class="tri-control-block tri-control-g">
+      <div class="tri-control-label">Wave initial velocity g</div>
+      <div class="tri-segmented tri-segmented-g" role="tablist">
+        <button class="tri-seg-btn tri-seg-active" data-g-profile="at_rest" type="button">at rest</button>
+        <button class="tri-seg-btn"                data-g-profile="outward_kick" type="button">outward</button>
+        <button class="tri-seg-btn"                data-g-profile="uniform_push" type="button">uniform</button>
+      </div>
+    </div>
+
     <div class="tri-control-block tri-control-actions">
       <button class="tri-action-btn tri-action-primary" id="tri-btn-play" type="button">
         <span id="tri-play-icon">▶</span>
@@ -1545,6 +1848,7 @@ const TRICHOTOMY_CSS = `
     --tri-accent-wave-bg: rgba(46, 125, 50, 0.08);
     --tri-accent-laplace: #ef6c00;
     --tri-accent-laplace-bg: rgba(239, 108, 0, 0.08);
+    --tri-accent-g:       #00838f;   /* teal: initial velocity g on wave panel */
 
     --tri-readout-ok:     #2e7d32;
     --tri-readout-warn:   #ef6c00;
@@ -1572,6 +1876,7 @@ html[data-theme="dark"] .trichotomy-container {
     --tri-accent-wave-bg: rgba(94, 218, 142, 0.12);
     --tri-accent-laplace: #ffb84a;
     --tri-accent-laplace-bg: rgba(255, 184, 74, 0.12);
+    --tri-accent-g:       #4dd0e1;   /* teal for dark theme */
 
     --tri-readout-ok:     #5eda8e;
     --tri-readout-warn:   #ffb84a;
@@ -1736,11 +2041,17 @@ html[data-theme="dark"] .trichotomy-container {
     border-top-width: 1px;
     opacity: 0.7;
 }
+.tri-legend-gvel {
+    /* dotted teal — initial velocity g(x) on the wave panel */
+    border-top-style: dotted;
+    border-top-color: var(--tri-accent-g);
+    border-top-width: 1.5px;
+}
 
 /* ===== Controls ===== */
 .tri-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 0.9fr);
     gap: 12px;
     align-items: end;
     padding: 12px;
@@ -1808,6 +2119,12 @@ html[data-theme="dark"] .trichotomy-container {
     background: var(--tri-fg);
     color: var(--tri-bg-panel);
     font-weight: 600;
+}
+/* g-profile segmented uses teal accent when active to signal
+   this is the Wave-specific initial-velocity control */
+.tri-segmented-g .tri-seg-btn.tri-seg-active {
+    background: var(--tri-accent-g);
+    color: var(--tri-bg-panel);
 }
 
 /* ===== Sliders ===== */
@@ -1952,11 +2269,13 @@ function collectTrichotomyDOMRefs(container) {
         readoutHmax:   q('#tri-readout-H-max'),
         readoutHmin:   q('#tri-readout-H-min'),
         readoutWratio: q('#tri-readout-W-ratio'),
+        readoutWmax:   q('#tri-readout-W-max'),
         readoutLmax:   q('#tri-readout-L-max'),
         readoutLmin:   q('#tri-readout-L-min'),
 
         // Controls
-        profileButtons: container.querySelectorAll('button[data-profile]'),
+        profileButtons:  container.querySelectorAll('button[data-profile]'),
+        gProfileButtons: container.querySelectorAll('button[data-g-profile]'),
         sliderTau:      q('#tri-slider-tau'),
         sliderK:        q('#tri-slider-k'),
         sliderC:        q('#tri-slider-c'),
@@ -2008,6 +2327,7 @@ function createInitialState() {
     return {
         // User selections
         profile: 'gaussian',
+        gProfile: 'at_rest',
         tau: 0.0,
         playing: false,
         k: 0.01,
@@ -2019,6 +2339,11 @@ function createInitialState() {
         fHat:   { re: new Float64Array(N), im: new Float64Array(N) },
         E0:     0.0,
 
+        // Wave initial velocity g and its cumulative integral
+        // (set on g-profile change; G has length N+1)
+        g:      new Float64Array(N),
+        gCumul: new Float64Array(N + 1),
+
         // Per-panel solutions (overwritten each frame)
         uH:   new Float64Array(N),
         uHIm: new Float64Array(N),   // sticky imag-output buffer for heat IFFT
@@ -2028,6 +2353,7 @@ function createInitialState() {
         // Frame diagnostics (set by updateFrameDiagnostics)
         maxUH: 1.0, minUH: 0.0,
         maxUL: 1.0, minUL: 0.0,
+        maxUW: 1.0, minUW: 0.0,   // new: for wave bound-tracking (g ≠ 0 may break it)
         Et:    0.0,
     };
 }
@@ -2039,7 +2365,7 @@ function createInitialState() {
 
 /**
  * Switch initial profile. Recomputes f, fPrime, fHat (forward FFT), E0,
- * then triggers a full panel recomputation.
+ * then triggers a full panel recomputation. Does NOT touch g.
  */
 function applyProfileChange(state, name) {
     state.profile = name;
@@ -2051,9 +2377,23 @@ function applyProfileChange(state, name) {
     state.fHat.re.set(state.f);
     state.fHat.im.fill(0.0);
     fft(state.fHat.re, state.fHat.im);
-    // Initial energy at t = 0 for the current c
-    state.E0 = waveEnergy(state.fPrime, 0.0, state.c);
+    // Initial energy at t = 0 for the current c and g
+    state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
     computeAllPanels(state);
+}
+
+/**
+ * Switch the wave's initial-velocity profile g. Recomputes g, its
+ * cumulative integral gCumul, the initial energy E0, then recomputes
+ * the wave panel (heat and Laplace are unaffected by g).
+ */
+function applyGProfileChange(state, name) {
+    state.gProfile = name;
+    const g = buildGProfile(name);
+    state.g.set(g);
+    state.gCumul.set(cumulativeIntegrate(state.g));
+    state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
+    computeWavePanel(state);
 }
 
 /**
@@ -2065,11 +2405,12 @@ function applyKChange(state, kNew) {
 }
 
 /**
- * Update wave speed c. Recomputes E0 and the wave panel.
+ * Update wave speed c. Recomputes E0 (since c enters the potential
+ * energy term) and the wave panel.
  */
 function applyCChange(state, cNew) {
     state.c = cNew;
-    state.E0 = waveEnergy(state.fPrime, 0.0, state.c);
+    state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
     computeWavePanel(state);
 }
 
@@ -2093,8 +2434,8 @@ function computeHeatPanel(state) {
 
 function computeWavePanel(state) {
     const tW = state.tau * T_W_MAX;
-    evolveWave(state.f, tW, state.c, state.uW);
-    state.Et = waveEnergy(state.fPrime, tW, state.c);
+    evolveWave(state.f, state.gCumul, tW, state.c, state.uW);
+    state.Et = waveEnergy(state.fPrime, state.g, tW, state.c);
 }
 
 function computeLaplacePanel(state) {
@@ -2159,6 +2500,11 @@ function updateReadouts(state, refs) {
     else if (wE.band === 'red') statusW = 'tri-status-bad';
     setStatus(refs.readoutWratio, wE.text, statusW);
 
+    // Wave max u — amber if bound broken (g ≠ 0 effect, not a bug)
+    const wMax = formatWaveBoundReadout(state.maxUW);
+    const statusWmax = (wMax.band === 'amber') ? 'tri-status-warn' : 'tri-status-ok';
+    setStatus(refs.readoutWmax, wMax.text, statusWmax);
+
     // Laplace max/min — same logic as heat
     const lMax = formatBoundReadout(state.maxUL, 1.0, 'upper');
     const lMin = formatBoundReadout(state.minUL, 0.0, 'lower');
@@ -2221,8 +2567,10 @@ function initTrichotomyDemo() {
     }
     setupAllCanvases();
 
-    // 3. Initialize state with default profile
+    // 3. Initialize state with default profiles
+    //    (g profile first so applyProfileChange can compute E0 with state.g)
     const state = createInitialState();
+    applyGProfileChange(state, 'at_rest');
     applyProfileChange(state, 'gaussian');
 
     // 4. Bind events
@@ -2249,7 +2597,7 @@ function initTrichotomyDemo() {
  * Play/Reset buttons.
  */
 function bindControlEvents(state, refs, canvases) {
-    // Profile segmented buttons
+    // Profile segmented buttons (f)
     refs.profileButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const name = btn.getAttribute('data-profile');
@@ -2258,6 +2606,19 @@ function bindControlEvents(state, refs, canvases) {
             btn.classList.add('tri-seg-active');
             // Update state
             applyProfileChange(state, name);
+            renderFullFrame(state, canvases, refs);
+        });
+    });
+
+    // g-profile segmented buttons (wave initial velocity)
+    refs.gProfileButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.getAttribute('data-g-profile');
+            // Update visual active state
+            refs.gProfileButtons.forEach(b => b.classList.remove('tri-seg-active'));
+            btn.classList.add('tri-seg-active');
+            // Update state (affects wave panel only; heat & Laplace unchanged)
+            applyGProfileChange(state, name);
             renderFullFrame(state, canvases, refs);
         });
     });
@@ -2296,7 +2657,7 @@ function bindControlEvents(state, refs, canvases) {
         renderFullFrame(state, canvases, refs);
     });
 
-    // Reset: τ = 0, stop animation; keep profile, k, c
+    // Reset: τ = 0, stop animation; keep profile, k, c, g profile
     refs.btnReset.addEventListener('click', () => {
         state.playing = false;
         setPlayingUI(refs, false);
