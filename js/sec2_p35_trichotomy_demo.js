@@ -2048,16 +2048,32 @@ html[data-theme="dark"] .trichotomy-container {
     border-top-width: 1.5px;
 }
 
-/* ===== Controls ===== */
+/* ===== Controls — 4 columns × 2 rows ===== */
+/*
+ * Row 1: [profile (1.2fr)] [τ (2fr)] [k (1fr)] [c (1fr)]
+ * Row 2: [wave g (spans cols 1–3)] [Play/Reset (col 4)]
+ * This separates Wave-specific controls (g) from the shared τ/k/c row,
+ * and prevents horizontal cramming.
+ */
 .tri-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 0.9fr);
-    gap: 12px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 12px 14px;
     align-items: end;
     padding: 12px;
     background: var(--tri-bg-frame);
     border: 1px solid var(--tri-border);
     border-radius: 6px;
+}
+/* Row-2 placements */
+.tri-control-g {
+    grid-column: 1 / 4;
+    grid-row: 2;
+}
+.tri-control-actions {
+    grid-column: 4 / 5;
+    grid-row: 2;
 }
 .tri-control-block {
     display: flex;
@@ -2204,11 +2220,15 @@ html[data-theme="dark"] .trichotomy-container {
     }
     .tri-controls {
         grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;   /* let rows auto-flow */
+    }
+    /* Reset the desktop-only row pinning so items flow naturally on mobile */
+    .tri-control-g,
+    .tri-control-actions {
+        grid-column: 1 / -1;
+        grid-row: auto;
     }
     .tri-control-tau {
-        grid-column: 1 / -1;
-    }
-    .tri-control-actions {
         grid-column: 1 / -1;
     }
 }
@@ -2217,6 +2237,7 @@ html[data-theme="dark"] .trichotomy-container {
         grid-template-columns: 1fr;
     }
     .tri-control-tau,
+    .tri-control-g,
     .tri-control-actions {
         grid-column: auto;
     }
