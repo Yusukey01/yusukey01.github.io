@@ -1212,11 +1212,17 @@ function getPalette() {
  */
 function setupPanelCanvas(canvas, wrapper) {
     const dpr = window.devicePixelRatio || 1;
-    const cssW = Math.min(
-        (wrapper && wrapper.clientWidth) || CANVAS_LOGICAL_WIDTH,
-        CANVAS_LOGICAL_WIDTH * 1.4   // allow a bit of growth on wide screens
+    // Defensive minimum: if the wrapper hasn't been laid out yet (clientWidth = 0),
+    // fall back to the logical default rather than producing a zero-size buffer.
+    const rawW = (wrapper && wrapper.clientWidth) || 0;
+    const cssW = Math.max(
+        Math.min(rawW || CANVAS_LOGICAL_WIDTH, CANVAS_LOGICAL_WIDTH * 1.4),
+        180   // hard minimum so the canvas remains drawable
     );
-    const cssH = CANVAS_LOGICAL_HEIGHT;
+    // Match the CSS aspect-ratio (7:6) so the physical pixel buffer
+    // matches what the browser renders; otherwise the canvas content
+    // gets non-uniformly stretched on mobile where width grows.
+    const cssH = cssW * (6 / 7);
     canvas.width  = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
     // CSS sizing is controlled by stylesheet; do not set canvas.style.width/height.
@@ -2218,6 +2224,17 @@ html[data-theme="dark"] .trichotomy-container {
     .tri-panel-row {
         flex-direction: column;
     }
+    /* In column mode, flex: 1 1 0 would try to height-share among panels,
+       but the row has no fixed height — yielding zero-height panels and
+       invisible canvases. Switch to natural sizing instead. */
+    .tri-panel {
+        flex: 0 0 auto;
+    }
+    .tri-canvas-wrap {
+        /* aspect-ratio is supported, but be defensive against older mobile
+           browsers and ensure a usable minimum height */
+        min-height: 220px;
+    }
     .tri-controls {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto;   /* let rows auto-flow */
@@ -2601,6 +2618,16 @@ function initTrichotomyDemo() {
 
     // 5. Initial render
     renderFullFrame(state, canvases, refs);
+
+    // 5b. Re-setup canvases one frame later, after the browser has had a
+    //     chance to fully lay out the demo container. On some mobile
+    //     browsers the wrapper's clientWidth is 0 during synchronous setup
+    //     immediately after innerHTML assignment, producing zero-size
+    //     canvas buffers; the deferred rAF setup catches the real size.
+    requestAnimationFrame(() => {
+        setupAllCanvases();
+        renderFullFrame(state, canvases, refs);
+    });
 
     // 6. Start animation loop (only animates when state.playing = true)
     startAnimationLoop(state, refs, canvases);
