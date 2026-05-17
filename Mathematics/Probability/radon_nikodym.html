@@ -31,47 +31,35 @@ uses_python: false
                 <h2>Why Radon-Nikodym?</h2>
 
                 <p>
-                    Three earlier pages have already used the name "Radon-Nikodym" without proof. In 
+                    Three earlier pages have used the name "Radon-Nikodym" without proof. In 
                     <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>Pushforward Measure</strong></a>, 
-                    we defined the probability density function as the formal derivative \(f_X = dP_X/d\lambda\) and granted 
-                    its existence whenever \(P_X \ll \lambda\). In 
+                    we defined the probability density \(f_X = dP_X/d\lambda\) and granted its existence whenever 
+                    \(P_X \ll \lambda\). In 
                     <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a>, 
-                    the duality \((L^p)^* \cong L^q\) was stated as a fact, with the proof of the converse direction — every 
-                    continuous functional on \(L^p\) arises from some \(L^q\) function — left to a future result. And in the closing 
-                    paragraphs of <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>, 
-                    we previewed the 
+                    the converse half of \((L^p)^* \cong L^q\) — every continuous functional on \(L^p\) arises from 
+                    some \(L^q\) function — was left to a future result. And in 
+                    <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>, 
+                    we previewed 
                     <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a> 
-                    \(\mathbb{E}[X \mid \mathcal{G}]\) as the Radon-Nikodym derivative of 
-                    a signed measure with respect to \(\mathbb{P}|_{\mathcal{G}}\). All three invocations rest on a single 
-                    theorem, the proof of which we provide in this chapter.
+                    \(\mathbb{E}[X \mid \mathcal{G}]\) as a Radon-Nikodym derivative of a signed measure with respect 
+                    to \(\mathbb{P}|_{\mathcal{G}}\). All three invocations rest on the single theorem proved here.
                 </p>
 
                 <p>
-                    The theorem answers a sharply posed question: <em>given two measures \(\mu\) and \(\nu\) on the same space, 
+                    The theorem answers a sharp question: <em>given two measures \(\mu\) and \(\nu\) on the same space, 
                     when can \(\nu\) be written as an integral against \(\mu\)?</em> That is, when does there exist a measurable 
-                    function \(f\) such that
+                    \(f\) with
                     \[
-                    \nu(A) \;=\; \int_A f \, d\mu \quad \text{for every measurable set } A \, ?
+                    \nu(A) \;=\; \int_A f \, d\mu \quad \text{for every measurable } A \, ?
                     \]
-                    The answer turns on a single hypothesis — <em>absolute continuity</em>, written \(\nu \ll \mu\) — and the 
-                    function \(f\) it produces is the <strong>density</strong> of \(\nu\) with respect to \(\mu\), denoted 
-                    \(d\nu/d\mu\). To formulate and prove this, we first need a notion of measure that admits negative values 
-                    (the assignment \(A \mapsto \int_A f \, d\mu\) for an integrable real-valued \(f\), and the difference 
-                    \(\nu_1 - \nu_2\) of two measures provided at least one is finite, are central examples). This leads us 
-                    to <strong>signed measures</strong> 
-                    and the <strong>Hahn and Jordan decompositions</strong>, which split any signed measure into a positive and 
-                    a negative part. With those in hand, the Radon-Nikodym theorem follows from a celebrated Hilbert-space 
-                    argument due to von Neumann — recovering, on the Section III side, the dividends of the entire functional-analytic 
-                    machinery developed in Section II.
-                </p>
-
-                <p>
-                    The applications in machine learning are pervasive and immediate: Bayesian posterior densities, the 
-                    score functions driving diffusion-based generative models, importance-sampling reweights, and the KL 
-                    divergences that regularize policy training in RLHF are all, at the foundational level, Radon-Nikodym 
-                    derivatives or integrals against them. We will revisit each of these in detail once the theorem is in 
-                    hand; for now, the message is that the abstract derivative \(d\nu/d\mu\) is the working object 
-                    underneath nearly every probabilistic construction in modern ML.
+                    The answer turns on a single hypothesis — <em>absolute continuity</em>, written \(\nu \ll \mu\) — and 
+                    the function \(f\) it produces is the <strong>density</strong> of \(\nu\) with respect to \(\mu\), denoted 
+                    \(d\nu/d\mu\). To formulate the theorem we first develop <strong>signed measures</strong> and the 
+                    <strong>Hahn and Jordan decompositions</strong>; the proof itself is a celebrated Hilbert-space argument 
+                    of von Neumann, harvesting on the Section III side the functional-analytic machinery developed in 
+                    Section II. The applications in machine learning — Bayesian posteriors, diffusion model score functions, 
+                    importance-sampling reweights, KL divergences in RLHF — are pervasive and immediate, and are collected 
+                    in detail once the theorem is in hand.
                 </p>
             </section>
 
@@ -1094,23 +1082,6 @@ uses_python: false
                         the model parameterization (e.g., a softmax over a shared vocabulary makes both policies 
                         positive on the same token set) rather than an explicit runtime check.
                     </p>
-
-                    <p>
-                        The recurring pattern across these four examples is a layered one: <em>the 
-                        Radon-Nikodym derivative is the object whose existence licenses the construction, 
-                        and absolute continuity is the hypothesis that makes the computation well-posed; 
-                        whether the derivative is itself computed depends on the algorithm</em>. 
-                        Importance sampling computes \(dP/dQ\) explicitly and uses it as a multiplicative 
-                        weight. Bayesian posterior density computation works with the explicit ratio 
-                        appearing in Bayes' formula under a chosen reference measure. Score-based 
-                        diffusion learns \(\nabla_x \log dP_t/d\lambda\) implicitly via a neural network 
-                        rather than constructing the derivative directly. RLHF's KL regularizer is 
-                        estimated by sample averages of log-ratios, with absolute continuity inherited 
-                        from the model parameterization. The 
-                        <a href="#T-radon_nikodym"><strong>Radon-Nikodym theorem</strong></a> proved 
-                        above is the existence proof that licenses every one of these constructions; 
-                        what each algorithm actually does with that object varies by application.
-                    </p>
                 </div>
             </section>
 
@@ -1118,151 +1089,48 @@ uses_python: false
                 <h2>Looking Ahead</h2>
 
                 <p>
-                    The Radon-Nikodym theorem closes three open accounts in the curriculum and opens several new lines 
-                    of development. We summarize both.
-                </p>
-
-                <h3>Retroactive Closures</h3>
-
-                <p>
-                    First, in 
-                    <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>Pushforward Measure</strong></a>, 
-                    we defined the probability density function \(f_X\) of a continuous random variable as the formal 
-                    derivative \(dP_X/d\lambda\), assuming its existence. With the Radon-Nikodym theorem proved here, 
-                    that assumption is now justified: whenever \(P_X \ll \lambda\) — the measure-theoretic definition 
-                    of "continuous random variable" — the function \(f_X\) exists, is unique \(\lambda\)-a.e., and is 
-                    given by \(f_X = dP_X/d\lambda\). The PDF is no longer a primitive object but a derived one, 
-                    obtained from the structural relation \(P_X \ll \lambda\) between two measures.
-                </p>
-
-                <p>
-                    Second, in 
-                    <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a>, 
-                    the duality \((L^p)^* \cong L^q\) was stated as a fact, with the converse direction — every continuous 
-                    functional on \(L^p\) arises from some \(\psi \in L^q\) — left without proof. The standard proof of 
-                    that converse takes a continuous functional \(\Lambda\) on \(L^p(\mu)\), constructs the signed measure 
-                    \(\nu(A) = \Lambda(\mathbf{1}_A)\), shows \(\nu \ll \mu\), and applies Radon-Nikodym to obtain 
-                    \(\psi = d\nu/d\mu\). The present theorem fills that gap, completing the standard \(L^p\)-duality 
-                    statement for \(1 \leq p < \infty\).
-                </p>
-
-                <p>
-                    Third, in 
-                    <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a>, 
-                    the closing paragraphs previewed 
+                    With Radon-Nikodym established, three earlier debts are settled at once. The probability density 
+                    \(f_X = dP_X/d\lambda\) of 
+                    <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>Pushforward Measure</strong></a> 
+                    is no longer a primitive but a derived object whose existence is guaranteed whenever \(P_X \ll \lambda\). 
+                    The converse direction of \((L^p)^* \cong L^q\) in 
+                    <a href="../Calculus/dual_spaces.html"><strong>Dual Spaces &amp; Riesz Representation</strong></a> 
+                    is completed by the standard route: a continuous functional \(\Lambda\) on \(L^p(\mu)\) induces a 
+                    signed measure \(\nu(A) = \Lambda(\mathbf{1}_A)\) with \(\nu \ll \mu\), and Radon-Nikodym produces 
+                    the representing \(L^q\) function \(\psi = d\nu/d\mu\). And the 
                     <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a> 
-                    \(\mathbb{E}[X | \mathcal{G}]\) as a 
-                    Radon-Nikodym derivative of the signed measure 
-                    \(A \mapsto \int_A X \, d\mathbb{P}\) (defined for \(A \in \mathcal{G}\)) with respect to 
-                    \(\mathbb{P}|_{\mathcal{G}}\). With Radon-Nikodym established, this construction is now fully 
-                    licensed; its development is the subject of 
-                    <a href="conditional_expectation.html"><strong>the next chapter</strong></a>.
+                    \(\mathbb{E}[X \mid \mathcal{G}]\) previewed in 
+                    <a href="limit_theorems_product_measures.html"><strong>Limit Theorems &amp; Product Measures</strong></a> 
+                    is now licensed for full construction.
                 </p>
 
                 <h3>The Lebesgue Decomposition</h3>
 
                 <p>
-                    Absolute continuity (\(\ll\)) and mutual singularity (\(\perp\)) are extreme relations between two 
-                    measures. The <strong>Lebesgue decomposition theorem</strong>, which we state without proof, asserts 
-                    that every \(\sigma\)-finite signed measure decomposes uniquely into an absolutely continuous part 
-                    and a mutually singular part with respect to any reference measure: given a \(\sigma\)-finite 
-                    non-negative measure \(\mu\) and a \(\sigma\)-finite signed measure \(\nu\), 
-                    there exist unique signed measures \(\nu_{\mathrm{ac}}, \nu_{\mathrm{s}}\) with 
+                    A natural companion to Radon-Nikodym states that absolute continuity and mutual singularity together 
+                    exhaust the qualitative ways two measures can interact: given a \(\sigma\)-finite non-negative measure 
+                    \(\mu\) and a \(\sigma\)-finite signed measure \(\nu\), there exist unique signed measures 
+                    \(\nu_{\mathrm{ac}}, \nu_{\mathrm{s}}\) with 
                     \(\nu = \nu_{\mathrm{ac}} + \nu_{\mathrm{s}}\), \(\nu_{\mathrm{ac}} \ll \mu\), and 
-                    \(\nu_{\mathrm{s}} \perp \mu\). The proof, available in standard references such as Folland's real 
-                    analysis text or Durrett's probability text, is a refinement of the von Neumann argument used here 
-                    for Radon-Nikodym. Combined with our theorem, the Lebesgue decomposition gives a complete structural 
-                    classification: \(\nu\) splits into a "density part" (an integral against \(\mu\)) and a "singular 
-                    part" (concentrated where \(\mu\) is not) — and nothing else.
+                    \(\nu_{\mathrm{s}} \perp \mu\). Combined with our theorem, this yields a complete structural 
+                    classification: every \(\sigma\)-finite signed \(\nu\) splits into a density part (an integral against 
+                    \(\mu\)) and a singular part (concentrated where \(\mu\) is not), and nothing else.
                 </p>
 
-                <h3>The Next Chapter</h3>
+                <h3>Onward</h3>
 
                 <p>
-                    In the 
-                    <a href="conditional_expectation.html"><strong>upcoming page on conditional expectation</strong></a>, 
-                    we will apply the Radon-Nikodym theorem to define 
-                    the <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a> 
-                    \(\mathbb{E}[X | \mathcal{G}]\) of an integrable random variable 
-                    \(X \in L^1(\mathbb{P})\) with respect to a sub-\(\sigma\)-algebra \(\mathcal{G} \subseteq \mathcal{F}\). 
-                    The signed measure \(\nu_X(A) = \int_A X \, d\mathbb{P}\) on \((\Omega, \mathcal{G})\) is absolutely 
-                    continuous with respect to the restricted probability measure \(\mathbb{P}|_{\mathcal{G}}\); the 
-                    conditional expectation is then defined as the Radon-Nikodym derivative
-                    \[
-                    \mathbb{E}[X | \mathcal{G}] \;=\; \frac{d\nu_X}{d \mathbb{P}|_{\mathcal{G}}}.
-                    \]
-                    This rephrasing does several things at once: it makes \(\mathbb{E}[X | \mathcal{G}]\) a 
-                    \(\mathcal{G}\)-measurable function (rather than an event-by-event computation), it explains why 
-                    conditional expectation is unique only \(\mathbb{P}\)-a.s. (Radon-Nikodym uniqueness), and it 
-                    provides a single unified abstract definition. The discrete case (\(\mathbb{E}[X | A]\) 
-                    for a partition into events \(A\)) is recovered verbatim; the continuous case requires one further 
-                    layer of machinery — regular conditional distributions and the disintegration theorem — to obtain 
-                    a coherent pointwise reading \(y \mapsto \mathbb{E}[X | Y = y]\), and is taken up in the chapter 
-                    after that. From this foundation, the martingale theory that drives stochastic calculus, optimal 
-                    stopping, and modern asymptotic statistics becomes available.
-                </p>
-
-                <h3>Further Horizons</h3>
-
-                <p>
-                    Beyond conditional expectation, several future directions follow naturally from the Radon-Nikodym 
-                    framework:
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li>
-                        <a href="variational_inference.html"><strong>Variational Inference.</strong></a> 
-                        The Evidence Lower Bound (ELBO), central to variational autoencoders and modern variational Bayesian inference, 
-                        arises from the decomposition
-                        \[
-                        \log p(x) = \mathrm{ELBO}(q) + D_{\mathrm{KL}}(q(z|x) \| p(z|x)), 
-                        \]
-                        which expresses the marginal log-likelihood as a sum of a tractable lower bound and an intractable 
-                        KL divergence to the true posterior. The ELBO itself further decomposes as 
-                        \[
-                        \mathbb{E}_{q(z|x)}[\log p(x|z)] - D_{\mathrm{KL}}(q(z|x) \| p(z))
-                        \] 
-                        — a reconstruction term plus a KL regularizer against the prior. Each KL term is an integral of the logarithm of a 
-                        Radon-Nikodym derivative, and the rigorous derivation requires absolute-continuity hypotheses on 
-                        the variational family \(q\) relative to the relevant reference measure, replacing the heuristic ELBO derivations of 
-                        introductory ML treatments.
-                    </li>
-                    
-                    <li>
-                        <strong>Girsanov's theorem and stochastic calculus.</strong> In continuous-time stochastic 
-                        analysis, the change of probability measure from one Brownian motion law to another (with a 
-                        drift) is governed by Girsanov's theorem, which is a Radon-Nikodym derivative computation in 
-                        the path-space measure. This underlies the mathematical theory of score-based diffusion 
-                        generative models — where the relationship between forward and reverse SDEs is established by 
-                        Anderson's time-reversal formula (with Girsanov-type changes of measure providing an 
-                        alternative path-space derivation in the spirit of Haussmann-Pardoux) — and the entire theory 
-                        of risk-neutral pricing in mathematical finance.
-                    </li>
-                    <li>
-                        <strong>Martingale theory.</strong> Doob's martingale convergence theorems, the Doob 
-                        decomposition of submartingales, and the optional stopping theorem all rely on conditional 
-                        expectation as a primitive — and hence on Radon-Nikodym. Martingales provide the discrete-time 
-                        skeleton of stochastic processes and are the gateway to continuous-time stochastic calculus.
-                    </li>
-                    <li>
-                        <strong>Information geometry.</strong> The KL divergence \(D_{\mathrm{KL}}(P \| Q)\) and the 
-                        Fisher information matrix \(F(\boldsymbol{\theta})\) — both built from Radon-Nikodym derivatives 
-                        (\(D_{\mathrm{KL}}\) from \(dP/dQ\) directly; \(F(\boldsymbol{\theta})\) from the parameter-derivatives 
-                        of \(\log(dP_\theta/d\mu)\) for a reference \(\mu\)) — generate a Riemannian structure on 
-                        parametric statistical manifolds. The natural gradient method, already developed for 
-                        <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a> in earlier 
-                        ML pages, is the gradient with respect to this geometry. A full development requires the 
-                        smooth-manifold framework of Section II's upcoming manifold series, at which point information 
-                        geometry becomes accessible.
-                    </li>
-                </ul>
-
-                <p>
-                    Each of these directions extends the same theorem in a different style: martingales push it into 
-                    the time domain, Girsanov pushes it into path space, variational inference pushes it into the 
-                    optimization landscape over distributions, and information geometry pushes it into differential 
-                    geometry. The Radon-Nikodym theorem is, in this sense, the central hub from which the deeper 
-                    probabilistic structure of modern machine learning radiates.
+                    The 
+                    <a href="conditional_expectation.html"><strong>next chapter</strong></a> 
+                    constructs conditional expectation \(\mathbb{E}[X \mid \mathcal{G}]\) for \(X \in L^1(\mathbb{P})\) 
+                    as the Radon-Nikodym derivative of the signed measure \(A \mapsto \int_A X \, d\mathbb{P}\) on 
+                    \((\Omega, \mathcal{G})\) with respect to \(\mathbb{P}|_{\mathcal{G}}\), from which martingale theory 
+                    and stochastic calculus open up. Beyond that, the same theorem reappears in several guises: as 
+                    Girsanov's change of measure in path-space (underlying the mathematical theory of score-based 
+                    diffusion models and risk-neutral pricing), as the ELBO/KL decomposition in 
+                    <a href="variational_inference.html"><strong>variational inference</strong></a>, 
+                    and as the Fisher-information metric on parametric statistical manifolds in information geometry — 
+                    each extending Radon-Nikodym in a different direction (time, path-space, optimization, geometry).
                 </p>
             </section>
 
