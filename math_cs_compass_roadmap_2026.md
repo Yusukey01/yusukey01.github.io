@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota
-**Last Updated:** 5/14/2026
+**Last Updated:** 5/18/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -322,23 +322,25 @@ This is a **4-track configuration**. Sustainability check is implicitly delegate
 
 ## Part 7 — Phase 3: Smooth Manifolds
 
-Lee Ch. 1–3 + Ch. 8 require ≥3 pages. Page IDs are assigned at drafting time.
+Series scope, page baseline, callback map, notation policy, and Lee Contents
+reference are specified in **`manifold_series_design_handout_v1.md`**
+(2026-05-18). Summary:
 
-### 7.1 calc-XX: Smooth Manifolds & Atlases (~1 page, `smooth_manifolds.html`)
+- **Primary reference**: Lee, *Introduction to Smooth Manifolds*, 2nd ed.
+- **Scope**: Lee Ch.1–12 (designated by Lee as the required core)
+- **Baseline page count**: 12, one per Lee chapter, with drafting-time split
+  expected (precedent: Lie series 2→4)
+- **Rigor calibration**: Lee single-reference, graduate-textbook standard
+- **Boundary**: Lee's "with or without boundary" framework throughout
 
-Topological manifolds, charts, atlases, transition maps, smooth structure, smooth maps. **Payoff:** calc-29's Hausdorff + second-countability are revealed as specifications excluding pathological spaces. **Prereqs:** calc-29, linalg-27~30.
+The earlier roadmap version proposed a 3-page series (Ch.1, 3, 8–9 only). This
+has been superseded by the handout's 12-page baseline, which keeps Lee's
+designated core intact and avoids omissions that would propagate to Stokes /
+de Rham / Riemannian series downstream.
 
-### 7.2 calc-XX: Tangent Spaces & The Pushforward (~1 page, `tangent_spaces.html`)
-
-Tangent vectors (curves and derivations), \(T_pM\), pushforward / differential, Jacobian in local coordinates. **CS angle:** pushforward = forward propagation Jacobian; pullback ↔ backprop. **Payoff:** \(T_I G\) from linalg-29 is a special case of the abstract tangent space.
-
-### 7.3 calc-XX: Vector Fields, Flows & The Tangent Bundle (~1 page, `vector_fields_flows.html`)
-
-\(TM\), vector fields, integral curves and flows, Lie bracket of vector fields. **CS angle:** ODE solvers on manifolds; Neural ODE and fluid simulation as flows. **Payoff:** the matrix commutator \([A, B] = AB - BA\) from linalg-29 is revealed as the matrix representation of the Lie bracket of vector fields.
-
-### 7.4 calc-XX: Riemannian Metrics & Beyond (~2 pages, scope TBD)
-
-Inner products on tangent spaces, metric tensor \(g\), geodesics, Levi-Civita connection, curvature, Laplace-Beltrami \(\Delta_g\). Likely splits into 2 pages (metrics & geodesics vs. curvature & Laplace-Beltrami). **Prereqs:** manifold series above, calc-25 (Riesz — musical isomorphisms).
+**Riemannian Metrics, Differential Forms, Integration, de Rham cohomology**
+(Lee Ch.13+) are out of scope for this series and addressed in future series
+triggered by GDL-track needs or independent demand.
 
 ---
 
@@ -364,7 +366,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 
 | Track | Est. Pages | Planned Filenames | Trigger / status |
 |--------|-----------|-------------------|--------|
-| Smooth Manifolds (calc-XX) | ~3 | `smooth_manifolds.html`, `tangent_spaces.html`, `vector_fields_flows.html` | Next |
+| Smooth Manifolds (calc-XX) | 12 baseline (see handout) | Filenames TBD at drafting; see `manifold_series_design_handout_v1.md` | Next |
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
@@ -389,7 +391,7 @@ This map tracks primary usage for development planning. The site-wide reference 
 |------|----------------------------|------|
 | **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
 | **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
-| **Lee — *Introduction to Smooth Manifolds*** | calc-29 → calc-XX manifold series, calc-XX Riemannian | Primary for manifold track |
+| **Lee — *Introduction to Smooth Manifolds*** | calc-29 → manifold series (calc-XX, 12-page baseline; see handout), future Riemannian series | Primary for manifold track |
 | **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32, calc-33, calc-34, calc-35 | Primary for Fourier and classical PDE applications |
 | **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
