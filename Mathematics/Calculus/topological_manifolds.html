@@ -1,0 +1,1112 @@
+---
+layout: default
+title: "Topological Manifolds"
+topic_id: calc-36
+level: core
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Topological Manifolds</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#what-is-a-manifold">What is a Manifold?</a>
+            <a href="#coordinate-charts">Coordinate Charts</a>
+            <a href="#graphs">Graphs of Continuous Functions</a>
+            <a href="#spheres">Spheres</a>
+            <a href="#projective-spaces">Projective Spaces</a>
+            <a href="#products-tori">Products and Tori</a>
+        </div>  
+
+        <div class="container">   
+            <section id="what-is-a-manifold" class="section-content">
+                <h2>What is a Manifold?</h2>
+
+                <p>
+                    Throughout our work in <a href="topological_spaces.html"><strong>topological spaces</strong></a>, 
+                    <a href="metric_space.html"><strong>metric spaces</strong></a>, and 
+                    <a href="homeomorphism.html"><strong>homeomorphisms</strong></a>, we have built a vocabulary 
+                    for discussing "spaces" abstractly. The category of all topological spaces is, however, 
+                    too permissive for differential geometry. Many topological spaces are too pathological — 
+                    too far from \(\mathbb{R}^n\) — to support a meaningful theory of differentiation, 
+                    integration, or measurement. We now isolate a class of spaces that retains enough 
+                    Euclidean character to do calculus, while still capturing the global complexity of 
+                    interesting geometric objects: <strong>manifolds</strong>.
+                </p>
+
+                <p>
+                    A manifold should be thought of as a space that is "<em>locally Euclidean, globally not 
+                    necessarily so</em>." The Earth's surface is the prototypical example: while it is 
+                    globally a sphere, any small region of it looks essentially like a flat plane — flat 
+                    enough that we can draw a paper map of it. The set of rotation matrices 
+                    <a href="../Linear_algebra/lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(\mathrm{SO}(3)\)</strong></a> 
+                    lives inside the \(9\)-dimensional space of \(3 \times 3\) real 
+                    matrices, but the set itself is only \(3\)-dimensional, and any small neighborhood 
+                    of a particular rotation can be parametrized by three angles. The space of all 
+                    smooth probability distributions on a fixed sample space, the configuration space 
+                    of a robotic arm, the orbit of a planet under a gravitational constraint: each is 
+                    a curved, non-Euclidean space that nevertheless admits a Euclidean description in 
+                    the small.
+                </p>
+
+                <p>
+                    The framework we develop here is purely topological: it concerns only the notion of 
+                    "local Euclidean similarity" without requiring derivatives. This is a deliberate 
+                    intermediate step. The structures used in physics, robotics, optimization, and 
+                    machine learning are almost always <strong>smooth manifolds</strong> — manifolds 
+                    on which differentiation makes sense. The smooth structure is built on top of the 
+                    topological one as a second, independent layer. We treat the topological layer in 
+                    isolation first, both because the topological conditions are subtle and because 
+                    the layered approach clarifies what differentiation actually adds.
+                </p>
+
+                <h3>The Three Conditions</h3>
+
+                <p>
+                    A manifold of dimension \(n\) is a topological space satisfying three conditions. 
+                    The third is the geometric content; the first two are technical requirements that 
+                    exclude certain pathological spaces.
+                </p>
+
+                <div class="theorem" id="D-topological_manifold">
+                    <span class="theorem-title">Definition: Topological Manifold</span>
+                    <p>
+                        A topological space \(M\) is called a <strong>topological manifold of dimension \(n\)</strong> 
+                        (or a <strong>topological \(n\)-manifold</strong>) if it satisfies:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            \(M\) is <a href="topological_spaces.html#D-T1_T2_top" class="ref-link"><strong>Hausdorff</strong></a>:<br>
+                            for any two distinct points \(p, q \in M\), there exist disjoint open sets 
+                            \(U, V \subseteq M\) with \(p \in U\) and \(q \in V\).
+                        </li>
+                        <li>
+                            \(M\) is <a href="topological_spaces.html#D-first_second_countable" class="ref-link"><strong>second-countable</strong></a>:<br>
+                            there exists a countable basis for the topology of \(M\).
+                        </li>
+                        <li>
+                            \(M\) is <strong>locally Euclidean of dimension \(n\)</strong>:<br>
+                            every point \(p \in M\) has an open neighborhood \(U \subseteq M\) and a 
+                            <a href="homeomorphism.html#D-homeomorphism" class="ref-link"><strong>homeomorphism</strong></a> 
+                            \(\varphi : U \to \widehat{U}\), where \(\widehat{U} = \varphi(U)\) is an open 
+                            subset of \(\mathbb{R}^n\).
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    The third condition is the geometric heart: at every point, \(M\) admits a 
+                    "<em>chart</em>" — a way of representing a neighborhood of that point as a piece 
+                    of \(\mathbb{R}^n\). We will study charts and atlases in detail in the next 
+                    section. For now we examine the role of the first two conditions, which may 
+                    initially appear technical but turn out to be indispensable.
+                </p>
+
+                <h3>Why Hausdorff?</h3>
+
+                <p>
+                    Without the Hausdorff condition, even a space that is otherwise locally Euclidean 
+                    can fail to have a unique limit for convergent sequences. Limits, and therefore 
+                    continuity in any sharpened form, become ambiguous. The standard cautionary 
+                    example is the 
+                    <a href="topological_spaces.html#T-line_two_origins_not_hausdorff" class="ref-link"><strong>line with two origins</strong></a>: 
+                    take two copies of \(\mathbb{R}\) and identify them at every nonzero point, while 
+                    leaving the two origins distinct. The resulting space is locally Euclidean of 
+                    dimension \(1\) at every point, and it is second-countable. However, the sequence 
+                    \(x_n = 1/n\) converges <em>both</em> to the first origin <em>and</em> to the 
+                    second origin, since any neighborhood of either origin eventually contains all 
+                    \(x_n\). Uniqueness of limits is lost. No usable theory of differentiation, or 
+                    even of continuous functions, can be built on such a space.
+                </p>
+
+                <p>
+                    Hausdorffness rules out this kind of identification. Two distinct points of a 
+                    Hausdorff space can always be separated by disjoint open sets, and the points 
+                    where a convergent sequence "wants to land" cannot multiply.
+                </p>
+
+                <h3>Why Second-Countable?</h3>
+
+                <p>
+                    Second-countability is a size constraint: it requires that the topology of 
+                    \(M\) be describable using countably many open sets. This excludes manifolds 
+                    that are "too large" for the methods of analysis. The classical example is the 
+                    <strong>long line</strong>, a one-dimensional locally Euclidean Hausdorff space 
+                    that is not second-countable; it is, in effect, an uncountable concatenation of 
+                    copies of \([0, 1)\) ordered by the first uncountable ordinal — a construction 
+                    where local Euclidean structure is preserved by the specific well-ordering, 
+                    but the resulting space contains too many "directions" to admit a countable 
+                    basis. The long line cannot be covered by countably many charts, and many 
+                    constructions — integration, Riemannian metrics, partitions of unity — 
+                    break down on it.
+                </p>
+
+                <p>
+                    The deeper role of second-countability emerges in the next page, on the 
+                    topological properties of manifolds. Combined with local compactness 
+                    (which manifolds enjoy automatically), second-countability implies 
+                    <strong>paracompactness</strong>, which is in turn the technical foundation 
+                    for <strong>partitions of unity</strong> — the tool that allows local 
+                    constructions on charts to be glued into global structures. Partitions of 
+                    unity underlie standard global constructions such as building a Riemannian 
+                    metric on a manifold or integrating a function over it. Second-countability 
+                    also forces the number of connected components to be at most countable. We 
+                    will say more about this in the upcoming page on topological properties.
+                </p>
+
+                <h3>Topological Invariance of Dimension</h3>
+
+                <p>
+                    The third condition asserts the existence of a homeomorphism \(\varphi : U \to 
+                    \widehat{U} \subseteq \mathbb{R}^n\) for some \(n\) at each point. A natural 
+                    question is whether \(n\) is well-defined: could the same manifold be locally 
+                    Euclidean of dimension \(n\) at some points and of dimension \(m \ne n\) at 
+                    others? For a connected manifold, the answer is no, and this is a deep theorem.
+                </p>
+
+                <div class="theorem" id="T-topological_invariance_of_dimension">
+                    <span class="theorem-title">Theorem: Topological Invariance of Dimension</span>
+                    <p>
+                        A nonempty open subset of \(\mathbb{R}^n\) is not homeomorphic to a 
+                        nonempty open subset of \(\mathbb{R}^m\) if \(n \ne m\). Consequently, 
+                        a nonempty connected topological manifold has a well-defined dimension.
+                    </p>
+                </div>
+
+                <p>
+                    The proof of this theorem requires tools from algebraic topology that lie 
+                    beyond the scope of the present series. We treat invariance of dimension as 
+                    a foundational fact: from now on, when we write "an \(n\)-manifold," the 
+                    value of \(n\) is a genuine topological invariant of the space.
+                </p>
+
+                <h3>Open Submanifolds at the Topological Level</h3>
+
+                <p>
+                    A useful preliminary observation: open subsets of manifolds are themselves 
+                    manifolds. This is the first hint of the "<em>locality</em>" of manifold theory — 
+                    structures restrict to open subsets without modification.
+                </p>
+
+                <div class="theorem" id="T-open_subset_of_top_manifold_is_manifold">
+                    <span class="theorem-title">Proposition: Open Subsets are Manifolds</span>
+                    <p>
+                        Every open subset of a topological \(n\)-manifold is itself a topological 
+                        \(n\)-manifold.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold and \(U \subseteq M\) an open subset. 
+                        Equip \(U\) with the 
+                        <a href="topological_spaces.html#D-subspace_topology" class="ref-link"><strong>subspace topology</strong></a>. 
+                        We verify the three conditions:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            <strong>Hausdorff</strong>:<br>For distinct \(p, q \in U \subseteq M\), 
+                            Hausdorffness of \(M\) gives disjoint open \(V_p, V_q \subseteq M\) 
+                            separating them. The subspace topology intersections \(V_p \cap U\) 
+                            and \(V_q \cap U\) are disjoint open subsets of \(U\) separating 
+                            \(p, q\) in \(U\).
+                        </li>
+                        <li>
+                            <strong>Second-countable</strong>:<br>If \(\{B_n\}_{n \in \mathbb{N}}\) is 
+                            a countable basis for \(M\), then \(\{B_n \cap U\}_{n \in \mathbb{N}}\) 
+                            is a countable basis for \(U\).
+                        </li>
+                        <li>
+                            <strong>Locally Euclidean</strong>:<br>For \(p \in U\), the manifold structure 
+                            of \(M\) gives an open \(V \subseteq M\) with \(p \in V\) and a 
+                            homeomorphism \(\varphi : V \to \widehat{V} \subseteq \mathbb{R}^n\). 
+                            Then \(V \cap U\) is open in \(M\), hence open in \(U\) (containing \(p\)). 
+                            The restriction \(\varphi|_{V \cap U} : V \cap U \to \varphi(V \cap U)\) 
+                            is a homeomorphism (continuity, injectivity, and the open-map property 
+                            all transfer to open subdomains), and 
+                            \(\varphi(V \cap U)\) is open in \(\widehat{V}\), hence open in 
+                            \(\mathbb{R}^n\).
+                        </li>
+                    </ol>
+                    <p>
+                        Thus \(U\) is a topological \(n\)-manifold. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The geometric content of a manifold — and the means by which we will work with 
+                    it concretely — is the system of charts that witnesses the locally Euclidean 
+                    condition. We turn to charts and their compatibility in the next section.
+                </p>
+            </section>
+
+            <section id="coordinate-charts" class="section-content">
+                <h2>Coordinate Charts</h2>
+
+                <p>
+                    The locally Euclidean condition guarantees that every point \(p \in M\) has a 
+                    neighborhood that "<em>looks like</em>" a piece of \(\mathbb{R}^n\). Making this 
+                    concrete requires naming the homeomorphism. The basic data — an open set with 
+                    its Euclidean representation — is called a <strong>coordinate chart</strong>, 
+                    and the metaphor of a paper map is exact: a chart on a manifold plays the same 
+                    role as a flat map of a region of the Earth.
+                </p>
+
+                <div class="theorem" id="D-coordinate_chart">
+                    <span class="theorem-title">Definition: Coordinate Chart</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold. A <strong>coordinate chart</strong> 
+                        (or just a <strong>chart</strong>) on \(M\) is a pair \((U, \varphi)\) where:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            \(U \subseteq M\) is an open subset, called the <strong>chart domain</strong>;
+                        </li>
+                        <li>
+                            \(\varphi : U \to \widehat{U}\) is a 
+                            <a href="homeomorphism.html#D-homeomorphism" class="ref-link"><strong>homeomorphism</strong></a> 
+                            from \(U\) onto an open subset 
+                            \(\widehat{U} = \varphi(U) \subseteq \mathbb{R}^n\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    The role of a chart is to assign Euclidean coordinates to points of \(M\) within 
+                    the chart domain. Writing the components of \(\varphi\) as
+                    \[
+                    \varphi(p) = (x^1(p), x^2(p), \ldots, x^n(p)),
+                    \]
+                    each function \(x^i : U \to \mathbb{R}\) is called a <strong>coordinate function</strong>, 
+                    or, more loosely, "the \(i\)-th coordinate." The superscript notation 
+                    \(x^i\) — distinct from a power — is standard in differential geometry, 
+                    foreshadowing the upper/lower index distinction we will formalize when we 
+                    introduce smooth structures and the Einstein summation convention.
+                </p>
+
+                <p>
+                    There are several equivalent notations for a chart, all of which appear freely 
+                    in the literature:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>\((U, \varphi)\) — the chart-name notation, emphasizing the homeomorphism;</li>
+                    <li>\((U, (x^1, \ldots, x^n))\) — the coordinate notation, emphasizing the individual coordinate functions;</li>
+                    <li>\((U, (x^i))\) — the shorthand, when the dimension is understood.</li>
+                </ul>
+
+                <h3>Charts Centered at a Point and Coordinate Balls</h3>
+
+                <p>
+                    Two refinements of the chart concept appear constantly in practice. The first 
+                    selects a chart based at a specified point.
+                </p>
+
+                <div class="theorem" id="D-chart_centered_at">
+                    <span class="theorem-title">Definition: Chart Centered at a Point</span>
+                    <p>
+                        A chart \((U, \varphi)\) on \(M\) is said to be <strong>centered at \(p\)</strong> 
+                        if \(p \in U\) and \(\varphi(p) = 0 \in \mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <p>
+                    Centered charts exist whenever charts do. Given any chart \((U, \varphi)\) 
+                    with \(p \in U\), let \(\tau : \mathbb{R}^n \to \mathbb{R}^n\) be the 
+                    translation \(\tau(y) = y - \varphi(p)\). Then \(\tau \circ \varphi : U \to 
+                    \tau(\widehat{U})\) is again a homeomorphism onto an open subset of 
+                    \(\mathbb{R}^n\), and \((\tau \circ \varphi)(p) = 0\), so 
+                    \((U, \tau \circ \varphi)\) is a chart centered at \(p\). It is therefore 
+                    harmless — and frequently convenient — to assume in proofs that a chart 
+                    through \(p\) is centered at \(p\).
+                </p>
+
+                <p>
+                    The second refinement classifies a chart by the shape of its codomain in 
+                    \(\mathbb{R}^n\).
+                </p>
+
+                <div class="theorem" id="D-coordinate_domain_ball_cube">
+                    <span class="theorem-title">Definition: Coordinate Domain, Ball, and Cube</span>
+                    <p>
+                        Let \((U, \varphi)\) be a chart on \(M\). The set \(U\) is called the 
+                        <strong>coordinate domain</strong> (or <strong>coordinate neighborhood</strong>) 
+                        of the chart. Depending on the shape of \(\widehat{U} = \varphi(U)\), the 
+                        chart is further classified:
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            A <strong>coordinate ball</strong>:<br>
+                            \(\widehat{U}\) is an open ball in \(\mathbb{R}^n\).
+                        </li>
+                        <li>
+                            A <strong>coordinate cube</strong>:<br>
+                            \(\widehat{U}\) is an open cube of the form \((a^1, b^1) \times \cdots \times (a^n, b^n)\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    The terminology is descriptive rather than restrictive: every coordinate domain 
+                    can be shrunk to a coordinate ball or cube around any of its points. Given 
+                    \((U, \varphi)\) and \(p \in U\), choose an open ball (resp. cube) 
+                    \(B \subseteq \widehat{U}\) containing \(\varphi(p)\); the restricted chart 
+                    \((\varphi^{-1}(B), \varphi|_{\varphi^{-1}(B)})\) is a coordinate ball 
+                    (resp. cube) around \(p\). The choice of shape is a matter of convenience 
+                    for the argument at hand.
+                </p>
+
+                <h3>Atlases and the Covering Question</h3>
+
+                <p>
+                    A single chart describes only an open piece of a manifold. To capture the global 
+                    structure, we collect charts into an atlas.
+                </p>
+
+                <div class="theorem" id="D-atlas_topological">
+                    <span class="theorem-title">Definition: Atlas</span>
+                    <p>
+                        An <strong>atlas</strong> for a topological manifold \(M\) is a collection 
+                        \(\mathcal{A} = \{(U_\alpha, \varphi_\alpha)\}_{\alpha \in A}\) of charts on 
+                        \(M\) whose domains cover \(M\):
+                        \[
+                        \bigcup_{\alpha \in A} U_\alpha = M.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Every topological manifold admits an atlas: the locally Euclidean condition 
+                    provides a chart around each point, and the collection of all such charts is 
+                    automatically an atlas. The interesting questions concern how small an atlas 
+                    can be and what the relations among its charts look like.
+                </p>
+
+                <h3>Dimension and the Number of Charts</h3>
+
+                <p>
+                    A common source of initial confusion is the relationship between the dimension 
+                    of a manifold and the number of charts needed to cover it. These two quantities 
+                    are essentially independent, and conflating them obscures the geometric content.
+                </p>
+
+                <p>
+                    The <strong>dimension</strong> \(n\) is a local invariant: it measures the size 
+                    of the Euclidean space that each point's neighborhood looks like. The 
+                    <strong>number of charts</strong> in a minimal atlas is a global topological 
+                    invariant: it reflects how the manifold is shaped overall.
+                </p>
+
+                <p>
+                    Consider \(\mathbb{R}^n\) itself as a manifold. Regardless of how large \(n\) is, 
+                    \(\mathbb{R}^n\) is covered by a single chart — namely the identity map 
+                    \(\mathrm{id} : \mathbb{R}^n \to \mathbb{R}^n\). A thousand-dimensional 
+                    Euclidean space is a one-chart manifold, just as the real line is. In a machine 
+                    learning context, this is the situation of an ordinary feature vector space: 
+                    a high-dimensional ambient space, but one with a globally trivial chart structure.
+                </p>
+
+                <p>
+                    Contrast this with the \(n\)-sphere \(S^n\). For any \(n\), \(S^n\) cannot be 
+                    covered by a single chart. The reason is topological: \(S^n\) is compact, but 
+                    no nonempty open subset of \(\mathbb{R}^n\) is compact. A homeomorphism would 
+                    map the compact \(S^n\) onto a compact open subset of \(\mathbb{R}^n\), which 
+                    cannot exist. The phenomenon is independent of \(n\). The sphere \(S^{1000}\) 
+                    requires multiple charts for the same reason \(S^1\) does — not because of its 
+                    dimension, but because of its global topology.
+                </p>
+
+                <p>
+                    The cardinality of a minimal atlas is itself a coarse measure of complexity. 
+                    What truly governs the geometry of a manifold is not how many charts are used 
+                    but how the charts relate where they overlap. We turn to this now.
+                </p>
+
+                <h3>Overlaps and Transition Maps</h3>
+
+                <p>
+                    For a connected manifold covered by more than one chart, the charts must 
+                    overlap. Indeed, if \(M\) is connected and 
+                    \(\mathcal{A} = \{(U_\alpha, \varphi_\alpha)\}_{\alpha \in A}\) is an atlas 
+                    with \(|A| \ge 2\) and pairwise disjoint chart domains, fix any 
+                    \(\alpha_0 \in A\). The sets \(U_{\alpha_0}\) and 
+                    \(\bigsqcup_{\beta \ne \alpha_0} U_\beta\) are nonempty, disjoint, open, and 
+                    their union is \(M\), contradicting connectedness. Thus, except in the 
+                    degenerate case of a manifold with multiple connected components covered 
+                    one-per-chart, atlases of connected manifolds with two or more charts 
+                    involve genuine overlaps.
+                </p>
+
+                <p>
+                    Overlap regions are where the descriptive power of an atlas is concentrated. 
+                    Suppose \((U, \varphi)\) and \((V, \psi)\) are two charts with 
+                    \(U \cap V \ne \emptyset\). A point \(p \in U \cap V\) is then assigned two 
+                    different coordinate representations: \(\varphi(p) \in \mathbb{R}^n\) under 
+                    the first chart, and \(\psi(p) \in \mathbb{R}^n\) under the second. The 
+                    relation between these two representations is captured by a single map between 
+                    open subsets of \(\mathbb{R}^n\).
+                </p>
+
+                <div class="theorem" id="D-transition_map_topological">
+                    <span class="theorem-title">Definition: Transition Map</span>
+                    <p>
+                        Let \((U, \varphi)\) and \((V, \psi)\) be charts on a topological manifold 
+                        \(M\) with \(U \cap V \ne \emptyset\). The <strong>transition map</strong> 
+                        from \(\varphi\) to \(\psi\) is the homeomorphism
+                        \[
+                        \psi \circ \varphi^{-1} : \varphi(U \cap V) \to \psi(U \cap V).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The transition map \(\psi \circ \varphi^{-1}\) is automatically a homeomorphism: 
+                    \(\varphi^{-1}\) is a homeomorphism from \(\varphi(U \cap V)\) to \(U \cap V\), 
+                    and \(\psi\) is a homeomorphism from \(U \cap V\) to \(\psi(U \cap V)\), so 
+                    the composition is a homeomorphism between open subsets of \(\mathbb{R}^n\).
+                </p>
+
+                <p>
+                    At the topological level, this is as much as can be said. The transition maps 
+                    of a topological atlas are homeomorphisms — continuous bijections with 
+                    continuous inverses — but they need not be differentiable, let alone smooth. 
+                    This is the reason a purely topological manifold structure is insufficient for 
+                    calculus: there is no well-defined notion of a smooth function on \(M\) unless 
+                    the transition maps themselves are required to be smooth. We turn to the 
+                    construction of smooth structures in the upcoming page on smooth manifolds.
+                </p>
+
+                <p>
+                    The remaining sections of this page exhibit the four most important families 
+                    of topological manifolds, organized by the technique used to construct them: 
+                    graphs of continuous functions, spheres, projective spaces, and products. 
+                    Each family will reappear later carrying smooth structure, and the smooth 
+                    versions will be built directly on top of the topological constructions given 
+                    here.
+                </p>
+            </section>
+
+            <section id="graphs" class="section-content">
+                <h2>Graphs of Continuous Functions</h2>
+
+                <p>
+                    The first construction we examine is the most elementary of the four: the graph 
+                    of a continuous function. As topological manifolds, graphs are essentially trivial 
+                    — they are covered by a single chart, and the chart is essentially built into 
+                    the definition. The reason for treating them carefully is that the technique 
+                    they introduce, sometimes called the <strong>graph chart construction</strong>, 
+                    becomes the workhorse of the next section, where it is used to give the sphere 
+                    \(S^n\) its standard atlas.
+                </p>
+
+                <h3>Setup</h3>
+
+                <p>
+                    Let \(U \subseteq \mathbb{R}^n\) be an open subset and 
+                    \(f : U \to \mathbb{R}^k\) a continuous function. The 
+                    <strong>graph</strong> of \(f\) is the subset
+                    \[
+                    \Gamma(f) = \{(x, f(x)) \in \mathbb{R}^{n+k} : x \in U\} \subseteq \mathbb{R}^{n+k},
+                    \]
+                    equipped with the 
+                    <a href="topological_spaces.html#D-subspace_topology" class="ref-link"><strong>subspace topology</strong></a> 
+                    inherited from \(\mathbb{R}^{n+k}\). Geometrically, \(\Gamma(f)\) is the 
+                    \(n\)-dimensional "tilted copy" of \(U\) sitting inside \(\mathbb{R}^{n+k}\) 
+                    that records the value of \(f\) at every point of \(U\).
+                </p>
+
+                <h3>The Graph as a Manifold</h3>
+
+                <p>
+                    The graph admits a single, natural chart: project away the \(f\)-coordinates 
+                    to recover the input \(x \in U\). This single map covers all of \(\Gamma(f)\), 
+                    so a single-chart atlas suffices to make \(\Gamma(f)\) a topological 
+                    \(n\)-manifold.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Graphs are Topological Manifolds</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{R}^n\) be open and \(f : U \to \mathbb{R}^k\) 
+                        continuous. The graph \(\Gamma(f) \subseteq \mathbb{R}^{n+k}\), endowed 
+                        with the subspace topology, is a topological \(n\)-manifold. The projection
+                        \[
+                        \pi_1 : \Gamma(f) \to U, \qquad \pi_1(x, f(x)) = x,
+                        \]
+                        is a homeomorphism, and \((\Gamma(f), \pi_1)\) is a single chart covering 
+                        all of \(\Gamma(f)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We verify that \(\pi_1\) is a homeomorphism onto \(U\). Since 
+                        \(\Gamma(f) \subseteq \mathbb{R}^{n+k}\) carries the subspace topology, 
+                        \(\pi_1\) is the restriction to \(\Gamma(f)\) of the linear projection 
+                        \(\mathbb{R}^{n+k} \to \mathbb{R}^n\), 
+                        \((x, y) \mapsto x\). The linear projection is continuous, so its restriction 
+                        \(\pi_1\) is continuous.
+                    </p>
+                    <p>
+                        The map \(\pi_1\) is a bijection onto \(U\) by construction: every 
+                        \(x \in U\) corresponds to the unique point \((x, f(x)) \in \Gamma(f)\). 
+                        The inverse is the explicit map
+                        \[
+                        \pi_1^{-1} : U \to \Gamma(f), \qquad \pi_1^{-1}(x) = (x, f(x)).
+                        \]
+                        Continuity of \(\pi_1^{-1}\) reduces to continuity of its two components, 
+                        \(x \mapsto x\) (the identity, continuous) and \(x \mapsto f(x)\) (continuous 
+                        by hypothesis on \(f\)). By the 
+                        <a href="topological_spaces.html#T-product_universal_property" class="ref-link"><strong>universal property of the product topology</strong></a>, 
+                        a map into a product space is continuous if and only if its components are 
+                        continuous, so \(\pi_1^{-1}\) is continuous.
+                    </p>
+                    <p>
+                        Thus \(\pi_1 : \Gamma(f) \to U\) is a continuous bijection with continuous 
+                        inverse, hence a homeomorphism. Since \(U \subseteq \mathbb{R}^n\) is open, 
+                        \((\Gamma(f), \pi_1)\) is a chart whose codomain is the open subset \(U\) 
+                        of \(\mathbb{R}^n\). The atlas \(\{(\Gamma(f), \pi_1)\}\) consisting of this 
+                        single chart covers \(\Gamma(f)\) entirely. The Hausdorff and 
+                        second-countable conditions are inherited from \(\mathbb{R}^{n+k}\) by the 
+                        <a href="topological_spaces.html#T-subspace_inheritance" class="ref-link"><strong>subspace inheritance theorem</strong></a>. 
+                        \(\Gamma(f)\) is therefore a topological \(n\)-manifold. 
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>The Graph Chart Construction</h3>
+
+                <p>
+                    The argument just given is more general than the statement suggests. What we 
+                    have actually shown is that whenever a subset \(S \subseteq \mathbb{R}^{n+k}\) 
+                    can be written as the graph of a continuous function on some open subset of 
+                    \(\mathbb{R}^n\), the projection forgetting the last \(k\) coordinates serves 
+                    as a chart for \(S\). This observation has a name in the manifold literature: 
+                    the <strong>graph chart construction</strong>.
+                </p>
+
+                <p>
+                    In its full form, the construction allows the role of the "input" coordinates 
+                    and the "output" coordinates to be played by any partition of the ambient 
+                    coordinates of \(\mathbb{R}^{n+k}\). For instance, a subset of \(\mathbb{R}^3\) 
+                    that is locally the graph of a continuous function of \(y, z\) — that is, 
+                    locally of the form \(x = g(y, z)\) — can be charted by the projection 
+                    \((x, y, z) \mapsto (y, z)\). The relevant condition is not which coordinates 
+                    are "input" and which are "output", but rather that the set is locally a graph 
+                    of some continuous function from one coordinate set to the rest.
+                </p>
+
+                <p>
+                    This flexibility is exactly what is required to chart the sphere. The sphere 
+                    \(S^n \subseteq \mathbb{R}^{n+1}\) is not globally the graph of any single 
+                    function, but every open hemisphere is locally a graph — once one coordinate 
+                    is singled out, the remaining \(n\) coordinates serve as the input, and the 
+                    chosen coordinate is determined by the constraint \(\sum (x^i)^2 = 1\). The 
+                    explicit construction occupies the next section.
+                </p>
+            </section>
+
+            <section id="spheres" class="section-content">
+                <h2>Spheres</h2>
+
+                <p>
+                    The sphere \(S^n\) is the second of the four constructions we examine, and 
+                    in many ways the most important: it is the prototypical example of a manifold 
+                    that genuinely requires multiple charts, and the chart construction we give 
+                    here — direct application of the graph chart machinery from the previous 
+                    section — is the standard one used throughout differential geometry. Spheres 
+                    are also the most concretely visualizable non-Euclidean manifolds, and they 
+                    will reappear repeatedly: as Lie groups (\(S^1, S^3\)), as factors of tori 
+                    \(T^n = (S^1)^n\), and as base spaces for fundamental constructions in 
+                    geometric deep learning, where rotation-equivariant networks process data 
+                    living on \(S^2\) or \(S^3\).
+                </p>
+
+                <h3>Setup</h3>
+
+                <p>
+                    The \(n\)-sphere is the subset of \(\mathbb{R}^{n+1}\) consisting of unit vectors:
+                    \[
+                    S^n = \left\{ x = (x^1, \ldots, x^{n+1}) \in \mathbb{R}^{n+1} : (x^1)^2 + \cdots + (x^{n+1})^2 = 1 \right\}.
+                    \]
+                    We equip \(S^n\) with the 
+                    <a href="topological_spaces.html#D-subspace_topology" class="ref-link"><strong>subspace topology</strong></a> 
+                    inherited from \(\mathbb{R}^{n+1}\). The Hausdorff and second-countable 
+                    conditions are automatic: any subspace of \(\mathbb{R}^{n+1}\) inherits both 
+                    properties from the ambient space. What requires work is the third manifold 
+                    condition — exhibiting an explicit atlas that witnesses local Euclidean 
+                    structure of dimension \(n\) at every point.
+                </p>
+
+                <h3>The Hemisphere Charts</h3>
+
+                <p>
+                    The idea is to view \(S^n\) as a union of open hemispheres, each of which is 
+                    a graph of a continuous function over an open ball in \(\mathbb{R}^n\). There 
+                    are \(2(n+1)\) hemispheres in total — two for each of the \(n+1\) coordinate 
+                    directions in the ambient space.
+                </p>
+
+                <p>
+                    For each index \(i \in \{1, \ldots, n+1\}\) and each sign \(\epsilon \in \{+, -\}\), 
+                    define the open hemisphere
+                    \[
+                    U_i^\epsilon = \{ x \in S^n : \epsilon \cdot x^i > 0 \}.
+                    \]
+                    This is the set of points on the sphere where the \(i\)-th coordinate has the 
+                    specified sign; geometrically, it is one of the two open hemispheres whose 
+                    pole is on the \(i\)-th coordinate axis. Each \(U_i^\epsilon\) is open in \(S^n\), 
+                    being the intersection of \(S^n\) with the open half-space 
+                    \(\{x \in \mathbb{R}^{n+1} : \epsilon \cdot x^i > 0\}\).
+                </p>
+
+                <p>
+                    Define the chart map
+                    \[
+                    \varphi_i^\epsilon : U_i^\epsilon \to B^n, \qquad 
+                    \varphi_i^\epsilon(x^1, \ldots, x^{n+1}) = (x^1, \ldots, \widehat{x^i}, \ldots, x^{n+1}),
+                    \]
+                    where \(B^n = \{u \in \mathbb{R}^n : |u| < 1\}\) is the open unit ball in 
+                    \(\mathbb{R}^n\), and the hat over \(x^i\) indicates that the \(i\)-th 
+                    coordinate is omitted from the tuple. The chart map sends a point on the 
+                    hemisphere to its remaining \(n\) coordinates, which lie inside \(B^n\) because 
+                    the omitted coordinate satisfies 
+                    \(x^i = \epsilon \sqrt{1 - \sum_{j \ne i} (x^j)^2}\) with 
+                    \(\sum_{j \ne i} (x^j)^2 < 1\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: The Sphere is a Topological Manifold</span>
+                    <p>
+                        The sphere \(S^n \subseteq \mathbb{R}^{n+1}\), with the subspace topology, 
+                        is a topological \(n\)-manifold. The collection of \(2(n+1)\) hemisphere 
+                        charts
+                        \[
+                        \mathcal{A}_{S^n} = \{(U_i^\epsilon, \varphi_i^\epsilon) : i = 1, \ldots, n+1,\ \epsilon \in \{+, -\}\}
+                        \]
+                        is an atlas for \(S^n\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Hausdorffness and second-countability of \(S^n\) follow from the same 
+                        properties of \(\mathbb{R}^{n+1}\) by the subspace topology. It remains 
+                        to verify that the collection \(\mathcal{A}_{S^n}\) is an atlas of charts.
+                    </p>
+                    <p>
+                        <strong>Each \(\varphi_i^\epsilon\) is a chart.</strong><br>
+                        Fix \(i\) and \(\epsilon\). On the hemisphere \(U_i^\epsilon\), the omitted 
+                        coordinate is determined by the others through 
+                        \(x^i = \epsilon \sqrt{1 - \sum_{j \ne i}(x^j)^2}\), 
+                        which is continuous on the open ball where the radicand is strictly positive. 
+                        Hence \(U_i^\epsilon\) is precisely the graph of the continuous function
+                        \[
+                        f_i^\epsilon : B^n \to \mathbb{R}, \qquad 
+                        f_i^\epsilon(u) = \epsilon \sqrt{1 - |u|^2},
+                        \]
+                        where \(u = (u^1, \ldots, u^n) \in B^n\) collects the \(n\) coordinates 
+                        of \(x \in U_i^\epsilon\) other than \(x^i\), and the graph is taken with 
+                        respect to the \(i\)-th coordinate position. 
+                        By the graph chart construction from the previous section, the projection 
+                        that drops the \(i\)-th coordinate is a homeomorphism from \(U_i^\epsilon\) 
+                        onto \(B^n\). This projection is exactly \(\varphi_i^\epsilon\). The 
+                        codomain \(B^n\) is an open subset of \(\mathbb{R}^n\), so 
+                        \((U_i^\epsilon, \varphi_i^\epsilon)\) is a chart on \(S^n\).
+                    </p>
+                    <p>
+                        <strong>The hemispheres cover \(S^n\).</strong><br>
+                        Let \(x = (x^1, \ldots, x^{n+1}) \in S^n\). Since 
+                        \((x^1)^2 + \cdots + (x^{n+1})^2 = 1 \ne 0\), at least one coordinate 
+                        \(x^i\) is nonzero. Choose such an \(i\) and let \(\epsilon\) be the sign 
+                        of \(x^i\). Then \(x \in U_i^\epsilon\), so every point of \(S^n\) lies in 
+                        at least one hemisphere chart.
+                    </p>
+                    <p>
+                        The collection \(\mathcal{A}_{S^n}\) is therefore an atlas, and \(S^n\) is 
+                        a topological \(n\)-manifold. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>Remarks on the Construction</h3>
+
+                <p>
+                    Two observations about the hemisphere atlas are worth noting now, even though 
+                    their full significance becomes apparent only later.
+                </p>
+
+                <p>
+                    First, the number of charts, \(2(n+1)\), is not the minimum possible: \(S^n\) 
+                    can in fact be covered by just two charts using stereographic projection from 
+                    the north and south poles. The hemisphere atlas is preferred at this stage 
+                    because it is the most direct application of the graph chart construction and 
+                    because its symmetry — every coordinate direction is treated identically — 
+                    makes it easier to analyze. The stereographic atlas is mentioned for context: 
+                    in differential geometry, the choice of atlas is often a matter of 
+                    computational convenience rather than logical necessity, and several distinct 
+                    atlases can describe the same manifold.
+                </p>
+
+                <p>
+                    Second, the construction so far is purely topological. The transition maps 
+                    between distinct charts \((U_i^\epsilon, \varphi_i^\epsilon)\) and 
+                    \((U_j^{\epsilon'}, \varphi_j^{\epsilon'})\) on their overlap are 
+                    homeomorphisms by the general theory of the previous section, but their 
+                    explicit form — and the smoothness of that form — is needed only when we 
+                    upgrade \(S^n\) to a smooth manifold. The explicit transition formulas 
+                    \(\varphi_j^{\epsilon'} \circ (\varphi_i^\epsilon)^{-1}\) involve square 
+                    roots of the form \(\sqrt{1 - |u|^2}\), which are smooth on the relevant 
+                    open subsets of \(\mathbb{R}^n\); we defer this verification to the future 
+                    page on smooth structures of the sphere and other constructed manifolds. At 
+                    the topological level treated here, the existence of the homeomorphism atlas 
+                    is the entire content of the statement.
+                </p>
+            </section>
+
+            <section id="projective-spaces" class="section-content">
+                <h2>Projective Spaces</h2>
+
+                <p>
+                    The third construction is qualitatively different from the previous two. Where 
+                    graphs and spheres are presented as subsets of an ambient Euclidean space, 
+                    real projective space \(\mathbb{RP}^n\) is built by an act of identification: 
+                    points of a larger space that are related by a specified equivalence are 
+                    declared to be the same. This is the <strong>quotient construction</strong>, 
+                    and projective space is its first nontrivial example in our development. The 
+                    construction will recur in more elaborate forms throughout differential 
+                    geometry — most directly in the future Grassmann manifold construction, of 
+                    which \(\mathbb{RP}^n\) is the simplest case.
+                </p>
+
+                <h3>Setup</h3>
+
+                <p>
+                    Real projective \(n\)-space is the set of one-dimensional linear subspaces 
+                    (i.e., lines through the origin) of \(\mathbb{R}^{n+1}\). Equivalently, it is 
+                    the quotient of \(\mathbb{R}^{n+1} \setminus \{0\}\) by the equivalence relation 
+                    that identifies nonzero scalar multiples:
+                    \[
+                    \mathbb{RP}^n = \bigl( \mathbb{R}^{n+1} \setminus \{0\} \bigr) / \sim, \qquad 
+                    x \sim y \iff y = \lambda x \text{ for some } \lambda \in \mathbb{R} \setminus \{0\}.
+                    \]
+                    We write \([x] = [x^1, \ldots, x^{n+1}]\) for the equivalence class of 
+                    \(x = (x^1, \ldots, x^{n+1})\), and 
+                    \(\pi : \mathbb{R}^{n+1} \setminus \{0\} \to \mathbb{RP}^n\) for the quotient 
+                    map sending \(x\) to \([x]\). The set \(\mathbb{RP}^n\) is endowed with the 
+                    <a href="topological_spaces.html#D-quotient_topology" class="ref-link"><strong>quotient topology</strong></a> 
+                    induced by \(\pi\): a subset \(V \subseteq \mathbb{RP}^n\) is open if and only 
+                    if \(\pi^{-1}(V)\) is open in \(\mathbb{R}^{n+1} \setminus \{0\}\).
+                </p>
+
+                <p>
+                    Geometrically, a point of \(\mathbb{RP}^n\) is a line through the origin in 
+                    \(\mathbb{R}^{n+1}\). The representative \(x\) is any nonzero point lying on 
+                    the line, and the equivalence \(x \sim \lambda x\) says simply that any two 
+                    such points represent the same line. This geometric picture motivates the 
+                    chart construction below: to coordinate a line, we intersect it with a 
+                    suitable affine hyperplane and record the intersection point.
+                </p>
+
+                <h3>The Affine Charts</h3>
+
+                <p>
+                    For each index \(i \in \{1, \ldots, n+1\}\), the chart domain consists of those 
+                    lines whose \(i\)-th coordinate is nonzero — equivalently, lines that meet the 
+                    affine hyperplane \(\{y \in \mathbb{R}^{n+1} : y^i = 1\}\) in a unique point. 
+                    Define
+                    \[
+                    \widetilde{U}_i = \{ x \in \mathbb{R}^{n+1} \setminus \{0\} : x^i \ne 0 \}, 
+                    \qquad U_i = \pi(\widetilde{U}_i) \subseteq \mathbb{RP}^n.
+                    \]
+                    The set \(\widetilde{U}_i\) is open in \(\mathbb{R}^{n+1} \setminus \{0\}\), 
+                    and it is saturated under \(\sim\) (if \(x \in \widetilde{U}_i\) and 
+                    \(\lambda \ne 0\), then \(\lambda x \in \widetilde{U}_i\)). It follows from 
+                    the definition of the quotient topology that \(U_i\) is open in 
+                    \(\mathbb{RP}^n\).
+                </p>
+
+                <p>
+                    Define the chart map by recording the ratios of the other coordinates to the 
+                    \(i\)-th:
+                    \[
+                    \varphi_i : U_i \to \mathbb{R}^n, \qquad 
+                    \varphi_i\bigl([x^1, \ldots, x^{n+1}]\bigr) 
+                    = \left( \frac{x^1}{x^i}, \ldots, \widehat{\frac{x^i}{x^i}}, \ldots, \frac{x^{n+1}}{x^i} \right),
+                    \]
+                    where the hat indicates that the \(i\)-th entry (which would equal 1) is 
+                    omitted, leaving \(n\) coordinates in the output.
+                </p>
+
+                <p>
+                    <strong>Well-definedness.</strong><br>
+                    The right-hand side is independent of the choice of representative. If 
+                    \(y = \lambda x\) with \(\lambda \ne 0\), then 
+                    \(y^j / y^i = (\lambda x^j) / (\lambda x^i) = x^j / x^i\) for every \(j\), 
+                    so the value of \(\varphi_i\) on the equivalence class \([x]\) does not depend 
+                    on which point of the line we used to compute it.
+                </p>
+
+                <p>
+                    <strong>Geometric interpretation.</strong><br>
+                    The image \(\varphi_i([x])\) records the unique point at which the line 
+                    \([x]\) meets the affine hyperplane \(\{y \in \mathbb{R}^{n+1} : y^i = 1\}\). 
+                    To see this, observe that the line \([x]\) intersects this hyperplane at the 
+                    unique point \(x / x^i\), whose coordinates are 
+                    \((x^1 / x^i, \ldots, x^i / x^i, \ldots, x^{n+1}/x^i) = (x^1/x^i, \ldots, 1, \ldots, x^{n+1}/x^i)\). 
+                    Dropping the entry equal to 1 — the \(i\)-th — leaves precisely the \(n\) 
+                    numbers that form \(\varphi_i([x])\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Projective Space is a Topological Manifold</span>
+                    <p>
+                        Real projective \(n\)-space \(\mathbb{RP}^n\), with the quotient topology 
+                        from \(\mathbb{R}^{n+1} \setminus \{0\}\), is a topological 
+                        \(n\)-manifold. The collection of affine charts
+                        \[
+                        \mathcal{A}_{\mathbb{RP}^n} = \{(U_i, \varphi_i) : i = 1, \ldots, n+1\}
+                        \]
+                        is an atlas for \(\mathbb{RP}^n\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        We verify the three manifold conditions. The Hausdorff and second-countable 
+                        conditions for a quotient space are more delicate than for a subspace: 
+                        these properties are not in general preserved by quotient maps. For 
+                        \(\mathbb{RP}^n\), both properties hold but their verification requires 
+                        some care. The quotient map \(\pi\) is open (the saturation of an open 
+                        set \(U \subseteq \mathbb{R}^{n+1} \setminus \{0\}\) is 
+                        \(\bigcup_{\lambda \ne 0} \lambda U\), again open), and the equivalence 
+                        relation \(\sim\) has closed graph in 
+                        \((\mathbb{R}^{n+1} \setminus \{0\})^2\); together, these imply 
+                        Hausdorffness. Second-countability follows from the second-countability 
+                        of the domain together with the openness of the quotient map.
+                    </p>
+                    <p>
+                        <strong>Each \(\varphi_i\) is a chart.</strong><br>
+                        The map \(\varphi_i : U_i \to \mathbb{R}^n\) is well-defined by the 
+                        argument above. To show it is a homeomorphism onto its image, we 
+                        construct an explicit inverse. The map
+                        \[
+                        \varphi_i^{-1} : \mathbb{R}^n \to U_i, \qquad 
+                        \varphi_i^{-1}(u^1, \ldots, u^n) 
+                        = [u^1, \ldots, u^{i-1}, 1, u^i, \ldots, u^n],
+                        \]
+                        where the \(i\)-th slot of the bracket is occupied by the constant \(1\), 
+                        is continuous: its lift through \(\pi\) is the continuous map 
+                        \(u \mapsto (u^1, \ldots, 1, \ldots, u^n)\) into 
+                        \(\mathbb{R}^{n+1} \setminus \{0\}\), and \(\pi\) is continuous by 
+                        definition of the quotient topology. One verifies directly that 
+                        \(\varphi_i \circ \varphi_i^{-1}\) and \(\varphi_i^{-1} \circ \varphi_i\) 
+                        are identities on \(\mathbb{R}^n\) and \(U_i\) respectively. Continuity of 
+                        \(\varphi_i\) itself reduces, via the 
+                        <a href="topological_spaces.html#T-quotient_universal_property" class="ref-link"><strong>universal property of the quotient topology</strong></a>, 
+                        to continuity of \(x \mapsto (x^1/x^i, \ldots, \widehat{x^i/x^i}, \ldots, x^{n+1}/x^i)\) 
+                        on the open set \(\widetilde{U}_i\), which is immediate since each component 
+                        is a rational function with non-vanishing denominator. The image 
+                        \(\varphi_i(U_i) = \mathbb{R}^n\) is open in \(\mathbb{R}^n\), so 
+                        \((U_i, \varphi_i)\) is a chart on \(\mathbb{RP}^n\).
+                    </p>
+                    <p>
+                        <strong>The charts cover \(\mathbb{RP}^n\).</strong><br>
+                        Any nonzero \(x \in \mathbb{R}^{n+1}\) has at least one coordinate 
+                        \(x^i \ne 0\), so \([x] \in U_i\). Therefore 
+                        \(\bigcup_i U_i = \mathbb{RP}^n\), and \(\mathcal{A}_{\mathbb{RP}^n}\) is 
+                        an atlas. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>Compactness and Two Useful Descriptions</h3>
+
+                <p>
+                    Projective space is compact: the quotient map restricts to a continuous 
+                    surjection \(S^n \to \mathbb{RP}^n\) (every line through the origin meets the 
+                    sphere), so \(\mathbb{RP}^n\) is the continuous image of the compact sphere 
+                    \(S^n\). This argument also reveals \(\mathbb{RP}^n\) under a second guise: 
+                    as the quotient of \(S^n\) by the antipodal identification \(x \sim -x\). 
+                    Both descriptions are useful and will appear in subsequent constructions.
+                </p>
+
+                <p>
+                    The case \(n = 1\) deserves special mention: \(\mathbb{RP}^1\) is the set of 
+                    lines through the origin in \(\mathbb{R}^2\). Each such line meets the upper 
+                    half of the unit circle in exactly one point, with the endpoints \((1, 0)\) and 
+                    \((-1, 0)\) of the upper half identified (since they lie on the same line, the 
+                    \(x\)-axis). Thus \(\mathbb{RP}^1\) is homeomorphic to a circle, although the 
+                    natural quotient map \(S^1 \to \mathbb{RP}^1\) is two-to-one (each pair of 
+                    antipodal points on \(S^1\) maps to a single point of \(\mathbb{RP}^1\)). 
+                    This double-cover relationship between \(S^1\) and \(\mathbb{RP}^1\) generalizes 
+                    to all \(n\): the antipodal quotient \(S^n \to \mathbb{RP}^n\) is a two-to-one 
+                    covering map for every \(n \ge 1\).
+                </p>
+
+                <p>
+                    Projective space will reappear later in two important contexts. First, 
+                    \(\mathbb{RP}^n\) is the simplest example of a <strong>Grassmann manifold</strong>: 
+                    if \(G_k(\mathbb{R}^{n+1})\) denotes the space of \(k\)-dimensional linear 
+                    subspaces of \(\mathbb{R}^{n+1}\), then \(\mathbb{RP}^n = G_1(\mathbb{R}^{n+1})\). 
+                    Second, the smooth structure on \(\mathbb{RP}^n\) — built directly from the 
+                    affine charts above by verifying that the transition maps \(\varphi_j \circ 
+                    \varphi_i^{-1}\) are rational functions, hence smooth — will be constructed 
+                    in a later page. The topological construction completed here is the foundation 
+                    on which the smooth and the Grassmannian generalizations are built.
+                </p>
+            </section>
+
+            <section id="products-tori" class="section-content">
+                <h2>Products and Tori</h2>
+
+                <p>
+                    The fourth and final construction is the simplest of the four: take the 
+                    Cartesian product of two manifolds and equip it with the product topology. 
+                    The result is again a manifold, with dimension equal to the sum of the 
+                    dimensions of the factors and an atlas built by taking products of charts. 
+                    The construction is mechanical, but it is the source of one of the most 
+                    important examples in geometry — the torus 
+                    \(T^n = S^1 \times \cdots \times S^1\) — and it is the technique by which 
+                    higher-dimensional manifolds are assembled from low-dimensional ones.
+                </p>
+
+                <h3>The Product of Manifolds</h3>
+
+                <p>
+                    Given topological manifolds \(M_1, \ldots, M_k\) of dimensions 
+                    \(n_1, \ldots, n_k\) respectively, the Cartesian product
+                    \[
+                    M = M_1 \times \cdots \times M_k
+                    \]
+                    is endowed with the 
+                    <a href="topological_spaces.html#D-product_topology_finite" class="ref-link"><strong>product topology</strong></a>, 
+                    in which a base of open sets consists of products \(V_1 \times \cdots \times V_k\) 
+                    where each \(V_j\) is open in \(M_j\).
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Proposition: Products of Manifolds are Manifolds</span>
+                    <p>
+                        Let \(M_1, \ldots, M_k\) be topological manifolds of dimensions 
+                        \(n_1, \ldots, n_k\). The product space \(M_1 \times \cdots \times M_k\), 
+                        with the product topology, is a topological manifold of dimension 
+                        \(n_1 + n_2 + \cdots + n_k\). If \(\mathcal{A}_j = \{(U_\alpha^{(j)}, \varphi_\alpha^{(j)})\}\) 
+                        is an atlas for \(M_j\), then the collection of product charts
+                        \[
+                        \bigl(U_{\alpha_1}^{(1)} \times \cdots \times U_{\alpha_k}^{(k)},\ 
+                        \varphi_{\alpha_1}^{(1)} \times \cdots \times \varphi_{\alpha_k}^{(k)}\bigr)
+                        \]
+                        forms an atlas for the product.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Hausdorff and second-countable.</strong><br>
+                        The product topology 
+                        <a href="topological_spaces.html#T-product_preserves_hausdorff_second_countable" class="ref-link"><strong>preserves both Hausdorffness and second-countability</strong></a> 
+                        for finite products. Since each \(M_j\) has both properties, so does 
+                        \(M_1 \times \cdots \times M_k\).
+                    </p>
+                    <p>
+                        <strong>Locally Euclidean of dimension \(\sum n_j\).</strong><br>
+                        Fix a point \((p_1, \ldots, p_k) \in M_1 \times \cdots \times M_k\). For 
+                        each \(j\), choose a chart \((U_{\alpha_j}^{(j)}, \varphi_{\alpha_j}^{(j)})\) 
+                        with \(p_j \in U_{\alpha_j}^{(j)}\) and 
+                        \(\varphi_{\alpha_j}^{(j)} : U_{\alpha_j}^{(j)} \to \widehat{U}_{\alpha_j}^{(j)} \subseteq \mathbb{R}^{n_j}\). 
+                        The product set 
+                        \(U = U_{\alpha_1}^{(1)} \times \cdots \times U_{\alpha_k}^{(k)}\) 
+                        is open in the product topology and contains \((p_1, \ldots, p_k)\). The 
+                        product map
+                        \[
+                        \varphi_{\alpha_1}^{(1)} \times \cdots \times \varphi_{\alpha_k}^{(k)} : 
+                        U \to \widehat{U}_{\alpha_1}^{(1)} \times \cdots \times \widehat{U}_{\alpha_k}^{(k)}, 
+                        \quad (q_1, \ldots, q_k) \mapsto \bigl(\varphi_{\alpha_1}^{(1)}(q_1), \ldots, \varphi_{\alpha_k}^{(k)}(q_k)\bigr),
+                        \]
+                        is a homeomorphism onto its image: continuity in each direction follows 
+                        by applying the 
+                        <a href="topological_spaces.html#T-product_universal_property" class="ref-link"><strong>universal property of the product topology</strong></a> 
+                        to the homeomorphisms \(\varphi_{\alpha_j}^{(j)}\) and their inverses, 
+                        and the image is the product of the images of the factors. The image is 
+                        an open subset of 
+                        \(\mathbb{R}^{n_1} \times \cdots \times \mathbb{R}^{n_k} = \mathbb{R}^{n_1 + \cdots + n_k}\). 
+                        This gives a chart at \((p_1, \ldots, p_k)\) of dimension 
+                        \(n_1 + \cdots + n_k\).
+                    </p>
+                    <p>
+                        Since the point was arbitrary, every point of the product has such a 
+                        chart, and the collection of all product charts covers the product space. 
+                        The product is therefore a topological \((n_1 + \cdots + n_k)\)-manifold. 
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <h3>The Torus</h3>
+
+                <p>
+                    The most important application of the product construction at this stage is 
+                    the torus.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">Definition: The n-Torus</span>
+                    <p>
+                        The <strong>\(n\)-torus</strong> is the product manifold
+                        \[
+                        T^n = \underbrace{S^1 \times S^1 \times \cdots \times S^1}_{n \text{ factors}}.
+                        \]
+                        By the proposition above, \(T^n\) is a topological \(n\)-manifold (each 
+                        circle contributes dimension 1).
+                    </p>
+                </div>
+
+                <p>
+                    The terminology can be subtle: in everyday usage, "the torus" almost always 
+                    refers specifically to \(T^2 = S^1 \times S^1\), the two-dimensional doughnut 
+                    surface. The higher-dimensional cases \(T^n\) for \(n \ge 3\) are routinely 
+                    called "\(n\)-tori" or simply "tori," but no concrete geometric picture in 
+                    three-dimensional space is available for them.
+                </p>
+
+                <p>
+                    The torus inherits from the product structure both an atlas and a great deal 
+                    of geometric content. The atlas built from the product of the standard 
+                    hemisphere atlases of each circle factor consists of \(4^n\) charts (each 
+                    \(S^1\) contributes 4 hemisphere charts, and the product takes one chart from 
+                    each factor). A more economical alternative is the product of stereographic 
+                    atlases — each \(S^1\) covered by 2 charts, giving \(2^n\) charts in total — 
+                    but the hemisphere product atlas is the conceptually natural one. Each chart 
+                    maps an open box-like region of \(T^n\) into an open subset of \(\mathbb{R}^n\) 
+                    — specifically, a product of open arcs.
+                </p>
+
+                <p>
+                    Although our treatment here is purely topological, the torus is one of the 
+                    most important examples in differential geometry for several reasons. It is 
+                    a compact manifold (a finite product of compact manifolds is compact), so it 
+                    serves as a natural setting for global analysis. It carries a natural group 
+                    structure inherited componentwise from \(S^1 \subseteq \mathbb{C}^*\), making 
+                    it the prototypical example of a compact abelian Lie group; this Lie-theoretic 
+                    structure will be the subject of a later page in the manifold series. And it 
+                    appears throughout physics and applied mathematics: as the configuration space 
+                    of pendulum systems, as the support of multivariate periodic Fourier series, 
+                    and as a quotient space \(\mathbb{R}^n / \mathbb{Z}^n\) that arises naturally 
+                    in number theory and dynamical systems.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
