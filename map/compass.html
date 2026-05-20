@@ -1633,20 +1633,50 @@ function lightenColor(color, percent) {
 }
 
 function wrapText(text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '', lines = [];
-    for (let n = 0; n < words.length; n++) {
-        let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) { 
-            lines.push(line); 
-            line = words[n] + ' '; 
-        } else { 
-            line = testLine; 
+    const maxLines = 4;            // hexagon vertical budget
+    const baseFont = ctx.font;     // remember caller's font (size + family)
+
+    // Try wrapping; if it overflows maxLines, shrink font and retry.
+    const buildLines = () => {
+        const words = text.split(' ');
+        let line = '', lines = [];
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                lines.push(line);
+                line = words[n] + ' ';
+            } else {
+                line = testLine;
+            }
         }
+        lines.push(line);
+        return lines;
+    };
+
+    // Parse "bold 12px 'Segoe UI'..." to get the numeric size we can scale.
+    const sizeMatch = baseFont.match(/(\d+(?:\.\d+)?)px/);
+    let fontPx = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
+    let lines = buildLines();
+    let lh = lineHeight;
+
+    // Shrink up to ~45% until it fits the line budget.
+    while (lines.length > maxLines && fontPx > 6) {
+        fontPx *= 0.92;
+        lh *= 0.92;
+        ctx.font = baseFont.replace(/(\d+(?:\.\d+)?)px/, fontPx.toFixed(2) + 'px');
+        lines = buildLines();
     }
-    lines.push(line);
-    const startY = y - ((lines.length - 1) * lineHeight) / 2;
-    lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + (i * lineHeight)));
+
+    // Hard cap: if still too many lines, truncate with an ellipsis.
+    if (lines.length > maxLines) {
+        lines = lines.slice(0, maxLines);
+        lines[maxLines - 1] = lines[maxLines - 1].trim().replace(/\s*\S*$/, '') + '…';
+    }
+
+    const startY = y - ((lines.length - 1) * lh) / 2;
+    lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + (i * lh)));
+
+    ctx.font = baseFont;  // restore so other draws are unaffected
 }
 
 /**
