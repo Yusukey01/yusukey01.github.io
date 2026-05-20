@@ -1636,9 +1636,25 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
     const maxLines = 4;            // hexagon vertical budget
     const baseFont = ctx.font;     // remember caller's font (size + family)
 
-    // Try wrapping; if it overflows maxLines, shrink font and retry.
+    // Hard-break a single word that is itself wider than maxWidth.
+    const breakLongWord = (word) => {
+        if (ctx.measureText(word).width <= maxWidth) return [word];
+        const pieces = [];
+        let chunk = '';
+        for (const ch of word) {
+            if (ctx.measureText(chunk + ch).width > maxWidth && chunk) {
+                pieces.push(chunk);
+                chunk = ch;
+            } else {
+                chunk += ch;
+            }
+        }
+        if (chunk) pieces.push(chunk);
+        return pieces;
+    };
+
     const buildLines = () => {
-        const words = text.split(' ');
+        const words = text.split(' ').flatMap(breakLongWord);
         let line = '', lines = [];
         for (let n = 0; n < words.length; n++) {
             const testLine = line + words[n] + ' ';
@@ -1653,21 +1669,24 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
         return lines;
     };
 
-    // Parse "bold 12px 'Segoe UI'..." to get the numeric size we can scale.
+    // Does any line exceed maxWidth? (catches single-long-word overflow)
+    const overflowsWidth = (lines) =>
+        lines.some(l => ctx.measureText(l.trim()).width > maxWidth);
+
     const sizeMatch = baseFont.match(/(\d+(?:\.\d+)?)px/);
     let fontPx = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
-    let lines = buildLines();
     let lh = lineHeight;
+    let lines = buildLines();
 
-    // Shrink up to ~45% until it fits the line budget.
-    while (lines.length > maxLines && fontPx > 6) {
+    // Shrink until it fits BOTH the line budget AND the width.
+    while ((lines.length > maxLines || overflowsWidth(lines)) && fontPx > 6) {
         fontPx *= 0.92;
         lh *= 0.92;
         ctx.font = baseFont.replace(/(\d+(?:\.\d+)?)px/, fontPx.toFixed(2) + 'px');
         lines = buildLines();
     }
 
-    // Hard cap: if still too many lines, truncate with an ellipsis.
+    // Hard cap on lines: truncate with an ellipsis if still too tall.
     if (lines.length > maxLines) {
         lines = lines.slice(0, maxLines);
         lines[maxLines - 1] = lines[maxLines - 1].trim().replace(/\s*\S*$/, '') + '…';
@@ -1676,7 +1695,7 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
     const startY = y - ((lines.length - 1) * lh) / 2;
     lines.forEach((l, i) => ctx.fillText(l.trim(), x, startY + (i * lh)));
 
-    ctx.font = baseFont;  // restore so other draws are unaffected
+    ctx.font = baseFont;  // restore global font state
 }
 
 /**
