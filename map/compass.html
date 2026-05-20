@@ -1633,28 +1633,12 @@ function lightenColor(color, percent) {
 }
 
 function wrapText(text, x, y, maxWidth, lineHeight) {
-    const maxLines = 4;            // hexagon vertical budget
-    const baseFont = ctx.font;     // remember caller's font (size + family)
+    const maxLines = 4;
+    const baseFont = ctx.font;
 
-    // Hard-break a single word that is itself wider than maxWidth.
-    const breakLongWord = (word) => {
-        if (ctx.measureText(word).width <= maxWidth) return [word];
-        const pieces = [];
-        let chunk = '';
-        for (const ch of word) {
-            if (ctx.measureText(chunk + ch).width > maxWidth && chunk) {
-                pieces.push(chunk);
-                chunk = ch;
-            } else {
-                chunk += ch;
-            }
-        }
-        if (chunk) pieces.push(chunk);
-        return pieces;
-    };
-
+    // Wrap on spaces only. Never split words.
     const buildLines = () => {
-        const words = text.split(' ').flatMap(breakLongWord);
+        const words = text.split(' ');
         let line = '', lines = [];
         for (let n = 0; n < words.length; n++) {
             const testLine = line + words[n] + ' ';
@@ -1669,7 +1653,6 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
         return lines;
     };
 
-    // Does any line exceed maxWidth? (catches single-long-word overflow)
     const overflowsWidth = (lines) =>
         lines.some(l => ctx.measureText(l.trim()).width > maxWidth);
 
@@ -1678,15 +1661,16 @@ function wrapText(text, x, y, maxWidth, lineHeight) {
     let lh = lineHeight;
     let lines = buildLines();
 
-    // Shrink until it fits BOTH the line budget AND the width.
-    while ((lines.length > maxLines || overflowsWidth(lines)) && fontPx > 6) {
-        fontPx *= 0.92;
-        lh *= 0.92;
+    // Shrink font until it fits both the line budget and the width.
+    // No word-splitting — shrinking alone handles long single words.
+    while ((lines.length > maxLines || overflowsWidth(lines)) && fontPx > 3) {
+        fontPx *= 0.94;
+        lh *= 0.94;
         ctx.font = baseFont.replace(/(\d+(?:\.\d+)?)px/, fontPx.toFixed(2) + 'px');
         lines = buildLines();
     }
 
-    // Hard cap on lines: truncate with an ellipsis if still too tall.
+    // Last-resort line cap (essentially never reached after shrinking).
     if (lines.length > maxLines) {
         lines = lines.slice(0, maxLines);
         lines[maxLines - 1] = lines[maxLines - 1].trim().replace(/\s*\S*$/, '') + '…';
