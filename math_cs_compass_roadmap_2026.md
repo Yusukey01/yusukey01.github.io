@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota
-**Last Updated:** 5/18/2026
+**Last Updated:** 5/20/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 122 pages as of 5/14/2026.**
+**Total: 129 pages as of 5/20/2026.** (linalg 30 / calc 42 / prob 26 / disc 17 / ml 14; per `curriculum.json`, which is authoritative for the count.)
 
 ---
 
@@ -322,21 +322,33 @@ This is a **4-track configuration**. Sustainability check is implicitly delegate
 
 ## Part 7 — Phase 3: Smooth Manifolds
 
-Series scope, page baseline, callback map, notation policy, and Lee Contents
-reference are specified in **`manifold_series_design_handout_v1.md`**
-(2026-05-18). Summary:
+Series scope, callback map, notation policy, and Lee Contents reference are
+specified in **`manifold_series_design_handout_v7.md`** (2026-05-20).
+Summary:
 
 - **Primary reference**: Lee, *Introduction to Smooth Manifolds*, 2nd ed.
 - **Scope**: Lee Ch.1–12 (designated by Lee as the required core)
-- **Baseline page count**: 12, one per Lee chapter, with drafting-time split
-  expected (precedent: Lie series 2→4)
 - **Rigor calibration**: Lee single-reference, graduate-textbook standard
 - **Boundary**: Lee's "with or without boundary" framework throughout
 
-The earlier roadmap version proposed a 3-page series (Ch.1, 3, 8–9 only). This
-has been superseded by the handout's 12-page baseline, which keeps Lee's
-designated core intact and avoids omissions that would propagate to Stokes /
-de Rham / Riemannian series downstream.
+**Progress (2026-05-20)**: The **Ch.1 block is complete — 6 pages published**
+(calc-36 Topological Manifolds, calc-37 Topological Properties, calc-38 Smooth
+Manifolds, calc-39 Smooth Sphere/Projective Space/Tori, calc-40 Chart Lemma &
+Grassmannian, calc-41 Manifolds with Boundary). Ch.2 onward is not yet started.
+
+A related page outside the Ch.1–12 core, **calc-42 (Homotopy and the
+Fundamental Group)**, has also been published; it derives from Lee's
+Appendix A topology review and sits as an extension of calc-29 (Topological
+Spaces) rather than in the manifold-series spine, but connects via π₁
+countability (owned by calc-37) and the SU(2)/SO(3) callback to linalg-27~30.
+
+**Page count is not predicted for Ch.2 onward.** The earlier "12-page
+baseline, one per Lee chapter" estimate is retracted: the Ch.1 record (an
+initial 1-page estimate that grew to 6) shows pre-drafting counts are
+unreliable. Topic IDs and page counts for Ch.2+ are fixed at drafting time.
+(The still-earlier 3-page proposal — Ch.1, 3, 8–9 only — was already
+superseded, as it would have propagated omissions to Stokes / de Rham /
+Riemannian series downstream.)
 
 **Riemannian Metrics, Differential Forms, Integration, de Rham cohomology**
 (Lee Ch.13+) are out of scope for this series and addressed in future series
@@ -366,7 +378,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 
 | Track | Est. Pages | Planned Filenames | Trigger / status |
 |--------|-----------|-------------------|--------|
-| Smooth Manifolds (calc-XX) | 12 baseline (see handout) | Filenames TBD at drafting; see `manifold_series_design_handout_v1.md` | Next |
+| Smooth Manifolds — Ch.2+ (calc-XX) | not predicted (see handout) | Filenames TBD at drafting; see `manifold_series_design_handout_v7.md` | Ch.1 block (calc-36~41) done; Ch.2 next |
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
@@ -391,7 +403,7 @@ This map tracks primary usage for development planning. The site-wide reference 
 |------|----------------------------|------|
 | **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
 | **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
-| **Lee — *Introduction to Smooth Manifolds*** | calc-29 → manifold series (calc-XX, 12-page baseline; see handout), future Riemannian series | Primary for manifold track |
+| **Lee — *Introduction to Smooth Manifolds*** | calc-29, calc-36~41 (Ch.1 block, published), calc-42 (related) → Ch.2+ manifold series, future Riemannian series; see `manifold_series_design_handout_v7.md` | Primary for manifold track |
 | **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32, calc-33, calc-34, calc-35 | Primary for Fourier and classical PDE applications |
 | **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
