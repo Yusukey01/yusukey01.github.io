@@ -1,0 +1,789 @@
+---
+layout: default
+title: "Manifolds with Boundary"
+topic_id: calc-41
+level: core
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Manifolds with Boundary</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#half-space-and-the-need-for-boundary">Half-Space and the Need for Boundary</a>
+            <a href="#topological-manifolds-with-boundary">Topological Manifolds with Boundary</a>
+            <a href="#topological-properties-of-manifolds-with-boundary">Topological Properties</a>
+            <a href="#smooth-structures-on-manifolds-with-boundary">Smooth Structures</a>
+            <a href="#product-and-smooth-invariance">Product and Smooth Invariance</a>
+        </div>
+
+        <div class="container">
+            <section id="half-space-and-the-need-for-boundary" class="section-content">
+                <h2>Half-Space and the Need for Boundary</h2>
+
+                <p>
+                    Every manifold we have constructed so far &mdash; spheres, projective spaces, tori, the
+                    <a href="grassmannian.html#T-grassmannian_smooth_manifold" class="ref-link"><strong>Grassmannians</strong></a>,
+                    and the
+                    <a href="topological_manifolds.html#D-topological_manifold" class="ref-link"><strong>topological manifolds</strong></a>
+                    of the opening pages &mdash; has been locally modeled on \(\mathbb{R}^n\), with no edges and no rim. Near every
+                    point, such a manifold looks like all of Euclidean space. Yet many of the most natural geometric objects do have
+                    edges. A closed interval \([a, b] \subseteq \mathbb{R}\) has its two endpoints; a closed disk in the plane has
+                    its bounding circle; a closed hemisphere of the sphere \(\mathbb{S}^n\) terminates at an equatorial
+                    \((n-1)\)-sphere. At an endpoint of \([a, b]\), no neighborhood inside the interval is homeomorphic to an open
+                    interval of \(\mathbb{R}\): every neighborhood is a half-open interval, with the endpoint sitting on its edge.
+                    These spaces are not manifolds in the sense developed so far, but they are manifolds in a slightly enlarged
+                    sense, one that admits a boundary.
+                </p>
+
+                <p>
+                    The reason to develop this enlarged notion now, as the closing topic of the topological and smooth foundations,
+                    is that the boundary is precisely where the most important integral identities of geometry live. The classical
+                    theorems of vector calculus &mdash; Green's theorem in the plane, the divergence theorem of Gauss, the curl
+                    theorem of Stokes &mdash; all relate an integral over a region to an integral over the edge of that region.
+                    Their common generalization, the modern Stokes theorem, takes the form
+                    \[
+                    \int_{M} d\omega \;=\; \int_{\partial M} \omega,
+                    \]
+                    in which the left-hand side integrates over a manifold and the right-hand side integrates over its boundary
+                    \(\partial M\). For this identity even to be stated, one needs a class of spaces that carry both a smooth
+                    structure in their interior and a well-defined boundary on which the second integral makes sense. The objects of
+                    this page are exactly those spaces. We do not develop integration here &mdash; that requires the machinery of
+                    differential forms, taken up later in the series &mdash; but the present page builds the stage on which it will
+                    be performed.
+                </p>
+
+                <p>
+                    The need is not confined to classical analysis. Wherever a domain is constrained, a boundary appears. Boundary-value
+                    problems for partial differential equations &mdash; the Dirichlet and Neumann problems, free-boundary problems in
+                    the calculus of variations &mdash; are posed on regions whose edges carry the prescribed data, and the integration
+                    theory we developed on the
+                    <a href="measure.html"><strong>measure-theoretic</strong></a>
+                    side has its natural geometric counterpart on manifolds with boundary. In machine learning and robotics the same
+                    structure recurs: a configuration space subject to constraints &mdash; joint angle limits on an articulated arm,
+                    obstacle-avoidance regions in a planning problem &mdash; is a manifold with boundary rather than a boundaryless one.
+                    The
+                    <a href="../Machine_learning/vae.html"><strong>variational autoencoder page's robotic manipulation demonstration</strong></a>,
+                    in which a three-degree-of-freedom arm is parametrized by a triple of joint angles, implicitly works over such a
+                    constrained space: the admissible joint angles fill a product of closed intervals
+                    \([\theta_{\min}, \theta_{\max}]^3\). Strictly, a product of closed intervals has corners as well as faces, placing
+                    it in the slightly larger class of <em>manifolds with corners</em>, which the manifold series treats much later; for
+                    now we record only that boundaries are the rule, not the exception, once domains are constrained.
+                </p>
+
+                <h3>The Upper Half-Space</h3>
+
+                <p>
+                    Just as a boundaryless \(n\)-manifold is modeled locally on \(\mathbb{R}^n\), a manifold with boundary is modeled
+                    locally on a half-space: the points of \(\mathbb{R}^n\) lying on one side of a hyperplane, together with the
+                    hyperplane itself. Fixing the last coordinate as the one cut off, we obtain the standard local model.
+                </p>
+
+                <div class="theorem" id="D-half_space">
+                    <span class="theorem-title">Definition: Closed Upper Half-Space</span>
+                    <p>
+                        For \(n \ge 1\), the <strong>closed upper half-space</strong> \(\mathbb{H}^n \subseteq \mathbb{R}^n\) is the set
+                        \[
+                        \mathbb{H}^n = \bigl\{ (x^1, \ldots, x^n) \in \mathbb{R}^n : x^n \ge 0 \bigr\},
+                        \]
+                        equipped with the subspace topology inherited from \(\mathbb{R}^n\). For \(n = 0\), we set
+                        \(\mathbb{H}^0 = \mathbb{R}^0 = \{0\}\).
+                    </p>
+                </div>
+
+                <p>
+                    The half-space inherits two distinguished subsets from the position of a point relative to the bounding hyperplane.
+                    For \(n \ge 1\), the <strong>interior of the half-space</strong> consists of the points lying strictly off the
+                    hyperplane,
+                    \[
+                    \operatorname{Int} \mathbb{H}^n = \bigl\{ (x^1, \ldots, x^n) : x^n > 0 \bigr\},
+                    \]
+                    and the <strong>boundary of the half-space</strong> consists of the points lying on it,
+                    \[
+                    \partial \mathbb{H}^n = \bigl\{ (x^1, \ldots, x^n) : x^n = 0 \bigr\}.
+                    \]
+                    The interior \(\operatorname{Int} \mathbb{H}^n\) is an open subset of \(\mathbb{R}^n\), and it is exactly the
+                    topological interior of \(\mathbb{H}^n\) as a subset of \(\mathbb{R}^n\). The boundary \(\partial \mathbb{H}^n\) is
+                    the hyperplane \(\{x^n = 0\}\); it is naturally identified with \(\mathbb{R}^{n-1}\) by discarding the final
+                    coordinate, and under this identification it is itself a copy of \(\mathbb{R}^{n-1}\), a \((n-1)\)-dimensional
+                    Euclidean space sitting inside \(\mathbb{R}^n\). The degenerate case \(n = 0\) follows the convention above:
+                    \(\mathbb{H}^0 = \{0\}\) is a single point with \(\operatorname{Int} \mathbb{H}^0 = \{0\}\) and
+                    \(\partial \mathbb{H}^0 = \varnothing\).
+                </p>
+
+                <p>
+                    A point of caution about the symbols \(\operatorname{Int}\) and \(\partial\), to which we return once manifolds enter
+                    the picture. As written here, \(\operatorname{Int} \mathbb{H}^n\) and \(\partial \mathbb{H}^n\) are defined by an
+                    inequality on the coordinate \(x^n\); they are subsets of \(\mathbb{R}^n\) singled out by their position relative to
+                    the hyperplane. This is the description we use as a <em>local model</em>. It is a separate matter &mdash; and the
+                    central subtlety of the next section &mdash; whether the interior and boundary of an abstract manifold, defined
+                    intrinsically without reference to any ambient space, can be detected chart by chart through this model. That they
+                    can is the content of an invariance theorem; until it is established we keep the half-space picture and the manifold
+                    picture notationally distinct.
+                </p>
+            </section>
+            <section id="topological-manifolds-with-boundary" class="section-content">
+                <h2>Topological Manifolds with Boundary</h2>
+
+                <p>
+                    With the local model in hand, the definition of a manifold with boundary is obtained from the
+                    boundaryless definition by a single change: a neighborhood of a point is now permitted to look like an
+                    open subset of the half-space \(\mathbb{H}^n\), not only an open subset of \(\mathbb{R}^n\). The
+                    Hausdorff and second-countability requirements are unchanged.
+                </p>
+
+                <div class="theorem" id="D-topological_manifold_with_boundary">
+                    <span class="theorem-title">Definition: Topological Manifold with Boundary</span>
+                    <p>
+                        A <strong>topological \(n\)-manifold with boundary</strong> is a topological space \(M\) that is
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            <a href="topological_spaces.html#D-T1_T2_top" class="ref-link"><strong>Hausdorff</strong></a>
+                            and
+                            <a href="topological_spaces.html#D-first_second_countable" class="ref-link"><strong>second-countable</strong></a>;
+                            and
+                        </li>
+                        <li>
+                            <strong>locally Euclidean with boundary</strong>: every point \(p \in M\) has an open
+                            neighborhood homeomorphic either to an open subset of \(\mathbb{R}^n\) or to an open subset of
+                            the half-space \(\mathbb{H}^n\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    The phrase "with boundary" is a permission, not a requirement: a point whose neighborhood happens to be
+                    homeomorphic to an open subset of \(\mathbb{R}^n\) is admitted exactly as before. Every boundaryless
+                    \(n\)-manifold is therefore a manifold with boundary in which the boundary turns out to be empty &mdash; a
+                    statement we will be able to make precise once the boundary is defined. The deliberate effect of the
+                    definition is to <em>enlarge</em> the class of admissible spaces, not to replace one class with another.
+                </p>
+
+                <h3>Charts and Their Two Types</h3>
+
+                <p>
+                    The chart vocabulary carries over verbatim, with the codomain now allowed to lie in either model space.
+                </p>
+
+                <div class="theorem" id="D-chart_for_manifold_with_boundary">
+                    <span class="theorem-title">Definition: Chart for a Manifold with Boundary</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold with boundary. A <strong>chart for \(M\)</strong> is a pair
+                        \((U, \varphi)\) where \(U \subseteq M\) is open and \(\varphi\) is a homeomorphism from \(U\) onto
+                        an open subset \(\varphi(U)\) of either \(\mathbb{R}^n\) or \(\mathbb{H}^n\).
+                    </p>
+                </div>
+
+                <p>
+                    Charts split into two kinds according to where their image sits relative to the bounding hyperplane of the
+                    model. The distinction is the engine of the entire theory of the boundary.
+                </p>
+
+                <div class="theorem" id="D-interior_boundary_chart">
+                    <span class="theorem-title">Definition: Interior Chart and Boundary Chart</span>
+                    <p>
+                        Let \((U, \varphi)\) be a chart for a topological \(n\)-manifold with boundary \(M\).
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            \((U, \varphi)\) is an <strong>interior chart</strong> if \(\varphi(U)\) is an open subset of
+                            \(\mathbb{R}^n\) &mdash; equivalently, an open subset of \(\mathbb{H}^n\) that is disjoint from
+                            \(\partial \mathbb{H}^n\), since such a set is also open in \(\mathbb{R}^n\).
+                        </li>
+                        <li>
+                            \((U, \varphi)\) is a <strong>boundary chart</strong> if \(\varphi(U)\) is an open subset of
+                            \(\mathbb{H}^n\) with \(\varphi(U) \cap \partial \mathbb{H}^n \ne \varnothing\).
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    A single subtlety deserves emphasis. An open subset of \(\mathbb{H}^n\) that misses the hyperplane
+                    \(\partial \mathbb{H}^n\) is, by definition of the subspace topology, an open subset of \(\mathbb{R}^n\)
+                    as well; a chart with such an image is therefore both expressible as an interior chart and harmlessly
+                    regardable as a boundary chart whose image avoids the edge. The classification into "interior" and
+                    "boundary" is genuinely informative only when the image of a boundary chart actually meets
+                    \(\partial \mathbb{H}^n\). It is precisely the points carried onto \(\partial \mathbb{H}^n\) by some chart
+                    that we are about to single out.
+                </p>
+
+                <p>
+                    The codomain of a boundary chart often has a standard convenient shape, the half-space analogue of a
+                    coordinate ball.
+                </p>
+
+                <div class="theorem" id="D-coordinate_half_ball">
+                    <span class="theorem-title">Definition: Coordinate Half-Ball</span>
+                    <p>
+                        A <strong>coordinate half-ball</strong> is a boundary chart \((U, \varphi)\) whose image is a set of
+                        the form \(B_r(x_0) \cap \mathbb{H}^n\), where \(x_0 \in \partial \mathbb{H}^n\) and \(B_r(x_0)\) is
+                        the open ball of radius \(r\) centered at \(x_0\) in \(\mathbb{R}^n\); equivalently, \(\varphi(U)\) is
+                        an open ball in \(\mathbb{R}^n\) centered on the hyperplane, intersected with the half-space.
+                    </p>
+                </div>
+
+                <h3>Interior and Boundary Points</h3>
+
+                <p>
+                    We can now define, intrinsically on \(M\), the two classes of points that the half-space model
+                    distinguishes locally.
+                </p>
+
+                <div class="theorem" id="D-interior_boundary_point_manifold">
+                    <span class="theorem-title">Definition: Interior Point, Boundary Point, \(\operatorname{Int} M\), \(\partial M\)</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold with boundary, and let \(p \in M\).
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            \(p\) is an <strong>interior point of \(M\)</strong> if it lies in the domain of some interior
+                            chart, or in the domain of a boundary chart \((U, \varphi)\) with
+                            \(\varphi(p) \in \operatorname{Int} \mathbb{H}^n\).
+                        </li>
+                        <li>
+                            \(p\) is a <strong>boundary point of \(M\)</strong> if it lies in the domain of some boundary
+                            chart \((U, \varphi)\) with \(\varphi(p) \in \partial \mathbb{H}^n\).
+                        </li>
+                    </ul>
+                    <p>
+                        The set of all boundary points is the <strong>boundary of \(M\)</strong>, denoted \(\partial M\); the
+                        set of all interior points is the <strong>interior of \(M\)</strong>, denoted \(\operatorname{Int} M\).
+                    </p>
+                </div>
+
+                <p>
+                    The definitions are phrased existentially &mdash; "lies in the domain of <em>some</em> chart of the stated
+                    kind" &mdash; and this is exactly where a difficulty hides. A given point \(p\) may lie in the domains of
+                    many charts at once. Nothing in the definitions, as stated, forbids one chart from presenting \(p\) as an
+                    interior point while another presents the same \(p\) as a boundary point. Were that to happen, the labels
+                    "interior" and "boundary" would not be properties of the point at all, but artifacts of the chart chosen to
+                    view it, and the sets \(\operatorname{Int} M\) and \(\partial M\) would be ill-defined. That this never
+                    happens &mdash; that the two classes are genuinely intrinsic &mdash; is a theorem.
+                </p>
+
+                <div class="theorem" id="T-topological_invariance_of_boundary">
+                    <span class="theorem-title">Theorem: Topological Invariance of the Boundary</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold with boundary. No point of \(M\) is simultaneously an interior
+                        point and a boundary point. Consequently \(\operatorname{Int} M\) and \(\partial M\) are disjoint, and
+                        every point of \(M\) belongs to exactly one of them, so that
+                        \[
+                        M = \operatorname{Int} M \;\sqcup\; \partial M.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    We state this result without proof. The obstruction is genuine: at the purely topological level, the
+                    assertion that an open subset of \(\mathbb{R}^n\) cannot be homeomorphic to a neighborhood of a point on the
+                    edge of \(\mathbb{H}^n\) is a statement about the local topology of Euclidean space that lies beyond what
+                    point-set methods can reach. Its standard proof uses the machinery of singular homology &mdash; specifically,
+                    the local homology groups that distinguish a point of \(\operatorname{Int} \mathbb{H}^n\) from a point of
+                    \(\partial \mathbb{H}^n\) &mdash; which is outside the scope of the manifold series at this stage. Remarkably,
+                    once a <em>smooth</em> structure is available the same invariance can be proved by elementary calculus, with
+                    no algebraic topology at all; that smooth counterpart is the technical climax of this page, and the contrast
+                    between the two proofs &mdash; one requiring homology, one requiring only the chain rule &mdash; is one of the
+                    instructive lessons of the subject.
+                </p>
+
+                <h3>Two Meanings of the Symbol \(\partial\)</h3>
+
+                <p>
+                    The notation \(\partial M\) collides with another standard use of the same symbol, and the two must be kept
+                    apart. In point-set topology, when a space \(X\) sits inside an ambient space, the <em>topological boundary</em>
+                    of \(X\) is the set of points in the closure of \(X\) that are not in its topological interior &mdash; the points
+                    that touch both \(X\) and its complement. The <em>manifold boundary</em> just defined is an intrinsic notion,
+                    depending only on \(M\) as an abstract manifold and not on any embedding into a larger space. The two need not
+                    coincide, and conflating them is a common source of error.
+                </p>
+
+                <p>
+                    The closed half-space itself illustrates the agreement and the closed unit ball the disagreement. Regarded as a
+                    manifold with boundary, \(\mathbb{H}^n\) has manifold boundary \(\partial \mathbb{H}^n = \{x^n = 0\}\); regarded
+                    as a subset of \(\mathbb{R}^n\), its topological boundary is the same hyperplane, so here the two notions agree.
+                    The closed unit ball \(\overline{\mathbb{B}}^n \subseteq \mathbb{R}^n\) is a manifold with boundary whose manifold
+                    boundary is the unit sphere \(\mathbb{S}^{n-1}\), and its topological boundary as a subset of \(\mathbb{R}^n\) is
+                    also \(\mathbb{S}^{n-1}\): the two agree again. But the agreement is an accident of the ambient dimension matching
+                    the manifold dimension. The open interval \((0,1)\), viewed as a \(1\)-manifold, has empty manifold boundary; viewed
+                    as a subset of \(\mathbb{R}^2\) along the \(x\)-axis it equals its own topological boundary, all of it. The manifold
+                    boundary is the notion this page concerns; the symbol \(\partial\) always refers to it here.
+                </p>
+
+                <h3>Closed and Open Manifolds</h3>
+
+                <p>
+                    Two further pieces of terminology, both concerning boundaryless manifolds, are conventional in the literature and
+                    worth recording before they appear unannounced. Both invite confusion with the point-set vocabulary of open and
+                    closed sets, and neither has anything to do with it.
+                </p>
+
+                <div class="theorem" id="D-closed_open_manifold">
+                    <span class="theorem-title">Definition: Closed Manifold and Open Manifold</span>
+                    <p>
+                        A <strong>closed manifold</strong> is a compact manifold without boundary. An <strong>open manifold</strong>
+                        is a noncompact connected manifold without boundary.
+                    </p>
+                </div>
+
+                <p>
+                    The word "closed" here records compactness, not the topological property of being a closed set, and neither a
+                    closed manifold nor an open manifold has any boundary at all. The sphere \(\mathbb{S}^n\) is a closed manifold; the
+                    Euclidean space \(\mathbb{R}^n\) and the open ball are open manifolds. A closed interval \([0,1]\), by contrast, is
+                    neither: it is compact but does have a boundary, so it is a compact manifold with boundary and falls under none of
+                    this terminology. The terms are useful precisely because the property of having no boundary, combined with a
+                    compactness alternative, organizes much of the global theory of manifolds.
+                </p>
+            </section>
+            <section id="topological-properties-of-manifolds-with-boundary" class="section-content">
+                <h2>Topological Properties of Manifolds with Boundary</h2>
+
+                <p>
+                    Granting the topological invariance of the boundary, the interior and the boundary of a manifold are
+                    well-defined sets, and we can ask what kind of spaces they are in their own right. The answer is the
+                    cleanest possible one: the interior is a boundaryless manifold of the same dimension, and the boundary is a
+                    boundaryless manifold of one dimension lower. The statement also records when the boundary is empty and what
+                    happens in the degenerate dimension zero.
+                </p>
+
+                <div class="theorem" id="T-int_and_boundary_of_manifold">
+                    <span class="theorem-title">Proposition: Structure of the Interior and Boundary</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold with boundary.
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            \(\operatorname{Int} M\) is an open subset of \(M\) and a topological \(n\)-manifold without
+                            boundary.
+                        </li>
+                        <li>
+                            \(\partial M\) is a closed subset of \(M\) and a topological \((n-1)\)-manifold without boundary.
+                        </li>
+                        <li>
+                            \(M\) is a topological manifold without boundary if and only if \(\partial M = \varnothing\).
+                        </li>
+                        <li>
+                            If \(n = 0\), then \(\partial M = \varnothing\) and \(M\) is a \(0\)-manifold.
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(a)</strong>:<br>
+                        Each interior point lies, by definition, in the domain of a chart carrying it into
+                        \(\operatorname{Int} \mathbb{H}^n\) or into an open subset of \(\mathbb{R}^n\); shrinking that chart's
+                        domain to the preimage of a small open ball about the image point produces a neighborhood of the point
+                        consisting entirely of interior points and homeomorphic to an open subset of \(\mathbb{R}^n\). Hence
+                        \(\operatorname{Int} M\) is open in \(M\) and every one of its points has a Euclidean neighborhood, so it
+                        is locally Euclidean without boundary; it inherits the Hausdorff and second-countability properties from
+                        \(M\) as a subspace, and is therefore a topological \(n\)-manifold without boundary.
+                    </p>
+                    <p>
+                        <strong>(b)</strong>:<br>
+                        Since \(\partial M = M \setminus \operatorname{Int} M\) by the invariance theorem, and
+                        \(\operatorname{Int} M\) is open, \(\partial M\) is closed in \(M\). For the manifold structure, let
+                        \(p \in \partial M\) lie in a boundary chart \((U, \varphi)\) with \(\varphi(p) \in \partial \mathbb{H}^n\).
+                        Restricting \(\varphi\) to \(U \cap \partial M\) and composing with the identification
+                        \(\partial \mathbb{H}^n \cong \mathbb{R}^{n-1}\) given by dropping the last coordinate yields a
+                        homeomorphism from a neighborhood of \(p\) in \(\partial M\) onto an open subset of \(\mathbb{R}^{n-1}\).
+                        These restricted charts cover \(\partial M\) and exhibit it as locally Euclidean of dimension \(n-1\)
+                        without boundary; with the inherited Hausdorff and second-countability properties, \(\partial M\) is a
+                        topological \((n-1)\)-manifold without boundary.
+                    </p>
+                    <p>
+                        <strong>(c)</strong>:<br>
+                        If \(\partial M = \varnothing\) then every point is interior, so \(M = \operatorname{Int} M\) is
+                        boundaryless by (a). Conversely, a manifold without boundary has every point covered by a chart into
+                        \(\mathbb{R}^n\), making every point interior and \(\partial M = \varnothing\).
+                    </p>
+                    <p>
+                        <strong>(d)</strong>:<br>
+                        A \(0\)-dimensional model space is a single point: \(\mathbb{R}^0 = \mathbb{H}^0 = \{0\}\), with
+                        \(\partial \mathbb{H}^0 = \varnothing\) by convention. Every chart on a \(0\)-manifold therefore carries
+                        its point into \(\operatorname{Int} \mathbb{H}^0\), so no point can be a boundary point and
+                        \(\partial M = \varnothing\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The relation \(\partial M = M \setminus \operatorname{Int} M\) used in part (b) is exactly the disjoint-union
+                    decomposition supplied by the invariance theorem; without that theorem, the complement of the interior would
+                    not be guaranteed to consist of boundary points, and the closedness of \(\partial M\) would not follow. This
+                    is the one place in the elementary theory where the deferred topological invariance is genuinely needed.
+                </p>
+
+                <h3>Carrying the Topological Properties Across</h3>
+
+                <p>
+                    The properties established earlier for boundaryless manifolds &mdash; the existence of well-behaved bases,
+                    local compactness, paracompactness, connectivity &mdash; all survive the introduction of a boundary. The
+                    reason is structural: each of those proofs rested on the local model being Euclidean, and the half-space
+                    \(\mathbb{H}^n\) is just as well-behaved a local model as \(\mathbb{R}^n\). Wherever a coordinate ball was
+                    used, a coordinate half-ball serves the same purpose at boundary points; the arguments are otherwise
+                    unchanged. We collect the results for the record.
+                </p>
+
+                <div class="theorem" id="T-topological_properties_manifold_with_boundary">
+                    <span class="theorem-title">Proposition: Topological Properties with Boundary</span>
+                    <p>
+                        Let \(M\) be a topological manifold with boundary. Then:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            \(M\) has a countable basis of precompact coordinate balls and coordinate half-balls.
+                        </li>
+                        <li>
+                            \(M\) is locally compact.
+                        </li>
+                        <li>
+                            \(M\) is paracompact.
+                        </li>
+                        <li>
+                            \(M\) is locally path-connected.
+                        </li>
+                        <li>
+                            \(M\) has countably many components, each of which is an open subset of \(M\) and a connected
+                            topological manifold with boundary.
+                        </li>
+                        <li>
+                            The fundamental group of \(M\) is countable.
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    Each statement is the boundary-aware version of a result proved for manifolds without boundary, and the
+                    proofs require only the substitution of half-balls for balls at boundary points. Statement (a) refines the
+                    earlier
+                    <a href="topological_properties_of_manifolds.html#T-precompact_coordinate_balls_basis" class="ref-link"><strong>basis of precompact coordinate balls</strong></a>
+                    by allowing half-balls in the cover; the single-chart construction in \(\mathbb{R}^n\) is replaced, at
+                    boundary charts, by the identical construction inside \(\mathbb{H}^n\), and the countable assembly is
+                    unchanged. Statement (b) follows from (a) exactly as before, since
+                    <a href="topological_properties_of_manifolds.html#T-manifolds_locally_compact" class="ref-link"><strong>local compactness</strong></a>
+                    needs only one precompact neighborhood at each point, and half-balls are precompact. Statement (c),
+                    <a href="topological_properties_of_manifolds.html#T-manifolds_paracompact" class="ref-link"><strong>paracompactness</strong></a>,
+                    is deduced from the basis of (a) and local compactness by the same compact-exhaustion argument, which never
+                    referred to the absence of boundary. Statements (d) and (e) are the
+                    <a href="topological_properties_of_manifolds.html#T-manifold_connectivity" class="ref-link"><strong>connectivity properties</strong></a>:
+                    coordinate half-balls, like coordinate balls, are path-connected (a half-ball is convex, hence path-connected,
+                    and path-connectedness transfers under the chart homeomorphism), so the manifold again has a basis of
+                    path-connected open sets, and the component count is governed by second-countability just as before.
+                    Statement (f), the
+                    <a href="topological_properties_of_manifolds.html#T-fundamental_group_manifold_countable" class="ref-link"><strong>countability of the fundamental group</strong></a>,
+                    is of a different character from the rest: it is not a point-set consequence of the basis but a fact about
+                    the algebraic topology of \(M\). Its proof for manifolds without boundary cuts a loop into finitely many arcs,
+                    each confined to a simply connected coordinate ball, and reads off the loop's class from the countable record
+                    of how consecutive arcs meet. Nothing in that argument uses the absence of a boundary: coordinate half-balls
+                    are convex, hence simply connected, and the cover by half-balls is countable piece by piece exactly as the
+                    cover by balls. The same proof therefore applies verbatim, with half-balls substituted for balls at boundary
+                    charts, and \(\pi_1(M)\) is countable for a manifold with boundary as well.
+                </p>
+            </section>
+            <section id="smooth-structures-on-manifolds-with-boundary" class="section-content">
+                <h2>Smooth Structures on Manifolds with Boundary</h2>
+
+                <p>
+                    Everything so far has been topological. To do calculus on a manifold with boundary we repeat the construction
+                    that produced
+                    <a href="smooth_manifolds.html#D-smooth_manifold" class="ref-link"><strong>smooth manifolds</strong></a>
+                    from topological ones: we single out a maximal atlas whose transition maps are diffeomorphisms. There is exactly
+                    one new ingredient. Transition maps between boundary charts are maps between open subsets of the half-space
+                    \(\mathbb{H}^n\), not of \(\mathbb{R}^n\), and the
+                    <a href="smooth_manifolds.html#D-smooth_function_Rn" class="ref-link"><strong>Euclidean definition of smoothness</strong></a>
+                    we already have applies only to maps on open subsets of \(\mathbb{R}^n\). A subset of \(\mathbb{H}^n\) that meets
+                    the boundary hyperplane is not open in \(\mathbb{R}^n\), so before anything else we must say what it means for a
+                    map defined on such a set to be smooth.
+                </p>
+
+                <h3>Smoothness on Subsets of the Half-Space</h3>
+
+                <p>
+                    The difficulty is that partial derivatives at a boundary point would have to be one-sided in the last variable,
+                    and a one-sided derivative is a weaker object than a genuine derivative: it sees only the values of the function
+                    on one side. The standard remedy declares a map smooth on a half-space subset exactly when it is the restriction
+                    of an honestly smooth map defined on a full Euclidean neighborhood.
+                </p>
+
+                <div class="theorem" id="D-smoothness_on_halfspace_subset">
+                    <span class="theorem-title">Definition: Smoothness on a Subset of \(\mathbb{H}^n\)</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{H}^n\) be open in the subspace topology, and let \(F : U \to \mathbb{R}^k\). The map
+                        \(F\) is <strong>smooth</strong> if for every point \(x \in U\) there exist an open set
+                        \(\widetilde{U} \subseteq \mathbb{R}^n\) containing \(x\) and a smooth map
+                        \(\widetilde{F} : \widetilde{U} \to \mathbb{R}^k\), in the
+                        <a href="smooth_manifolds.html#D-smooth_function_Rn" class="ref-link"><strong>ordinary Euclidean sense</strong></a>,
+                        that agrees with \(F\) on \(\widetilde{U} \cap U\).
+                    </p>
+                </div>
+
+                <p>
+                    At points of \(U\) lying in \(\operatorname{Int} \mathbb{H}^n\) the condition is automatic and adds nothing: such
+                    a point already has a full neighborhood inside \(U\), and \(F\) is its own extension there. The definition has
+                    content only at boundary points of \(U\), where it demands that \(F\) extend smoothly across the hyperplane to
+                    one side. An equivalent and frequently more practical description is that \(F\) is smooth on \(U\) precisely when
+                    all partial derivatives of all orders exist throughout \(U\) and extend continuously up to the boundary &mdash;
+                    the one-sided derivatives at boundary points matching limits of interior derivatives. The two formulations agree;
+                    we take the extension form as primary because it makes the chain rule available without one-sided bookkeeping.
+                </p>
+
+                <p>
+                    That the extension requirement is a genuine restriction, not a formality satisfied by every continuous-looking
+                    function, is shown by a single example. Consider on the half-disk \(\overline{\mathbb{B}}^2 \cap \mathbb{H}^2\)
+                    the function
+                    \[
+                    g(x, y) = \sqrt{y}, \qquad y \ge 0.
+                    \]
+                    It is continuous on its domain and infinitely differentiable at every interior point. But it is not smooth in the
+                    sense just defined: its partial derivative with respect to \(y\),
+                    \[
+                    \frac{\partial g}{\partial y} = \frac{1}{2\sqrt{y}},
+                    \]
+                    diverges as \(y \to 0^+\), so no continuous extension of the \(y\)-derivative to the boundary exists, and a
+                    fortiori no smooth extension of \(g\) to an open neighborhood of any boundary point in \(\mathbb{R}^2\) can exist
+                    &mdash; such an extension would have a finite \(y\)-derivative at the boundary, contradicting the blow-up.
+                    Smoothness up to the boundary is therefore a real constraint, exactly the one needed to keep the chain rule and
+                    the Jacobian well-behaved at the edge.
+                </p>
+
+                <h3>Smooth Manifolds with Boundary</h3>
+
+                <p>
+                    With smoothness defined on half-space subsets, the compatibility of charts is defined exactly as before. A
+                    transition map between two charts of a manifold with boundary is a homeomorphism between open subsets of model
+                    spaces, each of which is either \(\mathbb{R}^n\) or \(\mathbb{H}^n\); the half-space notion of smoothness applies
+                    to it in every case, and we may ask whether it is a diffeomorphism &mdash; smooth with smooth inverse &mdash; in
+                    that sense.
+                </p>
+
+                <div class="theorem" id="D-smooth_manifold_with_boundary">
+                    <span class="theorem-title">Definition: Smooth Manifold with Boundary</span>
+                    <p>
+                        A <strong>smooth manifold with boundary</strong> is a topological manifold with boundary \(M\) together with a
+                        maximal atlas of charts into \(\mathbb{R}^n\) or \(\mathbb{H}^n\), any two of which are <strong>smoothly
+                        compatible</strong>: their transition map is a diffeomorphism between the relevant open subsets of model
+                        spaces, where smoothness is read in the half-space sense whenever a domain meets the boundary hyperplane.
+                        This maximal atlas is the <strong>smooth structure</strong> on \(M\).
+                    </p>
+                </div>
+
+                <p>
+                    This is the
+                    <a href="smooth_manifolds.html#D-smooth_structure" class="ref-link"><strong>smooth structure</strong></a>
+                    of the boundaryless theory with two adjustments and no others: a chart may now map into \(\mathbb{H}^n\) as well
+                    as \(\mathbb{R}^n\), and the
+                    <a href="smooth_manifolds.html#D-smoothly_compatible_charts" class="ref-link"><strong>smooth-compatibility condition</strong></a>
+                    is read with the half-space notion of smoothness in place of the purely Euclidean one. When no chart meets the
+                    boundary &mdash; when every transition is a map between open subsets of \(\mathbb{R}^n\) &mdash; the two readings
+                    coincide and the definition reduces exactly to the boundaryless one, so a smooth manifold without boundary is the
+                    special case of a smooth manifold with boundary in which \(\partial M = \varnothing\).
+                </p>
+
+                <h3>Smooth Charts and Half-Balls</h3>
+
+                <p>
+                    The shape-based refinements of a chart specialize to the boundary setting in the obvious way, mirroring the
+                    <a href="smooth_manifolds.html#D-smooth_chart" class="ref-link"><strong>smooth coordinate balls</strong></a>
+                    of the boundaryless theory.
+                </p>
+
+                <div class="theorem" id="D-smooth_coord_half_ball">
+                    <span class="theorem-title">Definition: Smooth Coordinate Half-Ball</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with boundary. A <strong>smooth coordinate half-ball</strong> is a coordinate
+                        half-ball \((U, \varphi)\) that is a smooth chart &mdash; that is, an element of the smooth structure &mdash;
+                        whose image is of the form \(B_r(x_0) \cap \mathbb{H}^n\) with \(x_0 \in \partial \mathbb{H}^n\).
+                    </p>
+                </div>
+
+                <p>
+                    The same packaging that produced regular coordinate balls &mdash; a ball sitting with compact closure inside a
+                    strictly larger smooth chart &mdash; has a boundary version, in which the larger chart is itself a half-ball.
+                </p>
+
+                <div class="theorem" id="D-regular_coord_half_ball">
+                    <span class="theorem-title">Definition: Regular Coordinate Half-Ball</span>
+                    <p>
+                        A subset \(B \subseteq M\) is a <strong>regular coordinate half-ball</strong> if there exist a smooth
+                        coordinate half-ball \(B'\) with \(\overline{B} \subseteq B'\), a smooth coordinate map
+                        \(\varphi : B' \to \mathbb{H}^n\), and radii \(r < r'\) with \(x_0 \in \partial \mathbb{H}^n\) such that
+                        \[
+                        \varphi(B) = B_r(x_0) \cap \mathbb{H}^n, \qquad
+                        \varphi(\overline{B}) = \overline{B_r(x_0)} \cap \mathbb{H}^n, \qquad
+                        \varphi(B') = B_{r'}(x_0) \cap \mathbb{H}^n.
+                        \]
+                        This is the half-space analogue of a
+                        <a href="smooth_manifolds.html#D-regular_coordinate_ball" class="ref-link"><strong>regular coordinate ball</strong></a>,
+                        and like its boundaryless counterpart it is precompact in \(M\).
+                    </p>
+                </div>
+
+                <p>
+                    Finally, the basis result of the boundaryless theory persists. Just as every smooth manifold has a countable
+                    basis of regular coordinate balls, every smooth manifold with boundary has a countable basis consisting of
+                    regular coordinate balls at interior points and regular coordinate half-balls at boundary points. The proof is the
+                    smooth refinement of the topological basis result of the previous section, adapted exactly as the
+                    boundaryless basis-of-regular-balls argument was adapted from its topological predecessor: every chart in the
+                    construction is required to lie in the smooth structure, and at boundary points the half-ball model replaces the
+                    ball. We will not rewrite that argument here, since it differs from the one already given only by this
+                    substitution.
+                </p>
+            </section>
+            <section id="product-and-smooth-invariance" class="section-content">
+                <h2>Product and Smooth Invariance</h2>
+
+                <p>
+                    Two results close the theory. The first records how the boundary behaves under products; the second is the
+                    smooth counterpart of the invariance theorem stated earlier, and it is the technical high point of the page. Where
+                    the topological invariance required the machinery of algebraic topology, the smooth invariance falls to the chain
+                    rule and a single fact about smooth maps with invertible derivative.
+                </p>
+
+                <h3>Products</h3>
+
+                <p>
+                    Taking products of manifolds with boundary requires care, and the care is exactly the issue of corners. The
+                    product of two closed half-lines is a closed quarter-plane, whose edge is not a smooth hypersurface but a pair of
+                    rays meeting at a right angle. To stay within the category of manifolds with boundary, one must restrict products
+                    so that at most one factor has a boundary.
+                </p>
+
+                <div class="theorem" id="T-product_smooth_manifold_with_boundary">
+                    <span class="theorem-title">Proposition: Products with a Single Boundary Factor</span>
+                    <p>
+                        Let \(M_1, \ldots, M_k\) be smooth manifolds without boundary and let \(N\) be a smooth manifold with boundary.
+                        Then the product \(M_1 \times \cdots \times M_k \times N\) is a smooth manifold with boundary, and
+                        \[
+                        \partial\bigl(M_1 \times \cdots \times M_k \times N\bigr) = M_1 \times \cdots \times M_k \times \partial N.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The smooth structure is built from product charts exactly as in the
+                        <a href="smooth_constructed_spaces.html#T-smooth_product_manifold" class="ref-link"><strong>boundaryless product construction</strong></a>,
+                        with one factor's charts now allowed to be boundary charts into \(\mathbb{H}^m\). A product chart on
+                        \(M_1 \times \cdots \times M_k \times N\) maps into
+                        \(\mathbb{R}^{n_1} \times \cdots \times \mathbb{R}^{n_k} \times \mathbb{H}^m\), and the identification
+                        \(\mathbb{R}^{n} \times \mathbb{H}^{m} \cong \mathbb{H}^{n+m}\) &mdash; obtained by placing the single
+                        half-space coordinate last &mdash; exhibits this product model space as a half-space of the total dimension.
+                        Transition maps are products of the factor transitions; each factor transition is smooth, and a product of
+                        smooth maps between (half-space) open sets is smooth in the half-space sense, so the product charts are
+                        smoothly compatible and assemble into a smooth structure. A point of the product is a boundary point precisely
+                        when its \(N\)-coordinate is carried to \(\partial \mathbb{H}^m\), that is, precisely when the \(N\)-component
+                        lies in \(\partial N\); this is the displayed identity for the boundary. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The single-boundary-factor restriction is essential, not a convenience. The product of two manifolds with boundary
+                    has, along the locus where both boundaries meet, points whose neighborhoods are modeled on a product of two
+                    half-spaces \(\mathbb{H}^n \times \mathbb{H}^m\) rather than on a single half-space. Such a product is not
+                    homeomorphic to an open subset of any \(\mathbb{H}^{n+m}\) near the corner: it has a corner there, a feature no
+                    half-space model possesses. The objects that accommodate corners form the strictly larger category of
+                    <em>manifolds with corners</em>, whose local model is the orthant \(\{x : x^1 \ge 0, \ldots, x^k \ge 0\}\); their
+                    theory is developed much later in the manifold series, and it is the proper setting for products such as the cube
+                    \([0,1]^n\) or the constrained joint-angle spaces noted at the start of this page.
+                </p>
+
+                <h3>Smooth Invariance of the Boundary</h3>
+
+                <p>
+                    We come to the theorem that gives the boundary of a smooth manifold its meaning. The interior and boundary points
+                    were defined existentially &mdash; a point is a boundary point if <em>some</em> boundary chart sends it to
+                    \(\partial \mathbb{H}^n\) &mdash; and the topological invariance theorem, which guarantees the labels are
+                    well-defined, was stated without proof because its topological version needs singular homology. For smooth
+                    manifolds the same conclusion is available by elementary means, and we prove it in full.
+                </p>
+
+                <div class="theorem" id="T-smooth_invariance_of_boundary">
+                    <span class="theorem-title">Theorem: Smooth Invariance of the Boundary</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with boundary and let \(p \in M\). If some smooth boundary chart
+                        \((V, \varphi)\) for \(M\) has \(\varphi(p) \in \partial \mathbb{H}^n\), then every smooth chart whose domain
+                        contains \(p\) is a boundary chart carrying \(p\) into \(\partial \mathbb{H}^n\). Equivalently, no point of
+                        \(M\) is presented as a boundary point by one smooth chart and as an interior point by another, so
+                        \(\operatorname{Int} M\) and \(\partial M\) are well-defined.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Suppose, for contradiction, that \(p\) lies in the domain of a smooth interior chart \((U, \psi)\) and also in
+                        the domain of a smooth boundary chart \((V, \varphi)\) with \(\varphi(p) \in \partial \mathbb{H}^n\). Let
+                        \[
+                        \tau = \varphi \circ \psi^{-1} : \psi(U \cap V) \to \varphi(U \cap V)
+                        \]
+                        be the transition map, a homeomorphism between open subsets of the model spaces. By smooth compatibility of the
+                        two charts, both \(\tau\) and \(\tau^{-1}\) are smooth in the half-space sense: each agrees locally with a
+                        genuinely smooth map defined on an open subset of \(\mathbb{R}^n\).
+                    </p>
+                    <p>
+                        Write \(x_0 = \psi(p)\) and \(y_0 = \varphi(p) = \tau(x_0)\). Because \(\tau^{-1}\) is smooth at \(y_0\), there
+                        is a neighborhood \(W\) of \(y_0\) in \(\mathbb{R}^n\) and a smooth map \(\eta : W \to \mathbb{R}^n\), in the
+                        ordinary Euclidean sense, agreeing with \(\tau^{-1}\) on \(W \cap \varphi(U \cap V)\). On the other side, since
+                        \((U, \psi)\) is an interior chart, \(\psi(U \cap V)\) is an open subset of \(\mathbb{R}^n\), so there is an
+                        open Euclidean ball \(B\) centered at \(x_0\) and contained in \(\psi(U \cap V)\) on which \(\tau\) is
+                        genuinely smooth. Shrinking \(B\) if necessary, we may assume \(B \subseteq \tau^{-1}(W)\).
+                    </p>
+                    <p>
+                        On \(B\) the two maps compose to the identity:
+                        \[
+                        \eta \circ \tau\big|_{B} = \tau^{-1} \circ \tau\big|_{B} = \operatorname{id}_{B}.
+                        \]
+                        Differentiating with the chain rule at any \(x \in B\),
+                        \[
+                        D\eta\bigl(\tau(x)\bigr) \circ D\tau(x) = \operatorname{id},
+                        \]
+                        so the square matrix \(D\tau(x)\) has a left inverse and is therefore nonsingular at every \(x \in B\).
+                    </p>
+                    <p>
+                        We now invoke the one analytic fact the argument needs, the open mapping property of nonsingular smooth maps: a
+                        smooth map between open subsets of \(\mathbb{R}^n\) whose Jacobian is nonsingular at every point is an open map,
+                        carrying open sets to open sets. (This is a standard consequence of the inverse function theorem: nonsingularity
+                        of the Jacobian makes the map a local diffeomorphism at each point, and a local diffeomorphism is locally, hence
+                        globally, open.) Applying it to \(\tau\) on \(B\), the image \(\tau(B)\) is an open subset of \(\mathbb{R}^n\)
+                        containing \(y_0 = \varphi(p)\).
+                    </p>
+                    <p>
+                        This is the contradiction. On the one hand \(\tau(B) \subseteq \varphi(U \cap V) \subseteq \mathbb{H}^n\), so
+                        \(\tau(B)\) is a subset of the half-space; on the other hand \(\tau(B)\) is open in \(\mathbb{R}^n\) and
+                        contains the point \(\varphi(p) \in \partial \mathbb{H}^n\). But no subset of \(\mathbb{H}^n\) that is open in
+                        \(\mathbb{R}^n\) can contain a point of \(\partial \mathbb{H}^n\): any \(\mathbb{R}^n\)-open neighborhood of a
+                        point with final coordinate \(x^n = 0\) contains points with \(x^n < 0\), which lie outside \(\mathbb{H}^n\).
+                        The assumption that \(p\) is simultaneously an interior point and a boundary point is therefore untenable.
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The contrast with the topological invariance theorem stated earlier is worth drawing explicitly, because it
+                    illustrates a recurring theme: a smooth structure, once present, makes available tools far more elementary than
+                    those the bare topology demands. The topological statement &mdash; that no homeomorphism can identify a
+                    neighborhood of an interior point with a neighborhood of a boundary point &mdash; resists point-set methods and is
+                    proved through the local homology groups of singular homology theory. The smooth statement just proved needs none
+                    of that: the transition map is differentiable, its derivative is forced to be invertible by the chain rule, and
+                    invertibility of the derivative is exactly the hypothesis under which a smooth map is open. The same geometric fact
+                    &mdash; interior and boundary are intrinsic &mdash; is reached by two routes of utterly different cost, and the
+                    smooth route is the cheap one. This is one of the first concrete dividends of the smooth structure built over the
+                    course of these pages, and it is the foundation on which the boundary integral of the next stage of the theory will
+                    rest.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
