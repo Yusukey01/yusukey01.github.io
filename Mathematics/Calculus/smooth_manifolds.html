@@ -1,0 +1,1565 @@
+---
+layout: default
+title: "Smooth Manifolds"
+topic_id: calc-38
+level: core
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Smooth Manifolds</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#from-continuity-to-smoothness">From Continuity to Smoothness</a>
+            <a href="#smooth-atlases-and-structures">Smooth Atlases and Smooth Structures</a>
+            <a href="#local-coordinate-representations">Local Coordinate Representations</a>
+            <a href="#einstein-summation">The Einstein Summation Convention</a>
+            <a href="#standard-smooth-structures">Standard Smooth Structures</a>
+            <a href="#vector-and-matrix-spaces">Vector Spaces and Matrix Spaces</a>
+            <a href="#open-submanifolds-gl-and-graphs">Open Submanifolds, \(GL(n,\mathbb{R})\), and Smooth Graphs</a>
+        </div>
+
+        <div class="container">
+            <section id="from-continuity-to-smoothness" class="section-content">
+                <h2>From Continuity to Smoothness</h2>
+
+                <p>
+                    The theory developed in the previous two pages was, by design, entirely topological. A
+                    <a href="topological_manifolds.html#D-topological_manifold" class="ref-link"><strong>topological manifold</strong></a>
+                    is built from continuity alone: a Hausdorff, second-countable space that is locally homeomorphic to \(\mathbb{R}^n\). 
+                    Continuity is enough to ask when two manifolds are the same up to deformation, to count connected components, and 
+                    to compare global features such as compactness and simple connectivity. It is not enough, however, to do calculus. 
+                    In the entire theory of topological manifolds there is no mention of derivatives, and there cannot be one 
+                    — for a fundamental reason that we examine first.
+                </p>
+
+                <h3>Why Continuity is Not Enough</h3>
+
+                <p>
+                    The obstruction is that derivatives are not invariant under homeomorphisms. A locally Euclidean space carries, 
+                    at each point, a homeomorphism between an open neighborhood and an open subset of \(\mathbb{R}^n\); this homeomorphism is the
+                    <a href="topological_manifolds.html#D-coordinate_chart" class="ref-link"><strong>coordinate chart</strong></a>
+                    through which Euclidean calculus would have to be transported. But homeomorphisms are far too flexible to 
+                    preserve differentiability, and a single concrete example makes this transparent.
+                </p>
+
+                <p>
+                    Consider the map
+                    \[
+                    \psi : \mathbb{R}^2 \to \mathbb{R}^2, \qquad
+                    \psi(x, y) = (x^3, y^3).
+                    \]
+                    Each component is a continuous bijection of \(\mathbb{R}\) onto itself with continuous inverse \(t \mapsto t^{1/3}\), 
+                    so \(\psi\) is a homeomorphism; in our chart convention, \(\psi : \mathbb{R}^2 \to \mathbb{R}^2\) qualifies as a chart 
+                    on the manifold \(\mathbb{R}^2\), sending each point to its "coordinate" image. Now take the smooth function 
+                    \(f : \mathbb{R}^2 \to \mathbb{R}\) defined by \(f(x, y) = x\); this is a coordinate projection, as smooth as any function on
+                    \(\mathbb{R}^2\) could be. To read \(f\) through the chart \(\psi\), one composes with \(\psi^{-1}(u, v) = (u^{1/3}, v^{1/3})\) and computes
+                    \[
+                    f \circ \psi^{-1} : \mathbb{R}^2 \to \mathbb{R}, \qquad
+                    (u, v) \mapsto u^{1/3}.
+                    \]
+                    This composition is not differentiable at the origin: the partial derivative with respect to \(u\) equals \(\tfrac{1}{3} u^{-2/3}\) for
+                    \(u \ne 0\), which diverges as \(u \to 0\), so the limit defining the partial derivative at the origin does not exist. The same function
+                    \(f\) that is smooth when read through the identity chart on \(\mathbb{R}^2\) fails to be even once-differentiable when read
+                    through the chart \(\psi\), even though \(\psi\) is a perfectly valid homeomorphism.
+                </p>
+
+                <p>
+                    Reading this carefully: the function \(f\) has not changed; the underlying space \(\mathbb{R}^2\) has not changed; what 
+                    has changed is only the chart we use to assign coordinates. Differentiability — and therefore any notion of "derivative on the manifold" — 
+                    is sensitive to the choice of chart in a way that continuity is not. A topological manifold, in which every homeomorphism onto 
+                    an open subset of \(\mathbb{R}^n\) qualifies as a chart, has no means to decide which charts give the "right" answer for differentiation.
+                </p>
+
+                <h3>The Strategy: An Additional Layer of Structure</h3>
+
+                <p>
+                    The remedy is not to abandon topological manifolds but to add a layer of structure on top of them. The topological data remains unchanged; 
+                    to it we adjoin a selection rule that distinguishes a privileged collection of charts on which differentiation is well-defined and chart-
+                    independent. The construction is the subject of the next section.
+                </p>
+
+                <p>
+                    The extra layer is called a <strong>smooth structure</strong>, and a topological manifold endowed with one is called 
+                    a <strong>smooth manifold</strong>. Before we can define it formally, we review the small piece of Euclidean calculus 
+                    on which the construction rests.
+                </p>
+
+                <h3>Smoothness in Euclidean Space</h3>
+
+                <p>
+                    The definitions that follow describe ordinary smoothness for maps between open subsets of Euclidean spaces — the kind of smoothness
+                    encountered in multivariable calculus. They are stated separately from the manifold theory because the formal notion of a smooth map
+                    between smooth manifolds belongs to the next page in the manifold series; here we record only the working vocabulary for maps in
+                    Euclidean space, on which the manifold construction will rest.
+                </p>
+
+                <div class="theorem" id="D-smooth_function_Rn">
+                    <span class="theorem-title">Definition: \(C^\infty\) Map Between Euclidean Open Sets</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{R}^n\) and \(V \subseteq \mathbb{R}^m\) be open subsets. 
+                        A map \(F : U \to V\) is called <strong>smooth</strong> (or \(C^\infty\), or <strong>infinitely differentiable</strong>) if
+                        each of its component functions \(F^1, \ldots, F^m : U \to \mathbb{R}\) has continuous partial derivatives of all orders.
+                    </p>
+                </div>
+
+                <p>
+                    Throughout this page and the rest of the manifold series, we use <em>smooth</em> as synonymous with \(C^\infty\). Conventions in the
+                    literature vary — some authors use <em>smooth</em> to mean merely continuously differentiable, and some use <em>differentiable</em> to
+                    mean what we call smooth — but the choice of \(C^\infty\) is by far the most useful for manifold theory, since it avoids the bookkeeping 
+                    of finitely many derivatives and is preserved under all the operations of the subject 
+                    (compositions, restrictions, partitions of unity, and so on).
+                </p>
+
+                <div class="theorem" id="D-diffeomorphism_Rn">
+                    <span class="theorem-title">Definition: Diffeomorphism Between Euclidean Open Sets</span>
+                    <p>
+                        Let \(U, V \subseteq \mathbb{R}^n\) be open subsets of the same Euclidean space. A map \(F : U \to V\) is called a
+                        <strong>diffeomorphism</strong> if \(F\) is a smooth bijection and its inverse \(F^{-1} : V \to U\) is also smooth.
+                    </p>
+                </div>
+
+                <p>
+                    The restriction to a common ambient \(\mathbb{R}^n\) is not an additional constraint imposed by the definition but a necessary
+                    consequence of any candidate diffeomorphism's existence. If \(F : U \to V\) were a diffeomorphism with \(U \subseteq \mathbb{R}^n\)
+                    and \(V \subseteq \mathbb{R}^m\), then at every point of \(U\) the chain rule applied to \(F^{-1} \circ F = \mathrm{id}_U\) would 
+                    force the Jacobian \(DF\) to be a left-invertible \(m \times n\) matrix, and a similar argument with \(F \circ F^{-1} = \mathrm{id}_V\) 
+                    would force it to be right-invertible; both conditions can hold simultaneously only when the matrix is square, hence \(m = n\). 
+                    The two-sided smooth condition therefore forces the two ambient dimensions to agree, so we lose nothing by building this agreement 
+                    into the definition itself.
+                </p>
+
+                <p>
+                    Every diffeomorphism is, in particular, a
+                    <a href="homeomorphism.html#D-homeomorphism" class="ref-link"><strong>homeomorphism</strong></a>:
+                    a smooth map is continuous, and the same is true of its inverse. The converse is the issue raised by the example at the start of this
+                    section. The map \(\psi(x, y) = (x^3, y^3)\) is a homeomorphism of \(\mathbb{R}^2\) onto itself, and \(\psi\) itself is smooth (its
+                    components are polynomials); but the inverse \(\psi^{-1}(u, v) = (u^{1/3}, v^{1/3})\) fails to be smooth at the origin, 
+                    since the partial derivatives blow up there. So \(\psi\) is a smooth homeomorphism that is not a diffeomorphism, and this is
+                    precisely the asymmetry that the smooth structure on a manifold is designed to discipline. We turn to its construction now.
+                </p>
+            </section>
+
+            <section id="smooth-atlases-and-structures" class="section-content">
+                <h2>Smooth Atlases and Smooth Structures</h2>
+
+                <p>
+                    We now build the smooth structure formally. The construction has three layers: a compatibility relation between two charts, 
+                    an atlas in which every pair of charts satisfies the relation, and finally a canonical maximal version of such an atlas 
+                    — the smooth structure itself.
+                </p>
+
+                <h3>A First Attempt and Its Obstruction</h3>
+
+                <p>
+                    The natural first attempt to define smoothness on a manifold is the following. Given a real-valued function \(f : M \to \mathbb{R}\), 
+                    one would like to say that \(f\) is smooth if and only if, for every chart \((U, \varphi)\), the composite
+                    \[
+                    f \circ \varphi^{-1} : \widehat{U} \to \mathbb{R}
+                    \]
+                    is smooth in the sense of ordinary calculus on the open set \(\widehat{U} \subseteq \mathbb{R}^n\). 
+                    This definition would make smoothness on \(M\) a question about ordinary calculus on \(\mathbb{R}^n\),
+                    which is exactly what we want.
+                </p>
+
+                <p>
+                    The obstruction is that the definition will only make sense if the answer does not depend on the chart used to evaluate it. 
+                    The counter-example of the previous section shows that, among arbitrary topological charts, this independence fails — 
+                    the cube-root chart can turn a smooth function into a non-smooth one. So we are not yet entitled to declare \(f\) smooth 
+                    by checking it through any single chart. Independence of the chart is the property the entire construction must secure, and 
+                    the route to it is to restrict from the start to a collection of charts that agree with one another on differentiability,
+                    in the following precise sense.
+                </p>
+
+                <h3>Transition Maps and Smooth Compatibility</h3>
+
+                <p>
+                    Let \(M\) be a topological \(n\)-manifold, and let \((U, \varphi)\) and \((V, \psi)\) be two charts on \(M\) whose domains overlap, i.e.
+                    \(U \cap V \neq \emptyset\). On the overlap \(U \cap V\), there are two competing systems of coordinates: \(\varphi\) reads 
+                    a point as an element of \(\varphi(U \cap V) \subseteq \mathbb{R}^n\), and \(\psi\) reads the same point as an element of 
+                    \(\psi(U \cap V) \subseteq \mathbb{R}^n\). The map relating the two systems is the central object.
+                </p>
+
+                <div class="theorem" id="D-transition_map_smooth">
+                    <span class="theorem-title">Definition: Transition Map</span>
+                    <p>
+                        Let \(M\) be a topological \(n\)-manifold, and let \((U, \varphi)\) and
+                        \((V, \psi)\) be charts on \(M\) with \(U \cap V \neq \emptyset\). The
+                        <strong>transition map from \(\varphi\) to \(\psi\)</strong> is the composite
+                        \[
+                        \psi \circ \varphi^{-1} : \varphi(U \cap V) \to \psi(U \cap V).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    A transition map is, by construction, a map between open subsets of \(\mathbb{R}^n\): \(\varphi(U \cap V)\) is 
+                    open in \(\mathbb{R}^n\) because \(\varphi\) is a homeomorphism and \(U \cap V\) is open in \(M\),
+                    and similarly for \(\psi(U \cap V)\). As a composition of two homeomorphisms, \(\psi \circ \varphi^{-1}\) is 
+                    itself a homeomorphism. It is also a map between Euclidean open sets, and is therefore the kind of map to which the
+                    <a href="#D-smooth_function_Rn" class="ref-link"><strong>ordinary calculus definition of smoothness</strong></a>
+                    applies. Asking whether it is smooth, or even a
+                    <a href="#D-diffeomorphism_Rn" class="ref-link"><strong>diffeomorphism</strong></a>,
+                    is a question entirely within multivariable calculus.
+                </p>
+
+                <p>
+                    Two charts are compatible for the purposes of differentiation precisely 
+                    when their transition map is as well-behaved as Euclidean calculus allows.
+                </p>
+
+                <div class="theorem" id="D-smoothly_compatible_charts">
+                    <span class="theorem-title">Definition: Smoothly Compatible Charts</span>
+                    <p>
+                        Two charts \((U, \varphi)\) and \((V, \psi)\) on a topological \(n\)-manifold \(M\) are 
+                        said to be <strong>smoothly compatible</strong> if either
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            \(U \cap V = \emptyset\) (vacuous case: no overlap to check), or
+                        </li>
+                        <li>
+                            the transition map \(\psi \circ \varphi^{-1} : \varphi(U \cap V) \to \psi(U \cap V)\) is a diffeomorphism.
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    Note that for a single pair of charts, smoothness of one transition map does not by itself guarantee smoothness of its inverse 
+                    — the cube-cube map of the opening section is a concrete reminder that a smooth bijection between Euclidean open sets can 
+                    have a non-smooth inverse. The diffeomorphism requirement in the definition is therefore genuinely a two-direction condition 
+                    for an isolated pair of charts.
+                </p>
+
+                <p>
+                    At the level of an atlas, however, the two directions need not be handled chart-pair by chart-pair. If one verifies that for every
+                    ordered pair \(((U, \varphi), (V, \psi))\) of charts in a candidate atlas the forward transition \(\psi \circ \varphi^{-1}\) is smooth,
+                    then for any chart pair the reverse transition \(\varphi \circ \psi^{-1}\) is also smooth — not by appeal to any
+                    geometric or analytic theorem, but because \(\varphi \circ \psi^{-1}\) is itself the forward transition of the
+                    ordered pair \(((V, \psi), (U, \varphi))\), already covered by the enumeration. The total amount of smoothness verification is the same
+                    as checking both directions for each unordered pair; what the atlas structure does is reorganize the work, so that one never has to 
+                    address diffeomorphism for a chart pair as a separate task beyond verifying forward smoothness of every ordered pair.
+                </p>
+
+                <h3>Smooth Atlases</h3>
+
+                <p>
+                    Recall from the previous page that an
+                    <a href="topological_manifolds.html#D-atlas_topological" class="ref-link"><strong>atlas</strong></a>
+                    for a topological manifold is a collection of charts whose domains cover the manifold. A smooth atlas is the natural 
+                    strengthening in which every pair of charts passes the compatibility test.
+                </p>
+
+                <div class="theorem" id="D-smooth_atlas">
+                    <span class="theorem-title">Definition: Smooth Atlas</span>
+                    <p>
+                        An atlas \(\mathcal{A} = \{(U_\alpha, \varphi_\alpha)\}_{\alpha \in A}\) on a topological \(n\)-manifold \(M\) 
+                        is called a <strong>smooth atlas</strong> if any two charts in \(\mathcal{A}\) are smoothly compatible with each other.
+                    </p>
+                </div>
+
+                <p>
+                    Two practical remarks. First, the compatibility condition needs to be checked only on pairs of charts 
+                    whose domains actually overlap; pairs with disjoint domains are smoothly compatible by definition. Second,
+                    by the observation above, the verification of smooth compatibility for the entire atlas reduces to checking 
+                    forward smoothness of the transition map for each ordered pair of overlapping charts; the diffeomorphism 
+                    condition for each chart pair then holds because both ordered directions appear in this enumeration.
+                </p>
+
+                <p>
+                    Examples of smooth atlases are not yet visible — we have not exhibited one. The
+                    <a href="topological_manifolds.html#what-is-a-manifold" class="ref-link"><strong>topological atlases of \(\mathbb{R}^n\), spheres, projective spaces, and tori</strong></a>
+                    from the previous pages each give rise to smooth atlases, but the verification of smooth compatibility is a separate matter 
+                    that we postpone until the standard smooth structures section. For now we treat the abstract notion of smooth atlas 
+                    as the data we may assume given.
+                </p>
+
+                <h3>Many Atlases, One Structure</h3>
+
+                <p>
+                    A single manifold admits many different smooth atlases. On \(\mathbb{R}^n\), for instance, the one-chart atlas
+                    \(\{(\mathbb{R}^n, \mathrm{id})\}\) is a smooth atlas, but so is the collection of all charts \((U, \mathrm{id}|_U)\) 
+                    for arbitrary open \(U \subseteq \mathbb{R}^n\), and so is the collection obtained from either of these by applying 
+                    smooth diffeomorphisms to the codomain. These atlases are not literally equal as sets of charts, but they all
+                    declare the same functions \(\mathbb{R}^n \to \mathbb{R}\) to be smooth. A definition of "smooth manifold" that 
+                    fixed one particular atlas would be artificial: the geometry that matters is invariant under enlarging
+                    the atlas, as long as the enlargement remains smoothly compatible everywhere.
+                </p>
+
+                <p>
+                    The canonical way to remove this ambiguity is to enlarge any given smooth atlas until it cannot be enlarged any further. 
+                    This produces a distinguished representative — the maximal smooth atlas — which we will take as the definitional object.
+                </p>
+
+                <div class="theorem" id="D-maximal_smooth_atlas">
+                    <span class="theorem-title">Definition: Maximal Smooth Atlas</span>
+                    <p>
+                        A smooth atlas \(\mathcal{A}\) on a topological \(n\)-manifold \(M\)
+                        is said to be <strong>maximal</strong> (or <strong>complete</strong>)
+                        if it is not properly contained in any larger smooth atlas on \(M\). Equivalently, every
+                        <a href="topological_manifolds.html#D-coordinate_chart" class="ref-link"><strong>chart</strong></a>
+                        on \(M\) that is smoothly compatible with every chart in \(\mathcal{A}\) is itself an element of \(\mathcal{A}\).
+                    </p>
+                </div>
+
+                <p>
+                    An equivalent formulation, which is often more conceptually appealing, proceeds by an equivalence relation: 
+                    declare two smooth atlases equivalent when their union is again a smooth atlas, and define a smooth structure to 
+                    be an equivalence class. The maximal-atlas formulation and the equivalence-class formulation produce the same
+                    objects in bijection — the equivalence class containing \(\mathcal{A}\) corresponds to the unique maximal atlas 
+                    containing \(\mathcal{A}\), as we will prove below — and we adopt the maximal-atlas formulation as primary because 
+                    it makes the smooth structure a concrete set of charts rather than an abstract quotient.
+                </p>
+
+                <div class="theorem" id="D-smooth_structure">
+                    <span class="theorem-title">Definition: Smooth Structure</span>
+                    <p>
+                        A <strong>smooth structure</strong> on a topological \(n\)-manifold
+                        \(M\) is a maximal smooth atlas on \(M\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-smooth_manifold">
+                    <span class="theorem-title">Definition: Smooth Manifold</span>
+                    <p>
+                        A <strong>smooth manifold</strong> is a pair \((M, \mathcal{A})\),  where \(M\) is a topological manifold 
+                        and \(\mathcal{A}\) is a smooth structure on \(M\). When the smooth structure is understood from
+                        context, we usually omit explicit mention of it and refer simply to "the smooth manifold \(M\)."
+                    </p>
+                </div>
+
+                <p>
+                    Two cautions of substance. First, the smooth structure is genuinely additional data: a given topological manifold 
+                    may carry several distinct smooth structures, and the small-dimensional case will be witnessed concretely 
+                    in the standard smooth structures section, when we exhibit two inequivalent smooth structures on the underlying 
+                    topological space \(\mathbb{R}\). Second, the existence of any smooth structure at all is not automatic: 
+                    there are topological manifolds that admit no smooth structure whatsoever. The first such example was a compact
+                    \(10\)-dimensional manifold discovered by Michel Kervaire in 1960; its construction is far beyond the scope 
+                    of the present development, but its existence shows that the smoothability of a topological manifold is a
+                    genuine, nontrivial property rather than a foregone conclusion.
+                </p>
+
+                <h3>From a Smooth Atlas to a Smooth Structure</h3>
+
+                <p>
+                    Defining a smooth structure as a maximal smooth atlas has a practical disadvantage: a maximal atlas is enormous, 
+                    containing every chart on every open subset that is smoothly compatible with every other admitted
+                    chart. We never construct a maximal atlas by listing its charts. The following proposition supplies the working tool: 
+                    any smooth atlas determines a unique smooth structure containing it, so to specify a smooth structure it suffices to 
+                    specify any smooth atlas, however small.
+                </p>
+
+                <div class="theorem" id="T-smooth_structure_from_atlas">
+                    <span class="theorem-title">Proposition: Smooth Structure Generated by an Atlas</span>
+                    <p>
+                        Let \(M\) be a topological manifold.
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            Every smooth atlas \(\mathcal{A}\) on \(M\) is contained in a unique maximal smooth atlas, called the
+                            <strong>smooth structure determined by \(\mathcal{A}\)</strong>.
+                        </li>
+                        <li>
+                            Two smooth atlases on \(M\) determine the same smooth structure if and only if their union is a smooth atlas.
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (a):</span>
+                    <p>
+                        Let \(\mathcal{A}\) be a smooth atlas on \(M\), and let \(\overline{\mathcal{A}}\) denote the set of all charts on \(M\) 
+                        that are smoothly compatible with every chart in \(\mathcal{A}\). We claim
+                        that \(\overline{\mathcal{A}}\) is a smooth atlas, that it is maximal,
+                        and that it is the unique maximal smooth atlas containing \(\mathcal{A}\).
+                    </p>
+                    <p>
+                        <strong>\(\overline{\mathcal{A}}\) is a smooth atlas.</strong><br>
+                        First, \(\overline{\mathcal{A}}\) contains \(\mathcal{A}\), since
+                        every chart in \(\mathcal{A}\) is smoothly compatible with every
+                        chart in \(\mathcal{A}\). In particular, the domains of charts in
+                        \(\overline{\mathcal{A}}\) cover \(M\). It remains to show that any
+                        two charts \((U, \varphi), (V, \psi) \in \overline{\mathcal{A}}\)
+                        are smoothly compatible with each other. If \(U \cap V = \emptyset\),
+                        there is nothing to prove. Otherwise, fix a point \(p \in U \cap V\)
+                        and set \(x = \varphi(p) \in \varphi(U \cap V)\); we will show that
+                        \(\psi \circ \varphi^{-1}\) is smooth on a neighborhood of \(x\).
+                    </p>
+                    <p>
+                        Because the domains of charts in \(\mathcal{A}\) cover \(M\), there
+                        is some chart \((W, \theta) \in \mathcal{A}\) with \(p \in W\). Both
+                        \((U, \varphi)\) and \((V, \psi)\) belong to
+                        \(\overline{\mathcal{A}}\), so both are smoothly compatible with
+                        \((W, \theta)\), which means that the transition maps
+                        \[
+                        \theta \circ \varphi^{-1} : \varphi(U \cap W) \to \theta(U \cap W),
+                        \qquad
+                        \psi \circ \theta^{-1} : \theta(V \cap W) \to \psi(V \cap W)
+                        \]
+                        are both diffeomorphisms, hence in particular smooth where they are
+                        defined. Since \(p \in U \cap V \cap W\), the point \(x = \varphi(p)\)
+                        lies in the open set \(\varphi(U \cap V \cap W)\); on this set
+                        \(\theta \circ \varphi^{-1}\) is defined and takes values in
+                        \(\theta(U \cap V \cap W) \subseteq \theta(V \cap W)\), the domain
+                        of \(\psi \circ \theta^{-1}\), so the composition is well-defined
+                        and we may write
+                        \[
+                        \psi \circ \varphi^{-1} = (\psi \circ \theta^{-1}) \circ (\theta \circ \varphi^{-1}).
+                        \]
+                        Smoothness is preserved by composition, so \(\psi \circ \varphi^{-1}\)
+                        is smooth on the neighborhood \(\varphi(U \cap V \cap W)\) of \(x\).
+                        The point \(x \in \varphi(U \cap V)\) was arbitrary, so
+                        \(\psi \circ \varphi^{-1}\) is smooth on all of \(\varphi(U \cap V)\).
+                        Applying the same three-chart argument with the roles of
+                        \((U, \varphi)\) and \((V, \psi)\) exchanged establishes that the
+                        reverse transition \(\varphi \circ \psi^{-1}\) is smooth on
+                        \(\psi(U \cap V)\) as well; the two transitions are therefore
+                        mutual inverses that are both smooth, hence diffeomorphisms. The
+                        charts \((U, \varphi)\) and \((V, \psi)\) are smoothly compatible.
+                        Thus \(\overline{\mathcal{A}}\) is a smooth atlas.
+                    </p>
+                    <p>
+                        <strong>\(\overline{\mathcal{A}}\) is maximal.</strong><br>
+                        Suppose \((U, \varphi)\) is a chart on \(M\) that is smoothly
+                        compatible with every chart in \(\overline{\mathcal{A}}\). In
+                        particular, since \(\mathcal{A} \subseteq \overline{\mathcal{A}}\),
+                        the chart \((U, \varphi)\) is smoothly compatible with every chart
+                        in \(\mathcal{A}\), which is exactly the defining condition for
+                        membership in \(\overline{\mathcal{A}}\). So \((U, \varphi) \in \overline{\mathcal{A}}\), 
+                        and \(\overline{\mathcal{A}}\) is maximal.
+                    </p>
+                    <p>
+                        <strong>Uniqueness.</strong><br>
+                        Let \(\mathcal{B}\) be any maximal smooth atlas with
+                        \(\mathcal{A} \subseteq \mathcal{B}\). Every chart in \(\mathcal{B}\)
+                        is smoothly compatible with every other chart in \(\mathcal{B}\), so
+                        in particular with every chart in \(\mathcal{A}\); thus
+                        \(\mathcal{B} \subseteq \overline{\mathcal{A}}\). Conversely, every
+                        chart in \(\overline{\mathcal{A}}\) is smoothly compatible with every
+                        chart in \(\mathcal{A} \subseteq \mathcal{B}\), and we have just
+                        shown that the charts of \(\overline{\mathcal{A}}\) are mutually
+                        smoothly compatible with each other. So
+                        \(\mathcal{B} \cup \overline{\mathcal{A}}\) would be a smooth atlas
+                        containing \(\mathcal{B}\); by the maximality of \(\mathcal{B}\),
+                        the inclusion forces \(\overline{\mathcal{A}} \subseteq \mathcal{B}\). Therefore
+                        \(\mathcal{B} = \overline{\mathcal{A}}\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (b):</span>
+                    <p>
+                        Let \(\mathcal{A}_1\) and \(\mathcal{A}_2\) be smooth atlases on \(M\), and let \(\overline{\mathcal{A}_1}\) and
+                        \(\overline{\mathcal{A}_2}\) denote the maximal smooth atlases they determine, as constructed in part (a).
+                    </p>
+                    <p>
+                        <strong>(\(\Rightarrow\))</strong><br>
+                        Suppose \(\overline{\mathcal{A}_1} = \overline{\mathcal{A}_2}\); call
+                        this common maximal atlas \(\overline{\mathcal{A}}\). Then both
+                        \(\mathcal{A}_1\) and \(\mathcal{A}_2\) are contained in
+                        \(\overline{\mathcal{A}}\), so their union
+                        \(\mathcal{A}_1 \cup \mathcal{A}_2\) is also contained in
+                        \(\overline{\mathcal{A}}\). Any two charts in
+                        \(\mathcal{A}_1 \cup \mathcal{A}_2\) thus lie in the smooth atlas
+                        \(\overline{\mathcal{A}}\) and are therefore smoothly compatible
+                        with each other. The domains of charts in
+                        \(\mathcal{A}_1 \cup \mathcal{A}_2\) cover \(M\), since the domains
+                        of \(\mathcal{A}_1\) alone already do. So
+                        \(\mathcal{A}_1 \cup \mathcal{A}_2\) is a smooth atlas.
+                    </p>
+                    <p>
+                        <strong>(\(\Leftarrow\))</strong><br>
+                        Conversely, suppose \(\mathcal{A}_1 \cup \mathcal{A}_2\) is a smooth
+                        atlas. By part (a), it is contained in a unique maximal smooth
+                        atlas, which we denote \(\overline{\mathcal{A}_1 \cup \mathcal{A}_2}\).
+                        This maximal atlas contains \(\mathcal{A}_1\), so by uniqueness in
+                        part (a) it must equal \(\overline{\mathcal{A}_1}\); by the same
+                        argument applied to \(\mathcal{A}_2\), it also equals
+                        \(\overline{\mathcal{A}_2}\). Hence
+                        \(\overline{\mathcal{A}_1} = \overline{\mathcal{A}_1 \cup \mathcal{A}_2} = \overline{\mathcal{A}_2}\),
+                        and \(\mathcal{A}_1\) and \(\mathcal{A}_2\) determine the same smooth structure. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    With this proposition in hand, the working strategy is clear: to define a smooth structure on a topological manifold, 
+                    one specifies any smooth atlas, and the smooth structure is taken to be the (unique) maximal smooth atlas it determines. 
+                    The remainder of this page will follow exactly this pattern — we will define each forthcoming smooth structure
+                    by writing down a small, explicit smooth atlas, and the smooth structure will be understood to be its maximal extension.
+                </p>
+            </section>
+
+            <section id="local-coordinate-representations" class="section-content">
+                <h2>Local Coordinate Representations</h2>
+
+                <h3>Smooth Charts and Smooth Coordinate Maps</h3>
+
+                <p>
+                    Let \(M\) be a smooth manifold with smooth structure \(\mathcal{A}\).
+                    The charts of \(M\) on which differentiation can be done without
+                    ambiguity are precisely the elements of \(\mathcal{A}\).
+                </p>
+
+                <div class="theorem" id="D-smooth_chart">
+                    <span class="theorem-title">Definition: Smooth Chart and Smooth Coordinate Map</span>
+                    <p>
+                        Let \((M, \mathcal{A})\) be a smooth manifold. A chart
+                        \((U, \varphi)\) on \(M\) is called a <strong>smooth chart</strong>
+                        if it is contained in the smooth structure \(\mathcal{A}\). In this
+                        case the coordinate map \(\varphi : U \to \widehat{U}\) is called a
+                        <strong>smooth coordinate map</strong>, and the open set \(U\) is called a <strong>smooth coordinate domain</strong> 
+                        (or <strong>smooth coordinate neighborhood</strong>).
+                    </p>
+                </div>
+
+                <p>
+                    The shape-based refinements of a chart introduced in the
+                    <a href="topological_manifolds.html#D-coordinate_domain_ball_cube" class="ref-link"><strong>topological setting</strong></a>
+                    transfer immediately to the smooth setting. A <strong>smooth coordinate ball</strong> is a smooth coordinate domain
+                    whose image under its smooth coordinate map is an open ball in \(\mathbb{R}^n\); a <strong>smooth coordinate cube</strong> is 
+                    defined  similarly, with image an open box \((a^1, b^1) \times \cdots \times (a^n, b^n)\). The terminology mirrors
+                    the topological case, with the single added requirement that the chart in question is an element of the smooth structure.
+                </p>
+
+                <h3>Regular Coordinate Balls</h3>
+
+                <p>
+                    Many arguments in differential geometry require a coordinate ball together with a slightly larger smooth chart 
+                    in which it sits with compact closure. Packaging this pair into a single named object proves convenient.
+                </p>
+
+                <div class="theorem" id="D-regular_coordinate_ball">
+                    <span class="theorem-title">Definition: Regular Coordinate Ball</span>
+                    <p>
+                        Let \(M\) be a smooth \(n\)-manifold. A subset \(B \subseteq M\) is
+                        called a <strong>regular coordinate ball</strong> if there exist a
+                        smooth coordinate ball \(B' \supseteq \overline{B}\) (with the
+                        closure \(\overline{B}\) taken in \(M\)), a smooth coordinate map
+                        \(\varphi : B' \to \mathbb{R}^n\), and positive real numbers
+                        \(r < r'\) such that
+                        \[
+                        \varphi(B) = B_r(0), \qquad
+                        \varphi(\overline{B}) = \overline{B_r(0)}, \qquad
+                        \varphi(B') = B_{r'}(0),
+                        \]
+                        where \(B_r(0)\) denotes the open ball of radius \(r\) centered at
+                        the origin in \(\mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <p>
+                    The definition packages three pieces of geometric information. The set
+                    \(B\) itself is a smooth coordinate ball of radius \(r\); its closure
+                    \(\overline{B}\) corresponds under \(\varphi\) to the closed ball of the
+                    same radius; and \(\overline{B}\) is contained in a strictly larger
+                    smooth coordinate ball \(B'\) of radius \(r'\). The closure here is
+                    unambiguous: because \(\overline{B_r(0)}\) is compact in
+                    \(\mathbb{R}^n\), its homeomorphic image is compact in the smooth
+                    coordinate ball \(B'\), and since \(M\) is Hausdorff this image is
+                    closed in \(M\); the closure of \(B\) in \(M\) therefore coincides with
+                    its closure in \(B'\). Consequently \(\overline{B}\) is compact in
+                    \(M\), and every regular coordinate ball is therefore precompact in
+                    \(M\) in the sense introduced in the
+                    <a href="topological_properties_of_manifolds.html#bases-of-precompact-coordinate-balls" class="ref-link"><strong>previous page on topological properties of manifolds</strong></a>.
+                </p>
+
+                <p>
+                    The benefit of having a smooth coordinate ball sit inside a larger
+                    smooth chart with compact closure is technical but pervasive. Cutoff
+                    functions can be constructed on \(\overline{B}\) using the room provided
+                    by \(B'\); compactness allows uniform estimates; and the larger chart
+                    provides a smooth context in which to perform local arguments without
+                    boundary effects. The next proposition states that every smooth
+                    manifold admits a countable basis of such regular coordinate balls — the
+                    smooth refinement of the basis-of-precompact-coordinate-balls result for topological manifolds.
+                </p>
+
+                <div class="theorem" id="T-regular_coordinate_balls_basis">
+                    <span class="theorem-title">Proposition: Basis of Regular Coordinate Balls</span>
+                    <p>
+                        Every smooth manifold has a countable
+                        <a href="topological_spaces.html#D-basis_top" class="ref-link"><strong>basis</strong></a>
+                        of regular coordinate balls.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        The argument is a smooth adaptation of the proof of the
+                        <a href="topological_properties_of_manifolds.html#T-precompact_coordinate_balls_basis" class="ref-link"><strong>basis of precompact coordinate balls</strong></a>
+                        on the previous page; the two proofs differ only in that every chart appearing in the construction 
+                        here is required to belong to the smooth structure of \(M\).
+                    </p>
+                    <p>
+                        <strong>Single-chart case.</strong><br>
+                        Suppose first that \(M\) is covered by a single smooth chart
+                        \((W, \theta)\) with \(\theta(W) = \widehat{W} \subseteq \mathbb{R}^n\).
+                        For each pair of rational numbers \(r < r'\) and each rational point
+                        \(q \in \mathbb{Q}^n\) such that \(\overline{B_{r'}(q)} \subseteq \widehat{W}\), set
+                        \[
+                        B' = \theta^{-1}(B_{r'}(q)), \qquad
+                        B = \theta^{-1}(B_r(q)).
+                        \]
+                        Let \(\tau : \mathbb{R}^n \to \mathbb{R}^n\) be the translation
+                        \(\tau(y) = y - q\) and set
+                        \(\varphi = \tau \circ \theta|_{B'} : B' \to \mathbb{R}^n\), which
+                        has image \(B_{r'}(0)\). We need to confirm that \((B', \varphi)\)
+                        belongs to the smooth structure of \(M\). For this it suffices to
+                        check that \(\varphi\) is smoothly compatible with the original
+                        chart \((W, \theta)\), since the smooth structure is generated by
+                        any atlas containing \((W, \theta)\). On the overlap \(B' \subseteq W\),
+                        the transition map from \(\theta\) to \(\varphi\) is
+                        \(\varphi \circ \theta^{-1} = \tau\), the translation itself; its
+                        inverse \(\theta \circ \varphi^{-1} = \tau^{-1}\) is also a
+                        translation. Translations of \(\mathbb{R}^n\) are diffeomorphisms,
+                        so the transition is a diffeomorphism, and \((B', \varphi)\) is
+                        smoothly compatible with \((W, \theta)\). The same argument shows
+                        \(\varphi\) is smoothly compatible with every other chart in the
+                        smooth structure, by composing transition maps through
+                        \((W, \theta)\). So \((B', \varphi)\) is a smooth chart, and
+                        \(B\) is a smooth coordinate ball inside it. The triple
+                        \((B, \overline{B}, B')\) satisfies the radius conditions of the
+                        definition of regular coordinate ball with radii \(r < r'\). The
+                        collection of all such \(B\) is countable (indexed by triples
+                        \((q, r, r')\) of rationals) and forms a basis for the topology of
+                        \(M\): every open set in \(M\) is the union of those rational coordinate balls it contains.
+                    </p>
+                    <p>
+                        <strong>General case.</strong><br>
+                        Now let \(M\) be an arbitrary smooth manifold. By second-countability
+                        of \(M\) and the locally Euclidean property restricted to charts of
+                        the smooth structure, \(M\) is covered by countably many smooth
+                        charts \(\{(W_j, \theta_j)\}_{j \in \mathbb{N}}\). Applying the
+                        single-chart construction to each \((W_j, \theta_j)\) produces a
+                        countable basis \(\mathcal{B}_j\) of regular coordinate balls for
+                        \(W_j\), each of which is also a regular coordinate ball when viewed
+                        in \(M\). The union \(\bigcup_j \mathcal{B}_j\) is a countable union
+                        of countable sets, hence countable. It is a basis for the topology
+                        of \(M\) because any open \(U \subseteq M\) intersects some
+                        \(W_j\) nontrivially, and the basis \(\mathcal{B}_j\) covers \(U \cap W_j\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The proof sketch is faithful to the structure of the topological version;
+                    the only smooth content is verifying that the charts produced by
+                    translation remain inside the smooth structure, which is automatic
+                    because translations are smooth diffeomorphisms of \(\mathbb{R}^n\) onto itself.
+                </p>
+
+                <h3>Reading Through a Chart: The Identification Habit</h3>
+
+                <p>
+                    The framework so far is precise but typographically cumbersome: every
+                    statement about a point \(p \in M\) seems to require explicit reference
+                    to a chart \(\varphi\) and to the image \(\varphi(p) \in \mathbb{R}^n\).
+                    In practice, mathematicians working with smooth manifolds adopt a much
+                    lighter notational habit, and it is essential to understand and internalize it before proceeding.
+                </p>
+
+                <p>
+                    Once a smooth chart \((U, \varphi)\) is fixed, the coordinate map
+                    \(\varphi : U \to \widehat{U} \subseteq \mathbb{R}^n\) is a
+                    homeomorphism, and we can regard it as a <em>temporary identification</em>
+                    between the open subset \(U \subseteq M\) and the open subset
+                    \(\widehat{U} \subseteq \mathbb{R}^n\). While we are working inside this
+                    chart, we will simultaneously think of \(U\) as a piece of the abstract
+                    manifold and as a piece of Euclidean space. A point \(p \in U\) is represented by its coordinates
+                    \[
+                    (x^1, \ldots, x^n) = \varphi(p),
+                    \]
+                    and the standard practice is to say that "\((x^1, \ldots, x^n)\) is the
+                    (local) coordinate representation of \(p\)," or, more briefly, that
+                    "\(p = (x^1, \ldots, x^n)\) in local coordinates." Within the chart, the
+                    coordinate map \(\varphi\) is suppressed from the notation; effectively,
+                    one pretends that \(\varphi\) is the identity map.
+                </p>
+
+                <p>
+                    This habit takes practice to read fluently but yields enormous notational
+                    economy. Two cautions accompany it. First, the identification is purely
+                    local: it depends on the choice of chart and is valid only on \(U\). A
+                    point in the overlap of two charts has two coordinate representations,
+                    one for each chart, related by the transition map. Second, the
+                    identification suppresses information about the global structure of
+                    \(M\) — a chart never sees the manifold beyond its own domain — and the
+                    geometric content that distinguishes a manifold from Euclidean space
+                    lives precisely in how distinct charts must be glued together to recover the whole.
+                </p>
+
+                <h3>Local Coordinate Representations of Functions</h3>
+
+                <p>
+                    The identification through a chart extends naturally to functions on the manifold. 
+                    Given a function \(f : M \to \mathbb{R}\) and a smooth chart \((U, \varphi)\), the composition
+                    \[
+                    \widehat{f} := f \circ \varphi^{-1} : \widehat{U} \to \mathbb{R}
+                    \]
+                    is a real-valued function on the open subset \(\widehat{U} \subseteq \mathbb{R}^n\). This is called the
+                    <strong>local coordinate representation of \(f\)</strong> with respect to the chart \((U, \varphi)\), and 
+                    it expresses \(f\) as an ordinary function on Euclidean space in terms of the local coordinates
+                    \((x^1, \ldots, x^n)\). The earlier motivating question — when is \(f\) smooth on \(M\)? — will be answered 
+                    on the next page in terms of \(\widehat{f}\): the formal definition will declare \(f\) smooth at
+                    \(p\) when its local representation \(\widehat{f}\) is smooth in the ordinary Euclidean sense near \(\varphi(p)\), 
+                    and the smooth compatibility built into the structure will be exactly what ensures that this property is independent 
+                    of the chart used to test it. The present subsection only sets up the notation \(\widehat{f}\) 
+                    on which that future definition will rest.
+                </p>
+
+                <p>
+                    Maps between manifolds admit local coordinate representations of the same kind. 
+                    If \(F : M \to N\) is a map of smooth manifolds and we choose smooth charts \((U, \varphi)\) on \(M\) 
+                    and \((V, \psi)\) on \(N\) with \(F(U) \subseteq V\), then the composition
+                    \[
+                    \widehat{F} := \psi \circ F \circ \varphi^{-1} :
+                    \widehat{U} \to \widehat{V}
+                    \]
+                    is a map between Euclidean open sets, and is the local coordinate
+                    representation of \(F\). All questions about \(F\) that are local in
+                    nature — smoothness, differentials, invertibility — are reduced through
+                    \(\widehat{F}\) to ordinary calculus, and the choice of charts ceases to
+                    matter as soon as one shows the relevant property is invariant under
+                    change of chart. The formal definition of smoothness for maps between manifolds is taken up on the next page 
+                    in the series; here we only record the notational machinery on which it rests.
+                </p>
+
+                <h3>An Example from Multivariable Calculus: Polar Coordinates</h3>
+
+                <p>
+                    The identification habit is not new: every reader has practiced it, under a different name, when using polar coordinates in the plane.
+                </p>
+
+                <p>
+                    Let \(U = \{(x, y) \in \mathbb{R}^2 : x > 0\}\), the open right half-plane
+                    in \(\mathbb{R}^2\) regarded as a smooth manifold with its standard
+                    smooth structure (to be defined formally in the next section). The relation
+                    \[
+                    (x, y) = (r \cos\theta, r \sin\theta)
+                    \]
+                    defines polar coordinates \((r, \theta)\) on \(U\), with
+                    \(r = \sqrt{x^2 + y^2}\) and \(\theta = \arctan(y/x)\) for points in
+                    \(U\). The use of \(\arctan(y/x)\) requires a brief justification: in
+                    general the formula \(\theta = \arctan(y/x)\) determines \(\theta\) only
+                    up to addition of integer multiples of \(\pi\), because
+                    \(\tan(\theta) = \tan(\theta + \pi)\), and the two-argument function
+                    \(\arctan(y/x)\) is only well-defined as a single-valued function on a
+                    half-plane that does not cross the \(y\)-axis. On the right half-plane
+                    \(U = \{x > 0\}\), the angle \(\theta\) lies in the open interval
+                    \((-\pi/2, \pi/2)\); moreover, the quotient \(y/x\) is a smooth function
+                    on \(U\) (a rational function with non-vanishing denominator), and
+                    \(\arctan : \mathbb{R} \to (-\pi/2, \pi/2)\) is itself smooth, so the
+                    composition \(\theta(x, y) = \arctan(y/x)\) is a smooth function on
+                    \(U\). The formula \(\theta = \arctan(y/x)\) thus produces a single,
+                    smooth, well-defined angle. Restricting to \(U\) is exactly the device
+                    that makes the polar chart globally well-defined.
+                </p>
+
+                <p>
+                    The map
+                    \[
+                    \varphi : U \to (0, \infty) \times \left(-\tfrac{\pi}{2}, \tfrac{\pi}{2}\right),
+                    \qquad (x, y) \mapsto (r, \theta),
+                    \]
+                    is a smooth coordinate map with respect to the standard smooth structure
+                    on \(\mathbb{R}^2\): both \(r\) and \(\theta\) are smooth functions of \((x, y)\) on \(U\), and the inverse map
+                    \((r, \theta) \mapsto (r\cos\theta, r\sin\theta)\) is likewise smooth.
+                    The pair \((U, \varphi)\) is thus an example of a smooth chart, and the
+                    standard practice of writing "a point of \(U\) has polar coordinates
+                    \((r, \theta)\)" instead of writing "the point \(p \in U\) satisfies
+                    \(\varphi(p) = (r, \theta)\)" is precisely the identification habit at
+                    work. Other polar coordinate charts can be obtained by restricting the
+                    same coordinate formula to other open subsets of \(\mathbb{R}^2 \setminus \{0\}\).
+                </p>
+
+                <p>
+                    The example also shows that a single smooth manifold typically admits
+                    many smooth charts on a single open set, related by smooth transition
+                    maps. On \(U\), the identity chart \((U, \mathrm{id})\) and the polar
+                    chart \((U, \varphi)\) are smoothly compatible: the transition
+                    \(\varphi \circ \mathrm{id}^{-1} = \varphi\) is smooth, and so is its
+                    inverse \((r, \theta) \mapsto (r\cos\theta, r\sin\theta)\). The
+                    flexibility to switch between such coordinate representations, according to which 
+                    makes a given calculation easiest, is one of the central practical techniques of manifold theory.
+                </p>
+            </section>
+
+            <section id="einstein-summation" class="section-content">
+                <h2>The Einstein Summation Convention</h2>
+
+                <p>
+                    Before turning to concrete examples of smooth manifolds, we pause to introduce a notational convention 
+                    that pervades the rest of the manifold series. The convention is purely typographical, but it is
+                    used so universally in differential geometry and applied differential geometry — in robotics, in general relativity, 
+                    in geometric deep learning — that fluency with it is a prerequisite for reading the literature. Introducing it here, 
+                    before the substantive work begins, saves having to translate notation later.
+                </p>
+
+                <h3>The Problem: Proliferation of Summations</h3>
+
+                <p>
+                    The
+                    <a href="#local-coordinate-representations" class="ref-link"><strong>identification habit</strong></a>
+                    of the previous section already foreshadowed the issue. A point on a
+                    smooth \(n\)-manifold, read through a chart, carries \(n\) coordinates
+                    \(x^1, \ldots, x^n\). A vector at that point (when we eventually define
+                    such a thing) will be expanded in terms of \(n\) basis vectors. A change of coordinates between two overlapping charts is, 
+                    in general, a smooth but nonlinear map
+                    \[
+                    \widetilde{x}^j = \widetilde{x}^j(x^1, \ldots, x^n)
+                    \] 
+                    on the Euclidean side; only its differential at each point, the Jacobian matrix, is linear. Each of these objects 
+                    involves a sum from \(1\) to \(n\) over some index, and longer expressions accumulate multiple such sums.
+                </p>
+
+                <p>
+                    The simplest case where the convention becomes essential is the linear one. 
+                    In a finite-dimensional vector space \(V\) — which we will recognize as a smooth manifold in the next section — 
+                    expressing a vector in a basis or relating coordinates in two different bases produces formulas of the form
+                    \[
+                    v = \sum_{i=1}^{n} v^i E_i, \qquad
+                    \widetilde{x}^j = \sum_{i=1}^{n} A^j_i x^i,
+                    \]
+                    where \((A^j_i)\) is the matrix of an invertible linear change of coordinates. Such linear formulas appear frequently 
+                    — in the vector-space examples, in tangent spaces (a linear structure attached to each point of a manifold), and in 
+                    the chain rule for nonlinear coordinate changes — and stringing several of them together becomes typographically unmanageable. 
+                    Einstein's solution, introduced in his work on general relativity, was to drop the summation sign and read the implied sum off 
+                    from the index pattern.
+                </p>
+
+                <h3>The Convention</h3>
+
+                <div class="theorem" id="D-einstein_summation_convention">
+                    <span class="theorem-title">Definition: Einstein Summation Convention</span>
+                    <p>
+                        If, in any monomial expression, the same index name appears exactly
+                        twice — once as an upper index and once as a lower index — that
+                        term is understood to be summed over all possible values of that
+                        index, ranging from \(1\) to the dimension of the relevant space.
+                        The summation sign is omitted.
+                    </p>
+                </div>
+
+                <p>
+                    Under this convention, the expansion of a vector \(v\) in a basis is
+                    written
+                    \[
+                    v = v^i E_i,
+                    \]
+                    with the right-hand side understood to mean \(\sum_{i=1}^{n} v^i E_i\).
+                    The linear change-of-basis formula above becomes
+                    \[
+                    \widetilde{x}^j = A^j_i x^i,
+                    \]
+                    where \(i\) is summed from \(1\) to \(n\). Composition of two such linear transformations is similarly compact:
+                    \[
+                    \widetilde{\widetilde{x}}^k = B^k_j \widetilde{x}^j = B^k_j A^j_i x^i,
+                    \]
+                    where both \(i\) and \(j\) are summed.
+                </p>
+
+                <h3>Index Position</h3>
+
+                <p>
+                    The convention works only because index position carries information. Two conventions must be respected consistently:
+                </p>
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Basis vectors</strong>:<br>
+                        always written with <em>lower</em> indices, e.g. \(E_1, \ldots, E_n\).
+                    </li>
+                    <li>
+                        <strong>Components of a vector with respect to a basis</strong>:<br>
+                        always written with <em>upper</em> indices, e.g. \(v^1, \ldots, v^n\).
+                    </li>
+                </ul>
+
+                <p>
+                    Coordinates of a point \((x^1, \ldots, x^n) \in \mathbb{R}^n\) are
+                    written with upper indices. On \(\mathbb{R}^n\) the reason is the
+                    consistency rule above: a point of \(\mathbb{R}^n\) is identifiable
+                    with its position vector relative to the origin, so its coordinates
+                    coincide with the components of that vector with respect to the
+                    standard basis and sit in the same upper-index position.
+                </p>
+
+                <p>
+                    On a general smooth manifold a point is not a vector — there is no
+                    canonical origin and no canonical position vector. The upper-index
+                    convention for local coordinates \((x^1, \ldots, x^n) = \varphi(p)\)
+                    is therefore adopted by extension, but its deeper justification will
+                    come later in the manifold series, when tangent vectors are
+                    introduced. Under a change of coordinates on a manifold the
+                    coordinates themselves transform nonlinearly: \(\widetilde{x}^j =
+                    \widetilde{x}^j(x^1, \ldots, x^n)\), a smooth function of the
+                    \(x^i\) that need not be linear. What transforms linearly is the
+                    differential \(d\widetilde{x}^j = \tfrac{\partial \widetilde{x}^j}
+                    {\partial x^i} dx^i\), and likewise the components of a tangent
+                    vector \(v^i\) transform as \(\widetilde{v}^j = \tfrac{\partial
+                    \widetilde{x}^j}{\partial x^i} v^i\). The upper-index convention for
+                    coordinates is what makes the indices on \(dx^i\) and on tangent
+                    vector components line up with these transformation laws; it is a
+                    convention about the position of an index, not a claim that
+                    coordinates themselves are vector components. For now, the
+                    convention is taken as given; the notational asymmetry between
+                    coordinates \(x^i\) and basis vectors \(E_j\) is what makes the
+                    implicit summation in \(v = v^i E_i\) unambiguous and grammatically well-formed.
+                </p>
+
+                <h3>Dummy Indices</h3>
+
+                <p>
+                    An index that is summed over has no independent meaning — its name can
+                    be replaced by any other unused name without changing the value of the
+                    expression. Such an index is called a <strong>dummy index</strong>. For example,
+                    \[
+                    x^i E_i = x^j E_j = x^k E_k,
+                    \]
+                    all denoting the same sum. The names \(i\), \(j\), \(k\) are placeholders; 
+                    what matters is the pattern of paired upper-lower occurrences. By contrast, 
+                    an index that appears only once in an expression — a <strong>free index</strong> — carries genuine meaning,
+                    and its name must not be reused in the same expression to refer to a different quantity. In the formula
+                    \(\widetilde{x}^j = A^j_i x^i\), the index \(i\) is dummy (summed) and
+                    the index \(j\) is free (refers to a specific component on each side).
+                    Writing \(\widetilde{x}^i = A^i_i x^i\) would be a notational error:
+                    \(i\) appears as both a free index and a dummy index, which the convention cannot disambiguate.
+                </p>
+
+                <h3>Scope of the Convention</h3>
+
+                <p>
+                    From the next section onward we adopt the Einstein convention by
+                    default throughout the manifold series. An explicit \(\sum\) sign will
+                    appear only in two situations: when the indices do not follow the
+                    upper-lower pairing rule (so the convention does not apply), and when
+                    additional clarity is desired in an example that is being introduced for the first time.
+                </p>
+
+                <p>
+                    All this may seem awkward at first — keeping track of which indices go
+                    up and which go down is an extra layer of bookkeeping, and the
+                    disappearance of the summation sign can feel like a loss of grammar
+                    rather than a gain in economy. The discomfort passes with practice. In
+                    combination with the upper-lower convention, the implicit-summation
+                    rule makes coordinate changes, tensor contractions, and covariant
+                    derivatives — formal objects we will meet later in the manifold series
+                    — far less typographically dense than they would otherwise be, and the
+                    index pattern itself becomes a useful diagnostic for whether an
+                    expression makes geometric sense at all.
+                </p>
+            </section>
+
+            <section id="standard-smooth-structures" class="section-content">
+                <h2>Standard Smooth Structures</h2>
+
+                <h3>Discrete Spaces as 0-Dimensional Smooth Manifolds</h3>
+
+                <p>
+                    The smallest example of all is the case of dimension zero, where the
+                    manifold framework collapses to something almost trivial. A topological
+                    manifold of dimension zero is a Hausdorff, second-countable, locally
+                    Euclidean space whose local model is the single-point space
+                    \(\mathbb{R}^0 = \{0\}\). As a one-point space, \(\mathbb{R}^0\) has
+                    only two subsets at all (the empty set and \(\{0\}\) itself), both
+                    necessarily open; so being homeomorphic to a neighborhood of a point
+                    in \(\mathbb{R}^0\) forces the neighborhood to be a singleton, and
+                    every point of the manifold is open as a singleton. The space is
+                    therefore discrete; combined with second-countability, it is countable.
+                </p>
+
+                <p>
+                    On such a space there is essentially nothing to choose. At each point
+                    \(p \in M\), the only chart available is \(\varphi : \{p\} \to \{0\}\),
+                    the unique map between two one-point sets. Any two such charts have
+                    domains that are either equal (in which case their transition map is
+                    the identity on \(\mathbb{R}^0\), trivially smooth) or disjoint (in
+                    which case the smooth compatibility condition is vacuous). The
+                    collection of all such charts is therefore automatically a smooth
+                    atlas, and the smooth structure it generates is the only possible one.
+                    Every 0-dimensional topological manifold carries a unique smooth structure.
+                </p>
+
+                <h3>Euclidean Space as a Smooth Manifold</h3>
+
+                <p>
+                    The Euclidean space \(\mathbb{R}^n\), the prototype of all manifolds,
+                    carries a canonical smooth structure that requires no choice.
+                </p>
+
+                <div class="theorem" id="D-standard_smooth_structure_Rn">
+                    <span class="theorem-title">Definition: Standard Smooth Structure on \(\mathbb{R}^n\)</span>
+                    <p>
+                        The <strong>standard smooth structure</strong> on \(\mathbb{R}^n\) is
+                        the maximal smooth atlas determined by the single-chart atlas
+                        \[
+                        \mathcal{A}_{\mathrm{std}} = \{(\mathbb{R}^n, \mathrm{id}_{\mathbb{R}^n})\}.
+                        \]
+                        The coordinate map \(\mathrm{id}_{\mathbb{R}^n}\) is called the
+                        <strong>standard coordinate chart</strong>, and the components
+                        \((x^1, \ldots, x^n)\) of a point of \(\mathbb{R}^n\) under this
+                        chart are called <strong>standard coordinates</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The single-chart atlas \(\mathcal{A}_{\mathrm{std}}\) is trivially a
+                    smooth atlas: with only one chart, there are no nonempty overlaps to
+                    check, so the smooth compatibility condition holds vacuously. By the
+                    generation proposition, it determines a unique smooth structure on
+                    \(\mathbb{R}^n\). Throughout the manifold series, and throughout the
+                    literature, the convention is firm: unless an alternative smooth
+                    structure is explicitly specified, \(\mathbb{R}^n\) carries the standard smooth structure.
+                </p>
+
+                <p>
+                    With respect to this smooth structure, the
+                    <a href="#D-smooth_chart" class="ref-link"><strong>smooth charts on \(\mathbb{R}^n\)</strong></a>
+                    can be characterized concretely: a chart \((U, \varphi)\) is smooth
+                    precisely when \(\varphi : U \to \widehat{U} \subseteq \mathbb{R}^n\) is a
+                    <a href="#D-diffeomorphism_Rn" class="ref-link"><strong>diffeomorphism</strong></a>
+                    in the ordinary sense of multivariable calculus. The reason is direct:
+                    \((U, \varphi)\) is a smooth chart of the standard smooth structure if
+                    and only if it is smoothly compatible with \((\mathbb{R}^n, \mathrm{id})\), which means that the transition maps
+                    \(\mathrm{id} \circ \varphi^{-1} = \varphi^{-1}\) and
+                    \(\varphi \circ \mathrm{id}^{-1} = \varphi\) (read on the appropriate
+                    overlap, which is just \(U\) itself) are both smooth — that is, that
+                    \(\varphi\) is a diffeomorphism. So the smooth charts of
+                    \(\mathbb{R}^n\) are exactly its Euclidean diffeomorphisms onto open
+                    subsets, and the example polar chart from the previous section is one such.
+                </p>
+
+                <h3>Another Smooth Structure on \(\mathbb{R}\)</h3>
+
+                <p>
+                    Consider the real line \(\mathbb{R}\) regarded as a topological manifold, and define the map
+                    \[
+                    \psi : \mathbb{R} \to \mathbb{R}, \qquad \psi(x) = x^3.
+                    \]
+                    The map \(\psi\) is a homeomorphism: it is continuous, bijective, with
+                    continuous inverse \(\psi^{-1}(y) = y^{1/3}\). The single-chart atlas
+                    \(\{(\mathbb{R}, \psi)\}\) is therefore an atlas in the topological
+                    sense and, by the same vacuous argument as for \(\mathcal{A}_{\mathrm{std}}\),
+                    a smooth atlas. Call its determined smooth structure \(\mathcal{A}_\psi\).
+                </p>
+
+                <p>
+                    The natural question is whether \(\mathcal{A}_\psi\) is the same as the standard smooth structure
+                    \(\mathcal{A}_{\mathrm{std}}\) on \(\mathbb{R}\). By part (b) of the
+                    generation proposition, the two structures are equal if and only if
+                    the charts \((\mathbb{R}, \mathrm{id})\) and \((\mathbb{R}, \psi)\) are
+                    smoothly compatible. They are not. The transition map from \(\psi\) to \(\mathrm{id}\) is
+                    \[
+                    \mathrm{id} \circ \psi^{-1} : \mathbb{R} \to \mathbb{R}, \qquad
+                    y \mapsto y^{1/3},
+                    \]
+                    and this map fails to be smooth at the origin: for \(y \ne 0\) its
+                    first derivative equals \(\tfrac{1}{3} y^{-2/3}\), which diverges as
+                    \(y \to 0\), so the limit defining the derivative at the origin
+                    does not exist. So \((\mathbb{R}, \mathrm{id})\) and
+                    \((\mathbb{R}, \psi)\) are not smoothly compatible, and
+                    \(\mathcal{A}_\psi\) differs from \(\mathcal{A}_{\mathrm{std}}\).
+                </p>
+
+                <div class="theorem" id="T-multiple_smooth_structures_on_R">
+                    <span class="theorem-title">Theorem: Distinct Smooth Structures on \(\mathbb{R}\)</span>
+                    <p>
+                        The atlas \(\{(\mathbb{R}, \psi)\}\) with \(\psi(x) = x^3\) and the
+                        atlas \(\{(\mathbb{R}, \mathrm{id})\}\) determine two distinct
+                        smooth structures on the topological manifold \(\mathbb{R}\).
+                    </p>
+                </div>
+
+                <p>
+                    The proof is the verification just given. A reader meeting this example
+                    for the first time should pause to note what is and what is not being claimed.
+                </p>
+
+                <p>
+                    The cube-cube map appeared in the opening section of this page — in the
+                    two-dimensional form \(\psi(x,y) = (x^3, y^3)\) — but in a different
+                    role. There it served as a smooth homeomorphism whose non-smooth
+                    inverse \(\psi^{-1}(u,v) = (u^{1/3}, v^{1/3})\) made an otherwise
+                    smooth function look non-smooth when read through it, showing that
+                    smoothness is not a homeomorphism-invariant property and motivating
+                    the introduction of smooth structures in the first place. Here the
+                    one-dimensional version \(\psi(x) = x^3\) plays a different structural
+                    role: it defines a smooth chart of a smooth structure on \(\mathbb{R}\),
+                    but a smooth structure that is not the standard one. The reappearance
+                    is not a coincidence — both phenomena trace back to the failure of the
+                    cube-root map \(t \mapsto t^{1/3}\) to be smooth at the origin — and a
+                    careful reader is invited to compare the two situations: in the
+                    opening section, the non-smoothness of \(\psi^{-1}\) disqualified
+                    \(\psi\) from sitting in any smooth structure compatible with the
+                    standard smooth structure on \(\mathbb{R}^2\); here, the same failure
+                    is what keeps \(\mathcal{A}_\psi\) from equaling \(\mathcal{A}_{\mathrm{std}}\) on \(\mathbb{R}\).
+                </p>
+
+                <p>
+                    Two final observations are worth recording. First, although
+                    \(\mathcal{A}_\psi\) and \(\mathcal{A}_{\mathrm{std}}\) are distinct as
+                    smooth structures, this distinctness has a sharper expression than the
+                    abstract inequality of atlases: viewing the set-theoretic identity
+                    \(x \mapsto x\) as a map between the two smooth manifolds, it fails to
+                    be a diffeomorphism in either direction. Read \(\mathrm{id} :
+                    (\mathbb{R}, \mathcal{A}_\psi) \to (\mathbb{R}, \mathcal{A}_{\mathrm{std}})\)
+                    through the chart \(\psi\) on the domain and the chart
+                    \(\mathrm{id}_\mathbb{R}\) on the codomain: the local coordinate representation is
+                    \[
+                    \mathrm{id}_\mathbb{R} \circ \mathrm{id} \circ \psi^{-1}(y) =
+                    \psi^{-1}(y) = y^{1/3},
+                    \]
+                    the cube-root map, which is not smooth at the origin; this direction
+                    of the identity is not even a smooth map, let alone a diffeomorphism.
+                    The reverse direction \(\mathrm{id} : (\mathbb{R},
+                    \mathcal{A}_{\mathrm{std}}) \to (\mathbb{R}, \mathcal{A}_\psi)\), read
+                    through \(\mathrm{id}_\mathbb{R}\) on the domain and \(\psi\) on the codomain, has local representation
+                    \[
+                    \psi \circ \mathrm{id} \circ \mathrm{id}_\mathbb{R}^{-1}(x) =
+                    \psi(x) = x^3,
+                    \]
+                    which is smooth; but its inverse — the previous direction — is not,
+                    so this direction is a smooth map without being a diffeomorphism.
+                    Either way, the set-theoretic identity fails to be a diffeomorphism
+                    between the two smooth manifolds. This asymmetric failure is the
+                    geometric content of "distinct smooth structure": same underlying
+                    set, same topology, but no diffeomorphism via the identity.
+                </p>
+
+                <p>
+                    Second, although \(\mathcal{A}_\psi\) and \(\mathcal{A}_{\mathrm{std}}\)
+                    are distinct as smooth structures, the two resulting smooth manifolds
+                    turn out to be diffeomorphic — not via the identity, but via a different map. The map
+                    \[
+                    \Phi : (\mathbb{R}, \mathcal{A}_\psi) \to (\mathbb{R}, \mathcal{A}_{\mathrm{std}}), \qquad \Phi(x) = x^3,
+                    \]
+                    is a diffeomorphism between the two smooth manifolds. To check this,
+                    one reads \(\Phi\) through the chart \(\psi\) on the domain and the
+                    chart \(\mathrm{id}\) on the codomain: the local coordinate
+                    representation is
+                    \[
+                    \mathrm{id} \circ \Phi \circ \psi^{-1}(y) = \Phi(y^{1/3}) = (y^{1/3})^3 = y,
+                    \]
+                    the identity on \(\mathbb{R}\), which is smooth. The inverse map
+                    \(\Phi^{-1}(x) = x^{1/3}\) has coordinate representation
+                    \(\psi \circ \Phi^{-1} \circ \mathrm{id}^{-1}(x) = (x^{1/3})^3 = x\),
+                    again the identity, also smooth. So although \(\mathcal{A}_\psi\) is
+                    not the standard smooth structure on \(\mathbb{R}\), the smooth
+                    manifolds \((\mathbb{R}, \mathcal{A}_\psi)\) and
+                    \((\mathbb{R}, \mathcal{A}_{\mathrm{std}})\) are diffeomorphic. The
+                    distinction between "distinct smooth structure" and "non-diffeomorphic
+                    smooth manifold" is therefore real and important: \(\mathbb{R}\)
+                    admits many smooth structures, but only one diffeomorphism class of
+                    smooth manifold structure, by a deep theorem in low-dimensional topology.
+                </p>
+
+                <p>
+                    Third, the technique generalizes: by composing with non-smooth
+                    homeomorphisms of \(\mathbb{R}\), one can construct infinitely many
+                    distinct smooth structures on the same underlying topological
+                    \(\mathbb{R}\), all mutually diffeomorphic as smooth manifolds. The
+                    higher-dimensional analogues are far more delicate. In dimension four,
+                    the standard topological space \(\mathbb{R}^4\) carries uncountably
+                    many smooth structures that are not pairwise diffeomorphic — a famous
+                    result whose proof requires the full machinery of gauge theory and lies far beyond our present scope.
+                </p>
+            </section>
+
+            <section id="vector-and-matrix-spaces" class="section-content">
+                <h2>Vector Spaces and Matrix Spaces</h2>
+
+                <h3>Finite-Dimensional Real Vector Spaces</h3>
+
+                <p>
+                    Let \(V\) be a finite-dimensional real vector space of dimension
+                    \(n\). Before \(V\) can be regarded as a smooth manifold, it must be
+                    regarded as a topological manifold. To this end, recall that any norm
+                    \(\|\cdot\|\) on \(V\) determines a topology, and that on a
+                    finite-dimensional space all norms are equivalent: any two norms
+                    induce the same topology. The topology on \(V\) is therefore
+                    canonical, independent of the choice of norm. The verification that
+                    \(V\) is a topological \(n\)-manifold in this topology — Hausdorff,
+                    second-countable, and locally Euclidean — is most efficiently
+                    obtained from a single observation: any choice of basis gives a
+                    linear bijection \(\mathbb{R}^n \to V\) which is automatically a
+                    homeomorphism, and Hausdorff, second-countability, and the locally
+                    Euclidean property are all topological invariants that transfer along
+                    homeomorphisms from \(\mathbb{R}^n\). We make this construction
+                    explicit, since the same map will also produce the smooth chart.
+                </p>
+
+                <p>
+                    Choose an ordered basis \((E_1, \ldots, E_n)\) of \(V\), and define the <strong>basis isomorphism</strong>
+                    \[
+                    E : \mathbb{R}^n \to V, \qquad E(x) = x^i E_i.
+                    \]
+                    Here the Einstein summation convention introduced in the previous section is in force: the right-hand side denotes
+                    \(\sum_{i=1}^{n} x^i E_i\). The map \(E\) is a linear bijection, and
+                    by general principles its inverse \(E^{-1} : V \to \mathbb{R}^n\) is
+                    also linear; both maps are continuous with respect to the standard
+                    Euclidean topology on \(\mathbb{R}^n\) and the norm topology on \(V\)
+                    (in finite dimension the choice of norm on either side is
+                    immaterial), since any linear map between finite-dimensional normed
+                    spaces is bounded and therefore continuous. So \(E\) is a homeomorphism, which 
+                    both transfers Hausdorffness and second-countability from \(\mathbb{R}^n\) to \(V\) and exhibits
+                    \(V\) as locally (in fact globally) Euclidean. The single-chart
+                    collection \(\{(V, E^{-1})\}\) is therefore a topological atlas on
+                    \(V\), with \(E^{-1}\) sending each vector to its coordinate \(n\)-tuple in the chosen basis.
+                </p>
+
+                <p>
+                    The question is whether the smooth structure determined by this atlas
+                    depends on the basis. Suppose \((\widetilde{E}_1, \ldots, \widetilde{E}_n)\)
+                    is another ordered basis of \(V\), and let
+                    \(\widetilde{E} : \mathbb{R}^n \to V\), \(\widetilde{E}(x) = x^j \widetilde{E}_j\),
+                    be the corresponding basis isomorphism. Express the old basis in terms
+                    of the new: there exist scalars \(A^j_i\) (\(i, j = 1, \ldots, n\)) such
+                    that
+                    \[
+                    E_i = A^j_i \widetilde{E}_j,
+                    \]
+                    and the matrix \((A^j_i)\) is invertible because both
+                    \((E_i)\) and \((\widetilde{E}_j)\) are bases. Substituting,
+                    \[
+                    E(x) = x^i E_i = x^i A^j_i \widetilde{E}_j = (A^j_i x^i) \widetilde{E}_j,
+                    \]
+                    so the transition map between the two charts is
+                    \[
+                    \widetilde{E}^{-1} \circ E : \mathbb{R}^n \to \mathbb{R}^n, \qquad
+                    (\widetilde{E}^{-1} \circ E)(x) = \widetilde{x}, \qquad
+                    \widetilde{x}^j = A^j_i x^i.
+                    \]
+                    This transition map is an invertible linear map of \(\mathbb{R}^n\),
+                    hence a diffeomorphism in the ordinary sense of multivariable
+                    calculus. The two charts \((V, E^{-1})\) and \((V, \widetilde{E}^{-1})\)
+                    are therefore smoothly compatible. By symmetry the same holds for any
+                    pair of basis-induced charts, and the collection of all such charts is a smooth atlas.
+                </p>
+
+                <div class="theorem" id="D-standard_smooth_structure_vector_space">
+                    <span class="theorem-title">Definition: Standard Smooth Structure on a Finite-Dimensional Vector Space</span>
+                    <p>
+                        Let \(V\) be a finite-dimensional real vector space of dimension
+                        \(n\). The <strong>standard smooth structure</strong> on \(V\) is
+                        the maximal smooth atlas determined by the collection of charts
+                        \(\{(V, E^{-1})\}\), where \(E : \mathbb{R}^n \to V\) ranges over
+                        all basis isomorphisms of \(V\). With this smooth structure, \(V\) is a smooth \(n\)-manifold.
+                    </p>
+                </div>
+
+                <p>
+                    The basis-induced charts are all smoothly compatible with each other,
+                    so any one of them generates the same maximal atlas — the smooth
+                    structure does not depend on which basis was used to define it.
+                </p>
+
+                <p>
+                    When \(V = \mathbb{R}^n\) and the basis is the standard basis
+                    \((e_1, \ldots, e_n)\), the basis isomorphism is the identity, and the
+                    standard smooth structure on \(V\) coincides with the standard smooth structure on \(\mathbb{R}^n\)
+                    <a href="#D-standard_smooth_structure_Rn" class="ref-link"><strong>defined earlier</strong></a>.
+                </p>
+
+                <h3>Matrix Spaces</h3>
+
+                <p>
+                    The space of \(m \times n\) real matrices, denoted
+                    \(M(m \times n, \mathbb{R})\), is a finite-dimensional real vector
+                    space of dimension \(mn\) under entrywise matrix addition and scalar
+                    multiplication. By the construction just given, it carries a canonical
+                    standard smooth structure as a smooth \(mn\)-manifold.
+                </p>
+
+                <p>
+                    In practice this smooth manifold is often identified with
+                    \(\mathbb{R}^{mn}\) by the obvious mapping: write a matrix
+                    \(A = (a_{ij})\) and concatenate its entries into a single
+                    \(mn\)-tuple, for example by listing them row by row. This
+                    identification is an isomorphism of vector spaces, and is therefore a
+                    diffeomorphism of smooth manifolds; the choice between thinking of
+                    \(M(m \times n, \mathbb{R})\) as a matrix space or as
+                    \(\mathbb{R}^{mn}\) is a matter of notational convenience for the problem at hand.
+                </p>
+
+                <p>
+                    The complex case is similar. The space \(M(m \times n, \mathbb{C})\)
+                    of \(m \times n\) complex matrices is a real vector space of dimension
+                    \(2mn\): each complex entry contributes two real degrees of freedom,
+                    one for its real part and one for its imaginary part. It is therefore
+                    a smooth manifold of dimension \(2mn\), again by the basis-induced construction.
+                </p>
+
+                <p>
+                    For square matrices the notation is abbreviated: when \(m = n\), the
+                    spaces \(M(n \times n, \mathbb{R})\) and \(M(n \times n, \mathbb{C})\)
+                    are written as \(M(n, \mathbb{R})\) and \(M(n, \mathbb{C})\),
+                    respectively. The smooth manifold \(M(n, \mathbb{R})\) is the ambient
+                    space inside which all of the classical matrix groups will be defined
+                    in the next section, and the basis-induced smooth structure on it is
+                    the one with respect to which matrix multiplication, determinant,
+                    trace, and inverse will turn out to be smooth maps. The verification
+                    of smoothness for these operations belongs to the next page in the
+                    manifold series, where smooth maps between smooth manifolds are defined and studied.
+                </p>
+
+                <h3>Spaces of Linear Maps</h3>
+
+                <p>
+                    The space of linear maps between two finite-dimensional real vector
+                    spaces is also, naturally, a smooth manifold. Let \(V\) and \(W\) be
+                    finite-dimensional real vector spaces of dimensions \(n\) and \(m\)
+                    respectively, and let \(L(V; W)\) denote the set of linear maps from
+                    \(V\) to \(W\). Under pointwise addition and scalar multiplication,
+                    \(L(V; W)\) is itself a real vector space, of dimension \(mn\); so by
+                    the construction of the previous subsection it carries a canonical
+                    standard smooth structure as a smooth \(mn\)-manifold.
+                </p>
+
+                <p>
+                    A concrete chart is obtained by choosing bases. Fix ordered bases
+                    \((E_1, \ldots, E_n)\) for \(V\) and \((F_1, \ldots, F_m)\) for \(W\).
+                    A linear map \(T \in L(V; W)\) is determined by its action on the basis of \(V\), and writing
+                    \[
+                    T(E_i) = T^j_i \, F_j
+                    \]
+                    (Einstein convention, with \(j\) summed from \(1\) to \(m\)) assigns to
+                    \(T\) the matrix of scalars \((T^j_i) \in M(m \times n, \mathbb{R})\).
+                    This assignment is a linear isomorphism \(L(V; W) \cong M(m \times n, \mathbb{R})\),
+                    and is therefore a diffeomorphism of smooth manifolds. The choice of
+                    bases affects the explicit form of the isomorphism but not the smooth structure on \(L(V; W)\), which is intrinsic.
+                </p>
+
+                <p>
+                    The example is more useful than its brevity might suggest. The parameter space of a single linear layer 
+                    in a neural network is, after fixing input and output bases, a copy of \(L(V; W)\); the space of
+                    linear operators on the state space of a quantum system is \(L(V; V)\) for an appropriate complex 
+                    vector space \(V\); and in the next page on smooth maps, the differential \(dF_p\) of a smooth map
+                    \(F : M \to N\) at a point \(p \in M\) will be a linear map between tangent spaces and will therefore live 
+                    in such an \(L(V; W)\). 
+                    The smooth structure on \(L(V; W)\) is what makes it sensible to speak of \(dF_p\) as varying smoothly with \(p\).
+                </p>
+            </section>
+
+            <section id="open-submanifolds-gl-and-graphs" class="section-content">
+                <h2>Open Submanifolds, \(GL(n,\mathbb{R})\), and Smooth Graphs</h2>
+
+                <p>
+                    The final family of examples collected on this page rests on a single
+                    observation that has accompanied us since the
+                    <a href="topological_manifolds.html#T-open_subset_of_top_manifold_is_manifold" class="ref-link"><strong>opening of the manifold series</strong></a>:
+                    open subsets of manifolds are themselves manifolds, in a natural way.
+                    Lifting this construction from the topological setting to the smooth
+                    one provides immediate access to two of the most important smooth
+                    manifolds in the subject — the general linear group and the space of
+                    full-rank matrices — and gives the smooth refinement of the graph construction used in the topological case.
+                </p>
+
+                <h3>Open Submanifolds</h3>
+
+                <p>
+                    Let \(M\) be a smooth \(n\)-manifold and let \(U \subseteq M\) be an open subset. The
+                    <a href="topological_manifolds.html#T-open_subset_of_top_manifold_is_manifold" class="ref-link"><strong>topological result</strong></a>
+                    already established says that \(U\), equipped with the subspace
+                    topology, is itself a topological \(n\)-manifold. We promote it to a
+                    smooth manifold by restricting the smooth charts of \(M\) to \(U\).
+                </p>
+
+                <div class="theorem" id="D-open_submanifold">
+                    <span class="theorem-title">Definition: Open Submanifold</span>
+                    <p>
+                        Let \(M\) be a smooth \(n\)-manifold with smooth structure 
+                        \(\mathcal{A}\), and let \(U \subseteq M\) be an open subset. Define
+                        \[
+                        \mathcal{A}_U = \{(V, \varphi) \in \mathcal{A} : V \subseteq U\}.
+                        \]
+                        Then \(\mathcal{A}_U\) is a smooth atlas on \(U\), and the resulting
+                        smooth structure makes \(U\) into a smooth \(n\)-manifold. Equipped
+                        with this smooth structure, \(U\) is called an <strong>open submanifold</strong> of \(M\).
+                    </p>
+                </div>
+
+                <p>
+                    The verification is direct. Every point \(p \in U\) is contained in
+                    the domain of some smooth chart \((W, \varphi) \in \mathcal{A}\) of \(M\); we claim the restriction
+                    \((W \cap U, \varphi|_{W \cap U})\) lies in \(\mathcal{A}_U\). The restricted chart is smoothly compatible 
+                    with every chart \((V, \psi) \in \mathcal{A}\): the transition map
+                    \(\psi \circ (\varphi|_{W \cap U})^{-1}\) is just the original
+                    transition \(\psi \circ \varphi^{-1}\) restricted to the open subset
+                    \(\varphi(W \cap U \cap V) \subseteq \varphi(W \cap V)\), and a
+                    smooth function restricted to an open subdomain remains smooth; the
+                    same holds for the reverse direction. By
+                    <a href="#T-smooth_structure_from_atlas" class="ref-link"><strong>maximality of \(\mathcal{A}\)</strong></a>,
+                    the restricted chart belongs to \(\mathcal{A}\), and since its
+                    domain \(W \cap U\) lies in \(U\), it belongs to \(\mathcal{A}_U\).
+                    The charts of \(\mathcal{A}_U\) therefore cover \(U\). Any two
+                    charts of \(\mathcal{A}_U\) are smoothly compatible because they
+                    already belong to the smooth atlas \(\mathcal{A}\). So \(\mathcal{A}_U\) is a smooth atlas, and by the
+                    <a href="#T-smooth_structure_from_atlas" class="ref-link"><strong>generation proposition</strong></a>
+                    it determines a unique smooth structure on \(U\).
+                </p>
+
+                <p>
+                    The choice of terminology — "open submanifold" — is one of the earliest instances of a substructure notion in 
+                    differential geometry. A more general class of submanifolds (those that need not be open in the ambient manifold) 
+                    requires substantially more machinery and will be taken up later in the manifold series. For now the open case is
+                    the only one available, and it is already enough to produce two of the most important examples in the subject.
+                </p>
+
+                <h3>The General Linear Group</h3>
+
+                <p>
+                    The first such example is the
+                    <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>general linear group</strong></a>
+                    of degree \(n\), the group of invertible \(n \times n\) real matrices under matrix multiplication.
+                </p>
+
+                <div class="theorem" id="T-GL_smooth_manifold">
+                    <span class="theorem-title">Proposition: \(GL(n, \mathbb{R})\) is a Smooth Manifold</span>
+                    <p>
+                        The general linear group
+                        \[
+                        GL(n, \mathbb{R}) = \{A \in M(n, \mathbb{R}) : \det A \neq 0\}
+                        \]
+                        is a smooth manifold of dimension \(n^2\), as an open submanifold of the smooth \(n^2\)-manifold \(M(n, \mathbb{R})\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The determinant function \(\det : M(n, \mathbb{R}) \to \mathbb{R}\) is a polynomial in the entries of the matrix, 
+                        and in particular it is continuous. The set \(GL(n, \mathbb{R}) = \det^{-1}(\mathbb{R} \setminus \{0\})\) is
+                        therefore the preimage of an open set under a continuous map, hence open in \(M(n, \mathbb{R})\). 
+                        By the open submanifold construction, \(GL(n, \mathbb{R})\) is a smooth manifold of the same dimension as
+                        \(M(n, \mathbb{R})\), namely \(n^2\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    The smooth structure on \(GL(n, \mathbb{R})\) is exactly the one
+                    inherited from \(M(n, \mathbb{R})\): a chart on \(GL(n, \mathbb{R})\)
+                    is smooth precisely when it is the restriction of a smooth chart on
+                    \(M(n, \mathbb{R})\). With respect to this structure, matrix multiplication
+                    \(GL(n, \mathbb{R}) \times GL(n, \mathbb{R}) \to GL(n, \mathbb{R})\)
+                    and matrix inversion \(GL(n, \mathbb{R}) \to GL(n, \mathbb{R})\) will be shown, on the next
+                    page in the manifold series, to be smooth maps; the verification rests
+                    on the explicit polynomial formulas for the entries of a matrix product
+                    and the rational formulas (with nonvanishing denominator on
+                    \(GL(n, \mathbb{R})\)) for the entries of a matrix inverse. The same
+                    construction with \(\mathbb{C}\) in place of \(\mathbb{R}\) gives the
+                    complex general linear group
+                    \(GL(n, \mathbb{C}) \subseteq M(n, \mathbb{C})\), a smooth manifold of real dimension \(2n^2\).
+                </p>
+
+                <h3>Matrices of Full Rank</h3>
+
+                <p>
+                    The general linear group is the special case \(m = n\) of a broader family. 
+                    For a rectangular matrix \(A \in M(m \times n, \mathbb{R})\), the <strong>rank</strong> of \(A\) 
+                    — the maximum number of linearly independent rows or columns — is at most \(\min(m, n)\); the matrix is
+                    said to have <strong>full rank</strong> when its rank attains this maximum. The set of full-rank matrices is open.
+                </p>
+
+                <p>
+                    To see this concretely in the case \(m < n\), let \(M_m(m \times n, \mathbb{R})\) denote the subset of
+                    \(M(m \times n, \mathbb{R})\) consisting of matrices of rank \(m\).
+                    For a matrix \(A\) of rank \(m\), some \(m \times m\) submatrix of
+                    \(A\) is nonsingular — equivalently, has nonzero determinant — since
+                    rank \(m\) means \(m\) of the columns of \(A\) are linearly
+                    independent, and these \(m\) columns assembled into an \(m \times m\)
+                    matrix have nonzero determinant. The determinant of this submatrix is
+                    a continuous function of the entries of \(A\), so there is a
+                    neighborhood of \(A\) in \(M(m \times n, \mathbb{R})\) on which the
+                    same submatrix has nonzero determinant. Throughout this neighborhood,
+                    \(A\) retains rank at least \(m\); since the rank is bounded above by
+                    \(m\) in any case, every matrix in the neighborhood has rank exactly
+                    \(m\). The neighborhood is therefore contained in \(M_m(m \times n, \mathbb{R})\), so this set is open in
+                    \(M(m \times n, \mathbb{R})\) and is, by the open submanifold construction, a smooth manifold of dimension \(mn\). 
+                    A symmetric argument with the roles of rows and columns exchanged handles the case \(n < m\).
+                </p>
+
+                <p>
+                    The full-rank condition will recur throughout the manifold series and
+                    in applications. A linear layer of a neural network whose weight matrix
+                    is full-rank corresponds to an injective (or surjective) linear map;
+                    the columns of a full-column-rank matrix span a maximal-dimensional
+                    subspace; and the assignment to each full-rank matrix of the subspace
+                    it spans is the first step in the construction of the Grassmannian
+                    manifold of \(m\)-planes in \(n\)-space, a smooth manifold that we
+                    will study in a later page of the manifold series.
+                </p>
+
+                <h3>Smooth Graphs</h3>
+
+                <p>
+                    The graph construction encountered in the
+                    <a href="topological_manifolds.html#graphs" class="ref-link"><strong>topological setting</strong></a>
+                    refines naturally to the smooth setting. Recall that for a continuous
+                    function \(f : U \to \mathbb{R}^k\) on an open subset \(U \subseteq \mathbb{R}^n\), the graph
+                    \[
+                    \Gamma(f) = \{(x, f(x)) : x \in U\} \subseteq \mathbb{R}^n \times \mathbb{R}^k = \mathbb{R}^{n+k}
+                    \]
+                    is a topological \(n\)-manifold when equipped with the subspace
+                    topology inherited from \(\mathbb{R}^{n+k}\); under this topology the restriction of the projection
+                    \(\pi_1 : \mathbb{R}^n \times \mathbb{R}^k \to \mathbb{R}^n\) onto the first factor gives a homeomorphism
+                    \(\varphi : \Gamma(f) \to U\), a single chart making \(\Gamma(f)\) a
+                    topological manifold. When \(f\) is smooth, this construction promotes to a smooth structure with no extra effort.
+                </p>
+
+                <p>
+                    Suppose now that \(f : U \to \mathbb{R}^k\) is smooth, in the ordinary
+                    Euclidean sense. The single-chart atlas \(\{(\Gamma(f), \varphi)\}\) is, vacuously, a smooth atlas: with only
+                    one chart, the smooth compatibility condition is automatically satisfied. By the generation proposition, 
+                    it determines a unique smooth structure on \(\Gamma(f)\), making the graph a smooth
+                    \(n\)-manifold. The chart \((\Gamma(f), \varphi)\) is, by definition, a smooth chart of this structure.
+                </p>
+
+                <p>
+                    The smoothness of \(f\) is not used in proving that \(\Gamma(f)\) is a
+                    topological manifold — continuity is enough for that. What the
+                    smoothness adds is the further claim that \(\Gamma(f)\) sits inside
+                    \(\mathbb{R}^{n+k}\) in a way that is itself compatible with the
+                    standard smooth structure on \(\mathbb{R}^{n+k}\): the inclusion map
+                    \(\Gamma(f) \hookrightarrow \mathbb{R}^{n+k}\), \(x \mapsto (x, f(x))\)
+                    when read through the chart \(\varphi\), is smooth as a map between
+                    Euclidean open sets. This compatibility is the smooth analogue of
+                    saying that \(\Gamma(f)\) is "smoothly embedded" in \(\mathbb{R}^{n+k}\),
+                    a notion that will be made precise when smooth submanifolds are taken up later in the series.
+                </p>
+
+                <h3>Where These Smooth Manifolds Reappear</h3>
+
+                <div class="insight-box">
+                    <p>
+                        <strong>Matrix Lie groups.</strong><br>
+                         A <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>matrix Lie group</strong></a>
+                        is a subgroup of \(GL(n, \mathbb{C})\) closed in the subspace topology, and inherits its smooth structure from the ambient
+                        \(GL(n, \mathbb{C})\) by the Closed Subgroup Theorem. The classical examples — \(SO(n)\), \(SU(n)\), \(SE(3)\), the Lorentz
+                        and Poincaré groups — all live downstream of the smooth structure on \(GL(n, \mathbb{R})\) established here.
+                    </p>
+                    <p>
+                        <strong>Statistical manifolds.</strong><br>
+                        A parametric family of probability distributions, viewed as a smooth manifold under its
+                        parameters, is the foundation of information geometry and natural gradient descent. The construction is an instance 
+                        of the smooth graph example above, with parameters playing the role of Euclidean coordinates.
+                    </p>
+                    <p>
+                        <strong>Smoothness in generative models.</strong><br>
+                        The differentiability that backpropagation exploits — including the reparameterization trick in variational autoencoders — 
+                        is the smoothness of maps between smooth manifolds: the data space, the latent space, and the parameter space 
+                        of the output distribution.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+
+    </body>
+</html>
