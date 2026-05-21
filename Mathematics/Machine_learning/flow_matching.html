@@ -1,0 +1,320 @@
+---
+layout: default
+title: "Flow Matching"
+topic_id: ml-15
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Flow Matching</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#trajectory">The Trajectory Problem</a>
+            <a href="#velocity">Learning the Velocity Field</a>
+            <a href="#special-case">Diffusion as a Special Case</a>
+            <a href="#demo">Interactive Demo</a>
+        </div>
+
+        <div class="container">
+
+            <section id="trajectory" class="section-content">
+                <h2>The Trajectory Problem</h2>
+                <p>
+                    A common shorthand divides modern generative AI into two camps: language is the domain of large
+                    autoregressive transformers, and images and video are the domain of <strong>diffusion</strong>.
+                    The second half of that sentence describes a landscape that has shifted. Many of the most capable
+                    recent image and video generators — the FLUX family, among others — are trained not as diffusion
+                    models but by a closely related principle called <strong>flow matching</strong>. The shift is one of
+                    engineering emphasis, not of mathematical obsolescence: the machinery of diffusion remains exact and
+                    illuminating, and we will see that it sits <em>inside</em> the flow-matching framework as a special
+                    case rather than standing opposed to it. What changed is which trajectory practitioners choose to
+                    integrate, and why.
+                </p>
+
+                <p>
+                    The point of departure is our
+                    <a href="diffusion_models.html"><strong>treatment of diffusion models</strong></a>.
+                    There, generation was framed as the reversal of a noising process: a sample is produced by starting
+                    from Gaussian noise and following a <em>trajectory</em> back toward the data distribution, one denoising
+                    step at a time. That page closed with a scope note we now make good on. The discrete denoising chain
+                    admits a continuous-time limit; in that limit the deterministic sampler traces out a smooth curve
+                    governed by an ordinary differential equation — a <em>probability-flow ODE</em> — rather than a noisy,
+                    stochastic walk. Flow matching takes this deterministic, continuous-time picture as primary, and in
+                    doing so dispenses with the language of noise altogether.
+                </p>
+
+                <p>
+                    The reframing is worth stating plainly. A diffusion sampler integrates a stochastic trajectory whose
+                    randomness, inherited from its Brownian-motion origins, makes the path between noise and data wander.
+                    A wandering path is expensive: faithfully integrating it demands many small steps, which is why classical
+                    diffusion sampling can require hundreds or thousands of network evaluations to produce a single image.
+                    Flow matching asks a more direct question. Rather than reversing a stochastic corruption, it seeks a
+                    <em>deterministic</em> map from a source distribution \(p_{\text{init}}\) — typically, but not necessarily,
+                    Gaussian noise — to the data distribution \(p_{\text{data}}\), realized as the time-1 flow of an ODE.
+                    The object to be learned is the <strong>velocity field</strong> driving that ODE, and the central
+                    advantage, developed over the next two sections, is that the trajectories can be made nearly
+                    <em>straight</em> — and a straight path is cheap to integrate.
+                </p>
+
+                <p>
+                    Two consequences of the deterministic ODE viewpoint deserve early mention, because they explain why
+                    flow matching is not merely a recasting of diffusion but a genuine generalization. First, the source
+                    distribution need not be Gaussian: any distribution one can sample from may serve as \(p_{\text{init}}\),
+                    a freedom that diffusion's noise-centric construction does not naturally permit. Second, diffusion itself
+                    reappears inside this framework as one particular choice of trajectory, rather than as a separate theory.
+                    We develop the construction first, then return to both points once the machinery is in place.
+                </p>
+            </section>
+
+            <section id="velocity" class="section-content">
+                <h2>Learning the Velocity Field</h2>
+                <p>
+                    Fix a source distribution \(p_{\text{init}}\) and the data distribution \(p_{\text{data}}\), both on
+                    \(\mathbb{R}^d\). Flow matching seeks a time-dependent <strong>velocity field</strong>
+                    \(\mathbf{u}_t(\mathbf{x})\), defined for \(t \in [0, 1]\), with the following property: a point started
+                    at a noise sample and carried along the field arrives, at time \(1\), at a data sample. Concretely,
+                    if \(\mathbf{x}_t\) solves the ordinary differential equation
+                </p>
+
+                \[
+                    \frac{\mathrm{d}}{\mathrm{d}t}\,\mathbf{x}_t = \mathbf{u}_t(\mathbf{x}_t),
+                    \qquad \mathbf{x}_0 \sim p_{\text{init}},
+                \]
+
+                <p>
+                    then its distribution at each intermediate time should trace out a prescribed <strong>probability
+                    path</strong> \((p_t)_{0 \le t \le 1}\) — a curve in the space of distributions — running from
+                    \(p_0 = p_{\text{init}}\) to \(p_1 = p_{\text{data}}\). The flow of this ODE, the map carrying each
+                    starting point to its time-\(1\) endpoint, is the generator we want; sampling means drawing
+                    \(\mathbf{x}_0\) from noise and integrating forward to \(t = 1\). That distinct trajectories never
+                    cross — so that the flow is a well-defined map — follows from the existence-and-uniqueness theory for
+                    ODEs (the <strong>Picard&ndash;Lindel&ouml;f theorem</strong>), valid when \(\mathbf{u}_t\) satisfies a
+                    <a href="../Calculus/continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz condition</strong></a>.
+                    We take this regularity for granted and turn to the real problem: finding the field.
+                </p>
+
+                <h3>A path of distributions, built one data point at a time</h3>
+                <p>
+                    We are free to choose the probability path, and the choice is made by first prescribing it
+                    <em>conditionally</em>. For a fixed data point \(\mathbf{z} \sim p_{\text{data}}\), a
+                    <strong>conditional probability path</strong> \(p_t(\cdot \mid \mathbf{z})\) is a family of
+                    distributions interpolating from the noise \(p_{\text{init}}\) at \(t=0\) to a point mass at
+                    \(\mathbf{z}\) at \(t=1\). The dominant choice in practice is the <strong>Gaussian conditional
+                    path</strong>
+                </p>
+
+                \[
+                    p_t(\cdot \mid \mathbf{z}) = \mathcal{N}\!\big(\alpha_t \mathbf{z},\, \beta_t^2 I\big),
+                \]
+
+                <p>
+                    where the scalar schedules \(\alpha_t, \beta_t\) run monotonically from \(\alpha_0 = 0, \beta_0 = 1\)
+                    (pure noise) to \(\alpha_1 = 1, \beta_1 = 0\) (the variance collapses and the Gaussian concentrates on
+                    \(\mathbf{z}\)). Sampling from it is immediate: draw \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, I)\)
+                    and set \(\mathbf{x}_t = \alpha_t \mathbf{z} + \beta_t \boldsymbol{\varepsilon}\). The simplest schedule
+                    of all, \(\alpha_t = t\) and \(\beta_t = 1 - t\), makes the mean travel in a straight line from noise to
+                    data — a fact we will lean on heavily in the next section.
+                </p>
+
+                <p>
+                    The path we actually care about is the <strong>marginal probability path</strong>, obtained by mixing
+                    the conditional paths over all data points,
+                </p>
+
+                \[
+                    p_t(\mathbf{x}) = \int p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})\, \mathrm{d}\mathbf{z}.
+                \]
+
+                <p>
+                    One can sample from it — draw a data point, then draw from its conditional path — but its density is an
+                    intractable integral. This tractable-to-sample, intractable-to-evaluate split is the crux of everything
+                    that follows.
+                </p>
+
+                <h3>The continuity equation, and the trick it powers</h3>
+                <p>
+                    What links a probability path to a velocity field is a conservation law. A field \(\mathbf{u}_t\)
+                    transports the distribution \(p_t\) correctly — meaning a particle obeying the ODE stays distributed
+                    according to \(p_t\) — if and only if the pair satisfies the <strong>continuity equation</strong>
+                </p>
+
+                \[
+                    \partial_t\, p_t(\mathbf{x}) = -\,\operatorname{div}\!\big(p_t\, \mathbf{u}_t\big)(\mathbf{x}).
+                \]
+
+                <p>
+                    The reading is physical: the left side is the rate at which probability mass at \(\mathbf{x}\) changes
+                    in time; the divergence on the right measures net outflow of mass carried by the field, so its negative
+                    is net inflow. Mass is neither created nor destroyed — probability always integrates to one — so the two
+                    sides must agree. This is the same equation that governs the flow of an incompressible fluid or the
+                    conservation of charge.
+                </p>
+
+                <p>
+                    The continuity equation is what makes the conditional construction pay off. The marginal velocity field
+                    that transports \(p_t\) is recovered from the conditional fields by a weighted average — each data point
+                    contributes the field aimed at it, weighted by how plausibly the current location \(\mathbf{x}\) arose
+                    from that point:
+                </p>
+
+                \[
+                    \mathbf{u}_t(\mathbf{x}) = \int \mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\,
+                    \frac{p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})}{p_t(\mathbf{x})}\, \mathrm{d}\mathbf{z}.
+                \]
+
+                <p>
+                    This <strong>marginalization trick</strong> — verified by substituting the average into the continuity
+                    equation and checking it holds — is the theoretical heart of flow matching. The marginal field is
+                    intractable, just like the marginal density. But the conditional field \(\mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\)
+                    is explicit: for the Gaussian path it is a short closed-form expression in \(\mathbf{x}, \mathbf{z}\),
+                    and \(\alpha_t, \beta_t\). The remaining question is whether we can train against the easy conditional
+                    field and still recover the hard marginal one.
+                </p>
+
+                <h3>Conditional flow matching</h3>
+                <p>
+                    We can, and the reason is a clean identity between two losses. The loss we would <em>like</em> to
+                    minimize regresses a network \(\mathbf{u}_t^{\boldsymbol{\theta}}\) against the marginal field; the loss
+                    we <em>can</em> minimize, the <strong>conditional flow matching</strong> objective, regresses it against
+                    the explicit conditional field,
+                </p>
+
+                \[
+                    \mathcal{L}_{\text{CFM}}(\boldsymbol{\theta})
+                    = \mathbb{E}\Big[\big\|\,\mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}_t)
+                    - \mathbf{u}_t(\mathbf{x}_t \mid \mathbf{z})\,\big\|^2\Big],
+                \]
+
+                <p>
+                    with the expectation over a random time \(t \sim \mathrm{Unif}[0,1]\), a data point
+                    \(\mathbf{z} \sim p_{\text{data}}\), and a point \(\mathbf{x}_t \sim p_t(\cdot \mid \mathbf{z})\) on the
+                    conditional path. The two losses differ only by an additive constant independent of
+                    \(\boldsymbol{\theta}\), so they have identical gradients — minimizing the conditional loss is exactly
+                    minimizing the marginal one. The network learns the conditional field it is shown, and thereby, without
+                    ever being shown it, the marginal field that transports noise into data.
+                </p>
+
+                <p>
+                    This is what <strong>simulation-free</strong> means, and why it matters. No ODE is solved during
+                    training. Each gradient step needs only a noise sample, a data sample, a random time, and the
+                    conditional velocity between them — a closed-form target, evaluated without any integration through the
+                    field being learned. Contrast this with the alternative the trick avoids: defining the loss through the
+                    marginal field would require simulating the very flow one is trying to fit, at every step. The
+                    marginalization trick converts an intractable simulation problem into ordinary regression.
+                </p>
+            </section>
+
+            <section id="special-case" class="section-content">
+                <h2>Diffusion as a Special Case</h2>
+                <p>
+                    We can now make good on a claim from the opening: diffusion is not a rival to flow matching but an
+                    instance of it. The flow-matching construction transports a distribution along a probability path using
+                    a deterministic ODE driven by the velocity field \(\mathbf{u}_t\). Diffusion models transport the same
+                    distribution along the same path, but using a <em>stochastic</em> differential equation. The two are
+                    connected by a single knob.
+                </p>
+
+                <h3>One knob: from deterministic flow to stochastic diffusion</h3>
+                <p>
+                    Given a velocity field \(\mathbf{u}_t\) that transports the path \(p_t\), one may add a noise term and
+                    obtain a stochastic differential equation that transports the <em>very same</em> path. For any
+                    diffusion coefficient \(\sigma_t \ge 0\),
+                </p>
+
+                \[
+                    \mathrm{d}\mathbf{x}_t = \Big[\mathbf{u}_t(\mathbf{x}_t)
+                    + \tfrac{\sigma_t^2}{2}\, \mathbf{s}_t(\mathbf{x}_t)\Big]\mathrm{d}t
+                    + \sigma_t\, \mathrm{d}\mathbf{w}_t,
+                \]
+
+                <p>
+                    where \(\mathbf{s}_t = \nabla \log p_t\) is the <strong>score function</strong> of the path and
+                    \(\mathbf{w}_t\) is Brownian motion, produces trajectories distributed according to \(p_t\) at every
+                    time, for <em>any</em> choice of \(\sigma_t\). The deterministic flow is the endpoint \(\sigma_t = 0\):
+                    the noise vanishes, the score term vanishes with it, and the ODE of the previous section is recovered.
+                    Diffusion models live at \(\sigma_t > 0\): the trajectories acquire the wandering, stochastic character
+                    of Brownian motion, while the distribution they carry is unchanged. The schedule that reproduces the
+                    variance-preserving noising of classical denoising diffusion is one particular setting of
+                    \(\sigma_t\) and the path; flow matching is the same family read at \(\sigma_t = 0\).
+                </p>
+
+                <p>
+                    The bookkeeping that guarantees the path is preserved is, once again, a conservation law. The
+                    distribution under the stochastic equation obeys the <strong>Fokker&ndash;Planck equation</strong>
+                </p>
+
+                \[
+                    \partial_t\, p_t = -\operatorname{div}(p_t\, \mathbf{u}_t) + \tfrac{\sigma_t^2}{2}\,\Delta p_t,
+                \]
+
+                <p>
+                    which is the continuity equation of the previous section with one extra term: the Laplacian
+                    \(\Delta p_t\), the same diffusion term that appears in the heat equation. Setting \(\sigma_t = 0\)
+                    removes it and returns the continuity equation exactly. The Laplacian is the mathematical signature of
+                    diffusion — of mass spreading stochastically — and the framework shows precisely where it enters and
+                    where it can be switched off.
+                </p>
+
+                <h3>The score and the velocity field are the same object</h3>
+                <p>
+                    The appearance of the score function above is not a coincidence of notation. For a Gaussian path, the
+                    velocity field and the score are related by an invertible linear formula: each is recoverable from the
+                    other through the schedule \(\alpha_t, \beta_t\). What the diffusion literature calls learning the
+                    <a href="diffusion_models.html#D-score_function_data_gradient" class="ref-link"><strong>score function</strong></a>,
+                    and what flow matching calls learning the velocity field, are two parametrizations of one underlying
+                    quantity. The diffusion development built that quantity through Brownian motion and time-reversal; the
+                    flow-matching development built it through deterministic transport and the marginalization trick. They
+                    arrive at the same place.
+                </p>
+
+                <h3>Why the deterministic end is attractive</h3>
+                <p>
+                    If every \(\sigma_t\) carries the same distribution, why prefer the deterministic end? Because of
+                    sampling cost. A stochastic trajectory wanders and must be integrated in many small steps; a
+                    deterministic trajectory, especially one whose path has been chosen to be nearly straight, can be
+                    integrated in few — in the ideal limit, a single step. Each step is one evaluation of the network, so
+                    straighter and deterministic means faster generation. The schedule whose conditional trajectories are
+                    straight segments from noise to data is the basis of <strong>rectified flow</strong>; pushing toward
+                    genuine straightness connects to <strong>optimal transport</strong>, which characterizes the
+                    straightest coupling between two distributions. The large-scale image generators that displaced
+                    diffusion samplers in practice — among them Stable Diffusion 3 — are rectified-flow models, trading
+                    the curved stochastic trajectories of classical diffusion for straight deterministic ones, and the
+                    order-of-magnitude reduction in sampling steps that straightness buys.
+                </p>
+
+                <p>
+                    This is the sense in which flow matching <em>generalizes</em> diffusion. It keeps what made diffusion
+                    work — a tractable training signal, a smooth path from noise to data — exposes the stochasticity as a
+                    tunable coefficient rather than a built-in commitment, and frees the path itself to be chosen.
+                    Diffusion is the well-studied region of that design space at \(\sigma_t > 0\); the deterministic flows
+                    that now drive large-scale generation are the same construction at \(\sigma_t = 0\) with a straightened
+                    path; and the framework leaves room for choices not yet made.
+                </p>
+            </section>
+
+            <!-- DEMO SECTION: placeholder; interactive .js (sec5_p15_flow_matching_demo.js) to be authored next -->
+            <section id="demo" class="section-content">
+                <h2>Interactive Demo</h2>
+                <p>
+                    <em>[Interactive demo to follow: a 2D visualization contrasting the wandering stochastic trajectories
+                    of diffusion (\(\sigma_t &gt; 0\)) with the straight deterministic trajectories of flow matching
+                    (\(\sigma_t = 0\)), illustrating how step count trades off against path curvature.]</em>
+                </p>
+                <div id="flow_matching_demo_visualizer"></div>
+            </section>
+
+        </div>
+
+        <script src="/js/sec5_p15_flow_matching_demo.js"></script>
+
+    </body>
+</html>
