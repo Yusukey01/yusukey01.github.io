@@ -107,7 +107,7 @@ uses_python: false
                     We are free to choose the probability path, and the choice is made by first prescribing it
                     <em>conditionally</em>. For a fixed data point \(\mathbf{z} \sim p_{\text{data}}\), a
                     <strong>conditional probability path</strong> \(p_t(\cdot \mid \mathbf{z})\) is a family of
-                    distributions interpolating from the noise \(p_{\text{init}}\) at \(t=0\) to a point mass at
+                    distributions interpolating from the source noise at \(t=0\) to a point mass at
                     \(\mathbf{z}\) at \(t=1\). The dominant choice in practice is the <strong>Gaussian conditional
                     path</strong>
                 </p>
@@ -123,6 +123,18 @@ uses_python: false
                     and set \(\mathbf{x}_t = \alpha_t \mathbf{z} + \beta_t \boldsymbol{\varepsilon}\). The simplest schedule
                     of all, \(\alpha_t = t\) and \(\beta_t = 1 - t\), makes the mean travel in a straight line from noise to
                     data — a fact we will lean on heavily in the next section.
+                </p>
+
+                <p>
+                    A word on generality. With \(\alpha_0 = 0\) and \(\beta_0 = 1\) the conditional path begins at
+                    \(p_0(\cdot \mid \mathbf{z}) = \mathcal{N}(\mathbf{0}, I)\) independently of \(\mathbf{z}\), so mixing
+                    over data points leaves the source pinned to \(p_{\text{init}} = \mathcal{N}(\mathbf{0}, I)\): this
+                    standard construction recovers a Gaussian source, the same starting point as diffusion. The freedom to
+                    take an arbitrary \(p_{\text{init}}\), promised earlier, is realized by a more general construction that
+                    conditions the path on a source&ndash;target pair \((\mathbf{x}_0, \mathbf{z})\) rather than on
+                    \(\mathbf{z}\) alone; the marginalization argument below goes through unchanged for that case. We develop
+                    the Gaussian-source version, the one in universal practical use, and note where the generalization
+                    enters.
                 </p>
 
                 <p>
@@ -248,20 +260,35 @@ uses_python: false
                 </p>
 
                 <p>
-                    The bookkeeping that guarantees the path is preserved is, once again, a conservation law. The
-                    distribution under the stochastic equation obeys the <strong>Fokker&ndash;Planck equation</strong>
+                    The bookkeeping that guarantees the path is preserved is, once again, a conservation law. A stochastic
+                    differential equation with drift \(\boldsymbol{\mu}_t\) and diffusion coefficient \(\sigma_t\) evolves
+                    its density according to the <strong>Fokker&ndash;Planck equation</strong>
                 </p>
 
                 \[
-                    \partial_t\, p_t = -\operatorname{div}(p_t\, \mathbf{u}_t) + \tfrac{\sigma_t^2}{2}\,\Delta p_t,
+                    \partial_t\, p_t = -\operatorname{div}(p_t\, \boldsymbol{\mu}_t) + \tfrac{\sigma_t^2}{2}\,\Delta p_t.
                 \]
 
                 <p>
-                    which is the continuity equation of the previous section with one extra term: the Laplacian
-                    \(\Delta p_t\), the same diffusion term that appears in the heat equation. Setting \(\sigma_t = 0\)
-                    removes it and returns the continuity equation exactly. The Laplacian is the mathematical signature of
-                    diffusion — of mass spreading stochastically — and the framework shows precisely where it enters and
-                    where it can be switched off.
+                    The first term is the familiar transport of the continuity equation; the Laplacian
+                    \(\Delta p_t\) is the diffusion term that also appears in the heat equation, the mathematical
+                    signature of mass spreading stochastically. Substituting the drift of our equation,
+                    \(\boldsymbol{\mu}_t = \mathbf{u}_t + \tfrac{\sigma_t^2}{2}\,\mathbf{s}_t\), is what makes the two
+                    parts conspire. The score contributes a term
+                    \(-\tfrac{\sigma_t^2}{2}\operatorname{div}(p_t \nabla \log p_t)\); since
+                    \(p_t \nabla \log p_t = \nabla p_t\), this is exactly \(-\tfrac{\sigma_t^2}{2}\Delta p_t\), which
+                    cancels the diffusion term identically. What remains is
+                </p>
+
+                \[
+                    \partial_t\, p_t = -\operatorname{div}(p_t\, \mathbf{u}_t),
+                \]
+
+                <p>
+                    the continuity equation of the previous section, for <em>every</em> \(\sigma_t\). This is the precise
+                    reason the whole family carries the same path: the score term is calibrated to absorb the diffusion
+                    the Brownian motion injects. At \(\sigma_t = 0\) both the stochastic spreading and the score correction
+                    vanish together, and the stochastic differential equation collapses to the deterministic ODE outright.
                 </p>
 
                 <h3>The score and the velocity field are the same object</h3>
@@ -305,16 +332,13 @@ uses_python: false
             <section id="demo" class="section-content">
                 <h2>Interactive Demo</h2>
                 <p>
-                    Both panels start from the same noise sample and aim at the same five target modes (rings);
-                    only the path differs — straight on the left, curved on the right. Blue points reached a mode,
-                    orange missed. Drag N to change the number of Euler steps.
+                    <em>[Interactive demo to follow: a 2D visualization contrasting the wandering stochastic trajectories
+                    of diffusion (\(\sigma_t &gt; 0\)) with the straight deterministic trajectories of flow matching
+                    (\(\sigma_t = 0\)), illustrating how step count trades off against path curvature.]</em>
                 </p>
-                <div id="flow_matching_demo_visualizer"></div>
             </section>
 
         </div>
-
-        <script src="/js/sec5_p15_flow_matching_demo.js"></script>
 
     </body>
 </html>
