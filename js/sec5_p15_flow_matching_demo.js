@@ -286,7 +286,7 @@ function integrateBatch(batch, N, sched) {
 // BOTH panels degrade and blurs the message), max ~150, default 8 (peak
 // contrast). The verified table: N=8 gives ratio 5.2x (curved/straight).
 const N_MIN = 4;
-const N_MAX = 40;
+const N_MAX = 20;
 const N_DEFAULT = 8;
 
 // Particle count: enough for a clear cloud, light enough to recompute
