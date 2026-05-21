@@ -775,11 +775,13 @@ function injectFMDemoCSS() {
 function captionFor(state) {
     const dStraight = state.left ? state.left.error : 0;
     const dCurved = state.right ? state.right.error : 0;
-    const ratio = dStraight > 1e-6 ? (dCurved / dStraight) : 1;
+    const dS = Number(dStraight.toFixed(3));
+    const dC = Number(dCurved.toFixed(3));
+    const ratio = dS > 1e-6 ? (dC / dS) : 1;
     if (state.N <= 10) {
         return `At N = ${state.N} steps, the straight path already lands on the modes `
             + `while the curved diffusion path overshoots and misses — its mean miss is `
-            + `${ratio.toFixed(1)}\u00D7 larger. A straight trajectory is cheap to integrate.`;
+            + `approximately ${ratio.toFixed(1)}\u00D7 larger. A straight trajectory is cheap to integrate.`;
     } else if (state.N <= 30) {
         return `At N = ${state.N} the curved path is catching up but still trails the `
             + `straight one. Reducing N widens the gap; increasing it closes it.`;
