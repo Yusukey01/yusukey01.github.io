@@ -23,6 +23,7 @@ uses_python: false
             <a href="#taylor">Taylor's Theorem</a>
             <a href="#c_mvt">Cauchy's Mean Value Theorem</a>
             <a href="#h_dim">Higher-dimensional MVT</a>
+            <a href="#multi_taylor">Multivariate Taylor's Theorem</a>
         </div> 
 
         <div class="container">  
@@ -36,7 +37,7 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 1: Lagrange's Mean Value Theorem</span>
+                    <span class="theorem-title">Lagrange's Mean Value Theorem</span>
                     <p>
                         Suppose \(f\) is continuous on \([a, b]\) and differentiable on \((a, b)\). Then there exists
                         \(c \in (a, b)\) such that
@@ -137,7 +138,7 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 2: Taylor's Theorem, Peano Form</span> 
+                    <span class="theorem-title">Taylor's Theorem, Peano Form</span> 
                     <p>
                         Let \(n \geq 1\) be an integer, let \(U \subseteq \mathbb{R}\) be an open neighborhood of
                         \(a\), and suppose \(f: U \to \mathbb{R}\) is \((n-1)\) times differentiable on \(U\) with
@@ -160,11 +161,11 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 2': Taylor's Theorem, Lagrange Form</span> 
+                    <span class="theorem-title">Taylor's Theorem, Lagrange Form</span> 
                     <p>
                         Let \(n \geq 1\) be an integer and let \(I \subseteq \mathbb{R}\) be an interval
                         containing both \(a\) and \(x\). Suppose \(f: I \to \mathbb{R}\) is \(n\) times
-                        differentiable on \(I\) and \(f^{(n-1)}\) is continuous on \(I\). Then there exists
+                        differentiable on \(I\). Then there exists
                         \(c\) strictly between \(a\) and \(x\) such that
                         \[
                         R_n(x) \;=\; \frac{f^{(n)}(c)}{n!}\,(x - a)^n,
@@ -222,7 +223,7 @@ uses_python: false
                 <h2>Cauchy's Mean Value Theorem</h2>
                 
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 3: Cauchy's Mean Value Theorem</span>
+                    <span class="theorem-title">Cauchy's Mean Value Theorem</span>
                     <p>
                         Let \(f\) and \(g\) be continuous on \([a,b]\) and differentiable on \((a,b)\). If
                         \(g'(x) \neq 0\) for every \(x \in (a, b)\), then \(g(b) \neq g(a)\) (else Rolle's theorem
@@ -273,7 +274,7 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Theorem 4: Higher-Dimensional MVT</span>
+                    <span class="theorem-title">Higher-Dimensional MVT</span>
                     <p>
                         Let \(f: X \to \mathbb{R}\) be differentiable on an open set \(X \subseteq \mathbb{R}^n\)
                         (in the sense that the <a href="linear_approximation.html#D-linearization"><strong>linearization</strong></a>
@@ -320,6 +321,215 @@ uses_python: false
                         \(\|F(b) - F(a)\| \leq \sup_{c \in [a,b]} \|DF(c)\|\,\|b-a\|\). This distinction is the
                         reason first-order convergence proofs for gradient descent operate on scalar loss functions
                         directly rather than on vector-valued forward maps.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="multi_taylor" class="section-content">
+                <h2>Multivariate Taylor's Theorem</h2>
+
+                <p>
+                    The Higher-Dimensional MVT controlled the <em>first</em>-order behavior of a scalar field
+                    along a segment. To control approximation to <em>arbitrary</em> order — and, crucially, to
+                    obtain an <strong>exact</strong> remainder rather than an existential mean value point — we
+                    extend Taylor's Theorem to functions of several variables. The single-variable Lagrange form
+                    above located the remainder at an unknown point \(c\); the multivariate version below instead
+                    expresses the remainder as an <em>integral</em>, a form that is indispensable wherever the
+                    remainder must be manipulated algebraically rather than merely bounded. One such place is the
+                    foundation of differential geometry, where this exact integral remainder is the engine that
+                    identifies tangent vectors with directional-derivative operators.
+                </p>
+
+                <p>
+                    The mechanism is identical to the one used in the proof of the Higher-Dimensional MVT: we
+                    restrict \(f\) to the segment from \(a\) to \(x\) by composing with the curve
+                    \(t \mapsto a + t(x-a)\), reducing a multivariable problem to a single-variable one, and then
+                    invoke the single-variable theory. What changes is only the bookkeeping for higher-order
+                    derivatives, which we organize with multi-index notation.
+                </p>
+
+                <h3>Multi-index notation</h3>
+
+                <p>
+                    Writing higher-order partial derivatives and the matching monomials explicitly becomes unwieldy
+                    past first order. A <strong>multi-index</strong> packages the bookkeeping. We use the
+                    <em>ordered</em> convention throughout (each slot independently ranges over
+                    \(1,\dots,n\)), which is what makes the compressed sums below coincide with fully written-out
+                    sums with no extra combinatorial factors.
+                </p>
+
+                <div class="theorem" id="D-multi_index">
+                    <span class="theorem-title">Definition: Multi-index (ordered convention)</span>
+                    <p>
+                        Fix \(n \geq 1\). A <strong>multi-index of length \(m\)</strong> is an ordered tuple
+                        \(I = (i_1, \dots, i_m)\) with each \(i_j \in \{1, \dots, n\}\); we write \(|I| = m\) for
+                        its <strong>order</strong>. For a point \(x = (x^1,\dots,x^n) \in \mathbb{R}^n\) and a base
+                        point \(a = (a^1,\dots,a^n) \in \mathbb{R}^n\), the associated scalar monomial is
+                        \[
+                        (x - a)^I \;:=\; (x^{i_1} - a^{i_1})\,(x^{i_2} - a^{i_2}) \cdots (x^{i_m} - a^{i_m}) \;\in\; \mathbb{R},
+                        \]
+                        and for an \(m\)-times differentiable scalar function \(f\) the associated partial derivative is
+                        \[
+                        \partial_I f \;:=\; \frac{\partial^m f}{\partial x^{i_1} \partial x^{i_2} \cdots \partial x^{i_m}} \;\in\; \mathbb{R}.
+                        \]
+                        Both \((x-a)^I\) and \(\partial_I f\) are <strong>scalars</strong>, even though \(x\) and
+                        \(a\) are vectors. Because the convention is ordered, summing a quantity over all
+                        multi-indices of a fixed order \(|I| = m\) is the same as summing independently over each
+                        slot:
+                        \[
+                        \sum_{I : |I| = m} \;=\; \sum_{i_1 = 1}^{n} \sum_{i_2 = 1}^{n} \cdots \sum_{i_m = 1}^{n}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Before stating the general theorem, it is worth writing out the lowest orders explicitly, since
+                    these are the cases that arise most often. At <strong>first order</strong> (\(k = 1\)), the
+                    expansion reads
+                    \[
+                    f(x) \;=\; f(a) \;+\; \sum_{i=1}^{n} \frac{\partial f}{\partial x^i}(a)\,(x^i - a^i)
+                    \;+\; \underbrace{\sum_{i,j=1}^{n} (x^i - a^i)(x^j - a^j) \int_0^1 (1 - t)\,
+                    \frac{\partial^2 f}{\partial x^i \partial x^j}\bigl(a + t(x-a)\bigr)\,dt}_{\text{remainder } R_1(x)} .
+                    \]
+                    Every term here is a <strong>scalar</strong>: \(f(a)\) and each \(\partial f/\partial x^i(a)\)
+                    are scalars, \((x^i - a^i)\) is a scalar component of the displacement vector \(x - a\), and the
+                    integral is a scalar (the integrand is evaluated at the vector \(a + t(x-a)\) but returns a real
+                    number). The linear term \(\sum_i \partial_i f(a)(x^i - a^i)\) is exactly the directional
+                    contribution \(\nabla f(a) \cdot (x - a)\) seen in the Higher-Dimensional MVT, now accompanied by
+                    an explicit second-order remainder rather than hidden inside a mean value point.
+                </p>
+
+                <p>
+                    At <strong>second order</strong> (\(k = 2\)), the new term is the quadratic
+                    \[
+                    \frac{1}{2} \sum_{i,j=1}^{n} \frac{\partial^2 f}{\partial x^i \partial x^j}(a)\,(x^i - a^i)(x^j - a^j),
+                    \]
+                    which is precisely one-half the quadratic form of the <strong>Hessian</strong> — the symmetric
+                    matrix of second partial derivatives \(\partial^2 f / \partial x^i \partial x^j(a)\) — evaluated
+                    on the displacement vector \(x - a\). This quadratic form is itself a scalar. It is this
+                    \(k = 2\) expansion that underlies second-order optimization and Laplace-type approximations.
+                </p>
+
+                <p>
+                    The general statement compresses these patterns using the multi-index notation above.
+                </p>
+
+                <div class="theorem" id="T-taylor_multivariate">
+                    <span class="theorem-title">Multivariate Taylor's Theorem (integral remainder)</span>
+                    <p>
+                        Let \(X \subseteq \mathbb{R}^n\) be open and let \(a \in X\) be fixed. Suppose
+                        \(f \in C^{k+1}(X)\) for some integer \(k \geq 0\). If \(W \subseteq X\) is any convex set
+                        containing \(a\), then for all \(x \in W\),
+                        \[
+                        f(x) \;=\; P_k(x) + R_k(x),
+                        \]
+                        where the <strong>\(k\)th-order Taylor polynomial</strong> \(P_k\) is the scalar-valued
+                        function
+                        \[
+                        P_k(x) \;=\; f(a) + \sum_{m=1}^{k} \frac{1}{m!} \sum_{I : |I| = m} \partial_I f(a)\,(x - a)^I,
+                        \]
+                        and the <strong>\(k\)th remainder term</strong> \(R_k\) is
+                        \[
+                        R_k(x) \;=\; \frac{1}{k!} \sum_{I : |I| = k+1} (x - a)^I \int_0^1 (1 - t)^k\,
+                        \partial_I f\bigl(a + t(x-a)\bigr)\,dt .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Fix \(x \in W\). Since \(W\) is convex and contains both \(a\) and \(x\), the segment
+                        \(\{a + t(x-a) : t \in [0,1]\}\) lies in \(W \subseteq X\), so the scalar function
+                        \[
+                        u(t) \;:=\; f\bigl(a + t(x-a)\bigr), \qquad t \in [0,1],
+                        \]
+                        is well defined and of class \(C^{k+1}\). We prove the claim by induction on \(k\), tracking
+                        derivatives of \(u\) via the
+                        <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>.
+                    </p>
+                    <p>
+                        <em>Base case \(k = 0\).</em> Here \(P_0(x) = f(a)\). By the chain rule,
+                        \(u'(t) = \sum_{i=1}^n \partial_i f(a + t(x-a))\,(x^i - a^i)
+                        = \sum_{I : |I| = 1} (x-a)^I\, \partial_I f(a + t(x-a))\). The Fundamental Theorem of
+                        Calculus applied to \(u\) on \([0,1]\) gives
+                        \[
+                        f(x) - f(a) \;=\; u(1) - u(0) \;=\; \int_0^1 u'(t)\,dt
+                        \;=\; \sum_{I : |I| = 1} (x-a)^I \int_0^1 \partial_I f\bigl(a + t(x-a)\bigr)\,dt,
+                        \]
+                        which is exactly \(f(x) = P_0(x) + R_0(x)\), since \((1-t)^0 = 1\) and \(0! = 1\).
+                    </p>
+                    <p>
+                        <em>Inductive step.</em> Suppose the formula holds for some \(k\); we promote it to
+                        \(k + 1\). Each remainder integral has the form \(\int_0^1 (1-t)^k\, g(t)\,dt\) with
+                        \(g(t) = \partial_I f(a + t(x-a))\). Integrating by parts, using
+                        \(\frac{d}{dt}\!\left[-\frac{(1-t)^{k+1}}{k+1}\right] = (1-t)^k\) and again the chain rule
+                        for \(g'(t) = \sum_{j=1}^n \partial_j \partial_I f(a + t(x-a))\,(x^j - a^j)\), yields
+                        \[
+                        \int_0^1 (1-t)^k\, g(t)\,dt
+                        \;=\; \frac{1}{k+1}\, g(0)
+                        \;+\; \frac{1}{k+1} \sum_{j=1}^n (x^j - a^j) \int_0^1 (1-t)^{k+1}\,
+                        \partial_j \partial_I f\bigl(a + t(x-a)\bigr)\,dt .
+                        \]
+                        The boundary term contributes \(\frac{1}{k+1}\,\partial_I f(a)\), which (summed with the
+                        prefactor \(\frac{1}{k!}\) over \(|I| = k+1\)) supplies exactly the order-\((k+1)\) term of
+                        \(P_{k+1}\), since \(\frac{1}{k!}\cdot\frac{1}{k+1} = \frac{1}{(k+1)!}\). The surviving
+                        integral, with one extra differentiation slot \(j\) prepended, reassembles into the sum over
+                        multi-indices of order \(k + 2\), giving \(R_{k+1}\) with weight \((1-t)^{k+1}\) and
+                        prefactor \(\frac{1}{(k+1)!}\). This is precisely the asserted formula with \(k\) replaced by
+                        \(k + 1\), completing the induction. \(\qquad \blacksquare\)
+                    </p>
+                </div>
+
+                <p>
+                    When only a bound on the error is needed — rather than the exact integral — the integral
+                    remainder collapses to a clean estimate.
+                </p>
+
+                <div class="theorem" id="T-taylor_error_bound">
+                    <span class="theorem-title">Taylor Error Bound</span>
+                    <p>
+                        Let \(X \subseteq \mathbb{R}^n\) be open, \(a \in X\), and \(f \in C^{k+1}(X)\) for some
+                        \(k \geq 0\). If \(W \subseteq X\) is convex, contains \(a\), and every partial derivative of
+                        \(f\) of order \(k + 1\) is bounded in absolute value by a constant \(M\) on \(W\), then for
+                        all \(x \in W\),
+                        \[
+                        \bigl| f(x) - P_k(x) \bigr| \;\leq\; \frac{n^{k+1}\,M}{(k+1)!}\,\lVert x - a\rVert^{\,k+1},
+                        \]
+                        where \(P_k\) is the \(k\)th Taylor polynomial of \(f\) at \(a\) and \(\lVert\cdot\rVert\)
+                        is the Euclidean norm.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        The remainder \(R_k(x) = f(x) - P_k(x)\) is a sum over the multi-indices \(I\) with
+                        \(|I| = k+1\); by the ordered convention there are \(n^{k+1}\) such terms. For each, the
+                        scalar factor satisfies \(\lvert (x-a)^I \rvert \leq \lVert x - a\rVert^{\,k+1}\) (each of the
+                        \(k+1\) scalar factors \(\lvert x^{i_j} - a^{i_j}\rvert\) is at most the Euclidean norm
+                        \(\lVert x - a\rVert\)), the integrand obeys
+                        \(\lvert \partial_I f(a + t(x-a))\rvert \leq M\), and
+                        \(\int_0^1 (1-t)^k\,dt = \tfrac{1}{k+1}\). Combining with the prefactor \(\tfrac{1}{k!}\)
+                        and \(\tfrac{1}{k!}\cdot\tfrac{1}{k+1} = \tfrac{1}{(k+1)!}\), the triangle inequality over the
+                        \(n^{k+1}\) terms gives the stated bound. \(\qquad \blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why the integral remainder matters</h3>
+                    <p>
+                        The Lagrange form earlier in this page is ideal for <em>bounding</em> error, and the
+                        Taylor error bound above recovers exactly that role in the multivariate setting. But the integral form of the
+                        remainder does something the Lagrange form cannot: it exhibits the remainder as an explicit
+                        sum in which each term carries a factor \((x^i - a^i)\) that <em>vanishes</em> at
+                        \(x = a\) multiplied by a smooth coefficient. This algebraic structure — a remainder built
+                        from products that die at the base point — is exactly what is needed when one must apply a
+                        linear operator to the remainder and have it annihilate the leftover terms. That is the
+                        decisive step in the smooth-manifold theory of tangent vectors, where the first-order
+                        (\(k = 1\)) case of this theorem identifies abstract tangent vectors with classical
+                        directional derivatives.
                     </p>
                 </div>
 
