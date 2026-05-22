@@ -1,0 +1,887 @@
+---
+layout: default
+title: "Tangent Vectors"
+topic_id: calc-45
+level: core
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Tangent Vectors</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#tangent-vectors">Tangent Vectors</a>
+            <a href="#differential">The Differential</a>
+            <a href="#coordinates">Computations in Coordinates</a>
+            <a href="#jacobian">The Differential as a Jacobian</a>
+        </div>
+
+        <div class="container">
+            <section id="tangent-vectors" class="section-content">
+                <h2>Tangent Vectors</h2>
+
+                <p>
+                    Every construction in differential geometry that deserves the name "calculus" eventually needs a notion of
+                    derivative, and a derivative needs vectors to differentiate along. On a manifold there is no ambient space to
+                    borrow arrows from: a point of an abstract manifold is not a point of any \(\mathbb{R}^N\), and the naive picture
+                    of a tangent vector as a little arrow sticking out into the surrounding space has nothing to stick out into. The
+                    task of this section is to manufacture, intrinsically and out of the smooth structure alone, a vector space
+                    \(T_pM\) at each point \(p\) that plays the role the arrows once played. The strategy is the one that recurs
+                    throughout the subject: identify what a tangent vector <em>does</em>, promote that action to a definition, and
+                    discard the scaffolding that made the action visible in the first place.
+                </p>
+
+                <h3>The geometric picture in Euclidean space</h3>
+
+                <p>
+                    In \(\mathbb{R}^n\) the scaffolding is concrete. Fix a point \(a \in \mathbb{R}^n\) and attach to it a copy of
+                    \(\mathbb{R}^n\), the <strong>geometric tangent space</strong>
+                    \(\mathbb{R}^n_a = \{a\} \times \mathbb{R}^n\), whose elements we write \(v_a = (a, v)\) and picture as the arrow
+                    \(v\) drawn with its tail at \(a\). This is an honest \(n\)-dimensional real vector space, a translated copy of
+                    \(\mathbb{R}^n\), and it carries all the linear-algebraic structure we already have. Its defect is exactly its
+                    virtue: it is built from the ambient \(\mathbb{R}^n\) into which the point \(a\) is embedded, and an abstract
+                    manifold offers no such ambient room. To migrate the notion onto a manifold we must first reformulate it without
+                    reference to the surrounding space.
+                </p>
+
+                <p>
+                    The reformulation comes from asking what an arrow \(v_a\) lets us compute. Given a smooth function \(f\) defined
+                    near \(a\), the arrow specifies a <strong>directional derivative</strong>: the instantaneous rate of change of
+                    \(f\) as one moves away from \(a\) in the direction \(v\). Writing \(D_v\big|_a\) for this operation,
+                </p>
+
+                <p>
+                    \[
+                        \begin{align*}
+                            D_v\big|_a f &= \frac{d}{dt}\bigg|_{t=0} f(a + tv) \\\\
+                            &= v^i \, \frac{\partial f}{\partial x^i}(a),
+                        \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    where the second equality is the
+                    <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> applied to the curve
+                    \(t \mapsto a + tv\), and the repeated index \(i\) is summed in the Einstein convention. The operator
+                    \(D_v\big|_a\) sends a smooth function to a real number, and it has two structural features that survive without
+                    any mention of \(\mathbb{R}^n_a\): it is \(\mathbb{R}\)-linear in \(f\), and it obeys the product rule
+                </p>
+
+                <p>
+                    \[
+                        D_v\big|_a (fg) = f(a)\, D_v\big|_a g + g(a)\, D_v\big|_a f .
+                    \]
+                </p>
+
+                <p>
+                    These two properties — linearity and the Leibniz rule, the latter evaluated at the single point \(a\) — refer
+                    only to the values of functions and their derivatives at \(a\). They make no use of the arrow's tail, the ambient
+                    coordinates, or the embedding. They are precisely the data that transplant to a manifold, and so they become the
+                    definition.
+                </p>
+
+                <h3>Derivations as the intrinsic definition</h3>
+
+                <p>
+                    We isolate the surviving structure and elevate it to a definition, first on \(\mathbb{R}^n\) and then, verbatim,
+                    on a manifold. The only ingredient required is the algebra \(C^\infty(M)\) of smooth real-valued functions, an
+                    object already at our disposal.
+                </p>
+
+                <div class="theorem" id="D-derivation_at_point">
+                    <span class="theorem-title">Definition: Derivation at a Point</span>
+                    <p>
+                        Let \(M\) be a smooth manifold (with or without boundary) and \(p \in M\). A linear map
+                        \(v : C^\infty(M) \to \mathbb{R}\) is a <strong>derivation at \(p\)</strong> if it satisfies the Leibniz rule
+                        \[
+                            v(fg) = f(p)\, v g + g(p)\, v f
+                            \quad \text{for all } f, g \in C^\infty(M).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The phrase "at \(p\)" is carried entirely by the appearance of \(f(p)\) and \(g(p)\) in the Leibniz rule: a single
+                    derivation pins all of its weight to one point. Specializing the definition to \(M = \mathbb{R}^n\) recovers a
+                    derivation at \(a\) in the Euclidean setting, of which every directional-derivative operator \(D_v\big|_a\) is an
+                    example. We will see shortly that on \(\mathbb{R}^n\) these are the <em>only</em> examples, which is what licenses
+                    the whole construction.
+                </p>
+
+                <div class="theorem" id="D-tangent_space">
+                    <span class="theorem-title">Definition: Tangent Space and Tangent Vectors</span>
+                    <p>
+                        The set of all derivations of \(C^\infty(M)\) at \(p\) is a real vector space under the pointwise operations
+                        \((v + w)f = vf + wf\) and \((cv)f = c\,(vf)\); it is called the <strong>tangent space</strong> to \(M\) at
+                        \(p\) and denoted \(T_pM\). An element of \(T_pM\) is a <strong>tangent vector</strong> at \(p\).
+                    </p>
+                </div>
+
+                <p>
+                    That the sum and scalar multiple of derivations are again derivations is an immediate check against the Leibniz
+                    rule, which is linear in \(v\); we take the vector-space axioms for granted as inherited from the target
+                    \(\mathbb{R}\). What is not yet clear is that \(T_pM\) has the right size — that it is \(n\)-dimensional rather
+                    than enormous or trivial — and establishing this occupies the remainder of the section in the model case
+                    \(M = \mathbb{R}^n\), from which the general case will follow once charts are available.
+                </p>
+
+                <div class="insight-box">
+                    <h3>A Lie Algebra Is a Tangent Space</h3>
+                    <p>
+                        This definition quietly settles a debt left open in our study of matrix groups. There the
+                        <a href="lie_algebras.html#D-lie_algebra_matrix" class="ref-link"><strong>Lie algebra</strong></a>
+                        \(\mathfrak{g}\) of a group \(G\) was introduced as the set of velocity vectors of smooth curves through the
+                        identity \(I\) — a description that presupposed a notion of "tangent direction at \(I\)" we had not yet made
+                        precise. With \(T_pM\) now defined for an arbitrary manifold, the gap closes: \(\mathfrak{g}\) is nothing other
+                        than the tangent space \(T_I G\) at the identity element. The Lie algebra of a matrix group is a tangent space,
+                        and the bracket it carries is extra structure laid on top of this underlying linear object. The quantitative
+                        side of this identification — pinning down which concrete matrices constitute \(T_I G\) — waits until we can
+                        differentiate maps between manifolds; the velocity-vector half of the picture is completed when we study the
+                        velocities of curves directly.
+                    </p>
+                </div>
+
+                <h3>The two definitions agree in \(\mathbb{R}^n\)</h3>
+
+                <p>
+                    We now prove that on \(\mathbb{R}^n\) the abstract derivations are exactly the directional derivatives, so that the
+                    intrinsic tangent space \(T_a\mathbb{R}^n\) is canonically the geometric one \(\mathbb{R}^n_a\). The argument rests
+                    on a small lemma recording two reflexes every derivation has, which we will reuse on manifolds without change.
+                </p>
+
+                <div class="theorem" id="T-derivation_properties">
+                    <span class="theorem-title">Lemma: Elementary Properties of Derivations</span>
+                    <p>
+                        Let \(v\) be a derivation at \(p \in M\), and let \(f, g \in C^\infty(M)\).
+                    </p>
+                    <p>
+                        (a) If \(f\) is constant, then \(vf = 0\).
+                    </p>
+                    <p>
+                        (b) If \(f(p) = g(p) = 0\), then \(v(fg) = 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For (a) it suffices, by linearity, to treat the constant function \(f_1 \equiv 1\). Applying the Leibniz rule
+                        to the product \(f_1 f_1 = f_1\) gives
+                        \[
+                            \begin{align*}
+                                v f_1 &= v(f_1 f_1) = f_1(p)\, v f_1 + f_1(p)\, v f_1 \\\\
+                                &= 2\, v f_1,
+                            \end{align*}
+                        \]
+                        whence \(v f_1 = 0\). A general constant \(f \equiv c\) is \(c\, f_1\), so \(vf = c\, v f_1 = 0\) by
+                        linearity.
+                    </p>
+                    <p>
+                        For (b), the Leibniz rule applied to \(fg\) reads
+                        \(v(fg) = f(p)\, vg + g(p)\, vf\), and both coefficients \(f(p)\) and \(g(p)\) vanish by hypothesis, so
+                        \(v(fg) = 0\).
+                    </p>
+                </div>
+
+                <p>
+                    The same statement and the same proof hold word for word when \(M = \mathbb{R}^n\); we will invoke it in both
+                    settings. With the lemma in hand we can identify the tangent space of Euclidean space.
+                </p>
+
+                <div class="theorem" id="T-tangent_space_iso_Rn">
+                    <span class="theorem-title">Proposition: The Tangent Space of Euclidean Space</span>
+                    <p>
+                        For each \(a \in \mathbb{R}^n\), the map
+                        \[
+                            \begin{align*}
+                                \mathbb{R}^n_a &\longrightarrow T_a\mathbb{R}^n, \\\\
+                                v_a &\longmapsto D_v\big|_a,
+                            \end{align*}
+                        \]
+                        is an isomorphism of vector spaces. Consequently the \(n\) partial-derivative operators
+                        \(\partial/\partial x^1\big|_a, \dots, \partial/\partial x^n\big|_a\) form a basis for \(T_a\mathbb{R}^n\), and
+                        \(\dim T_a\mathbb{R}^n = n\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The map is linear in \(v\) by inspection of the formula \(D_v\big|_a = v^i \,\partial/\partial x^i\big|_a\), so
+                        it remains to prove that it is injective and surjective.
+                    </p>
+                    <p>
+                        <em>Injectivity.</em> Suppose \(D_v\big|_a = 0\). Applying the operator to the \(j\)-th coordinate function
+                        \(x^j\) and using \(\partial x^j/\partial x^i = \delta^j_i\) gives
+                        \[
+                            \begin{align*}
+                                0 = D_v\big|_a (x^j) &= v^i \,\frac{\partial x^j}{\partial x^i}(a) \\\\
+                                &= v^i \delta^j_i = v^j
+                            \end{align*}
+                        \]
+                        for every \(j\), so \(v = 0\) and the map is injective.
+                    </p>
+                    <p>
+                        <em>Surjectivity.</em> Let \(w \in T_a\mathbb{R}^n\) be any derivation; we produce an arrow inducing it. Set
+                        \(v^i := w(x^i)\) and let \(v = (v^1, \dots, v^n)\). For an arbitrary \(f \in C^\infty(\mathbb{R}^n)\), the
+                        first-order
+                        <a href="mvt.html#T-taylor_multivariate" class="ref-link"><strong>Taylor expansion with integral
+                        remainder</strong></a> about \(a\) writes
+                        \[
+                            \begin{align*}
+                                f(x) = f(a) &+ \frac{\partial f}{\partial x^i}(a)\,(x^i - a^i) \\\\
+                                &+ \sum_{i,j} (x^i - a^i)(x^j - a^j)\, g_{ij}(x),
+                            \end{align*}
+                        \]
+                        with each \(g_{ij}\) smooth near \(a\). Apply \(w\) and read off the three groups of terms. The constant
+                        \(f(a)\) is killed by part (a) of the lemma. Each remainder term is a product of two factors
+                        \((x^i - a^i)\) and \((x^j - a^j)\,g_{ij}\), both of which vanish at \(a\); by part (b) the derivation
+                        annihilates it. Only the linear terms survive, and since \(w\) is linear and \(w(a^i) = 0\) for the constants
+                        \(a^i\),
+                        \[
+                            \begin{align*}
+                                w f &= \frac{\partial f}{\partial x^i}(a)\, w(x^i - a^i) \\\\
+                                &= \frac{\partial f}{\partial x^i}(a)\, v^i = D_v\big|_a f .
+                            \end{align*}
+                        \]
+                        As \(f\) was arbitrary, \(w = D_v\big|_a\), proving surjectivity.
+                    </p>
+                    <p>
+                        The map is therefore a linear isomorphism. Its inverse carries the standard basis arrow \((e_i)_a\) to the
+                        operator \(D_{e_i}\big|_a = \partial/\partial x^i\big|_a\), so these \(n\) operators are the image of a basis
+                        and hence themselves a basis of \(T_a\mathbb{R}^n\). In particular \(\dim T_a\mathbb{R}^n = n\).
+                    </p>
+                </div>
+
+                <p>
+                    The proposition is the linchpin of the entire theory. It certifies that the abstract definition, for all its
+                    austerity, reproduces exactly the familiar vector space of arrows in the one case where we can check by hand — and
+                    it does so intrinsically, phrasing the answer in terms of derivations rather than the ambient copy
+                    \(\mathbb{R}^n_a\) that motivated them. On a general manifold there is no \(\mathbb{R}^n_a\) to compare against,
+                    but there are charts, and a chart will let us transport this Euclidean verdict to any point of any manifold once
+                    we know how derivations behave under smooth maps. That mechanism — the differential — is the business of the next
+                    section, where the manifold versions of the lemma above will be proved by the identical argument and
+                    \(\dim T_pM = n\) will follow.
+                </p>
+            </section>
+            <section id="differential" class="section-content">
+                <h2>The Differential of a Smooth Map</h2>
+
+                <p>
+                    A tangent space sitting in isolation at a single point is inert; what makes tangent vectors useful is that smooth
+                    maps carry them. If \(F : M \to N\) is smooth and \(p \in M\), we want to turn a tangent vector at \(p\) into a
+                    tangent vector at \(F(p)\) — to linearize \(F\) at \(p\) in a way that needs no coordinates. The mechanism is
+                    forced on us by the derivation definition: a tangent vector is something that differentiates functions, and the
+                    only functions available near \(F(p)\) become functions near \(p\) the moment we precompose with \(F\). Reading
+                    the construction off that observation gives the central operation of the chapter.
+                </p>
+
+                <h3>The differential of a smooth map</h3>
+
+                <div class="theorem" id="D-differential_of_smooth_map">
+                    <span class="theorem-title">Definition: The Differential (Pushforward)</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map and \(p \in M\). The <strong>differential of \(F\) at \(p\)</strong> is the
+                        linear map
+                        \[
+                            dF_p : T_pM \longrightarrow T_{F(p)}N
+                        \]
+                        defined, for \(v \in T_pM\) and \(f \in C^\infty(N)\), by
+                        \[
+                            dF_p(v)(f) = v(f \circ F).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    For the definition to make sense, \(dF_p(v)\) must actually be a tangent vector at \(F(p)\) — a derivation of
+                    \(C^\infty(N)\). It is linear in \(f\) because precomposition \(f \mapsto f \circ F\) is linear and \(v\) is
+                    linear. For the Leibniz rule, the smooth function \((fg) \circ F\) equals \((f \circ F)(g \circ F)\) pointwise, so
+                    applying the derivation \(v\) and evaluating the products at \(p\) gives
+                    \[
+                        \begin{align*}
+                            dF_p(v)(fg) &= v\bigl((f\circ F)(g\circ F)\bigr) \\\\
+                            &= (f\circ F)(p)\, v(g\circ F) + (g\circ F)(p)\, v(f\circ F) \\\\
+                            &= f(F(p))\, dF_p(v)(g) + g(F(p))\, dF_p(v)(f).
+                        \end{align*}
+                    \]
+                    Thus \(dF_p(v)\) is a derivation at \(F(p)\), and \(dF_p\) is itself linear in \(v\) because \(v \mapsto v(f\circ F)\)
+                    is. The differential is the coordinate-free linearization of \(F\): it records, intrinsically, the first-order
+                    behavior of \(F\) at \(p\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Differential Is the Jacobian, Without Coordinates</h3>
+                    <p>
+                        A reader who has computed gradients in a neural network has already met \(dF_p\) in disguise. There the
+                        linearization of a smooth layer \(F\) at an input is the
+                        <a href="jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian matrix</strong></a>, the array of
+                        partial derivatives that forward-mode automatic differentiation pushes tangent vectors through — the operation
+                        the autodiff literature calls a Jacobian–vector product. The differential is exactly this object stripped of
+                        its basis: \(dF_p\) is the linear map that the Jacobian represents once coordinates are chosen, and the
+                        forward pass of a Jacobian–vector product is the numerical shadow of \(v \mapsto dF_p(v)\). Keeping the types
+                        straight is worth the effort. A tangent vector \(v\) and its pushforward \(dF_p(v)\) are vectors; the number
+                        \(dF_p(v)(f)\) obtained by feeding a function to that pushforward is a scalar. The Jacobian is a matrix; its
+                        action on a component vector is again a vector. We will see in the next section precisely which matrix
+                        \(dF_p\) becomes in coordinates.
+                    </p>
+                </div>
+
+                <h3>Functorial properties and locality</h3>
+
+                <p>
+                    The differential behaves exactly as a derivative should under composition, identity, and inversion. We collect the
+                    four properties in one proposition; Lee assigns their verification as an exercise, but the site closes every such
+                    gap inline, and each part falls directly out of the definition.
+                </p>
+
+                <div class="theorem" id="T-differential_properties">
+                    <span class="theorem-title">Proposition: Properties of the Differential</span>
+                    <p>
+                        Let \(F : M \to N\) and \(G : N \to P\) be smooth maps and \(p \in M\).
+                    </p>
+                    <p>
+                        (a) \(dF_p : T_pM \to T_{F(p)}N\) is linear.
+                    </p>
+                    <p>
+                        (b) \(d(G \circ F)_p = dG_{F(p)} \circ dF_p\).
+                    </p>
+                    <p>
+                        (c) \(d(\mathrm{Id}_M)_p = \mathrm{Id}_{T_pM}\).
+                    </p>
+                    <p>
+                        (d) If \(F\) is a diffeomorphism, then \(dF_p\) is an isomorphism, with inverse
+                        \((dF_p)^{-1} = d(F^{-1})_{F(p)}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Part (a) was checked above. For (b), let \(v \in T_pM\) and \(f \in C^\infty(P)\). Unwinding the definition
+                        twice and using associativity of composition,
+                        \[
+                            \begin{align*}
+                                d(G\circ F)_p(v)(f) &= v\bigl(f \circ (G\circ F)\bigr) \\\\
+                                &= v\bigl((f\circ G) \circ F\bigr) \\\\
+                                &= dF_p(v)(f\circ G) \\\\
+                                &= dG_{F(p)}\bigl(dF_p(v)\bigr)(f).
+                            \end{align*}
+                        \]
+                        Since this holds for every \(f\), the two differentials agree.
+                    </p>
+                    <p>
+                        For (c), \(d(\mathrm{Id}_M)_p(v)(f) = v(f \circ \mathrm{Id}_M) = vf\), so the differential of the identity is
+                        the identity. Part (d) follows by applying (b) to \(F^{-1} \circ F = \mathrm{Id}_M\) and
+                        \(F \circ F^{-1} = \mathrm{Id}_N\): the chain rule and (c) give
+                        \(d(F^{-1})_{F(p)} \circ dF_p = \mathrm{Id}_{T_pM}\) and \(dF_p \circ d(F^{-1})_{F(p)} = \mathrm{Id}_{T_{F(p)}N}\),
+                        so \(dF_p\) is invertible with the stated inverse.
+                    </p>
+                </div>
+
+                <p>
+                    A subtle point lurks in the definition: a tangent vector is defined as a derivation of <em>global</em> smooth
+                    functions \(C^\infty(M)\), yet differentiation is an inherently local operation. The next proposition reconciles
+                    the two, showing that a tangent vector cannot tell apart two functions that agree near \(p\), even if they differ
+                    wildly elsewhere. This is what allows tangent vectors to be computed in a single chart.
+                </p>
+
+                <div class="theorem" id="T-tangent_vectors_act_locally">
+                    <span class="theorem-title">Proposition: Tangent Vectors Act Locally</span>
+                    <p>
+                        Let \(p \in M\) and \(v \in T_pM\). If \(f, g \in C^\infty(M)\) agree on some neighborhood of \(p\), then
+                        \(vf = vg\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(h = f - g\), so \(h\) vanishes on a neighborhood \(U\) of \(p\); by linearity it suffices to show
+                        \(vh = 0\). Choose a
+                        <a href="partitions_of_unity.html#T-smooth_bump_function_Rn" class="ref-link"><strong>smooth bump function</strong></a>
+                        \(\psi \in C^\infty(M)\) that equals \(1\) on a neighborhood of \(p\) and is supported in \(U\). On the support
+                        of \(\psi\) the function \(h\) vanishes, so \(\psi h \equiv 0\) on all of \(M\), and hence \(v(\psi h) = 0\).
+                        On the other hand \(\psi(p) = 1\) and \(h(p) = 0\), so the Leibniz rule gives
+                        \[
+                            0 = v(\psi h) = \psi(p)\, vh + h(p)\, v\psi = vh.
+                        \]
+                        Therefore \(vh = 0\), and \(vf = vg\).
+                    </p>
+                </div>
+
+                <p>
+                    Locality has an immediate structural payoff. It lets us regard a tangent vector to an open subset as a tangent
+                    vector to the whole manifold, removing any anxiety about whether \(T_pM\) depends on functions defined far from
+                    \(p\).
+                </p>
+
+                <div class="theorem" id="T-tangent_space_open_submanifold">
+                    <span class="theorem-title">Proposition: The Tangent Space to an Open Submanifold</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary, let \(U \subseteq M\) be an open subset, and let
+                        \(\iota : U \hookrightarrow M\) be the inclusion. For every \(p \in U\), the differential
+                        \(d\iota_p : T_pU \to T_pM\) is an isomorphism.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Choose a neighborhood \(B\) of \(p\) with \(\bar B \subseteq U\).
+                    </p>
+                    <p>
+                        <em>Injectivity.</em> Suppose \(v \in T_pU\) and \(d\iota_p(v) = 0\). Let \(f \in C^\infty(U)\) be arbitrary.
+                        By the
+                        <a href="partitions_of_unity.html#T-extension_lemma_smooth_functions" class="ref-link"><strong>extension lemma</strong></a>
+                        there is \(\tilde f \in C^\infty(M)\) with \(\tilde f = f\) on \(\bar B\). Then \(f\) and \(\tilde f|_U\) agree
+                        on a neighborhood of \(p\), so by the previous proposition
+                        \[
+                            \begin{align*}
+                                vf &= v\bigl(\tilde f|_U\bigr) = v\bigl(\tilde f \circ \iota\bigr) \\\\
+                                &= d\iota_p(v)\,\tilde f = 0.
+                            \end{align*}
+                        \]
+                        As \(f\) was arbitrary, \(v = 0\), so \(d\iota_p\) is injective.
+                    </p>
+                    <p>
+                        <em>Surjectivity.</em> Let \(w \in T_pM\). Define \(v : C^\infty(U) \to \mathbb{R}\) by \(vf = w\tilde f\),
+                        where \(\tilde f \in C^\infty(M)\) is any smooth function agreeing with \(f\) on \(\bar B\). By locality
+                        (applied in \(M\)) the value \(w\tilde f\) is independent of the choice of extension, so \(v\) is well defined,
+                        and it is routine to check that \(v\) is a derivation of \(C^\infty(U)\) at \(p\). For any
+                        \(g \in C^\infty(M)\),
+                        \[
+                            d\iota_p(v)\,g = v(g \circ \iota) = w\,\widetilde{g\circ\iota} = wg,
+                        \]
+                        where the last two equalities hold because \(g\circ\iota\), its extension \(\widetilde{g\circ\iota}\), and
+                        \(g\) all agree on \(\bar B\). Hence \(d\iota_p(v) = w\), and \(d\iota_p\) is surjective.
+                    </p>
+                </div>
+
+                <p>
+                    From now on we use this isomorphism to identify \(T_pU\) with \(T_pM\) for any point \(p\) of an open subset
+                    \(U \subseteq M\), suppressing \(d\iota_p\) from the notation. The identification is canonical, independent of any
+                    choices, and it amounts to the observation that tangent vectors are local objects. With locality and the open-set
+                    identification in hand, we can finally measure the size of an arbitrary tangent space.
+                </p>
+
+                <h3>The dimension of a tangent space</h3>
+
+                <p>
+                    On \(\mathbb{R}^n\) we proved directly that the tangent space is \(n\)-dimensional. A chart transports this verdict
+                    to any manifold: a chart is a diffeomorphism onto an open subset of \(\mathbb{R}^n\) (or of the half-space
+                    \(\mathbb{H}^n\) at a boundary point), and the differential of a diffeomorphism is an isomorphism. We state the
+                    result for manifolds with and without boundary together, since the boundary case requires only one extra lemma.
+                </p>
+
+                <div class="theorem" id="T-dimension_of_tangent_space">
+                    <span class="theorem-title">Proposition: Dimension of the Tangent Space</span>
+                    <p>
+                        If \(M\) is an \(n\)-dimensional smooth manifold with or without boundary, then for every \(p \in M\) the
+                        tangent space \(T_pM\) is an \(n\)-dimensional vector space. In particular this holds at boundary points: the
+                        tangent space at a boundary point is \(n\)-dimensional, not \((n-1)\)-dimensional.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Suppose first that \(p\) is an interior point, and let \((U, \varphi)\) be a smooth chart with
+                        \(p \in U\), so that \(\varphi : U \to \widehat U\) is a diffeomorphism onto an open subset
+                        \(\widehat U \subseteq \mathbb{R}^n\). By the open-submanifold identification we may replace \(T_pM\) by
+                        \(T_pU\), and Proposition&nbsp;3.6(d) makes
+                        \(d\varphi_p : T_pU \to T_{\varphi(p)}\widehat U\) an isomorphism. Identifying \(T_{\varphi(p)}\widehat U\) with
+                        \(T_{\varphi(p)}\mathbb{R}^n\) once more by the open-submanifold proposition, the Euclidean computation gives
+                        \(\dim T_{\varphi(p)}\mathbb{R}^n = n\), so \(\dim T_pM = n\).
+                    </p>
+                    <p>
+                        If \(p\) is a boundary point, the chart \(\varphi\) maps a neighborhood of \(p\) diffeomorphically onto an open
+                        subset of the half-space \(\mathbb{H}^n\), which is not open in \(\mathbb{R}^n\), so the open-submanifold
+                        identification of \(T_{\varphi(p)}\mathbb{H}^n\) with \(T_{\varphi(p)}\mathbb{R}^n\) is no longer available
+                        directly. The half-space lemma below supplies the missing isomorphism, and the same chain of identifications
+                        yields \(\dim T_pM = n\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma the boundary case rests on relates the tangent space of the half-space to that of the ambient Euclidean
+                    space at a boundary point.
+                </p>
+
+                <div class="theorem" id="T-tangent_space_half_space">
+                    <span class="theorem-title">Lemma: The Tangent Space of a Half-Space at a Boundary Point</span>
+                    <p>
+                        Let \(\iota : \mathbb{H}^n \hookrightarrow \mathbb{R}^n\) be the inclusion. For any
+                        \(a \in \partial\mathbb{H}^n\), the differential \(d\iota_a : T_a\mathbb{H}^n \to T_a\mathbb{R}^n\) is an
+                        isomorphism.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <em>Injectivity.</em> Suppose \(d\iota_a(v) = 0\). Let \(f : \mathbb{H}^n \to \mathbb{R}\) be smooth, and let
+                        \(\tilde f\) be any extension of \(f\) to a smooth function on all of \(\mathbb{R}^n\), which exists by the
+                        <a href="partitions_of_unity.html#T-extension_lemma_smooth_functions" class="ref-link"><strong>extension lemma</strong></a>.
+                        Then \(\tilde f \circ \iota = f\), so
+                        \[
+                            vf = v\bigl(\tilde f \circ \iota\bigr) = d\iota_a(v)\,\tilde f = 0.
+                        \]
+                        Since this holds for every \(f\), we conclude \(v = 0\) and \(d\iota_a\) is injective.
+                    </p>
+                    <p>
+                        <em>Surjectivity.</em> Let \(w \in T_a\mathbb{R}^n\) be arbitrary, and define
+                        \(v : C^\infty(\mathbb{H}^n) \to \mathbb{R}\) by \(vf = w\tilde f\), where \(\tilde f\) is any smooth
+                        extension of \(f\). Writing \(w = w^i\,\partial/\partial x^i|_a\) in the standard basis for
+                        \(T_a\mathbb{R}^n\), this reads
+                        \[
+                            vf = w^i\,\frac{\partial \tilde f}{\partial x^i}(a).
+                        \]
+                        This is independent of the choice of \(\tilde f\): by continuity, the partial derivatives of \(\tilde f\) at
+                        the boundary point \(a\) are determined by the values of \(f\) on \(\mathbb{H}^n\) alone, since every
+                        derivative at \(a\) is a limit of difference quotients that can be taken from within \(\mathbb{H}^n\). One
+                        checks that \(v\) is a derivation at \(a\), and by construction \(w = d\iota_a(v)\), so \(d\iota_a\) is
+                        surjective.
+                    </p>
+                </div>
+
+                <p>
+                    We henceforth identify \(T_a\mathbb{H}^n\) with \(T_a\mathbb{R}^n\) at boundary points exactly as we identified the
+                    tangent space to an open subset with that of the whole manifold, and we make no notational distinction between a
+                    tangent vector to the half-space and its image in \(T_a\mathbb{R}^n\). This is what closes the boundary case of the
+                    dimension proposition above.
+                </p>
+
+                <h3>Tangent spaces of vector spaces and products</h3>
+
+                <p>
+                    Two special manifolds have tangent spaces simple enough to identify outright. The first is a finite-dimensional
+                    vector space, where the tangent space at every point is canonically the space itself — the precise sense in which
+                    "the tangent space to a flat space is flat."
+                </p>
+
+                <div class="theorem" id="T-tangent_space_vector_space">
+                    <span class="theorem-title">Proposition: The Tangent Space of a Vector Space</span>
+                    <p>
+                        Let \(V\) be a finite-dimensional real vector space, regarded as a smooth manifold with its standard smooth
+                        structure. For each \(a \in V\) there is a canonical isomorphism
+                        \[
+                            V \longrightarrow T_aV,
+                            \qquad v \longmapsto D_v\big|_a,
+                            \quad D_v\big|_a f = \frac{d}{dt}\bigg|_{t=0} f(a + tv).
+                        \]
+                        Moreover, for any linear map \(L : V \to W\) between finite-dimensional vector spaces and any \(a \in V\), the
+                        differential \(dL_a : T_aV \to T_{La}W\) is, under these identifications, the map \(L\) itself: the square
+                        relating \(V \to W\) by \(L\) to \(T_aV \to T_{La}W\) by \(dL_a\) commutes.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Choosing a basis identifies \(V\) with \(\mathbb{R}^n\), under which the displayed map becomes the isomorphism
+                        \(\mathbb{R}^n_a \to T_a\mathbb{R}^n\) already established; that the result does not depend on the basis is the
+                        content of the commuting square, which we now verify. For a linear \(L\), the directional-derivative
+                        characterization gives, for any \(f \in C^\infty(W)\),
+                        \[
+                            \begin{align*}
+                                dL_a\bigl(D_v\big|_a\bigr) f &= D_v\big|_a (f \circ L) \\\\
+                                &= \frac{d}{dt}\bigg|_{t=0} f\bigl(L(a + tv)\bigr) \\\\
+                                &= \frac{d}{dt}\bigg|_{t=0} f\bigl(La + t\,Lv\bigr) \\\\
+                                &= D_{Lv}\big|_{La} f,
+                            \end{align*}
+                        \]
+                        using linearity of \(L\) in the third step. Thus \(dL_a\) carries \(D_v|_a\) to \(D_{Lv}|_{La}\), which is
+                        exactly the statement that the square commutes — that \(dL_a\) is \(L\) read through the identifications.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Which Matrices Form \(T_I G\)</h3>
+                    <p>
+                        We can now make good on the qualitative claim that a Lie algebra is a tangent space. The
+                        <a href="lie_groups.html#D-general_linear_group" class="ref-link"><strong>general linear group</strong></a>
+                        \(GL(n, \mathbb{R})\) is an open subset of the vector space \(M(n, \mathbb{R})\) of all real
+                        \(n \times n\) matrices, so the open-submanifold identification gives
+                        \(T_I GL(n, \mathbb{R}) \cong T_I M(n, \mathbb{R})\), and the proposition just proved identifies the latter
+                        with \(M(n, \mathbb{R})\) itself. The tangent space to the general linear group at the identity is therefore
+                        the entire space of matrices,
+                        \[
+                            T_I GL(n, \mathbb{R}) \cong M(n, \mathbb{R}).
+                        \]
+                        For a
+                        <a href="lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>matrix Lie group</strong></a>
+                        \(G \subseteq GL(n, \mathbb{R})\), the Lie algebra \(\mathfrak{g}\) introduced earlier as a set of matrices is
+                        precisely the subspace of \(M(n, \mathbb{R})\) realized as \(T_I G\): the abstract "tangent direction at the
+                        identity" is a concrete matrix. The remaining half of the picture — that these matrices are exactly the
+                        velocities \(\gamma'(0)\) of curves through the identity, the form in which \(\mathfrak{g}\) was originally
+                        defined — is completed once we have velocity vectors of curves in hand.
+                    </p>
+                </div>
+
+                <p>
+                    The second special case is a product of manifolds, whose tangent space decomposes as a direct sum of the factors'
+                    tangent spaces — the manifold-level expression of the fact that a curve in a product is a tuple of curves in the
+                    factors.
+                </p>
+
+                <div class="theorem" id="T-tangent_space_product">
+                    <span class="theorem-title">Proposition: The Tangent Space of a Product</span>
+                    <p>
+                        Let \(M_1, \dots, M_k\) be smooth manifolds, and for each \(j\) let \(\pi_j : M_1 \times \cdots \times M_k \to M_j\)
+                        be the projection. For any point \(p = (p_1, \dots, p_k)\), the map
+                        \[
+                            \alpha : T_p(M_1 \times \cdots \times M_k) \longrightarrow T_{p_1}M_1 \oplus \cdots \oplus T_{p_k}M_k,
+                            \quad v \longmapsto \bigl(d(\pi_1)_p(v), \dots, d(\pi_k)_p(v)\bigr),
+                        \]
+                        is an isomorphism.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch:</span>
+                    <p>
+                        It suffices to treat \(k = 2\); the general case follows by induction. The projections \(\pi_1, \pi_2\) and the
+                        inclusions \(\iota_1 : M_1 \to M_1 \times M_2\), \(x \mapsto (x, p_2)\) and
+                        \(\iota_2 : M_2 \to M_1 \times M_2\), \(y \mapsto (p_1, y)\) are smooth, and \(\pi_i \circ \iota_j\) is the
+                        identity when \(i = j\) and constant when \(i \neq j\). Define
+                        \[
+                            \beta : T_{p_1}M_1 \oplus T_{p_2}M_2 \longrightarrow T_p(M_1 \times M_2),
+                            \quad (v_1, v_2) \longmapsto d(\iota_1)_{p_1}(v_1) + d(\iota_2)_{p_2}(v_2).
+                        \]
+                        Applying \(\alpha\) and using the chain rule together with the fact that the differential of a constant map is
+                        zero shows \(\alpha \circ \beta = \mathrm{Id}\). For \(\beta \circ \alpha = \mathrm{Id}\), one verifies that any
+                        \(v \in T_p(M_1 \times M_2)\) acts on a function \(f\) through its values along the two slices
+                        \(\iota_1, \iota_2\) — a consequence of the product chart, in which \(f\) is differentiated coordinate by
+                        coordinate. Hence \(\alpha\) is an isomorphism with inverse \(\beta\).
+                    </p>
+                </div>
+
+                <p>
+                    These identifications are the everyday currency of computation: a tangent vector to \(GL(n, \mathbb{R})\) is a
+                    matrix, a tangent vector to \(\mathbb{R}^n\) is an arrow, and a tangent vector to a product is a tuple. What
+                    remains is to make all of this explicit in coordinates, where the differential acquires its familiar matrix face
+                    and the abstract apparatus becomes a calculus one can carry out by hand.
+                </p>
+            </section>
+            <section id="coordinates" class="section-content">
+                <h2>Computations in Coordinates</h2>
+
+                <p>
+                    The theory is now complete but, in Lee's phrase, hopelessly abstract: we know \(T_pM\) is an \(n\)-dimensional
+                    space of derivations, yet we have no concrete basis to compute with. A chart repairs this at once. Each chart
+                    carries the standard basis of Euclidean tangent space back to \(M\), producing a basis of \(T_pM\) made of partial
+                    derivatives, and once we have a basis everything reduces to bookkeeping with components.
+                </p>
+
+                <h3>Coordinate vectors as a basis</h3>
+
+                <p>
+                    Let \((U, \varphi)\) be a smooth chart with coordinate functions \((x^1, \dots, x^n)\), and let \(p \in U\) with
+                    \(\widehat p = \varphi(p)\). The chart is a diffeomorphism onto its image, so by the properties of the differential
+                    \(d\varphi_p : T_pM \to T_{\widehat p}\mathbb{R}^n\) is an isomorphism, where we have used the open-submanifold
+                    identification to regard \(\varphi\) as a map into \(\mathbb{R}^n\). Pulling back the standard basis
+                    \(\partial/\partial x^i|_{\widehat p}\) of \(T_{\widehat p}\mathbb{R}^n\) gives a basis of \(T_pM\).
+                </p>
+
+                <div class="theorem" id="D-coordinate_basis">
+                    <span class="theorem-title">Definition: Coordinate Vectors and Components</span>
+                    <p>
+                        With notation as above, the <strong>coordinate vectors</strong> at \(p\) are the tangent vectors
+                        \[
+                            \frac{\partial}{\partial x^i}\bigg|_p := (d\varphi_p)^{-1}\!\left( \frac{\partial}{\partial x^i}\bigg|_{\widehat p} \right),
+                            \qquad i = 1, \dots, n.
+                        \]
+                        They act on a smooth function \(f\) through its coordinate representation \(\widehat f = f \circ \varphi^{-1}\) by
+                        \[
+                            \frac{\partial}{\partial x^i}\bigg|_p f = \frac{\partial \widehat f}{\partial x^i}(\widehat p).
+                        \]
+                        The coordinate vectors form a basis for \(T_pM\), and every \(v \in T_pM\) is written
+                        \(v = v^i\,\partial/\partial x^i|_p\) with <strong>components</strong> recovered by
+                        \(v^j = v(x^j)\). At a boundary point the chart maps into \(\mathbb{H}^n\) and
+                        \(\partial/\partial x^n|_p\) is a one-sided derivative, but the formulas are unchanged.
+                    </p>
+                </div>
+
+                <p>
+                    The action formula is just the definition unwound: applying \(d\varphi_p\) and the chain through the chart turns
+                    \(\partial/\partial x^i|_p f\) into the ordinary Euclidean partial derivative of \(\widehat f\) at \(\widehat p\).
+                    The component formula \(v^j = v(x^j)\) follows by applying the expansion \(v = v^i\,\partial/\partial x^i|_p\) to the
+                    coordinate function \(x^j\) and using \(\partial/\partial x^i|_p\, x^j = \delta^j_i\). Collecting these observations
+                    with the dimension count of the previous section, we have proved everything in the following summary, which
+                    records the working vocabulary of the rest of the subject: \(T_pM\) is \(n\)-dimensional, the coordinate vectors of
+                    any chart are a basis, and a tangent vector is determined by its \(n\) components \(v^j = v(x^j)\).
+                </p>
+
+                <h3>Change of coordinates</h3>
+
+                <p>
+                    A single tangent vector has different components in different charts, and we need the rule converting between them.
+                    Suppose \(p\) lies in the domains of two charts, with coordinates \((x^i)\) and \((\tilde x^j)\); write
+                    \(\partial/\partial\tilde x^j|_p\) for the coordinate vectors of the second chart. The transition map expresses the
+                    new coordinates as smooth functions of the old, and differentiating it gives the change-of-basis rule.
+                </p>
+
+                <div class="theorem" id="T-change_of_coordinates_tangent">
+                    <span class="theorem-title">Proposition: Change of Coordinate Vectors and Components</span>
+                    <p>
+                        Let \((x^i)\) and \((\tilde x^j)\) be two smooth coordinate systems near \(p\), with \(\widehat p\) the
+                        representation of \(p\) in the \((x^i)\) chart. The coordinate vectors transform by
+                        \[
+                            \frac{\partial}{\partial x^i}\bigg|_p
+                                = \frac{\partial \tilde x^j}{\partial x^i}(\widehat p)\, \frac{\partial}{\partial \tilde x^j}\bigg|_p,
+                        \]
+                        and the components of a vector \(v = v^i\,\partial/\partial x^i|_p = \tilde v^j\,\partial/\partial\tilde x^j|_p\)
+                        transform by
+                        \[
+                            \tilde v^j = \frac{\partial \tilde x^j}{\partial x^i}(\widehat p)\, v^i.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Apply the coordinate vector \(\partial/\partial x^i|_p\) to the second coordinate function \(\tilde x^j\): by
+                        the action formula it yields \(\partial \tilde x^j/\partial x^i(\widehat p)\), which is the
+                        \(\partial/\partial\tilde x^j|_p\)-component of \(\partial/\partial x^i|_p\) by the component formula
+                        \(v^j = v(\tilde x^j)\). This is the first display. Substituting it into
+                        \(v = v^i\,\partial/\partial x^i|_p\) and collecting the coefficient of \(\partial/\partial\tilde x^j|_p\) gives
+                        the component rule.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>A Coordinate Vector Depends on the Whole Coordinate System</h3>
+                    <p>
+                        It is tempting to read \(\partial/\partial x^i|_p\) as differentiation along the \(x^i\)-axis, depending only on
+                        the single function \(x^i\). It does not: the coordinate vector depends on the entire coordinate system,
+                        because it differentiates with respect to \(x^i\) while holding <em>all the other</em> coordinates fixed, and
+                        changing those other coordinates changes the direction. A sharp illustration on \(\mathbb{R}^2\) takes the
+                        standard coordinates \((x, y)\) and the new coordinates
+                        \[
+                            \tilde x = x, \qquad \tilde y = y + x^3,
+                        \]
+                        which are global smooth coordinates. At the point \(p = (1, 0)\) the change-of-basis rule gives
+                        \(\partial \tilde y/\partial x(p) = 3x^2|_{x=1} = 3 \neq 0\), so that \(\partial/\partial x|_p\) acquires a
+                        \(\partial/\partial\tilde y|_p\) term and
+                        \[
+                            \frac{\partial}{\partial x}\bigg|_p \neq \frac{\partial}{\partial \tilde x}\bigg|_p,
+                        \]
+                        even though the coordinate functions \(x\) and \(\tilde x\) are identically equal. The first coordinate
+                        function is the same in both systems; the first coordinate vector is not.
+                    </p>
+                </div>
+            </section>
+
+            <section id="jacobian" class="section-content">
+                <h2>The Differential as a Jacobian</h2>
+
+                <p>
+                    We promised that the differential, defined abstractly to be coordinate-free, would reduce to the Jacobian once
+                    coordinates are chosen. We now redeem that promise. The payoff is conceptual as much as computational: the
+                    coordinate-free definition was, in Lee's words, cooked up precisely so that the Jacobian — an array that obviously
+                    depends on the chosen coordinates — would acquire a meaning independent of them.
+                </p>
+
+                <div class="theorem" id="T-differential_in_coordinates">
+                    <span class="theorem-title">Proposition: The Differential in Coordinates Is the Jacobian</span>
+                    <p>
+                        Let \(F : M \to N\) be smooth, let \((U, \varphi)\) and \((V, \psi)\) be charts containing \(p\) and \(F(p)\)
+                        with coordinates \((x^i)\) and \((y^j)\), and let \(\widehat F = \psi \circ F \circ \varphi^{-1}\) be the
+                        coordinate representation of \(F\). Then
+                        \[
+                            dF_p\!\left( \frac{\partial}{\partial x^i}\bigg|_p \right)
+                                = \frac{\partial \widehat F^j}{\partial x^i}(\widehat p)\, \frac{\partial}{\partial y^j}\bigg|_{F(p)}.
+                        \]
+                        In other words, the matrix of \(dF_p\) with respect to the coordinate bases is the Jacobian matrix of
+                        \(\widehat F\) at \(\widehat p\), with \(j\) indexing rows (the target coordinates) and \(i\) indexing columns
+                        (the source coordinates).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(f \in C^\infty(N)\). Applying the differential and then the action formula in the source chart,
+                        \[
+                            \begin{align*}
+                                dF_p\!\left( \frac{\partial}{\partial x^i}\bigg|_p \right) f
+                                    &= \frac{\partial}{\partial x^i}\bigg|_p (f \circ F) \\\\
+                                    &= \frac{\partial \, \widehat{(f\circ F)}}{\partial x^i}(\widehat p)
+                                    = \frac{\partial (\widehat f \circ \widehat F)}{\partial x^i}(\widehat p),
+                            \end{align*}
+                        \]
+                        where \(\widehat f = f \circ \psi^{-1}\) and the last equality uses
+                        \(\widehat{f\circ F} = \widehat f \circ \widehat F\). The ordinary
+                        <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> in \(\mathbb{R}^n\)
+                        expands the right-hand side as
+                        \(\dfrac{\partial \widehat F^j}{\partial x^i}(\widehat p)\, \dfrac{\partial \widehat f}{\partial y^j}(\widehat F(\widehat p))\),
+                        which is exactly the coordinate action of the right-hand vector in the statement. As \(f\) was arbitrary, the
+                        two tangent vectors agree.
+                    </p>
+                    <p>
+                        The matrix \(\bigl(\partial \widehat F^j/\partial x^i(\widehat p)\bigr)\) appearing here is precisely the
+                        <a href="jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian matrix</strong></a> of the coordinate
+                        representation \(\widehat F\). The Jacobian we met earlier as the matrix of partial derivatives is thus revealed
+                        to have been the shadow, in a particular pair of charts, of the coordinate-free linear map \(dF_p\) — the same
+                        identification the insight box above drew between pushforwards and Jacobian–vector products, now made exact.
+                    </p>
+                </div>
+
+                <p>
+                    A concrete computation shows the change-of-coordinates machinery and the Jacobian formula working together. We
+                    convert a tangent vector given in polar coordinates into standard coordinates.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Polar to Cartesian Coordinates</span>
+                    <p>
+                        The transition map between polar and standard coordinates on suitable open subsets of the plane is
+                        \((x, y) = (r\cos\theta,\, r\sin\theta)\). Let \(p\) be the point of \(\mathbb{R}^2\) with polar representation
+                        \((r, \theta) = (2, \pi/2)\), and let \(v \in T_p\mathbb{R}^2\) be the tangent vector with polar representation
+                        \[
+                            v = 3\,\frac{\partial}{\partial r}\bigg|_p - \frac{\partial}{\partial \theta}\bigg|_p .
+                        \]
+                        Applying the change-of-basis rule to the polar coordinate vectors, and evaluating with
+                        \(\cos(\pi/2) = 0\), \(\sin(\pi/2) = 1\), \(r = 2\),
+                        \[
+                            \begin{align*}
+                                \frac{\partial}{\partial r}\bigg|_p
+                                    &= \cos\!\Big(\tfrac{\pi}{2}\Big)\frac{\partial}{\partial x}\bigg|_p
+                                       + \sin\!\Big(\tfrac{\pi}{2}\Big)\frac{\partial}{\partial y}\bigg|_p
+                                    = \frac{\partial}{\partial y}\bigg|_p, \\\\
+                                \frac{\partial}{\partial \theta}\bigg|_p
+                                    &= -2\sin\!\Big(\tfrac{\pi}{2}\Big)\frac{\partial}{\partial x}\bigg|_p
+                                       + 2\cos\!\Big(\tfrac{\pi}{2}\Big)\frac{\partial}{\partial y}\bigg|_p
+                                    = -2\,\frac{\partial}{\partial x}\bigg|_p .
+                            \end{align*}
+                        \]
+                        Substituting these into the polar expression for \(v\) gives its standard-coordinate representation
+                        \[
+                            v = 3\,\frac{\partial}{\partial y}\bigg|_p + 2\,\frac{\partial}{\partial x}\bigg|_p .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    With coordinate bases, the change-of-coordinates rule, and the Jacobian identification in place, the tangent space
+                    has become a working instrument: every tangent vector is a list of components, every smooth map acts by its
+                    Jacobian, and every change of chart is governed by a single transformation law. These are the computational
+                    foundations on which the tangent bundle — the assembly of all the tangent spaces into a single smooth manifold —
+                    is built.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>
