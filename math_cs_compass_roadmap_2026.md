@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 129 pages as of 5/20/2026.** (linalg 30 / calc 42 / prob 26 / disc 17 / ml 14; per `curriculum.json`, which is authoritative for the count.)
+**Total: 130 pages as of 5/20/2026.** (linalg 30 / calc 42 / prob 26 / disc 17 / ml 15; per `curriculum.json`, which is authoritative for the count.)
 
 ---
 

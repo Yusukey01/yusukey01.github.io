@@ -1,0 +1,649 @@
+---
+layout: default
+title: "Partitions of Unity"
+topic_id: calc-44
+level: core
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Partitions of Unity</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#smooth-bump-functions">Smooth Bump Functions</a>
+            <a href="#support-and-partitions-of-unity">Support and Partitions of Unity</a>
+            <a href="#existence-theorem">The Existence Theorem</a>
+            <a href="#applications">Applications</a>
+        </div>
+
+        <div class="container">
+            <section id="smooth-bump-functions" class="section-content">
+                <h2>Smooth Bump Functions</h2>
+
+                <p>
+                    The theory of smooth maps developed in the previous page came with a built-in frustration. The
+                    <a href="smooth_functions_and_maps.html#T-gluing_lemma_smooth_maps" class="ref-link"><strong>gluing lemma</strong></a>
+                    let us assemble a global smooth map from smooth pieces, but only when the pieces were defined on an <em>open</em>
+                    cover and agreed exactly on overlaps. We saw there that the openness cannot be relaxed: gluing the smooth functions
+                    \(x \mapsto x\) and \(x \mapsto -x\) along the closed sets \([0, \infty)\) and \((-\infty, 0]\), where they agree at
+                    the seam, produces the function \(|x|\), which is not even differentiable at the origin. Agreement on a closed seam is
+                    not enough; what is missing is a way to <em>blend</em> one formula into another smoothly, surrendering the demand that
+                    they coincide and asking instead that the transition itself be smooth.
+                </p>
+
+                <p>
+                    The entire apparatus that resolves this is built from a single analytic seed: a function that is smooth everywhere,
+                    yet so flat at one point that it can be switched on and off without any derivative ever noticing. From that seed we
+                    will manufacture cutoffs, bumps, and ultimately partitions of unity — the device that converts locally defined smooth
+                    data into a single global smooth object, with no agreement on overlaps required. We begin with the seed.
+                </p>
+
+                <h3>The Analytic Seed</h3>
+
+                <div class="theorem" id="T-smooth_cutoff_seed_function">
+                    <span class="theorem-title">Lemma: A Smooth Function Flat at the Origin</span>
+                    <p>
+                        The function \(f : \mathbb{R} \to \mathbb{R}\) defined by
+                        \[
+                        f(t) =
+                        \begin{cases}
+                        e^{-1/t}, & t > 0,\\[2pt]
+                        0, & t \le 0,
+                        \end{cases}
+                        \]
+                        is smooth on all of \(\mathbb{R}\), and every derivative vanishes at the origin: \(f^{(k)}(0) = 0\) for all
+                        \(k \ge 0\). In particular \(f \ge 0\), with \(f(t) > 0\) precisely when \(t > 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        On the open set \(\{t > 0\}\) the function is a composition of smooth functions and hence smooth there; on
+                        \(\{t < 0\}\) it is identically zero, hence smooth there. The only point in question is the origin, where we must
+                        show that all left- and right-hand derivatives exist and agree at the value \(0\). Two facts about the growth of
+                        \(e^{-1/t}\) drive the argument.
+                    </p>
+                    <p>
+                        <strong>First, a decay estimate.</strong> For every integer \(k \ge 0\),
+                        \[
+                        \lim_{t \searrow 0} \frac{e^{-1/t}}{t^k} = 0.
+                        \]
+                        Substituting \(s = 1/t\), so that \(s \to +\infty\) as \(t \searrow 0\), this becomes
+                        \(\lim_{s \to \infty} s^k e^{-s} = \lim_{s \to \infty} s^k / e^{s}\), which is zero because the exponential
+                        dominates every power — a fact established by \(k\) applications of L'Hôpital's rule, or directly from the series
+                        \(e^{s} > s^{k+1}/(k+1)!\). Thus \(e^{-1/t}\) tends to zero faster than any power of \(t\) as \(t \searrow 0\).
+                    </p>
+                    <p>
+                        <strong>Second, the form of the derivatives on \(\{t > 0\}\).</strong> We claim that for each \(k \ge 0\) there
+                        is a polynomial \(p_k\) of degree at most \(k\) such that, for \(t > 0\),
+                        \[
+                        f^{(k)}(t) = \frac{p_k(t)\, e^{-1/t}}{t^{2k}}.
+                        \]
+                        This holds for \(k = 0\) with \(p_0 \equiv 1\). Assuming it for \(k\), differentiate using
+                        \(\frac{d}{dt} e^{-1/t} = t^{-2} e^{-1/t}\) and the quotient rule:
+                        \[
+                        f^{(k+1)}(t)
+                        = \frac{\bigl[t^2 p_k'(t) - 2k\, t\, p_k(t) + p_k(t)\bigr] e^{-1/t}}{t^{2k+2}},
+                        \]
+                        so the bracketed expression is a polynomial of degree at most \(k + 1\), establishing the claim for \(k + 1\) by
+                        induction. (The precise coefficients are immaterial; only the polynomial-over-power form matters.)
+                    </p>
+                    <p>
+                        <strong>Combining the two.</strong> We show by induction that \(f^{(k)}(0) = 0\) for all \(k\), with each
+                        derivative continuous at \(0\). For \(k = 0\), continuity at the origin is the statement
+                        \(\lim_{t \searrow 0} e^{-1/t} = 0\), which is the decay estimate with \(k = 0\). Suppose \(f^{(k)}(0) = 0\). The
+                        right-hand derivative of \(f^{(k)}\) at \(0\) is
+                        \[
+                        \lim_{t \searrow 0} \frac{f^{(k)}(t) - f^{(k)}(0)}{t}
+                        = \lim_{t \searrow 0} \frac{1}{t}\cdot \frac{p_k(t)\, e^{-1/t}}{t^{2k}}
+                        = \lim_{t \searrow 0} p_k(t)\,\frac{e^{-1/t}}{t^{2k+1}}.
+                        \]
+                        Writing \(p_k(t) = \sum_{j} c_j t^j\), each term is \(c_j\, e^{-1/t} / t^{\,2k + 1 - j}\), and since
+                        \(j \le k\) the exponent \(2k + 1 - j\) is a positive integer; by the decay estimate every such term tends to
+                        \(0\). The left-hand derivative is \(0\) because \(f\) vanishes identically for \(t \le 0\). The two agree, so
+                        \(f^{(k+1)}(0) = 0\). Continuity of \(f^{(k+1)}\) at \(0\) follows from the same estimate applied to its
+                        expression on \(\{t > 0\}\). By induction, \(f\) has derivatives of all orders at every point and they are
+                        continuous, so \(f\) is smooth, and \(f^{(k)}(0) = 0\) for all \(k\).
+                    </p>
+                </div>
+
+                <p>
+                    The vanishing of every derivative at the origin is the crucial property. It means \(f\) can rise from the constant
+                    value \(0\) without any derivative registering a discontinuity at the moment it begins — the graph leaves the axis
+                    infinitely gently. This is exactly the behavior the gluing failure of \(|x|\) lacked, and it is what allows the next
+                    two constructions to switch smoothly between constant values.
+                </p>
+
+                <h3>From Seed to Cutoff</h3>
+
+                <p>
+                    The seed function turns on at the origin but never levels off. A cutoff function is the engineered version: it equals
+                    \(1\) on one region, \(0\) on another, and interpolates smoothly between them.
+                </p>
+
+                <div class="theorem" id="T-cutoff_function_R">
+                    <span class="theorem-title">Lemma: Existence of a Cutoff Function on \(\mathbb{R}\)</span>
+                    <p>
+                        Given real numbers \(r_1 < r_2\), there exists a smooth function \(h : \mathbb{R} \to \mathbb{R}\) such that
+                        \(h(t) \equiv 1\) for \(t \le r_1\), \(0 < h(t) < 1\) for \(r_1 < t < r_2\), and \(h(t) \equiv 0\) for
+                        \(t \ge r_2\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(f\) be the seed function of the previous lemma, and define
+                        \[
+                        h(t) = \frac{f(r_2 - t)}{f(r_2 - t) + f(t - r_1)}.
+                        \]
+                        The denominator never vanishes. Indeed, for any \(t\) at least one of the two arguments \(r_2 - t\) and
+                        \(t - r_1\) is positive: if both were nonpositive we would have \(t \ge r_2\) and \(t \le r_1\) simultaneously,
+                        forcing \(r_2 \le r_1\), contrary to \(r_1 < r_2\). Since \(f\) is nonnegative and strictly positive on positive
+                        arguments, the sum \(f(r_2 - t) + f(t - r_1)\) is strictly positive everywhere; \(h\) is therefore a quotient of
+                        smooth functions with nonvanishing denominator, hence smooth.
+                    </p>
+                    <p>
+                        For \(t \ge r_2\) we have \(r_2 - t \le 0\), so \(f(r_2 - t) = 0\) and the numerator vanishes: \(h(t) = 0\). For
+                        \(t \le r_1\) we have \(t - r_1 \le 0\), so \(f(t - r_1) = 0\) and the denominator reduces to the numerator:
+                        \(h(t) = 1\). For \(r_1 < t < r_2\) both arguments are positive, so both \(f(r_2 - t)\) and \(f(t - r_1)\) are
+                        strictly positive, placing the numerator strictly between \(0\) and the denominator; thus \(0 < h(t) < 1\). All
+                        the asserted properties hold.
+                    </p>
+                </div>
+
+                <h3>From Cutoff to Bump</h3>
+
+                <p>
+                    Composing the one-dimensional cutoff with the Euclidean norm radializes it, producing a function on \(\mathbb{R}^n\)
+                    that equals \(1\) on a small closed ball and vanishes outside a slightly larger one. This is the smooth bump function,
+                    the local prototype of every construction in this page.
+                </p>
+
+                <div class="theorem" id="T-smooth_bump_function_Rn">
+                    <span class="theorem-title">Lemma: Smooth Bump Function on \(\mathbb{R}^n\)</span>
+                    <p>
+                        Given positive real numbers \(r_1 < r_2\), there exists a smooth function \(H : \mathbb{R}^n \to \mathbb{R}\) such
+                        that \(H \equiv 1\) on the closed ball \(\overline{B_{r_1}(0)}\), \(0 < H(x) < 1\) for
+                        \(x \in B_{r_2}(0) \setminus \overline{B_{r_1}(0)}\), and \(H \equiv 0\) on \(\mathbb{R}^n \setminus B_{r_2}(0)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Set \(H(x) = h(|x|)\), where \(h\) is the cutoff function of the previous lemma and \(|x|\) is the Euclidean norm.
+                        On \(\mathbb{R}^n \setminus \{0\}\) the norm \(x \mapsto |x|\) is smooth, so \(H\) is there a composition of smooth
+                        functions and hence smooth. At the origin a separate argument is needed because the norm is not differentiable
+                        there; but \(|x| \le r_1\) precisely on \(\overline{B_{r_1}(0)}\), and on that ball \(h(|x|) \equiv 1\) since
+                        \(h \equiv 1\) on \((-\infty, r_1]\). Since \(r_1 > 0\), the open ball \(B_{r_1}(0)\) is a neighborhood of the
+                        origin contained in \(\overline{B_{r_1}(0)}\), so \(H\) is identically \(1\) on a neighborhood of the origin, and it is
+                        smooth there as well, and therefore smooth on all of \(\mathbb{R}^n\).
+                    </p>
+                    <p>
+                        The pointwise values transfer directly from \(h\): for \(|x| \le r_1\), \(H(x) = h(|x|) = 1\); for
+                        \(|x| \ge r_2\), \(H(x) = h(|x|) = 0\); and for \(r_1 < |x| < r_2\), \(0 < h(|x|) < 1\). In terms of balls these
+                        are exactly the three asserted regions, completing the proof.
+                    </p>
+                </div>
+
+                <p>
+                    The set on which \(H\) is nonzero is contained in the open ball \(B_{r_2}(0)\), and its closure — the smallest closed
+                    set outside which \(H\) vanishes — is the closed ball \(\overline{B_{r_2}(0)}\). This closure is the bump's
+                    <em>support</em>, the notion that organizes the next section and that makes precise what it means for a globally
+                    defined function to be "concentrated" in a prescribed region.
+                </p>
+            </section>
+
+            <section id="support-and-partitions-of-unity" class="section-content">
+                <h2>Support and Partitions of Unity</h2>
+
+                <p>
+                    A bump function is useful precisely because it is nonzero only where we want it to be. To exploit this systematically
+                    we need a name for the region a function genuinely occupies, and then a way to assemble many such functions into a
+                    coherent whole. The first is the notion of support; the second is the partition of unity.
+                </p>
+
+                <h3>Support</h3>
+
+                <div class="theorem" id="D-support_of_function">
+                    <span class="theorem-title">Definition: Support of a Function</span>
+                    <p>
+                        Let \(M\) be a topological space and \(f : M \to \mathbb{R}^k\) a function. The <strong>support</strong> of \(f\),
+                        denoted \(\operatorname{supp} f\), is the closure of the set on which \(f\) is nonzero:
+                        \[
+                        \operatorname{supp} f = \overline{\{\, p \in M : f(p) \ne 0 \,\}}.
+                        \]
+                        If \(\operatorname{supp} f \subseteq A\) for some subset \(A \subseteq M\), we say \(f\) is
+                        <strong>supported in</strong> \(A\). If \(\operatorname{supp} f\) is compact, \(f\) is said to be
+                        <strong>compactly supported</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Two consequences of taking the closure are worth stating, since both are used silently below. First, the support is by
+                    definition closed, so its complement is open; on that complement \(f\) vanishes identically, and in fact \(f\)
+                    vanishes on an open neighborhood of every point outside the support. Second, on a compact space every function is
+                    compactly supported, because the support is a closed subset of a compact space and hence compact. For the bump
+                    function \(H\) of the previous section, \(\operatorname{supp} H = \overline{B_{r_2}(0)}\): the function is nonzero
+                    throughout the open ball \(B_{r_2}(0)\), and the closure of that set is the corresponding closed ball.
+                </p>
+
+                <h3>Partitions of Unity</h3>
+
+                <p>
+                    A partition of unity is a family of functions, each concentrated within one member of a given open cover, that
+                    together sum to the constant function \(1\). The summing condition is what lets it act as a smooth weighting scheme:
+                    multiplying any object by the members of the family and adding the pieces reconstructs the object, with the family
+                    silently apportioning it among the sets of the cover. The definition must be arranged so that this infinite sum makes
+                    sense and so that smoothness is preserved, and a single condition — local finiteness — secures both.
+                </p>
+
+                <div class="theorem" id="D-partition_of_unity">
+                    <span class="theorem-title">Definition: Partition of Unity</span>
+                    <p>
+                        Let \(M\) be a topological space and let \(\mathcal{X} = (X_\alpha)_{\alpha \in A}\) be an open cover of \(M\),
+                        indexed by an arbitrary set \(A\). A <strong>partition of unity subordinate to \(\mathcal{X}\)</strong> is a family
+                        \((\psi_\alpha)_{\alpha \in A}\) of continuous functions \(\psi_\alpha : M \to \mathbb{R}\), indexed by the same
+                        set, satisfying:
+                    </p>
+                    <p>
+                        <strong>(i)</strong> \(0 \le \psi_\alpha(p) \le 1\) for all \(\alpha \in A\) and all \(p \in M\);
+                    </p>
+                    <p>
+                        <strong>(ii)</strong> \(\operatorname{supp} \psi_\alpha \subseteq X_\alpha\) for each \(\alpha \in A\);
+                    </p>
+                    <p>
+                        <strong>(iii)</strong> the family of supports \((\operatorname{supp} \psi_\alpha)_{\alpha \in A}\) is
+                        <a href="topological_properties_of_manifolds.html#D-locally_finite_collection" class="ref-link"><strong>locally finite</strong></a>;
+                    </p>
+                    <p>
+                        <strong>(iv)</strong> \(\sum_{\alpha \in A} \psi_\alpha(p) = 1\) for every \(p \in M\).
+                    </p>
+                    <p>
+                        If \(M\) is a smooth manifold and every \(\psi_\alpha\) is smooth, the family is called a
+                        <strong>smooth partition of unity</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    Condition (iii) is the technical linchpin, and it is what makes (iv) meaningful. Local finiteness asserts that every
+                    point of \(M\) has a neighborhood meeting only finitely many of the supports \(\operatorname{supp} \psi_\alpha\).
+                    Consequently, near any given point all but finitely many \(\psi_\alpha\) vanish identically, so the sum in (iv) — though
+                    indexed by a possibly uncountable set \(A\) — reduces to a <em>finite</em> sum on a neighborhood of each point. There
+                    is no question of convergence: the sum is locally a finite sum of continuous (or smooth) functions, and the resulting
+                    total is therefore continuous (or smooth) wherever the \(\psi_\alpha\) are. The constant value \(1\) of that total is
+                    what the name "partition of unity" records — the number \(1\) is partitioned, point by point, among the members of the
+                    cover.
+                </p>
+
+                <p>
+                    The definition demands nothing about whether such a family exists; it merely names the structure we want. For a
+                    general topological space no partition of unity subordinate to a given cover need exist. The decisive question is
+                    therefore one of existence, and it is here that the topology of manifolds — specifically the paracompactness secured
+                    earlier in the series — enters and delivers exactly what the bump functions of the previous section were built to
+                    supply.
+                </p>
+            </section>
+
+            <section id="existence-theorem" class="section-content">
+                <h2>The Existence Theorem</h2>
+
+                <p>
+                    We now prove that on a smooth manifold, partitions of unity exist subordinate to <em>any</em> open cover whatsoever.
+                    This is the technical climax of the chapter, and it is where two strands of the series converge: the bump functions
+                    just constructed supply the local pieces, while the paracompactness of manifolds — proved earlier as a consequence of
+                    second-countability and local compactness — supplies the combinatorial control that makes the pieces fit together into
+                    a locally finite, summable family.
+                </p>
+
+                <div class="theorem" id="T-existence_of_partitions_of_unity">
+                    <span class="theorem-title">Theorem: Existence of Partitions of Unity</span>
+                    <p>
+                        Let \(M\) be a smooth manifold and let \(\mathcal{X} = (X_\alpha)_{\alpha \in A}\) be any indexed open cover of
+                        \(M\). Then there exists a smooth partition of unity \((\psi_\alpha)_{\alpha \in A}\) subordinate to
+                        \(\mathcal{X}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We give the proof for a smooth manifold without boundary, which is the case we shall use throughout; the
+                        construction adapts to manifolds with boundary with no new ideas. The proof proceeds in five movements: refine the
+                        cover, build a bump on each piece, sum them, normalize, and reindex.
+                    </p>
+                    <p>
+                        <strong>Step 1 — A refinement by regular coordinate balls.</strong> Each \(X_\alpha\), being open in \(M\), is
+                        itself a smooth manifold, so by the
+                        <a href="smooth_manifolds.html#T-regular_coordinate_balls_basis" class="ref-link"><strong>basis of regular coordinate balls</strong></a>
+                        it has a basis \(\mathcal{B}_\alpha\) consisting of
+                        <a href="smooth_manifolds.html#D-regular_coordinate_ball" class="ref-link"><strong>regular coordinate balls</strong></a>.
+                        The union \(\mathcal{B} = \bigcup_{\alpha} \mathcal{B}_\alpha\) is then a basis for the topology of \(M\): any
+                        open subset \(W \subseteq M\) and any point \(q \in W\) lie in some \(X_\alpha\) (the \(X_\alpha\) cover \(M\)), and
+                        \(\mathcal{B}_\alpha\), being a basis for \(X_\alpha\), supplies a regular coordinate ball with \(q \in B \subseteq W\).
+                        Because
+                        \(M\) is a manifold and hence
+                        <a href="topological_properties_of_manifolds.html#T-manifolds_paracompact" class="ref-link"><strong>paracompact</strong></a>,
+                        the cover \(\mathcal{X}\) admits a countable, locally finite refinement \(\{B_i\}\) all of whose members are drawn
+                        from \(\mathcal{B}\) — that is, each \(B_i\) is a regular coordinate ball contained in some \(X_\alpha\). By the
+                        <a href="topological_properties_of_manifolds.html#T-locally_finite_collection_lemma" class="ref-link"><strong>closure lemma for locally finite collections</strong></a>,
+                        the family of closures \(\{\overline{B_i}\}\) is locally finite as well.
+                    </p>
+                    <p>
+                        <strong>Step 2 — A bump on each ball.</strong> Fix \(i\), and let \(X_\alpha\) be a member of the cover
+                        containing \(B_i\). Since \(B_i\) is a regular coordinate ball in \(X_\alpha\), its defining property furnishes a
+                        slightly larger coordinate ball \(B_i'\) with \(\overline{B_i} \subseteq B_i' \subseteq X_\alpha\) and a smooth
+                        coordinate map \(\varphi_i : B_i' \to \mathbb{R}^n\) carrying these onto concentric Euclidean balls,
+                        \[
+                        \varphi_i(\overline{B_i}) = \overline{B_{r_i}(0)},
+                        \qquad
+                        \varphi_i(B_i') = B_{r_i'}(0),
+                        \qquad r_i < r_i'.
+                        \]
+                        Using the
+                        <a href="#T-smooth_bump_function_Rn" class="ref-link"><strong>smooth bump function</strong></a>
+                        construction with inner and outer radii both taken inside \(B_{r_i}(0)\) — say \(r_i/2\) and \(r_i\) — let
+                        \(H_i : \mathbb{R}^n \to \mathbb{R}\) be the resulting smooth function: equal to \(1\) on \(\overline{B_{r_i/2}(0)}\),
+                        strictly between \(0\) and \(1\) on the annulus, and \(0\) outside \(B_{r_i}(0)\). In particular \(H_i\) is positive
+                        on the open ball \(B_{r_i}(0)\) and zero everywhere outside it, which is all we shall use. Define \(f_i : M \to \mathbb{R}\) by
+                        \[
+                        f_i =
+                        \begin{cases}
+                        H_i \circ \varphi_i & \text{on } B_i',\\[2pt]
+                        0 & \text{on } M \setminus \overline{B_i}.
+                        \end{cases}
+                        \]
+                        These two prescriptions agree wherever their domains overlap, namely on \(B_i' \setminus \overline{B_i}\). Since
+                        \(\varphi_i\) is a bijection from \(B_i'\) onto \(B_{r_i'}(0)\) carrying \(\overline{B_i}\) onto
+                        \(\overline{B_{r_i}(0)}\), it maps the overlap onto \(B_{r_i'}(0) \setminus \overline{B_{r_i}(0)}\), which lies
+                        outside \(B_{r_i}(0)\); and \(H_i\) vanishes outside \(B_{r_i}(0)\). Thus \(H_i \circ \varphi_i = 0\) on the
+                        overlap, matching the second prescription, which is zero by fiat. The function \(f_i\) is therefore well-defined,
+                        and being locally given by a smooth formula it is smooth on all of \(M\). Its nonzero set is the preimage
+                        \(\varphi_i^{-1}(B_{r_i}(0)) = B_i\), so \(\operatorname{supp} f_i = \overline{B_i}\).
+                    </p>
+                    <p>
+                        <strong>Step 3 — Summation.</strong> Define \(f : M \to \mathbb{R}\) by \(f = \sum_i f_i\). Because the cover
+                        \(\{B_i\}\) is locally finite and \(\operatorname{supp} f_i = \overline{B_i}\), every point of \(M\) has a
+                        neighborhood on which all but finitely many \(f_i\) vanish; the sum is therefore locally finite, and \(f\) is
+                        smooth. Moreover each \(f_i \ge 0\), and since \(\{B_i\}\) covers \(M\), every point lies in some \(B_i\), where
+                        \(f_i > 0\). Hence \(f(p) > 0\) for every \(p \in M\).
+                    </p>
+                    <p>
+                        <strong>Step 4 — Normalization.</strong> Define \(g_i = f_i / f\). Since \(f\) is smooth and strictly positive,
+                        each \(g_i\) is smooth; clearly \(0 \le g_i \le 1\), and \(\sum_i g_i = (\sum_i f_i)/f = f/f \equiv 1\). The family
+                        \((g_i)\) is thus a smooth partition of unity, but indexed by \(i\) rather than by the index set \(A\) of the
+                        cover, and subordinate to \(\{B_i\}\) rather than to \(\mathcal{X}\). One adjustment remains.
+                    </p>
+                    <p>
+                        <strong>Step 5 — Reindexing onto \(A\).</strong> Because \(\{B_i'\}\) refines \(\mathcal{X}\) — each \(B_i'\) was
+                        chosen inside some \(X_\alpha\) in Step 2 — for each \(i\) we may fix an index \(a(i) \in A\) with
+                        \(B_i' \subseteq X_{a(i)}\). For each \(\alpha \in A\) define
+                        \[
+                        \psi_\alpha = \sum_{i \,:\, a(i) = \alpha} g_i,
+                        \]
+                        interpreting the sum as the zero function if no \(i\) maps to \(\alpha\). Each \(\psi_\alpha\) is smooth, being a
+                        locally finite sum of the smooth \(g_i\), and inherits \(0 \le \psi_\alpha \le 1\). Summing over \(\alpha\)
+                        regroups the \(g_i\) without omission, so \(\sum_\alpha \psi_\alpha = \sum_i g_i \equiv 1\), giving condition (iv).
+                        For the support condition, the
+                        <a href="topological_properties_of_manifolds.html#T-locally_finite_collection_lemma" class="ref-link"><strong>closure lemma</strong></a>
+                        permits the closure of a locally finite union to be computed termwise:
+                        \[
+                        \operatorname{supp} \psi_\alpha
+                        = \overline{\bigcup_{i \,:\, a(i) = \alpha} B_i}
+                        = \bigcup_{i \,:\, a(i) = \alpha} \overline{B_i}
+                        \subseteq X_\alpha,
+                        \]
+                        the final inclusion holding because, for each contributing \(i\),
+                        \(\overline{B_i} \subseteq B_i' \subseteq X_{a(i)} = X_\alpha\) by the choice of \(B_i'\) in Step 2 and of
+                        \(a(i)\) above. This is condition (ii). Finally, the family \((\operatorname{supp} \psi_\alpha)\) is
+                        locally finite, since each \(\operatorname{supp} \psi_\alpha\) is a union of members of the locally finite family
+                        \(\{\overline{B_i}\}\), giving condition (iii). With (i) already noted, all four conditions hold, and
+                        \((\psi_\alpha)_{\alpha \in A}\) is the desired smooth partition of unity subordinate to \(\mathcal{X}\).
+                    </p>
+                </div>
+
+                <p>
+                    The proof repays a moment's reflection on where each hypothesis is spent. Smoothness of the partition came entirely
+                    from the bump functions of the previous section, pulled back through coordinate charts. Everything else — the very
+                    possibility of choosing a countable, locally finite refinement, and the termwise computation of supports — came from
+                    paracompactness and its attendant closure lemma. Neither ingredient alone suffices: bump functions without local
+                    finiteness would give an unsummable family, and local finiteness without bump functions would give no smoothness. The
+                    theorem is precisely the marriage of the analytic seed with the topological control, and it is this marriage that
+                    makes the manifold a hospitable place to do global analysis. The remainder of the page harvests three consequences,
+                    each of which would be false or inaccessible without it.
+                </p>
+            </section>
+
+            <section id="applications" class="section-content">
+                <h2>Applications</h2>
+
+                <p>
+                    A partition of unity is rarely the end of a construction; it is the instrument by which local smooth data is welded
+                    into global smooth data. We illustrate this with three results, each obtained by the same maneuver — build the object
+                    locally, then splice the local versions together with a partition of unity. The first generalizes the bump function
+                    from a ball to an arbitrary closed set; the second extends smooth functions off closed sets; the third produces a
+                    proper smooth function on any manifold.
+                </p>
+
+                <h3>Bump Functions for Closed Sets</h3>
+
+                <p>
+                    The bump function of the first section was attached to a ball. With a partition of unity in hand we can attach one to
+                    any closed set, with prescribed support. Following the standard terminology, if \(M\) is a topological space,
+                    \(A \subseteq M\) is closed, and \(U \subseteq M\) is open with \(A \subseteq U\), a continuous function
+                    \(\psi : M \to \mathbb{R}\) is a <strong>bump function for \(A\) supported in \(U\)</strong> if \(0 \le \psi \le 1\) on
+                    \(M\), \(\psi \equiv 1\) on \(A\), and \(\operatorname{supp} \psi \subseteq U\).
+                </p>
+
+                <div class="theorem" id="T-existence_smooth_bump_functions">
+                    <span class="theorem-title">Proposition: Existence of Smooth Bump Functions</span>
+                    <p>
+                        Let \(M\) be a smooth manifold. For any closed subset \(A \subseteq M\) and any open subset \(U \subseteq M\)
+                        containing \(A\), there exists a smooth bump function for \(A\) supported in \(U\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The two sets \(U_0 = U\) and \(U_1 = M \setminus A\) form an open cover of \(M\): every point either lies in
+                        \(A \subseteq U_0\) or fails to, in which case it lies in \(U_1\). By the
+                        <a href="#T-existence_of_partitions_of_unity" class="ref-link"><strong>existence of partitions of unity</strong></a>,
+                        let \(\{\psi_0, \psi_1\}\) be a smooth partition of unity subordinate to this cover, so that
+                        \(\operatorname{supp} \psi_0 \subseteq U_0 = U\), \(\operatorname{supp} \psi_1 \subseteq U_1 = M \setminus A\),
+                        and \(\psi_0 + \psi_1 \equiv 1\). Since \(\operatorname{supp} \psi_1 \subseteq M \setminus A\), the function
+                        \(\psi_1\) vanishes on \(A\); hence on \(A\) the relation \(\psi_0 + \psi_1 = 1\) forces \(\psi_0 \equiv 1\).
+                        Together with \(0 \le \psi_0 \le 1\) and \(\operatorname{supp} \psi_0 \subseteq U\), this shows \(\psi_0\) is a
+                        smooth bump function for \(A\) supported in \(U\).
+                    </p>
+                </div>
+
+                <h3>The Extension Lemma</h3>
+
+                <p>
+                    The gluing lemma of the previous page extended smooth maps defined on open sets. Closed sets were beyond its reach —
+                    and indeed beyond the reach of any naive splicing, as the \(|x|\) example showed. Partitions of unity remove the
+                    obstruction entirely for real-valued maps: a smooth function on a closed set always extends smoothly to the whole
+                    manifold. Stating this precisely first requires saying what smoothness means on a set that need not be open, since the
+                    <a href="smooth_functions_and_maps.html#D-smooth_function_manifold" class="ref-link"><strong>definition of a smooth function</strong></a>
+                    tested smoothness in charts whose images are open. The standard remedy is to demand a local smooth extension.
+                </p>
+
+                <div class="theorem" id="D-smooth_map_on_subset">
+                    <span class="theorem-title">Definition: Smoothness on an Arbitrary Subset</span>
+                    <p>
+                        Let \(M\) and \(N\) be smooth manifolds, with or without boundary, and let \(A \subseteq M\) be an
+                        <em>arbitrary</em> subset, not necessarily open. A map \(F : A \to N\) is <strong>smooth on \(A\)</strong> if it
+                        admits a smooth extension near each point: for every \(p \in A\) there is an open subset \(W \subseteq M\)
+                        containing \(p\) and a smooth map \(\widetilde{F} : W \to N\) whose restriction to \(W \cap A\) agrees with \(F\).
+                    </p>
+                </div>
+
+                <p>
+                    When \(A\) is itself open this returns the earlier notion, since \(A\) may be taken as the common neighborhood; the
+                    definition earns its keep precisely when \(A\) is closed, or otherwise has empty interior, where no chart on \(A\) is
+                    available and the extension is the only access to smoothness. With it the second application can be stated.
+                </p>
+
+                <div class="theorem" id="T-extension_lemma_smooth_functions">
+                    <span class="theorem-title">Lemma: Extension Lemma for Smooth Functions</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, \(A \subseteq M\) a closed subset, and \(f : A \to \mathbb{R}^k\) a smooth
+                        function. For any open subset \(U \subseteq M\) containing \(A\), there exists a smooth function
+                        \(\widetilde{f} : M \to \mathbb{R}^k\) such that \(\widetilde{f}|_A = f\) and
+                        \(\operatorname{supp} \widetilde{f} \subseteq U\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Since \(f\) is smooth on \(A\), each point \(p \in A\) has a neighborhood \(W_p\) in \(M\) and a smooth function
+                        \(\widetilde{f}_p : W_p \to \mathbb{R}^k\) agreeing with \(f\) on \(W_p \cap A\). Shrinking \(W_p\) to
+                        \(W_p \cap U\) if necessary, we may assume \(W_p \subseteq U\). The collection
+                        \(\{W_p : p \in A\} \cup \{M \setminus A\}\) is then an open cover of \(M\). Let
+                        \(\{\psi_p : p \in A\} \cup \{\psi_0\}\) be a smooth partition of unity subordinate to it, indexed so that
+                        \(\operatorname{supp} \psi_p \subseteq W_p\) for each \(p \in A\) and \(\operatorname{supp} \psi_0 \subseteq M \setminus A\).
+                    </p>
+                    <p>
+                        For each \(p \in A\), the product \(\psi_p \widetilde{f}_p\) is smooth on \(W_p\) and extends smoothly to all of
+                        \(M\) when interpreted as \(0\) on \(M \setminus \operatorname{supp} \psi_p\): the two prescriptions agree on the
+                        open overlap \(W_p \setminus \operatorname{supp} \psi_p\), where both are zero. Define
+                        \[
+                        \widetilde{f} = \sum_{p \in A} \psi_p \widetilde{f}_p.
+                        \]
+                        Because the supports \(\{\operatorname{supp} \psi_p\}\) are locally finite, this sum has only finitely many
+                        nonzero terms near any point and so defines a smooth function on \(M\).
+                    </p>
+                    <p>
+                        It remains to check that \(\widetilde{f}\) extends \(f\). Fix \(x \in A\). Then \(\psi_0(x) = 0\), since
+                        \(\operatorname{supp} \psi_0 \subseteq M \setminus A\); and for each \(p\) with \(\psi_p(x) \ne 0\), the point
+                        \(x\) lies in \(\operatorname{supp} \psi_p \subseteq W_p\), so \(\widetilde{f}_p(x) = f(x)\) by the agreement on
+                        \(W_p \cap A\). Therefore
+                        \[
+                        \widetilde{f}(x)
+                        = \sum_{p \in A} \psi_p(x)\,\widetilde{f}_p(x)
+                        = \Bigl( \psi_0(x) + \sum_{p \in A} \psi_p(x) \Bigr) f(x)
+                        = f(x),
+                        \]
+                        using \(\psi_0(x) + \sum_p \psi_p(x) = 1\). Hence \(\widetilde{f}|_A = f\). Finally, by the
+                        <a href="topological_properties_of_manifolds.html#T-locally_finite_collection_lemma" class="ref-link"><strong>closure lemma</strong></a>,
+                        \[
+                        \operatorname{supp} \widetilde{f}
+                        \subseteq \overline{\bigcup_{p \in A} \operatorname{supp} \psi_p}
+                        = \bigcup_{p \in A} \operatorname{supp} \psi_p
+                        \subseteq \bigcup_{p \in A} W_p \subseteq U,
+                        \]
+                        completing the proof.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why the Codomain \(\mathbb{R}^k\) Is Essential</h3>
+                    <p>
+                        The extension lemma is a statement about <em>real-valued</em> (or \(\mathbb{R}^k\)-valued) maps, and the linear
+                        structure of the codomain is doing indispensable work: the proof multiplies the local extensions by scalars
+                        \(\psi_p\) and adds them, operations that are available only because \(\mathbb{R}^k\) is a vector space. For a
+                        general manifold codomain there is no sum to take, and the conclusion can fail for genuinely topological reasons.
+                        The identity map of the circle, \(\mathrm{id} : \mathbb{S}^1 \to \mathbb{S}^1\), is smooth on the closed set
+                        \(\mathbb{S}^1 \subseteq \mathbb{R}^2\), yet it admits no continuous extension to a map
+                        \(\mathbb{R}^2 \to \mathbb{S}^1\) at all — restricted to the closed unit disk, such an extension would be a
+                        continuous retraction of the disk onto its bounding circle, and no such retraction exists. Smoothness is not the obstruction here; the obstruction is the shape of
+                        the target, and it is precisely the flatness of \(\mathbb{R}^k\) that the extension lemma exploits.
+                    </p>
+                    <p>
+                        The same flatness sets smooth functions apart from real-analytic ones. The extension lemma is false in the
+                        real-analytic category: an analytic function that vanishes on an open subset of a connected domain must vanish
+                        identically, so there is no analytic analogue of a bump function and no way to confine an extension to a
+                        prescribed neighborhood. The "softness" of smooth functions — their willingness to be modified locally without
+                        global repercussions — is exactly what rigidity costs the analytic theory, and partitions of unity are the
+                        organized expression of that softness.
+                    </p>
+                </div>
+
+                <h3>Exhaustion Functions</h3>
+
+                <p>
+                    The final application produces a single global function recording the large-scale shape of a manifold. A continuous
+                    function \(f : M \to \mathbb{R}\) is an <strong>exhaustion function</strong> if, for every \(c \in \mathbb{R}\), the
+                    sublevel set \(f^{-1}\bigl((-\infty, c]\bigr)\) is compact. Such a function exhausts \(M\) by the increasing family of
+                    compact sets \(f^{-1}((-\infty, c])\) as \(c \to \infty\), and its existence in smooth form is a clean consequence of
+                    partitions of unity.
+                </p>
+
+                <div class="theorem" id="D-exhaustion_function">
+                    <span class="theorem-title">Definition: Exhaustion Function</span>
+                    <p>
+                        A continuous function \(f : M \to \mathbb{R}\) on a topological space \(M\) is an <strong>exhaustion function</strong>
+                        if the sublevel set \(f^{-1}\bigl((-\infty, c]\bigr) = \{\, p \in M : f(p) \le c \,\}\) is compact for every
+                        \(c \in \mathbb{R}\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-existence_smooth_exhaustion">
+                    <span class="theorem-title">Proposition: Existence of Smooth Exhaustion Functions</span>
+                    <p>
+                        Every smooth manifold admits a smooth exhaustion function.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        A manifold has a countable open cover \(\{V_j\}_{j=1}^\infty\) by precompact sets — sets whose closures
+                        \(\overline{V_j}\) are compact — furnished by the
+                        <a href="topological_properties_of_manifolds.html#T-precompact_coordinate_balls_basis" class="ref-link"><strong>basis of precompact coordinate balls</strong></a>,
+                        which provides a countable basis of open sets each having compact closure. Let \(\{\psi_j\}\) be a smooth
+                        partition of unity subordinate to \(\{V_j\}\), so that \(\operatorname{supp} \psi_j \subseteq V_j\) and
+                        \(\sum_j \psi_j \equiv 1\), and define
+                        \[
+                        f = \sum_{j=1}^\infty j\, \psi_j.
+                        \]
+                        The sum is locally finite, so \(f\) is smooth. Since each \(\psi_j \ge 0\) and \(\sum_j \psi_j = 1\), we have
+                        \(f = \sum_j j \psi_j \ge \sum_j \psi_j = 1\), so \(f \ge 1\) everywhere; in particular \(f\) is real-valued and
+                        continuous.
+                    </p>
+                    <p>
+                        To see that \(f\) is an exhaustion function, fix \(c \in \mathbb{R}\) and choose any integer \(N \ge c\). We claim
+                        that every point \(p\) with \(f(p) \le c\) lies in \(\operatorname{supp} \psi_j\) for some \(j \le N\). Suppose not:
+                        then every index \(j\) with \(\psi_j(p) \ne 0\) satisfies \(j > N\), and since the indices are integers this means
+                        \(j \ge N + 1\). The indices \(j \le N\) then contribute nothing to \(\sum_j \psi_j(p) = 1\), so
+                        \(\sum_{j > N} \psi_j(p) = 1\), and therefore
+                        \[
+                        f(p) = \sum_j j\, \psi_j(p) = \sum_{j > N} j\, \psi_j(p) \ge (N + 1) \sum_{j > N} \psi_j(p) = N + 1 > N \ge c,
+                        \]
+                        contradicting \(f(p) \le c\). Hence \(p\) lies in \(\operatorname{supp} \psi_j \subseteq \overline{V_j}\) for some
+                        \(j \le N\), giving
+                        \[
+                        f^{-1}\bigl((-\infty, c]\bigr) \subseteq \bigcup_{j \le N} \overline{V_j},
+                        \]
+                        a finite union of compact sets, hence compact. The sublevel set is closed, because \(f\) is continuous, and a
+                        closed subset of a compact set is compact; so \(f^{-1}((-\infty, c])\) is compact. Since \(c\) was arbitrary,
+                        \(f\) is a smooth exhaustion function.
+                    </p>
+                </div>
+
+                <p>
+                    Three constructions, one method. Each began with objects available only locally — a bump on a ball, a function defined
+                    near a single point, an index attached to one set of a cover — and used a partition of unity to fuse them into a
+                    single smooth global object. This is the role partitions of unity play throughout differential geometry: they are the
+                    standard bridge from the local, where smoothness is defined and computed in charts, to the global, where the manifold
+                    is studied as a whole. Every later existence theorem that asserts a smooth structure can be assembled from local
+                    pieces — a Riemannian metric, a connection, a global frame where one exists — rests on the same foundation laid here.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>
