@@ -1,0 +1,452 @@
+---
+layout: default
+title: "Inverse & Implicit Function Theorems"
+topic_id: calc-48
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Inverse & Implicit Function Theorems</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#inverse">The Inverse Function Theorem</a>
+            <a href="#diffeomorphisms">Diffeomorphisms from Nonsingular Derivatives</a>
+            <a href="#implicit">The Implicit Function Theorem</a>
+        </div>
+
+        <div class="container">
+
+            <section id="inverse" class="section-content">
+                <h2>The Inverse Function Theorem</h2>
+
+                <p>
+                    The two theorems of this page are the central analytic results about smooth maps between
+                    open subsets of Euclidean space. They make precise a single principle: under a nonsingularity
+                    hypothesis on the derivative, the local behavior of a smooth map is faithfully modeled by the
+                    behavior of its total derivative. The
+                    <a href="jacobian.html#D-differentiable_multivariate" class="ref-link"><strong>total derivative</strong></a>
+                    is the best linear approximation to \(F\) at a point; the inverse function theorem promotes a
+                    statement about that linear approximation — invertibility of \(DF(a)\) — into a statement about
+                    \(F\) itself, namely that \(F\) is a diffeomorphism near \(a\). The implicit function theorem,
+                    its close companion, then tells us when an equation \(\Phi(x, y) = c\) can be solved locally for
+                    \(y\) as a smooth function of \(x\). Together they are the engine behind the local theory of
+                    smooth manifolds, regular level sets, and the constraint geometry underlying optimization.
+                </p>
+
+                <div class="theorem" id="D-smooth_function_Rn">
+                    <span class="theorem-title">Definition: \(C^\infty\) Map Between Euclidean Open Sets</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{R}^n\) and \(V \subseteq \mathbb{R}^m\) be open subsets.
+                        A map \(F : U \to V\) is called <strong>smooth</strong> (or \(C^\infty\), or <strong>infinitely differentiable</strong>) if
+                        each of its component functions \(F^1, \ldots, F^m : U \to \mathbb{R}\) has continuous partial derivatives of all orders.
+                    </p>
+                </div>
+
+                <p>
+                    Throughout, we use <em>smooth</em> as synonymous with \(C^\infty\). Conventions in the
+                    literature vary — some authors use <em>smooth</em> to mean merely continuously differentiable, and some use <em>differentiable</em> to
+                    mean what we call smooth — but the choice of \(C^\infty\) is the most convenient here, since it is preserved under all the operations
+                    we use (compositions, restrictions, and matrix inversion), so we never need to track how many derivatives survive an argument.
+                </p>
+
+                <div class="theorem" id="D-diffeomorphism_Rn">
+                    <span class="theorem-title">Definition: Diffeomorphism Between Euclidean Open Sets</span>
+                    <p>
+                        Let \(U, V \subseteq \mathbb{R}^n\) be open subsets of the same Euclidean space. A map \(F : U \to V\) is called a
+                        <strong>diffeomorphism</strong> if \(F\) is a smooth bijection and its inverse \(F^{-1} : V \to U\) is also smooth.
+                    </p>
+                </div>
+
+                <p>
+                    The restriction to a common ambient \(\mathbb{R}^n\) is not an additional constraint imposed by the definition but a necessary
+                    consequence of any candidate diffeomorphism's existence. If \(F : U \to V\) were a diffeomorphism with \(U \subseteq \mathbb{R}^n\)
+                    and \(V \subseteq \mathbb{R}^m\), then at every point of \(U\) the
+                    <a href="jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>
+                    applied to \(F^{-1} \circ F = \mathrm{id}_U\) would
+                    force the Jacobian \(DF\) to be a left-invertible \(m \times n\) matrix, and a similar argument with \(F \circ F^{-1} = \mathrm{id}_V\)
+                    would force it to be right-invertible; both conditions can hold simultaneously only when the matrix is square, hence \(m = n\).
+                    The two-sided smooth condition therefore forces the two ambient dimensions to agree, so we lose nothing by building this agreement
+                    into the definition itself. (This is the first hint of the inverse function theorem's central mechanism: the invertibility of a map
+                    is constrained by the invertibility of its derivative.)
+                </p>
+
+                <p>
+                    Every diffeomorphism is, in particular, a
+                    <a href="homeomorphism.html#D-homeomorphism" class="ref-link"><strong>homeomorphism</strong></a>:
+                    a smooth map is continuous, and the same is true of its inverse. The converse fails, and the standard cautionary example is worth
+                    keeping in mind. The map \(\psi(x, y) = (x^3, y^3)\) is a homeomorphism of \(\mathbb{R}^2\) onto itself, and \(\psi\) itself is smooth (its
+                    components are polynomials); but the inverse \(\psi^{-1}(u, v) = (u^{1/3}, v^{1/3})\) fails to be smooth at the origin,
+                    since the partial derivatives blow up there. So \(\psi\) is a smooth homeomorphism that is not a diffeomorphism — and notably, its
+                    Jacobian determinant vanishes at the origin, exactly where the inverse function theorem's hypothesis fails.
+                </p>
+
+                <p>
+                    We write \(DF(a)\) for the total derivative of \(F\) at \(a\), identified with its
+                    <a href="jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian matrix</strong></a>.
+                </p>
+
+                <h3>The analytic engine: a contraction with a fixed point</h3>
+
+                <p>
+                    The proof of the inverse function theorem rests on one elementary fact about complete metric
+                    spaces. Recall that a map \(G : X \to X\) is a
+                    <a href="continuity.html#D-strong_contraction" class="ref-link"><strong>contraction</strong></a>
+                    if there is a constant \(\lambda \in (0, 1)\) with \(d(G(x), G(y)) \leq \lambda\, d(x, y)\) for
+                    all \(x, y \in X\), and that a <strong>fixed point</strong> of \(G\) is a point \(x\) with
+                    \(G(x) = x\). The
+                    <a href="completeness.html#T-banach_fixed_point" class="ref-link"><strong>Banach fixed-point theorem</strong></a>
+                    guarantees that every contraction of a nonempty complete metric space has a unique fixed point.
+                    This is the only fact about completeness the argument needs; we apply it to a closed ball in
+                    \(\mathbb{R}^n\), which is complete because it is a closed subset of a complete space.
+                </p>
+
+                <div class="theorem" id="T-inverse_function_theorem">
+                    <span class="theorem-title">Theorem (Inverse Function Theorem)</span>
+                    <p>
+                        Suppose \(U\) and \(V\) are open subsets of \(\mathbb{R}^n\), and \(F : U \to V\) is a
+                        smooth map. If \(DF(a)\) is invertible at some point \(a \in U\), then there exist connected
+                        neighborhoods \(U_0 \subseteq U\) of \(a\) and \(V_0 \subseteq V\) of \(F(a)\) such that
+                        \(F|_{U_0} : U_0 \to V_0\) is a diffeomorphism.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Reduction to a normalized map.</strong> We first make two simplifications that cost
+                        nothing. Define \(F_1(x) = F(x + a) - F(a)\); this is smooth on a neighborhood of \(0\),
+                        satisfies \(F_1(0) = 0\) and \(DF_1(0) = DF(a)\), and \(F\) is a diffeomorphism on a
+                        connected neighborhood of \(a\) if and only if \(F_1\) is one on a connected neighborhood
+                        of \(0\). Next set \(F_2 = DF_1(0)^{-1} \circ F_1\); this is smooth on the same
+                        neighborhood, satisfies \(F_2(0) = 0\) and \(DF_2(0) = I_n\), and is a diffeomorphism near
+                        \(0\) precisely when \(F_1\) is. Replacing \(F\) by \(F_2\), we may therefore assume that
+                        \(F\) is defined on a neighborhood \(U\) of \(0\) with \(F(0) = 0\) and \(DF(0) = I_n\).
+                        Because \(\det DF(x)\) is a continuous function of \(x\), by shrinking \(U\) we may further
+                        assume that \(DF(x)\) is invertible for every \(x \in U\).
+                    </p>
+                    <p>
+                        <strong>A Lipschitz estimate for the displacement.</strong> Let \(H(x) = x - F(x)\) for
+                        \(x \in U\). Then \(DH(0) = I_n - I_n = 0\). Since the entries of \(DH(x)\) depend
+                        continuously on \(x\), there is a number \(\delta > 0\) with \(\overline{B}_\delta(0)
+                        \subseteq U\) and \(\|DH(x)\| \leq \tfrac{1}{2}\) for all \(x \in \overline{B}_\delta(0)\),
+                        where \(\|\cdot\|\) denotes the
+                        <a href="../Linear_algebra/trace.html#D-induced_norm" class="ref-link"><strong>operator norm</strong></a>.
+                        Because \(\overline{B}_\delta(0)\) is convex, the
+                        <a href="mvt.html#T-mean_value_inequality" class="ref-link"><strong>Mean Value Inequality</strong></a>
+                        shows that \(H\) is
+                        <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz</strong></a>
+                        on \(\overline{B}_\delta(0)\) with constant \(\tfrac{1}{2}\):
+                        \[
+                        |H(x') - H(x)| \;\leq\; \tfrac{1}{2}\,|x' - x|, \qquad x, x' \in \overline{B}_\delta(0). \tag{1}
+                        \]
+                        Taking \(x = 0\) and using \(H(0) = 0\) gives \(|H(x)| \leq \tfrac{1}{2}|x|\). Moreover,
+                        since \(x' - x = F(x') - F(x) + H(x') - H(x)\), the triangle inequality and \((1)\) yield
+                        \[
+                        |x' - x| \;\leq\; |F(x') - F(x)| + \tfrac{1}{2}|x' - x|,
+                        \qquad\text{hence}\qquad
+                        |x' - x| \;\leq\; 2\,|F(x') - F(x)|. \tag{2}
+                        \]
+                        In particular \(F\) is injective on \(\overline{B}_\delta(0)\).
+                    </p>
+                    <p>
+                        <strong>Local surjectivity via a fixed point.</strong> Let \(y \in B_{\delta/2}(0)\) be
+                        arbitrary; we show there is a unique \(x \in \overline{B}_\delta(0)\) with \(F(x) = y\).
+                        Define \(G(x) = y + H(x) = y + x - F(x)\), so that \(G(x) = x\) if and only if \(F(x) = y\).
+                        For \(|x| \leq \delta\),
+                        \[
+                        |G(x)| \;\leq\; |y| + |H(x)| \;<\; \tfrac{\delta}{2} + \tfrac{1}{2}|x| \;\leq\; \delta,
+                        \]
+                        so \(G\) maps \(\overline{B}_\delta(0)\) into itself; and by \((1)\),
+                        \(|G(x) - G(x')| = |H(x) - H(x')| \leq \tfrac{1}{2}|x - x'|\), so \(G\) is a contraction.
+                        Since \(\overline{B}_\delta(0)\) is a nonempty complete metric space, the Banach fixed-point
+                        theorem gives a unique fixed point \(x \in \overline{B}_\delta(0)\); the strict bound above
+                        forces \(|x| < \delta\), so in fact \(x \in B_\delta(0)\). This proves that each
+                        \(y \in B_{\delta/2}(0)\) has exactly one preimage in \(B_\delta(0)\).
+                    </p>
+                    <p>
+                        <strong>The restricted map is a homeomorphism.</strong> Set \(V_0 = B_{\delta/2}(0)\) and
+                        \(U_0 = B_\delta(0) \cap F^{-1}(V_0)\). Then \(U_0\) is open in \(\mathbb{R}^n\), and the
+                        argument above shows that \(F : U_0 \to V_0\) is a bijection, so an inverse
+                        \(F^{-1} : V_0 \to U_0\) exists. Substituting \(x = F^{-1}(y)\) and \(x' = F^{-1}(y')\) into
+                        \((2)\) gives \(|F^{-1}(y') - F^{-1}(y)| \leq 2|y' - y|\), so \(F^{-1}\) is (Lipschitz)
+                        continuous. Thus \(F : U_0 \to V_0\) is a homeomorphism; since \(V_0\) is connected and
+                        \(F^{-1}\) is continuous, \(U_0\) is connected as well.
+                    </p>
+                    <p>
+                        <strong>The inverse is differentiable.</strong> Fix \(y \in V_0\), set \(x = F^{-1}(y)\) and
+                        \(L = DF(x)\) (invertible by our normalization). We claim \(F^{-1}\) is differentiable at
+                        \(y\) with derivative \(L^{-1}\). For \(y' \in V_0 \setminus \{y\}\), write
+                        \(x' = F^{-1}(y') \neq x\). A direct manipulation gives
+                        \[
+                        \frac{F^{-1}(y') - F^{-1}(y) - L^{-1}(y' - y)}{|y' - y|}
+                        \;=\;
+                        \frac{|x' - x|}{|y' - y|}\, L^{-1}\!\left( -\,\frac{F(x') - F(x) - L(x' - x)}{|x' - x|} \right).
+                        \]
+                        The factor \(|x' - x| / |y' - y|\) is bounded by \(2\) thanks to \((2)\); the linear map
+                        \(L^{-1}\) is bounded; and as \(y' \to y\) we have \(x' \to x\) by continuity of \(F^{-1}\),
+                        so the rightmost factor tends to \(0\) because \(F\) is differentiable at \(x\) with
+                        derivative \(L\). Hence the whole expression tends to \(0\), proving that \(F^{-1}\) is
+                        differentiable at \(y\) with \(D(F^{-1})(y) = DF(x)^{-1}\).
+                    </p>
+                    <p>
+                        <strong>The inverse is smooth.</strong> The partial derivatives of \(F^{-1}\) are therefore
+                        defined at every point of \(V_0\), and the formula \(D(F^{-1})(y) = DF(F^{-1}(y))^{-1}\)
+                        exhibits the matrix-valued map \(y \mapsto D(F^{-1})(y)\) as the composition
+                        \[
+                        y \;\xrightarrow{\;F^{-1}\;}\; F^{-1}(y) \;\xrightarrow{\;DF\;}\; DF(F^{-1}(y)) \;\xrightarrow{\;\text{inv}\;}\; DF(F^{-1}(y))^{-1},
+                        \]
+                        where \(\text{inv}\) denotes matrix inversion. In this composition \(F^{-1}\) is continuous;
+                        \(DF\) is smooth, its component functions being the partial derivatives of \(F\); and
+                        matrix inversion is smooth, since
+                        <a href="../Linear_algebra/determinants.html#T-cramers_rule" class="ref-link"><strong>Cramer's rule</strong></a>
+                        expresses the entries of an inverse as rational functions of the entries with nonvanishing
+                        denominator \(\det\). The composition of continuous maps is continuous, so the partial
+                        derivatives of \(F^{-1}\) are continuous and \(F^{-1}\) is of class \(C^1\). Assuming
+                        inductively that \(F^{-1}\) is of class \(C^k\), each map in the composition is then \(C^k\)
+                        (with \(DF\) smooth and inversion smooth), so \(D(F^{-1})\) is \(C^k\); this makes the
+                        partial derivatives of \(F^{-1}\) of class \(C^k\), hence \(F^{-1}\) itself is \(C^{k+1}\).
+                        By induction \(F^{-1}\) is smooth, and \(F|_{U_0} : U_0 \to V_0\) is a diffeomorphism.
+                        \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why a fixed point, and why completeness</h3>
+                    <p>
+                        The heart of the argument is the reformulation of "solve \(F(x) = y\)" as "find a fixed
+                        point of \(G(x) = y + x - F(x)\)." The nonsingularity of \(DF\) is what makes the
+                        displacement \(H = \mathrm{id} - F\) have small derivative, and the Mean Value Inequality
+                        converts that derivative bound into the contraction constant \(\tfrac{1}{2}\). Completeness
+                        of the closed ball is then exactly the hypothesis the Banach fixed-point theorem requires —
+                        the same property that guarantees convergence of iterative solvers in numerical analysis.
+                        The inverse function theorem is, in this sense, the analytic shadow of the fact that a
+                        well-conditioned nonlinear system can be solved by iteration.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="diffeomorphisms" class="section-content">
+                <h2>Diffeomorphisms from Nonsingular Derivatives</h2>
+
+                <p>
+                    The inverse function theorem is a statement about a single point: invertibility of \(DF\) at
+                    \(a\) produces a diffeomorphism on some neighborhood of \(a\). When the derivative is nonsingular
+                    at <em>every</em> point, the local conclusions assemble into a global one. The following
+                    corollary is the form in which the theorem is most often applied, and it is the workhorse for
+                    recognizing changes of coordinates.
+                </p>
+
+                <div class="theorem" id="T-nonsingular_derivative_diffeomorphism">
+                    <span class="theorem-title">Corollary (Nonsingular Derivatives and Diffeomorphisms)</span>
+                    <p>
+                        Suppose \(U \subseteq \mathbb{R}^n\) is open and \(F : U \to \mathbb{R}^n\) is a smooth map
+                        whose Jacobian determinant is nonzero at every point of \(U\). Then:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(F\) is an open map.</li>
+                        <li>If \(F\) is injective, then \(F : U \to F(U)\) is a diffeomorphism onto its image.</li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        For each \(a \in U\), the hypothesis that the Jacobian determinant is nonzero means precisely
+                        that \(DF(a)\) is invertible, so the
+                        <a href="#T-inverse_function_theorem" class="ref-link"><strong>inverse function theorem</strong></a>
+                        provides open sets \(U_a \subseteq U\) containing \(a\) and \(V_a \subseteq F(U)\) containing
+                        \(F(a)\) such that \(F|_{U_a} : U_a \to V_a\) is a diffeomorphism. In particular every point
+                        of \(F(U)\) has a neighborhood contained in \(F(U)\), so \(F(U)\) is open. The same argument
+                        applied to an arbitrary open subset \(W \subseteq U\) (in place of \(U\)) shows that \(F(W)\)
+                        is open; hence \(F\) is an open map, proving (1).
+                    </p>
+                    <p>
+                        For (2), suppose in addition that \(F\) is injective. Then the set-theoretic inverse
+                        \(F^{-1} : F(U) \to U\) exists. On a neighborhood of each point \(F(a) \in F(U)\), this
+                        inverse coincides with the smooth local inverse \((F|_{U_a})^{-1}\) furnished by the inverse
+                        function theorem, so \(F^{-1}\) is smooth. Therefore \(F : U \to F(U)\) is a smooth bijection
+                        with smooth inverse — a diffeomorphism. \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why this beats constructing inverses by hand</h3>
+                    <p>
+                        The corollary lets us certify that a map is a coordinate change without ever writing the
+                        inverse explicitly: it suffices to check that the Jacobian determinant is nonvanishing and
+                        that the map is injective on the region of interest. The two classical examples below — polar
+                        and spherical coordinates — illustrate the point. Inverting them by hand would require
+                        juggling inverse trigonometric functions and their branch cuts; the corollary sidesteps all
+                        of that, reducing the question to a determinant computation and an injectivity check on a
+                        suitable region.
+                    </p>
+                </div>
+
+                <h3>Example: polar coordinates</h3>
+
+                <p>
+                    Polar coordinates \((r, \theta)\) in the plane are defined implicitly by \(x = r\cos\theta\),
+                    \(y = r\sin\theta\). The map \(F : (0, \infty) \times \mathbb{R} \to \mathbb{R}^2\),
+                    \[
+                    F(r, \theta) = (r\cos\theta,\ r\sin\theta),
+                    \]
+                    is smooth, with Jacobian determinant
+                    \[
+                    \det DF(r,\theta)
+                    = \det\begin{bmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{bmatrix}
+                    = r(\cos^2\theta + \sin^2\theta) = r,
+                    \]
+                    which is nonzero everywhere on the domain. By the corollary, the restriction of \(F\) to any
+                    open set on which it is injective is a diffeomorphism onto its image. One such set is
+                    \(\{(r,\theta) : r > 0,\ -\pi < \theta < \pi\}\), which \(F\) maps bijectively onto the plane
+                    with the nonpositive part of the \(x\)-axis removed.
+                </p>
+
+                <h3>Example: spherical coordinates</h3>
+
+                <p>
+                    Spherical coordinates \((\rho, \varphi, \theta)\) on \(\mathbb{R}^3\) are defined by
+                    \[
+                    x = \rho\sin\varphi\cos\theta, \qquad
+                    y = \rho\sin\varphi\sin\theta, \qquad
+                    z = \rho\cos\varphi,
+                    \]
+                    where \(\rho\) is the distance from the origin, \(\varphi\) is the angle from the positive
+                    \(z\)-axis, and \(\theta\) is the angle in the \((x,y)\)-plane. The map
+                    \(G : (0,\infty) \times (0,\pi) \times \mathbb{R} \to \mathbb{R}^3\) defined by these relations
+                    is smooth, and a computation gives Jacobian determinant
+                    \[
+                    \det DG(\rho, \varphi, \theta) = \rho^2 \sin\varphi,
+                    \]
+                    which is nonzero on the domain (where \(\rho > 0\) and \(0 < \varphi < \pi\)). Thus the
+                    restriction of \(G\) to any open set on which it is injective is a diffeomorphism onto its image;
+                    one such set is \(\{(\rho,\varphi,\theta) : \rho > 0,\ 0 < \varphi < \pi,\ -\pi < \theta < \pi\}\).
+                </p>
+
+            </section>
+
+            <section id="implicit" class="section-content">
+                <h2>The Implicit Function Theorem</h2>
+
+                <p>
+                    The inverse function theorem answers the question "when can a map be inverted near a point?"
+                    Its companion answers a question of equal importance: given an equation \(\Phi(x, y) = c\),
+                    when can we solve it locally for \(y\) in terms of \(x\)? Geometrically, this asks when the level
+                    set \(\{\Phi = c\}\) is, near a given point, the graph of a function — and the answer, once
+                    again, is read off from the derivative. This is the most consequential application of the
+                    inverse function theorem, and the foundation on which the smooth-manifold theory of regular
+                    level sets is built.
+                </p>
+
+                <p>
+                    We split the coordinates on \(\mathbb{R}^n \times \mathbb{R}^k\) as \((x, y)\) with
+                    \(x = (x^1, \dots, x^n)\) and \(y = (y^1, \dots, y^k)\). For a smooth map
+                    \(\Phi : U \to \mathbb{R}^k\), the relevant object is the \(k \times k\) block of partial
+                    derivatives taken with respect to the \(y\)-variables alone,
+                    \(\bigl(\partial \Phi^i / \partial y^j\bigr)\); nonsingularity of this block at a point is what
+                    makes \(y\) the "solvable" variable there.
+                </p>
+
+                <div class="theorem" id="T-implicit_function_theorem">
+                    <span class="theorem-title">Theorem (Implicit Function Theorem)</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{R}^n \times \mathbb{R}^k\) be an open subset, with standard
+                        coordinates \((x, y) = (x^1, \dots, x^n, y^1, \dots, y^k)\). Suppose
+                        \(\Phi : U \to \mathbb{R}^k\) is smooth, \((a, b) \in U\), and \(c = \Phi(a, b)\). If the
+                        \(k \times k\) matrix
+                        \[
+                        \left( \frac{\partial \Phi^i}{\partial y^j}(a, b) \right)
+                        \]
+                        is nonsingular, then there exist neighborhoods \(V_0 \subseteq \mathbb{R}^n\) of \(a\) and
+                        \(W_0 \subseteq \mathbb{R}^k\) of \(b\), and a smooth map \(F : V_0 \to W_0\), such that
+                        \(\Phi^{-1}(c) \cap (V_0 \times W_0)\) is the graph of \(F\): that is,
+                        \(\Phi(x, y) = c\) for \((x, y) \in V_0 \times W_0\) if and only if \(y = F(x)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>An auxiliary map that the inverse function theorem can invert.</strong> Define a
+                        smooth map \(\Psi : U \to \mathbb{R}^n \times \mathbb{R}^k\) by
+                        \[
+                        \Psi(x, y) = \bigl(x,\ \Phi(x, y)\bigr).
+                        \]
+                        Its total derivative at \((a, b)\) has the block form
+                        \[
+                        D\Psi(a, b) =
+                        \begin{pmatrix}
+                            I_n & 0 \\[4pt]
+                            \dfrac{\partial \Phi^i}{\partial x^j}(a, b) & \dfrac{\partial \Phi^i}{\partial y^j}(a, b)
+                        \end{pmatrix}.
+                        \]
+                        This matrix is block lower triangular, so its determinant is the product of the determinants
+                        of the two diagonal blocks; both are nonsingular (the upper block is \(I_n\), the lower is
+                        nonsingular by hypothesis), so \(D\Psi(a, b)\) is invertible. By the
+                        <a href="#T-inverse_function_theorem" class="ref-link"><strong>inverse function theorem</strong></a>
+                        there are connected neighborhoods \(U_0\) of \((a, b)\) and \(Y_0\) of \(\Psi(a, b) = (a, c)\)
+                        such that \(\Psi : U_0 \to Y_0\) is a diffeomorphism. Shrinking \(U_0\) if necessary, we may
+                        assume \(U_0 = V \times W\) is a product neighborhood.
+                    </p>
+                    <p>
+                        <strong>The inverse fixes the first coordinate.</strong> Write the smooth inverse as
+                        \(\Psi^{-1}(x, y) = \bigl(A(x, y),\ B(x, y)\bigr)\) for smooth maps \(A, B\). Computing
+                        \(\Psi \circ \Psi^{-1} = \mathrm{id}\),
+                        \[
+                        (x, y) = \Psi\bigl(\Psi^{-1}(x, y)\bigr) = \Psi\bigl(A(x, y), B(x, y)\bigr)
+                        = \bigl(A(x, y),\ \Phi(A(x, y), B(x, y))\bigr).
+                        \]
+                        Comparing first components gives \(A(x, y) = x\), so the inverse has the form
+                        \(\Psi^{-1}(x, y) = \bigl(x,\ B(x, y)\bigr)\).
+                    </p>
+                    <p>
+                        <strong>Reading off the solving function.</strong> Set
+                        \(V_0 = \{x \in V : (x, c) \in Y_0\}\) and \(W_0 = W\), and define \(F : V_0 \to W_0\) by
+                        \(F(x) = B(x, c)\); both are smooth. We verify that \(\Phi^{-1}(c) \cap (V_0 \times W_0)\) is
+                        the graph of \(F\). Comparing second components in the identity above with \(y = c\) yields,
+                        for \(x \in V_0\),
+                        \[
+                        c = \Phi\bigl(x, B(x, c)\bigr) = \Phi\bigl(x, F(x)\bigr), \tag{3}
+                        \]
+                        so the graph of \(F\) is contained in \(\Phi^{-1}(c)\). Conversely, suppose
+                        \((x, y) \in V_0 \times W_0\) with \(\Phi(x, y) = c\). Then
+                        \(\Psi(x, y) = (x, \Phi(x, y)) = (x, c)\), so applying \(\Psi^{-1}\),
+                        \[
+                        (x, y) = \Psi^{-1}(x, c) = \bigl(x,\ B(x, c)\bigr) = \bigl(x,\ F(x)\bigr),
+                        \]
+                        which forces \(y = F(x)\). Thus \(\Phi(x, y) = c\) on \(V_0 \times W_0\) if and only if
+                        \(y = F(x)\); the level set is exactly the graph of \(F\). \(\blacksquare\)
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Where this leads: regular level sets and constraint geometry</h3>
+                    <p>
+                        The implicit function theorem is the analytic seed of a geometric idea: a level set
+                        \(\{\Phi = c\}\) on which the derivative has full rank is, locally, the graph of a smooth
+                        function, and therefore looks like a piece of Euclidean space of dimension \(n\). This is the
+                        precise sense in which a constraint equation cuts out a smooth surface. The same theorem
+                        underwrites the tangent-space description of constraint surfaces in
+                        <a href="constrained_opt.html"><strong>constrained optimization</strong></a>,
+                        where it guarantees that every tangent direction to a regular constraint set is realized by
+                        an honest curve lying in the set — the fact that makes the Lagrange multiplier rule rigorous.
+                        Carried into the manifold setting, this circle of ideas becomes the regular level set
+                        theorem, one of the principal sources of examples of smooth manifolds.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+</body>
+</html>
