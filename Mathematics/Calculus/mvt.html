@@ -133,7 +133,7 @@ uses_python: false
                     \[
                     T_1(x) \;=\; f(a) + f'(a)(x-a)
                     \]
-                    is precisely the <a href="linear_approximation.html#D-linearization"><strong>linearization</strong></a>
+                    is precisely the <a href="linear_approximation.html#D-linearization" class="ref-link"><strong>linearization</strong></a>
                     of \(f\) at \(a\); Taylor's theorem is its systematic higher-order generalization.
                 </p>
 
@@ -273,11 +273,11 @@ uses_python: false
                     of its gradients.
                 </p>
 
-                <div class="theorem">
+                <div class="theorem" id="T-higher_dimensional_mvt">
                     <span class="theorem-title">Higher-Dimensional MVT</span>
                     <p>
                         Let \(f: X \to \mathbb{R}\) be differentiable on an open set \(X \subseteq \mathbb{R}^n\)
-                        (in the sense that the <a href="linear_approximation.html#D-linearization"><strong>linearization</strong></a>
+                        (in the sense that the <a href="linear_approximation.html#D-linearization" class="ref-link"><strong>linearization</strong></a>
                         exists at every point of \(X\) — equivalently, Fréchet differentiable, which is stronger than
                         mere existence of all partial derivatives). Let \(a, b \in X\) with the closed segment
                         \([a,b] \subset X\). Then there exists \(c \in (a,b)\) such that
@@ -311,16 +311,83 @@ uses_python: false
                     </p>
                 </div>
 
+                <p>
+                    For <strong>vector-valued</strong> maps the exact equality fails: each scalar component
+                    \(F^j\) supplies its own mean value point \(c_j\), and there is in general no single \(c\)
+                    serving all components at once. What survives is an inequality, and remarkably it survives
+                    with no loss in the constant. The standard device is to test the vector increment against a
+                    fixed direction, reducing the vector statement to a single application of the scalar theorem.
+                </p>
+
+                <div class="theorem" id="T-mean_value_inequality">
+                    <span class="theorem-title">Mean Value Inequality</span>
+                    <p>
+                        Let \(F : X \to \mathbb{R}^m\) be differentiable on an open set
+                        \(X \subseteq \mathbb{R}^n\), and let \(a, b \in X\) with the closed segment
+                        \([a,b] \subset X\). Then
+                        \[
+                        \|F(b) - F(a)\| \;\leq\; \Big(\sup_{c \in [a,b]} \|DF(c)\|\Big)\,\|b - a\|,
+                        \]
+                        where \(\|DF(c)\|\) denotes the
+                        <a href="../Linear_algebra/trace.html#D-induced_norm" class="ref-link"><strong>operator norm</strong></a>
+                        of the total derivative
+                        \(DF(c) : \mathbb{R}^n \to \mathbb{R}^m\). In particular, if \(F\) is of class \(C^1\)
+                        and \(K \subseteq X\) is compact and convex, then \(F\) is
+                        <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz continuous</strong></a>
+                        on \(K\) with Lipschitz constant \(\sup_{x \in K} \|DF(x)\|\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        If \(F(b) = F(a)\) the inequality is trivial, so assume \(F(b) \neq F(a)\) and set
+                        \(\mathbf{u} := F(b) - F(a) \in \mathbb{R}^m\). Define the scalar function
+                        \(\varphi : [0,1] \to \mathbb{R}\) by
+                        \[
+                        \varphi(t) \;=\; \big\langle \mathbf{u},\, F(a + t(b-a)) \big\rangle.
+                        \]
+                        Since \([a,b] \subset X\) and \(F\) is differentiable on \(X\), the composition with the
+                        segment \(t \mapsto a + t(b-a)\) is differentiable on \((0,1)\) and continuous on \([0,1]\);
+                        by the chain rule,
+                        \[
+                        \varphi'(t) \;=\; \big\langle \mathbf{u},\, DF\big(a + t(b-a)\big)(b - a) \big\rangle.
+                        \]
+                        Applying <a href="#l_mvt">Lagrange's MVT</a> to \(\varphi\) on \([0,1]\) yields
+                        \(\theta \in (0,1)\) with \(\varphi(1) - \varphi(0) = \varphi'(\theta)\). The left-hand side
+                        is \(\langle \mathbf{u}, F(b)\rangle - \langle \mathbf{u}, F(a)\rangle
+                        = \langle \mathbf{u}, \mathbf{u}\rangle = \|\mathbf{u}\|^2\). Writing \(c := a + \theta(b-a)\)
+                        and applying the Cauchy&ndash;Schwarz inequality to the right-hand side,
+                        \[
+                        \|\mathbf{u}\|^2 \;=\; \big\langle \mathbf{u},\, DF(c)(b-a) \big\rangle
+                        \;\leq\; \|\mathbf{u}\|\,\|DF(c)(b-a)\|
+                        \;\leq\; \|\mathbf{u}\|\,\|DF(c)\|\,\|b-a\|,
+                        \]
+                        the last step by the definition of the operator norm. Dividing by
+                        \(\|\mathbf{u}\| > 0\) gives
+                        \(\|F(b) - F(a)\| \leq \|DF(c)\|\,\|b-a\| \leq \big(\sup_{c \in [a,b]}\|DF(c)\|\big)\|b-a\|\).
+                    </p>
+                    <p>
+                        For the \(C^1\) statement, fix a compact convex \(K \subseteq X\). The operator norm
+                        \(x \mapsto \|DF(x)\|\) is continuous, hence attains a finite maximum
+                        \(M = \sup_{x \in K}\|DF(x)\|\) on \(K\). For any \(a, b \in K\), convexity gives
+                        \([a,b] \subseteq K\), so the inequality above yields
+                        \(\|F(b) - F(a)\| \leq M\,\|b-a\|\), which is precisely the Lipschitz condition with
+                        constant \(M\). \(\blacksquare\)
+                    </p>
+                </div>
+
                 <div class="insight-box">
                     <h3>Important Constraint: Scalar-valued Outputs</h3>
                     <p>
-                        The exact equality above holds only for <strong>scalar-valued</strong> functions
-                        \(f : \mathbb{R}^n \to \mathbb{R}\). For vector-valued functions (where the output is also
-                        a vector) the MVT generally fails as an equality; the best one can say is a
-                        <strong>Mean Value Inequality</strong> involving norms, typically of the form
-                        \(\|F(b) - F(a)\| \leq \sup_{c \in [a,b]} \|DF(c)\|\,\|b-a\|\). This distinction is the
+                        The <em>exact equality</em> of the Higher-Dimensional MVT holds only for
+                        <strong>scalar-valued</strong> functions \(f : \mathbb{R}^n \to \mathbb{R}\); for
+                        vector-valued maps only the Mean Value Inequality above survives. This distinction is the
                         reason first-order convergence proofs for gradient descent operate on scalar loss functions
-                        directly rather than on vector-valued forward maps.
+                        directly rather than on vector-valued forward maps. The inequality form, by contrast, is the
+                        workhorse for controlling how far a smooth map can spread points apart, and it is exactly
+                        the estimate that converts a bound on a derivative into the contraction property underlying
+                        the inverse function theorem.
                     </p>
                 </div>
 
