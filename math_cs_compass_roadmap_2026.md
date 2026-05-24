@@ -1,7 +1,7 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan
 
 **Author:** Yusuke Yokota
-**Last Updated:** 5/20/2026
+**Last Updated:** 5/24/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -10,7 +10,7 @@
 
 MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
 
-**Total: 130 pages as of 5/20/2026.** (linalg 30 / calc 42 / prob 26 / disc 17 / ml 15; per `curriculum.json`, which is authoritative for the count.)
+**Total: 139 pages as of 5/24/2026.** (linalg 30 / calc 51 / prob 26 / disc 17 / ml 15; per `curriculum.json`, which is authoritative for the count.)
 
 ---
 
@@ -86,7 +86,7 @@ This obligation is **not stated explicitly in each page**. Readers will infer th
 
 `ml-13 (GNN) → manifold series (calc-XX, ~3 pages) → representation theory (linalg-XX, ~3–4 pages) → ml-XX (Equivariant NN) → ml-XX (GDL Overview)`
 
-The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` has been completed and remains a prerequisite capstone for the Peter-Weyl bridge later in the sequence. With `ml-13` and `calc-32` already complete, the active ordering from here is: manifold series → representation theory → `ml-XX` (Equivariant NN).
+The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` has been completed and remains a prerequisite capstone for the Peter-Weyl bridge later in the sequence. With `ml-13` and `calc-32` already complete, the active ordering from here is: manifold series → representation theory → `ml-XX` (Equivariant NN). As of 5/24/2026 the manifold series has advanced through Lee Ch.1–4 (calc-36~51 published) and is now in Ch.5 (Submanifolds); see Part 7.
 
 ---
 
@@ -323,7 +323,7 @@ This is a **4-track configuration**. Sustainability check is implicitly delegate
 ## Part 7 — Phase 3: Smooth Manifolds
 
 Series scope, callback map, notation policy, and Lee Contents reference are
-specified in **`manifold_series_design_handout_v7.md`** (2026-05-20).
+specified in **`manifold_series_design_handout_v11.md`**.
 Summary:
 
 - **Primary reference**: Lee, *Introduction to Smooth Manifolds*, 2nd ed.
@@ -331,10 +331,29 @@ Summary:
 - **Rigor calibration**: Lee single-reference, graduate-textbook standard
 - **Boundary**: Lee's "with or without boundary" framework throughout
 
-**Progress (2026-05-20)**: The **Ch.1 block is complete — 6 pages published**
-(calc-36 Topological Manifolds, calc-37 Topological Properties, calc-38 Smooth
-Manifolds, calc-39 Smooth Sphere/Projective Space/Tori, calc-40 Chart Lemma &
-Grassmannian, calc-41 Manifolds with Boundary). Ch.2 onward is not yet started.
+**Progress (2026-05-24)**: Lee **Ch.1–4 complete — calc-36~51 published.**
+- **Ch.1 block** (6 pages): calc-36 Topological Manifolds, calc-37 Topological
+  Properties, calc-38 Smooth Manifolds, calc-39 Smooth Sphere/Projective
+  Space/Tori, calc-40 Chart Lemma & Grassmannian, calc-41 Manifolds with Boundary.
+- **Ch.2** (Smooth Maps): calc-43 Smooth Functions and Smooth Maps, calc-44
+  Partitions of Unity.
+- **Ch.3** (Tangent Vectors): calc-45 Tangent Vectors, calc-46 The Tangent Bundle.
+- **Ch.4** (Submersions, Immersions, Embeddings): calc-48 Inverse & Implicit
+  Function Theorems, calc-49 Maps of Constant Rank, calc-50 Immersions,
+  Embeddings, and Submersions, calc-51 Smooth Covering Maps. (Supporting topology
+  page calc-47 Topological Connectedness & Compactness, from Lee Appendix A,
+  was inserted to carry the proper-map / closed-map machinery.)
+
+**Ch.5 (Submanifolds) — in progress (5/24/2026)**: full-chapter close-reading
+complete (Lee pp.98–122). Split **confirmed: 2 pages, calc-52 / calc-53**, on the
+Lee p.98 motivation-paragraph seam (cluster 1 "these basic concepts" = calc-52:
+embedded + level sets + immersed; cluster 2 "technical questions" = calc-53:
+restricting maps, uniqueness, extending functions, tangent space). **§Submanifolds
+with Boundary
+deliberately omitted** (regular domain is integration-theory prep, out of
+Ch.1–12-core scope; Lee himself routes the boundary-version theorems to Problems
+as analogues of the main results). Implementation pending GO. Full design state in
+`ch5_page_handout_v1.md`.
 
 A related page outside the Ch.1–12 core, **calc-42 (Homotopy and the
 Fundamental Group)**, has also been published; it derives from Lee's
@@ -342,10 +361,11 @@ Appendix A topology review and sits as an extension of calc-29 (Topological
 Spaces) rather than in the manifold-series spine, but connects via π₁
 countability (owned by calc-37) and the SU(2)/SO(3) callback to linalg-27~30.
 
-**Page count is not predicted for Ch.2 onward.** The earlier "12-page
+**Page count is not predicted for Ch.6 onward.** The earlier "12-page
 baseline, one per Lee chapter" estimate is retracted: the Ch.1 record (an
-initial 1-page estimate that grew to 6) shows pre-drafting counts are
-unreliable. Topic IDs and page counts for Ch.2+ are fixed at drafting time.
+initial 1-page estimate that grew to 6) and the Ch.2–4 record (which ran to
+9 pages including the calc-47 topology insertion) show pre-drafting counts are
+unreliable. Topic IDs and page counts for Ch.6+ are fixed at drafting time.
 (The still-earlier 3-page proposal — Ch.1, 3, 8–9 only — was already
 superseded, as it would have propagated omissions to Stokes / de Rham /
 Riemannian series downstream.)
@@ -378,7 +398,7 @@ Forward-link target reservations for **planned pages**. Completed pages are trac
 
 | Track | Est. Pages | Planned Filenames | Trigger / status |
 |--------|-----------|-------------------|--------|
-| Smooth Manifolds — Ch.2+ (calc-XX) | not predicted (see handout) | Filenames TBD at drafting; see `manifold_series_design_handout_v7.md` | Ch.1 block (calc-36~41) done; Ch.2 next |
+| Smooth Manifolds — Ch.5 (calc-52/53) + Ch.6+ | Ch.5 = 2 (confirmed); Ch.6+ not predicted | Ch.5: calc-52/53 (filenames TBD at drafting); Ch.6+ TBD; see `manifold_series_design_handout_v11.md`, `ch5_page_handout_v1.md` | Ch.1–4 done (calc-36~51); Ch.5 split confirmed, impl pending GO; Ch.6 next |
 | Riemannian Metrics (calc-XX) | ~2 | `riemannian_metrics.html`, TBD | After manifold series |
 | Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series |
 | Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
@@ -403,7 +423,7 @@ This map tracks primary usage for development planning. The site-wide reference 
 |------|----------------------------|------|
 | **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
 | **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
-| **Lee — *Introduction to Smooth Manifolds*** | calc-29, calc-36~41 (Ch.1 block, published), calc-42 (related) → Ch.2+ manifold series, future Riemannian series; see `manifold_series_design_handout_v7.md` | Primary for manifold track |
+| **Lee — *Introduction to Smooth Manifolds*** | calc-29, calc-36~51 (Ch.1–4, published), calc-42 (related) → calc-52/53 (Ch.5, confirmed split), Ch.6+ manifold series, future Riemannian series; see `manifold_series_design_handout_v11.md` | Primary for manifold track |
 | **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32, calc-33, calc-34, calc-35 | Primary for Fourier and classical PDE applications |
 | **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
 | **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
