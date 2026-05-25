@@ -2373,46 +2373,54 @@ function handleInteraction(clientX, clientY) {
     highlightedSection = null;
 
     let hit = false;
-    for (const tile of knowledgeData) {
-        const { x, y } = getPixelCoords(tile.q, tile.r);
-        
-        if (Math.hypot(x - clientX, y - clientY) < scale * 0.8) {
-            hit = true;
-            
-            if (tile.isReserved) {
-                activeTileId = tile.id;
-                updateInfoPanel(tile);
-                panToTile(tile);
-                break;
-            }
-            
-            if (activeTileId === tile.id) {
-                if (tile.url) {
-                    triggerExitAnimation(tile.url);
-                }
-            } else {
-                activeTileId = tile.id;
+    // Touch needs a more forgiving hit radius than a mouse cursor: a fingertip
+    // is wide and the hexagon's corners fall outside a tight 0.8*scale circle.
+    const hitRadius = scale * (isTouchInteraction ? 1.0 : 0.8);
+    // Pick the NEAREST tile within range (not merely the first in array order),
+    // so an enlarged touch radius can't snap to the wrong overlapping tile.
+    let tile = null;
+    let bestDist = Infinity;
+    for (const t of knowledgeData) {
+        const { x, y } = getPixelCoords(t.q, t.r);
+        const d = Math.hypot(x - clientX, y - clientY);
+        if (d < hitRadius && d < bestDist) {
+            bestDist = d;
+            tile = t;
+        }
+    }
 
-                sfx.tap(); //tap sound
+    if (tile) {
+        hit = true;
 
-                // tile effect
-                const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
-                activeRipples.push({
-                    q: tile.q,       
-                    r: tile.r,      
-                    radius: scale * 0.9,      
-                    maxRadius: scale * 4.5,   
-                    alpha: 0.8,               
-                    color: sectionColor,
-                    startTime: Date.now()
-                });//end effect
-                
-                const prereqCount = tile.prereqs?.length || 0;
-                const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
-                updateInfoPanel(tile);
-                panToTile(tile);
+        if (tile.isReserved) {
+            activeTileId = tile.id;
+            updateInfoPanel(tile);
+            panToTile(tile);
+        } else if (activeTileId === tile.id) {
+            if (tile.url) {
+                triggerExitAnimation(tile.url);
             }
-            break;
+        } else {
+            activeTileId = tile.id;
+
+            sfx.tap(); //tap sound
+
+            // tile effect
+            const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
+            activeRipples.push({
+                q: tile.q,       
+                r: tile.r,      
+                radius: scale * 0.9,      
+                maxRadius: scale * 4.5,   
+                alpha: 0.8,               
+                color: sectionColor,
+                startTime: Date.now()
+            });//end effect
+            
+            const prereqCount = tile.prereqs?.length || 0;
+            const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
+            updateInfoPanel(tile);
+            panToTile(tile);
         }
     }
 
@@ -2529,7 +2537,7 @@ canvas.addEventListener('touchmove', e => {
     if (e.touches.length === 1) {
         const x = e.touches[0].clientX;
         const y = e.touches[0].clientY;
-        if (Math.hypot(x - startX, y - startY) > 5) isDragging = true;
+        if (Math.hypot(x - startX, y - startY) > 15) isDragging = true;
         offsetX += x - lastX; offsetY += y - lastY;
         lastX = x; lastY = y;
         
