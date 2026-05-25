@@ -1885,11 +1885,40 @@ function drawPrerequisiteConnections(activeTile) {
 }
 
 /**
+ * Frame scheduling with tab-visibility awareness.
+ * When the tab is hidden we stop scheduling frames entirely (instead of
+ * relying on the browser's implicit rAF throttling), then resume on return.
+ */
+let rafId = null;
+let isPageVisible = true;
+
+function scheduleNextFrame() {
+    if (!isPageVisible) { rafId = null; return; }
+    rafId = requestAnimationFrame(render);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        isPageVisible = false;
+        if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+    } else {
+        if (isPageVisible) return; // already running
+        isPageVisible = true;
+        // Resume: nudge time-based animations so they don't jump after being
+        // paused (the long hidden gap would otherwise cause a visible skip).
+        const now = Date.now();
+        if (entryAnimationActive) entryAnimationStartTime = now;
+        if (exitAnimationActive) exitAnimationStartTime = now;
+        if (rafId === null) rafId = requestAnimationFrame(render);
+    }
+});
+
+/**
  * Main rendering loop
  */
 function render() {
     if (knowledgeData.length === 0) {
-        requestAnimationFrame(render);
+        scheduleNextFrame();
         return;
     }
 
@@ -2200,7 +2229,7 @@ function render() {
         ctx.fillText(text, x, hintY + bounceOffset);
     }
 
-    requestAnimationFrame(render);
+    scheduleNextFrame();
 }
 
 /**
