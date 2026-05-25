@@ -623,6 +623,11 @@
         @media (max-width: 768px) {
             #bgm-toggle { left: 10px; width: 40px; height: 40px; }
         }
+        /* Respect OS "reduce motion": stop the looping background-logo pulse.
+           Tessera's float/wave and the loading spinner are intentionally kept. */
+        @media (prefers-reduced-motion: reduce) {
+            body::after { animation: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -1609,7 +1614,7 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
 
     // Home tile: pulsing glow effect (but keep original color)
     if (isHome) {
-        const pulsePhase = (Math.sin(Date.now() / 800) + 1) / 2;
+        const pulsePhase = reduceMotion ? 0.5 : (Math.sin(Date.now() / 800) + 1) / 2;
         ctx.shadowColor = 'rgba(200, 200, 220, ' + (0.4 + pulsePhase * 0.4) + ')';
         ctx.shadowBlur = 15 + pulsePhase * 10;
         finalAlpha = 1;
@@ -1618,7 +1623,7 @@ function drawHexagon(x, y, size, color, alpha = 1, isGlow = false, isBlinking = 
     // Research tile: amber pulse + orbiting particles
     if (isResearch) {
         const t = Date.now();
-        const pulsePhase = (Math.sin(t / 1000) + 1) / 2;
+        const pulsePhase = reduceMotion ? 0.5 : (Math.sin(t / 1000) + 1) / 2;
         ctx.shadowColor = 'rgba(240, 165, 0, ' + (0.3 + pulsePhase * 0.5) + ')';
         ctx.shadowBlur = 12 + pulsePhase * 14;
         finalAlpha = 1;
@@ -2165,10 +2170,10 @@ function render() {
         ];
         ctx.save();
         particles.forEach(p => {
-            const angle = t * p.speed + p.offset;
+            const angle = reduceMotion ? p.offset : (t * p.speed + p.offset);
             const px = rx + orbitRadius * Math.cos(angle);
             const py = ry + orbitRadius * Math.sin(angle);
-            const trailAlpha = 0.5 + 0.3 * Math.sin(t * 0.003 + p.offset);
+            const trailAlpha = reduceMotion ? 0.6 : (0.5 + 0.3 * Math.sin(t * 0.003 + p.offset));
             ctx.beginPath();
             ctx.arc(px, py, p.size * (scale / 50), 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255, 201, 71, ' + trailAlpha + ')';
