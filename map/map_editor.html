@@ -591,6 +591,63 @@
             
 
             /**
+             * Custom JSON serializer for curriculum.json.
+             *   - Array of all-strings  -> grouped 5 per line (e.g. "keywords")
+             *   - Array of shallow all-primitive objects -> one object per line
+             *     (e.g. tile "sections": {id, name})
+             *   - Everything else -> standard 2-space pretty printing.
+             */
+            const formatCurriculum = (data) => {
+                const IND = '  ';
+                const KEYWORDS_PER_LINE = 5;
+                const isPrimitive = v => v === null || typeof v !== 'object';
+                const isShallowObject = v =>
+                    v && typeof v === 'object' && !Array.isArray(v) &&
+                    Object.values(v).every(isPrimitive);
+
+                const fmt = (value, depth) => {
+                    const pad = IND.repeat(depth);
+                    const padIn = IND.repeat(depth + 1);
+
+                    if (Array.isArray(value)) {
+                        if (value.length === 0) return '[]';
+                        if (value.every(v => typeof v === 'string')) {
+                            const lines = [];
+                            for (let i = 0; i < value.length; i += KEYWORDS_PER_LINE) {
+                                const chunk = value.slice(i, i + KEYWORDS_PER_LINE)
+                                    .map(s => JSON.stringify(s));
+                                lines.push(padIn + chunk.join(', '));
+                            }
+                            return '[\n' + lines.join(',\n') + '\n' + pad + ']';
+                        }
+                        if (value.every(isShallowObject)) {
+                            const lines = value.map(obj => {
+                                const inner = Object.entries(obj)
+                                    .map(([k, v]) => JSON.stringify(k) + ': ' + JSON.stringify(v))
+                                    .join(', ');
+                                return padIn + '{ ' + inner + ' }';
+                            });
+                            return '[\n' + lines.join(',\n') + '\n' + pad + ']';
+                        }
+                        const items = value.map(v => padIn + fmt(v, depth + 1));
+                        return '[\n' + items.join(',\n') + '\n' + pad + ']';
+                    }
+
+                    if (value && typeof value === 'object') {
+                        const keys = Object.keys(value);
+                        if (keys.length === 0) return '{}';
+                        const items = keys.map(k =>
+                            padIn + JSON.stringify(k) + ': ' + fmt(value[k], depth + 1));
+                        return '{\n' + items.join(',\n') + '\n' + pad + '}';
+                    }
+
+                    return JSON.stringify(value);
+                };
+
+                return fmt(data, 0);
+            };
+
+            /**
              * Function to export current tile layout to a JSON file
              */
             const exportToJson = () => {
@@ -626,7 +683,7 @@
                     }
                 });
 
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const blob = new Blob([formatCurriculum(exportData)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
