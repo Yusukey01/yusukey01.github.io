@@ -605,9 +605,17 @@
                     v && typeof v === 'object' && !Array.isArray(v) &&
                     Object.values(v).every(isPrimitive);
 
-                const fmt = (value, depth) => {
+                const fmt = (value, depth, key) => {
                     const pad = IND.repeat(depth);
                     const padIn = IND.repeat(depth + 1);
+
+                    // mapCoords: always inline as { "q": .., "r": .. }
+                    if (key === 'mapCoords' && isShallowObject(value)) {
+                        const inner = Object.entries(value)
+                            .map(([k, v]) => JSON.stringify(k) + ': ' + JSON.stringify(v))
+                            .join(', ');
+                        return '{ ' + inner + ' }';
+                    }
 
                     if (Array.isArray(value)) {
                         if (value.length === 0) return '[]';
@@ -637,7 +645,7 @@
                         const keys = Object.keys(value);
                         if (keys.length === 0) return '{}';
                         const items = keys.map(k =>
-                            padIn + JSON.stringify(k) + ': ' + fmt(value[k], depth + 1));
+                            padIn + JSON.stringify(k) + ': ' + fmt(value[k], depth + 1, k));
                         return '{\n' + items.join(',\n') + '\n' + pad + '}';
                     }
 
