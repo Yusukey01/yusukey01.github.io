@@ -2157,28 +2157,44 @@ function render() {
         }
     });
 
-    // Research tile: orbiting particles
+    // Research tile: 3D orbiting particles (atom-model style)
     const researchTile = knowledgeData.find(t => t.isResearch);
     if (researchTile && !exitAnimationActive) {
         const { x: rx, y: ry } = getPixelCoords(researchTile.q, researchTile.r);
         const t = Date.now();
         const orbitRadius = scale * 1.25;
-        const particles = [
-            { speed: 0.0008, offset: 0,           size: 2.5 },
-            { speed: -0.0012, offset: Math.PI * 0.7, size: 2.0 },
-            { speed: 0.0006, offset: Math.PI * 1.4, size: 1.5 }
+        // Each electron lives on its own inclined orbital plane.
+        // tilt = how far the plane leans toward the viewer; rot = how the
+        // plane is spun around the screen's vertical axis.
+        const electrons = [
+            { speed: 0.0011, phase: 0,             tilt: 1.15, rot: 0.0,            size: 2.6 },
+            { speed: -0.0014, phase: Math.PI * 0.7, tilt: 1.15, rot: Math.PI / 3,   size: 2.2 },
+            { speed: 0.0009, phase: Math.PI * 1.4, tilt: 1.15, rot: 2 * Math.PI / 3, size: 1.9 }
         ];
         ctx.save();
-        particles.forEach(p => {
-            const angle = reduceMotion ? p.offset : (t * p.speed + p.offset);
-            const px = rx + orbitRadius * Math.cos(angle);
-            const py = ry + orbitRadius * Math.sin(angle);
-            const trailAlpha = reduceMotion ? 0.6 : (0.5 + 0.3 * Math.sin(t * 0.003 + p.offset));
+        electrons.forEach(e => {
+            const a = reduceMotion ? e.phase : (t * e.speed + e.phase);
+            // Point on a flat circle in the orbital plane's local frame.
+            const lx = Math.cos(a) * orbitRadius;
+            const ly = Math.sin(a) * orbitRadius;
+            // Incline the plane: ly tips into the screen, producing a z-depth.
+            const tlx = lx;
+            const tly = ly * Math.cos(e.tilt);
+            const tz  = ly * Math.sin(e.tilt);
+            // Spin the inclined plane around the vertical (screen-y) axis.
+            const px = rx + (tlx * Math.cos(e.rot) - tz * Math.sin(e.rot));
+            const py = ry + tly;
+            const z  = tlx * Math.sin(e.rot) + tz * Math.cos(e.rot); // +z toward viewer
+            // Depth cues: nearer = larger + brighter, farther = smaller + dimmer.
+            const depth = (z / orbitRadius);          // -1 (far) .. +1 (near)
+            const depthScale = 0.6 + 0.4 * (depth + 1) / 2;   // 0.6 .. 1.0
+            const baseAlpha = reduceMotion ? 0.7 : (0.45 + 0.4 * (depth + 1) / 2);
+            const r = e.size * (scale / 50) * depthScale;
             ctx.beginPath();
-            ctx.arc(px, py, p.size * (scale / 50), 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 201, 71, ' + trailAlpha + ')';
-            ctx.shadowColor = 'rgba(240, 165, 0, 0.6)';
-            ctx.shadowBlur = 8;
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 201, 71, ' + baseAlpha.toFixed(3) + ')';
+            ctx.shadowColor = 'rgba(240, 165, 0, ' + (0.4 + 0.4 * (depth + 1) / 2).toFixed(3) + ')';
+            ctx.shadowBlur = 6 + 6 * (depth + 1) / 2;
             ctx.fill();
         });
         ctx.restore();
