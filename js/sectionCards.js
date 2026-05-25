@@ -20,6 +20,16 @@ const SectionCards = (function() {
     let curriculumData = null;
 
     /**
+     * Derive the display part-number from a topic id (e.g. "linalg-7" -> 7).
+     * The id suffix is the single source of truth; the old `part` field is
+     * redundant and being phased out.
+     */
+    function partNumberFromId(id) {
+        const m = /(\d+)$/.exec(id || '');
+        return m ? m[1] : '';
+    }
+
+    /**
      * Fetch and cache the curriculum data
      */
     async function loadData() {
@@ -59,7 +69,7 @@ const SectionCards = (function() {
         const titleLink = document.createElement('a');
 
         titleLink.href = part.url;
-        titleLink.textContent = `Part ${part.part}: ${part.title}`;
+        titleLink.textContent = `Part ${partNumberFromId(part.id)}: ${part.title}`;
         titleH3.appendChild(titleLink);
         card.appendChild(titleH3);
 
