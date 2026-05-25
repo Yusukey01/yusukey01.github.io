@@ -1000,6 +1000,13 @@ const MAX_CONCURRENT_BLINKS = 4;
 const idleBlinkState = {};
 let lastBlinkTime = 0;
 
+// Respect the OS "reduce motion" preference: suppress map/tile motion
+// (idle blinking, global pulsing, entry/exit animation, hint bounce).
+// Tessera's character animations are intentionally left running.
+const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+let reduceMotion = reduceMotionMQ.matches;
+reduceMotionMQ.addEventListener('change', e => { reduceMotion = e.matches; });
+
 const panSpeed = 0.12;
 
 // Search state
@@ -1483,7 +1490,7 @@ const Easing = {
  * Calculate entry animation progress for a tile
  */
 function getEntryAnimationProgress(tileIndex) {
-    if (!entryAnimationActive) return 1;
+    if (!entryAnimationActive || reduceMotion) return 1;
     
     const elapsed = Date.now() - entryAnimationStartTime;
     const tileStartTime = tileIndex * ENTRY_STAGGER_DELAY;
@@ -1942,7 +1949,7 @@ function render() {
 
     const time = Date.now();
     
-    const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
+    const globalAlphaFactor = reduceMotion ? 1.0 : (0.97 + 0.03 * Math.sin(time / 2500));
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     // Empty-slot backdrop (faint dashed hexes) — behind all real tiles.
@@ -2001,7 +2008,7 @@ function render() {
     const isSystemIdle = !activeTileId && !blinkTileId && !entryAnimationActive && !highlightedSection;
 
     // Idle blink scheduling
-    if (isSystemIdle && knowledgeData.length > 0) {
+    if (isSystemIdle && !reduceMotion && knowledgeData.length > 0) {
         const currentBlinkCount = Object.keys(idleBlinkState).length;
         const timeSinceLastBlink = time - lastBlinkTime;
         
@@ -2221,7 +2228,7 @@ function render() {
         ctx.restore();
         
         // Text with subtle bounce
-        const bounceOffset = Math.sin(time / 200) * 1.5;
+        const bounceOffset = reduceMotion ? 0 : Math.sin(time / 200) * 1.5;
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
