@@ -967,6 +967,7 @@ let initialScale = 0;
 
 // Data (loaded from curriculum.json)
 let knowledgeData = [];
+let blankSlots = [];
 let SECTION_COLORS = {};
 
 // Entry Animation State
@@ -1164,7 +1165,11 @@ async function loadCurriculumData() {
         });
         
         console.log(`Loaded ${knowledgeData.length} tiles from curriculum data`);
-        
+
+        // Compute the one-ring of empty hex slots surrounding all tiles, for an
+        // editor-style "unfilled map" backdrop. Tiles never move, so compute once.
+        blankSlots = computeBlankSlots();
+
         document.getElementById('loading').style.display = 'none';
         
         // Start entry animation
@@ -1408,6 +1413,49 @@ function getPixelCoords(q, r) {
     const x = scale * Math.sqrt(3) * (q + r/2);
     const y = scale * (3/2 * r); 
     return { x: x + offsetX, y: y + offsetY };
+}
+
+/**
+ * Compute the one-ring of empty hex cells bordering any occupied tile.
+ * Mirrors the map editor's emptySlots logic. Returns [{q, r}].
+ */
+function computeBlankSlots() {
+    const occupied = new Set(knowledgeData.map(t => `${t.q},${t.r}`));
+    const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
+    const seen = new Set();
+    const slots = [];
+    knowledgeData.forEach(tile => {
+        neighbors.forEach(([dq, dr]) => {
+            const nq = tile.q + dq, nr = tile.r + dr;
+            const key = `${nq},${nr}`;
+            if (!occupied.has(key) && !seen.has(key)) {
+                seen.add(key);
+                slots.push({ q: nq, r: nr });
+            }
+        });
+    });
+    return slots;
+}
+
+/**
+ * Draw a faint dashed hexagon outline for an empty map slot.
+ * Pointy-top, matching drawHexagon's orientation.
+ */
+function drawBlankHex(x, y, size) {
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 6) + (i * Math.PI / 3);
+        const px = x + size * Math.cos(angle);
+        const py = y + size * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.stroke();
+    ctx.restore();
 }
 
 /**
@@ -1868,6 +1916,12 @@ function render() {
     
     const globalAlphaFactor = 0.97 + 0.03 * Math.sin(time / 2500);
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    // Empty-slot backdrop (faint dashed hexes) — behind all real tiles.
+    blankSlots.forEach(slot => {
+        const { x, y } = getPixelCoords(slot.q, slot.r);
+        drawBlankHex(x, y, scale * 0.95);
+    });
 
     //For tile effect
     for (let i = activeRipples.length - 1; i >= 0; i--) {
