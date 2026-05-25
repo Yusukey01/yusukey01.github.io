@@ -271,6 +271,8 @@
 
             const [addReservedTarget, setAddReservedTarget] = useState(null);
             const [selectionBox, setSelectionBox] = useState(null);
+            const [showBridges, setShowBridges] = useState(false);
+            const [showIslandHulls, setShowIslandHulls] = useState(false);
 
             const hexSize = 28;
 
@@ -409,202 +411,182 @@
             }, [analysisMode, tiles]);
             
 
-            // --- AUTO-LAYOUT CORE LOGIC ---
-            const performAutoLayout = () => {
-                setLoading(true);
-                
-                // 1. Separate HOME, RESEARCH, and other tiles
-                const homeTile = tiles.find(t => t.section === 'HOME');
-                const researchTile = tiles.find(t => t.section === 'RESEARCH');
-                const otherTiles = tiles.filter(t => t.section !== 'HOME' && t.section !== 'RESEARCH');
-                
-                // 2. Topological Sort (Calculate Depth)
-                const depthMap = new Map();
-                if (homeTile) depthMap.set(homeTile.id, 0);
-                
-                let remaining = [...otherTiles];
-                let currentDepth = 1;
-                let changed = true;
-                
-                while (remaining.length > 0 && changed) {
-                    changed = false;
-                    const nextBatch = [];
-                    const stillRemaining = [];
-                    
-                    for (const tile of remaining) {
-                        const prereqs = tile.prereqs || [];
-                        // Check if all prereqs have a calculated depth
-                        const allPrereqsResolved = prereqs.every(p => depthMap.has(p));
-                        // Reserved tiles have no prereqs, treat them as leaf nodes of their section
-                        if (tile.isReserved || allPrereqsResolved) {
-                            nextBatch.push(tile);
-                        } else {
-                            stillRemaining.push(tile);
-                        }
-                    }
-                    
-                    for (const tile of nextBatch) {
-                        // Depth is max depth of prereqs + 1. If no prereqs, base it on section or default
-                        let maxPrereqDepth = 0;
-                        if (tile.prereqs && tile.prereqs.length > 0) {
-                            maxPrereqDepth = Math.max(...tile.prereqs.map(p => depthMap.get(p) || 0));
-                        } else if (tile.isReserved) {
-                            // Push reserved tiles slightly outward
-                            maxPrereqDepth = currentDepth + 1; 
-                        }
-                        depthMap.set(tile.id, Math.max(currentDepth, maxPrereqDepth + 1));
-                    }
-                    
-                    if (nextBatch.length > 0) {
-                        changed = true;
-                        currentDepth++;
-                        remaining = stillRemaining;
+            // --- ISLAND COMPACTION CORE LOGIC ---
+            // Philosophy: islands (topicGroup clusters) are the layout unit. We do NOT
+            // globally reshuffle the map (that destroys hand-tuned territory and is
+            // visually unstable). Instead each island is compacted IN PLACE into a tight
+            // hub-centered blob, using only cells it already occupies or empty cells —
+            // it can never overwrite another island. Island PLACEMENT (where a blob sits)
+            // stays a manual, aesthetic decision via drag.
+
+            // Compact a single island's member tiles into a tight blob near their current
+            // centroid. `forbidden` = set of "q,r" cells owned by OTHER tiles (off-limits).
+            const compactIslandTiles = (members, forbidden) => {
+                if (members.length <= 1) return new Map(members.map(m => [m.id, { q: m.q, r: m.r }]));
+
+                const memById = new Map(members.map(m => [m.id, m]));
+                const inIsland = id => memById.has(id);
+                const free = (q, r) => !forbidden.has(`${q},${r}`);
+
+                // Current centroid (rounded to a hex via cube rounding through pixelToHex-free approx)
+                const cq = Math.round(members.reduce((s, m) => s + m.q, 0) / members.length);
+                const cr = Math.round(members.reduce((s, m) => s + m.r, 0) / members.length);
+
+                // Hub = most-referenced tile within the island (highest in-island in-degree),
+                // tie-broken by fewest own in-island prereqs (closest to a root).
+                const indeg = {};
+                members.forEach(m => (m.prereqs || []).forEach(p => { if (inIsland(p)) indeg[p] = (indeg[p] || 0) + 1; }));
+                const ownPre = m => (m.prereqs || []).filter(inIsland).length;
+                const hub = members.reduce((best, m) => {
+                    const a = [indeg[m.id] || 0, -ownPre(m)];
+                    const b = [indeg[best.id] || 0, -ownPre(best)];
+                    return (a[0] > b[0] || (a[0] === b[0] && a[1] > b[1])) ? m : best;
+                }, members[0]);
+
+                // BFS order over the island's undirected prereq graph, starting from hub.
+                const adj = {};
+                members.forEach(m => { adj[m.id] = adj[m.id] || new Set(); });
+                members.forEach(m => (m.prereqs || []).forEach(p => {
+                    if (inIsland(p)) { adj[m.id].add(p); adj[p].add(m.id); }
+                }));
+                const order = [hub.id];
+                const seen = new Set([hub.id]);
+                const queue = [hub.id];
+                while (queue.length) {
+                    const c = queue.shift();
+                    [...adj[c]].sort().forEach(nb => { if (!seen.has(nb)) { seen.add(nb); queue.push(nb); order.push(nb); } });
+                }
+                members.forEach(m => { if (!seen.has(m.id)) order.push(m.id); });
+
+                // Place hub at centroid if free, else nearest free cell.
+                const pos = new Map();
+                const occ = new Set();
+                let hubCell = null;
+                if (free(cq, cr)) hubCell = { q: cq, r: cr };
+                else {
+                    for (let rad = 1; rad <= 10 && !hubCell; rad++) {
+                        const ring = [];
+                        for (let q = cq - rad; q <= cq + rad; q++)
+                            for (let r = cr - rad; r <= cr + rad; r++)
+                                if (hexDistance(cq, cr, q, r) === rad && free(q, r)) ring.push({ q, r });
+                        if (ring.length) hubCell = ring.reduce((a, b) =>
+                            hexDistance(cq, cr, a.q, a.r) <= hexDistance(cq, cr, b.q, b.r) ? a : b);
                     }
                 }
-                
-                // Assign arbitrary depth to orphans/cycles just to place them
-                remaining.forEach(t => depthMap.set(t.id, currentDepth + 1));
-                
-                // Sort by depth, then by section, then by TopicGroup to cluster them
-                const sortedTiles = [...otherTiles].sort((a, b) => {
-                    const depthDiff = (depthMap.get(a.id) || 0) - (depthMap.get(b.id) || 0);
-                    if (depthDiff !== 0) return depthDiff;
-                    if (a.section !== b.section) return a.section.localeCompare(b.section);
-                    const groupA = a.topicGroup || 'zz';
-                    const groupB = b.topicGroup || 'zz';
-                    return groupA.localeCompare(groupB);
-                });
+                if (!hubCell) hubCell = { q: cq, r: cr }; // last resort
+                pos.set(hub.id, hubCell);
+                occ.add(`${hubCell.q},${hubCell.r}`);
 
-                // 3. Placement Engine
-                const placedTiles = [];
-                const occupiedCoords = new Set();
-                
-                if (homeTile) {
-                    placedTiles.push({ ...homeTile, q: 0, r: 0 });
-                    occupiedCoords.add('0,0');
-                }
-
-                if (researchTile) placedTiles.push(researchTile);
-
-               // Helper to score a candidate hex for a specific tile
-                const scoreCandidate = (q, r, tile) => {
-                    let score = 0;
-                    
-                    // A. Strict Sector Alignment (Absolute Territory)
-                    const targetAngle = SECTION_TARGET_ANGLES[tile.section];
-                    if (targetAngle !== undefined && (q !== 0 || r !== 0)) {
-                        const angle = getHexAngle(q, r);
-                        const angDiff = angleDifference(angle, targetAngle);
-                        // Massive penalty for deviating from the assigned section slice
-                        score -= angDiff * 150; 
-                    }
-
-                    // B. Distance from center based on Depth
-                    const distFromCenter = hexDistance(0, 0, q, r);
-                    const targetDepth = depthMap.get(tile.id) || 1;
-                    score -= Math.abs(distFromCenter - targetDepth) * 5;
-
-                    // C. Prereq Proximity (Smart Gravity)
-                    if (tile.prereqs && tile.prereqs.length > 0) {
-                        tile.prereqs.forEach(pId => {
-                            const pTile = placedTiles.find(t => t.id === pId);
-                            if (pTile) {
-                                const dist = hexDistance(q, r, pTile.q, pTile.r);
-                                
-                                if (pTile.section === tile.section) {
-                                    // Strong attraction to parents within the SAME section
-                                    if (dist === 1) score += 80;
-                                    else score -= dist * 10;
-                                } else {
-                                    // Weak attraction to parents in DIFFERENT sections
-                                    // We want them to flow generally from the parent, but NOT invade their territory
-                                    score -= dist * 2;
-                                }
+                // Greedily place remaining members: hug the blob, fill concavities,
+                // sit adjacent to in-island prereqs.
+                for (const id of order) {
+                    if (id === hub.id) continue;
+                    const tile = memById.get(id);
+                    const cands = new Set();
+                    occ.forEach(key => {
+                        const [q, r] = key.split(',').map(Number);
+                        getHexNeighbors(q, r).forEach(n => {
+                            const nk = `${n.q},${n.r}`;
+                            if (!occ.has(nk) && free(n.q, n.r)) cands.add(nk);
+                        });
+                    });
+                    let best = null, bestScore = -Infinity;
+                    cands.forEach(nk => {
+                        const [q, r] = nk.split(',').map(Number);
+                        let sc = -hexDistance(hubCell.q, hubCell.r, q, r) * 4;
+                        // reward cells that touch many already-placed island cells (compactness)
+                        getHexNeighbors(q, r).forEach(n => { if (occ.has(`${n.q},${n.r}`)) sc += 3; });
+                        (tile.prereqs || []).forEach(p => {
+                            if (pos.has(p)) {
+                                const pc = pos.get(p);
+                                const dd = hexDistance(q, r, pc.q, pc.r);
+                                sc += dd === 1 ? 25 : -dd * 4;
                             }
                         });
-                    }
-
-                    // D. Topic Group Cohesion
-                    if (tile.topicGroup && !tile.isReserved) {
-                        const sameGroupTiles = placedTiles.filter(t => t.topicGroup === tile.topicGroup);
-                        sameGroupTiles.forEach(pTile => {
-                            const dist = hexDistance(q, r, pTile.q, pTile.r);
-                            if (dist === 1) score += 40;
-                            else if (dist === 2) score += 10;
-                        });
-                    }
-                    
-                    // E. Hard Separation between different sections (Create buffer zones)
-                    let touchingOtherSection = false;
-                    const neighbors = getHexNeighbors(q, r);
-                    neighbors.forEach(n => {
-                        const nKey = `${n.q},${n.r}`;
-                        const nTile = placedTiles.find(t => `${t.q},${t.r}` === nKey);
-                        if (nTile && nTile.section !== 'HOME' && nTile.section !== tile.section) {
-                            touchingOtherSection = true;
-                            // Extreme penalty for touching a different section's tile
-                            score -= 200; 
-                        }
+                        if (sc > bestScore) { bestScore = sc; best = { q, r }; }
                     });
-                    
-                    // If it touches another section AND is far from HOME, punish it even more
-                    // to force clear borders in the outer edges.
-                    if (touchingOtherSection && distFromCenter > 2) {
-                         score -= 300;
+                    if (!best) { // no free adjacent cell anywhere — leave in place
+                        best = { q: tile.q, r: tile.r };
                     }
-
-                    return score;
-                };
-
-                // Place each tile
-                for (const tile of sortedTiles) {
-                    let bestHex = null;
-                    let bestScore = -Infinity;
-                    
-                    // Generate candidates: adjacent to any already placed tile
-                    const candidates = new Set();
-                    if (placedTiles.length === 0) {
-                        candidates.add({q:0, r:0});
-                    } else {
-                        placedTiles.forEach(pt => {
-                            getHexNeighbors(pt.q, pt.r).forEach(n => {
-                                if (!occupiedCoords.has(`${n.q},${n.r}`)) {
-                                    candidates.add(`${n.q},${n.r}`);
-                                }
-                            });
-                        });
-                        // Also add some outer ring candidates just in case
-                        placedTiles.forEach(pt => {
-                            getHexNeighbors(pt.q, pt.r).forEach(n1 => {
-                                getHexNeighbors(n1.q, n1.r).forEach(n2 => {
-                                    if (!occupiedCoords.has(`${n2.q},${n2.r}`)) {
-                                        candidates.add(`${n2.q},${n2.r}`);
-                                    }
-                                });
-                            });
-                        });
-                    }
-
-                    // Evaluate candidates
-                    candidates.forEach(candStr => {
-                        const [q, r] = candStr.split(',').map(Number);
-                        const score = scoreCandidate(q, r, tile);
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestHex = {q, r};
-                        }
-                    });
-
-                    // Place the tile
-                    if (bestHex) {
-                        placedTiles.push({ ...tile, q: bestHex.q, r: bestHex.r });
-                        occupiedCoords.add(`${bestHex.q},${bestHex.r}`);
-                    }
+                    pos.set(id, best);
+                    occ.add(`${best.q},${best.r}`);
                 }
+                return pos;
+            };
+
+            // Build the list of islands (topicGroup clusters) from the current tiles.
+            // Reserved tiles and HOME/RESEARCH are excluded; ungrouped real tiles each
+            // form their own singleton island so they are never moved by accident.
+            const buildIslands = (tileList) => {
+                const groups = new Map(); // key -> [tiles]
+                tileList.forEach(t => {
+                    if (t.section === 'HOME' || t.section === 'RESEARCH' || t.isReserved) return;
+                    const key = t.topicGroup ? `${t.section}::${t.topicGroup}` : `__solo::${t.id}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push(t);
+                });
+                return groups;
+            };
+
+            // Compact ALL islands in place (each sees others' current cells as forbidden).
+            // Larger islands first so they claim their tight blob before small ones fill gaps.
+            const performAutoLayout = () => {
+                setLoading(true);
+                const groups = buildIslands(tiles);
+                const orderedKeys = [...groups.keys()].sort((a, b) => groups.get(b).length - groups.get(a).length);
+
+                // working coordinate map id -> {q,r}, seeded from current positions
+                const coordOf = new Map(tiles.map(t => [t.id, { q: t.q, r: t.r }]));
+                const cellOwner = new Map(); // "q,r" -> id (live occupancy across all tiles)
+                tiles.forEach(t => cellOwner.set(`${t.q},${t.r}`, t.id));
+
+                orderedKeys.forEach(key => {
+                    const members = groups.get(key).map(m => ({ ...m, q: coordOf.get(m.id).q, r: coordOf.get(m.id).r }));
+                    const memberIds = new Set(members.map(m => m.id));
+                    // forbidden = every occupied cell NOT owned by this island
+                    const forbidden = new Set();
+                    cellOwner.forEach((id, cell) => { if (!memberIds.has(id)) forbidden.add(cell); });
+                    const newPos = compactIslandTiles(members, forbidden);
+                    // free this island's old cells, then commit new ones
+                    members.forEach(m => cellOwner.delete(`${coordOf.get(m.id).q},${coordOf.get(m.id).r}`));
+                    newPos.forEach((c, id) => { coordOf.set(id, c); cellOwner.set(`${c.q},${c.r}`, id); });
+                });
 
                 saveHistory(tiles);
-                setTiles(placedTiles);
-                setTimeout(() => setLoading(false), 300); // slight delay to show UI update
+                setTiles(tiles.map(t => {
+                    const c = coordOf.get(t.id);
+                    return c ? { ...t, q: c.q, r: c.r } : t;
+                }));
+                setTimeout(() => setLoading(false), 300);
+            };
+
+            // Compact only ONE island (the one containing the given tile), in place.
+            const compactSingleIsland = (anchorTile) => {
+                if (!anchorTile || anchorTile.isReserved || anchorTile.section === 'HOME' || anchorTile.section === 'RESEARCH') return;
+                const key = anchorTile.topicGroup ? `${anchorTile.section}::${anchorTile.topicGroup}` : null;
+                if (!key) return; // ungrouped: nothing to compact
+                const members = tiles.filter(t => t.topicGroup === anchorTile.topicGroup && t.section === anchorTile.section && !t.isReserved);
+                if (members.length <= 1) return;
+                const memberIds = new Set(members.map(m => m.id));
+                const forbidden = new Set();
+                tiles.forEach(t => { if (!memberIds.has(t.id)) forbidden.add(`${t.q},${t.r}`); });
+                const newPos = compactIslandTiles(members, forbidden);
+                saveHistory(tiles);
+                setTiles(tiles.map(t => {
+                    const c = newPos.get(t.id);
+                    return c ? { ...t, q: c.q, r: c.r } : t;
+                }));
+            };
+
+            // Select all tiles in the same island as the given tile.
+            const selectIsland = (anchorTile) => {
+                if (!anchorTile || !anchorTile.topicGroup) {
+                    if (anchorTile) { setSelectedIds([anchorTile.id]); setSelectedTile(anchorTile); }
+                    return;
+                }
+                const members = tiles.filter(t => t.topicGroup === anchorTile.topicGroup && t.section === anchorTile.section && !t.isReserved);
+                setSelectedIds(members.map(m => m.id));
+                setSelectedTile(null);
             };
             
 
@@ -734,6 +716,25 @@
                 y: hexSize * (3 / 2) * r
             });
 
+            // Cross-section prereq edges ("bridges"). Each entry has pixel endpoints and
+            // a weight so we can render thicker lines for stronger island-to-island links.
+            const bridges = useMemo(() => {
+                if (!showBridges) return [];
+                const byId = new Map(tiles.filter(t => !t.isReserved).map(t => [t.id, t]));
+                const out = [];
+                byId.forEach(t => {
+                    (t.prereqs || []).forEach(pid => {
+                        const p = byId.get(pid);
+                        if (p && p.section !== t.section) {
+                            const a = hexToPixel(p.q, p.r);
+                            const b = hexToPixel(t.q, t.r);
+                            out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, color: SECTION_COLORS[p.section] || '#888' });
+                        }
+                    });
+                });
+                return out;
+            }, [showBridges, tiles]);
+
             const pixelToHex = (x, y) => {
                 const q = (Math.sqrt(3)/3 * x - 1/3 * y) / hexSize;
                 const r = (2/3 * y) / hexSize;
@@ -852,6 +853,7 @@
                 return (
                     <g key={tile.id} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); if (!isEmpty) selectIsland(tile); }}
                     onMouseDown={(e) => {
                             e.stopPropagation();
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
@@ -910,6 +912,10 @@
                         <label>
                             <input type="checkbox" checked={showReserved} onChange={(e) => setShowReserved(e.target.checked)} />
                             Reserved
+                        </label>
+                        <label>
+                            <input type="checkbox" checked={showBridges} onChange={(e) => setShowBridges(e.target.checked)} />
+                            Cross-section bridges
                         </label>
                     </div>
 
@@ -1057,6 +1063,10 @@
                                 }}
                             >
                                 <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
+                                {showBridges && bridges.map((b, i) => (
+                                    <line key={`bridge-${i}`} x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
+                                        stroke={b.color} strokeWidth={1.5} strokeOpacity={0.55} strokeLinecap="round" />
+                                ))}
                                 {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
                                 {activeTiles.map(tile => renderTile(tile, false))}
                                 {/* Render the Selection Box */}
@@ -1145,6 +1155,20 @@
                                                     }
                                                 }}
                                             />
+                                        </div>
+                                    )}
+                                    {!selectedTile.isReserved && selectedTile.section !== 'EMPTY' && selectedTile.topicGroup && (
+                                        <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                                            <button
+                                                style={{ ...buttonBaseStyle, backgroundColor: '#0e7490', textAlign: 'center', fontSize: '0.7rem', flex: 1 }}
+                                                onClick={() => selectIsland(selectedTile)}>
+                                                ◎ Select island
+                                            </button>
+                                            <button
+                                                style={{ ...buttonBaseStyle, backgroundColor: '#7c3aed', textAlign: 'center', fontSize: '0.7rem', flex: 1 }}
+                                                onClick={() => compactSingleIsland(selectedTile)}>
+                                                ✦ Compact island
+                                            </button>
                                         </div>
                                     )}
                                     {!selectedTile.isReserved && selectedTile.section !== 'EMPTY' && (
@@ -1285,20 +1309,24 @@
                             </div>
                             
                             <div className="info-box">
-                                <h3>Auto Layout</h3>
+                                <h3>Island Layout</h3>
                                 <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
-                                    Automatically arrange tiles based on prerequisites, sections, and topic groups.
+                                    Compacts every topic-group island into a tight hub-centered blob, in place.
+                                    Islands never move into each other's cells — placement stays manual (drag).
                                 </p>
                                 <button 
                                     style={{ width: '100%', padding: '8px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                                     onClick={() => {
-                                        if(window.confirm("This will completely rearrange all tiles on the map. You can press Ctrl+Z to undo. Proceed?")) {
+                                        if(window.confirm("This compacts all islands in place. Island positions are preserved; only tiles within each island are rearranged. Ctrl+Z to undo. Proceed?")) {
                                             performAutoLayout();
                                         }
                                     }}
                                 >
-                                    ✨ Run Auto Layout
+                                    ✨ Compact All Islands
                                 </button>
+                                <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '8px' }}>
+                                    Tip: double-click a tile to select its whole island, then drag to reposition.
+                                </p>
                             </div>
 
                             <div className="info-box" style={{ marginTop: 'auto' }}>
