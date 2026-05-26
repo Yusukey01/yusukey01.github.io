@@ -814,9 +814,19 @@ class CrossfadeBGMPlayer {
         else this.play();
     }
 
-    // Tab hidden: stop sound but remember the user still wants it.
+    // Tab hidden: stop sound IMMEDIATELY (no 4s fade — that's for song
+    // transitions, not for leaving the tab). Keep the user's intent.
     suspendForVisibility() {
-        if (this.isPlaying) this.pause();
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        clearInterval(this.checkInterval);
+        // Hard stop both players at once, no fade.
+        [this.player1, this.player2].forEach(p => {
+            p.pause();
+            p.volume = 0;
+        });
+        document.getElementById('bgm-icon-on').style.display = 'none';
+        document.getElementById('bgm-icon-off').style.display = 'block';
     }
 
     // Tab visible again: resume only if the user had it on.
