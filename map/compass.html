@@ -968,34 +968,6 @@ const sfx = {
             osc.start(t);
             osc.stop(t + 1.5);
         });
-    },
-
-    // Open sound: a heavier, fuller version of the tap — same timbre, pitched
-    // down with extra body for a sense of "confirm / entering".
-    open: () => {
-        if (!bgmPlayer.userWantsBGM) return; // master audio toggle (off by default)
-        if (!audioCtx || audioCtx.state === 'suspended') return;
-        const t = audioCtx.currentTime;
-
-        const masterGain = audioCtx.createGain();
-        masterGain.gain.setValueAtTime(0, t);
-        masterGain.gain.linearRampToValueAtTime(0.14, t + 0.04);
-        // Page navigation fires at ~400ms, so the sound must land its decay
-        // before then — otherwise it gets cut off mid-tail by the transition.
-        masterGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
-        masterGain.connect(audioCtx.destination);
-
-        // Lower than tap (tap is ~E6); a perfect-fifth stack adds confirm weight.
-        const root = 659.25;   // E5, an octave below the tap
-        const fifth = 987.77;  // B5
-        [root, root + 3, fifth].forEach(freq => {
-            const osc = audioCtx.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            osc.connect(masterGain);
-            osc.start(t);
-            osc.stop(t + 0.45);
-        });
     }
 };
 
@@ -1587,8 +1559,6 @@ function triggerExitAnimation(url) {
     exitAnimationActive = true;
     exitAnimationStartTime = Date.now();
     exitTargetUrl = url;
-
-    sfx.open(); // rising sweep synced to the sucking-in animation
     
     // Update Tessera for departure
     setTesseraExpression('wave');
@@ -2450,7 +2420,10 @@ function handleInteraction(clientX, clientY) {
         if (tile.isReserved) {
             activeTileId = tile.id;
             updateInfoPanel(tile);
-            panToTile(tile);
+            // Only recenter on touch: on a mouse the cursor stays put, so
+            // panning would slide the tile out from under the pointer and
+            // break the click-again-to-open gesture.
+            if (isTouchInteraction) panToTile(tile);
         } else if (activeTileId === tile.id) {
             if (tile.url) {
                 triggerExitAnimation(tile.url);
@@ -2475,7 +2448,7 @@ function handleInteraction(clientX, clientY) {
             const prereqCount = tile.prereqs?.length || 0;
             const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
             updateInfoPanel(tile);
-            panToTile(tile);
+            if (isTouchInteraction) panToTile(tile);
         }
     }
 
