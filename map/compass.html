@@ -801,8 +801,13 @@ class CrossfadeBGMPlayer {
         if (!this.isPlaying) return;
         this.isPlaying = false;
         clearInterval(this.checkInterval);
-        
-        this.fadeOut(this.currentPlayer, true);
+        // Immediate stop — a user toggling off (or leaving the tab) expects
+        // silence now, not a 4s fade. The 4s fade is only for song-to-song
+        // crossfades (see doCrossfade).
+        [this.player1, this.player2].forEach(p => {
+            p.pause();
+            p.volume = 0;
+        });
         document.getElementById('bgm-icon-on').style.display = 'none';
         document.getElementById('bgm-icon-off').style.display = 'block';
     }
@@ -814,19 +819,9 @@ class CrossfadeBGMPlayer {
         else this.play();
     }
 
-    // Tab hidden: stop sound IMMEDIATELY (no 4s fade — that's for song
-    // transitions, not for leaving the tab). Keep the user's intent.
+    // Tab hidden: stop immediately but keep the user's intent.
     suspendForVisibility() {
-        if (!this.isPlaying) return;
-        this.isPlaying = false;
-        clearInterval(this.checkInterval);
-        // Hard stop both players at once, no fade.
-        [this.player1, this.player2].forEach(p => {
-            p.pause();
-            p.volume = 0;
-        });
-        document.getElementById('bgm-icon-on').style.display = 'none';
-        document.getElementById('bgm-icon-off').style.display = 'block';
+        this.pause();
     }
 
     // Tab visible again: resume only if the user had it on.
