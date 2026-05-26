@@ -761,6 +761,10 @@ class CrossfadeBGMPlayer {
         this.crossfadeTime = crossfadeTime; 
         this.maxVolume = 0.15;
         this.isPlaying = false;
+        // Distinguishes the user's intent ("I want BGM on") from the actual
+        // playback state. Tab-visibility pausing must not clear this, so we can
+        // resume only if the user actually wanted music.
+        this.userWantsBGM = false;
         
         // two players for natural fade out and in 
         this.player1 = new Audio(url);
@@ -804,8 +808,20 @@ class CrossfadeBGMPlayer {
     }
 
     toggle() {
+        // User-initiated: this is the real intent.
+        this.userWantsBGM = !this.isPlaying;
         if (this.isPlaying) this.pause();
         else this.play();
+    }
+
+    // Tab hidden: stop sound but remember the user still wants it.
+    suspendForVisibility() {
+        if (this.isPlaying) this.pause();
+    }
+
+    // Tab visible again: resume only if the user had it on.
+    resumeForVisibility() {
+        if (this.userWantsBGM && !this.isPlaying) this.play();
     }
 
     scheduleCrossfade() {
@@ -1914,6 +1930,7 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         isPageVisible = false;
         if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+        bgmPlayer.suspendForVisibility();
     } else {
         if (isPageVisible) return; // already running
         isPageVisible = true;
@@ -1923,6 +1940,7 @@ document.addEventListener('visibilitychange', () => {
         if (entryAnimationActive) entryAnimationStartTime = now;
         if (exitAnimationActive) exitAnimationStartTime = now;
         if (rafId === null) rafId = requestAnimationFrame(render);
+        bgmPlayer.resumeForVisibility();
     }
 });
 
