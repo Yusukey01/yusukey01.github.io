@@ -968,6 +968,33 @@ const sfx = {
             osc.start(t);
             osc.stop(t + 1.5);
         });
+    },
+
+    // Open sound: rising sweep that matches the "sucking-in" exit animation —
+    // pitch climbs as the tiles are pulled toward the center ("entering").
+    open: () => {
+        if (!bgmPlayer.userWantsBGM) return; // master audio toggle (off by default)
+        if (!audioCtx || audioCtx.state === 'suspended') return;
+        const t = audioCtx.currentTime;
+
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0, t);
+        masterGain.gain.linearRampToValueAtTime(0.12, t + 0.06);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+        masterGain.connect(audioCtx.destination);
+
+        // Two slightly detuned voices sweeping up ~1.5 octaves.
+        const startFreq = 330;   // ~E4
+        const endFreq = 880;     // ~A5
+        [0, 4].forEach(detune => {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(startFreq, t);
+            osc.frequency.exponentialRampToValueAtTime(endFreq + detune, t + 0.5);
+            osc.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + 1.0);
+        });
     }
 };
 
@@ -1559,6 +1586,8 @@ function triggerExitAnimation(url) {
     exitAnimationActive = true;
     exitAnimationStartTime = Date.now();
     exitTargetUrl = url;
+
+    sfx.open(); // rising sweep synced to the sucking-in animation
     
     // Update Tessera for departure
     setTesseraExpression('wave');
