@@ -1,0 +1,1113 @@
+---
+layout: default
+title: "Vector Fields under Maps and Lie Brackets"
+topic_id: calc-61
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Vector Fields under Maps and Lie Brackets</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#differential-vs-vector-field">The Differential and Vector Fields</a>
+            <a href="#pushforward">Pushforward by a Diffeomorphism</a>
+            <a href="#vector-fields-and-submanifolds">Vector Fields and Submanifolds</a>
+            <a href="#lie-brackets">The Lie Bracket</a>
+            <a href="#bracket-properties">Properties of the Bracket</a>
+            <a href="#applications">Controllability and Symbolic Brackets</a>
+        </div>
+
+        <div class="container">
+
+            <section id="differential-vs-vector-field" class="section-content">
+                <h2>The Differential and Vector Fields</h2>
+
+                <p>
+                    Once vector fields are at hand, two natural operations arise: pushing them along smooth maps between
+                    manifolds, and combining them with one another. The first operation, governed by the differential,
+                    leads to a refined notion of compatibility &mdash; \(F\)-relatedness &mdash; and clarifies when a
+                    vector field on one manifold transfers cleanly to another. The second operation, the Lie bracket
+                    \([X, Y] = XY - YX\), produces a new vector field from two given ones and turns
+                    <a href="vector_fields_on_manifolds.html#D-smooth_vector_fields_module" class="ref-link"><strong>\(\mathfrak{X}(M)\)</strong></a>
+                    into an algebraic object whose structure mirrors the matrix commutator structure already used in the
+                    linear-algebra track. The bracket measures the failure of two flows to commute, and its algebraic
+                    structure carries the theory of vector fields toward Lie algebras.
+                </p>
+
+                <h3>The differential does not move vector fields cleanly</h3>
+
+                <p>
+                    Suppose \(F : M \to N\) is smooth and
+                    <a href="vector_fields_on_manifolds.html#D-vector_field" class="ref-link"><strong>\(X\) is a vector field</strong></a>
+                    on \(M\). For each \(p \in M\), the
+                    <a href="tangent_vectors.html#D-differential_of_smooth_map" class="ref-link"><strong>differential</strong></a>
+                    \(dF_p : T_pM \to T_{F(p)}N\) sends the tangent vector \(X_p\) to a tangent vector
+                    \(dF_p(X_p) \in T_{F(p)}N\). The question is whether the assignment \(q \mapsto dF_p(X_p)\) for points
+                    \(q \in N\) of the form \(q = F(p)\) extends to a well-defined vector field on \(N\). In general it
+                    does not.
+                </p>
+
+                <p>
+                    Two obstructions arise. If \(F\) is not surjective, there are points \(q \in N \setminus F(M)\) at
+                    which no rule has been specified, and one cannot decide what tangent vector to assign there. If
+                    \(F\) is not injective, there are points \(q \in N\) with several preimages \(p_1, p_2, \dots\), and
+                    the differential will in general send the corresponding tangent vectors \(X_{p_1}, X_{p_2}, \dots\)
+                    to different tangent vectors at \(q\) &mdash; with no preferred choice among them. The differential
+                    is a pointwise object, indifferent to the global question of whether the values it produces fit
+                    together into a section.
+                </p>
+
+                <p>
+                    For the construction to succeed we need either a hypothesis on \(F\) that rules out both obstructions,
+                    or a hypothesis on the pair \((X, Y)\) that says the obstructions happen not to occur for these
+                    particular fields. The latter is the more flexible notion and arises first.
+                </p>
+
+                <h3>\(F\)-related vector fields</h3>
+
+                <div class="theorem" id="D-F_related_vector_fields">
+                    <span class="theorem-title">Definition: \(F\)-Related Vector Fields</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map, \(X \in \mathfrak{X}(M)\), and \(Y \in \mathfrak{X}(N)\). The
+                        vector fields \(X\) and \(Y\) are <strong>\(F\)-related</strong> if
+                        \[
+                            dF_p(X_p) = Y_{F(p)} \qquad \text{for every } p \in M .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The definition asks that the value of \(Y\) at any image point \(F(p)\) coincide with what the
+                    differential of \(F\) does to \(X_p\). It says nothing about what \(Y\) does at points of \(N\)
+                    outside the image of \(F\), and it is compatible with multiple preimages only when the differential
+                    sends every preimage's \(X\)-value to the same tangent vector. For a general \(F\) and a given \(X\),
+                    there need not be any \(Y\) that is \(F\)-related to \(X\), and when there is one, it need not be
+                    unique. The diffeomorphism case (next section) is precisely the case in which existence and
+                    uniqueness are automatic.
+                </p>
+
+                <p>
+                    The relation has a clean reformulation in terms of how the two vector fields act on smooth functions.
+                    On the \(M\)-side, a vector field \(X\) acts on the composite \(f \circ F\), where
+                    \(f \in C^\infty(N)\); on the \(N\)-side, the vector field \(Y\) acts on \(f\) and the result is
+                    pulled back along \(F\). The two operations agree exactly when \(X\) and \(Y\) are \(F\)-related.
+                </p>
+
+                <div class="theorem" id="T-F_related_iff_pullback_action">
+                    <span class="theorem-title">Proposition (\(F\)-Relatedness via the Action on Functions)</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map, \(X \in \mathfrak{X}(M)\), and \(Y \in \mathfrak{X}(N)\).
+                        Then \(X\) and \(Y\) are \(F\)-related if and only if, for every open subset \(V \subseteq N\) and
+                        every \(f \in C^\infty(V)\),
+                        \[
+                            X(f \circ F) = (Yf) \circ F \qquad \text{on } F^{-1}(V) .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For \(p \in F^{-1}(V)\) and \(f\) defined in a neighborhood of \(F(p)\), the
+                        <a href="tangent_vectors.html#T-differential_properties" class="ref-link"><strong>defining property of the differential</strong></a>
+                        gives
+                        \[
+                            X_p (f \circ F) = dF_p(X_p)\, f ,
+                        \]
+                        while the action of \(Y\) on \(f\) at the image point yields
+                        \[
+                            (Yf)(F(p)) = Y_{F(p)}\, f .
+                        \]
+                        The first equality holds for every \(p\) and every \(f\); pointwise, the two expressions are
+                        equal at \(p\) if and only if \(dF_p(X_p)\, f = Y_{F(p)}\, f\). Quantifying over all \(f\) in a
+                        neighborhood of \(F(p)\), they are equal at \(p\) for every such \(f\) if and only if
+                        \(dF_p(X_p) = Y_{F(p)}\). The function-level equation \(X(f \circ F) = (Yf) \circ F\) on
+                        \(F^{-1}(V)\) for every \(V\) and every \(f\) is therefore equivalent to the pointwise tangent
+                        vector equation \(dF_p(X_p) = Y_{F(p)}\) for every \(p\), which is precisely \(F\)-relatedness.
+                    </p>
+                </div>
+
+                <p>
+                    The function-level reformulation is the principal tool of the section: most identities involving
+                    \(F\)-related fields will be proved by chasing functions through both sides, since the algebraic
+                    side is easier to manipulate than the pointwise side. We will use this proposition repeatedly when
+                    establishing the naturality of the Lie bracket later in this page.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example (A Simple \(F\)-Relatedness):</span>
+                    <p>
+                        Let \(F : \mathbb{R} \to \mathbb{R}^2\) be the smooth map \(F(t) = (\cos t, \sin t)\), the standard
+                        parametrization of the unit circle. The vector field \(d/dt \in \mathfrak{X}(\mathbb{R})\) is
+                        \(F\)-related to the rotational vector field
+                        \[
+                            Y = -y\, \frac{\partial}{\partial x} + x\, \frac{\partial}{\partial y}
+                                \in \mathfrak{X}(\mathbb{R}^2) .
+                        \]
+                        Verifying this from the definition, the differential of \(F\) at \(t\) sends \(d/dt\) to
+                        \(F'(t) = (-\sin t, \cos t) \in T_{F(t)}\mathbb{R}^2\), and evaluating \(Y\) at \(F(t)\) gives
+                        \(Y_{F(t)} = -\sin t\, \partial/\partial x + \cos t\, \partial/\partial y\), the same tangent
+                        vector under the canonical identification of \(T_q \mathbb{R}^2\) with \(\mathbb{R}^2\). The
+                        \(F\)-relatedness can equivalently be checked through the action on functions using the
+                        proposition above.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="pushforward" class="section-content">
+                <h2>Pushforward by a Diffeomorphism</h2>
+
+                <p>
+                    The two obstructions to transporting a vector field along a smooth map &mdash; non-surjectivity and
+                    non-injectivity &mdash; both vanish exactly when the map is a
+                    <a href="smooth_functions_and_maps.html#D-diffeomorphism_manifolds" class="ref-link"><strong>diffeomorphism</strong></a>.
+                    In that case the resulting vector field exists, is uniquely determined, and is automatically smooth.
+                    Of all the compatibility scenarios for transporting vector fields, this one delivers the cleanest
+                    guarantees, and it is the case in which the differential actually moves vector fields cleanly from
+                    one manifold to another.
+                </p>
+
+                <h3>Existence and uniqueness</h3>
+
+                <div class="theorem" id="T-diffeomorphism_pushforward">
+                    <span class="theorem-title">Proposition (Pushforward Along a Diffeomorphism)</span>
+                    <p>
+                        Let \(M\) and \(N\) be smooth manifolds with or without boundary, and let \(F : M \to N\) be a
+                        diffeomorphism. For every \(X \in \mathfrak{X}(M)\) there is a unique smooth vector field
+                        \(Y \in \mathfrak{X}(N)\) that is \(F\)-related to \(X\), given by the formula
+                        \[
+                            Y_q = dF_{F^{-1}(q)}\bigl( X_{F^{-1}(q)} \bigr) \qquad \text{for } q \in N .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <em>Uniqueness.</em> If \(Y \in \mathfrak{X}(N)\) is \(F\)-related to \(X\), then by definition
+                        \(dF_p(X_p) = Y_{F(p)}\) for every \(p \in M\). Substituting \(p = F^{-1}(q)\), which is
+                        well-defined because \(F\) is a bijection, gives \(Y_q = dF_{F^{-1}(q)}(X_{F^{-1}(q)})\).
+                        Uniqueness is automatic from this formula.
+                    </p>
+                    <p>
+                        <em>Existence and smoothness.</em> Define \(Y : N \to TN\) by the formula above. Since
+                        \(X_{F^{-1}(q)} \in T_{F^{-1}(q)}M\) and the differential
+                        \(dF_{F^{-1}(q)} : T_{F^{-1}(q)}M \to T_q N\) sends tangent vectors at \(F^{-1}(q)\) to tangent
+                        vectors at \(F(F^{-1}(q)) = q\), we have \(Y_q \in T_q N\), so \(Y\) is a rough vector field on
+                        \(N\). It is \(F\)-related to \(X\) by construction: substituting \(q = F(p)\) into the formula
+                        yields \(Y_{F(p)} = dF_p(X_p)\). It remains to check that \(Y\) is smooth.
+                    </p>
+                    <p>
+                        Writing the formula as the composition
+                        \[
+                            N \xrightarrow{F^{-1}} M \xrightarrow{X} TM \xrightarrow{dF} TN ,
+                        \]
+                        each factor is smooth: \(F^{-1}\) because \(F\) is a diffeomorphism, \(X\) because it is a smooth
+                        vector field, and the
+                        <a href="tangent_bundle.html#T-global_differential_properties" class="ref-link"><strong>global differential</strong></a>
+                        \(dF : TM \to TN\) because the differential of a smooth map is itself smooth. The composition is
+                        therefore smooth, and \(Y\) is a smooth vector field on \(N\).
+                    </p>
+                </div>
+
+                <h3>The pushforward of a vector field</h3>
+
+                <p>
+                    The unique \(F\)-related vector field guaranteed by the previous proposition is given a name and a
+                    notation, and one warning about the notation is in order before the definition.
+                </p>
+
+                <div class="theorem" id="D-pushforward_vector_field">
+                    <span class="theorem-title">Definition: Pushforward of a Vector Field</span>
+                    <p>
+                        Let \(F : M \to N\) be a diffeomorphism and \(X \in \mathfrak{X}(M)\). The <strong>pushforward of
+                        \(X\) by \(F\)</strong>, denoted \(F_* X\), is the unique smooth vector field on \(N\) that is
+                        \(F\)-related to \(X\). It is given explicitly by
+                        \[
+                            (F_* X)_q = dF_{F^{-1}(q)}\bigl( X_{F^{-1}(q)} \bigr) \qquad \text{for } q \in N .
+                        \]
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>The Symbol \(F_*\) and the Symbol \(dF\)</h3>
+                    <p>
+                        Two related operations associated with a smooth map \(F : M \to N\) move tangent data forward,
+                        and the literature uses overlapping notation for them. We fix the convention on this site.
+                    </p>
+                    <p>
+                        At a single point \(p \in M\), the
+                        <a href="tangent_vectors.html#D-differential_of_smooth_map" class="ref-link"><strong>differential of \(F\)</strong></a>
+                        is the linear map \(dF_p : T_pM \to T_{F(p)}N\), and the
+                        <a href="tangent_bundle.html#T-global_differential_properties" class="ref-link"><strong>global differential</strong></a>
+                        \(dF : TM \to TN\) assembles the pointwise differentials into a smooth map between tangent
+                        bundles. Both require only that \(F\) be smooth, and both are denoted \(dF\) (with or without a
+                        base-point subscript) on this site. Some textbooks write \(F_*\) for these operations as well;
+                        we do not, in order to keep the next item unambiguous.
+                    </p>
+                    <p>
+                        On a vector field \(X \in \mathfrak{X}(M)\), the pushforward just defined produces another vector
+                        field \(F_* X \in \mathfrak{X}(N)\). This is a global operation, defined only when \(F\) is a
+                        diffeomorphism, because both injectivity and surjectivity are needed for the formula to make
+                        sense and for the result to be a vector field rather than a partial or multivalued assignment.
+                        The pointwise identity \((F_* X)_{F(p)} = dF_p(X_p)\) is just \(F\)-relatedness applied to
+                        \(Y = F_* X\), and it is the only place where the two notations meet in our usage: \(dF\) acts
+                        on tangent vectors at a point, while \(F_*\) acts on global vector fields under a diffeomorphism.
+                    </p>
+                </div>
+
+                <h3>A concrete computation</h3>
+
+                <p>
+                    When \(F^{-1}\) is given by an explicit formula, the definition above is a calculation rule:
+                    substitute \(F^{-1}(q)\) into the components of \(X\) and then apply the Jacobian matrix of \(F\) at
+                    \(F^{-1}(q)\). The following example carries this out for two open submanifolds of \(\mathbb{R}^2\).
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Computing a Pushforward in the Plane):</span>
+                    <p>
+                        Let
+                        \[
+                            M = \{ (x, y) : y > 0,\ x + y > 0 \} ,
+                            \qquad
+                            N = \{ (u, v) : u > 0,\ v > 0 \} ,
+                        \]
+                        regarded as open submanifolds of \(\mathbb{R}^2\), and define
+                        \(F : M \to N\) by \(F(x, y) = (x + y,\ x/y + 1)\). Solving \(u = x + y\) and \(v = x/y + 1\) for
+                        \((x, y)\) gives the inverse \(F^{-1}(u, v) = (u - u/v,\ u/v)\), and direct substitution
+                        confirms that \(F\) is a diffeomorphism. Consider the smooth vector field
+                        \[
+                            X = y^2\, \frac{\partial}{\partial x}
+                                \;\in\; \mathfrak{X}(M) .
+                        \]
+                    </p>
+                    <p>
+                        The Jacobian matrix of \(F\) at a point \((x, y) \in M\) is
+                        \[
+                            DF(x, y)
+                                = \begin{pmatrix} 1 & 1 \\[2pt] 1/y & -x/y^2 \end{pmatrix} ,
+                        \]
+                        and evaluating at \((x, y) = F^{-1}(u, v) = (u - u/v,\ u/v)\) gives
+                        \[
+                            DF\bigl( F^{-1}(u, v) \bigr)
+                                = \begin{pmatrix} 1 & 1 \\[2pt] v/u & (v - v^2)/u \end{pmatrix} ,
+                        \]
+                        where the lower-right entry is \(-x/y^2 = -\,(u - u/v)/(u/v)^2 = (v - v^2)/u\) after
+                        simplification.
+                    </p>
+                    <p>
+                        On the side of \(X\), evaluating at \(F^{-1}(u, v)\) gives
+                        \[
+                            X_{F^{-1}(u, v)}
+                                = (u/v)^2\, \frac{\partial}{\partial x}\bigg|_{F^{-1}(u, v)}
+                                = \frac{u^2}{v^2}\, \frac{\partial}{\partial x}\bigg|_{F^{-1}(u, v)} .
+                        \]
+                        Applying the Jacobian \(DF(F^{-1}(u, v))\) to the coordinate column
+                        \((u^2/v^2,\ 0)^\top\) representing this tangent vector, the first row produces \(u^2/v^2\) and
+                        the second row produces \((v/u) \cdot (u^2/v^2) = u/v\). By the explicit formula for the
+                        pushforward,
+                        \[
+                            (F_* X)_{(u, v)}
+                                = \frac{u^2}{v^2}\, \frac{\partial}{\partial u}\bigg|_{(u, v)}
+                                + \frac{u}{v}\, \frac{\partial}{\partial v}\bigg|_{(u, v)} .
+                        \]
+                        As a coordinate-free identity between vector fields on \(N\),
+                        \[
+                            F_* X = \frac{u^2}{v^2}\, \frac{\partial}{\partial u} + \frac{u}{v}\, \frac{\partial}{\partial v} .
+                        \]
+                    </p>
+                </div>
+
+                <h3>The action of the pushforward on functions</h3>
+
+                <p>
+                    Applying the function-level characterization of \(F\)-relatedness from the previous section to the
+                    pair \((X, F_* X)\) yields a clean identity relating the actions of \(X\) and \(F_* X\) on smooth
+                    functions. It is the operator-level statement that pushing the vector field forward by \(F\)
+                    corresponds to changing the variable from a function on \(N\) to a function on \(M\) via composition
+                    with \(F\).
+                </p>
+
+                <div class="theorem" id="T-pushforward_action_corollary">
+                    <span class="theorem-title">Corollary (Action of the Pushforward on Functions)</span>
+                    <p>
+                        Let \(F : M \to N\) be a diffeomorphism, \(X \in \mathfrak{X}(M)\), and \(f \in C^\infty(N)\).
+                        Then
+                        \[
+                            \bigl( (F_* X) f \bigr) \circ F = X (f \circ F) .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By definition, \(F_* X\) is the unique vector field on \(N\) that is \(F\)-related to \(X\).
+                        Applying the
+                        <a href="#T-F_related_iff_pullback_action" class="ref-link"><strong>function-level characterization of \(F\)-relatedness</strong></a>
+                        with \(Y = F_* X\) gives \(X(f \circ F) = ((F_* X) f) \circ F\) on \(F^{-1}(N) = M\), which is
+                        the stated identity.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="vector-fields-and-submanifolds" class="section-content">
+                <h2>Vector Fields and Submanifolds</h2>
+
+                <p>
+                    Submanifolds raise a question parallel to the one just settled for smooth maps: when does a vector
+                    field on the ambient manifold \(M\) restrict to a vector field on a submanifold \(S \subseteq M\)?
+                    The pointwise obstruction is that the value \(X_p\) of an ambient vector field at a point of \(S\)
+                    need not lie in the tangent space \(T_pS\); when it does at every point, the field is said to be
+                    tangent to \(S\), and the restriction goes through. The criterion that detects tangency through the
+                    action of the field on smooth functions specializes the
+                    <a href="submanifold_maps_tangent.html#T-tangent_space_submanifold" class="ref-link"><strong>tangent-space-as-annihilator</strong></a>
+                    characterization of \(T_pS\) to a global statement about vector fields.
+                </p>
+
+                <h3>Tangency to a submanifold</h3>
+
+                <div class="theorem" id="D-vector_field_tangent_to_submanifold">
+                    <span class="theorem-title">Definition: Tangent to a Submanifold</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, \(S \subseteq M\) an
+                        <a href="submanifold_types.html#D-immersed_submanifold" class="ref-link"><strong>immersed</strong></a>
+                        or
+                        <a href="submanifold_types.html#D-embedded_submanifold" class="ref-link"><strong>embedded submanifold</strong></a>,
+                        and \(X \in \mathfrak{X}(M)\). The vector field \(X\) is <strong>tangent to \(S\) at \(p\)</strong>
+                        for \(p \in S\) if \(X_p \in T_pS \subseteq T_pM\); it is <strong>tangent to \(S\)</strong> if it
+                        is tangent to \(S\) at every point of \(S\).
+                    </p>
+                </div>
+
+                <p>
+                    The condition \(X_p \in T_pS\) is naturally tested against functions vanishing on \(S\): tangent
+                    vectors to \(S\) annihilate every function flat along \(S\), and any tangent vector at \(p\) failing
+                    to annihilate some such function points away from \(S\). Globalizing over all \(p \in S\), an
+                    ambient vector field is tangent to \(S\) exactly when the function \(Xf\) vanishes on \(S\) whenever
+                    \(f\) does.
+                </p>
+
+                <div class="theorem" id="T-tangent_iff_vanishing_on_defining_ideal">
+                    <span class="theorem-title">Proposition (Tangency Through Defining Functions)</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, \(S \subseteq M\) an embedded submanifold, and
+                        \(X \in \mathfrak{X}(M)\). Then \(X\) is tangent to \(S\) if and only if for every
+                        \(f \in C^\infty(M)\) with \(f|_S = 0\), the function \(Xf\) satisfies \((Xf)|_S = 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        At each point \(p \in S\), the
+                        <a href="submanifold_maps_tangent.html#T-tangent_space_submanifold" class="ref-link"><strong>tangent space as annihilator</strong></a>
+                        characterizes membership in \(T_pS\) as the vanishing of the action on every smooth function flat
+                        along \(S\): a tangent vector \(v \in T_pM\) lies in \(T_pS\) if and only if \(vf = 0\) for every
+                        \(f \in C^\infty(M)\) with \(f|_S = 0\). Applying this to \(v = X_p\) for each \(p \in S\),
+                        \[
+                            X_p \in T_pS \quad \text{for every } p \in S
+                                \;\iff\;
+                            (Xf)(p) = X_p f = 0 \quad \text{for every } p \in S \text{ and every such } f ,
+                        \]
+                        and the right-hand condition is precisely \((Xf)|_S = 0\) for every \(f \in C^\infty(M)\) with
+                        \(f|_S = 0\), which is the statement of the proposition.
+                    </p>
+                </div>
+
+                <h3>Restricting a tangent vector field</h3>
+
+                <p>
+                    Once a vector field on \(M\) is known to be tangent to \(S\), its values along \(S\) themselves form
+                    tangent vectors to \(S\) at every point. The next proposition records that these values assemble into
+                    a smooth vector field on \(S\), and that the original field is the \(\iota\)-related image of this
+                    restriction under the inclusion \(\iota : S \hookrightarrow M\). This is the submanifold counterpart
+                    of the diffeomorphism pushforward: existence and smoothness are automatic, with the inclusion playing
+                    the role of the diffeomorphism.
+                </p>
+
+                <div class="theorem" id="T-restricting_vector_fields_to_submanifolds">
+                    <span class="theorem-title">Proposition (Restricting Vector Fields to Submanifolds)</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, \(S \subseteq M\) an immersed submanifold, and
+                        \(\iota : S \hookrightarrow M\) the inclusion map. If \(Y \in \mathfrak{X}(M)\) is tangent to
+                        \(S\), there exists a unique smooth vector field \(X \in \mathfrak{X}(S)\), denoted \(Y|_S\),
+                        that is \(\iota\)-related to \(Y\): for every \(p \in S\),
+                        \[
+                            d\iota_p (X_p) = Y_p .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <em>Uniqueness and pointwise existence.</em> For each \(p \in S\), the hypothesis that \(Y\) is
+                        tangent to \(S\) gives \(Y_p \in T_pS\), and \(d\iota_p : T_pS \to T_pM\) is the inclusion of
+                        \(T_pS\) into \(T_pM\) &mdash; injective because \(\iota\) is a
+                        <a href="maps_of_constant_rank.html#D-smooth_immersion" class="ref-link"><strong>smooth immersion</strong></a>.
+                        There is therefore a unique \(X_p \in T_pS\) with \(d\iota_p(X_p) = Y_p\), and \(X_p\) is in fact
+                        \(Y_p\) viewed as an element of \(T_pS\). The assignment \(p \mapsto X_p\) is a rough vector
+                        field on \(S\), and it is the unique candidate for a smooth one with the required property; it
+                        remains to verify smoothness.
+                    </p>
+                    <p>
+                        <em>Smoothness.</em> Smoothness is a local question on \(S\), so we work near an arbitrary point
+                        \(p \in S\). Since an
+                        <a href="submanifold_types.html#T-immersed_locally_embedded" class="ref-link"><strong>immersed submanifold is locally embedded</strong></a>,
+                        there is a neighborhood \(V\) of \(p\) in \(S\) on which the inclusion \(V \hookrightarrow M\)
+                        is an embedding. Choose a
+                        <a href="submanifold_types.html#D-slice_chart" class="ref-link"><strong>slice chart</strong></a>
+                        \((U, (x^i))\) for \(V\) in \(M\), centered at \(p\), in which \(V \cap U\) is the subset where
+                        \(x^{k+1} = \cdots = x^n = 0\), with \(k = \dim S\); the restrictions
+                        \((x^1, \dots, x^k)\) of the first \(k\) coordinates to \(V \cap U\) are local coordinates for
+                        \(S\). Write the ambient field in these coordinates as
+                        \[
+                            Y = Y^1\, \frac{\partial}{\partial x^1} + \cdots + Y^n\, \frac{\partial}{\partial x^n}
+                                \qquad \text{on } U ,
+                        \]
+                        with smooth component functions \(Y^i \in C^\infty(U)\). The hypothesis that \(Y\) is tangent to
+                        \(S\) means \(Y_p \in T_pS\), which in the slice chart is the subspace spanned by
+                        \(\partial/\partial x^1|_p, \dots, \partial/\partial x^k|_p\); the components \(Y^{k+1}, \dots,
+                        Y^n\) therefore vanish on \(V \cap U\). It follows from the pointwise construction in the first
+                        part of the proof that \(X\) has the coordinate representation
+                        \[
+                            X = Y^1\bigl|_{V \cap U}\, \frac{\partial}{\partial x^1}
+                                + \cdots
+                                + Y^k\bigl|_{V \cap U}\, \frac{\partial}{\partial x^k}
+                                \qquad \text{on } V \cap U ,
+                        \]
+                        in the coordinates \((x^1, \dots, x^k)\) for \(S\). Each coefficient is the restriction of a
+                        smooth function on \(U\) and is therefore smooth on \(V \cap U\), so \(X\) is smooth on
+                        \(V \cap U\). Since every point of \(S\) has such a coordinate neighborhood, \(X\) is smooth on
+                        \(S\).
+                    </p>
+                </div>
+
+                <p>
+                    When the submanifold \(S\) has boundary, the construction goes through with a boundary slice chart
+                    in place of an ordinary slice chart; the convention adopted on this site keeps boundaries in view
+                    only where they alter the argument, and the slice-chart construction above is the form we use by
+                    default.
+                </p>
+
+            </section>
+
+            <section id="lie-brackets" class="section-content">
+                <h2>The Lie Bracket</h2>
+
+                <p>
+                    We now turn to the second operation announced at the start of this page: combining two smooth vector
+                    fields to produce a third. The natural first attempt &mdash; compose the two as differential operators
+                    on \(C^\infty(M)\), in the
+                    <a href="vector_fields_on_manifolds.html#T-smooth_vf_iff_derivation" class="ref-link"><strong>derivation picture</strong></a>
+                    &mdash; turns out to fail: the composition \(XY\) of two vector fields, viewed as operators, is not
+                    in general a derivation, hence not a vector field. The antisymmetrization \(XY - YX\) does succeed,
+                    and the resulting operation is the Lie bracket. It equips \(\mathfrak{X}(M)\) with the structure of
+                    a Lie algebra, made explicit in the next section.
+                </p>
+
+                <h3>Why composition alone fails</h3>
+
+                <p>
+                    A smooth vector field \(X\) acts on smooth functions, sending \(f \in C^\infty(M)\) to
+                    \(Xf \in C^\infty(M)\); composing two such actions yields a linear operator
+                    \(f \mapsto X(Yf)\), which we write \(XYf\). This operator is \(\mathbb{R}\)-linear, but it is not a
+                    derivation: the product rule fails, with second-order cross terms appearing that have no first-order
+                    interpretation as the directional derivative of a single vector field.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Failure of the Product Rule for \(XY\)):</span>
+                    <p>
+                        On \(\mathbb{R}^2\), let \(X = \partial/\partial x\) and \(Y = x\, \partial/\partial y\), and let
+                        \(f(x, y) = x\), \(g(x, y) = y\). Computing the left-hand side of the would-be product rule,
+                        \[
+                            Y(fg) = x \cdot \frac{\partial(xy)}{\partial y} = x \cdot x = x^2 ,
+                            \qquad
+                            XY(fg) = \frac{\partial(x^2)}{\partial x} = 2x .
+                        \]
+                        For the right-hand side,
+                        \[
+                            Yg = x \cdot \frac{\partial y}{\partial y} = x ,
+                            \quad XYg = \frac{\partial x}{\partial x} = 1 ,
+                            \qquad
+                            Yf = x \cdot \frac{\partial x}{\partial y} = 0 ,
+                            \quad XYf = 0 ,
+                        \]
+                        and so \(f \cdot XYg + g \cdot XYf = x \cdot 1 + y \cdot 0 = x\). Since \(2x \neq x\), the
+                        operator \(XY\) does not satisfy the product rule, and is not a derivation of
+                        \(C^\infty(\mathbb{R}^2)\).
+                    </p>
+                </div>
+
+                <p>
+                    The asymmetry between the two sides of the failed identity has a clean structure: the missing terms
+                    are precisely the ones that would appear from applying the operators in the reverse order. The
+                    cancellation that gives a derivation is therefore the difference \(XY - YX\).
+                </p>
+
+                <h3>The Lie bracket</h3>
+
+                <div class="theorem" id="D-lie_bracket_vector_fields">
+                    <span class="theorem-title">Definition: Lie Bracket of Vector Fields</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary, and let \(X, Y \in \mathfrak{X}(M)\) be
+                        smooth vector fields. The <strong>Lie bracket</strong> of \(X\) and \(Y\) is the linear operator
+                        \([X, Y] : C^\infty(M) \to C^\infty(M)\) defined by
+                        \[
+                            [X, Y] f = X (Yf) - Y (Xf) \qquad \text{for } f \in C^\infty(M) .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The notation matches the
+                    <a href="../Linear_algebra/lie_algebras.html#D-lie_bracket" class="ref-link"><strong>matrix Lie bracket</strong></a>
+                    \([A, B] = AB - BA\) used earlier in the linear-algebra track, and the match is more than cosmetic:
+                    when the manifold is a matrix Lie group, the bracket of vector fields adapted to its left-translation
+                    structure will reduce exactly to the matrix commutator at the identity. That correspondence is
+                    developed in a later page of this series. For the moment we treat \([X, Y]\) purely as an operator
+                    on smooth functions and show that it is in fact a vector field.
+                </p>
+
+                <h3>The bracket is a smooth vector field</h3>
+
+                <div class="theorem" id="T-lie_bracket_is_smooth_vf">
+                    <span class="theorem-title">Lemma (The Lie Bracket Is a Smooth Vector Field)</span>
+                    <p>
+                        For any \(X, Y \in \mathfrak{X}(M)\), the operator \([X, Y]\) is a derivation of \(C^\infty(M)\),
+                        and is therefore the action on functions of a uniquely determined smooth vector field on \(M\),
+                        which we identify with \([X, Y]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Linearity of \([X, Y]\) over \(\mathbb{R}\) is inherited from the linearity of \(X\) and \(Y\)
+                        and the linearity of composition. It remains to verify the product rule for \([X, Y]\). For any
+                        \(f, g \in C^\infty(M)\), applying the product rule for \(X\) and \(Y\) twice gives
+                        \[
+                            \begin{align*}
+                                X\bigl( Y(fg) \bigr)
+                                    &= X\bigl( f\, Yg + g\, Yf \bigr) \\
+                                    &= Xf \cdot Yg + f \cdot XYg + Xg \cdot Yf + g \cdot XYf ,
+                            \end{align*}
+                        \]
+                        and symmetrically
+                        \[
+                            \begin{align*}
+                                Y\bigl( X(fg) \bigr)
+                                    &= Y\bigl( f\, Xg + g\, Xf \bigr) \\
+                                    &= Yf \cdot Xg + f \cdot YXg + Yg \cdot Xf + g \cdot YXf .
+                            \end{align*}
+                        \]
+                        Subtracting, the cross terms cancel in pairs &mdash; the product of real-valued smooth functions
+                        is commutative, so \(Xf \cdot Yg = Yg \cdot Xf\) and \(Xg \cdot Yf = Yf \cdot Xg\) &mdash;
+                        leaving
+                        \[
+                            [X, Y](fg)
+                                = X(Y(fg)) - Y(X(fg))
+                                = f \cdot (XYg - YXg) + g \cdot (XYf - YXf)
+                                = f \cdot [X, Y] g + g \cdot [X, Y] f .
+                        \]
+                        Hence \([X, Y]\) is a derivation of \(C^\infty(M)\). By the
+                        <a href="vector_fields_on_manifolds.html#T-smooth_vf_iff_derivation" class="ref-link"><strong>identification of smooth vector fields with derivations</strong></a>,
+                        there is a unique smooth vector field on \(M\) whose action on functions is \([X, Y]\), and we
+                        denote that vector field by \([X, Y]\) as well.
+                    </p>
+                </div>
+
+                <h3>Pointwise formula and computational practicality</h3>
+
+                <p>
+                    Evaluating the bracket as a vector field at a point yields
+                    \[
+                        [X, Y]_p f = X_p (Yf) - Y_p (Xf) ,
+                    \]
+                    a tangent vector at \(p\) acting on functions defined near \(p\). This pointwise formula is the most
+                    direct definition, but it is awkward in computations: applying it to a specific \(f\) produces second
+                    derivatives of \(f\), which must then be shown to cancel by hand. A coordinate formula in which the
+                    cancellation has already been carried out gives a more tractable expression.
+                </p>
+
+                <h3>The coordinate formula</h3>
+
+                <div class="theorem" id="T-lie_bracket_coordinate_formula">
+                    <span class="theorem-title">Proposition (Coordinate Formula for the Lie Bracket)</span>
+                    <p>
+                        Let \(X, Y \in \mathfrak{X}(M)\), let \((U, (x^i))\) be a smooth chart on \(M\), and write
+                        \(X = X^i\, \partial/\partial x^i\) and \(Y = Y^j\, \partial/\partial x^j\) on \(U\) with the
+                        Einstein summation convention in force. Then on \(U\),
+                        \[
+                            [X, Y]
+                                = \left( X^i\, \frac{\partial Y^j}{\partial x^i}
+                                       - Y^i\, \frac{\partial X^j}{\partial x^i} \right)
+                                  \frac{\partial}{\partial x^j} ,
+                        \]
+                        or more concisely
+                        \[
+                            [X, Y] = \bigl( X Y^j - Y X^j \bigr)\, \frac{\partial}{\partial x^j} ,
+                        \]
+                        where \(X Y^j\) denotes the action of the vector field \(X\) on the component function \(Y^j\),
+                        and similarly for \(Y X^j\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Both sides are smooth vector fields on \(U\), and equality of vector fields is a local question
+                        on which both sides act on any \(f \in C^\infty(U)\). It therefore suffices to apply both sides
+                        to a smooth function \(f\) and show that the resulting real-valued functions agree on \(U\).
+                        Expanding by the product rule,
+                        \[
+                            \begin{align*}
+                                [X, Y] f
+                                    &= X(Yf) - Y(Xf) \\
+                                    &= X^i\, \frac{\partial}{\partial x^i}
+                                       \left( Y^j\, \frac{\partial f}{\partial x^j} \right)
+                                     - Y^j\, \frac{\partial}{\partial x^j}
+                                       \left( X^i\, \frac{\partial f}{\partial x^i} \right) \\
+                                    &= X^i\, \frac{\partial Y^j}{\partial x^i}\, \frac{\partial f}{\partial x^j}
+                                     + X^i Y^j\, \frac{\partial^2 f}{\partial x^i\, \partial x^j} \\
+                                    &\quad - Y^j\, \frac{\partial X^i}{\partial x^j}\, \frac{\partial f}{\partial x^i}
+                                     - Y^j X^i\, \frac{\partial^2 f}{\partial x^j\, \partial x^i} .
+                            \end{align*}
+                        \]
+                        The two second-derivative terms are equal: \(X^i Y^j = Y^j X^i\) by commutativity of
+                        multiplication of real-valued functions, and
+                        \(\partial^2 f / \partial x^i\, \partial x^j = \partial^2 f / \partial x^j\, \partial x^i\) for
+                        any \(f \in C^\infty(U)\). They cancel.
+                    </p>
+                    <p>
+                        Renaming the dummy index \(i \leftrightarrow j\) in the third surviving term turns it into
+                        \(- Y^i\, (\partial X^j / \partial x^i)\, \partial f/\partial x^j\), bringing both surviving
+                        terms onto a common basis vector \(\partial f/\partial x^j\). The result is
+                        \[
+                            [X, Y] f
+                                = \left( X^i\, \frac{\partial Y^j}{\partial x^i}
+                                       - Y^i\, \frac{\partial X^j}{\partial x^i} \right)
+                                  \frac{\partial f}{\partial x^j} ,
+                        \]
+                        valid for every \(f \in C^\infty(U)\), which is the operator equality of the proposition.
+                        Recognizing \(X^i\, \partial Y^j/\partial x^i = X Y^j\) and similarly for \(Y X^j\) gives the
+                        concise form.
+                    </p>
+                </div>
+
+                <h3>Brackets of coordinate vector fields</h3>
+
+                <p>
+                    A trivial special case of the coordinate formula is the bracket of two coordinate vector fields,
+                    whose component functions are constants.
+                </p>
+
+                <div class="theorem" id="T-coordinate_vf_bracket_zero">
+                    <span class="theorem-title">Proposition (Coordinate Vector Fields Commute)</span>
+                    <p>
+                        In any smooth chart \((U, (x^i))\), the coordinate vector fields satisfy
+                        \[
+                            \left[ \frac{\partial}{\partial x^i},\ \frac{\partial}{\partial x^j} \right] = 0
+                            \qquad \text{for all } i, j .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The \(k\)th component function of \(\partial/\partial x^i\) in the chart \((U, (x^i))\) is the
+                        Kronecker delta \(\delta^i_k\), a constant; its partial derivatives in any of the coordinate
+                        directions vanish. Substituting into the coordinate formula above, every coefficient is zero, so
+                        the bracket vanishes.
+                    </p>
+                </div>
+
+                <p>
+                    The fact that coordinate vector fields commute is a restatement, at the level of the bracket, of the
+                    commutativity of mixed partial derivatives of smooth functions. A geometric interpretation of the
+                    Lie bracket as the obstruction to commuting flows of two vector fields is available in a later
+                    stage of this development; for now, the formula is the computational tool we need.
+                </p>
+
+                <h3>A worked example</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Lie Bracket of Two Vector Fields on \(\mathbb{R}^3\)):</span>
+                    <p>
+                        On \(\mathbb{R}^3\), let
+                        \[
+                            X = x\, \frac{\partial}{\partial x} + \frac{\partial}{\partial y} + x(y + 1)\, \frac{\partial}{\partial z} ,
+                            \qquad
+                            Y = \frac{\partial}{\partial x} + y\, \frac{\partial}{\partial z} ,
+                        \]
+                        with component functions \(X^x = x\), \(X^y = 1\), \(X^z = x(y+1)\) and \(Y^x = 1\), \(Y^y = 0\),
+                        \(Y^z = y\). Applying the concise coordinate formula to each component:
+                        \[
+                            \begin{align*}
+                                X Y^x - Y X^x
+                                    &= X(1) - Y(x)
+                                    = 0 - 1
+                                    = -1 ,\\
+                                X Y^y - Y X^y
+                                    &= X(0) - Y(1)
+                                    = 0 - 0
+                                    = 0 ,\\
+                                X Y^z - Y X^z
+                                    &= X(y) - Y\bigl( x(y + 1) \bigr) .
+                            \end{align*}
+                        \]
+                        For the last entry, \(X(y) = X^y \cdot 1 = 1\) since \(\partial y/\partial y = 1\), and
+                        \(Y(x(y+1)) = \partial(x(y+1))/\partial x + y\, \partial(x(y+1))/\partial z = (y + 1) + 0 = y + 1\),
+                        so \(X Y^z - Y X^z = 1 - (y + 1) = -y\). Assembling,
+                        \[
+                            [X, Y]
+                                = -\frac{\partial}{\partial x} - y\, \frac{\partial}{\partial z} .
+                        \]
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="bracket-properties" class="section-content">
+                <h2>Properties of the Bracket</h2>
+
+                <p>
+                    The Lie bracket of vector fields is bilinear, antisymmetric, and satisfies a Jacobi identity, making
+                    \((\mathfrak{X}(M), [\,\cdot\,, \cdot\,])\) into a Lie algebra over \(\mathbb{R}\); it also satisfies
+                    a product rule with respect to the action of smooth functions on each argument. Beyond these
+                    identities purely internal to a fixed manifold, the bracket interacts cleanly with smooth maps and
+                    with restriction to submanifolds: it commutes with the operations of \(F\)-relatedness, pushforward
+                    by a diffeomorphism, and restriction along an inclusion.
+                </p>
+
+                <h3>Internal identities of the bracket</h3>
+
+                <div class="theorem" id="T-lie_bracket_vector_fields_properties">
+                    <span class="theorem-title">Proposition (Properties of the Lie Bracket)</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary. For all
+                        \(X, Y, Z \in \mathfrak{X}(M)\), \(a, b \in \mathbb{R}\), and \(f, g \in C^\infty(M)\), the
+                        Lie bracket satisfies the following identities.
+                    </p>
+                    <p>
+                        <strong>(a) Bilinearity:</strong>
+                        \[
+                            [aX + bY, Z] = a[X, Z] + b[Y, Z] ,
+                            \qquad
+                            [Z, aX + bY] = a[Z, X] + b[Z, Y] .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(b) Antisymmetry:</strong>
+                        \[
+                            [X, Y] = -[Y, X] .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(c) Jacobi identity:</strong>
+                        \[
+                            \bigl[ X, [Y, Z] \bigr] + \bigl[ Y, [Z, X] \bigr] + \bigl[ Z, [X, Y] \bigr] = 0 .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(d) Product rule with respect to \(C^\infty(M)\)-scaling:</strong>
+                        \[
+                            [fX, gY] = fg\, [X, Y] + (f\, Xg)\, Y - (g\, Yf)\, X .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(a) and (b)</strong> follow immediately from the operator definition
+                        \([X, Y] f = X(Yf) - Y(Xf)\): \(\mathbb{R}\)-linearity of each entry is the linearity of \(X\) and
+                        \(Y\) acting on functions, and \([X, Y] = X Y - Y X = -(YX - XY) = -[Y, X]\) is the antisymmetry
+                        of the commutator.
+                    </p>
+                    <p>
+                        <strong>(c) Jacobi identity.</strong> Applying the left-hand side to an arbitrary
+                        \(f \in C^\infty(M)\) and expanding each outer bracket gives
+                        \[
+                            \begin{align*}
+                                \bigl[ X, [Y, Z] \bigr] f
+                                    &= X\bigl( [Y, Z] f \bigr) - [Y, Z] (Xf) \\
+                                    &= X\bigl( Y(Zf) - Z(Yf) \bigr) - Y\bigl( Z(Xf) \bigr) + Z\bigl( Y(Xf) \bigr) \\
+                                    &= XYZf - XZYf - YZXf + ZYXf ,
+                            \end{align*}
+                        \]
+                        and cyclically
+                        \[
+                            \begin{align*}
+                                \bigl[ Y, [Z, X] \bigr] f
+                                    &= YZXf - YXZf - ZXYf + XZYf ,\\
+                                \bigl[ Z, [X, Y] \bigr] f
+                                    &= ZXYf - ZYXf - XYZf + YXZf .
+                            \end{align*}
+                        \]
+                        Adding the three lines, each of the six monomials \(XYZf\), \(XZYf\), \(YXZf\), \(YZXf\),
+                        \(ZXYf\), \(ZYXf\) appears once with a positive sign and once with a negative sign and so
+                        cancels. The total is zero for every \(f\), proving the identity.
+                    </p>
+                    <p>
+                        <strong>(d) Product rule.</strong> Applying both sides to an arbitrary \(h \in C^\infty(M)\),
+                        the left-hand side expands by the product rule for \(X\) and \(Y\) acting on functions as
+                        \[
+                            \begin{align*}
+                                [fX, gY] h
+                                    &= fX(gYh) - gY(fXh) \\
+                                    &= f \cdot \bigl( Xg \cdot Yh + g \cdot XYh \bigr)
+                                       - g \cdot \bigl( Yf \cdot Xh + f \cdot YXh \bigr) \\
+                                    &= fg \cdot \bigl( XYh - YXh \bigr)
+                                       + (fXg) \cdot Yh
+                                       - (gYf) \cdot Xh \\
+                                    &= fg \cdot [X, Y] h + (fXg)\, Yh - (gYf)\, Xh ,
+                            \end{align*}
+                        \]
+                        which is the right-hand side applied to \(h\). Since the equality holds for every \(h\), the
+                        two operators agree as vector fields.
+                    </p>
+                </div>
+
+                <p>
+                    Properties (a), (b), and (c) together say that the pair
+                    \((\mathfrak{X}(M), [\,\cdot\,, \cdot\,])\) is a Lie algebra over the field of real numbers: an
+                    \(\mathbb{R}\)-vector space equipped with an antisymmetric bilinear operation satisfying the Jacobi
+                    identity. Property (d) records how the bracket interacts with the \(C^\infty(M)\)-module structure
+                    on \(\mathfrak{X}(M)\) established earlier; it is the price one pays for using functional rather
+                    than scalar coefficients, and it controls many later computations where smooth function factors
+                    appear inside brackets.
+                </p>
+
+                <h3>Naturality under smooth maps</h3>
+
+                <p>
+                    Beyond these internal identities, the bracket interacts cleanly with smooth maps: if both inputs of
+                    a bracket are \(F\)-related across a smooth map, then so is the bracket itself. This compatibility
+                    is what allows Lie-algebra constructions on different manifolds to be transported between them, and
+                    it is the key technical fact used downstream when matrix groups and abstract Lie groups are
+                    reconciled.
+                </p>
+
+                <div class="theorem" id="T-naturality_lie_bracket">
+                    <span class="theorem-title">Proposition (Naturality of the Lie Bracket)</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map between smooth manifolds with or without boundary, and let
+                        \(X_1, X_2 \in \mathfrak{X}(M)\) and \(Y_1, Y_2 \in \mathfrak{X}(N)\). If \(X_i\) is
+                        \(F\)-related to \(Y_i\) for \(i = 1, 2\), then \([X_1, X_2]\) is \(F\)-related to
+                        \([Y_1, Y_2]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By the
+                        <a href="#T-F_related_iff_pullback_action" class="ref-link"><strong>function-level characterization of \(F\)-relatedness</strong></a>,
+                        \(X_i\) being \(F\)-related to \(Y_i\) means
+                        \[
+                            X_i (f \circ F) = (Y_i f) \circ F
+                            \qquad \text{for every open } V \subseteq N \text{ and every } f \in C^\infty(V) .
+                        \]
+                        Applying this with \(i = 2\) and then with \(i = 1\) to the function \(Y_2 f\) gives
+                        \[
+                            X_1 X_2 (f \circ F)
+                                = X_1 \bigl( (Y_2 f) \circ F \bigr)
+                                = (Y_1 Y_2 f) \circ F ,
+                        \]
+                        and symmetrically \(X_2 X_1 (f \circ F) = (Y_2 Y_1 f) \circ F\). Subtracting,
+                        \[
+                            [X_1, X_2] (f \circ F)
+                                = X_1 X_2 (f \circ F) - X_2 X_1 (f \circ F)
+                                = (Y_1 Y_2 f) \circ F - (Y_2 Y_1 f) \circ F
+                                = \bigl( [Y_1, Y_2] f \bigr) \circ F .
+                        \]
+                        Since this holds for every \(f\), the function-level characterization applied in the reverse
+                        direction yields that \([X_1, X_2]\) is \(F\)-related to \([Y_1, Y_2]\).
+                    </p>
+                </div>
+
+                <p>
+                    The term <em>naturality</em> reflects a categorical perspective relating pairs
+                    \((M, \mathfrak{X}(M))\) and maps between them; we use the name without pursuing the categorical
+                    formalism here.
+                </p>
+
+                <h3>Bracket and pushforward</h3>
+
+                <p>
+                    When the smooth map is a diffeomorphism, every vector field on the source has a uniquely determined
+                    \(F\)-related field on the target, namely the pushforward. Naturality then becomes a statement that
+                    the pushforward commutes with the Lie bracket.
+                </p>
+
+                <div class="theorem" id="T-pushforward_of_lie_bracket">
+                    <span class="theorem-title">Corollary (Pushforward Commutes with the Bracket)</span>
+                    <p>
+                        Let \(F : M \to N\) be a diffeomorphism and \(X_1, X_2 \in \mathfrak{X}(M)\). Then
+                        \[
+                            F_* [X_1, X_2] = [F_* X_1, F_* X_2] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By the
+                        <a href="#D-pushforward_vector_field" class="ref-link"><strong>definition of the pushforward</strong></a>,
+                        \(F_* X_i\) is the unique smooth vector field on \(N\) that is \(F\)-related to \(X_i\). By
+                        naturality of the bracket, \([X_1, X_2]\) is \(F\)-related to \([F_* X_1, F_* X_2]\). Since
+                        \(F\) is a diffeomorphism, the \(F\)-related vector field on \(N\) for the given input
+                        \([X_1, X_2]\) is unique and is denoted \(F_* [X_1, X_2]\). Therefore the two are equal.
+                    </p>
+                </div>
+
+                <h3>Brackets along a submanifold</h3>
+
+                <p>
+                    The submanifold counterpart of pushforward is the restriction of a tangent field along an inclusion.
+                    Naturality applied to the inclusion map shows that the bracket of two ambient vector fields tangent
+                    to a submanifold is itself tangent to that submanifold.
+                </p>
+
+                <div class="theorem" id="T-brackets_tangent_to_submanifold">
+                    <span class="theorem-title">Corollary (Brackets of Tangent Vector Fields Are Tangent)</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, \(S \subseteq M\) an immersed submanifold with or without
+                        boundary, and \(Y_1, Y_2 \in \mathfrak{X}(M)\) both tangent to \(S\). Then the Lie bracket
+                        \([Y_1, Y_2]\) is also tangent to \(S\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(\iota : S \hookrightarrow M\) be the inclusion. By the
+                        <a href="#T-restricting_vector_fields_to_submanifolds" class="ref-link"><strong>restriction proposition</strong></a>
+                        for vector fields tangent to a submanifold, there exist smooth vector fields
+                        \(X_1, X_2 \in \mathfrak{X}(S)\) with \(X_i\) \(\iota\)-related to \(Y_i\). By naturality of the
+                        bracket, \([X_1, X_2] \in \mathfrak{X}(S)\) is \(\iota\)-related to \([Y_1, Y_2]\). This means
+                        precisely that for every \(p \in S\),
+                        \[
+                            d\iota_p\bigl( [X_1, X_2]_p \bigr) = [Y_1, Y_2]_p ,
+                        \]
+                        so \([Y_1, Y_2]_p\) lies in the image of \(d\iota_p\), which is \(T_pS\) regarded as a subspace
+                        of \(T_pM\). Hence \([Y_1, Y_2]\) is tangent to \(S\) at every point of \(S\).
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="applications" class="section-content">
+                <h2>Controllability and Symbolic Brackets</h2>
+
+                <p>
+                    The two threads we close this page on illustrate where the bracket operates outside pure differential
+                    geometry. The first is the role of the Lie bracket in control theory, where it measures the reachable
+                    configurations of mechanical systems governed by a fixed collection of allowable velocities. The
+                    second is the practical one: the coordinate formula for the bracket is exactly the rule by which
+                    symbolic algebra systems compute brackets of vector fields, making the derivation picture established
+                    on the previous page directly available to computation. The further application, the connection
+                    between the bracket on \(\mathfrak{X}(G)\) of a Lie group and the matrix commutator, we defer to a
+                    separate page where the requisite group structure is taken up.
+                </p>
+
+                <h3>The Lie bracket and controllability</h3>
+
+                <p>
+                    A mechanical system whose state is a configuration \(q\) on a smooth manifold \(Q\) is often
+                    described by a driftless input-affine equation
+                    \[
+                        \dot{q}(t) = \sum_{i=1}^m u_i(t)\, f_i\bigl( q(t) \bigr) ,
+                    \]
+                    where \(f_1, \dots, f_m \in \mathfrak{X}(Q)\) are smooth vector fields on the configuration manifold
+                    and \(u_1, \dots, u_m\) are real-valued control inputs the operator chooses as functions of time.
+                    Each \(f_i\) is the instantaneous velocity contributed by activating the \(i\)th control. Examples
+                    include a wheeled robot whose two controls are the rolling speed and steering rate, a satellite
+                    whose controls are the momentum-wheel torques, and a robotic arm whose controls are the
+                    joint-angular velocities.
+                </p>
+
+                <p>
+                    At each configuration \(q\), the available instantaneous velocities span a linear subspace
+                    \(\Delta_q = \mathrm{span}\{ f_1(q), \dots, f_m(q) \} \subseteq T_q Q\). When \(\Delta_q\) is a
+                    proper subspace of \(T_q Q\), the system cannot move in directions outside \(\Delta_q\) at any
+                    given instant; the question is whether such directions are nonetheless reachable by composing
+                    sequences of small control moves. The answer is governed by the Lie bracket: if at some
+                    configuration \(q\) the bracket \([f_i, f_j](q)\) lies outside \(\Delta_q\), then by alternating
+                    short pulses of \(f_i\) and \(f_j\) the system can produce a net motion in the bracket direction,
+                    even though that direction was unavailable instantaneously.
+                </p>
+
+                <p>
+                    Iterating this construction &mdash; allowing also brackets of brackets, brackets of those, and so on
+                    &mdash; produces a nested family of subspaces of \(T_q Q\). If the resulting iterated brackets
+                    eventually span all of \(T_q Q\) at every \(q\), the system is said to satisfy the bracket-generating
+                    condition, and a classical theorem of control theory then guarantees that any configuration is
+                    reachable from any other along a sequence of control trajectories. Spelling out this theorem, and
+                    proving it, requires the language of flows on manifolds developed in the next stage of this theory;
+                    the relevance of the bracket to the question, however, is already visible on the page: the bracket
+                    measures the failure of two flows to commute, and the failure to commute is what allows compound
+                    motions to generate directions inaccessible to either flow alone.
+                </p>
+
+                <h3>Coordinate formula and symbolic computation</h3>
+
+                <p>
+                    Beyond its theoretical role, the coordinate formula proved earlier on this page is the rule by
+                    which symbolic algebra systems for differential geometry compute brackets. Given vector fields
+                    \(X = X^i \partial/\partial x^i\) and \(Y = Y^j \partial/\partial x^j\) presented by their
+                    component functions in a chart, the bracket
+                    \[
+                        [X, Y]
+                            = \left( X^i\, \frac{\partial Y^j}{\partial x^i}
+                                   - Y^i\, \frac{\partial X^j}{\partial x^i} \right)
+                              \frac{\partial}{\partial x^j}
+                    \]
+                    reduces the operation to a finite collection of symbolic differentiations and arithmetic
+                    operations on the component functions. Modern differential-geometry packages in computer algebra
+                    systems implement this formula as the basic bracket operation on vector fields, and the worked
+                    example on \(\mathbb{R}^3\) that closed the previous section was, in effect, an instance of the
+                    same computation a symbolic system would carry out automatically.
+                </p>
+
+                <p>
+                    The general point is that the operator description of vector fields developed on the previous page,
+                    together with the bracket formula derived on this one, fits naturally with the standard data
+                    structures of computer algebra: a vector field is a tuple of smooth component functions, the action
+                    on a function is a coordinate-by-coordinate differentiation, and the bracket is one further
+                    differentiation step. The same description supports the algorithms used in geometric integrators,
+                    in symbolic Hamiltonian mechanics, and in computer-aided derivations within control and robotics.
+                </p>
+
+                <p>
+                    The next page in this development specializes the bracket to the setting where the manifold itself
+                    carries a Lie group structure, and singles out the vector fields invariant under the group's
+                    left-translation action. That class of vector fields is closed under the bracket, finite-dimensional,
+                    and entirely determined by its values at the identity &mdash; properties that together turn it into
+                    a finite-dimensional Lie algebra, and that recover the matrix commutator on \(\mathfrak{gl}(n,
+                    \mathbb{R})\) as a special case of the construction on this page.
+                </p>
+
+            </section>
+
+        </div>
+
+    </body>
+</html>
